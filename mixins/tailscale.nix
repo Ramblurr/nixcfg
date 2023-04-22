@@ -9,5 +9,12 @@
     boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
 
     networking.firewall.trustedInterfaces = ["tailscale0"];
+
+    environment.persistence = {
+      "/persist".directories = [
+        "/var/lib/tailscale"
+        "/var/cache/tailscale"
+      ];
+    };
   };
 }
