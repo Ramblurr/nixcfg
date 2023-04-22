@@ -45,6 +45,7 @@
       users.ramblurr = {pkgs, ...} @ hm: {
         home.extraOutputsToInstall = ["info" "man" "share" "icons" "doc"];
         home.stateVersion = "21.11";
+        home.homeDirectory = "/home/ramblurr";
         home.sessionVariables = {
           EDITOR = "vim";
           CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
