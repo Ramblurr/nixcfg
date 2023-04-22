@@ -2,7 +2,8 @@
   pkgs,
   config,
   ...
-}: {
+}:
+{
   config = {
     environment.pathsToLink = ["/share/zsh"];
 
@@ -11,32 +12,83 @@
     # users.users.ramblurr.ignoreShellProgramCheck = true;
 
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
+      programs.fzf = {
+        enable = true;
+        enableZshIntegration = true;
+      };
+      home.file = {
+        ".config/zsh" = {
+          source = ../configs/zsh;
+          recursive = true;
+        };
+      };
       programs.zsh = {
         enable = true;
+        autocd = true;
         enableAutosuggestions = true;
         enableCompletion = true;
-        defaultKeymap = "viins";
+        enableSyntaxHighlighting = true;
         dotDir = ".config/zsh";
-        shellAliases = {
-          "ls" = "ls --color --group-directories-first";
-          "exa" = "exa --group-directories-first";
-        };
         history = {
-          size = 99999;
-          save = 99999;
-          path = "${hm.config.xdg.dataHome}/zsh/zsh_history";
+          size = 5000000;
+          save = 5000000;
+          path = "${hm.config.home.homeDirectory}/.zhistory";
+          ignoreDups = true;
+          ignoreSpace = true;
+          expireDuplicatesFirst = true;
+          share = true;
+          ignorePatterns = [
+            "ls"
+            "cd"
+            "cd -"
+            "pwd"
+            "exit"
+            "date"
+            "* --help"
+            "man *"
+            "zstyle *"
+          ];
         };
-
-        # TODO:
-        # - tab-completion isn't color-highlighted
-        # - can rev search + tab-completion use the same tool/path?
-        # - better nix/lorri/direnv integration?
+        shellAliases = {
+          "nixcfg" = "cd ${hm.config.home.homeDirectory}/src/nixcfg";
+          "reshell!" = "exec $SHELL -l";
+          "exa" = "exa --group-directories-first";
+          ".." = "cd ..";
+          "..." = "cd ../..";
+          "...." = "cd ../../../";
+          "j" = "z";
+          "v" = "vim";
+          "vi" = "vim";
+          "ga" = "git add";
+          "gap" = "git add --patch";
+          "gc" = "git commit";
+          "gcm" = "git commit -m";
+          "gcam" = "git commit --amend";
+          "gca" = "git commit --amend --no-edit";
+          "gs" = "git status";
+          "gd" = "git diff";
+          "gf" = "git fetch";
+          "gr" = "git rebase";
+          "gp" = "git push";
+          "gu" = "git unstage";
+          "gg" = "git graph";
+          "gco" = "git checkout";
+          "gcs" = "git commit -S -m";
+          "tree" = "tree -CAFa -I \"CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components\" --dirsfirst";
+          "zz" = "quit";
+          "tf" = "terraform";
+          "mkdir" = "mkdir -p";
+          "cp" = "cp -r";
+          "scp" = "scp -r";
+          "ls" = "exa -l --group-directories-first";
+          "ll" = "ls -lahF --color=auto --group-directories-first";
+          "lsl" = "ls -lhF --color=auto --group-directories-first";
+          "utcnow" = "date -u +\"%Y-%m-%d %H:%M:%S\"";
+          "task" = "go-task";
+          "k" = "kubectl";
+        };
 
         envExtra = ''
-          export KEYTIMEOUT=10
-          export MCFLY_RESULTS_SORT="LAST_RUN"
-          export LESSHISTFILE=-
-
           # SESSION
           ${
             ""
@@ -55,37 +107,11 @@
         '';
 
         initExtra = ''
-          # surely something else has these defaults?
-          bindkey "^[[H"    beginning-of-line
-          bindkey "^[[F"    end-of-line
-          bindkey "^[[3~"   delete-char
-          bindkey "^[[1;5C" forward-word
-          bindkey "^[[1;5D" backward-word
-
-          # autoload -U compinit && compinit
+        source ~/.config/zsh/init.zsh
         '';
 
-        # initExtraBeforeCompInit = ''
-        #   export TZSH_INIT_EXTRA_BEFORE_COMP_INIT=1
-        # '';
-        # loginExtra = ''
         profileExtra = ''
-          if [[ "''${AUTOLOGIN_CMD}" != "" ]]; then
-          (
-            if [[ "$(tty)" == "/dev/tty1" ]]; then
-              set -x
-              "''${AUTOLOGIN_CMD}"
-              exit
-            fi
-            )
-          fi
         '';
-        #   # extra .zprofile
-        #   export TZSH_PROFILE_EXTRA=1
-        # '';
-        # sessionVariables = {
-        #   TZSH_TEST_VAR = "VALUE";
-        # };
       };
     };
   };
