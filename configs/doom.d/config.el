@@ -1,0 +1,443 @@
+;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
+
+;; Doom exposes five (optional) variables for controlling fonts in Doom:
+;;
+;; - `doom-font' -- the primary font to use
+;; - `doom-variable-pitch-font' -- a non-monospace font (where applicable)
+;; - `doom-big-font' -- used for `doom-big-font-mode'; use this for
+;;   presentations or streaming.
+;; - `doom-unicode-font' -- for unicode glyphs
+;; - `doom-serif-font' -- for the `fixed-pitch-serif' face
+;;
+;; See 'C-h v doom-font' for documentation and more examples of what they
+;; accept. For example:
+;;
+;;(setq doom-font (font-spec :family "Fira Code" :size 12 :weight 'semi-light)
+;;      doom-variable-pitch-font (font-spec :family "Fira Sans" :size 13))
+;;
+;; If you or Emacs can't find your font, use 'M-x describe-font' to look them
+;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
+;; refresh your font settings. If Emacs still can't find your font, it likely
+;; wasn't installed correctly. Font issues are rarely Doom issues!
+
+;; There are two ways to load a theme. Both assume the theme is installed and
+;; available. You can either set `doom-theme' or manually load a theme with the
+;; `load-theme' function. This is the default:
+(setq doom-theme 'doom-one)
+(setq doom-font (font-spec :family "Iosevka" :size 18))
+(setq doom-theme 'doom-gruvbox)
+(setq doom-themes-treemacs-enable-variable-pitch nil)
+(setq display-line-numbers-type 'relative)
+
+;; This determines the style of line numbers in effect. If set to `nil', line
+;; numbers are disabled. For relative line numbers, set this to `relative'.
+(setq display-line-numbers-type t)
+
+;; If you use `org' and don't want your org files in the default location below,
+;; change `org-directory'. It must be set before org loads!
+(setq org-directory "~/docs/org/")
+
+;; Aggressive auto backup feature
+;; I've been bit y undo corruption too many times to fully trust emacs with my
+;; code. Since we don't have an intellij style Local History feature, we just
+;; keep a ton of backups around.
+(defun force-backup-of-buffer ()
+  (setq buffer-backed-up nil))
+(add-hook 'before-save-hook  'force-backup-of-buffer)
+
+(setq create-lockfiles nil
+      make-backup-files t     ; enable backup files
+      vc-make-backup-files t  ; backup version controlled files
+      version-control t       ; number each backup file
+      delete-old-versions t   ; clean up after itself
+      kept-old-versions 0     ; don't bother with old versions
+      kept-new-versions 1000  ; keep 1000 latest versions
+      backup-by-copying t    ; don't clobber symlinks
+      backup-directory-alist (list
+                              (cons tramp-file-name-regexp nil)
+                              (cons "." (concat doom-cache-dir "backup/"))
+                              )
+      tramp-backup-directory-alist nil
+      )
+
+;; Disable backup on certain sensitive file types
+;; source: https://anirudhsasikumar.net/blog/2005.01.21.html
+(define-minor-mode sensitive-mode
+  "For sensitive files like password lists.
+It disables backup creation and auto saving.
+
+With no argument, this command toggles the mode.
+Non-null prefix argument turns on the mode.
+Null prefix argument turns off the mode."
+  ;; The initial value.
+  nil
+  ;; The indicator for the mode line.
+  " Sensitive"
+  ;; The minor mode bindings.
+  nil
+  (if (symbol-value sensitive-mode)
+      (progn
+        ;; disable backups
+        (set (make-local-variable 'backup-inhibited) t)
+        ;; disable auto-save
+        (if auto-save-default
+            (auto-save-mode -1)))
+                                        ;resort to default value of backup-inhibited
+    (kill-local-variable 'backup-inhibited)
+                                        ;resort to default auto save setting
+    (if auto-save-default
+        (auto-save-mode 1))))
+
+(setq auto-mode-alist
+      (append '(("\\.gpg$" . sensitive-mode)
+                ("\\.env$" . sensitive-mode)
+                ("\\.job$" . hcl-mode)
+                ("\\.hcl$" . hcl-mode)
+                ("\\.bu$" . yaml-mode)
+                )
+              auto-mode-alist))
+
+;; Projects all over
+(setq projectile-project-search-path '(
+                                       ("~/src" . 1)
+                                       ("~/src/sno" . 1)
+                                       ("~/src/many-stars" . 1)
+                                       ("~/work/vollers/src". 1)
+                                       ))
+;; show me projects in LIFO order
+(setq projectile-sort-order 'recently-active)
+
+;; intellij muscle memory dies hard
+(map!
+ :i "C-S-v" 'clipboard-yank
+                                        ;:n "C-e" #'projectile-recentf
+ :n "C-e" #'persp-switch-to-buffer
+ :n "C-n" #'projectile-find-file)
+
+
+(after! clojure-mode
+  (setq clojure-toplevel-inside-comment-form t)
+  (setq cider-save-file-on-load t)
+  (define-clojure-indent
+    (defresolver :defn)
+    (defcomponent :defn))
+  (put 'defresolver 'clojure-doc-string-elt 2)
+
+
+  (setq cljr-magic-require-namespaces
+        '(("io" . "clojure.java.io")
+          ("sh" . "clojure.java.shell")
+          ("jdbc" . "clojure.java.jdbc")
+          ("set" . "clojure.set")
+          ("string" . "clojure.string")
+          ("gstring" . "goog.string")
+          ("time" . "java-time")
+          ("path" . "pathetic.core")
+          ("walk" . "clojure.walk")
+          ("zip" . "clojure.zip")
+          ("async" . "clojure.core.async")
+          ("component" . "com.stuartsierra.component")
+          ("http" . "clj-http.client")
+          ("url" . "cemerick.url")
+          ("sql" . "honeysql.core")
+          ("csv" . "clojure.data.csv")
+          ("json" . "jsonista.core")
+          ("s" . "clojure.spec.alpha")
+          ("fs" . "me.raynes.fs")
+          ("ig" . "integrant.core")
+          ("cp" . "com.climate.claypoole")
+          ("re-frame" . "re-frame.core")
+          ("rf" . "re-frame.core")
+          ("rf.db" . "re-frame.db")
+          ("re" . "reagent.core")
+          ("reagent" . "reagent.core")
+          ("gen" . "clojure.spec.gen.alpha")
+          ("log" . "taoensso.timbre")
+          ("enc" . "taoensso.encore")
+          ("t" . "tick.alpha.api")
+          ("d" . "datahike.api")
+          ("dc" . "datahike.core")
+          ("p" . "com.wsscode.pathom.core")
+          ("pc" . "com.wsscode.pathom.connect")
+          ("uism" . "com.fulcrologic.fulcro.ui-state-machines")
+          ("df" . "com.fulcrologic.fulcro.data-fetch")
+          ("dr" . "com.fulcrologic.fulcro.routing.dynamic-routing")
+          ("dom" . "com.fulcrologic.fulcro.dom")
+          ("ent" . "com.fulcrologic.fulcro.dom.html-entities")
+          ("evt" . "com.fulcrologic.fulcro.dom.events")
+          ("comp" . "com.fulcrologic.fulcro.components")
+          ("mu" . "com.fulcrologic.fulcro.mutations")
+          ("merge" . "com.fulcrologic.fulcro.algorithms.merge")
+          ("fs" . "com.fulcrologic.fulcro.algorithms.form-state")
+          ("m" . "medley.core")))
+
+  (defun my/clojure-reload-browser ()
+    "Reload the browser on eval"
+    (interactive)
+    (cider-interactive-eval
+     (format "(browser/refresh)" (cider-last-sexp))))
+
+  (defun my/eval-defun-and-reload-browser ()
+    "Reload the browser on eval"
+    (interactive)
+    (cider-eval-defun-at-point)
+    (my/clojure-reload-browser))
+
+  (defun my/eval-rcf ()
+    (interactive) ;; you have to do this to be able to bind it to a key or M-x it
+    (save-excursion      ;; this is what returns the point to where you started
+      (goto-char (point-max))              ;; go to end of buffer
+      (if (re-search-backward " *;; rcf" nil t) ;; search backward, don't throw an error
+          (cider-eval-last-sexp) ;; the cider fn which evals the last form
+        (message "No rcf found!")))) ;; if the search fails, show a message in the echo area
+
+
+  (defun my/clojure-dev-reset ()
+    (interactive)
+    (cider-interactive-eval
+     ;; (format "(ol.app.dev.dev-extras/reset)"
+     ;;         (cider-last-sexp))
+
+     (format "(dev/reset)"
+             (cider-last-sexp))))
+
+  (defun my/clojure-reveal-clear-output ()
+    (interactive)
+    (cider-interactive-eval
+     (format "{:vlaaad.reveal/command '(clear-output)}"
+             (cider-last-sexp))))
+
+  ;; Leverage an existing cider nrepl connection to evaluate portal.api functions
+  ;; and map them to convenient key bindings.
+
+  ;; def portal to the dev namespace to allow dereferencing via @dev/portal
+  (defun portal.api/open ()
+    (interactive)
+    (cider-nrepl-sync-request:eval
+     "(do (ns dev) (def portal ((requiring-resolve 'portal.api/open))) (add-tap (requiring-resolve 'portal.api/submit)))"))
+
+  (defun portal.api/clear ()
+    (interactive)
+    (cider-nrepl-sync-request:eval "(portal.api/clear)"))
+
+  (defun portal.api/close ()
+    (interactive)
+    (cider-nrepl-sync-request:eval "(portal.api/close)"))
+
+  ;; Example key mappings for doom emacs
+  (map! :map clojure-mode-map
+        ;; cmd  + o
+        :n "s-o" #'portal.api/open
+        ;; ctrl + l
+        :n "C-l" #'portal.api/clear)
+
+  ;; NOTE: You do need to have portal on the class path and the easiest way I know
+  ;; how is via a clj user or project alias.
+  (setq cider-clojure-cli-global-options "-A:portal"))
+
+(after! lsp-clojure
+  (setq lsp-lens-enable t))
+
+(after! company
+  (setq company-auto-complete t
+        ;; complete on clojure namespaces
+        company-auto-complete-chars "/"))
+
+(after! treemacs
+  ;; follow the current project file
+  (setq treemacs-follow-mode t)
+  (setq +treemacs-git-mode 'deferred)
+  ;; single click expand/collapse nodes
+  (define-key treemacs-mode-map [mouse-1] #'treemacs-single-click-expand-action)
+  (add-to-list 'treemacs-pre-file-insert-predicates #'treemacs-is-file-git-ignored?))
+
+;; Snippets
+;(use-package doom-snippets
+;  :load-path "~/.config/doom-snippets"
+;  :after yasnippet)
+
+
+(evil-define-command rm/lispyville-insert-at-end-of-list (count)
+                       "same as `lispyville-insert-at-end-of-list', but adds a newline."
+                       (interactive "<c>")
+                       ;; TODO if already at the end of the list, add a newline above
+                       (when (lispyville--out-forward (or count 1))
+                         (backward-char)
+                         (newline-and-indent)
+                         (evil-change-state lispyville-preferred-state)))
+
+;; Lispyville needs Lispy, but I don't want to ever use the insane lispy-mode
+;; bindings.
+;; (use-package! lispy)
+(map!
+ :after lispyville
+ :map lispyville-mode-map
+ :n "M-L" #'lispyville-beginning-of-next-defun
+ :v "(" #'lispy-parens)
+
+
+
+(require 'evil-nerd-commenter)
+(use-package! lispyville
+  :hook ((lisp-mode . lispyville-mode)
+         (emacs-lisp-mode . lispyville-mode)
+         (ielm-mode . lispyville-mode)
+         (scheme-mode . lispyville-mode)
+         (racket-mode . lispyville-mode)
+         (hy-mode . lispyville-mode)
+         (lfe-mode . lispyville-mode)
+         (dune-mode . lispyville-mode)
+         (clojure-mode . lispyville-mode)
+         (fennel-mode . lispyville-mode))
+  :init
+  (setq
+   lispyville-key-theme
+   '(
+     (operators normal)
+     c-w c-u ;; Ctrl-w and Ctrl-u are sexp aware
+     prettify
+     text-objects
+     ;; (atom-movement normal visual)
+     ;; W, B and E will operate on atoms
+     ;; (atom-motions t)
+     atom-motions
+     additional-movement
+     ;; (additional-movement normal visual motion)
+     additional        ;; M-j/k to swap atoms forward/back
+     additional-insert ;;  M-{i,a,o,O} for sexp-aware enter insert
+     (additional-wrap normal insert)
+     (commentary normal visual)
+     slurp/barf-lispy ;; >/< to 'grow' and 'shrink' sexps
+     (escape insert emacs)))
+  :config
+  (lispyville-set-key-theme)
+
+  (evil-define-key 'normal lispyville-mode-map
+    (kbd "M-o") 'rm/lispyville-insert-at-end-of-list)
+
+  (setq
+   lispy-safe-actions-ignore-strings t
+   lispy-safe-actions-ignore-comments t)
+
+  (remove-hook 'clojure-mode-hook 'parinfer-mode)
+  (remove-hook 'emacs-lisp-mode-hook 'parinfer-mode)
+  " string a is long"
+
+  ;; make w/e/b move by words inside strings and comments
+  (defun fn--lispyville-e-handler ()
+    (interactive)
+    (if (or (in-string-p)
+            (evilnc-pure-comment-p (point))
+            )
+        (evil-forward-word-end)
+      (lispyville-forward-atom-end)))
+
+  (defun fn--lispyville-w-handler ()
+    (interactive)
+    (if (or (in-string-p)
+            (evilnc-pure-comment-p (point))
+            )
+        (evil-forward-word-begin)
+      (lispyville-forward-atom-begin)))
+
+  (defun fn--lispyville-b-handler ()
+    (interactive)
+    (if (or (in-string-p)
+            (evilnc-pure-comment-p (point)))
+        (evil-backward-word-begin)
+      (lispyville-backward-atom-begin)))
+
+  (evil-define-key '(normal visual) lispyville-mode-map
+    (kbd "e") 'fn--lispyville-e-handler
+    (kbd "w") 'fn--lispyville-w-handler
+    (kbd "b") 'fn--lispyville-b-handler))
+
+
+(use-package! elpher :defer t)
+(after! elpher
+  (map! (:localleader
+         (:map elpher-mode-map)
+         "b" #'elpher-back
+         "r" #'elpher-reload
+         "g" #'elpher-go
+         "B" #'elpher-show-bookmarks
+         "A" #'elpher-bookmark-current
+         "U" #'elpher-copy-link-url
+         "u" #'elpher-copy-current-url
+         "d" #'elpher-download
+         "." #'elpher-view-raw
+         ))
+
+  (add-hook 'elpher-mode-hook
+            (defun +elpher-clean-up-ui ()
+              (setq cursor-type nil)
+              (hl-line-mode -1)))
+  (add-hook 'elpher-mode-hook #'doom-mark-buffer-as-real-h)
+  (advice-add #'elpher-bookmark-jump :after
+              (defun +elpher-bookmark-jump-a (_)
+                (switch-to-buffer elpher-buffer-name)))
+  )
+
+
+
+(after! flycheck
+  ;; flycheck-next-error will navigate to errors before warnings
+  (setq flycheck-navigation-minimum-level 'error)
+)
+
+
+;; Tell the LSP to not monitor vendor dirs
+(after! lsp-mode
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]vendor\\'" t))
+
+(defun tramp-abort ()
+  (interactive)
+  (recentf-cleanup)
+  (tramp-cleanup-all-buffers)
+  (tramp-cleanup-all-connections))
+
+;; ensure identically named files are shown in the buffer switcher with a directory disambiguation
+(require 'uniquify)
+;;(setq uniquify-buffer-name-style 'reverse)
+(setq uniquify-buffer-name-style 'forward)
+(setq uniquify-separator "/")
+(setq uniquify-after-kill-buffer-p t) ; rename after killing uniquified
+(setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
+
+;; accept completion from copilot and fallback to company
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (("C-TAB" . 'copilot-accept-completion-by-word)
+         ("C-<tab>" . 'copilot-accept-completion-by-word)
+         :map copilot-completion-map
+         ("<tab>" . 'copilot-accept-completion)
+         ("TAB" . 'copilot-accept-completion)))
+
+
+(defun my/copilot-tab ()
+  (interactive)
+  (or (copilot-accept-completion)
+      (indent-for-tab-command)))
+
+(with-eval-after-load 'copilot
+  (evil-define-key 'insert copilot-mode-map
+    (kbd "<tab>") #'my/copilot-tab))
+
+;; Disable Copilot when editing Lisp
+;; Copilot really sucks in Lisp
+(setq copilot-disable-predicates
+      (list
+       (lambda () (when (derived-mode-p 'clojure-mode 'lisp-mode 'emacs-lisp-mode) t))))
+
+(use-package! python-black
+  :after python
+  :hook (python-mode . python-black-on-save-mode-enable-dwim))
+
+(after! python
+  (setq lsp-ui-doc-enabled nil))
+
+(after!
+  treemacs (treemacs-follow-mode 1))
+
+(load! "+bindings.el")
+(load! "+dashboard.el")
