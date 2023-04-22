@@ -43,6 +43,7 @@
           nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default
+          sops-nix.nixosModules.sops
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
           {programs.hyprland.enable = true;}
           {

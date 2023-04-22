@@ -189,8 +189,6 @@ in {
 
     users = {
       mutableUsers = false;
-      users."root".initialHashedPassword = lib.mkForce "$6$EiATeVQpuAcM4BfT$B31xDzJjYs4pXF500/rOB.pVo1N8PJ9NEt0OF/U04Jw4n.DFfw2sjt71rbN3xqtVVSUBe0rN4qKVGILWQE6Xu0";
-      users."root".hashedPassword = config.users.users."root".initialHashedPassword;
     };
 
     ## MISC HARDWARE RELATED ################################################

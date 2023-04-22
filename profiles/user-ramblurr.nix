@@ -1,3 +1,4 @@
+{ config, ... }:
 let
   user = "ramblurr";
   name = "Ramblurr";
@@ -17,8 +18,7 @@ in {
         "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJ6XVIQ8DU60p0cjBti+kJgd/UqM1tV4M5gFIoR+I0tQ5XmWU65V91uxfeJMBG0Owoweod2q1qKhH3xic9tIHHA= casey@ipad"
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF7TTPusOHuyKotZBcwWqIH3B+cRRDQM46+lvATGNAWO disaster recovery 2021"
       ];
-      #mkpasswd -m sha-512
-      hashedPassword = "$6$EiATeVQpuAcM4BfT$B31xDzJjYs4pXF500/rOB.pVo1N8PJ9NEt0OF/U04Jw4n.DFfw2sjt71rbN3xqtVVSUBe0rN4qKVGILWQE6Xu0";
+      passwordFile = config.sops.secrets.ramblurr-password.path;
       extraGroups = [
         "wheel"
         "kvm"
@@ -44,6 +44,10 @@ in {
       ];
       uid = idno;
       group = user;
+    };
+    sops.secrets.ramblurr-password = {
+      sopsFile = ../secrets/secrets.sops.yaml;
+      neededForUsers = true;
     };
   };
 }
