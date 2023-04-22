@@ -26,13 +26,6 @@
     users.users.ramblurr.linger = true;
     users.users.ramblurr.shell = pkgs.zsh;
 
-    # TODO sops
-    #sops.secrets = {
-    #  "nixup-secrets".owner = "ramblurr";
-    #  "home-assistant-bearer-token".owner = "ramblurr";
-    #  "tailscale-join-authkey".owner = "ramblurr";
-    #};
-
     services.dbus.packages = with pkgs; [pkgs.dconf];
     nix.extraOptions = ''
       keep-outputs = true
@@ -112,7 +105,7 @@
             lsof
             unar
             p7zip
-            sops # age ?rage?
+            sops
             age
             step-cli
             gptfdisk
