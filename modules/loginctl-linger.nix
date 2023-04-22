@@ -1,3 +1,4 @@
+# see https://github.com/michalrus/dotfiles/commit/ebd5fa9583f82589f23531647aa677feb3f8d344#diff-4d353005ef5b3e37f33c07332b8523edR1
 {
   config,
   lib,
@@ -12,7 +13,11 @@
 with lib; let
   dataDir = "/var/lib/systemd/linger";
 
-  lingeringUsers = map (u: u.name) (attrValues (flip filterAttrs config.users.users (n: u: u.linger)));
+  shouldLinger = user:
+    if user.linger != null
+    then user.linger
+    else user.isNormalUser && config.users.defaultLinger;
+  lingeringUsers = map (u: u.name) (filter shouldLinger (attrValues config.users.users));
 
   lingeringUsersFile =
     builtins.toFile "lingering-users"
@@ -27,19 +32,22 @@ with lib; let
   '';
 in {
   options = {
+    users.defaultLinger = mkEnableOption "lingering for normal users (can be overridden per user)";
     users.users = mkOption {
-      options = [
-        {
-          linger = mkEnableOption "lingering for the user";
-        }
-      ];
+      type = with types;
+        attrsOf (submodule {
+          options.linger =
+            mkEnableOption "lingering for the user"
+            // {
+              type = nullOr bool;
+              default = null;
+            };
+        });
     };
   };
 
   config = {
-    system.activationScripts.update-lingering = {
-      text = updateLingering;
-      deps = ["users"];
-    };
+    system.activationScripts.update-lingering =
+      stringAfter ["users"] updateLingering;
   };
 }

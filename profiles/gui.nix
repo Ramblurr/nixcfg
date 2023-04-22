@@ -5,10 +5,6 @@
   inputs,
   ...
 }: let
-  firefoxFlake = inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system};
-  # _firefox = pkgs.firefox-wayland;
-  _firefox = lib.hiPrio firefoxFlake.firefox-nightly-bin;
-
   # _chrome = pkgs.ungoogled-chromium;
   _chrome = pkgs.google-chrome-dev.override {
     commandLineArgs = ["--force-dark-mode"];
@@ -61,12 +57,9 @@ in {
 
       home.packages = lib.mkMerge [
         (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
-          _firefox
+          firefox
           _chrome
           captive-browser
-          jamesdsp
-
-          nheko
         ]))
         (with pkgs; [
           # misc tools/utils
@@ -76,7 +69,6 @@ in {
           evince
           signal-desktop
           # libnotify # `notify-send`
-          toastify
         ])
       ];
     };

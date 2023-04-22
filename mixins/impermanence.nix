@@ -12,8 +12,7 @@
   environment.persistence."/persist" = {
     directories = [
       "/etc/nixos"
-      "/etc/NetworkManager/system-connections"
-      "/var/log"
+      #"/var/log"
       #"/var/lib"
       #"/srv"
     ];

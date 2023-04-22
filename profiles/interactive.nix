@@ -69,8 +69,6 @@
           ]))
           # ++ inputs.self.devShells.${pkgs.stdenv.hostPlatform.system}.ci.nativeBuildInputs
           (with pkgs; [
-            (pkgs.callPackage ../pkgs/commands.nix {})
-
             # <rust pkgs>
             bat
             tealdeer
@@ -140,8 +138,8 @@
             just
             go-task
             aspell
-            aspell-dict-en
-            aspell-dict-de
+            aspellDicts.en
+            aspellDicts.de
             curl
             fzf
             jdk
