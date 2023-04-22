@@ -6,6 +6,8 @@
     impermanence.url = "github:nix-community/impermanence";
     alejandra.url = "github:kamadorueda/alejandra/3.0.0";
     alejandra.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-hardware.url = "github:nixos/nixos-hardware";
+    sops-nix = {url = "github:Mic92/sops-nix/master";};
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -22,18 +24,22 @@
     nur,
     ...
   }: {
+    nixosModules = {
+      loginctl-linger = import ./modules/loginctl-linger.nix;
+    };
+
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
     nixosConfigurations = {
       quine = nixpkgs.lib.nixosSystem rec {
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules = [
+          ./hosts/quine/configuration.nix
           nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
           {programs.hyprland.enable = true;}
-          ./configuration.nix
         ];
       };
     };

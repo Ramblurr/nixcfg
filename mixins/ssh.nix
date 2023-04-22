@@ -11,9 +11,9 @@ in {
         (
           # symlink root ssh config to ours so daemon can use our agent/keys/etc...
           mkdir -p /root/.ssh
-          ln -sf /home/cole/.ssh/config /root/.ssh/config
-          ln -sf /home/cole/.ssh/known_hosts /root/.ssh/known_hosts
-          ln -sf /home/cole/.ssh/known_hosts /root/.ssh/known_hosts
+          ln -sf /home/ramblurr/.ssh/config /root/.ssh/config
+          ln -sf /home/ramblurr/.ssh/known_hosts /root/.ssh/known_hosts
+          ln -sf /home/ramblurr/.ssh/known_hosts /root/.ssh/known_hosts
 
           # and we control our own SSH_AUTH_SOCK fate
           # mkdir -p "$(dirname "${fixedSshAgentSocket}")" || true
@@ -23,7 +23,7 @@ in {
       deps = [];
     };
 
-    home-manager.users.cole = {
+    home-manager.users.ramblurr = {
       pkgs,
       lib,
       ...
@@ -31,7 +31,7 @@ in {
       home.file.".ssh/control/.keep".text = "";
       programs.ssh = {
         enable = true;
-        controlPath = "/home/cole/.ssh/control/%C"; # TODO: lolwut
+        controlPath = "/home/ramblurr/.ssh/control/%C"; # TODO: lolwut
         # just no... this shit does not work well
         #controlMaster = "auto";
         #controlPersist = "1m";

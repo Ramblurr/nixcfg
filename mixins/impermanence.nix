@@ -1,6 +1,6 @@
 {
   config,
-  input,
+  inputs,
   lib,
   pkgs,
   ...
@@ -14,7 +14,7 @@
       "/etc/nixos"
       "/etc/NetworkManager/system-connections"
       "/var/log"
-      "/var/lib"
+      #"/var/lib"
       #"/srv"
     ];
     files = [

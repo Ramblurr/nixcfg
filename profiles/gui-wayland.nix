@@ -10,7 +10,7 @@
     ../mixins/obs.nix
   ];
   config = {
-    home-manager.users.cole = {pkgs, ...}: {
+    home-manager.users.ramblurr = {pkgs, ...}: {
       home.sessionVariables = {
         XDG_SESSION_TYPE = "wayland";
         NIXOS_OZONE_WL = "1";

@@ -10,16 +10,14 @@ in {
   imports = [
     ./hardware-configuration.nix
     ../../profiles/interactive.nix
-    #../../profiles/addon-laptop.nix
-    ../../profiles/addon-desktop.nix
     ../../profiles/addon-gaming.nix
+    ../../profiles/gui-wayland.nix
+    ../../profiles/gui-plasma.nix
+    ../../profiles/gui-hyprland.nix
 
     ../../mixins/impermanence.nix
     ../../mixins/cpu-ryzen.nix
     ../../mixins/gfx-nvidia.nix
-    ../../mixins/gui-wayland.nix
-    ../../mixins/gui-plasma.nix
-    ../../mixins/gui-hyprland.nix
     ../../mixins/hyprland.nix
     ../../mixins/syncthing.nix
     ../../mixins/zfs.nix

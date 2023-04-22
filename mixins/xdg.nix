@@ -6,7 +6,7 @@
   config = {
     # see profiles/desktop-<foo>.nix for xdg-portal stuff
 
-    home-manager.users.cole = {pkgs, ...}: {
+    home-manager.users.ramblurr = {pkgs, ...}: {
       home.packages = with pkgs; [
         xdg-utils
         xdg-user-dirs

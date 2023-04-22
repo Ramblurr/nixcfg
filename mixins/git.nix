@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   config = {
-    home-manager.users.cole = {pkgs, ...}: {
+    home-manager.users.ramblurr = {pkgs, ...}: {
       programs.git = {
         enable = true;
         signing.key = "978C4D08058BA26EB97CB51820782DBCACFAACDA";

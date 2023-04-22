@@ -8,9 +8,9 @@
 
     # BUG: come onnnnn nixpkgs
     programs.zsh.enable = true;
-    # users.users.cole.ignoreShellProgramCheck = true;
+    # users.users.ramblurr.ignoreShellProgramCheck = true;
 
-    home-manager.users.cole = {pkgs, ...} @ hm: {
+    home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       programs.zsh = {
         enable = true;
         enableAutosuggestions = true;

@@ -22,7 +22,7 @@
       '')
     ];
 
-    home-manager.users.cole = {pkgs, ...}: {
+    home-manager.users.ramblurr = {pkgs, ...}: {
       programs.obs-studio = {
         enable = true;
 

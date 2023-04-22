@@ -5,7 +5,7 @@
   ...
 }: {
   config = {
-    home-manager.users.cole = {pkgs, ...} @ hm: {
+    home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       home.file = {
         # Add hyprland config
         ".config/hypr/hyprland.conf" = {

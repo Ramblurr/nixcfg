@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   config = {
-    home-manager.users.cole = {pkgs, ...}: {
+    home-manager.users.ramblurr = {pkgs, ...}: {
       programs.aria2 = {
         enable = true;
         settings = {
