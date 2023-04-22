@@ -2,8 +2,7 @@
   pkgs,
   config,
   ...
-}:
-{
+}: {
   config = {
     environment.pathsToLink = ["/share/zsh"];
 
@@ -107,7 +106,7 @@
         '';
 
         initExtra = ''
-        source ~/.config/zsh/init.zsh
+          source ~/.config/zsh/init.zsh
         '';
 
         profileExtra = ''
