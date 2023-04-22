@@ -8,7 +8,7 @@
   prefs = import ./_preferences.nix {inherit inputs config lib pkgs;};
 in {
   config = {
-    home-manager.users.cole = {pkgs, ...} @ hm: {
+    home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       # home.sessionVariables = {
       # XCURSOR_PATH = prefs.cursor.package.outPath;
       # };

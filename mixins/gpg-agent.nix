@@ -104,7 +104,7 @@ in {
     # if all three are disable then shit just don't work
     # neither ccid or pc/sc are able to work
 
-    home-manager.users.cole = {pkgs, ...} @ hm: {
+    home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       programs.gpg.enable = true;
       programs.gpg.homedir = "${hm.config.xdg.dataHome}/gnupg";
       home.file."${hm.config.programs.gpg.homedir}/.keep".text = "";

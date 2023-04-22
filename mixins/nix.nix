@@ -14,9 +14,6 @@ in {
       allowAliases = false;
       allowUnfree = true;
     };
-    nixpkgs.overlays = [
-      inputs.self.overlays.default
-    ];
     nix = {
       gc = {
         automatic = true;

@@ -11,7 +11,7 @@
 
     networking.firewall.interfaces."tailscale0".allowedTCPPorts = [8384];
 
-    home-manager.users.cole = {pkgs, ...} @ hm: {
+    home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       services.syncthing = {
         enable = true;
         extraOptions = [

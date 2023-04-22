@@ -11,7 +11,7 @@
     inputs.home-manager.nixosModules.default # "home-manager"
     ./core.nix
 
-    ../secrets
+    #../secrets
 
     ../mixins/aria2.nix
     ../mixins/git.nix
@@ -26,11 +26,12 @@
     users.users.ramblurr.linger = true;
     users.users.ramblurr.shell = pkgs.zsh;
 
-    sops.secrets = {
-      "nixup-secrets".owner = "ramblurr";
-      "home-assistant-bearer-token".owner = "ramblurr";
-      "tailscale-join-authkey".owner = "ramblurr";
-    };
+    # TODO sops
+    #sops.secrets = {
+    #  "nixup-secrets".owner = "ramblurr";
+    #  "home-assistant-bearer-token".owner = "ramblurr";
+    #  "tailscale-join-authkey".owner = "ramblurr";
+    #};
 
     services.dbus.packages = with pkgs; [pkgs.dconf];
     nix.extraOptions = ''

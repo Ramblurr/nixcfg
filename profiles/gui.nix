@@ -39,7 +39,7 @@ in {
 
     services = {};
 
-    home-manager.users.cole = {
+    home-manager.users.ramblurr = {
       pkgs,
       config,
       ...

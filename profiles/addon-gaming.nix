@@ -19,11 +19,11 @@ in {
       steam = {
         enable = true;
       };
-      gamescope = {
-        enable = true;
-        enableRenice = true;
-        # settings = {};
-      };
+      #gamescope = {
+      #  enable = true;
+      #  enableRenice = true;
+      #  # settings = {};
+      #};
       gamemode = {
         enable = true;
         enableRenice = true;
@@ -31,11 +31,10 @@ in {
     };
     hardware = {
       # xone.enable = true; # xbox one wired/wireless driver
-      xpad-tip.enable = true; # xpad-override
       # TODO: fork? test? try with regular xbox controller
       # xboxdrv.enable = true; # userspace xbox driver
     };
-    home-manager.users.cole = {
+    home-manager.users.ramblurr = {
       pkgs,
       config,
       ...
@@ -56,6 +55,7 @@ in {
         input-remapper
         heroic
         bottles
+        gamescope
       ];
       programs = {
         mangohud = {
