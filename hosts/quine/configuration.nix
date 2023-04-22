@@ -8,6 +8,7 @@
   hn = "quine";
 in {
   imports = [
+    ../../modules/loginctl-linger.nix
     ./hardware-configuration.nix
     ../../profiles/interactive.nix
     ../../profiles/addon-gaming.nix
@@ -23,7 +24,6 @@ in {
     ../../mixins/zfs.nix
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
-    inputs.nixos-hardware.nixosModules.common-gpu-nvidia
   ];
 
   config = {

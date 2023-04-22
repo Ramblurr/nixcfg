@@ -37,19 +37,6 @@ in {
         #controlPersist = "1m";
         #serverAliveInterval = 5;
         #serverAliveCountMax = 2;
-        matchBlocks = {
-          "localhost2222" = {
-            hostname = "localhost";
-            port = 2222;
-            identityAgent = fixedSshAgentSocket;
-          };
-          "*" = {
-            # everything sucks about SSH_AUTH_SOCK, so let's just control
-            # it and what it points to directly
-            identityAgent = fixedSshAgentSocket;
-            serverAliveInterval = 11;
-          };
-        };
       };
     };
   };

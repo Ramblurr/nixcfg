@@ -47,8 +47,6 @@ in {
         vkbasalt
         goverlay
 
-        inputs.jstest-gtk.packages.${stdenv.hostPlatform.system}.default
-        inputs.xboxdrv.packages.${stdenv.hostPlatform.system}.default
         steamtinkerlaunch
         protontricks
         prismlauncher
