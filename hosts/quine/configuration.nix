@@ -14,12 +14,12 @@ in {
     ../../profiles/addon-gaming.nix
     ../../profiles/gui-wayland.nix
     ../../profiles/gui-plasma.nix
-    ../../profiles/gui-hyprland.nix
+    #../../profiles/gui-hyprland.nix
 
     ../../mixins/impermanence.nix
     ../../mixins/cpu-ryzen.nix
     ../../mixins/gfx-nvidia.nix
-    ../../mixins/hyprland.nix
+    #../../mixins/hyprland.nix
     ../../mixins/syncthing.nix
     ../../mixins/zfs.nix
     ../../mixins/1password.nix
@@ -72,7 +72,5 @@ in {
     };
     #users.mutableUsers = false;
     #users.users.root.initialHashedPassword = "...";
-
-    fileSystems."/var/log".neededForBoot = true;
   };
 }
