@@ -30,7 +30,7 @@
 set -euo pipefail
 
 
-DISK=changeme # e.g, nvme0n1
+DISK=nvme0n1 # e.g, nvme0n1
 SWAPSIZE="72G"
 
 ################################################################################
@@ -38,6 +38,8 @@ SWAPSIZE="72G"
 export COLOR_RESET="\033[0m"
 export RED_BG="\033[41m"
 export BLUE_BG="\033[44m"
+export YELLOW_BG="\033[43m"
+
 
 function err {
     echo -e "${RED_BG}$1${COLOR_RESET}"
@@ -47,10 +49,22 @@ function info {
     echo -e "${BLUE_BG}$1${COLOR_RESET}"
 }
 
+function prompt_danger {
+    echo -e "⚠ ${YELLOW_BG}$1${COLOR_RESET}⚠"
+    read -p "Are you sure? (Type 'yes' in captial letters): " -r
+    echo
+    echo
+    if ! [[ $REPLY == "YES" ]];
+    then
+        err "Aborting"
+        exit 1
+    fi
+}
+
 ################################################################################
 
 
-if ! [[ "$DISK" == "changeme" ]]; then
+if [[ "$DISK" == "changeme" ]]; then
     err "You haven't configured the script. Please edit the script and set the variables."
     exit 1
 fi
@@ -85,6 +99,7 @@ export ZFS_BLANK_SNAPSHOT="${ZFS_DS_ROOT}@blank"
 
 ################################################################################
 
+prompt_danger "This will destroy all partitions and data on the disk ${DISK_PATH} irrevoably."
 info "Running the UEFI (GPT) partitioning"
 
 blkdiscard -f "$DISK_PATH"
@@ -108,24 +123,25 @@ export ZFS="${DISK_PATH}p4"
 partprobe "$DISK_PATH"
 sleep 1
 
-info "Formatting boot & swap partition ..."
+info "Formatting boot partition $BOOT ..."
 mkfs.vfat -n boot "$BOOT"
 
-info "Formatting cryptkey partition"
-echo "changeme" | cryptsetup luksFormat --label cryptkey "${CRYPTKEY}" -
-echo "changeme" | cryptsetup open "${CRYPTKEY}" cryptkey -
+info "Formatting cryptkey partition $CRYPTKEY ..."
+printf "changeme" | cryptsetup luksFormat --batch-mode --label cryptkey "${CRYPTKEY}" -
+printf "changeme" | cryptsetup open "${CRYPTKEY}" cryptkey -
 
-info "Generating encryption key"
+info "Generating encryption key ..."
 echo "" > newline
 dd if=/dev/zero bs=1 count=1 seek=1 of=newline
 dd if=/dev/urandom bs=32 count=1 | od -A none -t x | tr -d '[:space:]' | cat - newline > hdd.key
 dd if=hdd.key of=/dev/mapper/cryptkey
 dd if=/dev/mapper/cryptkey bs=64 count=1
 
-info "Formatting encrypted swap partition ..."
-echo "changeme" | cryptsetup luksFormat --label cryptswap --key-file=/dev/mapper/cryptkey --keyfile-size=64 "" -
-echo "changeme" | cryptsetup open --key-file=/dev/mapper/cryptkey --keyfile-size=64 "$SWAP" cryptswap -
+info "Encrypting swap partition $SWAP ..."
+cryptsetup luksFormat --batch-mode --label cryptswap --key-file=/dev/mapper/cryptkey --keyfile-size=64 "$SWAP"
+cryptsetup open --key-file=/dev/mapper/cryptkey --keyfile-size=64 "$SWAP" cryptswap
 
+info "Enabling swap on /dev/mapper/cryptswap ..."
 mkswap /dev/mapper/cryptswap
 swapon /dev/mapper/cryptswap
 
@@ -133,21 +149,22 @@ info "Creating '$ZFS_POOL' ZFS pool for '$ZFS' ..."
 # we do not encrypt the root pool, so we leave open the option
 # to add other un-encrypted datasets later
 zpool create \
+    -o ashift=12 \
+    -o autotrim=on \
     -O acltype=posixacl \
     -O compression=zstd \
     -O normalization=formD \
     -O xattr=sa \
+    -O relatime=on \
     -f $ZFS_POOL $ZFS
-
-zpool set autotrim=on $ZFS_POOL
 
 info "Creating '$ZFS_ENCRYPTED' ZFS pool for '$ZFS' ..."
 zfs create \
     -p \
     -o mountpoint=legacy \
     -o encryption=aes-256-gcm \
-    -O keyformat=hex \
-    -O keylocation=file:///dev/mapper/cryptkey \
+    -o keyformat=hex \
+    -o keylocation=file:///dev/mapper/cryptkey \
     "$ZFS_DS_ROOT"
 
 info "Creating '$ZFS_DS_ROOT' ZFS dataset ..."
