@@ -1,5 +1,4 @@
-{ config, ... }:
-let
+{config, ...}: let
   user = "ramblurr";
   name = "Ramblurr";
   idno = 1000;
