@@ -4,10 +4,9 @@
   pkgs,
   ...
 }: let
-   host-secrets = host: ../../${host}/secrets.sops.yaml;
-   in {
+  host-secrets = host: ../../${host}/secrets.sops.yaml;
+in {
   config = {
-
     # Should exist already as it is used for sops bootstrapping
     # sops.secrets.ssh_host_ed25519_key = {
     #   sopsFile = ../secrets/secrets.sops.yaml;
@@ -26,7 +25,7 @@
 
     sops.secrets.ssh_host_rsa_key_pub = {
       sopsFile = ../secrets/secrets.sops.yaml;
-      path ="/persist/etc/ssh/ssh_host_rsa_key.pub";
+      path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
     };
 
     environment.persistence."/persist" = {
