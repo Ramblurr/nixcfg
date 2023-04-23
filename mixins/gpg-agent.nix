@@ -3,10 +3,9 @@
   inputs,
   ...
 }: let
-  wayprompt = "${inputs.nixpkgs-wayland.outputs.packages.${pkgs.stdenv.hostPlatform.system}.wayprompt}";
-  pinentryProgram = "${wayprompt}/bin/pinentry-wayprompt";
+  #wayprompt = "${inputs.nixpkgs-wayland.outputs.packages.${pkgs.stdenv.hostPlatform.system}.wayprompt}";
+  #pinentryProgram = "${wayprompt}/bin/pinentry-wayprompt";
   # pinentryProgram = "${pkgs.pinentry-bemenu}/bin/pinentry-bemenu";
-
   sysPkgs = with pkgs; [gcr];
   def = {
     # gnupgPkg = pkgs.gnupg;
@@ -131,10 +130,10 @@ in {
         extraConfig = ''
           # enable-ssh-support
           allow-preset-passphrase
-          pinentry-program "${pinentryProgram}"
         '';
-        # pinentryFlavor = "gnome3";
-        pinentryFlavor = null;
+        #pinentry-program "${pinentryProgram}"
+        pinentryFlavor = "gnome3";
+        #pinentryFlavor = null;
         defaultCacheTtl = 34560000;
         defaultCacheTtlSsh = 34560000;
         maxCacheTtl = 34560000;
