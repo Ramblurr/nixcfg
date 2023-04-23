@@ -2,13 +2,16 @@
   inputs = {
     hyprland.url = "github:hyprwm/Hyprland";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nur.url = "github:nix-community/NUR";
+    #nur.url = "github:nix-community/NUR";
     impermanence.url = "github:nix-community/impermanence";
     alejandra.url = "github:kamadorueda/alejandra/3.0.0";
     alejandra.inputs.nixpkgs.follows = "nixpkgs";
     nix-doom-emacs.url = "github:nix-community/nix-doom-emacs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    sops-nix = {url = "github:Mic92/sops-nix/master";};
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixpkgs-wayland = {
       url = "github:nix-community/nixpkgs-wayland/master";
       inputs."nixpkgs".follows = "nixpkgs";
@@ -26,7 +29,7 @@
     nixpkgs,
     hyprland,
     home-manager,
-    nur,
+    #nur,
     nixos-hardware,
     nixpkgs-wayland,
     sops-nix,
@@ -40,12 +43,11 @@
         specialArgs = {inherit inputs;};
         modules = [
           ./hosts/quine/configuration.nix
-          nur.nixosModules.nur
+          #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default
           sops-nix.nixosModules.sops
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
-          {programs.hyprland.enable = true;}
           {
             environment.systemPackages = let
               doom-emacs = nix-doom-emacs.packages.${system}.default.override {

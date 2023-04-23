@@ -52,14 +52,15 @@ info "Generating NixOS configuration (/mnt/etc/nixos/*.nix) ..."
 nixos-generate-config --root /mnt
 
 
-cd /home/nixos/nixos-workstation
+cd /home/nixos/nixcfg
 rm /mnt/etc/nixos/configuration.nix
 mv /mnt/etc/nixos/hardware-configuration.nix ./hosts/quine/
 
 
 nixos-install --no-root-passwd \
-    --option substituters "https://aseipp-nix-cache.global.ssl.fastly.net" \
     --flake '.#quine'
+
+#--option substituters "https://aseipp-nix-cache.global.ssl.fastly.net" \
 
 info "Done."
 echo

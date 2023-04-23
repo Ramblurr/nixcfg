@@ -25,6 +25,7 @@ in {
         builders-use-substitutes = true;
         cores = 0;
         max-jobs = "auto";
+        auto-optimise-store = true;
         use-xdg-base-directories = true;
         trusted-public-keys = [
           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
@@ -34,7 +35,6 @@ in {
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
         ];
         substituters = [
-          "https://aseipp-nix-cache.global.ssl.fastly.net"
           "https://hyprland.cachix.org"
           "https://cache.nixos.org"
           "https://nixpkgs-wayland.cachix.org"

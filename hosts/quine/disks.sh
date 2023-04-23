@@ -137,6 +137,12 @@ dd if=/dev/urandom bs=32 count=1 | od -A none -t x | tr -d '[:space:]' | cat - n
 dd if=hdd.key of=/dev/mapper/cryptkey
 dd if=/dev/mapper/cryptkey bs=64 count=1
 
+echo
+echo
+info "Backup the $PWD/hdd.key file to a safe place, before you reboot."
+echo
+echo
+
 info "Encrypting swap partition $SWAP ..."
 cryptsetup luksFormat --batch-mode --label cryptswap --key-file=/dev/mapper/cryptkey --keyfile-size=64 "$SWAP"
 cryptsetup open --key-file=/dev/mapper/cryptkey --keyfile-size=64 "$SWAP" cryptswap

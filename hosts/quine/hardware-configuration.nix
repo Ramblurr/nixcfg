@@ -18,48 +18,33 @@
   boot.extraModulePackages = [];
 
   fileSystems."/" = {
-    device = "rpool/local/root";
+    device = "rpool/encrypted/local/root";
     fsType = "zfs";
   };
 
   fileSystems."/boot" = {
-    device = "/dev/disk/by-label/BOOT";
+    device = "/dev/disk/by-label/boot";
     fsType = "vfat";
   };
 
   fileSystems."/nix" = {
-    device = "rpool/local/nix";
+    device = "rpool/encrypted/local/nix";
     fsType = "zfs";
   };
 
-  fileSystems."/home/ramblurr" = {
-    device = "rpool/local/home/ramblurr";
-    fsType = "zfs";
-  };
-
-  fileSystems."/root" = {
-    device = "rpool/local/home/root";
+  fileSystems."/home" = {
+    device = "rpool/encrypted/safe/home";
     fsType = "zfs";
   };
 
   fileSystems."/persist" = {
-    device = "rpool/local/persist";
+    device = "rpool/encrypted/safe/persist";
     fsType = "zfs";
     neededForBoot = true;
   };
 
-  fileSystems."/var/lib" = {
-    device = "rpool/local/var/lib";
-    fsType = "zfs";
-  };
-
-  fileSystems."/var/log" = {
-    device = "rpool/local/var/log";
-    fsType = "zfs";
-  };
-
   swapDevices = [
-    {device = "/dev/disk/by-label/nixswap";}
+    {device = "/dev/mapper/cryptswap";}
   ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
@@ -69,6 +54,7 @@
   networking.useDHCP = lib.mkDefault true;
   # networking.interfaces.eno1.useDHCP = lib.mkDefault true;
   # networking.interfaces.eno2.useDHCP = lib.mkDefault true;
+  # networking.interfaces.wlp8s0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
