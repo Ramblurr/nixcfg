@@ -161,7 +161,22 @@ in {
     security = {
       sudo.enable = true;
       sudo.wheelNeedsPassword = false;
-
+      sudo.extraRules = let
+        # systemPath is the path where the system being activated is uploaded by `deploy`.
+        systemPath = "/nix/store/*-activatable-nixos-system-${config.networking.hostName}-*";
+        nopasswd = command: {
+          inherit command;
+          options = ["NOPASSWD" "SETENV"];
+        };
+      in [
+        {
+          groups = with config.users.groups; [ops.name];
+          runAs = config.users.users.root.name;
+          commands = [
+            (nopasswd "/run/current-system/sw/bin/systemctl reboot")
+          ];
+        }
+      ];
       please.enable = true;
       please.wheelNeedsPassword = false;
       pam.loginLimits = [
