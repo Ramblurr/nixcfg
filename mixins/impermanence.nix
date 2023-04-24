@@ -5,9 +5,6 @@
   pkgs,
   ...
 }: {
-  #  imports = [
-  #    inputs.impermanence.nixosModules.impermanence
-  #  ];
   boot.initrd.systemd.services.rollback = lib.mkIf (config.boot.initrd.systemd.enable) {
     description = "Rollback ZFS datasets to a pristine state";
     wantedBy = [
