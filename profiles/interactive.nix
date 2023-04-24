@@ -19,6 +19,7 @@
     ../mixins/xdg.nix
     ../mixins/zsh.nix
     ../mixins/tmux.nix
+    ../mixins/htop.nix
   ];
 
   config = {
@@ -110,7 +111,6 @@
             nix-tree
             nix-prefetch
             nix-output-monitor
-            htop
             ncdu
             binwalk
             usbutils
