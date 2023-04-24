@@ -9,7 +9,10 @@ with lib; let
   _nix = pkgs.nixVersions.unstable;
 in {
   config = {
-    environment.systemPackages = [_nix];
+    environment.systemPackages = [
+      _nix
+      pkgs.git
+    ];
     nixpkgs.config = {
       allowAliases = false;
       allowUnfree = true;

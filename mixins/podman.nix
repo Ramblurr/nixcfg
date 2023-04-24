@@ -1,11 +1,13 @@
-{ config, pkgs, ... }:
-
 {
-  virtualisation {
+  config,
+  pkgs,
+  ...
+}: {
+  virtualisation = {
     podman = {
       enable = true;
       defaultNetwork.dnsname.enable = true;
-      extraPackages = [ pkgs.zfs ];
-    }
-  }
+      extraPackages = [pkgs.zfs];
+    };
+  };
 }

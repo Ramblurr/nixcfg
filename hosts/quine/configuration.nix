@@ -45,6 +45,8 @@ in {
     networking.dhcpcd.wait = "background";
     networking.dhcpcd.extraConfig = "noarp";
 
+    environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
+
     boot = {
       #kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
       initrd = {
@@ -62,14 +64,16 @@ in {
           };
         };
 
-        #postMountCommands = ''
-        #  # Don't keep the cryptkey available all the time.
-        #  cryptsetup close /dev/mapper/cryptkey
-        #'';
+        postMountCommands = ''
+          # Don't keep the cryptkey available all the time.
+          cryptsetup close /dev/mapper/cryptkey
+        '';
 
-        #postDeviceCommands = lib.mkAfter ''
-        #  zfs rollback -r rpool/local/root@blank
-        #'';
+        postDeviceCommands = lib.mkAfter ''
+          zfs rollback -r rpool/encrypted/local/root@blank && \
+          zfs rollback -r rpool/encrypted/local/home@blank && \
+          echo "rollback complete"
+        '';
       };
     };
     #users.mutableUsers = false;
