@@ -17,6 +17,8 @@ in {
     ../mixins/fonts.nix
     ../mixins/gtk.nix
     ../mixins/pipewire.nix
+    ../mixins/kdeconnect.nix
+    ../mixins/flatpak.nix
   ];
 
   config = {
@@ -67,7 +69,16 @@ in {
           brightnessctl
           virt-viewer
           evince
-          signal-desktop
+          #signal-desktop
+          #vlc
+          mullvad-vpn
+          #onlyoffice-bin
+          #libreoffice-qt
+          #hunspell
+          #hunspellDicts.en_US
+          #hunspellDicts.de_AT
+          morgen
+
           # libnotify # `notify-send`
         ])
       ];

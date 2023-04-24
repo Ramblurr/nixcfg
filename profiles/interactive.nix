@@ -30,17 +30,37 @@
       keep-outputs = true
       keep-derivations = true
     '';
+
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
 
       users.ramblurr = {pkgs, ...} @ hm: {
+        imports = [inputs.impermanence.nixosModules.home-manager.impermanence];
         home.extraOutputsToInstall = ["info" "man" "share" "icons" "doc"];
         home.stateVersion = "21.11";
         home.homeDirectory = "/home/ramblurr";
         home.sessionVariables = {
           EDITOR = "vim";
           CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
+        };
+
+        home.persistence."/persist/home/ramblurr" = {
+          allowOther = true;
+          directories = [
+            "docs"
+            "downloads"
+            "sync"
+            "src"
+            "nixcfg"
+            ".config/gnupg"
+            ".config/gh"
+            ".config/lutris"
+            ".local/share/lutris"
+          ];
+          files = [
+            ".zhistory"
+          ];
         };
         manual = {manpages.enable = false;};
         news.display = "silent";
@@ -74,8 +94,6 @@
             hexyl
             xh
             dogdns
-            ripgrep
-            gnupg
             jless
             sd
             procs
@@ -83,7 +101,11 @@
             bandwhich
             pipes-rs
             rustscan
+            ripgrep
             # </rust pkgs>
+            #
+            vim
+            gnupg
 
             # nix-related (TODO move to devtools shell that gets pulled in)
             # nix-tree nix-du ncdu nix-prefetch nixpkgs-review

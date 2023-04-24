@@ -20,26 +20,27 @@ in {
       passwordFile = config.sops.secrets.ramblurr-password.path;
       extraGroups = [
         "wheel"
+        "audio"
+        "dialout"
+        "docker"
+        "flatpak"
+        "input"
+        "ipfs"
+        "keys"
         "kvm"
         "libvirtd"
-        "qemu-libvirtd"
-        "docker"
-        "audio"
-        "video"
-        "sound"
-        "pulse"
-        "input"
-        "render"
-        "dialout"
-        "keys"
-        "ipfs"
-        "plugdev"
+        "lxd" # lxd lxc waydroid
+        "netdev" # actually networkctl
         "networkmanager"
+        "plugdev"
+        "pulse"
+        "qemu-libvirtd"
+        "render"
         "scard"
+        "sound"
         "tty"
         "users"
-        "netdev" # actually networkctl
-        "lxd" # lxd lxc waydroid
+        "video"
       ];
       uid = idno;
       group = user;

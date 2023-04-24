@@ -4,7 +4,6 @@
   lib,
   ...
 }: {
-
   services = {
     dbus.enable = true;
     gvfs.enable = true; # Needed for nautilus
@@ -13,7 +12,6 @@
     kdeconnect.enable = true; # Connect phone to PC
     hyperland.enable = true;
   };
-
 
   environment = {
     systemPackages = with pkgs; [
