@@ -31,12 +31,11 @@ in {
       home.file.".ssh/control/.keep".text = "";
       programs.ssh = {
         enable = true;
-        controlPath = "/home/ramblurr/.ssh/control/%C"; # TODO: lolwut
-        # just no... this shit does not work well
-        #controlMaster = "auto";
-        #controlPersist = "1m";
-        #serverAliveInterval = 5;
-        #serverAliveCountMax = 2;
+        controlPath = "/home/ramblurr/.ssh/control/%C";
+      };
+
+      home.persistence = {
+        "/persist/home/ramblurr".directories = [".ssh"];
       };
     };
   };

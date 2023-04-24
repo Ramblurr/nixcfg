@@ -197,7 +197,6 @@ in {
     services.getty = {
       greetingLine = ''\l  -  (kernel: \r) (label: ${config.system.nixos.label}) (arch: \m)'';
       helpLine = ''
-        -... . / --. .- -.-- --..-- / -.. --- / -.-. .-. .. -- .
       '';
     };
   };

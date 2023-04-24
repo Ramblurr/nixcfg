@@ -45,6 +45,8 @@
           #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default
+          inputs.home-manager.nixosModules.home-manager
+          inputs.impermanence.nixosModules.impermanence
           #sops-nix.nixosModules.sops
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
           {

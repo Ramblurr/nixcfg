@@ -3,8 +3,7 @@
   lib,
   pkgs,
   ...
-}:
-{
+}: {
   config = {
     # Should exist already as it is used for sops bootstrapping
     # sops.secrets.ssh_host_ed25519_key = {

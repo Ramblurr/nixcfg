@@ -17,7 +17,9 @@
 #█▓▒░ autocompletion systems
 autoload -Uz compinit
 compinit
-autoload -U $ZDOTDIR/completion/*(:t)
+if [[ -d "$ZDOTDIR/completion" ]]; then
+  autoload -U $ZDOTDIR/completion/*(:t)
+fi
 
 # +---------+
 # | Options |

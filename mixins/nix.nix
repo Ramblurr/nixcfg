@@ -22,7 +22,7 @@ in {
       };
       nixPath = lib.mkForce []; # i doth protest
       settings = {
-        experimental-features = [ "nix-command" "flakes" ];
+        experimental-features = ["nix-command" "flakes"];
         builders-use-substitutes = true;
         cores = 0;
         max-jobs = "auto";
