@@ -30,6 +30,10 @@ COLOR_USER="%F{yellow}"
 COLOR_NORMAL="%F{white}"
 PROMPT_STYLE="classic"
 
+if [[ $(hostname) == "quine" ]]; then
+  COLOR_HOST="%F{green}"
+  COLOR_USER="%F{green}"
+fi
 
 #█▓▒░ allow functions in the prompt
 setopt PROMPT_SUBST
@@ -46,6 +50,7 @@ fi
 if [[ $(hostname) != "toolbox" && -d "$HOME/.local/bin-toolbox" ]]; then
   USER_LEVEL="${COLOR_HOST}"
 fi
+
 
 #█▓▒░ git prompt
 GIT_PROMPT() {

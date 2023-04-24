@@ -12,6 +12,7 @@ in {
     ./hardware-configuration.nix
     ../../profiles/interactive.nix
     ../../profiles/addon-gaming.nix
+    ../../profiles/gui-greeter.nix
     ../../profiles/gui-wayland.nix
     ../../profiles/gui-plasma.nix
     #../../profiles/gui-hyprland.nix
@@ -34,7 +35,7 @@ in {
     #environment.systemPackages = with pkgs; [
     #];
 
-    nixcfg.common.hostColor = "yellow";
+    nixcfg.common.hostColor = "purple";
     sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
     sops.defaultSopsFile = ./secrets.sops.yaml;
 
