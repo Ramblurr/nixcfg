@@ -4,10 +4,16 @@
   lib,
   ...
 }: {
+
+  services = {
+    dbus.enable = true;
+    gvfs.enable = true; # Needed for nautilus
+  };
   programs = {
     kdeconnect.enable = true; # Connect phone to PC
     hyperland.enable = true;
   };
+
 
   environment = {
     systemPackages = with pkgs; [
@@ -44,11 +50,6 @@
       "wlogout-icons".source = "${pkgs.wlogout}/share/wlogout/icons";
       "polkit-gnome".source = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
     };
-  };
-
-  services = {
-    dbus.enable = true;
-    gvfs.enable = true; # Needed for nautilus
   };
 
   security.polkit.enable = true;
