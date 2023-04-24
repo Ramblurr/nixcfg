@@ -70,6 +70,7 @@ in {
       tmp.useTmpfs = lib.mkDefault false;
       tmp.cleanOnBoot = true;
       zfs.enableUnstable = cfg.useZfs && _zfsUnstable;
+      zfs.requestEncryptionCredentials = cfg.useZfs;
 
       loader = {
         efi = {
@@ -83,7 +84,6 @@ in {
       };
 
       plymouth.enable = cfg.usePlymouth;
-      initrd.systemd.enable = true;
       initrd.supportedFilesystems = lib.optionals (cfg.useZfs) ["zfs"];
 
       kernelPackages = lib.mkIf cfg.defaultKernel _kernelPackages;
@@ -95,13 +95,17 @@ in {
       };
     };
 
+    # NOTE: 2023-04-24
+    # I couldn't get initrd.systemd to work the rollback service failed with
+    # "The ZFS Modules are not loaded"
+    boot.initrd.systemd.enable = false;
     ## LEGACYBOOT - we use stage-1/systemd so have a fallback ###############
-    specialisation."legacyboot" = lib.mkIf (config.boot.initrd.systemd.enable) {
-      inheritParentConfig = true;
-      configuration = {
-        boot.initrd.systemd.enable = lib.mkForce false;
-      };
-    };
+    #specialisation."legacyboot" = lib.mkIf (config.boot.initrd.systemd.enable) {
+    #  inheritParentConfig = true;
+    #  configuration = {
+    #    boot.initrd.systemd.enable = lib.mkForce false;
+    #  };
+    #};
 
     ## NETWORK + TIME #######################################################
     networking = {
@@ -172,8 +176,8 @@ in {
 
     users = {
       mutableUsers = false;
-      users.root.initialHashedPassword = "$6$JLKED6KrnXMF1IP7$igjrcYZ6IZI8osQZyUXhH5n4P9OY5ibQHznSi4SYTYicgpLHqcNjB8CoAnO./TH9MCIivQ81HR6lR17kNwab2.";
-      users.root.hashedPassword = config.users.users.root.initialHashedPassword;
+      users.root.initialHashedPassword = null;
+      users.root.hashedPassword = "$6$JLKED6KrnXMF1IP7$igjrcYZ6IZI8osQZyUXhH5n4P9OY5ibQHznSi4SYTYicgpLHqcNjB8CoAnO./TH9MCIivQ81HR6lR17kNwab2.";
     };
 
     ## MISC HARDWARE RELATED ################################################

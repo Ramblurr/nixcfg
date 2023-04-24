@@ -1,6 +1,4 @@
-  { config, ... }:
-
-{
+{config, ...}: {
   config = {
     virtualisation.docker = {
       enable = true;
