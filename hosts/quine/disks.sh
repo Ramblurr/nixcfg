@@ -95,8 +95,6 @@ export ZFS_SAFE="${ZFS_ENCRYPTED}/safe"
 export ZFS_DS_HOME="${ZFS_SAFE}/home"
 export ZFS_DS_PERSIST="${ZFS_SAFE}/persist"
 
-export ZFS_BLANK_SNAPSHOT="${ZFS_DS_ROOT}@blank"
-
 ################################################################################
 
 prompt_danger "This will destroy all partitions and data on the disk ${DISK_PATH} irrevoably."
@@ -182,8 +180,8 @@ zfs set xattr=sa "$ZFS_DS_ROOT"
 info "Configuring access control list setting for '$ZFS_DS_ROOT' ZFS dataset ..."
 zfs set acltype=posixacl "$ZFS_DS_ROOT"
 
-info "Creating '$ZFS_BLANK_SNAPSHOT' ZFS snapshot ..."
-zfs snapshot "$ZFS_BLANK_SNAPSHOT"
+info "Creating '${ZFS_DS_ROOT}@blank' ZFS snapshot ..."
+zfs snapshot "${ZFS_DS_ROOT}@blank"
 
 info "Mounting '$ZFS_DS_ROOT' to /mnt ..."
 mount -t zfs "$ZFS_DS_ROOT" /mnt
@@ -195,6 +193,9 @@ mount -t vfat "$BOOT" /mnt/boot
 info "Creating '$ZFS_DS_NIX' ZFS dataset ..."
 zfs create -p -o mountpoint=legacy "$ZFS_DS_NIX"
 
+info "Creating '${ZFS_DS_NIX}@blank' ZFS snapshot ..."
+zfs snapshot "${ZFS_DS_NIX}@blank"
+
 info "Disabling access time setting for '$ZFS_DS_NIX' ZFS dataset ..."
 zfs set atime=off "$ZFS_DS_NIX"
 
@@ -204,6 +205,9 @@ mount -t zfs "$ZFS_DS_NIX" /mnt/nix
 
 info "Creating '$ZFS_DS_HOME' ZFS dataset ..."
 zfs create -p -o mountpoint=legacy "$ZFS_DS_HOME"
+
+info "Creating '${ZFS_DS_HOME}@blank' ZFS snapshot ..."
+zfs snapshot "${ZFS_DS_HOME}@blank"
 
 info "Mounting '$ZFS_DS_HOME' to /mnt/home ..."
 mkdir -p /mnt/home
