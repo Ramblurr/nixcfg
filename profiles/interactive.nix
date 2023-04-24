@@ -20,6 +20,7 @@
     ../mixins/zsh.nix
     ../mixins/tmux.nix
     ../mixins/htop.nix
+    ../mixins/vim.nix
   ];
 
   config = {
