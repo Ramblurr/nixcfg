@@ -18,6 +18,7 @@
     ../mixins/ssh.nix
     ../mixins/xdg.nix
     ../mixins/zsh.nix
+    ../mixins/tmux.nix
   ];
 
   config = {
