@@ -6,7 +6,6 @@
     impermanence.url = "github:nix-community/impermanence";
     alejandra.url = "github:kamadorueda/alejandra/3.0.0";
     alejandra.inputs.nixpkgs.follows = "nixpkgs";
-    nix-doom-emacs.url = "github:nix-community/nix-doom-emacs";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -33,7 +32,6 @@
     nixos-hardware,
     nixpkgs-wayland,
     sops-nix,
-    nix-doom-emacs,
     ...
   }: {
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
@@ -49,15 +47,6 @@
           inputs.impermanence.nixosModules.impermanence
           #sops-nix.nixosModules.sops
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
-          {
-            environment.systemPackages = let
-              doom-emacs = nix-doom-emacs.packages.${system}.default.override {
-                doomPrivateDir = ./configs/doom.d;
-              };
-            in [
-              doom-emacs
-            ];
-          }
           ./hosts/quine/configuration.nix
         ];
       };

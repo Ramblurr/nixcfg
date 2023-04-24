@@ -151,9 +151,6 @@
             difftastic
             just
             go-task
-            aspell
-            aspellDicts.en
-            aspellDicts.de
             curl
             fzf
             jdk
