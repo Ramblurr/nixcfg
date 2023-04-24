@@ -31,11 +31,12 @@ in {
   config = {
     nixpkgs.hostPlatform.system = "x86_64-linux";
     system.stateVersion = "23.05";
-    environment.systemPackages = with pkgs; [
-    ];
+    #environment.systemPackages = with pkgs; [
+    #];
 
     nixcfg.common.hostColor = "yellow";
     sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
+    sops.defaultSopsFile = ./secrets.sops.yaml;
 
     #services.tailscale.useRoutingFeatures = "server";
 
