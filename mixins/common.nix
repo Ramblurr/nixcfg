@@ -28,7 +28,7 @@ in {
       };
       defaultNoDocs = lib.mkOption {
         type = lib.types.bool;
-        default = true;
+        default = false;
       };
       defaultNetworking = lib.mkOption {
         type = lib.types.bool;
@@ -63,7 +63,6 @@ in {
       info.enable = false;
       nixos.enable = false;
     };
-    system.disableInstallerTools = true;
 
     ## BOOT #################################################################
     console.earlySetup = true; # needed for LUKS
@@ -173,6 +172,8 @@ in {
 
     users = {
       mutableUsers = false;
+      users.root.initialHashedPassword = "$6$JLKED6KrnXMF1IP7$igjrcYZ6IZI8osQZyUXhH5n4P9OY5ibQHznSi4SYTYicgpLHqcNjB8CoAnO./TH9MCIivQ81HR6lR17kNwab2.";
+      users.root.hashedPassword = config.users.users.root.initialHashedPassword;
     };
 
     ## MISC HARDWARE RELATED ################################################
@@ -184,7 +185,9 @@ in {
     hardware.cpu.intel.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
 
     environment = {
-      systemPackages = with pkgs; [coreutils];
+      systemPackages = with pkgs; [
+        coreutils
+      ];
       etc."flake.lock" = {
         source = ../flake.lock;
       };

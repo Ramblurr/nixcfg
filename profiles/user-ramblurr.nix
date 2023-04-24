@@ -6,8 +6,8 @@ in {
   config = {
     nix.settings.trusted-users = [user];
 
-    users.extraGroups."${user}".gid = idno;
-    users.extraUsers."${user}" = {
+    users.groups."${user}".gid = idno;
+    users.users."${user}" = {
       isNormalUser = true;
       home = "/home/${user}";
       description = name;

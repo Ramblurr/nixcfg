@@ -20,21 +20,25 @@
   fileSystems."/" = {
     device = "rpool/encrypted/local/root";
     fsType = "zfs";
+    neededForBoot = true;
   };
 
   fileSystems."/boot" = {
     device = "/dev/disk/by-label/boot";
     fsType = "vfat";
+    neededForBoot = true;
   };
 
   fileSystems."/nix" = {
     device = "rpool/encrypted/local/nix";
     fsType = "zfs";
+    neededForBoot = true;
   };
 
   fileSystems."/home" = {
     device = "rpool/encrypted/safe/home";
     fsType = "zfs";
+    neededForBoot = true;
   };
 
   fileSystems."/persist" = {
