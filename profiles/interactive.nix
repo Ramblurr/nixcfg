@@ -11,8 +11,7 @@
     inputs.home-manager.nixosModules.default # "home-manager"
     ./core.nix
 
-    #../secrets
-
+    ../mixins/sops.nix
     ../mixins/aria2.nix
     ../mixins/git.nix
     ../mixins/gpg-agent.nix
@@ -76,6 +75,7 @@
             xh
             dogdns
             ripgrep
+            gnupg
             jless
             sd
             procs

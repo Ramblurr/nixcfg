@@ -15,13 +15,14 @@ in {
       allowUnfree = true;
     };
     nix = {
+      package = _nix;
       gc = {
         automatic = true;
         dates = "weekly";
       };
       nixPath = lib.mkForce []; # i doth protest
       settings = {
-        keep-derivations = true; # this is the default (?)
+        experimental-features = [ "nix-command" "flakes" ];
         builders-use-substitutes = true;
         cores = 0;
         max-jobs = "auto";
@@ -43,10 +44,6 @@ in {
         ];
         trusted-users = ["@wheel" "ramblurr" "root"];
       };
-      package = _nix;
-      extraOptions = ''
-        experimental-features = nix-command flakes recursive-nix
-      '';
     };
   };
 }
