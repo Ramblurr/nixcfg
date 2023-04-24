@@ -80,7 +80,6 @@
           (lib.mkIf (pkgs.hostPlatform.system == "aarch_64-linux") (with pkgs; [
             # aarch64-linux only
           ]))
-          # ++ inputs.self.devShells.${pkgs.stdenv.hostPlatform.system}.ci.nativeBuildInputs
           (with pkgs; [
             # <rust pkgs>
             bat
@@ -106,11 +105,10 @@
             #
             vim
             gnupg
-
-            # nix-related (TODO move to devtools shell that gets pulled in)
-            # nix-tree nix-du ncdu nix-prefetch nixpkgs-review
+            nix-du
+            nix-tree
+            nix-prefetch
             nix-output-monitor
-
             htop
             ncdu
             binwalk

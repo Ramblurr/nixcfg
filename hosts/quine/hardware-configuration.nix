@@ -36,7 +36,8 @@
   };
 
   fileSystems."/home" = {
-    device = "rpool/encrypted/safe/home";
+    #device = "rpool/encrypted/safe/home";
+    device = "rpool/encrypted/local/home";
     fsType = "zfs";
     neededForBoot = true;
   };

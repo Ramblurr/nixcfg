@@ -62,14 +62,14 @@ in {
           };
         };
 
-        postMountCommands = ''
-          # Don't keep the cryptkey available all the time.
-          cryptsetup close /dev/mapper/cryptkey
-        '';
+        #postMountCommands = ''
+        #  # Don't keep the cryptkey available all the time.
+        #  cryptsetup close /dev/mapper/cryptkey
+        #'';
 
-        postDeviceCommands = lib.mkAfter ''
-          zfs rollback -r rpool/local/root@blank
-        '';
+        #postDeviceCommands = lib.mkAfter ''
+        #  zfs rollback -r rpool/local/root@blank
+        #'';
       };
     };
     #users.mutableUsers = false;
