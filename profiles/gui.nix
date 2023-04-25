@@ -23,6 +23,7 @@ in {
     ../mixins/1password.nix
     ../mixins/emacs.nix
     ../mixins/firefox.nix
+    ../mixins/thunderbird.nix
   ];
 
   config = {
