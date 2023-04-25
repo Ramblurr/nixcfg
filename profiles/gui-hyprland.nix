@@ -44,6 +44,7 @@
       wlogout # Logout screen
       hyprpicker # color picker
       swaylock # Lock screen
+      gtk-layer-shell # shell components on wayland
     ];
 
     etc = {
