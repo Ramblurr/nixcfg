@@ -1,5 +1,5 @@
 {
-	"layer": "top",
+	"layer": "bottom",
 	"modules-left": ["wlr/workspaces"],
 	"modules-center": ["hyprland/window"],
 	"modules-right": ["tray", "custom/vpn", "custom/separator", "bluetooth", "custom/separator", "hyprland/language", "custom/separator","pulseaudio", "custom/separator", "clock", "custom/separator", "custom/power"],
