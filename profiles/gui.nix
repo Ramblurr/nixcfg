@@ -22,6 +22,7 @@ in {
     ../mixins/syncthing.nix
     ../mixins/1password.nix
     ../mixins/emacs.nix
+    ../mixins/firefox.nix
   ];
 
   config = {
@@ -62,7 +63,6 @@ in {
 
       home.packages = lib.mkMerge [
         (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
-          firefox
           _chrome
           captive-browser
         ]))
