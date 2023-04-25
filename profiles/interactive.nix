@@ -52,6 +52,8 @@
             "downloads"
             "sync"
             "src"
+            "work"
+            "vendor"
             "nixcfg"
             ".config/gnupg"
             ".config/gh"
