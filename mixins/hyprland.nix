@@ -12,6 +12,11 @@
           source = ../configs/hyprland.conf;
           recursive = true;
         };
+        # Add hyprland portal wrapper
+        ".config/hypr/xdg-portal-hyprland" = {
+          source = ../configs/xdg-portal-hyprland;
+          recursive = true;
+        };
 
         # Add waybar config files
         ".config/waybar/config" = {
