@@ -16,6 +16,28 @@
     home.persistence = {
       "/persist/home/ramblurr".directories = ["${hm.config.xdg.configHome}/emacs"];
     };
+    home.file.".local/share/icons/doom.png" = {
+      source = ../configs/icons/doom.png;
+      recursive = true;
+    };
+    home.file.".local/share/applications/doom.desktop" = {
+      text = ''
+        [Desktop Entry]
+        Name=Doom
+        GenericName=Text Editor
+        Comment=Edit text
+        MimeType=text/english;text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-moc;text/x-pascal;text/x-tcl;text/x-tex;application/x-shellscript;text/x-c;text/x-c++;text/x-markdown;text/html;application/xhtml+xml
+        Exec=emacs %F
+        Icon=${hm.config.home.homeDirectory}/.local/share/icons/doom.png
+        Type=Application
+        Terminal=false
+        Categories=Development;TextEditor;
+        StartupWMClass=Doom
+        StartupNotify=true
+        Keywords=Text;Editor;
+      '';
+    };
+
     home.packages = with pkgs; [
       ## Doom dependencies
       git
