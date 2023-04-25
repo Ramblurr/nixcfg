@@ -13,7 +13,7 @@
           bold_italic_font = "auto";
           disable_ligatures = "never";
           cursor_blink_interval = "1";
-          cursos_stop_blinking_after = "0.0";
+          cursor_stop_blinking_after = "0.0";
           select_by_word_characters = "@-./_~?&=%+#";
           enable_audio_bell = "no";
         };
