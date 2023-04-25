@@ -12,6 +12,12 @@
       settings.X11.UserAuthFile = ".local/share/sddm/Xauthority";
     };
 
+    importedVariables = [
+      "XDG_SESSION_TYPE"
+      "XDG_CURRENT_DESKTOP"
+      "XDG_SESSION_DESKTOP"
+    ];
+
     setupCommands = ''
       export XDG_RUNTIME_DIR=/run/user/$(id --user)
       export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id --user)/bus
