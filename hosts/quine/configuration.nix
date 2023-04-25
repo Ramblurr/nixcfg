@@ -11,6 +11,7 @@ in {
     ../../modules/loginctl-linger.nix
     ./hardware-configuration.nix
     ../../profiles/interactive.nix
+    ../../profiles/addon-dev.nix
     ../../profiles/addon-gaming.nix
     ../../profiles/gui-greeter.nix
     ../../profiles/gui-wayland.nix

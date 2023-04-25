@@ -5,6 +5,10 @@
   ...
 }: {
   config = {
+    environment.systemPackages = with pkgs; [
+      python311
+      python311Packages.requests
+    ];
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       home.file = {
         # Add hyprland config
