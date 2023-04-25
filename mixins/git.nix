@@ -4,7 +4,7 @@
       programs.git = {
         enable = true;
         signing.key = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
-        signing.signByDefault = true;
+        signing.signByDefault = false;
         userEmail = "unnamedrambler@gmail.com";
         userName = "Casey Link";
         extraConfig = {
