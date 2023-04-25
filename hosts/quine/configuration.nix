@@ -15,12 +15,12 @@ in {
     ../../profiles/gui-greeter.nix
     ../../profiles/gui-wayland.nix
     ../../profiles/gui-plasma.nix
-    #../../profiles/gui-hyprland.nix
-    #
+    ../../profiles/gui-hyprland.nix
+
     ../../mixins/impermanence.nix
     ../../mixins/cpu-ryzen.nix
     ../../mixins/gfx-nvidia.nix
-    #../../mixins/hyprland.nix
+    ../../mixins/hyprland.nix
     ../../mixins/zfs.nix
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate

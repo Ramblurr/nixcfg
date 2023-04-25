@@ -10,7 +10,7 @@
   };
   programs = {
     kdeconnect.enable = true; # Connect phone to PC
-    hyperland.enable = true;
+    hyprland.enable = true;
   };
 
   environment = {
