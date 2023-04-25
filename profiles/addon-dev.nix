@@ -9,14 +9,27 @@
     ../mixins/podman.nix
   ];
   config = {
+    environment.systemPackages = with pkgs; [
+      python311
+      (python39.withPackages (ps:
+        with ps; [
+          pip
+          pytest
+          virtualenv
+          black
+          python-lsp-black
+          setuptools
+          wheel
+          requests
+        ]))
+    ];
     home-manager.users.ramblurr = {pkgs, ...}: {
+      home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
+      home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
         go
         terraform
         httpie
-        openjdk11
-        openjdk17
-        openjdk19
         jetbrains.idea-ultimate
         jetbrains.datagrip
         jetbrains.gateway
@@ -222,36 +235,36 @@
           }
         ];
 
-        extensions = with pkgs.vscode-extensions; [
-          redhat.ansible
-          Boto3typed.boto3-ide
-          bungcip.better-toml
-          blinkshellinc.blink-fs
-          ms-vscode-remote.remote-containers
-          GitHub.copilot
-          gitpod.gitpod-desktop
-          golang.go
-          casualjim.gotemplate
-          andrejunges.Handlebars
-          hashicorp.hcl
-          hashicorp.terraform
-          VisualStudioExptTeam.vscodeintellicode
-          ms-python.isort
-          wholroyd.jinja
-          darkriszty.markdown-table-prettify
-          matangover.mypy
-          esbenp.prettier-vscode
-          ms-python.vscode-pylance
-          ms-python.python
-          ms-vscode-remote.remote-ssh
-          ms-vscode-remote.remote-ssh-edit
-          ms-vscode.remote-explorer
-          coolbear.systemd-unit-file
-          bradlc.vscode-tailwindcss
-          vscodevim.vim
-          redhat.vscode-yaml
-          jdinhlife.gruvbox
-        ];
+        #extensions = with pkgs.vscode-extensions; [
+        #  redhat.ansible
+        #  Boto3typed.boto3-ide
+        #  bungcip.better-toml
+        #  blinkshellinc.blink-fs
+        #  ms-vscode-remote.remote-containers
+        #  GitHub.copilot
+        #  gitpod.gitpod-desktop
+        #  golang.go
+        #  casualjim.gotemplate
+        #  andrejunges.Handlebars
+        #  hashicorp.hcl
+        #  hashicorp.terraform
+        #  VisualStudioExptTeam.vscodeintellicode
+        #  ms-python.isort
+        #  wholroyd.jinja
+        #  darkriszty.markdown-table-prettify
+        #  matangover.mypy
+        #  esbenp.prettier-vscode
+        #  ms-python.vscode-pylance
+        #  ms-python.python
+        #  ms-vscode-remote.remote-ssh
+        #  ms-vscode-remote.remote-ssh-edit
+        #  ms-vscode.remote-explorer
+        #  coolbear.systemd-unit-file
+        #  bradlc.vscode-tailwindcss
+        #  vscodevim.vim
+        #  redhat.vscode-yaml
+        #  jdinhlife.gruvbox
+        #];
         userSettings = {
           "html.format.enable" = true;
           "html.format.indentHandlebars" = true;

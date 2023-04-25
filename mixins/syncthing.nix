@@ -39,6 +39,7 @@
       };
       folders = {
         "logseq" = {
+          id = "lzv9p-tt1gf";
           path = "/home/ramblurr/docs/brain";
           devices = ["aquinas" "rorty" "phone" "ipad"];
           versioning = {
@@ -49,7 +50,32 @@
             };
           };
         };
+        "src" = {
+          id = "3afjx-a2sse";
+          path = "/home/ramblurr/src";
+          devices = ["aquinas" "rorty"];
+          versioning = {
+            type = "staggered";
+            params = {
+              cleanInterval = "3600"; # 1 hour
+              maxAge = "1209600"; # 14 days
+            };
+          };
+        };
+        "work-src" = {
+          id = "pcdsa-wgsys";
+          path = "/home/ramblurr/work";
+          devices = ["aquinas" "rorty"];
+          versioning = {
+            type = "staggered";
+            params = {
+              cleanInterval = "3600"; # 1 hour
+              maxAge = "1209600"; # 14 days
+            };
+          };
+        };
         "inbox" = {
+          id = "n0zj4-mpb2o";
           path = "/home/ramblurr/sync/inbox";
           devices = ["aquinas" "rorty" "phone" "ipad"];
           versioning = {
@@ -61,6 +87,7 @@
           };
         };
         "viki" = {
+          id = "emomw-9nc2j";
           path = "/home/ramblurr/sync/viki";
           devices = ["aquinas" "rorty" "phone" "ipad" "v-phone" "v-pc"];
           versioning = {
