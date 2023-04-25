@@ -3,29 +3,32 @@
   pkgs,
   ...
 }: {
-  security.rtkit.enable = true; # ?
-
-  nixpkgs.config.pulseaudio = true;
-  #hardware.pulseaudio.enable = true; # we're trying pipewire
+  security.rtkit.enable = true;
+  sound.enable = true;
+  #nixpkgs.config.pulseaudio = true;
   hardware.pulseaudio.enable = pkgs.lib.mkForce false;
 
   environment.systemPackages = with pkgs; [
-    #helvum
     alsa-utils #ignore for now cross-compile problem
     pipewire
     pulseaudio
     pulsemixer
-    # pw-viz
+    rnnoise-plugin
+    pw-viz
   ];
-
   programs.dconf.enable = true;
-
   systemd.user.services.pipewire-pulse.path = [pkgs.pulseaudio];
-
+  home-manager.users.ramblurr = {pkgs, ...} @ hm: {
+    home.file.".config/pipewire/pipewire.conf.d/99-input-denoising.conf" = {
+      source = ../configs/pipewire.conf;
+      force = true;
+      recursive = true;
+    };
+  };
   services.pipewire = {
     enable = true;
     alsa.enable = true;
-    # alsa.support32Bit = true; # ?
+    alsa.support32Bit = true; # ?
     pulse.enable = true;
     jack.enable = false;
 
