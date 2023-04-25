@@ -100,6 +100,26 @@
       };
     }
     {
+      name = "com.onepassword.OnePassword";
+      text = toINI {} {
+        Context = {
+          sockets = "x11;wayland;fallback-x11;";
+          shared = "ipc;network;";
+          devices = "all";
+          filesystems = concatStringsSep ";" [
+            "xdg-download"
+            "xdg-config/1Password"
+          ];
+        };
+        "Session Bus Policy" = {
+          "org.freedesktop.secrets" = "talk";
+          "org.kde.StatusNotifierWatcher" = "talk";
+          "org.freedesktop.Notifications" = "talk";
+          "com.canonical.AppMenu.Register" = "talk";
+        };
+      };
+    }
+    {
       name = "com.github.micahflee.torbrowser-launcher";
       text = toINI {} {
         Context = {
