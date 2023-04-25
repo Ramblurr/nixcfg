@@ -42,6 +42,8 @@
       wdisplays # Displays manager
       wl-clipboard # Clipboard daemon
       wlogout # Logout screen
+      hyprpicker # color picker
+      swaylock # Lock screen
     ];
 
     etc = {
