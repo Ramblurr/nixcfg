@@ -71,10 +71,6 @@
           home-manager.enable = true;
           gpg.enable = true;
         };
-        programs = {
-          git.enable = true;
-          neovim.enable = true;
-        };
         home.packages = lib.mkMerge [
           (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
             # x86_64-linux only
@@ -106,8 +102,6 @@
             ripgrep
             # </rust pkgs>
             #
-            vim
-            gnupg
             nix-du
             nix-tree
             nix-prefetch
