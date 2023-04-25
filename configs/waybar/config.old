@@ -1,0 +1,79 @@
+{
+	"layer": "top",
+	"modules-left": ["wlr/workspaces"],
+	"modules-center": ["hyprland/window"],
+	"modules-right": ["tray", "custom/vpn", "custom/separator", "bluetooth", "custom/separator", "hyprland/language", "custom/separator","pulseaudio", "custom/separator", "clock", "custom/separator", "custom/power"],
+
+	"bluetooth": {
+		"format": "  {status}",
+		"format-connected": "  Connected",
+		"format-connected-battery": "  Connected ({device_battery_percentage})",
+		"tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
+		"tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
+		"tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+		"tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t({device_battery_percentage})",
+		"on-click": "blueberry"
+	},
+
+	"tray": {
+		"icon-size": 17,
+		"spacing": 10,
+		"reverse-direction" : true
+	},
+
+	"clock": {
+		"interval": 1,
+		"format": "{:%H:%M:%S}",
+		"format-alt": "{:%d/%m/%Y}",
+		"max-length": 25
+	},
+
+	"pulseaudio": {
+		"format": "{volume}",
+		"scroll-step": 5,
+		"on-click": "pavucontrol"
+	},
+
+	"wlr/workspaces": {
+		"format": "{icon}",
+		"on-click": "activate",
+		"format-icons": {
+			"urgent": "",
+			"active": "",
+			"default": ""
+		},
+		"sort-by-number": true
+	},
+
+	"hyprland/language": {
+		"format": "{}",
+		"format-en": "US",
+		"format-gr": "GR",
+		"on-click": "hyprctl switchxkblayout kingston-hyperx-alloy-fps-pro-mechanical-gaming-keyboard-1 next"
+	},
+
+	"hyprland/window": {
+		"format": "{}",
+		"separate-outputs": true,
+		"max-length": 40
+	},
+
+	"custom/power": {
+		"format": "",
+		"on-click": "wlogout",
+		"tooltip": false
+	},
+
+	"custom/vpn": {
+		"format": "{}",
+		"exec": "(ssh -f server@192.168.1.2 mullvad status | grep -q Connected && echo '') || echo ''",
+		"on-click": "(ssh -f server@192.168.1.2 mullvad status | grep -q Connected && ssh -f server@192.168.1.2 mullvad disconnect) || ssh -f server@192.168.1.2 mullvad connect",
+		"return-type": "{}",
+		"interval": 1
+	},
+
+	"custom/separator": {
+		"format": "•",
+		"tooltip": false
+	}
+}

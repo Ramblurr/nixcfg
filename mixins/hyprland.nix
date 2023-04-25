@@ -19,13 +19,8 @@
         };
 
         # Add waybar config files
-        ".config/waybar/config" = {
-          source = ../configs/waybar/config;
-          recursive = true;
-        };
-
-        ".config/waybar/style.css" = {
-          source = ../configs/waybar/style.css;
+        ".config/waybar" = {
+          source = ../configs/waybar;
           recursive = true;
         };
 
@@ -43,6 +38,12 @@
         # Add dunst config file
         ".config/dunst/dunstrc" = {
           source = ../configs/dunstrc;
+          recursive = true;
+        };
+
+        # Add swaylock config files
+        ".config/swaylock" = {
+          source = ../configs/swaylock;
           recursive = true;
         };
 
