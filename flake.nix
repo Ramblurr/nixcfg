@@ -1,10 +1,6 @@
 {
   inputs = {
-    # we need wayland 1.22
-    # https://github.com/hyprwm/Hyprland/issues/2120
-    # https://github.com/NixOS/nixpkgs/pull/226283
-    #hyprland.url = "github:hyprwm/Hyprland";
-    hyprland.url = "github:hyprwm/Hyprland/2df0d034bc4a18fafb3524401eeeceaa6b23e753";
+    hyprland.url = "github:hyprwm/Hyprland";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     #nur.url = "github:nix-community/NUR";
     impermanence.url = "github:nix-community/impermanence";
