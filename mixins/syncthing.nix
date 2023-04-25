@@ -20,6 +20,11 @@
         ];
         # tray.enable = true;
       };
+      home.persistence."/persist/home/ramblurr" = {
+        directories = [
+          ".config/syncthing"
+        ];
+      };
     };
   };
 }
