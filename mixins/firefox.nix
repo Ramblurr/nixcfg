@@ -5,8 +5,6 @@
   pkgs,
   ...
 }: {
-  services.emacs.enable = true;
-
   home-manager.users.ramblurr = {pkgs, ...} @ hm: {
     programs.firefox = {
       enable = true;
@@ -28,6 +26,13 @@
           "browser.sessionstore.resume_from_crash" = false;
         };
       };
+    };
+
+    home.persistence."/persist/home/ramblurr" = {
+      directories = [
+        ".mozilla/extensions"
+        ".mozilla/firefox"
+      ];
     };
 
     home.file.".local/share/applications/firefox-work.desktop" = {
