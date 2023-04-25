@@ -64,11 +64,10 @@
             ".zhistory"
           ];
         };
-        manual = {manpages.enable = false;};
+        manual = {manpages.enable = true;};
         news.display = "silent";
         programs = {
           home-manager.enable = true;
-          gpg.enable = true;
         };
         home.packages = lib.mkMerge [
           (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
@@ -160,5 +159,13 @@
         ];
       };
     };
+    environm.systemPackages = with pkgs: [
+      python311
+      python311Packages.virtualenv
+      python311Packages.requests
+      python311Packages.black
+      python311Packages.python-lsp-black
+      python311Packages.pytest
+    ];
   };
 }
