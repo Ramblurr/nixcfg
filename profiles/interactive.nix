@@ -31,6 +31,10 @@
       keep-derivations = true
     '';
 
+    environment.systemPackages = with pkgs; [
+      killall
+      inotify-tools
+    ];
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
@@ -159,13 +163,5 @@
         ];
       };
     };
-    environm.systemPackages = with pkgs: [
-      python311
-      python311Packages.virtualenv
-      python311Packages.requests
-      python311Packages.black
-      python311Packages.python-lsp-black
-      python311Packages.pytest
-    ];
   };
 }

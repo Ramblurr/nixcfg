@@ -1,5 +1,5 @@
 {
-    "layer": "top",
+    "layer": "bottom",
     "position": "top",
     "mod": "dock",
     "exclusive": true,
@@ -7,17 +7,22 @@
     "gtk-layer-shell": true,
     "height": 0,
     "modules-left": [
-        "clock",
-        "custom/weather",
         "wlr/workspaces"
     ],
     "modules-center": ["hyprland/window"],
     "modules-right": [
-        "tray",
-        "custom/language",
-        "backlight",
-        "pulseaudio",
-        "pulseaudio#microphone"
+			"tray",
+		"custom/language",
+		"pulseaudio",
+		"pulseaudio#microphone",
+
+		"network",
+		"cpu",
+		"memory",
+		"temperature",
+
+		"custom/weather",
+		"clock"
     ],
 
     "hyprland/window": {
@@ -41,6 +46,21 @@
             "10": []
         }
     },
+    "cpu": {
+        "format": "{usage}% ",
+        "tooltip": false
+    },
+    "memory": {
+        "format": "{}% "
+    },
+    "temperature": {
+        // "thermal-zone": 2,
+        // "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input",
+        "critical-threshold": 80,
+        // "format-critical": "{temperatureC}°C {icon}",
+        "format": "{temperatureC}°C {icon}",
+        "format-icons": ["❄", "", "🔥"]
+    },
    "custom/weather" : {
         "tooltip" : true,
         "format" : "{}",
@@ -55,14 +75,6 @@
     "clock": {
         "format": "{: %R   %d/%m}",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
-    },
-    "backlight": {
-        "device": "intel_backlight",
-        "format": "{icon} {percent}%",
-        "format-icons": ["", "", ""],
-        "on-scroll-up": "brightnessctl set 1%+",
-        "on-scroll-down": "brightnessctl set 1%-",
-        "min-length": 6
     },
     "pulseaudio": {
         "format": "{icon} {volume}%",
@@ -90,5 +102,16 @@
         "on-scroll-up": "pamixer --default-source -i 5",
         "on-scroll-down": "pamixer --default-source -d 5",
         "scroll-step": 5
-    }
+    },
+    "network": {
+        // "interface": "wlp2*", // (Optional) To force the use of this interface
+        "format-wifi": "{essid} ({signalStrength}%) ",
+        "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
+        "format-linked": "{ifname} (No IP) ",
+        "format-disconnected": "Disconnected ⚠",
+        "format-alt": "{ifname}: {ipaddr}/{cidr}",
+        "on-click-right": "nm-connection-editor"
+    },
+
+
 }
