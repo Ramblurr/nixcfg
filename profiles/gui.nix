@@ -82,6 +82,7 @@ in {
           #hunspellDicts.en_US
           #hunspellDicts.de_AT
           morgen
+          junction
 
           # libnotify # `notify-send`
         ])
