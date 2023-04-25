@@ -33,7 +33,7 @@
     hideMounts = true;
     directories = [
       "/etc/nixos"
-      #"/var/log"
+      "/var/log"
       #"/var/lib"
       #"/srv"
     ];
