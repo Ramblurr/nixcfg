@@ -12,10 +12,18 @@
       enable = true;
       package = pkgs.emacs;
     };
-
-    home.persistence = {
-      "/persist/home/ramblurr".directories = ["${hm.config.xdg.configHome}/emacs"];
+    home.persistence."/persist/home/ramblurr" = {
+      directories = [
+        ".emacs.d"
+      ];
     };
+    home.file.".doom.d" = {
+      # Get Doom Emacs
+      source = ../configs/doom.d; # Sets up symlink name ".doom.d" for file "doom.d"
+      recursive = true; # symlink the whole dirj
+      onChange = builtins.readFile ../configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
+    };
+
     home.file.".local/share/icons/doom.png" = {
       source = ../configs/icons/doom.png;
       recursive = true;
@@ -43,6 +51,7 @@
       git
       (ripgrep.override {withPCRE2 = true;})
       gnutls # for TLS connectivity
+      kitty
 
       ## Optional dependencies
       fd # faster projectile indexing
@@ -67,10 +76,20 @@
   fonts.fonts = [pkgs.emacs-all-the-icons-fonts];
 
   system.userActivationScripts = {
-    installDoomEmacs = ''
-      if [ ! -d "$XDG_CONFIG_HOME/emacs" ]; then
-         git clone --depth=1 --single-branch "" "$XDG_CONFIG_HOME/emacs"
-      fi
-    '';
+    # Installation script every time nixos-rebuild is run. So not during initial install.
+    doomEmacs = {
+      text = ''
+        source ${config.system.build.setEnvironment}
+        EMACS="/persist/home/ramblurr/.emacs.d"
+
+        if [ ! -d "$EMACS" ]; then
+          ${pkgs.git}/bin/git clone https://github.com/hlissner/doom-emacs.git $EMACS
+          yes | $EMACS/bin/doom install
+          $EMACS/bin/doom sync
+        else
+          $EMACS/bin/doom sync
+        fi
+      ''; # It will always sync when rebuild is done. So changes will always be applied.
+    };
   };
 }
