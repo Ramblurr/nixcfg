@@ -7,8 +7,8 @@
         signing.signByDefault = true;
         userEmail = "unnamedrambler@gmail.com";
         userName = "Casey Link";
-
         extraConfig = {
+          init.defaultBranch = "main";
           user.editor = "vim";
           pull.rebase = true;
           safe = {

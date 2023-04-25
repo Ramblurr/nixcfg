@@ -22,7 +22,7 @@
       };
       home.persistence."/persist/home/ramblurr" = {
         directories = [
-          ".config/syncthing"
+          "${hm.config.xdg.configHome}/syncthing"
         ];
       };
     };
