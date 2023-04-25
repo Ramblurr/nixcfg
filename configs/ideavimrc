@@ -1,0 +1,2 @@
+source  ~/.config/ideavim/settings.vim
+source  ~/.config/ideavim/major.vim

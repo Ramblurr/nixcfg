@@ -171,7 +171,7 @@ in {
       in [
         {
           groups = ["wheel"];
-          runAs = config.users.users.root.name;
+          runAs = "root";
           commands = [
             (nopasswd "/run/current-system/sw/bin/systemctl reboot")
           ];
