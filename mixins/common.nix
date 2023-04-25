@@ -189,10 +189,15 @@ in {
       ];
     };
 
+    sops.secrets.root-password = {
+      neededForUsers = true;
+    };
+
     users = {
       mutableUsers = false;
       users.root.initialHashedPassword = null;
-      users.root.hashedPassword = "$6$JLKED6KrnXMF1IP7$igjrcYZ6IZI8osQZyUXhH5n4P9OY5ibQHznSi4SYTYicgpLHqcNjB8CoAnO./TH9MCIivQ81HR6lR17kNwab2.";
+      users.root.passwordFile = config.sops.secrets.root-password.path;
+      #users.root.hashedPassword = "$6$JLKED6KrnXMF1IP7$igjrcYZ6IZI8osQZyUXhH5n4P9OY5ibQHznSi4SYTYicgpLHqcNjB8CoAnO./TH9MCIivQ81HR6lR17kNwab2.";
     };
 
     ## MISC HARDWARE RELATED ################################################
