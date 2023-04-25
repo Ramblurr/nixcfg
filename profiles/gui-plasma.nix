@@ -15,6 +15,11 @@
         ".config/kde.org"
         ".config/plasma-workspace"
         ".config/xsettingsd"
+        ".local/share/kscreen"
+        ".local/share/kwalletd"
+        ".local/share/baloo"
+        ".local/share/kactivitymanagerd"
+        ".local/share/sddm"
         ".kde"
       ];
       files = [
