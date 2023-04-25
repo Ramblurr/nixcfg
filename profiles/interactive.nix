@@ -4,11 +4,9 @@
   config,
   inputs,
   ...
-}:
-# includes ci devshell nativeBuildInputs - see bottom
-{
+}: {
   imports = [
-    inputs.home-manager.nixosModules.default # "home-manager"
+    inputs.home-manager.nixosModules.default
     ./core.nix
 
     ../mixins/sops.nix
@@ -24,7 +22,6 @@
   ];
 
   config = {
-    # I don't think my user dbus socket is here without this?????
     users.users.ramblurr.linger = true;
     users.users.ramblurr.shell = pkgs.zsh;
 
