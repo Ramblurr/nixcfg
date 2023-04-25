@@ -19,6 +19,9 @@ in {
     ../mixins/pipewire.nix
     ../mixins/kdeconnect.nix
     ../mixins/flatpak.nix
+    ../mixins/syncthing.nix
+    ../mixins/1password.nix
+    ../mixins/emacs.nix
   ];
 
   config = {
