@@ -108,6 +108,7 @@
             ncdu
             binwalk
             usbutils
+            rclone
             pciutils
             dmidecode
             lshw
