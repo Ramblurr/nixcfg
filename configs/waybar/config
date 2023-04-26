@@ -11,10 +11,7 @@
     ],
     "modules-center": ["hyprland/window"],
     "modules-right": [
-"tray",
-/*
-    "custom/language",
-    */
+    "tray",
     "pulseaudio",
     "pulseaudio#microphone",
     "network",
@@ -32,7 +29,7 @@
         "disable-scroll": true,
         "all-outputs": true,
         "on-click": "activate",
-        //"format": "{icon}",
+        "format": "{icon}",
         "persistent_workspaces": {
             "1": [],
             "2": [],

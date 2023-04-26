@@ -1,6 +1,14 @@
 {pkgs, ...}: {
   config = {
     home-manager.users.ramblurr = {pkgs, ...}: {
+      home.file = {
+        ".config/kitty/kitty.session" = {
+          source = ../configs/kitty/kitty.session;
+        };
+        ".config/kitty/kitty-monitor.session" = {
+          source = ../configs/kitty/kitty-monitor.session;
+        };
+      };
       programs.kitty = {
         enable = true;
         theme = "Gruvbox Dark";
