@@ -312,7 +312,6 @@
 in {
   config = {
     services.flatpak.enable = true;
-    xdg.portal.enable = true;
 
     environment.persistence."/persist" = {
       directories = [
