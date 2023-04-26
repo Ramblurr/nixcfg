@@ -11,6 +11,7 @@
   programs = {
     kdeconnect.enable = true; # Connect phone to PC
     hyprland.enable = true;
+    hyprland.nvidiaPatches = true;
   };
 
   environment = {
