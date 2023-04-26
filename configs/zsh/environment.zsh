@@ -44,14 +44,14 @@ if [[ -d "$VOLTA_HOME/bin" ]]; then
 fi
 
 #█▓▒░ all the evil things in the world have full sway
-if [ "$XDG_SESSION_DESKTOP" = "sway" ] || [ "$XDG_CURRENT_DESKTOP" = "sway" ]; then
+if [ "$XDG_SESSION_DESKTOP" = "sway" ] || [ "$XDG_CURRENT_DESKTOP" = "sway" ] || [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     # https://github.com/swaywm/sway/issues/595
     export _JAVA_AWT_WM_NONREPARENTING=1
     export KITTY_ENABLE_WAYLAND=1 kitty
 fi
 
 #█▓▒░ if you're using podman, you're probably not using docker
-if command -v podman && ! command -v docker; then
+if command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
   export DOCKER=podman
   export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
 fi

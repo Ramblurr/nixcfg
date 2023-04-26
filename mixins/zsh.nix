@@ -21,6 +21,11 @@
           recursive = true;
         };
       };
+      programs.starship = {
+        enable = true;
+        enableBashIntegration = false;
+        enableZshIntegration = false;
+      };
       programs.zsh = {
         enable = true;
         autocd = true;
