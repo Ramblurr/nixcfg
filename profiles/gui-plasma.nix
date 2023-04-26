@@ -73,7 +73,7 @@
         ".config/spectaclerc"
         ".config/startkderc"
         ".config/systemsettingsrc"
-        ".config/Trolltech.conf"
+        #".config/Trolltech.conf"
         ".config/user-dirs.locale"
 
         ".local/share/krunnerstaterc"
