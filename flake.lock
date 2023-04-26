@@ -215,7 +215,7 @@
     "nix-eval-jobs": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_4"
       },
       "locked": {
         "lastModified": 1682421210,
@@ -228,6 +228,24 @@
       "original": {
         "owner": "nix-community",
         "repo": "nix-eval-jobs",
+        "type": "github"
+      }
+    },
+    "nix-gaming": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1682298303,
+        "narHash": "sha256-DOgXWL3p42JfP256fjlBOfZfey8B8r1ir3E6P1YpCxc=",
+        "owner": "fufexan",
+        "repo": "nix-gaming",
+        "rev": "ca90d38d85ffe678a648d6d4dbd89a574c140526",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fufexan",
+        "repo": "nix-gaming",
         "type": "github"
       }
     },
@@ -319,6 +337,22 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 1681753173,
+        "narHash": "sha256-MrGmzZWLUqh2VstoikKLFFIELXm/lsf/G9U9zR96VD4=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "0a4206a51b386e5cda731e8ac78d76ad924c7125",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1682362401,
         "narHash": "sha256-/UMUHtF2CyYNl4b60Z2y4wwTTdIWGKhj9H301EDcT9M=",
         "owner": "NixOS",
@@ -333,7 +367,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_3": {
+    "nixpkgs_4": {
       "locked": {
         "lastModified": 1681347147,
         "narHash": "sha256-B+hTioRc3Jdf4SJyeCiO0fW5ShIznJk2OTiW2vOV+mc=",
@@ -355,8 +389,9 @@
         "home-manager": "home-manager",
         "hyprland": "hyprland",
         "impermanence": "impermanence",
+        "nix-gaming": "nix-gaming",
         "nixos-hardware": "nixos-hardware",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs_3",
         "nixpkgs-wayland": "nixpkgs-wayland",
         "sops-nix": "sops-nix"
       }
