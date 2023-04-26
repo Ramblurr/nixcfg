@@ -4,11 +4,17 @@
   inputs,
   ...
 }: {
+  imports = [
+    ../modules/dynamic-wallpaper.nix
+  ];
   config = {
     environment.systemPackages = with pkgs; [
-      python311
-      python311Packages.requests
+      (python311.withPackages(ps: with ps; [ requests]))
     ];
+    services.dynamic-wallpaper = {
+      enable = true;
+      transitionDuration = 10;
+    };
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       home.file = {
         # Add hyprland config
@@ -20,6 +26,13 @@
         ".config/hypr/xdg-portal-hyprland" = {
           source = ../configs/xdg-portal-hyprland;
           recursive = true;
+        };
+
+        # Add wallpaper files
+        ".config/hypr/wallpaper" = {
+          source = ../configs/wallpaper;
+          recursive = true;
+          force = true;
         };
 
         # Add waybar config files
