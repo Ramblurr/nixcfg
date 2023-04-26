@@ -99,7 +99,7 @@ in {
       ];
       path = [pkgs.swww];
       environment = {
-        WAYLAND_DISPLAY = "wayland-1";
+        WAYLAND_DISPLAY = "wayland-2";
         XDG_RUNTIME_DIR = "/run/user/1000";
       };
     };
@@ -162,7 +162,7 @@ in {
       '';
       scriptArgs = "%i";
       environment = {
-        WAYLAND_DISPLAY = "wayland-1";
+        WAYLAND_DISPLAY = "wayland-2";
         XDG_RUNTIME_DIR = "/run/user/1000";
       };
       serviceConfig = {
