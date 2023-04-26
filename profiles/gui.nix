@@ -24,6 +24,7 @@ in {
     ../mixins/emacs.nix
     ../mixins/firefox.nix
     ../mixins/thunderbird.nix
+    ../mixins/mpv.nix
   ];
 
   config = {
@@ -83,7 +84,7 @@ in {
           #hunspellDicts.de_AT
           morgen
           junction
-
+          ffmpeg_5-full
           # libnotify # `notify-send`
         ])
       ];

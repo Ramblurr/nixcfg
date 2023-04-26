@@ -1,3 +1,48 @@
+/*
+ *gruvbox https://github.com/morhetz/gruvbox
+*/
+@define-color red       #fb4934;
+@define-color green     #b8bb26;
+@define-color yellow    #fabd2f;
+@define-color blue      #83a598;
+@define-color purple    #d3869b;
+@define-color aqua      #8ec07c;
+@define-color orange    #fe8019;
+
+
+@define-color red-dark      #cc241d;
+@define-color green-dark    #98971a;
+@define-color yellow-dark   #d79921;
+@define-color blue-dark     #458588;
+@define-color purple-dark   #b16286;
+@define-color aqua-dark     #689d6a;
+@define-color orange-dark   #d65d0e;
+
+
+@define-color dark0-hard       #1d2021;
+@define-color dark0            #282828;
+@define-color dark0-soft       #32302f;
+@define-color dark1            #3c3836;
+@define-color dark2            #504945;
+@define-color dark3            #665c54;
+@define-color dark4            #7c6f64;
+@define-color gray-245         #928374;
+@define-color gray-244         #928374;
+@define-color light0-hard      #f9f5d7;
+@define-color light0           #fbf1c7;
+@define-color light0-soft      #f2e5bc;
+@define-color light1           #ebdbb2;
+@define-color light2           #d5c4a1;
+@define-color light3           #bdae93;
+@define-color light4           #a89984;
+@define-color red-faded        #9d0006;
+@define-color green-faded      #79740e;
+@define-color yellow-faded     #b57614;
+@define-color blue-faded       #076678;
+@define-color purple-faded     #8f3f71;
+@define-color aqua-faded       #427b58;
+@define-color orange-faded     #af3a03;
+
 * {
     border: none;
     border-radius: 0;
@@ -8,12 +53,12 @@
 }
 
 window#waybar {
-    background: rgba(21, 18, 27, 0);
-    color: #cdd6f4;
+    background: rgba(0, 0, 0, 0);
+    color: @aqua;
 }
 
 tooltip {
-    background: #1e1e2e;
+    background: @dark1;
     border-radius: 10px;
     border-width: 2px;
     border-style: solid;
@@ -22,12 +67,12 @@ tooltip {
 
 #workspaces button {
     padding: 5px;
-    color: #313244;
+    color: @aqua-dark;
     margin-right: 5px;
 }
 
 #workspaces button.active {
-    color: #a6adc8;
+    color: @red;
 }
 
 #workspaces button.focused {
@@ -44,7 +89,7 @@ tooltip {
 
 #workspaces button:hover {
     background: #11111b;
-    color: #cdd6f4;
+    color: @aqua;
     border-radius: 10px;
 }
 
@@ -59,43 +104,38 @@ tooltip {
 #network,
 #workspaces,
 #tray,
+#cpu,
+#memory,
+#temperature,
 #backlight {
-    background: #1e1e2e;
+    background: @dark1;
     padding: 0px 10px;
     margin: 3px 0px;
     margin-top: 10px;
-    border: 1px solid #181825;
+    border: 1px solid @dark0-hard;
+}
+
+#cpu {
+    border-right: 0;
 }
 
 #tray {
-    border-radius: 10px;
-    margin-right: 10px;
+    border-radius: 10px 0px 0px 10px;
+    border-right: 0;
+    background: red;
+    margin-left: 10px;
 }
 
 #workspaces {
-    background: #1e1e2e;
+    background: @dark1;
     border-radius: 10px;
     margin-left: 10px;
     padding-right: 0px;
     padding-left: 5px;
 }
 
-#custom-caffeine {
-    color: #89dceb;
-    border-radius: 10px 0px 0px 10px;
-    border-right: 0px;
-    margin-left: 10px;
-}
-
 #custom-language {
-    color: #f38ba8;
-    border-left: 0px;
-    border-right: 0px;
-}
-
-#custom-updates {
-    color: #f5c2e7;
-    border-radius: 10px 0px 0px 10px;
+    color: @purple;
     border-left: 0px;
     border-right: 0px;
 }
@@ -107,41 +147,33 @@ tooltip {
 }
 
 #clock {
-    color: #fab387;
-    border-radius: 10px 0px 0px 10px;
-    margin-left: 5px;
-    border-right: 0px;
+    color: @blue;
+    border-radius: 0px 10px 10px 0px;
+    margin-right: 5px;
+    border-left: 0px;
 }
 
 #network {
-    color: #f9e2af;
+    color: @aqua;
     border-left: 0px;
     border-right: 0px;
 }
 
 #pulseaudio {
-    color: #89b4fa;
+    color: @blue;
     border-left: 0px;
     border-right: 0px;
 }
 
 #pulseaudio.microphone {
-    color: #cba6f7;
+    color: @red-faded;
     border-radius: 0px 10px 10px 0px;
     border-left: 0px;
     border-right: 0px;
     margin-right: 5px;
 }
 
-#battery {
-    color: #a6e3a1;
-    border-radius: 0 10px 10px 0;
-    margin-right: 10px;
-    border-left: 0px;
-}
-
 #custom-weather {
-    border-radius: 0px 10px 10px 0px;
-    border-right: 0px;
-    margin-left: 0px;
+    border-left: 0px;
+    margin-right: 0px;
 }

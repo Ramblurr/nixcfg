@@ -1,6 +1,6 @@
 {
-    "layer": "bottom",
-    "position": "top",
+    "layer": "top",
+    "position": "bottom",
     "mod": "dock",
     "exclusive": true,
     "passthrough": false,
@@ -11,18 +11,18 @@
     ],
     "modules-center": ["hyprland/window"],
     "modules-right": [
-			"tray",
-		"custom/language",
-		"pulseaudio",
-		"pulseaudio#microphone",
-
-		"network",
-		"cpu",
-		"memory",
-		"temperature",
-
-		"custom/weather",
-		"clock"
+"tray",
+/*
+    "custom/language",
+    */
+    "pulseaudio",
+    "pulseaudio#microphone",
+    "network",
+    "cpu",
+    "memory",
+    "temperature",
+    "custom/weather",
+    "clock"
     ],
 
     "hyprland/window": {

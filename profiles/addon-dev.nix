@@ -10,8 +10,7 @@
   ];
   config = {
     environment.systemPackages = with pkgs; [
-      python311
-      (python39.withPackages (ps:
+      (python311.withPackages (ps:
         with ps; [
           pip
           pytest
