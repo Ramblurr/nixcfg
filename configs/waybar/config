@@ -62,7 +62,7 @@
         "tooltip" : true,
         "format" : "{}",
         "interval" : 30,
-        "exec" : "python3 ~/.config/waybar/scripts/waybar-wttr.py",
+        "exec" : "/run/current-system/sw/bin/python3 ~/.config/waybar/scripts/waybar-wttr.py",
         "return-type" : "json"
     },
     "tray": {
@@ -77,9 +77,9 @@
         "format": "{icon} {volume}%",
         "tooltip": false,
         "format-muted": " Muted",
-        "on-click": "pamixer -t",
-        "on-scroll-up": "pamixer -i 5",
-        "on-scroll-down": "pamixer -d 5",
+        "on-click": "/run/current-system/sw/bin/pactl set-sink-mute @DEFAULT_SINK@ toggle",
+        "on-scroll-up": "/run/current-system/sw/bin/pactl set-sink-volume @DEFAULT_SINK@ +5%",
+        "on-scroll-down": "/run/current-system/sw/bin/pactl set-sink-volume @DEFAULT_SINK@ -5%",
         "scroll-step": 5,
         "format-icons": {
             "headphone": "",
@@ -93,11 +93,11 @@
     },
     "pulseaudio#microphone": {
         "format": "{format_source}",
-        "format-source": " {volume}%",
+        "format-source": "󰝝 {volume}%",
         "format-source-muted": " Muted",
-        "on-click": "pamixer --default-source -t",
-        "on-scroll-up": "pamixer --default-source -i 5",
-        "on-scroll-down": "pamixer --default-source -d 5",
+        "on-click": "/run/current-system/sw/bin/pactl set-source-mute @DEFAULT_SOURCE@ toggle",
+        "on-scroll-up": "/run/current-system/sw/bin/pactl set-source-volume @DEFAULT_SOURCE@ +5%",
+        "on-scroll-down": "/run/current-system/sw/bin/pactl set-source-volume @DEFAULT_SOURCE@ -5%",
         "scroll-step": 5
     },
     "network": {
@@ -106,8 +106,7 @@
         "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
         "format-linked": "{ifname} (No IP) ",
         "format-disconnected": "Disconnected ⚠",
-        "format-alt": "{ifname}: {ipaddr}/{cidr}",
-        "on-click-right": "nm-connection-editor"
+        "format-alt": "{ifname}: {ipaddr}/{cidr}"
     },
 
 

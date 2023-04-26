@@ -24,7 +24,7 @@
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 ;; (setq doom-theme 'doom-one)
-(setq doom-font (font-spec :family "Iosevka Comfy Fixed" :size 18))
+(setq doom-font (font-spec :family "IosevkaTerm Nerd Font Medium" :size 18))
 (setq doom-theme 'doom-gruvbox)
 (setq doom-themes-treemacs-enable-variable-pitch nil)
 (setq display-line-numbers-type 'relative)
