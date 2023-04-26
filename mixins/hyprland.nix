@@ -9,7 +9,7 @@
   ];
   config = {
     environment.systemPackages = with pkgs; [
-      (python311.withPackages(ps: with ps; [ requests]))
+      (python311.withPackages (ps: with ps; [requests]))
     ];
     services.dynamic-wallpaper = {
       enable = true;

@@ -2,6 +2,7 @@
   inputs = {
     hyprland.url = "github:hyprwm/Hyprland";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nix-gaming.url = "github:fufexan/nix-gaming";
     #nur.url = "github:nix-community/NUR";
     impermanence.url = "github:nix-community/impermanence";
     alejandra.url = "github:kamadorueda/alejandra/3.0.0";
@@ -32,6 +33,7 @@
     nixos-hardware,
     nixpkgs-wayland,
     sops-nix,
+    nix-gaming,
     ...
   }: {
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
@@ -43,6 +45,7 @@
           #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default
+          nix-gaming.nixosModules.default
           inputs.home-manager.nixosModules.home-manager
           inputs.impermanence.nixosModules.impermanence
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
