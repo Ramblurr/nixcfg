@@ -14,6 +14,24 @@
     sops.secrets.syncthing-cert = {
       owner = "ramblurr";
     };
+
+    # FIX: home-manager impermanence
+    # when using with home-manager impermanence we need to ensure that home-manager actives before
+    # syncthing. otherwise the syncthing init will create ~/.config/syncthing, but ~/.config will be created
+    # with root:root ownership.
+    systemd.services."syncthing" = {
+      enable = true;
+      overrideStrategy = "asDropin";
+      requires = [ "home-manager-ramblurr.service" ];
+      after = [ "home-manager-ramblurr.service" ];
+    };
+    systemd.services."syncthing-init" = {
+      enable = true;
+      overrideStrategy = "asDropin";
+      requires = [ "home-manager-ramblurr.service" ];
+      after = [ "home-manager-ramblurr.service" ];
+    };
+    # END FIX: home-manager impermanence
     services.syncthing = {
       enable = true;
       user = "ramblurr";
