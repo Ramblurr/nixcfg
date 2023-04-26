@@ -101,6 +101,17 @@ in {
             background-color: #3b393d;
             outline-style: none;
           }
+        #logout {
+            background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/logout.png"), url("/usr/local/share/wlogout/icons/logout.png"));
+        }
+
+        #shutdown {
+            background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/shutdown.png"), url("/usr/local/share/wlogout/icons/shutdown.png"));
+        }
+
+        #reboot {
+            background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/reboot.png"), url("/usr/local/share/wlogout/icons/reboot.png"));
+        }
         '';
       };
       programs.swaylock = {

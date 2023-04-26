@@ -39,8 +39,8 @@
     ];
 
     etc = {
-      "wlogout-icons".source = "${pkgs.wlogout}/share/wlogout/icons";
-      "polkit-gnome".source = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      #"wlogout-icons".source = "${pkgs.wlogout}/share/wlogout/icons";
+      #"polkit-gnome".source = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
     };
   };
 }
