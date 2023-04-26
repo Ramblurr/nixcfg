@@ -85,7 +85,7 @@ in {
           morgen
           junction
           ffmpeg_5-full
-          # libnotify # `notify-send`
+          libnotify # `notify-send`
         ])
       ];
     };
