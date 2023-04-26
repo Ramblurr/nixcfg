@@ -22,14 +22,14 @@
     systemd.services."syncthing" = {
       enable = true;
       overrideStrategy = "asDropin";
-      requires = [ "home-manager-ramblurr.service" ];
-      after = [ "home-manager-ramblurr.service" ];
+      requires = ["home-manager-ramblurr.service"];
+      after = ["home-manager-ramblurr.service"];
     };
     systemd.services."syncthing-init" = {
       enable = true;
       overrideStrategy = "asDropin";
-      requires = [ "home-manager-ramblurr.service" ];
-      after = [ "home-manager-ramblurr.service" ];
+      requires = ["home-manager-ramblurr.service"];
+      after = ["home-manager-ramblurr.service"];
     };
     # END FIX: home-manager impermanence
     services.syncthing = {
