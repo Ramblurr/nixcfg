@@ -3,7 +3,14 @@
   pkgs,
   inputs,
   ...
-}: {
+}: let
+  hyprland_waybar = pkgs.waybar.overrideAttrs (oldAttrs: {
+    mesonFlags = oldAttrs.mesonFlags ++ ["-Dexperimental=true"];
+    postPatch = ''
+      sed -i 's/zext_workspace_handle_v1_activate(workspace_handle_);/const std::string command = "hyprctl dispatch workspace " + name_;\n\tsystem(command.c_str());/g' src/modules/wlr/workspace_manager.cpp
+    '';
+  });
+in {
   imports = [
     ../modules/dynamic-wallpaper.nix
   ];
@@ -16,6 +23,8 @@
       transitionDuration = 10;
     };
 
+    # see https://github.com/NixOS/nixpkgs/issues/158025
+    security.pam.services.swaylock = { };
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       services.swayidle = {
         enable = true;
@@ -37,32 +46,100 @@
         ];
         systemdTarget = "xdg-desktop-portal-hyprland.service";
       };
+      services.dunst = {
+        enable = true;
+        configFile = ../configs/dunstrc;
+      };
+      programs.waybar = {
+        enable = true;
+        package = hyprland_waybar;
+        systemd.enable = true;
+      };
+      programs.wlogout = {
+        enable = true;
+        layout = [
+          {
+            "label" = "logout";
+            "action" = "loginctl terminate-user $USER";
+            "text" = "";
+            "keybind" = "l";
+          }
+
+          {
+            "label" = "reboot";
+            "action" = "systemctl reboot";
+            "text" = "";
+            "keybind" = "r";
+          }
+
+          {
+            "label" = "shutdown";
+            "action" = "systemctl poweroff";
+            "text" = "";
+            "keybind" = "s";
+          }
+        ];
+        style = ''
+
+          * {
+            background-image: none;
+          }
+          window {
+            background-color: rgba(12, 12, 12, 1);
+          }
+          button {
+            color: #FFFFFF;
+            background-color: #1E1E1E;
+            border-radius: 20px;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 50%;
+            margin: 10px;
+          }
+
+          button:hover {
+            background-color: #3b393d;
+            outline-style: none;
+          }
+        '';
+      };
       programs.swaylock = {
         enable = true;
         settings = {
-          #image = "$HOME/.config/wall";
-          color = "000000f0";
-          font-size = "24";
-          indicator-idle-visible = false;
-          indicator-radius = 100;
-          indicator-thickness = 20;
-          inside-color = "00000000";
-          inside-clear-color = "00000000";
-          inside-ver-color = "00000000";
-          inside-wrong-color = "00000000";
-          key-hl-color = "79b360";
-          line-color = "000000f0";
-          line-clear-color = "000000f0";
-          line-ver-color = "000000f0";
-          line-wrong-color = "000000f0";
-          ring-color = "ffffff50";
-          ring-clear-color = "bbbbbb50";
-          ring-ver-color = "bbbbbb50";
-          ring-wrong-color = "b3606050";
-          text-color = "ffffff";
-          text-ver-color = "ffffff";
-          text-wrong-color = "ffffff";
           show-failed-attempts = true;
+          clock = true;
+          indicator = true;
+          effect-blur = "5x5";
+          color = "1f1d2e80";
+          font = "Iosevka Comfy Fixed";
+          indicator-radius = 200;
+          indicator-thickness = 20;
+          line-color = "1f1d2e";
+          ring-color = "191724";
+          inside-color = "1f1d2e";
+          key-hl-color = "eb6f92";
+          separator-color = "00000000";
+          text-color = "e0def4";
+          text-caps-lock-color = "";
+          line-ver-color = "eb6f92";
+          ring-ver-color = "eb6f92";
+          inside-ver-color = "1f1d2e";
+          text-ver-color = "e0def4";
+          ring-wrong-color = "31748f";
+          text-wrong-color = "31748f";
+          inside-wrong-color = "1f1d2e";
+          inside-clear-color = "1f1d2e";
+          text-clear-color = "e0def4";
+          ring-clear-color = "9ccfd8";
+          line-clear-color = "1f1d2e";
+          line-wrong-color = "1f1d2e";
+          bs-hl-color = "31748f";
+          grace = 2;
+          grace-no-mouse = true;
+          grace-no-touch = true;
+          datestr = "%d.%m";
+          fade-in = "0.1";
+          ignore-empty-password = true;
         };
       };
       home.file = {
@@ -92,29 +169,6 @@
 
         ".config/rofi/theme.rasi" = {
           source = ../configs/rofi/theme.rasi;
-          recursive = true;
-        };
-
-        # Add dunst config file
-        ".config/dunst/dunstrc" = {
-          source = ../configs/dunstrc;
-          recursive = true;
-        };
-
-        # Add swaylock config files
-        ".config/swaylock" = {
-          source = ../configs/swaylock;
-          recursive = true;
-        };
-
-        # Add wlogout config files
-        ".config/wlogout/layout" = {
-          source = ../configs/wlogout/layout;
-          recursive = true;
-        };
-
-        ".config/wlogout/style.css" = {
-          source = ../configs/wlogout/style.css;
           recursive = true;
         };
 

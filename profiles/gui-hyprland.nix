@@ -13,20 +13,12 @@
     hyprland.enable = true;
     hyprland.nvidiaPatches = true;
   };
-
+  security.polkit.enable = true;
   environment = {
     systemPackages = with pkgs; [
-      # Status bar
-      (waybar.overrideAttrs (oldAttrs: {
-        mesonFlags = oldAttrs.mesonFlags ++ ["-Dexperimental=true"];
-        postPatch = ''
-          sed -i 's/zext_workspace_handle_v1_activate(workspace_handle_);/const std::string command = "hyprctl dispatch workspace " + name_;\n\tsystem(command.c_str());/g' src/modules/wlr/workspace_manager.cpp
-        '';
-      }))
       baobab # Disk usage analyser
       blueberry # Bluetooth manager
       clipman # Clipboard manager for wayland
-      dunst # Notification daemon
       gnome.file-roller # Archive file manager
       gnome.gnome-calculator # Calculator
       gnome.gnome-disk-utility # Disks manager
@@ -42,9 +34,7 @@
       swappy # Edit screenshots
       wdisplays # Displays manager
       wl-clipboard # Clipboard daemon
-      wlogout # Logout screen
       hyprpicker # color picker
-      swaylock # Lock screen
       gtk-layer-shell # shell components on wayland
     ];
 
@@ -53,6 +43,4 @@
       "polkit-gnome".source = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
     };
   };
-
-  security.polkit.enable = true;
 }
