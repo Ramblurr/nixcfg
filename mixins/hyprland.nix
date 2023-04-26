@@ -24,7 +24,7 @@ in {
     };
 
     # see https://github.com/NixOS/nixpkgs/issues/158025
-    security.pam.services.swaylock = { };
+    security.pam.services.swaylock = {};
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
       services.swayidle = {
         enable = true;
@@ -61,21 +61,21 @@ in {
           {
             "label" = "logout";
             "action" = "loginctl terminate-user $USER";
-            "text" = "";
+            "text" = "Logout";
             "keybind" = "l";
           }
 
           {
             "label" = "reboot";
             "action" = "systemctl reboot";
-            "text" = "";
+            "text" = "Reboot";
             "keybind" = "r";
           }
 
           {
             "label" = "shutdown";
             "action" = "systemctl poweroff";
-            "text" = "";
+            "text" = "Power Off";
             "keybind" = "s";
           }
         ];
@@ -169,12 +169,6 @@ in {
 
         ".config/rofi/theme.rasi" = {
           source = ../configs/rofi/theme.rasi;
-          recursive = true;
-        };
-
-        # Avoid file not found errors for bash
-        ".bashrc" = {
-          text = '''';
           recursive = true;
         };
       };
