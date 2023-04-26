@@ -4,8 +4,7 @@
   ...
 }: {
   config = {
-    # see profiles/desktop-<foo>.nix for xdg-portal stuff
-
+    # hyprland module enables xdg.portal
     home-manager.users.ramblurr = {pkgs, ...}: {
       home.packages = with pkgs; [
         xdg-utils
