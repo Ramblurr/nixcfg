@@ -47,13 +47,13 @@ in {
       matchConfig.Name = "eno1";
       linkConfig.RequiredForOnline = "routable";
 
-        networkConfig = {
-          DHCP = "yes";
-          IPForward = "yes";
-          # IPMasquerade = "both";
-        };
-        dhcpV4Config.Use6RD = "yes";
-        dhcpV4Config.RouteMetric = 512;
+      networkConfig = {
+        DHCP = "yes";
+        IPForward = "yes";
+        # IPMasquerade = "both";
+      };
+      dhcpV4Config.Use6RD = "yes";
+      dhcpV4Config.RouteMetric = 512;
       address = [
         "10.8.3.1/24"
         #"10.9.4.1/22"
@@ -66,10 +66,10 @@ in {
       ];
       routes = [
         {
-        routeConfig = {
-          Gateway="192.168.1.1";
-          Metric=2000;
-        };
+          routeConfig = {
+            Gateway = "192.168.1.1";
+            Metric = 2000;
+          };
         }
       ];
     };
