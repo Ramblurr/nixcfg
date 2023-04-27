@@ -1,7 +1,9 @@
 {
     "layer": "top",
     "position": "bottom",
-    "mod": "dock",
+    "mode": "dock",
+    "margin-bottom": 0,
+    "margin-top": 0,
     "exclusive": true,
     "passthrough": false,
     "gtk-layer-shell": true,
@@ -79,9 +81,8 @@
         "format": "{icon}",
         "exec-on-event": true,
         "interval": "once",
-        "exec": "~/.config/waybar/scripts/pa-sink-toggle get",
-        "exec-if": "sleep 0.1", // Give enough time for `pactl get-default-sink` to update
-        "on-click": "~/.config/waybar/scripts/pa-sink-toggle",
+        "exec": "/run/current-system/sw/bin/bash ~/.config/waybar/scripts/pa-sink-toggle get",
+        "on-click": "/run/current-system/sw/bin/bash ~/.config/waybar/scripts/pa-sink-toggle",
         "format-icons": {
             "speaker": "󰓃",
             "headphone": "",
