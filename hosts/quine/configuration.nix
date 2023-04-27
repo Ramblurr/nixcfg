@@ -43,6 +43,37 @@ in {
     networking.dhcpcd.wait = "background";
     networking.dhcpcd.extraConfig = "noarp";
 
+    systemd.network.networks."20-local-routes" = {
+      matchConfig.Name = "eno1";
+      linkConfig.RequiredForOnline = "routable";
+
+        networkConfig = {
+          DHCP = "yes";
+          IPForward = "yes";
+          # IPMasquerade = "both";
+        };
+        dhcpV4Config.Use6RD = "yes";
+        dhcpV4Config.RouteMetric = 512;
+      address = [
+        "10.8.3.1/24"
+        #"10.9.4.1/22"
+        "10.9.8.1/23"
+        "10.9.10.1/23"
+        "10.8.50.1/23"
+        "10.8.60.1/23"
+        "10.5.0.0/24"
+        "10.10.10.0/23"
+      ];
+      routes = [
+        {
+        routeConfig = {
+          Gateway="192.168.1.1";
+          Metric=2000;
+        };
+        }
+      ];
+    };
+
     environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
 
     boot = {
