@@ -25,6 +25,7 @@ in {
     ../mixins/firefox.nix
     ../mixins/thunderbird.nix
     ../mixins/mpv.nix
+    ../mixins/vpn-mullvad.nix
   ];
 
   config = {
@@ -76,7 +77,6 @@ in {
           evince
           #signal-desktop
           #vlc
-          mullvad-vpn
           #onlyoffice-bin
           #libreoffice-qt
           #hunspell
