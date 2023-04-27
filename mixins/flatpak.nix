@@ -323,6 +323,10 @@ in {
         directories = [
           ".cache/flatpak"
           ".local/share/flatpak"
+          {
+            method = "symlink";
+            directory = ".var/app";
+          }
         ];
       };
     };
