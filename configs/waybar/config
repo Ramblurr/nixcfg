@@ -12,6 +12,7 @@
     "modules-center": ["hyprland/window"],
     "modules-right": [
     "tray",
+    "custom/sink-switch",
     "pulseaudio",
     "pulseaudio#microphone",
     "network",
@@ -61,7 +62,7 @@
    "custom/weather" : {
         "tooltip" : true,
         "format" : "{}",
-        "interval" : 30,
+        "interval" : 300,
         "exec" : "/run/current-system/sw/bin/python3 ~/.config/waybar/scripts/waybar-wttr.py",
         "return-type" : "json"
     },
@@ -73,11 +74,25 @@
         "format": "{: %R   %d/%m}",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
     },
+    "custom/sink-switch": {
+        "return-type" : "json",
+        "format": "{icon}",
+        "exec-on-event": true,
+        "interval": "once",
+        "exec": "~/.config/waybar/scripts/pa-sink-toggle get",
+        "exec-if": "sleep 0.1", // Give enough time for `pactl get-default-sink` to update
+        "on-click": "~/.config/waybar/scripts/pa-sink-toggle",
+        "format-icons": {
+            "speaker": "󰓃",
+            "headphone": "",
+        },
+    },
     "pulseaudio": {
         "format": "{icon} {volume}%",
         "tooltip": false,
-        "format-muted": " Muted",
+        "format-muted": "󰝟 Muted",
         "on-click": "/run/current-system/sw/bin/pactl set-sink-mute @DEFAULT_SINK@ toggle",
+        "on-right": "pavucontrol",
         "on-scroll-up": "/run/current-system/sw/bin/pactl set-sink-volume @DEFAULT_SINK@ +5%",
         "on-scroll-down": "/run/current-system/sw/bin/pactl set-sink-volume @DEFAULT_SINK@ -5%",
         "scroll-step": 5,
@@ -93,8 +108,8 @@
     },
     "pulseaudio#microphone": {
         "format": "{format_source}",
-        "format-source": "󰝝 {volume}%",
-        "format-source-muted": " Muted",
+        "format-source": " {volume}%",
+        "format-source-muted": " Muted",
         "on-click": "/run/current-system/sw/bin/pactl set-source-mute @DEFAULT_SOURCE@ toggle",
         "on-scroll-up": "/run/current-system/sw/bin/pactl set-source-volume @DEFAULT_SOURCE@ +5%",
         "on-scroll-down": "/run/current-system/sw/bin/pactl set-source-volume @DEFAULT_SOURCE@ -5%",

@@ -37,10 +37,5 @@
       hyprpicker # color picker
       gtk-layer-shell # shell components on wayland
     ];
-
-    etc = {
-      #"wlogout-icons".source = "${pkgs.wlogout}/share/wlogout/icons";
-      #"polkit-gnome".source = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
-    };
   };
 }
