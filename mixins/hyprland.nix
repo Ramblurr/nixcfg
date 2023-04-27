@@ -81,37 +81,37 @@ in {
         ];
         style = ''
 
-          * {
-            background-image: none;
-          }
-          window {
-            background-color: rgba(12, 12, 12, 1);
-          }
-          button {
-            color: #FFFFFF;
-            background-color: #1E1E1E;
-            border-radius: 20px;
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: 50%;
-            margin: 10px;
+            * {
+              background-image: none;
+            }
+            window {
+              background-color: rgba(12, 12, 12, 1);
+            }
+            button {
+              color: #FFFFFF;
+              background-color: #1E1E1E;
+              border-radius: 20px;
+              background-repeat: no-repeat;
+              background-position: center;
+              background-size: 50%;
+              margin: 10px;
+            }
+
+            button:hover {
+              background-color: #3b393d;
+              outline-style: none;
+            }
+          #logout {
+              background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/logout.png"), url("/usr/local/share/wlogout/icons/logout.png"));
           }
 
-          button:hover {
-            background-color: #3b393d;
-            outline-style: none;
+          #shutdown {
+              background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/shutdown.png"), url("/usr/local/share/wlogout/icons/shutdown.png"));
           }
-        #logout {
-            background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/logout.png"), url("/usr/local/share/wlogout/icons/logout.png"));
-        }
 
-        #shutdown {
-            background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/shutdown.png"), url("/usr/local/share/wlogout/icons/shutdown.png"));
-        }
-
-        #reboot {
-            background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/reboot.png"), url("/usr/local/share/wlogout/icons/reboot.png"));
-        }
+          #reboot {
+              background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/reboot.png"), url("/usr/local/share/wlogout/icons/reboot.png"));
+          }
         '';
       };
       programs.swaylock = {
@@ -153,32 +153,47 @@ in {
           ignore-empty-password = true;
         };
       };
-      home.file = {
-        # Add hyprland config
-        ".config/hypr/hyprland.conf" = {
-          source = ../configs/hyprland.conf;
-          recursive = true;
+      xdg.configFile = {
+        # This is from the hyprland home-manager module
+        # https://github.com/hyprwm/Hyprland/blob/main/nix/hm-module.nix
+        # We need it here to ensure that all our other gui services (waybar, dynamic-wallpaper, etc) are started
+        # when we login.
+        # Also we get a nice hyprland reload when the config changes
+        "hypr/hyprland.conf" = {
+          text =
+            ''
+              exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP && systemctl --user start hyprland-session.target
+            ''
+            + builtins.readFile ../configs/hyprland.conf;
+          onChange = ''
+            (  # execute in subshell so that `shopt` won't affect other scripts
+               shopt -s nullglob  # so that nothing is done if /tmp/hypr/ does not exist or is empty
+               for instance in /tmp/hypr/*; do
+                 HYPRLAND_INSTANCE_SIGNATURE=''${instance##*/} ${config.programs.hyprland.package}/bin/hyprctl reload config-only \
+                   || true  # ignore dead instance(s)
+               done
+             )
+          '';
         };
-        # Add wallpaper files
-        ".config/hypr/wallpaper" = {
+
+        "hypr/wallpaper" = {
           source = ../configs/wallpaper;
           recursive = true;
           force = true;
         };
 
-        # Add waybar config files
-        ".config/waybar" = {
+        "waybar" = {
           source = ../configs/waybar;
           recursive = true;
+          onChange = ''systemctl --user restart waybar'';
         };
 
-        # Add rofi config files
-        ".config/rofi/config.rasi" = {
+        "rofi/config.rasi" = {
           source = ../configs/rofi/config.rasi;
           recursive = true;
         };
 
-        ".config/rofi/theme.rasi" = {
+        "rofi/theme.rasi" = {
           source = ../configs/rofi/theme.rasi;
           recursive = true;
         };

@@ -1,5 +1,19 @@
 {pkgs, ...}: {
   home-manager.users.ramblurr = {pkgs, ...} @ hm: {
+    xdg.configFile."wireplumber/main.lua.d/51-disable-hdmi-sinks.lua".text = ''
+      rule = {
+        matches = {
+          {
+            { "device.name", "equals", "alsa_card.pci-0000_01_00.1" },
+          },
+        },
+        apply_properties = {
+          ["device.disabled"] = true,
+        },
+      }
+
+      table.insert(alsa_monitor.rules,rule)
+    '';
     xdg.configFile."wireplumber/main.lua.d/51-kef-lsx.lua".text = ''
       rule = {
         matches = {

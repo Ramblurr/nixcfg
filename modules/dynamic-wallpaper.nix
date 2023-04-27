@@ -98,17 +98,13 @@ in {
         "graphical-session.target"
       ];
       path = [pkgs.swww];
-      environment = {
-        WAYLAND_DISPLAY = "wayland-2";
-        XDG_RUNTIME_DIR = "/run/user/1000";
-      };
     };
     # Service which sets the current wallpaper to the wallpaper corresponding to the current hour
     #   systemctl --user start dynamic-wallpaper@default.service # Use settings specified by this module
     #   systemctl --user start dynamic-wallpaper@skip.service # Skip transition and immediately set the image as background
     systemd.user.services."dynamic-wallpaper@" = mkIf cfg.enable {
       unitConfig = {
-        "Description" = "Dynamically change wallpaper based on time of day";
+        "Description" = "Change the wallpaper periodically";
         "Requires" = "swww-daemon.service";
         "PartOf" = "swww-daemon.service";
         "After" = "swww-daemon.service";
@@ -161,10 +157,6 @@ in {
         fi
       '';
       scriptArgs = "%i";
-      environment = {
-        WAYLAND_DISPLAY = "wayland-2";
-        XDG_RUNTIME_DIR = "/run/user/1000";
-      };
       serviceConfig = {
         Type = "oneshot";
       };

@@ -72,7 +72,7 @@ tooltip {
 }
 
 #workspaces button.active {
-    color: @dark1;
+    color: @red;
 }
 
 #workspaces button.focused {
@@ -95,7 +95,7 @@ tooltip {
 
 #custom-language,
 #custom-updates,
-#custom-caffeine,
+#custom-sink-switch,
 #custom-weather,
 #window,
 #clock,
@@ -160,18 +160,36 @@ tooltip {
     border-right: 0px;
 }
 
+#pulseaudio.muted {
+    color: @red;
+}
 #pulseaudio {
     color: @blue;
     border-left: 0px;
     border-right: 0px;
 }
 
+#pulseaudio:hover:hover,
+#pulseaudio.microphone:hover {
+  background-color: @dark3;
+}
+
+#pulseaudio.microphone.source-muted {
+    color: @red;
+}
+
 #pulseaudio.microphone {
-    color: @red-faded;
+    color: @yellow;
     border-radius: 0px 10px 10px 0px;
     border-left: 0px;
     border-right: 0px;
     margin-right: 5px;
+}
+
+#custom-sink-switch {
+    color: @blue;
+    border-left: 0px;
+    border-right: 0px;
 }
 
 #custom-weather {
