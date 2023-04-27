@@ -40,6 +40,24 @@
       (self: super: {
         microsocks = super.pkgs.callPackage ./packages/microsocks {};
       })
+      (self: super: {
+        thunderbird = super.thunderbird.overrideAttrs (e: rec {
+          desktopItem = e.desktopItem.override (d: {
+            # I only want my own custom thunderbird desktop files showing up
+            noDisplay = true;
+          });
+          buildCommand = builtins.replaceStrings ["${e.desktopItem}"] ["${desktopItem}"] e.buildCommand;
+        });
+      })
+      (self: super: {
+        firefox = super.firefox.overrideAttrs (e: rec {
+          desktopItem = e.desktopItem.override (d: {
+            # I only want my own custom firefox desktop files showing up
+            noDisplay = true;
+          });
+          buildCommand = builtins.replaceStrings ["${e.desktopItem}"] ["${desktopItem}"] e.buildCommand;
+        });
+      })
     ];
   in {
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
