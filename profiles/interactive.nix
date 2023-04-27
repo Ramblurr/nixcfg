@@ -62,6 +62,13 @@
             ".config/gnupg"
             ".config/gh"
             ".config/lutris"
+            ".config/Morgen"
+            ".config/OpenSCAD"
+            ".config/PrusaSlicer-alpha"
+            ".config/qobuz-dl"
+            ".config/gh"
+            ".config/github-copilot"
+            ".config/clojure"
             ".local/share/lutris"
           ];
         };
