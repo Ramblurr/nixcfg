@@ -35,13 +35,20 @@
     sops-nix,
     nix-gaming,
     ...
-  }: {
+  }: let
+    overlays = [
+      (self: super: {
+        microsocks = super.pkgs.callPackage ./packages/microsocks {};
+      })
+    ];
+  in {
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
     nixosConfigurations = {
       quine = nixpkgs.lib.nixosSystem rec {
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules = [
+          {nixpkgs.overlays = overlays;}
           #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default

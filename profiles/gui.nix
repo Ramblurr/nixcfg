@@ -26,6 +26,7 @@ in {
     ../mixins/thunderbird.nix
     ../mixins/mpv.nix
     ../mixins/vpn-mullvad.nix
+    ../mixins/microsocks.nix
   ];
 
   config = {

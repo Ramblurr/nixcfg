@@ -9,6 +9,10 @@
     boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
 
     networking.firewall.trustedInterfaces = ["tailscale0"];
+    systemd.services.tailscaled.serviceConfig.ExecStart = [
+      ""
+      "${pkgs.mullvad-vpn}/bin/mullvad-exclude ${pkgs.tailscale}/bin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=\${PORT} $FLAGS"
+    ];
 
     environment.persistence = {
       "/persist".directories = [
