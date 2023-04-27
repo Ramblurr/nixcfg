@@ -26,6 +26,18 @@
         enableBashIntegration = false;
         enableZshIntegration = false;
       };
+      # NOTE: I am keeping zsh's history in a directory, and persisting that directory
+      # Before I tried just keeping the histfile in the normal location and persisting
+      # the file, but often the symlink would be overriden causing home-manager activation errors.
+      home.persistence."/persist/home/ramblurr" = {
+        allowOther = true;
+        directories = [
+          {
+            method = "symlink";
+            directory = ".local/state/zsh";
+          }
+        ];
+      };
       programs.zsh = {
         enable = true;
         autocd = true;
@@ -36,7 +48,7 @@
         history = {
           size = 5000000;
           save = 5000000;
-          path = "${hm.config.home.homeDirectory}/.zhistory";
+          path = "${hm.config.xdg.stateHome}/zsh/zhistory";
           ignoreDups = true;
           ignoreSpace = true;
           expireDuplicatesFirst = true;
@@ -54,7 +66,7 @@
           ];
         };
         shellAliases = {
-          "nixcfg" = "cd ${hm.config.home.homeDirectory}/src/nixcfg";
+          "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";
           "reshell!" = "exec $SHELL -l";
           "exa" = "exa --group-directories-first";
           ".." = "cd ..";

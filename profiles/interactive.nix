@@ -64,9 +64,6 @@
             ".config/lutris"
             ".local/share/lutris"
           ];
-          files = [
-            ".zhistory"
-          ];
         };
         manual = {manpages.enable = true;};
         news.display = "silent";
