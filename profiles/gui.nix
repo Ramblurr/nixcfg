@@ -5,10 +5,6 @@
   inputs,
   ...
 }: let
-  # _chrome = pkgs.ungoogled-chromium;
-  _chrome = pkgs.google-chrome-dev.override {
-    commandLineArgs = ["--force-dark-mode"];
-  };
 in {
   imports = [
     ./interactive.nix # includes core.nix (which imports hm)
@@ -68,10 +64,13 @@ in {
 
       home.packages = lib.mkMerge [
         (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
-          _chrome
           captive-browser
         ]))
         (with pkgs; [
+          # chrome
+          #ungoogled-chromium
+          chromium
+          google-chrome-dev
           # misc tools/utils
           pavucontrol
           brightnessctl
