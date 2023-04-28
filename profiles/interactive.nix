@@ -45,6 +45,7 @@
           inputs.impermanence.nixosModules.home-manager.impermanence
           inputs.sops-nix.homeManagerModule
         ];
+        systemd.user.startServices = true;
         home.extraOutputsToInstall = ["info" "man" "share" "icons" "doc"];
         home.stateVersion = "21.11";
         home.homeDirectory = "/home/ramblurr";
@@ -69,7 +70,6 @@
             "nixcfg"
             ".config/gnupg"
             ".config/gh"
-            ".config/lutris"
             ".config/Morgen"
             ".config/OpenSCAD"
             ".config/PrusaSlicer-alpha"
@@ -77,7 +77,6 @@
             ".config/gh"
             ".config/github-copilot"
             ".config/clojure"
-            ".local/share/lutris"
           ];
         };
         manual = {manpages.enable = true;};
