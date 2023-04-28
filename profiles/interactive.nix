@@ -38,15 +38,21 @@
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
-
       users.ramblurr = {pkgs, ...} @ hm: {
-        imports = [inputs.impermanence.nixosModules.home-manager.impermanence];
+        imports = [
+          inputs.impermanence.nixosModules.home-manager.impermanence
+          inputs.sops-nix.homeManagerModule
+        ];
         home.extraOutputsToInstall = ["info" "man" "share" "icons" "doc"];
         home.stateVersion = "21.11";
         home.homeDirectory = "/home/ramblurr";
         home.sessionVariables = {
           EDITOR = "vim";
           CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
+        };
+        sops = {
+          defaultSopsFile = ../secrets/secrets.sops.yaml;
+          gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
         };
 
         home.persistence."/persist/home/ramblurr" = {
