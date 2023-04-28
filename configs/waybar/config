@@ -1,7 +1,6 @@
 {
     "layer": "top",
     "position": "bottom",
-    "mode": "dock",
     "margin-bottom": 0,
     "margin-top": 0,
     "exclusive": true,
