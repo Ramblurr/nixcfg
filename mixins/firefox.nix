@@ -8,6 +8,7 @@
   home-manager.users.ramblurr = {pkgs, ...} @ hm: {
     programs.firefox = {
       enable = true;
+      package = inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
       profiles.personal = {
         id = 0;
         path = "personal";

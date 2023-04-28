@@ -1,6 +1,10 @@
 {
   inputs = {
     hyprland.url = "github:hyprwm/Hyprland";
+    firefox-nightly = {
+      url = "github:colemickens/flake-firefox-nightly";
+      inputs."nixpkgs".follows = "nixpkgs";
+    };
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nix-gaming.url = "github:fufexan/nix-gaming";
     #nur.url = "github:nix-community/NUR";
@@ -31,6 +35,7 @@
     home-manager,
     #nur,
     nixos-hardware,
+    firefox-nightly,
     nixpkgs-wayland,
     sops-nix,
     nix-gaming,
