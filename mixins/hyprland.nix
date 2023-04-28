@@ -31,7 +31,7 @@ in {
         events = [
           {
             event = "before-sleep";
-            command = "${pkgs.swaylock}/bin/swaylock -f";
+            command = "${pkgs.swaylock}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
           }
           {
             event = "lock";
@@ -40,8 +40,16 @@ in {
         ];
         timeouts = [
           {
-            timeout = 300;
-            command = "${pkgs.swaylock}/bin/swaylock -f";
+            timeout = 430;
+            command = "${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/ramblurr/share/icons/breeze/preferences/22/preferences-desktop-screensaver.svg  \"Idle timeout\" \"Screen is locking soon\"";
+          }
+          {
+            timeout = 500;
+            command = "${pkgs.swaylock}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
+          }
+          {
+            timeout = 550;
+            command = "${pkgs.hyprland}/bin/ dispatch dpms off";
           }
         ];
         systemdTarget = "xdg-desktop-portal-hyprland.service";
