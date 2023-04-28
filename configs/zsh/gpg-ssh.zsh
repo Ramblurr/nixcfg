@@ -11,8 +11,11 @@ if [[ ! -f /usr/lib/systemd/user/gpg-agent.socket ]]; then
   # add alias for ssh to update the tty
   #alias ssh="gpg-connect-agent updatestartuptty /bye >/dev/null; ssh"
   gpgconf --launch gpg-agent
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 fi
-export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+if [[ -z "$SSH_AUTH_SOCK" ]]; then
+  export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+fi
 
 function compile-ssh-config() {
     >~/.ssh/config cat <<EOF
