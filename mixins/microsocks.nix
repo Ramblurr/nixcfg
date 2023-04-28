@@ -12,6 +12,9 @@
       enable = true;
       description = "sets up mullvad exclusion cgroup";
       after = ["network.target"];
+      wantedBy = [
+        "network.target"
+      ];
       restartIfChanged = true;
       serviceConfig = {
         User = "root";
@@ -20,16 +23,15 @@
         Type = "oneshot";
         RemainAfterExit = "yes";
       };
-      wantedBy = [
-        "graphical-session.target"
-      ];
       path = [pkgs.coreutils];
     };
     "microsocks" = {
-      enable = true;
       description = "a tiny socks server";
       after = ["mullvad-exclusion-init.service"];
       requires = ["mullvad-exclusion-init.service"];
+      wantedBy = [
+        "network.target"
+      ];
       restartIfChanged = true;
       serviceConfig = {
         Type = "simple";
