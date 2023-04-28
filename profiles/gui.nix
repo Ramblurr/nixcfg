@@ -27,6 +27,7 @@ in {
     ../mixins/mpv.nix
     ../mixins/vpn-mullvad.nix
     ../mixins/microsocks.nix
+    ../mixins/junction.nix
   ];
 
   config = {
@@ -59,7 +60,6 @@ in {
       };
 
       home.sessionVariables = {
-        BROWSER = "firefox";
       };
 
       services = {
@@ -84,7 +84,6 @@ in {
           #hunspellDicts.en_US
           #hunspellDicts.de_AT
           morgen
-          junction
           ffmpeg_5-full
           libnotify # `notify-send`
         ])
