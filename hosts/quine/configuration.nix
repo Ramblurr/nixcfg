@@ -82,6 +82,12 @@ in {
             device = "/dev/disk/by-label/cryptkey";
           };
 
+          cryptdata = {
+            device = "/dev/disk/by-label/cryptdata";
+            keyFile = "/dev/mapper/cryptkey";
+            keyFileSize = 64;
+          };
+
           cryptswap = {
             device = "/dev/disk/by-label/cryptswap";
             keyFile = "/dev/mapper/cryptkey";
