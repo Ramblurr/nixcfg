@@ -112,15 +112,10 @@ in {
       hostId = pkgs.lib.concatStringsSep "" (pkgs.lib.take 8
         (pkgs.lib.stringToCharacters
           (builtins.hashString "sha256" config.networking.hostName)));
-      firewall.enable = true;
       useDHCP = lib.mkIf (cfg.defaultNetworking) false;
       useNetworkd = lib.mkIf (cfg.defaultNetworking) true;
-
-      firewall.logRefusedConnections = false;
     };
-    services.resolved = {
-      enable = true;
-    };
+    services.resolved.enable = true;
     services.timesyncd.enable = true;
     time.timeZone = lib.mkDefault "Europe/Berlin";
 
