@@ -18,6 +18,7 @@ in {
     ../../profiles/gui-plasma.nix
     ../../profiles/gui-hyprland.nix
 
+    ../../mixins/firewall.nix
     ../../mixins/impermanence.nix
     ../../mixins/cpu-ryzen.nix
     ../../mixins/gfx-nvidia.nix
@@ -42,6 +43,8 @@ in {
     networking.hostName = hn;
     networking.dhcpcd.wait = "background";
     networking.dhcpcd.extraConfig = "noarp";
+    deviceSpecific.vpn.mullvad.enable = true;
+    deviceSpecific.vpn.tailscale.enable = true;
 
     systemd.network.networks."20-local-routes" = {
       matchConfig.Name = "eno1";

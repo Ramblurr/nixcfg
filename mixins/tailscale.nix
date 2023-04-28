@@ -1,10 +1,11 @@
 {
   pkgs,
   config,
+  lib,
   ...
 }: {
   config = {
-    services.tailscale.enable = true;
+    services.tailscale.enable = lib.mkIf (config.deviceSpecific.vpn.tailscale.enable) true;
 
     boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
 

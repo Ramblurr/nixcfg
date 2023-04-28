@@ -74,6 +74,7 @@
           inputs.home-manager.nixosModules.home-manager
           inputs.impermanence.nixosModules.impermanence
           {environment.systemPackages = [alejandra.defaultPackage.${system}];}
+          ./modules/device.nix
           ./hosts/quine/configuration.nix
         ];
       };
