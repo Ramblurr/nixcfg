@@ -66,6 +66,7 @@
           ];
         };
         shellAliases = {
+          "open" = "re.sonny.Junction";
           "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";
           "reshell!" = "exec $SHELL -l";
           "exa" = "exa --group-directories-first";
