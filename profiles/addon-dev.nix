@@ -43,6 +43,7 @@
         yamlfmt
         kustomize
         cilium-cli
+        talosctl
         fluxcd
         esphome
       ];
