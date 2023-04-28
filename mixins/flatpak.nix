@@ -8,6 +8,7 @@
   inherit (lib.generators) toINI;
   inherit (pkgs) writeTextDir symlinkJoin;
   flathub_apps = [
+    #"re.sonny.Junction"
     "cc.arduino.arduinoide"
     "com.calibre_ebook.calibre"
     "com.github.jeromerobert.pdfarranger"
@@ -99,11 +100,50 @@
         };
       };
     }
+
+    {
+      name = "re.sonny.Junction";
+      text = toINI {} {
+        Context = {
+          sockets = "x11;wayland;fallback-x11;";
+          shared = "ipc;";
+          devices = "dri;";
+          filesystems = concatStringsSep ";" [
+            "host:ro"
+            "host-etc:ro"
+            "host-os:ro"
+            "home:ro"
+            "xdg-cache:ro"
+            "xdg-config:ro"
+            "xdg-data:ro"
+            "xdg-desktop:ro"
+            "xdg-documents:ro"
+            "xdg-download:ro"
+            "xdg-music:ro"
+            "xdg-pictures:ro"
+            "xdg-public-share:ro"
+            "xdg-templates:ro"
+            "xdg-videos:ro"
+            "xdg-run/keyring:ro"
+            "/media:ro"
+            "/run/media:ro"
+            "/tmp:ro"
+            "/var/lib/flatpak:ro"
+            "/var/lib/snapd/desktop:ro"
+            "/run/current-system/sw/share:ro"
+          ];
+        };
+        "Session Bus Policy" = {
+          "org.freedesktop.Flatpak" = "talk";
+        };
+      };
+    }
     {
       name = "com.onepassword.OnePassword";
       text = toINI {} {
         Context = {
-          sockets = "x11;wayland;fallback-x11;";
+          # wayland disabled for now because copy-paste doesn't work.
+          sockets = "x11;!wayland;fallback-x11;";
           shared = "ipc;network;";
           devices = "all";
           filesystems = concatStringsSep ";" [
