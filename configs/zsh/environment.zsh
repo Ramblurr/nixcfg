@@ -2,6 +2,11 @@
 
 #█▓▒░ the one, the only zsh
 export SHELL=/usr/bin/zsh
+if [[ -f /run/current-system/sw/bin/zsh ]]; then
+  export SHELL=/run/current-system/sw/bin/zsh
+elif [[ -f /usr/bin/zsh ]]; then
+  export SHELL=/usr/bin/zsh
+fi
 
 #█▓▒░ preferred editor for local and remote sessions
 export EDITOR=vim
@@ -18,6 +23,7 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LESSCHARSET=utf-8
+
 #█▓▒░ This path our people walked
 export PATH=$HOME/vendor/clojure/bin:$HOME/.local/share/go/bin:$HOME/.local/dotbin:$HOME/.local/bin:/usr/local/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH
 
@@ -26,7 +32,6 @@ export PATH=$HOME/vendor/clojure/bin:$HOME/.local/share/go/bin:$HOME/.local/dotb
 export XDG_CACHE_HOME=$HOME/.cache
 export XDG_DATA_HOME=$HOME/.local/share
 export XDG_CONFIG_HOME=$HOME/.config
-#export XDG_DATA_DIRS=/home/ramblurr/.local/share:/home/ramblurr/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share
 export KUBECONFIG=$XDG_CONFIG_HOME/kube/config
 export KUBE_CONFIG_PATH=$KUBECONFIG
 export LEIN_HOME=$XDG_DATA_HOME/lein
