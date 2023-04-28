@@ -23,6 +23,12 @@
     neededForBoot = true;
   };
 
+  fileSystems."/srv/data" = {
+    device = "/dev/mapper/cryptdata";
+    fsType = "ext4";
+    neededForBoot = false;
+  };
+
   fileSystems."/boot" = {
     device = "/dev/disk/by-label/boot";
     fsType = "vfat";
@@ -36,7 +42,6 @@
   };
 
   fileSystems."/home" = {
-    #device = "rpool/encrypted/safe/home";
     device = "rpool/encrypted/local/home";
     fsType = "zfs";
     neededForBoot = true;
