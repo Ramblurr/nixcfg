@@ -86,6 +86,7 @@ in {
           morgen
           ffmpeg_5-full
           libnotify # `notify-send`
+          gparted
         ])
       ];
     };
