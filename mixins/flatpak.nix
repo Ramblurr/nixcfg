@@ -1,3 +1,4 @@
+# source: https://github.com/knopki/devops-at-home/blob/307921320d6147347e830d2c709f142b809d55b4/nixos/hosts/alien/flatpak.nix#L5
 {
   pkgs,
   lib,
@@ -99,7 +100,6 @@
         };
       };
     }
-
     {
       name = "re.sonny.Junction";
       text = toINI {} {
@@ -396,16 +396,6 @@ in {
           ${pkgs.flatpak}/bin/flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           ${flathub_cmd}
           ${pkgs.flatpak}/bin/flatpak uninstall --system --unused -y --noninteractive
-
-          # discord/openasar
-          ${pkgs.flatpak}/bin/flatpak mask --system com.discordapp.Discord
-          DISCOSAR=/var/lib/flatpak/app/com.discordapp.Discord/current/active/files/discord/resources/app.asar
-          if [ -f "$DISCOSAR" ]; then
-            DISCOSARSIZE=$(stat -c%s "$DISCOSAR")
-            if (( DISCOSARSIZE > 1000000 )); then
-              ${pkgs.curl}/bin/curl https://github.com/GooseMod/OpenAsar/releases/download/nightly/app.asar > "$DISCOSAR"
-            fi
-          fi
         '';
       };
     };
