@@ -23,7 +23,7 @@
   ];
 
   config = {
-    users.users.ramblurr.linger = true;
+    #users.users.ramblurr.linger = true;
     users.users.ramblurr.shell = pkgs.zsh;
 
     services.dbus.packages = with pkgs; [pkgs.dconf];

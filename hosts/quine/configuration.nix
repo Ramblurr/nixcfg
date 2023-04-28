@@ -8,7 +8,7 @@
   hn = "quine";
 in {
   imports = [
-    ../../modules/loginctl-linger.nix
+    #../../modules/loginctl-linger.nix
     ./hardware-configuration.nix
     ../../profiles/interactive.nix
     ../../profiles/addon-dev.nix
