@@ -58,6 +58,15 @@
           buildCommand = builtins.replaceStrings ["${e.desktopItem}"] ["${desktopItem}"] e.buildCommand;
         });
       })
+      (self: super: {
+        element-desktop = super.element-desktop.overrideAttrs (e: rec {
+          desktopItem = e.desktopItem.override (d: {
+            # I only want my own custom thunderbird desktop files showing up
+            noDisplay = true;
+          });
+          installPhase = builtins.replaceStrings ["${e.desktopItem}"] ["${desktopItem}"] e.installPhase;
+        });
+      })
     ];
   in {
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;

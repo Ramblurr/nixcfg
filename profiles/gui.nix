@@ -28,6 +28,7 @@ in {
     ../mixins/vpn-mullvad.nix
     ../mixins/microsocks.nix
     ../mixins/junction.nix
+    ../mixins/element.nix
   ];
 
   config = {

@@ -18,7 +18,6 @@
     "com.nextcloud.desktopclient.nextcloud"
     "com.slack.Slack"
     "fr.handbrake.ghb"
-    "im.riot.Riot"
     "io.github.seadve.Kooha"
     "net.poedit.Poedit"
     "org.audacityteam.Audacity"
