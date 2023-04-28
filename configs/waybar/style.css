@@ -107,7 +107,9 @@ tooltip {
 #cpu,
 #memory,
 #temperature,
+#idle_inhibitor,
 #backlight {
+
     background: @dark1;
     padding: 0px 10px;
     margin: 3px 0px;
@@ -163,6 +165,7 @@ tooltip {
 #pulseaudio.muted {
     color: @red;
 }
+#idle_inhibitor,
 #pulseaudio {
     color: @blue;
     border-left: 0px;
