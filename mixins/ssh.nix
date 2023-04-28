@@ -1,8 +1,4 @@
-{pkgs, ...}: let
-  fixedSshAgentSocket = "/run/user/1000/sshagent";
-  effectiveGpgDir = "/run/user/1000/gnupg/d.kbocp7uc7zjy47nnek3436ij/"; #TODO: get this from gpg-agent module
-  gpgSshSock = "${effectiveGpgDir}/S.gpg-agent.ssh";
-in {
+{pkgs, ...}: {
   config = {
     home-manager.users.ramblurr = {
       pkgs,
