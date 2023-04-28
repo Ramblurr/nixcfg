@@ -43,8 +43,6 @@ in {
     networking.hostName = hn;
     networking.dhcpcd.wait = "background";
     networking.dhcpcd.extraConfig = "noarp";
-    deviceSpecific.vpn.mullvad.enable = true;
-    deviceSpecific.vpn.tailscale.enable = true;
 
     systemd.network.networks."20-local-routes" = {
       matchConfig.Name = "eno1";
@@ -105,5 +103,68 @@ in {
     };
     #users.mutableUsers = false;
     #users.users.root.initialHashedPassword = "...";
+    #
+    deviceSpecific.vpn.mullvad.enable = true;
+    deviceSpecific.vpn.tailscale.enable = true;
+    deviceSpecific.backup.borgmatic = {
+      enable = true;
+      name = "aquinas.***REMOVED***-mali";
+      repositories = [
+        "ssh://aquinas@borgbackup-host.int.***REMOVED***/mnt/backup/borg_repos/aquinas/home"
+        "\${OFFSITE_REPOSITORY}"
+      ];
+      exclude-patterns = [
+        "etc/ssl"
+        "var/home/*/.cache"
+        "var/home/*/.var"
+        "var/home/*/.local/lib"
+        "var/home/*/.local/share/containers"
+        "var/home/*/.local/share/JetBrains"
+        "var/home/*/.local/share/volta"
+        "var/home/*/.local/share/lein"
+        "var/home/*/.local/share/Trash"
+        "var/home/*/.local/share/virtualenv"
+        "var/home/*/.local/share/yarn"
+        "var/home/*/.local/share/nvm"
+        "var/home/*/.local/state"
+        "var/home/*/.npm"
+        "var/home/*/.yarn"
+        "var/home/*/.vagrant.d/boxes"
+        "\'*.pyc\'"
+        "'*/.vim*.tmp'"
+        "'*/.DS_Store'"
+        "'*/node_modules'"
+        "'*/build'"
+        "'*/target'"
+        "'*/dist'"
+        "'*/tmp'"
+        "'*/bower_components'"
+        "'*.idea'"
+        "'*/.*~'"
+        "'*/out'"
+        "'*/.vagrant'"
+        "'*/securedir'"
+        "'*/encrypted'"
+        "'*/ram'"
+        "'*/cache'"
+        "'*/.cache'"
+        "'*/_cacache'"
+        "'*/_lock'"
+        "'*/*.tmp'"
+        "'*/*.swp'"
+        "'*/*~'"
+        "'*/*.lock'"
+        "'*/*-nas'"
+        "'*/.Trash'"
+        "'*/.terraform'"
+        "'*/pihole-FTL.db'"
+        "'*/venv'"
+        "'*/emacs-doom.d'"
+        "'*/SpiderOakONE'"
+        "'*/.gradle'"
+        "'*/.*sync*.db'"
+        "'*/.ansible'"
+      ];
+    };
   };
 }
