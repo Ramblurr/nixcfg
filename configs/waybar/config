@@ -13,6 +13,7 @@
     "modules-center": ["hyprland/window"],
     "modules-right": [
     "tray",
+    "idle_inhibitor",
     "custom/sink-switch",
     "pulseaudio",
     "pulseaudio#microphone",
@@ -60,6 +61,14 @@
         "format": "{temperatureC}°C {icon}",
         "format-icons": ["❄", "", "🔥"]
     },
+    "idle_inhibitor": {
+      "format": "{icon}",
+      "format-icons": {
+        "activated": "",
+        "deactivated": ""
+      },
+      "timeout": 30.5
+   },
    "custom/weather" : {
         "tooltip" : true,
         "format" : "{}",
