@@ -19,6 +19,7 @@
     ../mixins/tmux.nix
     ../mixins/htop.nix
     ../mixins/vim.nix
+    ../mixins/backup.nix
   ];
 
   config = {
@@ -33,6 +34,7 @@
 
     environment.systemPackages = with pkgs; [
       killall
+      vim
       inotify-tools
     ];
     home-manager = {
