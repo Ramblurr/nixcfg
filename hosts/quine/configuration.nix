@@ -53,23 +53,14 @@ in {
       networkConfig = {
         DHCP = "yes";
         IPForward = "yes";
-        # IPMasquerade = "both";
+        DNSSEC = "no";
       };
+
       dhcpV4Config.Use6RD = "yes";
       dhcpV4Config.RouteMetric = 512;
       domains = [
         "~***REMOVED***"
         "~***REMOVED***"
-      ];
-      address = [
-        "10.8.3.1/24"
-        #"10.9.4.1/22"
-        "10.9.8.1/23"
-        "10.9.10.1/23"
-        "10.8.50.1/23"
-        "10.8.60.1/23"
-        "10.5.0.0/24"
-        "10.10.10.0/23"
       ];
       routes = [
         {
