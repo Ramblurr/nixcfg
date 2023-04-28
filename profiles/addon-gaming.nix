@@ -39,6 +39,36 @@ in {
       config,
       ...
     } @ hm: {
+      home.persistence."/persist/home/ramblurr" = {
+        directories = [
+          {
+            method = "symlink";
+            directory = ".steam";
+          }
+          {
+            method = "symlink";
+            directory = ".local/share/Steam";
+          }
+          ".config/lutris"
+          ".local/share/lutris"
+        ];
+      };
+
+      home.file.".local/share/applications/steam.desktop" = {
+        text = ''
+          [Desktop Entry]
+          Name=Steam (Clearnet)
+          Comment=Application for managing and playing games on Steam
+          Exec=${pkgs.mullvad-vpn}/bin/mullvad-exclude steam %U
+          Icon=steam
+          Terminal=false
+          Type=Application
+          Categories=Network;FileTransfer;Game;
+          MimeType=x-scheme-handler/steam;x-scheme-handler/steamlink;
+          PrefersNonDefaultGPU=true
+          X-KDE-RunOnDiscreteGpu=true
+        '';
+      };
       home.packages = with pkgs; [
         evtest # misc input debug
         linuxConsoleTools # joystick testing

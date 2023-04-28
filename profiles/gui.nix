@@ -25,6 +25,7 @@ in {
     ../mixins/microsocks.nix
     ../mixins/junction.nix
     ../mixins/element.nix
+    ../mixins/discord.nix
   ];
 
   config = {
