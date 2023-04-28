@@ -57,6 +57,10 @@ in {
       };
       dhcpV4Config.Use6RD = "yes";
       dhcpV4Config.RouteMetric = 512;
+      domains = [
+        "~***REMOVED***"
+        "~***REMOVED***"
+      ];
       address = [
         "10.8.3.1/24"
         #"10.9.4.1/22"

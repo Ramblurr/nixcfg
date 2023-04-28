@@ -115,7 +115,9 @@ in {
       useDHCP = lib.mkIf (cfg.defaultNetworking) false;
       useNetworkd = lib.mkIf (cfg.defaultNetworking) true;
     };
-    services.resolved.enable = true;
+    services.resolved = {
+      enable = true;
+    };
     services.timesyncd.enable = true;
     time.timeZone = lib.mkDefault "Europe/Berlin";
 
