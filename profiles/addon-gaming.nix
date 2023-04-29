@@ -32,7 +32,51 @@ in {
         enableRenice = true;
       };
     };
+    # Override Steam package to provide extra libraries for games
+    nixpkgs.config.packageOverrides = pkgs: let
+      fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
+        mkdir -p "$out/share/fonts"
+        font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
+        find ${toString (config.fonts.fonts)} -regex "$font_regexp" \
+          -exec ln -sf -t "$out/share/fonts" '{}' \;
+      '');
+    in {
+      steam = pkgs.steam.override {
+        #withJava = true;
+        extraPkgs = pkgs:
+          with pkgs; [
+            (fontsPkg pkgs)
+            at-spi2-atk
+            binutils
+            fmodex
+            gtk3
+            gtk3-x11
+            harfbuzz
+            icu
+            glxinfo
+            inetutils
+            keyutils
+            libgdiplus
+            libkrb5
+            libpng
+            libpulseaudio
+            libthai
+            libvorbis
+            mono5
+            pango
+            stdenv.cc.cc.lib
+            strace
+            xorg.libXcursor
+            xorg.libXi
+            xorg.libXinerama
+            xorg.libXScrnSaver
+            zlib
+          ];
+      };
+    };
     hardware = {
+      steam-hardware.enable = true;
+
       # xone.enable = true; # xbox one wired/wireless driver
       # TODO: fork? test? try with regular xbox controller
       # xboxdrv.enable = true; # userspace xbox driver
@@ -44,16 +88,13 @@ in {
     } @ hm: {
       home.persistence."/persist/home/ramblurr" = {
         directories = [
-          {
-            method = "symlink";
-            directory = ".steam";
-          }
-          {
-            method = "symlink";
-            directory = ".local/share/Steam";
-          }
+          ".steam"
+          ".local/share/Steam"
           ".config/lutris"
           ".local/share/lutris"
+          ".local/share/bottles"
+          ".config/heroic"
+          ".config/legendary"
         ];
       };
 
@@ -81,12 +122,14 @@ in {
         goverlay
 
         steamtinkerlaunch
+        steam-run
         protontricks
         prismlauncher
         input-remapper
         heroic
         bottles
         gamescope
+        lutris
       ];
       programs = {
         mangohud = {

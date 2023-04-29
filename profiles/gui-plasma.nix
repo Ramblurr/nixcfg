@@ -5,6 +5,7 @@
   ...
 }: {
   services.xserver.desktopManager.plasma5.enable = true;
+  services.xserver.desktopManager.plasma5.runUsingSystemd = false;
 
   home-manager.users.ramblurr = {pkgs, ...} @ hm: {
     home.persistence."/persist/home/ramblurr" = {
