@@ -31,7 +31,7 @@ in {
         events = [
           {
             event = "before-sleep";
-            command = "${pkgs.swaylock}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
+            command = "${pkgs.pkgs.swaylock-effects}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
           }
           {
             event = "lock";
@@ -45,7 +45,7 @@ in {
           }
           {
             timeout = 500;
-            command = "${pkgs.swaylock}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
+            command = "${pkgs.swaylock-effects}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
           }
           {
             timeout = 550;
