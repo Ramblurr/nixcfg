@@ -7,6 +7,14 @@
   _foo = "bar";
 in {
   config = {
+    security.wrappers = {
+      gamescope = {
+        owner = "root";
+        group = "root";
+        source = "${pkgs.gamescope}/bin/gamescope";
+        capabilities = "cap_sys_nice+pie";
+      };
+    };
     boot.blacklistedKernelModules = [
       "hid-nintendo"
     ];
@@ -19,11 +27,6 @@ in {
       steam = {
         enable = true;
       };
-      #gamescope = {
-      #  enable = true;
-      #  enableRenice = true;
-      #  # settings = {};
-      #};
       gamemode = {
         enable = true;
         enableRenice = true;
