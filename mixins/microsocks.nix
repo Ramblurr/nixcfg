@@ -11,8 +11,8 @@
     "mullvad-exclusion-init" = {
       enable = true;
       description = "sets up mullvad exclusion cgroup";
-      after = ["network.target"];
-      requires = ["network.target"];
+      after = ["network-online.target"];
+      wants = ["network-online.target"];
       restartIfChanged = true;
       serviceConfig = {
         User = "root";
@@ -27,7 +27,7 @@
       enable = true;
       description = "a tiny socks server";
       after = ["mullvad-exclusion-init.service"];
-      requires = ["mullvad-exclusion-init.service"];
+      wants = ["mullvad-exclusion-init.service" "multi-user.target"];
       restartIfChanged = true;
       serviceConfig = {
         Type = "simple";
