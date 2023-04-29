@@ -33,6 +33,7 @@ in {
     # hardware.drivers.enable = true;
     hardware.bluetooth = {
       enable = false;
+      package = pkgs.bluezFull;
       powerOnBoot = false;
       settings = {
         General = {
