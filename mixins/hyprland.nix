@@ -23,6 +23,10 @@ in {
       transitionDuration = 10;
     };
 
+    security.pam.services.kwallet = {
+      name = "kwallet";
+      enableKwallet = true;
+    };
     # see https://github.com/NixOS/nixpkgs/issues/158025
     security.pam.services.swaylock = {};
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
@@ -171,7 +175,7 @@ in {
         "hypr/hyprland.conf" = {
           text =
             ''
-              exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP && systemctl --user start hyprland-session.target
+              exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XAUTHORITY DISPLAY && systemctl --user start hyprland-session.target
             ''
             + builtins.readFile ../configs/hyprland.conf;
           onChange = ''

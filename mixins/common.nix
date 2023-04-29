@@ -155,6 +155,7 @@ in {
       };
     };
 
+    systemd.extraConfig = "DefaultLimitNOFILE=1048576";
     security = {
       sudo.enable = true;
       sudo.wheelNeedsPassword = false;
@@ -181,7 +182,7 @@ in {
           domain = "*";
           type = "soft";
           item = "nofile";
-          value = "262144";
+          value = "1048576";
         }
       ];
     };
