@@ -82,7 +82,7 @@ in {
             device = "/dev/disk/by-label/cryptkey";
           };
 
-          cryptdata = {
+          cryptxdata = {
             device = "/dev/disk/by-label/cryptdata";
             keyFile = "/dev/mapper/cryptkey";
             keyFileSize = 64;
@@ -95,10 +95,10 @@ in {
           };
         };
 
-        postMountCommands = ''
-          # Don't keep the cryptkey available all the time.
-          cryptsetup close /dev/mapper/cryptkey
-        '';
+        #postMountCommands = ''
+        #  # Don't keep the cryptkey available all the time.
+        #  cryptsetup close /dev/mapper/cryptkey
+        #'';
 
         postDeviceCommands = lib.mkAfter ''
           zfs rollback -r rpool/encrypted/local/root@blank && \
