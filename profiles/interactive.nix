@@ -78,6 +78,7 @@
             ".config/OpenSCAD"
             ".config/PrusaSlicer-alpha"
             ".config/qobuz-dl"
+            ".local/share/fonts"
           ];
         };
         manual = {manpages.enable = true;};
