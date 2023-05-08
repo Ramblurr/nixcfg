@@ -1,0 +1,19 @@
+{:lint-as {
+           com.fulcrologic.fulcro.components/defsc clojure.core/defn
+           com.fulcrologic.fulcro.routing.dynamic-routing/defrouter clojure.core/defn
+           mount.core/defstate clojure.core/def
+           com.wsscode.pathom.connect/defresolver clojure.core/defn
+           com.wsscode.pathom.connect/defmutation clojure.core/defn
+           nubank.workspaces.core/defcard clojure.core/def
+           com.fulcrologic.guardrails.core/>defn  clojure.core/defn
+           taoensso.encore/if-let clojure.core/if-let
+           ctmx.core/defcomponent clojure.core/defn
+           }
+ :linters {
+           :unresolved-var {:level :error}
+           :unresolved-symbol {:exclude [
+                                         (app.ui/tw)
+                                         (ctmx.core/defcomponent [path id value self])
+                                         (ctmx.core/with-req [post? put? patch? delete?])
+                                         ]}}
+ }
