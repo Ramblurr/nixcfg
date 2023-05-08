@@ -30,6 +30,15 @@ in {
     # see https://github.com/NixOS/nixpkgs/issues/158025
     security.pam.services.swaylock = {};
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
+      systemd.user.targets.hyprland-session = {
+        Unit = {
+          Description = "hyprland compositor session";
+          Documentation = [ "man:systemd.special(7)" ];
+          BindsTo = [ "graphical-session.target" ];
+          Wants = [ "graphical-session-pre.target" ];
+          After = [ "graphical-session-pre.target" ];
+        };
+      };
       services.swayidle = {
         enable = true;
         events = [
@@ -66,6 +75,7 @@ in {
         enable = true;
         package = hyprland_waybar;
         systemd.enable = true;
+        systemd.target = "hyprland-session.target";
       };
       programs.wlogout = {
         enable = true;
