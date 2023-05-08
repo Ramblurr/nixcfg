@@ -36,6 +36,10 @@
       killall
       vim
       inotify-tools
+      bandwhich
+      tmux
+      curl
+      wget
     ];
     home-manager = {
       useGlobalPkgs = true;
@@ -74,9 +78,6 @@
             ".config/OpenSCAD"
             ".config/PrusaSlicer-alpha"
             ".config/qobuz-dl"
-            ".config/gh"
-            ".config/github-copilot"
-            ".config/clojure"
           ];
         };
         manual = {manpages.enable = true;};
@@ -95,26 +96,18 @@
           (with pkgs; [
             # <rust pkgs>
             bat
-            tealdeer
             du-dust
             exa
             fd
             gitui
             gex
-            grex
-            hexyl
-            xh
+            httpie
             dogdns
             jless
             sd
             procs
-            prs
-            bandwhich
-            pipes-rs
-            rustscan
             ripgrep
             # </rust pkgs>
-            #
             nix-du
             nix-tree
             nix-prefetch
@@ -147,12 +140,9 @@
             xz
             zip
             asciinema
-            wget
-            curl
             findutils
             rsync
             wget
-            curl
             jq
             openssh
             watchman
@@ -161,7 +151,6 @@
             difftastic
             just
             go-task
-            curl
             fzf
             jdk
             powertop
