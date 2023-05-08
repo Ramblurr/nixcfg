@@ -93,6 +93,9 @@ in {
           ffmpeg_5-full
           libnotify # `notify-send`
           gparted
+          inkscape
+          meld
+          gimp-with-plugins
         ])
       ];
     };
