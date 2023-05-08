@@ -105,16 +105,20 @@
     # when using with home-manager impermanence we need to ensure that home-manager activates before
     # syncthing. otherwise the syncthing init will create ~/.config/syncthing, but ~/.config will be created
     # with root:root ownership.
-    # systemd.services."syncthing" = {
-    #   overrideStrategy = "asDropin";
-    #   requires = ["home-manager-ramblurr.service"];
-    #   after = ["home-manager-ramblurr.service"];
-    # };
-    # systemd.services."syncthing-init" = {
-    #   overrideStrategy = "asDropin";
-    #   requires = ["home-manager-ramblurr.service"];
-    #   after = ["home-manager-ramblurr.service"];
-    # };
+    systemd.services.syncthing.after = ["home-ramblurr-.config-syncthing.mount"];
+    systemd.services.syncthing-init.after = ["home-ramblurr-.config-syncthing.mount"];
     # END FIX: home-manager impermanence
+
+    home-manager.users.ramblurr = {
+      pkgs,
+      config,
+      ...
+    } @ hm: {
+      home.persistence."/persist/home/ramblurr" = {
+        directories = [
+          ".config/syncthing"
+        ];
+      };
+    };
   };
 }
