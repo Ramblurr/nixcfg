@@ -79,6 +79,8 @@
             ".config/PrusaSlicer-alpha"
             ".config/qobuz-dl"
             ".local/share/fonts"
+            ".cache/inkscape"
+            ".config/inkscape"
           ];
         };
         manual = {manpages.enable = true;};
