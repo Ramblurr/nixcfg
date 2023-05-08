@@ -27,12 +27,14 @@
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
         go
+        maven
         terraform
         httpie
         jetbrains.idea-ultimate
         jetbrains.datagrip
         jetbrains.gateway
         tcpdump
+        gnumake
         docker-compose
         dig
         dogdns
@@ -46,14 +48,24 @@
         talosctl
         fluxcd
         esphome
+        nodejs
+        nodePackages.npm
+        clojure
+        clojure-lsp
+        clj-kondo
+        babashka
+        polylith
       ];
 
       home.file.".ideavimrc" = {
         source = ../configs/ideavimrc;
       };
-      home.file.".config/ideavim" = {
+      xdg.configFile."ideavim" = {
         source = ../configs/ideavim;
         recursive = true;
+      };
+      xdg.configFile."clojure/deps.edn" = {
+        source = ../configs/clojure/deps.edn;
       };
       home.persistence."/persist/home/ramblurr" = {
         directories = [
@@ -63,6 +75,18 @@
           ".java/.userPrefs/jetbrains"
           ".vscode/extensions"
           ".config/Code"
+          ".config/gh"
+          ".config/github-copilot"
+          ".config/maven"
+          ".cache/maven"
+          ".config/npm"
+          ".cache/npm-packages"
+          ".local/share/npm"
+          ".config/clojure"
+          ".config/clojure-lsp"
+          ".cache/clojure"
+          ".cache/clojure-gitlibs"
+          ".local/share/deps.clj"
         ];
       };
       programs.vscode = {

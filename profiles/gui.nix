@@ -26,6 +26,7 @@ in {
     ../mixins/junction.nix
     ../mixins/element.nix
     ../mixins/discord.nix
+    ../mixins/slack.nix
     ../mixins/nheko.nix
   ];
 
