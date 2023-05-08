@@ -35,11 +35,15 @@ export XDG_CONFIG_HOME=$HOME/.config
 export KUBECONFIG=$XDG_CONFIG_HOME/kube/config
 export KUBE_CONFIG_PATH=$KUBECONFIG
 export LEIN_HOME=$XDG_DATA_HOME/lein
-export M2_HOME=$XDG_DATA_HOME/m2
 export PSQL_HISTORY=$XDG_CACHE_HOME/psql_history
 export VOLTA_HOME=$XDG_DATA_HOME/volta
 export NPM_PACKAGES=$XDG_CACHE_HOME/npm-packages
 export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
+export CLJ_CONFIG=$XDG_CONFIG_HOME/clojure
+export CLJ_CACHE=$XDG_CACHE_HOME/clojure
+export DEPS_CLJ_TOOLS_DIR=$XDG_DATA_HOME/deps.clj
+export GITLIBS=$XDG_CACHE_HOME/clojure-gitlibs
+
 if [[ -d "$NPM_PACKAGES" ]]; then
   export PATH=$NPM_PACKAGES/bin:$PATH
 fi

@@ -66,6 +66,7 @@
           ];
         };
         shellAliases = {
+          "mvm" = "mvn -gs \"$XDG_CONFIG_HOME\"/maven/settings.xml";
           "open" = "re.sonny.Junction";
           "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";
           "reshell!" = "exec $SHELL -l";
