@@ -8,11 +8,11 @@
     microsocks
   ];
   systemd.services = {
-    "mullvad-exclusion-init" = {
+    mullvad-exclusion-init = {
       enable = true;
       description = "sets up mullvad exclusion cgroup";
-      after = ["network-online.target" "mullvad-daemon.service"];
-      wants = ["network-online.target" "mullvad-daemon.service"];
+      after = ["mullvad-daemon.service"];
+      wants = ["mullvad-daemon.service"];
       restartIfChanged = true;
       serviceConfig = {
         User = "root";
@@ -23,7 +23,7 @@
       };
       path = [pkgs.coreutils];
     };
-    "microsocks" = {
+    microsocks = {
       enable = true;
       description = "a tiny socks server";
       after = ["mullvad-exclusion-init.service"];
