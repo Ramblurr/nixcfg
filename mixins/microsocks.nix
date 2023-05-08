@@ -11,8 +11,8 @@
     "mullvad-exclusion-init" = {
       enable = true;
       description = "sets up mullvad exclusion cgroup";
-      after = ["network-online.target"];
-      wants = ["network-online.target"];
+      after = ["network-online.target" "mullvad-daemon.service"];
+      wants = ["network-online.target" "mullvad-daemon.service"];
       restartIfChanged = true;
       serviceConfig = {
         User = "root";
