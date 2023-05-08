@@ -27,7 +27,8 @@
       enable = true;
       description = "a tiny socks server";
       after = ["mullvad-exclusion-init.service"];
-      wants = ["mullvad-exclusion-init.service" "multi-user.target"];
+      wants = ["mullvad-exclusion-init.service"];
+      requires = ["mullvad-exclusion-init.service"];
       restartIfChanged = true;
       serviceConfig = {
         Type = "simple";
