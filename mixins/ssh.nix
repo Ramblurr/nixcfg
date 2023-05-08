@@ -9,6 +9,9 @@
       programs.ssh = {
         enable = true;
         controlPath = "/home/ramblurr/.ssh/control/%C";
+        includes = [
+          "config.d/*"
+        ];
       };
 
       home.persistence = {
