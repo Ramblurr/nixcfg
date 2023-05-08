@@ -8,6 +8,9 @@
     } @ hm: {
       programs.atuin = {
         enable = true;
+        settings = {
+          style = "compact";
+        };
       };
       home.persistence."/persist/home/ramblurr" = {
         directories = [
