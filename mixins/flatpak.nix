@@ -17,7 +17,6 @@
     "com.github.tchx84.Flatseal"
     "com.logseq.Logseq"
     "com.nextcloud.desktopclient.nextcloud"
-    "com.slack.Slack"
     "fr.handbrake.ghb"
     "io.github.seadve.Kooha"
     "net.poedit.Poedit"

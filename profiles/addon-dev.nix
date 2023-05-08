@@ -71,6 +71,10 @@
         source = ../configs/clj-kondo;
         recursive = true;
       };
+      xdg.configFile."npm" = {
+        source = ../configs/npm;
+        recursive = true;
+      };
       home.persistence."/persist/home/ramblurr" = {
         directories = [
           ".config/JetBrains"
