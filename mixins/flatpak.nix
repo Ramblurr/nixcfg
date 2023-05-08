@@ -27,7 +27,6 @@
     "org.fritzing.Fritzing"
     "org.gimp.GIMP"
     "org.gnome.meld"
-    "org.inkscape.Inkscape"
     "org.jitsi.jitsi-meet"
     "org.kde.kid3"
     "org.kde.krita"

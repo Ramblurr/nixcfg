@@ -20,7 +20,7 @@
   };
   boot.kernelParams = [
     "clearcpuid=514" # Fixes certain wine games crash on launch
-    "video=3440x1440@100" # for virtual console resolution
+    #"video=3440x1440@100" # for virtual console resolution
     "quiet"
     "splash"
     "boot.shell_on_fail"
