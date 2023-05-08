@@ -67,6 +67,10 @@
       xdg.configFile."clojure/deps.edn" = {
         source = ../configs/clojure/deps.edn;
       };
+      xdg.configFile."clj-kondo" = {
+        source = ../configs/clj-kondo;
+        recursive = true;
+      };
       home.persistence."/persist/home/ramblurr" = {
         directories = [
           ".config/JetBrains"
@@ -83,11 +87,15 @@
           ".cache/npm-packages"
           ".local/share/npm"
           ".config/clojure"
+          ".config/clj-kondo"
           ".config/clojure-lsp"
           ".cache/clojure"
           ".cache/clojure-gitlibs"
           ".local/share/deps.clj"
         ];
+      };
+      programs.gh = {
+        enable = true;
       };
       programs.vscode = {
         enable = true;
