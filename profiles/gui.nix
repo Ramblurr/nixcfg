@@ -29,6 +29,7 @@ in {
     ../mixins/slack.nix
     ../mixins/nheko.nix
     ../mixins/atuin.nix
+    ../mixins/zoxide.nix
   ];
 
   config = {
