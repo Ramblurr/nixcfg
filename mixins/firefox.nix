@@ -33,6 +33,7 @@
       directories = [
         ".mozilla/extensions"
         ".mozilla/firefox"
+        ".cache/mozilla/firefox"
       ];
     };
 

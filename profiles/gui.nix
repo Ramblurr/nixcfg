@@ -30,6 +30,7 @@ in {
     ../mixins/nheko.nix
     ../mixins/atuin.nix
     ../mixins/zoxide.nix
+    ../mixins/nextcloud.nix
   ];
 
   config = {
