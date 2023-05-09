@@ -30,6 +30,7 @@
         maven
         terraform
         httpie
+        gettext
         jetbrains.idea-ultimate
         jetbrains.datagrip
         jetbrains.gateway
@@ -96,6 +97,7 @@
           ".cache/clojure"
           ".cache/clojure-gitlibs"
           ".local/share/deps.clj"
+          ".config/docker"
         ];
       };
       programs.gh = {
