@@ -43,6 +43,7 @@ export CLJ_CONFIG=$XDG_CONFIG_HOME/clojure
 export CLJ_CACHE=$XDG_CACHE_HOME/clojure
 export DEPS_CLJ_TOOLS_DIR=$XDG_DATA_HOME/deps.clj
 export GITLIBS=$XDG_CACHE_HOME/clojure-gitlibs
+export DOCKER_CONFIG=$XDG_CONFIG_HOME/docker
 
 if [[ -d "$NPM_PACKAGES" ]]; then
   export PATH=$NPM_PACKAGES/bin:$PATH
