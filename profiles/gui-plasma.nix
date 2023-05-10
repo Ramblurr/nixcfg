@@ -21,6 +21,9 @@
         ".local/share/baloo"
         ".local/share/kactivitymanagerd"
         ".local/share/sddm"
+        ".local/share/gwenview"
+        ".local/share/dolphin"
+        ".local/share/okular"
         ".kde"
       ];
       files = [
