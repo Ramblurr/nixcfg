@@ -9,11 +9,12 @@
       enable = true;
       driSupport = true;
       driSupport32Bit = true;
-      extraPackages = with pkgs; [vaapiVdpau nvidia-vaapi-driver];
     };
     nvidia = {
       modesetting.enable = true; # Required for wayland
       package = config.boot.kernelPackages.nvidiaPackages.vulkan_beta;
+      # NVreg_PreserveVideoMemoryAllocations=1
+      powerManagement.enable = true;
     };
 
     uinput.enable = true;
@@ -46,5 +47,6 @@
   environment.systemPackages = [
     pkgs.nvitop
     pkgs.nvtop-nvidia
-  ]; # Monitoring tool for nvidia GPUs
+    pkgs.libva-utils
+  ];
 }
