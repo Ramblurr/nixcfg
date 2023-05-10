@@ -77,7 +77,7 @@
         #".config/Trolltech.conf"
         ".config/user-dirs.locale"
         ".local/share/krunnerstaterc"
-        #".local/share/user-places.xbel"
+        ".local/share/user-places.xbel"
         #".local/share/user-places.xbel.bak"
         #".local/share/user-places.xbel.tbcache"
       ];
