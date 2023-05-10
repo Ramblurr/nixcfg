@@ -29,7 +29,7 @@
         [Desktop Entry]
         Categories=Network;InstantMessaging;Chat
         Comment=Element Work
-        Exec=element-desktop --profile work --proxy-server=socks5://10.64.0.1:1080 %u
+        Exec=element-desktop --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
         GenericName=Matrix Work
         Icon=element
         MimeType=x-scheme-handler/element
@@ -45,7 +45,7 @@
         [Desktop Entry]
         Categories=Network;InstantMessaging;Chat
         Comment=Element Personal
-        Exec=element-desktop --profile personal --proxy-server=socks5://127.0.0.1:1081 %u
+        Exec=element-desktop --profile=personal --proxy-server=socks5://127.0.0.1:1081 %u
         GenericName=Matrix Personal
         Icon=element
         MimeType=x-scheme-handler/element
