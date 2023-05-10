@@ -81,6 +81,8 @@
             ".local/share/fonts"
             ".cache/inkscape"
             ".config/inkscape"
+            ".config/GIMP"
+            ".cache/gimp"
           ];
         };
         manual = {manpages.enable = true;};
