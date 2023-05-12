@@ -75,7 +75,8 @@ in {
               10.8.50.1/23,
               10.8.60.1/23,
               10.5.0.0/24,
-              10.10.10.0/23
+              10.10.10.0/23,
+              192.168.8.0/22
             }
             chain exclude-local-lan {
                 type route hook output priority 0; policy accept;
