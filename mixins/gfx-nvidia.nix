@@ -40,7 +40,7 @@
     WLR_NO_HARDWARE_CURSORS = "1";
   };
 
-  boot.kernel.sysctl = {"vm.max_map_count" = 262144;}; # Fixes crash when loading maps in CS2
+  boot.kernel.sysctl = {"vm.max_map_count" = 2147483642;};
   boot.blacklistedKernelModules = ["nouveau" "mt7921e"];
   services.xserver.videoDrivers = ["nvidia"]; # Install the nvidia drivers
   virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker

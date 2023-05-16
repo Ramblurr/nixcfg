@@ -98,6 +98,7 @@
           ".cache/clojure-gitlibs"
           ".local/share/deps.clj"
           ".config/docker"
+          ".config/k9s"
         ];
       };
       programs.gh = {
