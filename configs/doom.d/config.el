@@ -115,6 +115,9 @@ Null prefix argument turns off the mode."
  :n "C-e" #'persp-switch-to-buffer
  :n "C-n" #'projectile-find-file)
 
+;; (add-hook! clojure-mode
+;;   (set-formatter! 'cljstyle "/home/ramblurr/.local/bin/cljstyle pipe" :modes '(clojure-mode))
+;;   (add-hook 'before-save-hook 'format-all-buffer t t))
 
 (after! clojure-mode
   (setq clojure-toplevel-inside-comment-form t)

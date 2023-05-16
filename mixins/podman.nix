@@ -3,6 +3,11 @@
   pkgs,
   ...
 }: {
+  environment.persistence."/persist" = {
+    directories = [
+      "/var/lib/containers"
+    ];
+  };
   virtualisation = {
     podman = {
       enable = true;
