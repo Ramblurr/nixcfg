@@ -15,6 +15,7 @@
         XDG_SESSION_TYPE = "wayland";
         NIXOS_OZONE_WL = "1";
         MOZ_ENABLE_WAYLAND = "1";
+        _JAVA_AWT_WM_NONREPARENTING= "1";
       };
       home.packages = with pkgs; [
         qt5.qtwayland
