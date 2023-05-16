@@ -1,5 +1,10 @@
 {config, ...}: {
   config = {
+    environment.persistence."/persist" = {
+      directories = [
+        "/var/lib/docker"
+      ];
+    };
     virtualisation.docker = {
       enable = true;
       #storageDriver = "zfs";

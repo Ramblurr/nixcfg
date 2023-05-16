@@ -72,6 +72,7 @@
             "work"
             "vendor"
             "nixcfg"
+            ".local/bin"
             ".config/gnupg"
             ".config/gh"
             ".config/Morgen"
