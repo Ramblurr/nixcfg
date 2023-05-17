@@ -62,7 +62,7 @@
         ".config/kwinrc"
         ".config/kwinrulesrc"
         ".config/kxkbrc"
-        ".config/mimeapps.list"
+        #".config/mimeapps.list"
         ".config/partitionmanagerrc"
         ".config/plasma-localerc"
         ".config/plasma-nm"
