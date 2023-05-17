@@ -15,9 +15,7 @@
     "com.github.jeromerobert.pdfarranger"
     "com.github.micahflee.torbrowser-launcher"
     "com.github.tchx84.Flatseal"
-    "com.logseq.Logseq"
     "fr.handbrake.ghb"
-    "io.github.seadve.Kooha"
     "net.poedit.Poedit"
     "org.audacityteam.Audacity"
     "org.blender.Blender"
@@ -32,7 +30,6 @@
     "org.musescore.MuseScore"
     "org.musicbrainz.Picard"
     "org.remmina.Remmina"
-    "org.signal.Signal"
     "org.videolan.VLC"
     "org.zealdocs.Zeal"
     "rest.insomnia.Insomnia"
@@ -181,18 +178,6 @@
         };
         "System Bus Policy" = {
           "org.freedesktop.impl.portal.PermissionStore" = "talk";
-        };
-      };
-    }
-    {
-      name = "com.logseq.Logseq";
-      text = toINI {} {
-        Context = {
-          sockets = "x11;wayland;cups;";
-          shared = "network;ipc;";
-          devices = "dri;";
-          filesystems = "xdg-documents;";
-          persistent = ".logseq;";
         };
       };
     }
