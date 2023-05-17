@@ -4,7 +4,7 @@
   ...
 }: {
   imports = [
-    ./pipewire-rnnoise.nix
+    #./pipewire-rnnoise.nix
     ./pipewire-wireplumber.nix
   ];
   config = {
