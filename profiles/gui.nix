@@ -31,6 +31,8 @@ in {
     ../mixins/atuin.nix
     ../mixins/zoxide.nix
     ../mixins/nextcloud.nix
+    ../mixins/signal.nix
+    ../mixins/logseq.nix
   ];
 
   config = {
@@ -83,6 +85,7 @@ in {
           brightnessctl
           virt-viewer
           evince
+          kooha
           #signal-desktop
           #vlc
           #onlyoffice-bin
