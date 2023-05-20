@@ -33,6 +33,7 @@ in {
     ../mixins/nextcloud.nix
     ../mixins/signal.nix
     ../mixins/logseq.nix
+    ../mixins/calibre.nix
   ];
 
   config = {
@@ -100,6 +101,7 @@ in {
           inkscape
           meld
           gimp-with-plugins
+          pdfgrep
         ])
       ];
     };
