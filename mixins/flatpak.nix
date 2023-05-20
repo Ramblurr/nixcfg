@@ -11,7 +11,6 @@
   flathub_apps = [
     #"re.sonny.Junction"
     "cc.arduino.arduinoide"
-    "com.calibre_ebook.calibre"
     "com.github.jeromerobert.pdfarranger"
     "com.github.micahflee.torbrowser-launcher"
     "com.github.tchx84.Flatseal"
