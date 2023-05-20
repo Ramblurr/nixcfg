@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  inputs,
   pkgs,
   ...
 }: {
@@ -27,7 +28,9 @@
       home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
+        ansible
         go
+        git-filter-repo
         maven
         stripe-cli
         terraform
@@ -43,8 +46,12 @@
         dogdns
         whois
         nmap
+        pre-commit
         yq
         k9s
+        kubernetes-helm
+        kubectl
+        krew
         yamlfmt
         kustomize
         cilium-cli
@@ -58,6 +65,8 @@
         clj-kondo
         babashka
         polylith
+        shellcheck
+        inputs.talhelper.packages.${pkgs.stdenv.hostPlatform.system}.default
       ];
 
       home.file.".ideavimrc" = {
@@ -82,6 +91,7 @@
         directories = [
           ".config/JetBrains"
           ".cache/JetBrains"
+          ".cache/pre-commit"
           ".local/share/JetBrains"
           ".java/.userPrefs/jetbrains"
           ".config/gh"
@@ -99,6 +109,8 @@
           ".local/share/deps.clj"
           ".config/docker"
           ".config/k9s"
+          ".config/kube"
+          ".config/krew"
         ];
       };
       programs.gh = {
