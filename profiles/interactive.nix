@@ -84,6 +84,7 @@
             ".config/inkscape"
             ".config/GIMP"
             ".cache/gimp"
+            ".config/rclone"
           ];
         };
         manual = {manpages.enable = true;};

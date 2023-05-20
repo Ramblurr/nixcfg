@@ -1,5 +1,6 @@
 {
   inputs = {
+    talhelper.url = "github:budimanjojo/talhelper";
     hyprland.url = "github:hyprwm/Hyprland";
     firefox-nightly = {
       url = "github:colemickens/flake-firefox-nightly";
@@ -31,6 +32,7 @@
     alejandra,
     self,
     nixpkgs,
+    talhelper,
     hyprland,
     home-manager,
     #nur,
