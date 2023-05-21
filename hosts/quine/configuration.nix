@@ -59,6 +59,7 @@ in {
       domains = [
         "~socozy.casa"
         "~outskirtslabs.com"
+         (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
       ];
       routes = [
         {
