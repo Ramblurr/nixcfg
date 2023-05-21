@@ -59,6 +59,7 @@ in {
       domains = [
         "~***REMOVED***"
         "~***REMOVED***"
+         (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
       ];
       routes = [
         {
