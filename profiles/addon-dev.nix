@@ -12,6 +12,7 @@
   ];
   config = {
     environment.systemPackages = with pkgs; [
+      python311Packages.netaddr
       (python311.withPackages (ps:
         with ps; [
           pip
@@ -22,12 +23,15 @@
           setuptools
           wheel
           requests
+          netaddr
         ]))
     ];
     home-manager.users.ramblurr = {pkgs, ...}: {
       home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
+        postgresql_15
+        mariadb
         git-crypt
         ansible
         go
@@ -67,6 +71,8 @@
         babashka
         polylith
         shellcheck
+        cloudflared
+        shadowsocks-rust
         inputs.talhelper.packages.${pkgs.stdenv.hostPlatform.system}.default
       ];
 

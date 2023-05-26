@@ -87,8 +87,6 @@ in {
           virt-viewer
           evince
           kooha
-          #signal-desktop
-          #vlc
           #onlyoffice-bin
           #libreoffice-qt
           #hunspell
@@ -102,6 +100,7 @@ in {
           meld
           gimp-with-plugins
           pdfgrep
+          nerdfix
         ])
       ];
     };
