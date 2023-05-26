@@ -117,7 +117,7 @@
         "on-click": "/run/current-system/sw/bin/bash ~/.config/waybar/scripts/pa-sink-toggle",
         "format-icons": {
             "speaker": "󰓃",
-            "headphone": "",
+            "headphone": "󰋋",
         },
     },
     "pulseaudio": {
@@ -151,8 +151,8 @@
     "network": {
         // "interface": "wlp2*", // (Optional) To force the use of this interface
         "format-wifi": "{essid} ({signalStrength}%) ",
-        "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
-        "format-linked": "{ifname} (No IP) ",
+        "format-ethernet": "{ifname}: {ipaddr}/{cidr} 󰈀",
+        "format-linked": "{ifname} (No IP) 󰈀",
         "format-disconnected": "Disconnected ⚠",
         "format-alt": "{ifname}: {ipaddr}/{cidr}"
     },
