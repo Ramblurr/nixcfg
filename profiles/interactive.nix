@@ -166,6 +166,7 @@
             yt-dlp
             imgurbash2
             mosh
+            vifm
           ])
         ];
       };
