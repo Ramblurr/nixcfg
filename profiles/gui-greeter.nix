@@ -23,7 +23,9 @@
       export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id --user)/bus
 
       xrandr \
-        --output DP-0 --mode 2560x1440 --auto
+        --output DP-1 --mode 5120x1440 --auto
+      xrandr \
+        --output HDMI-A-1 --mode 3840x2160 --auto
     '';
   };
 

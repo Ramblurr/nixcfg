@@ -23,10 +23,11 @@ in {
       transitionDuration = 10;
     };
 
-    security.pam.services.kwallet = {
-      name = "kwallet";
-      enableKwallet = true;
-    };
+    # PAM
+    security.pam.services.login.enableKwallet = true;
+    security.pam.services.login.enableGnomeKeyring = true;
+    security.pam.services.sddm.enableKwallet = true;
+    security.pam.services.sddm.enableGnomeKeyring = true;
     # see https://github.com/NixOS/nixpkgs/issues/158025
     security.pam.services.swaylock = {};
     home-manager.users.ramblurr = {pkgs, ...} @ hm: {
