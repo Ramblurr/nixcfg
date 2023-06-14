@@ -9,6 +9,7 @@ in {
   imports = [
     ./interactive.nix # includes core.nix (which imports hm)
 
+    ../mixins/printing.nix
     ../mixins/kitty.nix
     ../mixins/fonts.nix
     ../mixins/gtk.nix
