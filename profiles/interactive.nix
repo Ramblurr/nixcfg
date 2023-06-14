@@ -167,6 +167,7 @@
             imgurbash2
             mosh
             vifm
+            smartmontools
           ])
         ];
       };
