@@ -11,7 +11,6 @@
   flathub_apps = [
     #"re.sonny.Junction"
     "cc.arduino.arduinoide"
-    "com.github.jeromerobert.pdfarranger"
     "com.github.micahflee.torbrowser-launcher"
     "com.github.tchx84.Flatseal"
     "fr.handbrake.ghb"
@@ -23,7 +22,6 @@
     "org.fritzing.Fritzing"
     "org.gnome.meld"
     "org.jitsi.jitsi-meet"
-    "org.kde.kid3"
     "org.kde.krita"
     "org.libreoffice.LibreOffice"
     "org.musescore.MuseScore"

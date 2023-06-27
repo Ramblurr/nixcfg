@@ -165,9 +165,9 @@ in {
     systemd.user.timers."dynamic-wallpaper" = {
       wantedBy = ["timers.target"];
       timerConfig = {
-        OnBootSec = "1h";
+        OnBootSec = "3h";
         RandomizedDelaySec = "300";
-        OnUnitActiveSec = "1h";
+        OnUnitActiveSec = "3h";
         Unit = "dynamic-wallpaper@default.service";
       };
     };
