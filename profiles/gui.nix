@@ -102,6 +102,8 @@ in {
           gimp-with-plugins
           pdfgrep
           nerdfix
+          kid3
+          pdfarranger
         ])
       ];
     };
