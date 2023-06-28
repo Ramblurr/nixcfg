@@ -88,13 +88,21 @@ in {
     } @ hm: {
       home.persistence."/persist/home/ramblurr" = {
         directories = [
-          ".steam"
-          ".local/share/Steam"
           ".config/lutris"
           ".local/share/lutris"
           ".local/share/bottles"
           ".config/heroic"
           ".config/legendary"
+          ".config/steamtinkerlaunch"
+          # NOTE this is very important. the steam dirs must be symlinked, otherwise steam will not load properly and the system will hang
+          {
+            method = "symlink";
+            directory = ".local/share/Steam";
+          }
+          {
+            method = "symlink";
+            directory = ".steam";
+          }
         ];
       };
 
