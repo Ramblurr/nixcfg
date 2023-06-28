@@ -168,6 +168,7 @@
             mosh
             vifm
             smartmontools
+            chrysalis
           ])
         ];
       };

@@ -59,7 +59,7 @@ in {
       domains = [
         "~***REMOVED***"
         "~***REMOVED***"
-         (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
+        (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
       ];
       routes = [
         {
@@ -108,6 +108,9 @@ in {
         '';
       };
     };
+    services.udev.extraRules = ''
+      KERNEL=="ttyACM0", MODE:="666"
+    '';
     #users.mutableUsers = false;
     #users.users.root.initialHashedPassword = "...";
     #
