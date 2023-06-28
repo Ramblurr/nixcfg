@@ -10,8 +10,8 @@
 
     home.persistence."/persist/home/ramblurr" = {
       directories = [
-         ".config/Logseq"
-         ".logseq"
+        ".config/Logseq"
+        ".logseq"
       ];
     };
   };

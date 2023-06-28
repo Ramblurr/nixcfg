@@ -10,7 +10,7 @@
 
     home.persistence."/persist/home/ramblurr" = {
       directories = [
-         ".config/calibre"
+        ".config/calibre"
       ];
     };
   };
