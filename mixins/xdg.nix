@@ -10,7 +10,7 @@
         # hyprland module enables its own portal
         # xdg-desktop-portal-hyprland
         libsForQt5.xdg-desktop-portal-kde
-        xdg-desktop-portal-gtk
+        #xdg-desktop-portal-gtk
       ];
     };
     home-manager.users.ramblurr = {pkgs, ...}: {
