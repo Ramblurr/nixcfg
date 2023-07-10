@@ -169,6 +169,7 @@
             vifm
             smartmontools
             chrysalis
+            pwgen-secure
           ])
         ];
       };
