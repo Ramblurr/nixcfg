@@ -71,6 +71,7 @@ in {
             xorg.libXinerama
             xorg.libXScrnSaver
             zlib
+            libunwind # for titanfall 2 Northstart launcher
           ];
       };
     };
@@ -91,6 +92,7 @@ in {
           ".config/lutris"
           ".local/share/lutris"
           ".local/share/bottles"
+          ".local/share/applications/wine"
           ".config/heroic"
           ".config/legendary"
           ".config/steamtinkerlaunch"
@@ -138,6 +140,8 @@ in {
         bottles
         gamescope
         lutris
+        wineWowPackages.waylandFull
+        winetricks
       ];
       programs = {
         mangohud = {
