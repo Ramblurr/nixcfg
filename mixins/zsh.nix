@@ -43,7 +43,7 @@
         autocd = true;
         enableAutosuggestions = true;
         enableCompletion = true;
-        enableSyntaxHighlighting = true;
+        syntaxHighlighting.enable = true;
         dotDir = ".config/zsh";
         history = {
           size = 5000000;
