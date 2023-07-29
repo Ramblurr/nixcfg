@@ -9,6 +9,7 @@
 
   home-manager.users.ramblurr = {pkgs, ...} @ hm: {
     home.packages = [
+      pkgs.digikam
       pkgs.libsForQt5.kfind
       pkgs.krename
     ];
@@ -38,8 +39,12 @@
         ".local/share/dolphin"
         ".local/share/okular"
         ".kde"
+        ".local/share/digikam"
+        ".cache/digikam"
       ];
       files = [
+        ".config/digikamrc"
+        ".config/digikam_systemrc"
         ".config/akregatorrc"
         ".config/baloofileinformationrc"
         ".config/bluedevilglobalrc"
