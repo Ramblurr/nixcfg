@@ -202,7 +202,7 @@ in {
     services.fwupd.enable = true;
     services.udisks2.enable = true;
     hardware.enableRedistributableFirmware = true;
-    hardware.usbWwan.enable = false; # dual role usb/cdrom stick thing
+    hardware.usb-modeswitch.enable = false; # dual role usb/cdrom stick thing
     hardware.cpu.amd.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
     hardware.cpu.intel.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
 

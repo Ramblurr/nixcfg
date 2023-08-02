@@ -73,7 +73,7 @@
     ];
   };
 
-  fonts.fonts = [pkgs.emacs-all-the-icons-fonts];
+  fonts.packages = [pkgs.emacs-all-the-icons-fonts];
 
   system.userActivationScripts = {
     # Installation script every time nixos-rebuild is run. So not during initial install.
