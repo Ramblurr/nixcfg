@@ -37,7 +37,7 @@ in {
       fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
         mkdir -p "$out/share/fonts"
         font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-        find ${toString (config.fonts.fonts)} -regex "$font_regexp" \
+        find ${toString (config.fonts.packages)} -regex "$font_regexp" \
           -exec ln -sf -t "$out/share/fonts" '{}' \;
       '');
     in {

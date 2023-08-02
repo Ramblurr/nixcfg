@@ -106,6 +106,7 @@ in {
           pdfarranger
           handbrake
           makemkv
+          xournal
         ])
       ];
     };
