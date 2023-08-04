@@ -107,6 +107,8 @@ in {
           handbrake
           makemkv
           xournal
+          fava
+          beancount
         ])
       ];
     };

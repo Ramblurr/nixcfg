@@ -34,6 +34,7 @@
     directories = [
       "/etc/nixos"
       "/var/log"
+      "/var/lib/cups"
       #"/var/lib"
       #"/srv"
     ];
