@@ -9,7 +9,7 @@
 in {
   config = {
     fonts = {
-      fonts = prefs.font.allPackages;
+      packages = prefs.font.allPackages;
       fontDir.enable = true;
 
       fontconfig = {
