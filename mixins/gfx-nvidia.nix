@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  inputs,
   lib,
   ...
 }: {
@@ -52,4 +53,31 @@
     pkgs.nvtop-nvidia
     pkgs.libva-utils
   ];
+
+  # force use of up to date nixos packages egl-wayland library, not the old one bundled in the nvidia driver
+  # ref: https://github.com/NixOS/nixpkgs/issues/202454#issuecomment-1657230960
+  # this makes hardware acceleration in firefox work!
+  environment.etc."egl/egl_external_platform.d".source = let
+    nvidia_wayland = pkgs.writeText "10_nvidia_wayland.json" ''
+      {
+          "file_format_version" : "1.0.0",
+          "ICD" : {
+              "library_path" : "${inputs.nixpkgs.legacyPackages.${pkgs.hostPlatform.system}.egl-wayland}/lib/libnvidia-egl-wayland.so"
+          }
+      }
+    '';
+    nvidia_gbm = pkgs.writeText "15_nvidia_gbm.json" ''
+      {
+          "file_format_version" : "1.0.0",
+          "ICD" : {
+              "library_path" : "${config.hardware.nvidia.package}/lib/libnvidia-egl-gbm.so.1"
+          }
+      }
+    '';
+  in
+    lib.mkForce (pkgs.runCommandLocal "nvidia-egl-hack" {} ''
+      mkdir -p $out
+      cp ${nvidia_wayland} $out/10_nvidia_wayland.json
+      cp ${nvidia_gbm} $out/15_nvidia_gbm.json
+    '');
 }
