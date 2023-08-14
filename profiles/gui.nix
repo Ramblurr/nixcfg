@@ -109,6 +109,7 @@ in {
           xournal
           fava
           beancount
+          keepassxc
         ])
       ];
     };
