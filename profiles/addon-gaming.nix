@@ -47,7 +47,7 @@ in {
           with pkgs; [
             (fontsPkg pkgs)
             at-spi2-atk
-            binutils
+            #binutils  # this conflicts with the gcc package
             fmodex
             gtk3
             gtk3-x11

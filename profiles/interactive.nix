@@ -142,7 +142,7 @@
             parted
             iotop
             which
-            binutils.bintools
+            #binutils.bintools # this conflicts with the gcc package
             unzip
             xz
             zip
