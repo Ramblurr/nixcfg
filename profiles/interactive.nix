@@ -170,6 +170,7 @@
             smartmontools
             chrysalis
             pwgen-secure
+            alejandra
           ])
         ];
       };
