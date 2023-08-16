@@ -51,6 +51,7 @@
         gnumake
         docker-compose
         dig
+        influxdb2-cli
         dogdns
         whois
         nmap
@@ -77,6 +78,11 @@
         cloudflared
         shadowsocks-rust
         inputs.talhelper.packages.${pkgs.stdenv.hostPlatform.system}.default
+        gcc
+        cmake
+        libsForQt5.qt5.qttools
+        libsForQt5.qt5.qtdeclarative
+        subversion
       ];
 
       home.file.".ideavimrc" = {
@@ -99,6 +105,11 @@
       };
       home.persistence."/persist/home/ramblurr" = {
         directories = [
+          {
+            method = "symlink";
+            directory = ".local/share/containers";
+          }
+          ".config/containers"
           ".config/JetBrains"
           ".cache/JetBrains"
           ".cache/pre-commit"
@@ -121,6 +132,7 @@
           ".config/k9s"
           ".config/kube"
           ".config/krew"
+          ".influxdbv2"
         ];
       };
       programs.gh = {
