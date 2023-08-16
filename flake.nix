@@ -18,8 +18,8 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
-    alejandra.url = "github:kamadorueda/alejandra/3.0.0";
-    alejandra.inputs.nixpkgs.follows = "nixpkgs";
+    #alejandra.url = "github:kamadorueda/alejandra/3.0.0";
+    #alejandra.inputs.nixpkgs.follows = "nixpkgs";
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
@@ -34,7 +34,7 @@
   };
 
   outputs = inputs @ {
-    alejandra,
+    #alejandra,
     self,
     nixpkgs,
     talhelper,
@@ -48,6 +48,7 @@
     nix-gaming,
     ...
   }: let
+    #system = "x86_64-linux";
     overlays = [
       (self: super: {
         microsocks = super.pkgs.callPackage ./packages/microsocks {};
@@ -84,6 +85,7 @@
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
     nixosConfigurations = {
       quine = nixpkgs.lib.nixosSystem rec {
+        #inherit system;
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules = [
@@ -94,7 +96,7 @@
           nix-gaming.nixosModules.default
           inputs.home-manager.nixosModules.home-manager
           inputs.impermanence.nixosModules.impermanence
-          {environment.systemPackages = [alejandra.defaultPackage.${system}];}
+          #{environment.systemPackages = [alejandra.defaultPackage.${system}];}
           ./modules/device.nix
           ./hosts/quine/configuration.nix
         ];
