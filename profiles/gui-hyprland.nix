@@ -11,8 +11,8 @@
   programs = {
     kdeconnect.enable = true; # Connect phone to PC
     hyprland.enable = true;
-    hyprland.nvidiaPatches = true;
-    #hyprland.enableNvidiaPatches = true;
+    #hyprland.nvidiaPatches = true;
+    hyprland.enableNvidiaPatches = true;
   };
   security.polkit.enable = true;
   systemd.user.services.polkit-gnome-authentication-agent-1 = {
