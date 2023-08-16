@@ -14,7 +14,6 @@ in {
       pkgs.git
     ];
     nixpkgs.config = {
-      allowAliases = false;
       allowUnfree = true;
     };
     nix = {
