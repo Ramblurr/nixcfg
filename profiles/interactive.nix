@@ -1,5 +1,6 @@
 {
   pkgs,
+  nixpkgs,
   lib,
   config,
   inputs,
@@ -49,6 +50,7 @@
           inputs.impermanence.nixosModules.home-manager.impermanence
           inputs.sops-nix.homeManagerModule
         ];
+
         systemd.user.startServices = true;
         home.extraOutputsToInstall = ["info" "man" "share" "icons" "doc"];
         home.stateVersion = "21.11";
@@ -56,7 +58,9 @@
         home.sessionVariables = {
           EDITOR = "vim";
           CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
+          NIX_PATH = "nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
         };
+        nix.registry.nixpkgs.flake = inputs.nixpkgs;
         sops = {
           defaultSopsFile = ../secrets/secrets.sops.yaml;
           gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
@@ -154,6 +158,7 @@
             openssh
             watchman
             watchexec
+            tree
             wireguard-tools
             difftastic
             just

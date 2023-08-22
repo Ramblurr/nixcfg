@@ -72,3 +72,7 @@ if command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
   export DOCKER=podman
   export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
 fi
+
+if command -v direnv &>/dev/null; then
+  eval "$(direnv hook zsh)"
+fi
