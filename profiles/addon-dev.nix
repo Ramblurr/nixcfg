@@ -30,6 +30,7 @@
       home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
+        direnv
         android-tools
         heimdall-gui
         sshpass
@@ -67,8 +68,8 @@
         talosctl
         fluxcd
         esphome
-        nodejs
-        nodePackages.npm
+        nodejs_20
+        nodePackages_latest.pyright
         clojure
         clojure-lsp
         clj-kondo
@@ -83,6 +84,7 @@
         libsForQt5.qt5.qttools
         libsForQt5.qt5.qtdeclarative
         subversion
+        libstdcxx5
       ];
 
       home.file.".ideavimrc" = {
@@ -133,6 +135,7 @@
           ".config/kube"
           ".config/krew"
           ".influxdbv2"
+          ".cache/pypoetry/virtualenvs/"
         ];
       };
       programs.gh = {
