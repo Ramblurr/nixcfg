@@ -89,6 +89,8 @@
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules = [
+          {nix.registry.nixpkgs.flake = nixpkgs;
+           nix.nixPath = ["nixpkgs=flake:nixpkgs"];}
           {nixpkgs.overlays = overlays;}
           #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
