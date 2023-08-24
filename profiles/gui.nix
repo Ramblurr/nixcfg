@@ -110,7 +110,7 @@ in {
           fava
           beancount
           keepassxc
-          etcher
+          # etcher
         ])
       ];
     };
