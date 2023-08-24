@@ -443,5 +443,7 @@ Null prefix argument turns off the mode."
 (after!
   treemacs (treemacs-follow-mode 1))
 
+(set-formatter! 'alejandra "alejandra --quiet" :modes '(nix-mode))
+
 (load! "+bindings.el")
 (load! "+dashboard.el")

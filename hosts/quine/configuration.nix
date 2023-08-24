@@ -57,6 +57,7 @@ in {
       dhcpV4Config.Use6RD = "yes";
       dhcpV4Config.RouteMetric = 512;
       domains = [
+        "~"
         "~socozy.casa"
         "~outskirtslabs.com"
         (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
