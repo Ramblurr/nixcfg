@@ -57,6 +57,7 @@ in {
       dhcpV4Config.Use6RD = "yes";
       dhcpV4Config.RouteMetric = 512;
       domains = [
+        "~"
         "~***REMOVED***"
         "~***REMOVED***"
         (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
