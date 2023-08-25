@@ -1,4 +1,5 @@
 {
+  inputs,
   pkgs,
   config,
   lib,
@@ -11,6 +12,7 @@
   programs = {
     kdeconnect.enable = true; # Connect phone to PC
     hyprland.enable = true;
+    hyprland.package = inputs.hyprland.packages.${pkgs.system}.hyprland;
     #hyprland.nvidiaPatches = true;
     hyprland.enableNvidiaPatches = true;
   };
