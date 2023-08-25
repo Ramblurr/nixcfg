@@ -60,6 +60,7 @@
         whois
         nmap
         pre-commit
+        bridge-utils
         yq
         k9s
         kubernetes-helm
