@@ -28,154 +28,150 @@ in {
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
   ];
 
-  config = {
-    nixpkgs.hostPlatform.system = "x86_64-linux";
-    system.stateVersion = "23.05";
-    #environment.systemPackages = with pkgs; [
-    #];
+  nixpkgs.hostPlatform.system = "x86_64-linux";
+  system.stateVersion = "23.05";
 
-    nixcfg.common.hostColor = "purple";
-    sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
-    sops.defaultSopsFile = ./secrets.sops.yaml;
+  nixcfg.common.hostColor = "purple";
+  sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
+  sops.defaultSopsFile = ./secrets.sops.yaml;
 
-    #services.tailscale.useRoutingFeatures = "server";
+  #services.tailscale.useRoutingFeatures = "server";
 
-    networking.hostName = hn;
-    networking.dhcpcd.wait = "background";
-    networking.dhcpcd.extraConfig = "noarp";
+  networking.hostName = hn;
+  networking.dhcpcd.wait = "background";
+  networking.dhcpcd.extraConfig = "noarp";
 
-    systemd.network.networks."20-local-routes" = {
-      matchConfig.Name = "eno1";
-      linkConfig.RequiredForOnline = "routable";
+  systemd.network.networks."20-local-routes" = {
+    matchConfig.Name = "eno1";
+    linkConfig.RequiredForOnline = "routable";
 
-      networkConfig = {
-        DHCP = "yes";
-        IPForward = "yes";
-        DNSSEC = "no";
-      };
-
-      dhcpV4Config.Use6RD = "yes";
-      dhcpV4Config.RouteMetric = 512;
-      domains = [
-        "~"
-        "~***REMOVED***"
-        "~***REMOVED***"
-        (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
-      ];
-      routes = [
-        {
-          routeConfig = {
-            Gateway = "192.168.1.1";
-            Metric = 2000;
-          };
-        }
-      ];
+    networkConfig = {
+      DHCP = "yes";
+      IPForward = "yes";
+      DNSSEC = "no";
     };
 
-    environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
+    dhcpV4Config.Use6RD = "yes";
+    dhcpV4Config.RouteMetric = 512;
+    domains = [
+      "~"
+      "~***REMOVED***"
+      "~***REMOVED***"
+      (builtins.readFile ../../secrets/resolved-domain-secret.secrets)
+    ];
+    routes = [
+      {
+        routeConfig = {
+          Gateway = "192.168.1.1";
+          Metric = 2000;
+        };
+      }
+    ];
+  };
 
-    boot = {
-      #kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
-      initrd = {
-        availableKernelModules = ["aesni_intel" "cryptd"];
+  environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
 
-        luks.devices = {
-          cryptkey = {
-            device = "/dev/disk/by-label/cryptkey";
-          };
+  boot = {
+    #kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+    initrd = {
+      availableKernelModules = ["aesni_intel" "cryptd"];
 
-          cryptxdata = {
-            device = "/dev/disk/by-label/cryptdata";
-            keyFile = "/dev/mapper/cryptkey";
-            keyFileSize = 64;
-          };
-
-          cryptswap = {
-            device = "/dev/disk/by-label/cryptswap";
-            keyFile = "/dev/mapper/cryptkey";
-            keyFileSize = 64;
-          };
+      luks.devices = {
+        cryptkey = {
+          device = "/dev/disk/by-label/cryptkey";
         };
 
-        #postMountCommands = ''
-        #  # Don't keep the cryptkey available all the time.
-        #  cryptsetup close /dev/mapper/cryptkey
-        #'';
+        cryptxdata = {
+          device = "/dev/disk/by-label/cryptdata";
+          keyFile = "/dev/mapper/cryptkey";
+          keyFileSize = 64;
+        };
 
-        postDeviceCommands = lib.mkAfter ''
-          zfs rollback -r rpool/encrypted/local/root@blank && \
-          zfs rollback -r rpool/encrypted/local/home@blank && \
-          echo "rollback complete"
-        '';
+        cryptswap = {
+          device = "/dev/disk/by-label/cryptswap";
+          keyFile = "/dev/mapper/cryptkey";
+          keyFileSize = 64;
+        };
       };
+
+      #postMountCommands = ''
+      #  # Don't keep the cryptkey available all the time.
+      #  cryptsetup close /dev/mapper/cryptkey
+      #'';
+
+      postDeviceCommands = lib.mkAfter ''
+        zfs rollback -r rpool/encrypted/local/root@blank && \
+        zfs rollback -r rpool/encrypted/local/home@blank && \
+        echo "rollback complete"
+      '';
     };
-    services.udev.extraRules = ''
-      KERNEL=="ttyACM0", MODE:="666"
-    '';
-    #users.mutableUsers = false;
-    #users.users.root.initialHashedPassword = "...";
-    #
-    deviceSpecific.vpn.mullvad.enable = true;
-    deviceSpecific.vpn.tailscale.enable = true;
-    deviceSpecific.backup.borgmatic = {
-      enable = true;
-      name = "aquinas.***REMOVED***-mali";
-      repositories = [
-        "ssh://aquinas@borgbackup-host.int.***REMOVED***/mnt/backup/borg_repos/aquinas/home"
-        "\${OFFSITE_REPOSITORY}"
-      ];
-      exclude-patterns = [
-        "etc/ssl"
-        "var/home/*/.cache"
-        "var/home/*/.var"
-        "var/home/*/.local/lib"
-        "var/home/*/.local/share/containers"
-        "var/home/*/.local/share/JetBrains"
-        "var/home/*/.local/share/volta"
-        "var/home/*/.local/share/lein"
-        "var/home/*/.local/share/Trash"
-        "var/home/*/.local/share/virtualenv"
-        "var/home/*/.local/share/yarn"
-        "var/home/*/.local/share/nvm"
-        "var/home/*/.local/state"
-        "var/home/*/.npm"
-        "var/home/*/.yarn"
-        "var/home/*/.vagrant.d/boxes"
-        "\'*.pyc\'"
-        "'*/.vim*.tmp'"
-        "'*/.DS_Store'"
-        "'*/node_modules'"
-        "'*/build'"
-        "'*/target'"
-        "'*/dist'"
-        "'*/tmp'"
-        "'*/bower_components'"
-        "'*.idea'"
-        "'*/.*~'"
-        "'*/out'"
-        "'*/.vagrant'"
-        "'*/securedir'"
-        "'*/encrypted'"
-        "'*/ram'"
-        "'*/cache'"
-        "'*/.cache'"
-        "'*/_cacache'"
-        "'*/_lock'"
-        "'*/*.tmp'"
-        "'*/*.swp'"
-        "'*/*~'"
-        "'*/*.lock'"
-        "'*/*-nas'"
-        "'*/.Trash'"
-        "'*/.terraform'"
-        "'*/pihole-FTL.db'"
-        "'*/venv'"
-        "'*/emacs-doom.d'"
-        "'*/SpiderOakONE'"
-        "'*/.gradle'"
-        "'*/.*sync*.db'"
-        "'*/.ansible'"
-      ];
-    };
+  };
+  services.udev.extraRules = ''
+    KERNEL=="ttyACM0", MODE:="666"
+  '';
+  #users.mutableUsers = false;
+  #users.users.root.initialHashedPassword = "...";
+  #
+  deviceSpecific.vpn.mullvad.enable = true;
+  deviceSpecific.vpn.tailscale.enable = true;
+  deviceSpecific.backup.borgmatic = {
+    enable = true;
+    name = "aquinas.***REMOVED***-mali";
+    repositories = [
+      "ssh://aquinas@borgbackup-host.int.***REMOVED***/mnt/backup/borg_repos/aquinas/home"
+      "\${OFFSITE_REPOSITORY}"
+    ];
+    exclude-patterns = [
+      "etc/ssl"
+      "var/home/*/.cache"
+      "var/home/*/.var"
+      "var/home/*/.local/lib"
+      "var/home/*/.local/share/containers"
+      "var/home/*/.local/share/JetBrains"
+      "var/home/*/.local/share/volta"
+      "var/home/*/.local/share/lein"
+      "var/home/*/.local/share/Trash"
+      "var/home/*/.local/share/virtualenv"
+      "var/home/*/.local/share/yarn"
+      "var/home/*/.local/share/nvm"
+      "var/home/*/.local/state"
+      "var/home/*/.npm"
+      "var/home/*/.yarn"
+      "var/home/*/.vagrant.d/boxes"
+      "\'*.pyc\'"
+      "'*/.vim*.tmp'"
+      "'*/.DS_Store'"
+      "'*/node_modules'"
+      "'*/build'"
+      "'*/target'"
+      "'*/dist'"
+      "'*/tmp'"
+      "'*/bower_components'"
+      "'*.idea'"
+      "'*/.*~'"
+      "'*/out'"
+      "'*/.vagrant'"
+      "'*/securedir'"
+      "'*/encrypted'"
+      "'*/ram'"
+      "'*/cache'"
+      "'*/.cache'"
+      "'*/_cacache'"
+      "'*/_lock'"
+      "'*/*.tmp'"
+      "'*/*.swp'"
+      "'*/*~'"
+      "'*/*.lock'"
+      "'*/*-nas'"
+      "'*/.Trash'"
+      "'*/.terraform'"
+      "'*/pihole-FTL.db'"
+      "'*/venv'"
+      "'*/emacs-doom.d'"
+      "'*/SpiderOakONE'"
+      "'*/.gradle'"
+      "'*/.*sync*.db'"
+      "'*/.ansible'"
+    ];
   };
 }

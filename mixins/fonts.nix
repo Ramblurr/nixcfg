@@ -7,18 +7,16 @@
 }: let
   prefs = import ./_preferences.nix {inherit config lib pkgs inputs;};
 in {
-  config = {
-    fonts = {
-      packages = prefs.font.allPackages;
-      fontDir.enable = true;
+  fonts = {
+    packages = prefs.font.allPackages;
+    fontDir.enable = true;
 
-      fontconfig = {
-        defaultFonts = {
-          serif = [prefs.font.serif.family];
-          sansSerif = [prefs.font.sans.family];
-          monospace = [prefs.font.monospace.family];
-          emoji = [prefs.font.emoji.family];
-        };
+    fontconfig = {
+      defaultFonts = {
+        serif = [prefs.font.serif.family];
+        sansSerif = [prefs.font.sans.family];
+        monospace = [prefs.font.monospace.family];
+        emoji = [prefs.font.emoji.family];
       };
     };
   };

@@ -36,83 +36,80 @@ in {
     ../mixins/logseq.nix
     ../mixins/calibre.nix
   ];
+  # hardware.drivers.enable = true;
+  hardware.bluetooth = {
+    enable = false;
+    package = pkgs.bluezFull;
+    powerOnBoot = false;
+    settings = {
+      General = {
+        Experimental = true;
+      };
+    };
+  };
 
-  config = {
-    # hardware.drivers.enable = true;
-    hardware.bluetooth = {
-      enable = false;
-      package = pkgs.bluezFull;
-      powerOnBoot = false;
-      settings = {
-        General = {
-          Experimental = true;
-        };
+  programs.noisetorch.enable = true;
+
+  services = {};
+
+  home-manager.users.ramblurr = {
+    pkgs,
+    config,
+    ...
+  } @ hm: {
+    # home-manager/#2064
+    systemd.user.targets.tray = {
+      Unit = {
+        Description = "Home Manager System Tray";
+        Requires = ["graphical-session-pre.target"];
       };
     };
 
-    programs.noisetorch.enable = true;
-
-    services = {};
-
-    home-manager.users.ramblurr = {
-      pkgs,
-      config,
-      ...
-    } @ hm: {
-      # home-manager/#2064
-      systemd.user.targets.tray = {
-        Unit = {
-          Description = "Home Manager System Tray";
-          Requires = ["graphical-session-pre.target"];
-        };
-      };
-
-      home.sessionVariables = {
-      };
-
-      services = {
-      };
-
-      home.packages = lib.mkMerge [
-        (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
-          captive-browser
-        ]))
-        (with pkgs; [
-          # chrome
-          #ungoogled-chromium
-          chromium
-          google-chrome-dev
-          # misc tools/utils
-          pavucontrol
-          brightnessctl
-          virt-viewer
-          evince
-          kooha
-          #onlyoffice-bin
-          #libreoffice-qt
-          #hunspell
-          #hunspellDicts.en_US
-          #hunspellDicts.de_AT
-          morgen
-          ffmpeg_5-full
-          libnotify # `notify-send`
-          gparted
-          inkscape
-          meld
-          gimp-with-plugins
-          pdfgrep
-          nerdfix
-          kid3
-          pdfarranger
-          handbrake
-          makemkv
-          xournal
-          fava
-          beancount
-          keepassxc
-          # etcher
-        ])
-      ];
+    home.sessionVariables = {
     };
+
+    services = {
+    };
+
+    home.packages = lib.mkMerge [
+      (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
+        captive-browser
+      ]))
+      (with pkgs; [
+        # chrome
+        #ungoogled-chromium
+        chromium
+        google-chrome-dev
+        # misc tools/utils
+        pavucontrol
+        brightnessctl
+        virt-viewer
+        evince
+        kooha
+        #onlyoffice-bin
+        #libreoffice-qt
+        #hunspell
+        #hunspellDicts.en_US
+        #hunspellDicts.de_AT
+        morgen
+        ffmpeg_5-full
+        libnotify # `notify-send`
+        gparted
+        inkscape
+        meld
+        gimp-with-plugins
+        pdfgrep
+        nerdfix
+        kid3
+        pdfarranger
+        handbrake
+        makemkv
+        xournal
+        fava
+        beancount
+        keepassxc
+        # etcher
+      ])
+    ];
   };
 }
