@@ -32,47 +32,45 @@
     #"us.zoom.Zoom"
   ];
 in {
-  config = {
-    services.flatpak.enable = true;
+  services.flatpak.enable = true;
 
-    environment.persistence."/persist" = {
+  environment.persistence."/persist" = {
+    directories = [
+      "/var/lib/flatpak"
+    ];
+  };
+  home-manager.users.ramblurr = {pkgs, ...}: {
+    home.persistence."/persist/home/ramblurr" = {
       directories = [
-        "/var/lib/flatpak"
+        ".cache/flatpak"
+        ".local/share/flatpak"
+        ".var/app"
       ];
     };
-    home-manager.users.ramblurr = {pkgs, ...}: {
-      home.persistence."/persist/home/ramblurr" = {
-        directories = [
-          ".cache/flatpak"
-          ".local/share/flatpak"
-          ".var/app"
-        ];
-      };
-    };
-    #systemd = {
-    #  services.flatpak-setup = {
-    #    description = "Setup system Flatpak";
-    #    after = ["network-online.target"];
-    #    wants = ["network-online.target"];
-    #    # this can slow down boot considerably
-    #    # wantedBy = ["graphical.target"];
-    #    serviceConfig = {
-    #      Type = "oneshot";
-    #      RemainAfterExit = "yes";
-    #    };
-    #    script = let
-    #      flathub_cmd =
-    #        concatStringsSep "\n"
-    #        (map
-    #          (x: "${pkgs.flatpak}/bin/flatpak install flathub ${x} -y --noninteractive --verbose >> ~/.cache/flatpak.log 2>&1")
-    #          flathub_apps);
-    #    in ''
-    #      ${pkgs.flatpak}/bin/flatpak config --system --set languages "en"
-    #      ${pkgs.flatpak}/bin/flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    #      ${flathub_cmd}
-    #      ${pkgs.flatpak}/bin/flatpak uninstall --system --unused -y --noninteractive
-    #    '';
-    #  };
-    #};
   };
+  #systemd = {
+  #  services.flatpak-setup = {
+  #    description = "Setup system Flatpak";
+  #    after = ["network-online.target"];
+  #    wants = ["network-online.target"];
+  #    # this can slow down boot considerably
+  #    # wantedBy = ["graphical.target"];
+  #    serviceConfig = {
+  #      Type = "oneshot";
+  #      RemainAfterExit = "yes";
+  #    };
+  #    script = let
+  #      flathub_cmd =
+  #        concatStringsSep "\n"
+  #        (map
+  #          (x: "${pkgs.flatpak}/bin/flatpak install flathub ${x} -y --noninteractive --verbose >> ~/.cache/flatpak.log 2>&1")
+  #          flathub_apps);
+  #    in ''
+  #      ${pkgs.flatpak}/bin/flatpak config --system --set languages "en"
+  #      ${pkgs.flatpak}/bin/flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  #      ${flathub_cmd}
+  #      ${pkgs.flatpak}/bin/flatpak uninstall --system --unused -y --noninteractive
+  #    '';
+  #  };
+  #};
 }
