@@ -27,7 +27,7 @@
         ]))
     ];
     # enable cross-compilation for aarch64
-    boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+    boot.binfmt.emulatedSystems = ["aarch64-linux"];
     home-manager.users.ramblurr = {pkgs, ...}: {
       home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;

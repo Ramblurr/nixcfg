@@ -7,7 +7,7 @@
 
     hyprland.url = "github:hyprwm/Hyprland";
 
-    firefox-nightly.url ="github:colemickens/flake-firefox-nightly";
+    firefox-nightly.url = "github:colemickens/flake-firefox-nightly";
     firefox-nightly.inputs.nixpkgs.follows = "nixpkgs";
 
     nix-gaming.url = "github:fufexan/nix-gaming";
@@ -88,8 +88,10 @@
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules = [
-          {nix.registry.nixpkgs.flake = nixpkgs;
-           nix.nixPath = ["nixpkgs=flake:nixpkgs"];}
+          {
+            nix.registry.nixpkgs.flake = nixpkgs;
+            nix.nixPath = ["nixpkgs=flake:nixpkgs"];
+          }
           {nixpkgs.overlays = overlays;}
           #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
