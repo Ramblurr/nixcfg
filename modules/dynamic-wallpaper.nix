@@ -162,14 +162,14 @@ in {
       };
     };
     # Run the dynamic-wallpaper service every hour
-    systemd.user.timers."dynamic-wallpaper" = {
-      wantedBy = ["timers.target"];
-      timerConfig = {
-        OnBootSec = "3h";
-        RandomizedDelaySec = "300";
-        OnUnitActiveSec = "3h";
-        Unit = "dynamic-wallpaper@default.service";
-      };
-    };
+    #systemd.user.timers."dynamic-wallpaper" = {
+    #  wantedBy = ["timers.target"];
+    #  timerConfig = {
+    #    OnBootSec = "3h";
+    #    RandomizedDelaySec = "300";
+    #    OnUnitActiveSec = "3h";
+    #    Unit = "dynamic-wallpaper@default.service";
+    #  };
+    #};
   };
 }
