@@ -12,6 +12,4 @@
     ../mixins/sshd.nix
     ../mixins/tailscale.nix
   ];
-
-  config = {};
 }
