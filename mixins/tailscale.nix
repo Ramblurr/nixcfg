@@ -4,7 +4,6 @@
   lib,
   ...
 }: {
-  config = {
     services.tailscale.enable = lib.mkIf (config.deviceSpecific.vpn.tailscale.enable) true;
 
     boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
@@ -21,5 +20,4 @@
         "/var/cache/tailscale"
       ];
     };
-  };
 }
