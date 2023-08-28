@@ -49,6 +49,7 @@ in {
         discord.enable = true;
         junction.enable = true;
         kitty.enable = true;
+        wezterm.enable = true;
         logseq.enable = true;
         nextcloud.enable = true;
         nheko.enable = true;
