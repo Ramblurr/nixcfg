@@ -4,7 +4,8 @@
   config,
   lib,
   ...
-}: {
+}:
+{
   services = {
     dbus.enable = true;
     gvfs.enable = true; # Needed for nautilus
@@ -52,6 +53,8 @@
       wl-clipboard # Clipboard daemon
       hyprpicker # color picker
       gtk-layer-shell # shell components on wayland
+      inputs.hyprNStack.packages.${pkgs.system}.hyprNStack
+      inputs.hy3.packages.x86_64-linux.hy3
     ];
   };
 }
