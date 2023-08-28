@@ -32,9 +32,9 @@ in {
       };
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
-        ".config/npm"
-        ".cache/npm-packages"
-        ".local/share/npm"
+          ".config/npm"
+          ".cache/npm-packages"
+          ".local/share/npm"
         ];
       };
     };

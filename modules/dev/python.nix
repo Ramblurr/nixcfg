@@ -36,11 +36,11 @@ in {
     ];
     home-manager.users."${username}" = {
       home.packages = with pkgs; [
-      nodePackages_latest.pyright
+        nodePackages_latest.pyright
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
-        ".cache/pypoetry/virtualenvs/"
+          ".cache/pypoetry/virtualenvs/"
         ];
       };
     };
