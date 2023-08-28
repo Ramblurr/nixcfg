@@ -24,10 +24,10 @@ in {
     } @ hm: {
       home.file = {
         ".config/kitty/kitty.session" = {
-          source = ../../../configs/kitty/kitty.session;
+          source = ./configs/kitty.session;
         };
         ".config/kitty/kitty-monitor.session" = {
-          source = ../../../configs/kitty/kitty-monitor.session;
+          source = ./configs/kitty-monitor.session;
         };
       };
 
