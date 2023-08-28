@@ -25,4 +25,9 @@ in rec {
       inherit default;
       type = types.uniq types.int;
     };
+  mkPkgOpt = default:
+    mkOption {
+      inherit default;
+      type = types.package;
+    };
 }
