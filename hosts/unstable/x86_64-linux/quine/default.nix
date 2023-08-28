@@ -114,6 +114,7 @@ in {
       signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
+      shell = pkgs.zsh;
       extraGroups = [
         "wheel"
         "audio"

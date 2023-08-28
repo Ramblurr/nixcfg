@@ -26,6 +26,10 @@ in {
         uid = mkIntOpt 1000;
         passwordEnable = mkBoolOpt true;
         passwordSecretKey = mkStrOpt "ramblurr-password";
+        shell = mkOption {
+          type = types.nullOr (types.either types.shellPackage (types.passwdEntry types.path));
+          default = pkgs.bash;
+        };
         extraGroups = mkOption {
           type = types.listOf types.str;
           default = [];
@@ -71,6 +75,7 @@ in {
         extraGroups = cfg.primaryUser.extraGroups;
         uid = cfg.primaryUser.uid;
         group = cfg.primaryUser.username;
+        shell = cfg.primaryUser.shell;
       };
     };
 
