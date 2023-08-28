@@ -57,6 +57,10 @@ in {
         ## Module dependencies
         # :checkers spell
         (aspellWithDicts (ds: with ds; [en en-computers en-science de]))
+        hunspell
+        hunspellDicts.en_US
+        hunspellDicts.de_AT
+
         # :tools editorconfig
         editorconfig-core-c # per-project style config
         # :tools lookup & :lang org +roam
@@ -66,6 +70,7 @@ in {
         # :lang beancount
         beancount
         fava
+
       ];
       persistence = mkIf withImpermanence {
         directories = [
