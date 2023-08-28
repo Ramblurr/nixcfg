@@ -31,6 +31,7 @@
     home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
     home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
     home.packages = with pkgs; [
+      roc-toolkit
       direnv
       android-tools
       heimdall-gui
