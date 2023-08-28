@@ -4,6 +4,71 @@
   inputs,
   ...
 }: let
+  hy3_layouter = pkgs.writeScriptBin "hy3-layouter.sh" ''
+
+#!/usr/bin/env bash
+WORKSPACE=0
+SLEEP_TIME=1
+KILL_APPS=false
+COMMAND=kitty
+usage() {
+  echo "A rather poor mimic of a center master layout."
+  echo "Usage: $0 [options] command"
+  echo "Options:"
+  echo "  -w, --workspace <int>    Workspace to create the layout on"
+  echo "  -s, --sleep <int>        Number of seconds to sleep after app launching"
+  echo "  -k, --kill               Kill existing apps on the workspace"
+  echo "  -h, --help               Display this help message"
+  echo "Example:"
+  echo "  $0 --workspace 2 --sleep 15 firefox"
+}
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+    case $key in
+        -w|--workspace)
+        WORKSPACE="$2"
+        shift
+        shift
+        ;;
+        -s|--sleep)
+        SLEEP_TIME="$2"
+        shift
+        shift
+        ;;
+        -k|--kill)
+        KILL_APPS=true
+        shift
+        ;;
+        -h|--help)
+        usage
+        exit 0
+        ;;
+        *)
+        COMMAND="$@"
+        break
+        ;;
+    esac
+done
+
+H="hyprctl dispatch"
+
+$H workspace $WORKSPACE
+
+
+kitty &
+$COMMAND &
+sleep $SLEEP_TIME
+kitty &
+sleep 1
+
+$H hy3:makegroup v
+$H hy3:movefocus l
+$H hy3:makegroup v
+$H hy3:movefocus l
+$H hy3:makegroup v
+$H hy3:movefocus r
+'';
   hyprland_waybar = pkgs.waybar.overrideAttrs (oldAttrs: {
     mesonFlags = oldAttrs.mesonFlags ++ ["-Dexperimental=true"];
     postPatch = ''
@@ -30,6 +95,10 @@ in {
   # see https://github.com/NixOS/nixpkgs/issues/158025
   security.pam.services.swaylock = {};
   home-manager.users.ramblurr = {pkgs, ...} @ hm: {
+    home.packages = [
+      hy3_layouter
+    ];
+
     systemd.user.targets.hyprland-session = {
       Unit = {
         Description = "hyprland compositor session";
@@ -186,6 +255,10 @@ in {
         text =
           ''
             exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XAUTHORITY DISPLAY && systemctl --user start hyprland-session.target
+          ''
+          + ''
+            plugin = ${inputs.hyprNStack.packages.${pkgs.system}.hyprNStack}/lib/libhyprNStack.so
+            plugin = ${inputs.hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
           ''
           + builtins.readFile ../configs/hyprland.conf;
         onChange = ''
