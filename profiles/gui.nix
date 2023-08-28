@@ -108,6 +108,7 @@ in {
         fava
         beancount
         keepassxc
+        dex
         # etcher
       ])
     ];

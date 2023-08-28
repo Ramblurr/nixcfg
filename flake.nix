@@ -13,12 +13,7 @@
     nix-gaming.url = "github:fufexan/nix-gaming";
     nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
 
-    #nur.url = "github:nix-community/NUR";
-
     impermanence.url = "github:nix-community/impermanence";
-
-    #alejandra.url = "github:kamadorueda/alejandra/3.0.0";
-    #alejandra.inputs.nixpkgs.follows = "nixpkgs";
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
@@ -30,16 +25,24 @@
 
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+
+    hyprNStack = {
+      url = "github:SiriusStarr/hyprNStack";
+      inputs.hyprland.follows = "hyprland";
+    };
+
+    hy3 = {
+      url = "github:outfoxxed/hy3";
+      inputs.hyprland.follows = "hyprland";
+    };
   };
 
   outputs = inputs @ {
-    #alejandra,
     self,
     nixpkgs,
     talhelper,
     hyprland,
     home-manager,
-    #nur,
     nixos-hardware,
     firefox-nightly,
     nixpkgs-wayland,
@@ -47,7 +50,6 @@
     nix-gaming,
     ...
   }: let
-    #system = "x86_64-linux";
     overlays = [
       (self: super: {
         microsocks = super.pkgs.callPackage ./packages/microsocks {};
@@ -84,7 +86,6 @@
     formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.alejandra;
     nixosConfigurations = {
       quine = nixpkgs.lib.nixosSystem rec {
-        #inherit system;
         system = "x86_64-linux";
         specialArgs = {inherit inputs;};
         modules = [
@@ -93,13 +94,11 @@
             nix.nixPath = ["nixpkgs=flake:nixpkgs"];
           }
           {nixpkgs.overlays = overlays;}
-          #nur.nixosModules.nur
           home-manager.nixosModules.home-manager
           hyprland.nixosModules.default
           nix-gaming.nixosModules.default
           inputs.home-manager.nixosModules.home-manager
           inputs.impermanence.nixosModules.impermanence
-          #{environment.systemPackages = [alejandra.defaultPackage.${system}];}
           ./modules/device.nix
           ./hosts/quine/configuration.nix
         ];
