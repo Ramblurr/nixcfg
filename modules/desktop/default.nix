@@ -51,12 +51,40 @@ in {
       ];
     };
 
-    home-manager.users."${username}" = {
+    myhm = {...} @ hm: {
       # home-manager/#2064
       systemd.user.targets.tray = {
         Unit = {
           Description = "Home Manager System Tray";
           Requires = ["graphical-session-pre.target"];
+        };
+      };
+      gtk = {
+        enable = true;
+        font = {
+          name = "${config.modules.desktop.fonts.sans.family} 11";
+          package = config.modules.desktop.fonts.sans.package;
+        };
+        theme = {
+          name = "Arc-Dark";
+          package = pkgs.arc-theme;
+        };
+        iconTheme = {
+          name = "Tela-circle-dark";
+          package = pkgs.tela-circle-icon-theme;
+        };
+        cursorTheme = {
+          name = "macOS-BigSur-White";
+          package = pkgs.apple-cursor;
+        };
+        gtk2.configLocation = "${hm.config.xdg.configHome}/gtk-2.0/gtkrc";
+        gtk3.extraConfig = {
+          gtk-application-prefer-dark-theme = 1;
+          gtk-cursor-theme-size = 48;
+          gtk-xft-hinting = 1;
+          gtk-xft-hintstyle = "slight";
+          gtk-xft-antialias = 1; # => font-antialiasing="grayscale"
+          gtk-xft-rgba = "rgb"; # => font-rgb-order="rgb"
         };
       };
     };
