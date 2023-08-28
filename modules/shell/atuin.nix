@@ -20,6 +20,7 @@ in {
     home-manager.users."${username}" = {
       programs.atuin = {
         enable = true;
+        enableBashIntegration = true;
         settings = {
           style = "compact";
         };

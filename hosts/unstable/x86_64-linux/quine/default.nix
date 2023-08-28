@@ -31,6 +31,7 @@ in {
         xrandr \
         --output HDMI-A-1 --mode 3840x2160 --auto
       '';
+      fonts.enable = true;
       hyprland.enable = true;
       kde.enable = true;
       xdg.enable = true;
