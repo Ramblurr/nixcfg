@@ -5,7 +5,7 @@
 }: {
   imports = [
     #./pipewire-rnnoise.nix
-    ./pipewire-wireplumber.nix
+    #./pipewire-wireplumber.nix
   ];
   security.rtkit.enable = true;
   sound.enable = true;
