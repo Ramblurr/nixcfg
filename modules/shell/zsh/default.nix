@@ -29,7 +29,7 @@ in {
       };
       home.file = {
         ".config/zsh" = {
-          source = ../../configs/zsh;
+          source = ./configs;
           recursive = true;
         };
       };
