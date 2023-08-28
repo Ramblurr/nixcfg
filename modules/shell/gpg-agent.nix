@@ -18,9 +18,7 @@ in {
   };
   config = mkIf cfg.enable {
     services.pcscd.enable = true;
-    myhm = {
-      ...
-    } @ hm: {
+    myhm = {...} @ hm: {
       services.gpg-agent = {
         enable = true;
         enableSshSupport = true;

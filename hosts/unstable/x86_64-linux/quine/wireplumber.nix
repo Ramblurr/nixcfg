@@ -1,5 +1,9 @@
-{ config, lib, pkgs, ... }:
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   home-manager.users."${config.modules.users.primaryUser.username}" = {pkgs, ...} @ hm: {
     xdg.configFile."wireplumber/main.lua.d/51-disable-hdmi-sinks.lua".text = ''
       rule = {

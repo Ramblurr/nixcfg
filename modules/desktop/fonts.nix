@@ -36,32 +36,33 @@ in {
   };
   config = mkIf cfg.enable {
     fonts = {
-      packages = (map (p: p.package)
-        [
-          cfg.sans
-          cfg.serif
-          cfg.monospace
-          cfg.fallback
-          cfg.emoji
-        ])
-      ++ (with pkgs; [
-        liberation_ttf # free corefonts-metric-compatible replacement
-        ttf_bitstream_vera
-        gelasio # metric-compatible with Georgia
-        powerline-symbols
-        (nerdfonts.override {fonts = ["Iosevka" "FiraCode" "Mononoki" "JetBrainsMono" "NerdFontsSymbolsOnly"];})
-      ]);
+      packages =
+        (map (p: p.package)
+          [
+            cfg.sans
+            cfg.serif
+            cfg.monospace
+            cfg.fallback
+            cfg.emoji
+          ])
+        ++ (with pkgs; [
+          liberation_ttf # free corefonts-metric-compatible replacement
+          ttf_bitstream_vera
+          gelasio # metric-compatible with Georgia
+          powerline-symbols
+          (nerdfonts.override {fonts = ["Iosevka" "FiraCode" "Mononoki" "JetBrainsMono" "NerdFontsSymbolsOnly"];})
+        ]);
 
-    fontDir.enable = true;
+      fontDir.enable = true;
 
-    fontconfig = {
-      defaultFonts = {
-        serif = [cfg.serif.family];
-        sansSerif = [cfg.sans.family];
-        monospace = [cfg.sans.family];
-        emoji = [cfg.emoji.family];
+      fontconfig = {
+        defaultFonts = {
+          serif = [cfg.serif.family];
+          sansSerif = [cfg.sans.family];
+          monospace = [cfg.sans.family];
+          emoji = [cfg.emoji.family];
+        };
       };
     };
-  };
   };
 }
