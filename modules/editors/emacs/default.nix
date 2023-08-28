@@ -70,7 +70,6 @@ in {
         # :lang beancount
         beancount
         fava
-
       ];
       persistence = mkIf withImpermanence {
         directories = [
