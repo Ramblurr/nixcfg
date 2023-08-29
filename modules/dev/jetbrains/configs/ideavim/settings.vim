@@ -28,5 +28,3 @@ set history=1000
 
 set relativenumber
 set number
-
-

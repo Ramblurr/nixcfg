@@ -8,4 +8,3 @@ source ~/.config/ideavim/projects.vim
 
 " major modes
 source ~/.config/ideavim/major.vim
-
