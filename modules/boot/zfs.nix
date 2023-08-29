@@ -117,7 +117,9 @@ in {
     services.fwupd.enable = true;
     services.udisks2.enable = true;
     hardware.enableRedistributableFirmware = true;
-    hardware.usb-modeswitch.enable = false; # dual role usb/cdrom stick thing
+    # TODO(upgrade) hardware.usbWwan to hardware.usb-modeswitch once everything is on 23.11
+    hardware.usbWwan.enable = false; # dual role usb/cdrom stick thing
+    # hardware.usb-modeswitch.enable = false; # dual role usb/cdrom stick thing
     hardware.cpu.amd.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
     hardware.cpu.intel.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
 

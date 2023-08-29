@@ -18,7 +18,8 @@ in {
   };
   config = mkIf cfg.enable {
     services.emacs.enable = true;
-    fonts.packages = [pkgs.emacs-all-the-icons-fonts];
+    # TODO(upgrade) to fonts.packages once everything is on 23.11
+    fonts.fonts = [pkgs.emacs-all-the-icons-fonts];
 
     system.userActivationScripts = {
       # Installation script every time nixos-rebuild is run. So not during initial install.

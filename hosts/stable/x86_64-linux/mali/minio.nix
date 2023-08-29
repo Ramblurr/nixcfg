@@ -10,8 +10,8 @@
   services.minio = {
     enable = true;
     dataDir = ["/mnt/tank2/services/minio"];
-    package = pkgs.unstable.minio;
+    package = pkgs.minio;
     rootCredentialsFile = config.sops.secrets.minio-root-credentials.path;
-    networking.firewall.allowedTCPPorts = [9000 9001];
   };
+  networking.firewall.allowedTCPPorts = [9000 9001];
 }

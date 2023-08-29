@@ -6,13 +6,15 @@
   acmeSecrets = lib.importJSON ../../../../secrets/mali-acme.secrets;
   creds = pkgs.writeTextFile {
     name = "cloudflare.env";
-    text = acmeSecrets.cloudflareEnv;
+    text = ''
+      CF_DNS_API_TOKEN=${acmeSecrets.cloudflare_dns_token}
+    '';
   };
   email = acmeSecrets.email;
 
   extraLegoFlags = ["--dns.resolvers=1.1.1.1:53"];
   certStanzas =
-    builtins.mapAttrsToList (name: value: {
+    lib.mapAttrsToList (name: value: {
       inherit name;
       group = value.group;
       dnsProvider = value.dnsProvider;
@@ -23,7 +25,7 @@ in {
   security.acme.defaults.email = email;
   security.acme.acceptTerms = true;
 
-  security.acme.certs = builtins.listToAttrs (builtins.map (x: {
+  security.acme.certs = lib.listToAttrs (builtins.map (x: {
       name = x.name;
       value =
         {

@@ -24,6 +24,9 @@ in {
   i18n.defaultLocale = "en_US.utf8";
   sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
   environment.etc."machine-id".text = "3b3e54988be146febcce587e0f65669b";
+  sops.defaultSopsFile = ./secrets.sops.yaml;
+  documentation.nixos.enable = false;
+  documentation.doc.enable = false;
   modules = {
     shell = {
       atuin.enable = true;
@@ -59,7 +62,7 @@ in {
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
       shell = pkgs.zsh;
-      defaultSopsFile = ./secrets-mali.sops.yaml;
+      defaultSopsFile = ./secrets.sops.yaml;
       extraGroups = [
         "wheel"
       ];
@@ -74,10 +77,12 @@ in {
     k8s-nfs = {
       group = "k8s-nfs";
       uid = 2000;
+      isSystemUser = true;
     };
     proxmox = {
       group = "proxmox";
       uid = 1004;
+      isSystemUser = true;
     };
   };
   services.smartd.enable = true;

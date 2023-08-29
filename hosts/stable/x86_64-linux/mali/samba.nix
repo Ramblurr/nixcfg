@@ -14,7 +14,6 @@
   ];
   services.samba = {
     enable = true;
-    syncPasswordsByPam = true;
     securityType = "user";
     # enableNmbd = false;
     # enableWinbindd = false;

@@ -26,7 +26,6 @@ in {
         uid = mkIntOpt 1000;
         passwordEnable = mkBoolOpt true;
         passwordSecretKey = mkStrOpt "ramblurr-password";
-
         defaultSopsFile = mkOption {
           type = types.nullOr (types.path);
           default = ../../secrets/secrets.sops.yaml;
@@ -103,6 +102,8 @@ in {
       ];
       home.stateVersion = "21.11";
       home.homeDirectory = cfg.primaryUser.homeDirectory;
+
+      manual.manpages.enable = true;
       systemd.user.startServices = true;
       programs = {
         home-manager.enable = true;
@@ -115,7 +116,7 @@ in {
       };
       nix.registry.nixpkgs.flake = inputs.nixpkgs;
       sops = {
-        defaultSopsFile = cfg.defaultSopsFile;
+        defaultSopsFile = cfg.primaryUser.defaultSopsFile;
         gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
       };
       # This is an alias for

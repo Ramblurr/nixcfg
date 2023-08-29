@@ -14,12 +14,10 @@
       node = {
         enable = true;
         enabledCollectors = ["systemd"];
-        openFirewall = true;
         port = 9001;
       };
       zfs = {
         enable = true;
-        openFirewall = true;
         port = 9002;
       };
       smartctl = {
