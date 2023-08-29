@@ -13,7 +13,19 @@ In the processes of nixifying everything.
 
 -> [hosts/unstable/x86_64-linux/quine/README.md](./hosts/unstable/x86_64-linux/quine/README.md)
 
+``` sh
+sudo nixos-rebuild --flake  .#quine build
+```
 
+### Mali - workstation
+
+[![NixOS Stable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+
+-> [hosts/stable/x86_64-linux/mali/README.md](./hosts/stable/x86_64-linux/mali/README.md)
+
+``` sh
+sudo nixos-rebuild --flake  .#mali build
+```
 
 # License and Inspiration
 
