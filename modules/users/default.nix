@@ -26,6 +26,11 @@ in {
         uid = mkIntOpt 1000;
         passwordEnable = mkBoolOpt true;
         passwordSecretKey = mkStrOpt "ramblurr-password";
+
+        defaultSopsFile = mkOption {
+          type = types.nullOr (types.path);
+          default = ../../secrets/secrets.sops.yaml;
+        };
         shell = mkOption {
           type = types.nullOr (types.either types.shellPackage (types.passwdEntry types.path));
           default = pkgs.bash;
@@ -110,7 +115,7 @@ in {
       };
       nix.registry.nixpkgs.flake = inputs.nixpkgs;
       sops = {
-        defaultSopsFile = ../../secrets/secrets.sops.yaml;
+        defaultSopsFile = cfg.defaultSopsFile;
         gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
       };
       # This is an alias for
