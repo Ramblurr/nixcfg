@@ -1,11 +1,11 @@
-#                 ██      
-#                ░██      
-#  ██████  ██████░██      
-# ░░░░██  ██░░░░ ░██████  
-#    ██  ░░█████ ░██░░░██ 
-#   ██    ░░░░░██░██  ░██ 
-#  ██████ ██████ ░██  ░██ 
-# ░░░░░░ ░░░░░░  ░░   ░░  
+#                 ██
+#                ░██
+#  ██████  ██████░██
+# ░░░░██  ██░░░░ ░██████
+#    ██  ░░█████ ░██░░░██
+#   ██    ░░░░░██░██  ░██
+#  ██████ ██████ ░██  ░██
+# ░░░░░░ ░░░░░░  ░░   ░░
 #
 #  ▓▓▓▓▓▓▓▓▓▓
 # ░▓ author ▓ xero <x@xero.nu>
@@ -102,12 +102,12 @@ GIT_PROMPT() {
 case "$PROMPT_STYLE" in
 #█▓▒░ ascii
 ascii)
-PROMPT='%{$bg[yellow]%} %F{black}%~ $(GIT_PROMPT)$reset_color 
+PROMPT='%{$bg[yellow]%} %F{black}%~ $(GIT_PROMPT)$reset_color
 %f'
 ;;
 #█▓▒░ arrows
 arrows)
-PROMPT='%{$bg[yellow]%}%F{black} %~ $(GIT_PROMPT)$reset_color 
+PROMPT='%{$bg[yellow]%}%F{black} %~ $(GIT_PROMPT)$reset_color
 %f'
 ;;
 #█▓▒░ ninja
@@ -116,7 +116,7 @@ PROMPT='%F{white}
         ▟▙  ${USER_LEVEL}%~   %F{white}$(GIT_PROMPT) %F{white}
 ▟▒${USER_LEVEL}░░░░░░░%F{white}▜▙▜████████████████████████████████▛
 ▜▒${USER_LEVEL}░░░░░░░%F{white}▟▛▟▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▛
-        ▜▛  
+        ▜▛
             %f'
 ;;
 #█▓▒░ dual line
