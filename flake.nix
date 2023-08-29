@@ -94,8 +94,6 @@
         #     home-manager = inputs.home-manager-stable;
       };
 
-    apps = inputs.nixinate.nixinate."${system}" self;
-
     packages."${system}" = import ./packages {inherit pkgs;};
 
     overlay = final: prev: {
