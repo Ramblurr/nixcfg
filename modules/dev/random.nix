@@ -53,6 +53,7 @@ in {
         bridge-utils
         yq
         yamlfmt
+        yamllint
         esphome
         shellcheck
         shadowsocks-rust
