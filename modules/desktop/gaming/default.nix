@@ -41,12 +41,14 @@ in {
         enableRenice = true;
       };
     };
+
     # Override Steam package to provide extra libraries for games
     nixpkgs.config.packageOverrides = pkgs: let
+      # TODO(upgrade) fonts.fonts to fonts.packages once everything is on 23.11
       fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
         mkdir -p "$out/share/fonts"
         font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-        find ${toString (config.fonts.packages)} -regex "$font_regexp" \
+        find ${toString (config.fonts.fonts)} -regex "$font_regexp" \
           -exec ln -sf -t "$out/share/fonts" '{}' \;
       '');
     in {
