@@ -18,7 +18,7 @@ in {
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
-      xdg.configFile."btop/themes/gruvbox_dark_v2.theme".source = ../../configs/btop/gruvbox_dark_v2.theme;
+      xdg.configFile."btop/themes/gruvbox_dark_v2.theme".source = ./configs/btop/gruvbox_dark_v2.theme;
       programs.btop = {
         enable = true;
         settings = {
