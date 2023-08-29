@@ -165,6 +165,27 @@
         "type": "github"
       }
     },
+    "home-manager-stable": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-stable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1693208669,
+        "narHash": "sha256-hHFaaUsZ860wvppPeiu7nJn/nXZjJfnqAQEu9SPFE9I=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "5bac4a1c06cd77cf8fc35a658ccb035a6c50cd2c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "ref": "release-23.05",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
     "hy3": {
       "inputs": {
         "hyprland": [
@@ -518,6 +539,7 @@
       "inputs": {
         "firefox-nightly": "firefox-nightly",
         "home-manager": "home-manager",
+        "home-manager-stable": "home-manager-stable",
         "hy3": "hy3",
         "hyprNStack": "hyprNStack",
         "hyprland": "hyprland",

@@ -28,6 +28,9 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    home-manager-stable.url = "github:nix-community/home-manager/release-23.05";
+    home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
+
     hyprNStack = {
       url = "github:SiriusStarr/hyprNStack";
       inputs.hyprland.follows = "hyprland";
@@ -76,14 +79,14 @@
         system = "x86_64-linux";
         mkPkgs = mkPkgs;
         home-manager = inputs.home-manager;
-        #   }
-        # // mapHosts ./hosts/stable/x86_64-linux
-        #   {
-        #     nixpkgs = inputs.nixpkgs-stable;
-        #     unstable = nixpkgs;
-        #     system = "x86_64-linux";
-        #     mkPkgs = mkPkgs;
-        #     home-manager = inputs.home-manager-stable;
+      }
+      // mapHosts ./hosts/stable/x86_64-linux
+      {
+        nixpkgs = inputs.nixpkgs-stable;
+        unstable = nixpkgs;
+        system = "x86_64-linux";
+        mkPkgs = mkPkgs;
+        home-manager = inputs.home-manager-stable;
         #   }
         # // mapHosts ./hosts/stable/aarch64-linux
         #   {
