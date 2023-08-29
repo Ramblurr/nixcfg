@@ -30,7 +30,7 @@
 	height = 100
 
 	# Position the notification
-	origin = bottom-right
+	origin = bottom-center
 
 	# Offset from the origin
 	offset = 10x10
@@ -111,7 +111,7 @@
 
 	### Text ###
 
-	font = Monospace 12
+	font = "Iosevka Comfy Fixed 13"
 
 	# The spacing between lines.  If the height is smaller than the
 	# font height, it will get raised to the font height.
