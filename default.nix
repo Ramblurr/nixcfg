@@ -82,6 +82,7 @@ with lib.my; {
     gnumake
     unzip
     killall
+    nvd
 
     # These are used by the flake tooling
     git
