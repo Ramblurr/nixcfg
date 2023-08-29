@@ -20,17 +20,17 @@ in {
     #   path = "/persist/etc/ssh/ssh_host_ed25519_key";
     # };
 
-    sops.secrets.ssh_host_ed25519_key_pub = {
-      path = "/persist/etc/ssh/ssh_host_ed25519_key.pub";
-    };
+    # sops.secrets.ssh_host_ed25519_key_pub = {
+    #   path = "/persist/etc/ssh/ssh_host_ed25519_key.pub";
+    # };
 
-    sops.secrets.ssh_host_rsa_key = {
-      path = "/persist/etc/ssh/ssh_host_rsa_key";
-    };
+    # sops.secrets.ssh_host_rsa_key = {
+    #   path = "/persist/etc/ssh/ssh_host_rsa_key";
+    # };
 
-    sops.secrets.ssh_host_rsa_key_pub = {
-      path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
-    };
+    # sops.secrets.ssh_host_rsa_key_pub = {
+    #   path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
+    # };
 
     environment.persistence."/persist" = {
       files = [

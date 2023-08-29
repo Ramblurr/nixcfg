@@ -5,18 +5,26 @@ keys:
       - &disaster-recovery age15j42dspmmwprjau6l48xp05d97s8ml5s3tjxrfwvm37tvuynssuqtsevkj
   - &hosts:
       - &quine age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
+      - &mali age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
 creation_rules:
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
-    - age:
-      - *quine
-      - *disaster-recovery
-      pgp:
-      - *ramblurr
-  - path_regex: hosts/quine/secrets.sops.ya?ml$
+      - age:
+          - *quine
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
+  - path_regex: hosts/unstable/x86_64-linux/quine/secrets.sops.ya?ml$
     key_groups:
-    - age:
-      - *quine
-      - *disaster-recovery
-      pgp:
-      - *ramblurr
+      - age:
+          - *quine
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
+  - path_regex: hosts/stable/x86_64-linux/mali/secrets.sops.ya?ml$
+    key_groups:
+      - age:
+          - *mali
+          - *disaster-recovery
+        pgp:
+          - *ramblurr

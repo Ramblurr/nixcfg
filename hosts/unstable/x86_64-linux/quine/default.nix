@@ -98,13 +98,13 @@ in {
     };
     impermanence.enable = true;
     boot.zfs.enable = true;
-    boot.zfs.pools = ["rpool"];
+    boot.zfs.scrubPools = ["rpool"];
     vpn.mullvad.enable = true;
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
     networking.default.enable = true;
-    networking.default.hostName = "quine";
+    networking.default.hostName = hn;
     hardware.ryzen.enable = true;
     hardware.nvidia.enable = true;
     hardware.pipewire.enable = true;

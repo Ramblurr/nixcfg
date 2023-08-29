@@ -16,21 +16,29 @@ in {
       encrypted = mkBoolOpt true;
       usePlymouth = mkBoolOpt true;
       skipMitigations = mkBoolOpt true;
-      pools = mkOption {
+      autoSnapshot.enable = mkBoolOpt true;
+      rootPool = mkStrOpt "rpool";
+      scrubPools = mkOption {
         type = types.listOf types.str;
         default = ["rpool"];
+      };
+      extraPools = mkOption {
+        type = types.listOf types.str;
+        default = [];
       };
     };
   };
 
   config = {
     ## BOOT #################################################################
+    ## WARNING this module makes assumptions about your disk partition layout
     console.earlySetup = true; # needed for LUKS
     boot = {
       tmp.useTmpfs = mkDefault false;
       tmp.cleanOnBoot = true;
       zfs.enableUnstable = false;
       zfs.requestEncryptionCredentials = cfg.encrypted;
+      zfs.extraPools = cfg.extraPools;
 
       loader = {
         efi = {
@@ -67,16 +75,26 @@ in {
           unitConfig.DefaultDependencies = "no";
           serviceConfig.Type = "oneshot";
           #cryptsetup close /dev/mapper/cryptkey && \
-          script = mkIf config.modules.impermanence.enable ''
-            zfs rollback -r rpool/encrypted/local/root@blank && \
-            zfs rollback -r rpool/encrypted/local/home@blank && \
-            echo "rollback complete"
-          '';
+          script =
+            mkIf config.modules.impermanence.enable
+            (
+              if cfg.encrypted
+              then ''
+                zfs rollback -r ${cfg.rootPool}/encrypted/local/root@blank && \
+                zfs rollback -r ${cfg.rootPool}/encrypted/local/home@blank && \
+                echo "rollback complete"
+              ''
+              else ''
+                zfs rollback -r ${cfg.rootPool}/local/root@blank && \
+                zfs rollback -r ${cfg.rootPool}/local/home@blank && \
+                echo "rollback complete"
+              ''
+            );
         };
 
-        availableKernelModules = ["nvme" "thunderbolt" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod"];
+        availableKernelModules = ["nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod"];
       };
-      kernelModules = ["kvm-amd"];
+      kernelModules = ["kvm-intel"];
       extraModulePackages = [];
 
       kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
@@ -144,10 +162,10 @@ in {
       trim.enable = true;
       autoScrub = {
         enable = true;
-        pools = cfg.pools;
+        pools = cfg.scrubPools;
       };
       autoSnapshot = {
-        enable = true;
+        enable = cfg.autoSnapshot.enable;
         frequent = 8; # keep the latest eight 15-minute snapshots (instead of four)
         monthly = 1; # keep only one monthly snapshot (instead of twelve)
       };
