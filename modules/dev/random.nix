@@ -57,6 +57,7 @@ in {
         esphome
         shellcheck
         shadowsocks-rust
+        ssh-to-age
       ];
 
       persistence = mkIf withImpermanence {
