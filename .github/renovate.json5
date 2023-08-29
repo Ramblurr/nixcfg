@@ -4,7 +4,8 @@
     "enabled": true
   },
   "lockFileMaintenance": {
-    "enabled": true
+    "enabled": true,
+    "extends": ["schedule:weekly"]
   },
   "extends": [
     "config:recommended"
