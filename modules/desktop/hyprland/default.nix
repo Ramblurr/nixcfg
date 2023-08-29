@@ -35,7 +35,9 @@ in {
       kdeconnect.enable = true; # Connect phone to PC
       hyprland.enable = true;
       hyprland.package = inputs.hyprland.packages.${pkgs.system}.hyprland;
-      hyprland.enableNvidiaPatches = true;
+      # TODO(upgrade) `hyprland.nvidiaPatches` to `hyprland.enableNvidiaPatches`
+      hyprland.nvidiaPatches = true;
+      #hyprland.enableNvidiaPatches = true;
     };
 
     security.polkit.enable = true;
