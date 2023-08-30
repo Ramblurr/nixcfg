@@ -1,43 +1,51 @@
 {
   lib,
   pkgs,
+  config,
   ...
-}: let
-  acmeSecrets = lib.importJSON ../../../../secrets/mali-acme.secrets;
-  creds = pkgs.writeTextFile {
-    name = "cloudflare.env";
-    text = ''
-      CF_DNS_API_TOKEN=${acmeSecrets.cloudflare_dns_token}
-    '';
+}: {
+  security.acme = {
+    acceptTerms = true;
+    defaults = {
+      email = "acme@outskirtslabs.com";
+      dnsProvider = "cloudflare";
+      credentialsFile = config.sops.templates.acme-credentials.path;
+      extraLegoFlags = ["--dns.resolvers=1.1.1.1:53"];
+    };
   };
-  email = acmeSecrets.email;
 
-  extraLegoFlags = ["--dns.resolvers=1.1.1.1:53"];
-  certStanzas =
-    lib.mapAttrsToList (name: value: {
-      inherit name;
-      group = value.group;
-      dnsProvider = value.dnsProvider;
-      extraDomainNames = value.extraDomainNames;
-    })
-    acmeSecrets.certs;
-in {
-  security.acme.defaults.email = email;
-  security.acme.acceptTerms = true;
+  sops.secrets."acmeSecrets/cloudflareDnsToken" = {
+    sopsFile = ./secrets.sops.yaml;
+    restartUnits = [];
+  };
 
-  security.acme.certs = lib.listToAttrs (builtins.map (x: {
-      name = x.name;
-      value =
-        {
-          group = x.group;
-          extraDomainNames = x.extraDomainNames;
-        }
-        // {
-          credentialsFile = "${creds}";
-          dnsProvider = "cloudflare";
-          email = email;
-          inherit extraLegoFlags;
-        };
-    })
-    certStanzas);
+  sops.secrets."acmeSecrets/cloudflareZoneToken" = {
+    sopsFile = ./secrets.sops.yaml;
+    restartUnits = [];
+  };
+
+  sops.templates.acme-credentials.content = ''
+    CF_DNS_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareDnsToken"}
+    CF_ZONE_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareZoneToken"}
+  '';
+  security.acme.certs = {
+    "mali" = {
+      domain = "mali.int.socozy.casa";
+      extraDomainNames = [];
+      group = "nginx";
+    };
+    "s3" = {
+      domain = "s3.data.socozy.casa";
+      extraDomainNames = ["*.s3.data.socozy.casa"];
+      group = "minio";
+    };
+  };
+
+  environment.persistence = {
+    "/persist" = {
+      directories = [
+        "/var/lib/acme"
+      ];
+    };
+  };
 }
