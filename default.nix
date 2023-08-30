@@ -72,14 +72,12 @@ with lib.my; {
 
   # Just the bare necessities...
   environment.systemPackages = with pkgs; [
-    bind
     cached-nix-shell
     dig
     jq
     curl
     vim
     wget
-    gnumake
     unzip
     killall
     nvd
