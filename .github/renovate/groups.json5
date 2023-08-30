@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    packageRules: [
+    {
+      "matchDatasources": ["maven"],
+      "matchPackagePatterns": ["^org\\.openjfx\\/javafx-.*$"],
+      "groupName": "org.openjfx clojure libraries",
+      "groupSlug": "org-openjfx",
+      "matchFiles": ["modules/dev/clojure/configs/deps.edn"],
+      "separateMinorPatch": true
+    }
+    ],
+}
