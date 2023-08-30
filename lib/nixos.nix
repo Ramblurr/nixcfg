@@ -26,6 +26,9 @@ with lib.my; {
           networking.hostName = mkDefault (removeSuffix ".nix" (baseNameOf path));
         }
         home-manager.nixosModules.home-manager
+        ({...}: {
+          modules.sops.secretsFile = builtins.getEnv "SOPS_SECRETS_FILE";
+        })
         (filterAttrs (n: v: !elem n ["nixpkgs" "unstable" "system" "mkPkgs" "home-manager"]) attrs)
         ../. # /default.nix
         (import path)

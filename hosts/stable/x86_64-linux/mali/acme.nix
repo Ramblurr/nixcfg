@@ -1,10 +1,10 @@
 {
   lib,
   pkgs,
+  config,
   ...
 }: let
-  sopsFile = builtins.getEnv "SOPS_SECRETS_FILE";
-  acmeSecrets = (lib.importJSON sopsFile).acme_secrets;
+  acmeSecrets = (lib.importJSON config.modules.sops.secretsFile).acme_secrets;
 
   creds = pkgs.writeTextFile {
     name = "cloudflare.env";

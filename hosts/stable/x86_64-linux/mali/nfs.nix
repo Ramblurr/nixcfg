@@ -4,8 +4,7 @@
   pkgs,
   ...
 }: let
-  sopsFile = builtins.getEnv "SOPS_SECRETS_FILE";
-  nfsExports = (lib.importJSON sopsFile).nfs_exports;
+  nfsExports = (lib.importJSON config.modules.sops.secretsFile).nfs_exports;
 in {
   services.nfs.server = {
     enable = true;
