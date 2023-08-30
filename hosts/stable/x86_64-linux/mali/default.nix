@@ -19,6 +19,19 @@ in {
     ./borgbackup-server.nix
     ./ups.nix
   ];
+  # TODO
+  # mail notifications ups, zfs issues
+  # users
+  #   zigbee2mqtt
+  #   roon
+  #   homeassistant / hassos?
+  #   phoniebox ?
+  #   media ?
+  #
+  # rclone
+  # firewall check
+  # impermanence for all custom config
+  # zrepl use unstable https://github.com/danderson/homelab/blob/30b7aa0907831d07959323084e0e536d03a78219/lib/zrepl.nix#L4
   system.stateVersion = "23.05";
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
@@ -92,11 +105,4 @@ in {
     rclone
     sshfs
   ];
-  # TODO
-  # users
-  # zigbee2mqtt
-  # roon
-  # homeassistant / hassos?
-  # phoniebox ?
-  # media ?
 }
