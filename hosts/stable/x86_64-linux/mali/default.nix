@@ -64,7 +64,7 @@ in {
       encrypted = true;
       rootPool = "rpool";
       scrubPools = ["rpool"];
-      extraPools = ["tank" "tank2" "fast"];
+      # extraPools = ["tank" "tank2" "fast"];
     };
     vpn.tailscale.enable = true;
     firewall.enable = true;
