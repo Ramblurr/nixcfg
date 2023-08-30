@@ -82,6 +82,11 @@ in {
     };
   };
 
+  sops.secrets."maliSecrets" = {
+    sopsFile = ./secrets.sops.yaml;
+    restartUnits = []; # no need to restart units
+  };
+
   users.groups = {
     k8s-nfs.gid = 2000;
     proxmox.gid = 1004;
