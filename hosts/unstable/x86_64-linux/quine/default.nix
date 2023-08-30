@@ -6,6 +6,7 @@
   ...
 }: let
   hn = "quine";
+  defaultSopsFile = ./secrets.sops.yaml;
 in {
   imports = [
     ../../../home.nix
@@ -16,8 +17,8 @@ in {
     ./syncthing.nix
   ];
   system.stateVersion = "23.05";
+  sops.defaultSopsFile = defaultSopsFile;
   sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
-  sops.defaultSopsFile = ./secrets.sops.yaml;
   environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
   services.udev.extraRules = ''
     KERNEL=="ttyACM0", MODE:="666"
@@ -91,6 +92,7 @@ in {
       jetbrains.enable = true;
       random.enable = true;
     };
+
     editors = {
       emacs.enable = true;
       vim.enable = true;
@@ -116,6 +118,7 @@ in {
       signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
+      defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
