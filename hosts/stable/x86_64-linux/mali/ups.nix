@@ -40,4 +40,11 @@
     description = "UPS monitor user";
   };
   users.groups."nut" = {gid = 84;};
+
+  environment.persistence."/persist" = {
+    hideMounts = true;
+    directories = [
+      "/var/lib/nut"
+    ];
+  };
 }

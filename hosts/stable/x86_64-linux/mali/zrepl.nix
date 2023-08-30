@@ -1,12 +1,14 @@
 {
   config,
   pkgs,
+  inputs,
   lib,
   ...
 }: {
   networking.firewall.allowedTCPPorts = [9811 3478];
   services.zrepl = {
     enable = false;
+    package = inputs.unstable.zrepl;
     settings = {
       global = {
         logging = [

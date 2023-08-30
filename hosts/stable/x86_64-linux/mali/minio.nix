@@ -14,4 +14,10 @@
     rootCredentialsFile = config.sops.secrets.minio-root-credentials.path;
   };
   networking.firewall.allowedTCPPorts = [9000 9001];
+
+  environment.persistence."/persist" = {
+    directories = [
+      "/var/lib/minio/"
+    ];
+  };
 }

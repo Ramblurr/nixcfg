@@ -105,4 +105,13 @@ in {
     rclone
     sshfs
   ];
+  environment.persistence."/persist" = {
+    hideMounts = true;
+    directories = [
+      "/var/lib/nixos"
+      "/var/lib/systemd/coredump"
+    ];
+    files = [
+    ];
+  };
 }
