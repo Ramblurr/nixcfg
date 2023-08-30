@@ -5,10 +5,12 @@
   modulesPath,
   ...
 }: {
+  # TODO(qemu)
   # imports = [
   #   (modulesPath + "/installer/scan/not-detected.nix")
   # ];
 
+  # TODO(qemu)
   imports = [
     (modulesPath + "/profiles/qemu-guest.nix")
   ];
@@ -48,8 +50,34 @@
   ];
 
   boot = {
+    zfs.devNodes = "/dev/disk/by-partuuid";
+    loader = {
+      efi = {
+        canTouchEfiVariables = true;
+      };
+      systemd-boot = {
+        enable = true;
+        configurationLimit = 20;
+      };
+    };
     initrd = {
-      availableKernelModules = ["aesni_intel" "cryptd"];
+      availableKernelModules = [
+        "aesni_intel"
+        "cryptd"
+        "nvme"
+        "xhci_pci"
+        "ahci"
+        "usb_storage"
+        "usbhid"
+        "sd_mod"
+
+        # TODO(qemu)
+        "ata_piix"
+        "uhci_hcd"
+        "virtio_pci"
+        "sr_mod"
+        "virtio_blk"
+      ];
 
       kernelModules = ["usb_storage"];
 

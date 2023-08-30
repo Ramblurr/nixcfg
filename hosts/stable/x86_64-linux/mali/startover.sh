@@ -6,6 +6,8 @@ if [ -d "/home/ramblurr" ];then
   exit 1
 fi
 
+
+umount /mnt/boot
 swapoff /dev/mapper/cryptswap
 cryptsetup close /dev/mapper/cryptswap
 cryptsetup close /dev/mapper/cryptkey
