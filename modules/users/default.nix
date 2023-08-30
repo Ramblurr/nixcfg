@@ -28,7 +28,6 @@ in {
         passwordSecretKey = mkStrOpt "ramblurr-password";
         defaultSopsFile = mkOption {
           type = types.nullOr (types.path);
-          default = ../../secrets/secrets.sops.yaml;
         };
         shell = mkOption {
           type = types.nullOr (types.either types.shellPackage (types.passwdEntry types.path));
@@ -84,7 +83,7 @@ in {
     };
 
     sops.secrets."${cfg.primaryUser.passwordSecretKey}" = mkIf cfg.primaryUser.passwordEnable {
-      sopsFile = ../../secrets/secrets.sops.yaml;
+      sopsFile = cfg.primaryUser.defaultSopsFile;
       neededForUsers = true;
     };
 
@@ -116,7 +115,6 @@ in {
       };
       nix.registry.nixpkgs.flake = inputs.nixpkgs;
       sops = {
-        defaultSopsFile = cfg.primaryUser.defaultSopsFile;
         gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
       };
       # This is an alias for

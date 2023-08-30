@@ -6,6 +6,7 @@
   ...
 }: let
   hn = "mali";
+  defaultSopsFile = ./secrets.sops.yaml;
 in {
   imports = [
     ./hardware-configuration.nix
@@ -33,11 +34,12 @@ in {
   # impermanence for all custom config
   # zrepl use unstable https://github.com/danderson/homelab/blob/30b7aa0907831d07959323084e0e536d03a78219/lib/zrepl.nix#L4
   system.stateVersion = "23.05";
+  sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
   sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
   environment.etc."machine-id".text = "3b3e54988be146febcce587e0f65669b";
-  sops.defaultSopsFile = ./secrets.sops.yaml;
+
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
   modules = {
@@ -57,11 +59,13 @@ in {
       vim.enable = true;
     };
     impermanence.enable = true;
-    boot.zfs.enable = true;
-    boot.zfs.encrypted = false;
-    boot.zfs.rootPool = "rpool";
-    boot.zfs.scrubPools = ["rpool"];
-    boot.zfs.extraPools = ["tank" "tank2" "fast"];
+    boot.zfs = {
+      enable = true;
+      encrypted = true;
+      rootPool = "rpool";
+      scrubPools = ["rpool"];
+      extraPools = ["tank" "tank2" "fast"];
+    };
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
@@ -75,7 +79,7 @@ in {
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
       shell = pkgs.zsh;
-      defaultSopsFile = ./secrets.sops.yaml;
+      defaultSopsFile = defaultSopsFile;
       extraGroups = [
         "wheel"
       ];
