@@ -20,27 +20,17 @@ in {
     #   path = "/persist/etc/ssh/ssh_host_ed25519_key";
     # };
 
-    # sops.secrets.ssh_host_ed25519_key_pub = {
-    #   path = "/persist/etc/ssh/ssh_host_ed25519_key.pub";
-    # };
-
-    # sops.secrets.ssh_host_rsa_key = {
-    #   path = "/persist/etc/ssh/ssh_host_rsa_key";
-    # };
-
-    # sops.secrets.ssh_host_rsa_key_pub = {
-    #   path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
-    # };
-
-    environment.persistence."/persist" = {
-      files = [
-        "/root/.ssh/known_hosts"
-        "/etc/ssh/ssh_host_ed25519_key"
-        "/etc/ssh/ssh_host_ed25519_key.pub"
-        "/etc/ssh/ssh_host_rsa_key"
-        "/etc/ssh/ssh_host_rsa_key.pub"
-      ];
+    sops.secrets.ssh_host_ed25519_key_pub = {
+      path = "/persist/etc/ssh/ssh_host_ed25519_key.pub";
     };
+
+    #sops.secrets.ssh_host_rsa_key = {
+    #  path = "/persist/etc/ssh/ssh_host_rsa_key";
+    #};
+
+    #sops.secrets.ssh_host_rsa_key_pub = {
+    #  path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
+    #};
     networking.firewall.allowedTCPPorts = [22];
 
     services.openssh = {
@@ -48,7 +38,20 @@ in {
       settings = {
         PermitRootLogin = lib.mkForce "no";
         PasswordAuthentication = false;
+        StreamLocalBindUnlink = true;
       };
+      hostKeys = [
+        {
+          path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key";
+          type = "ed25519";
+        }
+      ];
+    };
+
+    environment.persistence."/persist" = {
+      files = [
+        "/root/.ssh/known_hosts"
+      ];
     };
   };
 }

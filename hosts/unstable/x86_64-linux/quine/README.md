@@ -14,7 +14,7 @@
 
   git clone https://github.com/ramblurr/nixcfg.git /mnt/etc/nixos --recurse-submodules
 
-  cd /mnt/etc/nixos/hosts/quine
+  cd /mnt/etc/nixos/unstable/x86_64-linux/quine
 
   # edit disks.sh and verify vars
 
@@ -49,7 +49,7 @@
 
   git clone https://github.com/ramblurr/nixcfg.git /mnt/etc/nixos --recurse-submodules
 
-  cd /mnt/etc/nixos/hosts/quine
+  cd /mnt/etc/nixos/unstable/x86_64-linux/quine
 
   # edit disks.sh and verify vars
 
