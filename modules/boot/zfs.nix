@@ -40,24 +40,13 @@ in {
       zfs.requestEncryptionCredentials = cfg.encrypted;
       zfs.extraPools = cfg.extraPools;
 
-      loader = {
-        efi = {
-          canTouchEfiVariables = true;
-        };
-        systemd-boot = {
-          enable = true;
-          configurationLimit = 20;
-        };
-        timeout = 3;
-      };
-
       plymouth.enable = cfg.usePlymouth;
       initrd = {
+        supportedFilesystems = ["zfs"];
         # NOTE: 2023-04-24
         # I couldn't get initrd.systemd to work the rollback service failed with
         # "The ZFS Modules are not loaded"
         systemd.enable = false;
-        supportedFilesystems = ["zfs"];
         systemd.services.rollback = mkIf (config.boot.initrd.systemd.enable) {
           description = "Rollback ZFS datasets to a pristine state";
           wantedBy = [
@@ -91,8 +80,6 @@ in {
               ''
             );
         };
-
-        availableKernelModules = ["nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod"];
       };
       kernelModules = ["kvm-intel"];
       extraModulePackages = [];

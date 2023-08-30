@@ -51,7 +51,7 @@ check_key
 rm -f /mnt/etc/nixos/configuration.nix
 
 
-nixos-install --no-root-passwd --flake '.#mali'
+nixos-install --flake '.#mali'
 
 info "Done."
 echo
