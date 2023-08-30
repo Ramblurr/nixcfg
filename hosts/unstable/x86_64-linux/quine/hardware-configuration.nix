@@ -49,8 +49,8 @@
     {device = "/dev/mapper/cryptswap";}
   ];
   boot = {
-    timeout = 3;
     loader = {
+      timeout = 3;
       efi = {
         canTouchEfiVariables = true;
       };
