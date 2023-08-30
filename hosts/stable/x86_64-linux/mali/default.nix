@@ -7,6 +7,7 @@
 }: let
   hn = "mali";
   defaultSopsFile = ./secrets.sops.yaml;
+  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
 in {
   imports = [
     ./hardware-configuration.nix
@@ -72,14 +73,14 @@ in {
     networking.default.enable = true;
     networking.default.hostName = hn;
     users.primaryUser = {
-      username = "ramblurr";
-      name = "Casey Link";
-      homeDirectory = "/home/ramblurr";
-      signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
-      email = "unnamedrambler@gmail.com";
-      passwordSecretKey = "ramblurr-password";
-      shell = pkgs.zsh;
+      username = ramblurr.username;
+      name = ramblurr.name;
+      homeDirectory = ramblurr.homeDirectory;
+      signingKey = ramblurr.signingKey;
+      email = ramblurr.email;
+      passwordSecretKey = ramblurr.passwordSecretKey;
       defaultSopsFile = defaultSopsFile;
+      shell = pkgs.zsh;
       extraGroups = [
         "wheel"
       ];
