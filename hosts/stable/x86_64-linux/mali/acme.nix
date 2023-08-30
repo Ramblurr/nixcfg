@@ -3,11 +3,14 @@
   pkgs,
   ...
 }: let
-  acmeSecrets = lib.importJSON ../../../../secrets/mali-acme.secrets;
+  sopsFile = builtins.getEnv "SOPS_SECRETS_FILE";
+  acmeSecrets = (lib.importJSON sopsFile).acme_secrets;
+
   creds = pkgs.writeTextFile {
     name = "cloudflare.env";
     text = ''
-      CF_DNS_API_TOKEN=${acmeSecrets.cloudflare_dns_token}
+      CF_DNS_API_TOKEN=${acmeSecrets.cloudflareDnsToken}
+      CF_ZONE_API_TOKEN=${acmeSecrets.cloudflareZoneToken}
     '';
   };
   email = acmeSecrets.email;

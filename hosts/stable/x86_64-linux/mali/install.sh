@@ -19,6 +19,8 @@ function check_key {
     then
         echo
         info "Here we go..."
+        chown -R root:root /mnt/persist/etc/ssh/ssh_host_ed25519_key
+        chmod 0600 /mnt/persist/etc/ssh/ssh_host_ed25519_key
     else
         mkdir -p /mnt/persist/etc/ssh
         echo
@@ -46,11 +48,6 @@ if [[ ! -d /mnt/boot ]]; then
 fi
 
 check_key
-
-chown -R root:root /mnt/persist/etc/ssh/ssh_host_ed25519_key
-chmod 0600 /mnt/persist/etc/ssh/ssh_host_ed25519_key
-
-cd /home/nixos/nixcfg
 rm -f /mnt/etc/nixos/configuration.nix
 
 
