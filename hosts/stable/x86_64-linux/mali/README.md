@@ -11,28 +11,22 @@
 
 2. Follow:
   ``` sh
+  # edit disks.sh and verify vars
+  # partition disk
+  sudo ./disks.sh
+
   # go into a root shell
   sudo su
-
-  # create this folder if necessary
-  mkdir -p /mnt/etc/
 
   # get git
   nix-shell -p git sops
 
   git clone https://github.com/ramblurr/nixcfg.git /mnt/etc/nixos --recurse-submodules
 
-
   cd /mnt/etc/nixos/hosts/stable/x86_64-linux/mali
 
-  # edit disks.sh and verify vars
-
-  # partition disk
-  ./disks.sh
-
-  # Edit /persist/etc/ssh/ssh_host_ed25519_key and place the private key
-  # it is used to decrypt the secrets with sops
-  # you can get it with sops -d --extract "['ssh_host_ed25519_key']" ./secrets.sops.yaml
+  # Edit /mnt/persist/etc/ssh/ssh_host_ed25519_key and place the private key there
+  # sops -d --extract "['ssh_host_ed25519_key']" ./secrets.sops.yaml | ssh nixos 'cat - > /mnt/persist/etc/ssh/ssh_host_ed25519_key'
 
   # on your host machine setup a sops keyservice
   # this allows us to decrypt evaluation-time secrets without having pgp or keys installed on the to-be-installed nixos host

@@ -164,7 +164,7 @@ printf "changeme" | cryptsetup luksFormat --batch-mode --label cryptkey "${CRYPT
 printf "changeme" | cryptsetup open "${CRYPTKEY}" cryptkey -
 info "Generating boot encryption key ..."
 dd if=/dev/random of=boot.key bs=4096 count=1
-info "Adding boot.key to usb disk ${USB_DISK_PATH} as slot 1"
+info "Adding boot.key to usb disk ${USB_BOOT_KEY} as slot 1"
 printf "changeme" | cryptsetup luksAddKey "${CRYPTKEY}" ./boot.key
 dd if=./boot.key of="${USB_BOOT_KEY}"
 
@@ -270,6 +270,7 @@ info "Starting verification process."
 echo
 info "Umounting all"
 touch /mnt/home/marker
+mkdir /mnt/etc
 umount /mnt/boot
 umount /mnt/home
 umount /mnt/persist
