@@ -54,9 +54,10 @@ in {
         };
       };
 
-      networks."30-network-defaults-wired" = {
+      networks."99-network-defaults-wired" = {
         matchConfig.Name = "en* | eth* | usb*";
         networkConfig = {
+          Description = "Fallback Wired DHCP";
           DHCP = "yes";
           IPForward = "yes";
           # IPMasquerade = "both";

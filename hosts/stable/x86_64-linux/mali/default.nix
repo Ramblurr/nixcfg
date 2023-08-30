@@ -11,6 +11,7 @@
 in {
   imports = [
     ./hardware-configuration.nix
+    ./networking.nix
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
