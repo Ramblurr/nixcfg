@@ -48,10 +48,19 @@
   swapDevices = [
     {device = "/dev/mapper/cryptswap";}
   ];
-
   boot = {
+    timeout = 3;
+    loader = {
+      efi = {
+        canTouchEfiVariables = true;
+      };
+      systemd-boot = {
+        enable = true;
+        configurationLimit = 20;
+      };
+    };
     initrd = {
-      availableKernelModules = ["aesni_intel" "cryptd"];
+      availableKernelModules = ["nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod" "aesni_intel" "cryptd"];
 
       luks.devices = {
         cryptkey = {
