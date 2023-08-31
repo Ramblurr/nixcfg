@@ -5,21 +5,9 @@
   modulesPath,
   ...
 }: {
-  # notes
-  # /dev/sdd is the truenas disk
-  # /dev/sdf is a usb stick sandisk 3.2gen1 32gb - nixos installer
-  # /dev/sdg is a usb stick 16 gb ultrafit - for boot key
-  # /dev/nvme0n1 is zfs fast pool
-  # TODO(qemu)
-  # imports = [
-  #   (modulesPath + "/installer/scan/not-detected.nix")
-  # ];
-
-  # TODO(qemu)
   imports = [
-    (modulesPath + "/profiles/qemu-guest.nix")
+    (modulesPath + "/installer/scan/not-detected.nix")
   ];
-
   fileSystems."/" = {
     device = "rpool/encrypted/local/root";
     fsType = "zfs";
@@ -68,20 +56,14 @@
     initrd = {
       availableKernelModules = [
         "aesni_intel"
-        "cryptd"
-        "nvme"
-        "xhci_pci"
         "ahci"
-        "usb_storage"
-        "usbhid"
+        "cryptd"
+        "mpt3sas"
+        "nvme"
         "sd_mod"
-
-        # TODO(qemu)
-        "ata_piix"
-        "uhci_hcd"
-        "virtio_pci"
-        "sr_mod"
-        "virtio_blk"
+        "usbhid"
+        "usb_storage"
+        "xhci_pci"
       ];
 
       kernelModules = ["usb_storage"];

@@ -66,6 +66,7 @@ in {
       encrypted = true;
       rootPool = "rpool";
       scrubPools = ["rpool"];
+      autoSnapshot.enable = false;
       # extraPools = ["tank" "tank2" "fast"];
     };
     vpn.tailscale.enable = true;
@@ -106,10 +107,12 @@ in {
   };
   services.smartd.enable = true;
   environment.systemPackages = with pkgs; [
+    dosfstools
     smartmontools
     ncdu
     rclone
     sshfs
+    lshw
   ];
   environment.persistence."/persist" = {
     hideMounts = true;

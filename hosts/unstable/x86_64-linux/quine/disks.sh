@@ -89,10 +89,10 @@ export ZFS_ENCRYPTED="${ZFS_POOL}/encrypted"
 export ZFS_LOCAL="${ZFS_ENCRYPTED}/local"
 export ZFS_DS_ROOT="${ZFS_LOCAL}/root"
 export ZFS_DS_NIX="${ZFS_LOCAL}/nix"
+export ZFS_DS_HOME="${ZFS_LOCAL}/home"
 
 # persistent datasets
 export ZFS_SAFE="${ZFS_ENCRYPTED}/safe"
-export ZFS_DS_HOME="${ZFS_SAFE}/home"
 export ZFS_DS_PERSIST="${ZFS_SAFE}/persist"
 
 ################################################################################
