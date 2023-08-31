@@ -32,9 +32,9 @@
 
 set -euo pipefail
 
-DISK=vda # the disk to partition for nixos e.g, nvme0n1
+DISK=sdd # the disk to partition for nixos e.g, nvme0n1
 DISK_IS_NVME=no # whether the disk is an nvme or not: yes or no
-USB_DISK=vdb # should be usb stick for encryption key file
+USB_DISK=sdh # should be usb stick for encryption key file
 SWAPSIZE="4G"
 
 ################################################################################
@@ -103,10 +103,10 @@ export ZFS_ENCRYPTED="${ZFS_POOL}/encrypted"
 export ZFS_LOCAL="${ZFS_ENCRYPTED}/local"
 export ZFS_DS_ROOT="${ZFS_LOCAL}/root"
 export ZFS_DS_NIX="${ZFS_LOCAL}/nix"
+export ZFS_DS_HOME="${ZFS_LOCAL}/home"
 
 # persistent datasets
 export ZFS_SAFE="${ZFS_ENCRYPTED}/safe"
-export ZFS_DS_HOME="${ZFS_SAFE}/home"
 export ZFS_DS_PERSIST="${ZFS_SAFE}/persist"
 
 ################################################################################
@@ -132,7 +132,7 @@ sgdisk -c 1:"boot" -c 2:"rawcryptkey" -c 3:"rawcryptswap" -c 4:"rawcryptrpool" "
 
 
 info "Running the UEFI (GPT) partitioning for the USB key"
-blkdiscard -f "$USB_DISK_PATH"
+# blkdiscard -f "$USB_DISK_PATH" # doesn't work on USB keys
 sgdisk --zap-all "$USB_DISK_PATH"
 sgdisk --clear  --mbrtogpt "$USB_DISK_PATH"
 sgdisk -n 0:1M:+513M -t 0:8309 "$USB_DISK_PATH"
