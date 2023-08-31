@@ -9,12 +9,20 @@
   # 1.
   # from workstation
   ssh-copy-id -f -i ~/.ssh/casey.pub nixos
-  rsync  -avr ~/nixcfg/hosts/ nixos:nixcfg/hosts
+  rsync  -avr ~/nixcfg nixos:
+
+  # WARNING: ensure target disks are correct
+  lsblk -a -o NAME,SIZE,VENDOR,NAME,MODEL,PARTLABEL
 
   # 2.
   # from target
   cd /home/nixos/nixcfg/hosts/stable/x86_64-linux/mali
   sudo ./disks.sh
+
+  # 3. Save hdd.key and boot.key
+  scp nixos:/home/nixos/nixcfg/hosts/stable/x86_64-linux/mali/boot.key .
+  scp nixos:/home/nixos/nixcfg/hosts/stable/x86_64-linux/mali/hdd.key .
+  # Add them to your password manager
 
   # 3.
   # go into a root shell
