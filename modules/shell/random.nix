@@ -23,7 +23,6 @@ in {
         # <rust pkgs>
         bat
         du-dust
-        exa
         fd
         gitui
         gex
@@ -32,7 +31,6 @@ in {
         jless
         sd
         procs
-        ripgrep
         # </rust pkgs>
         nix-du
         nix-tree

@@ -22,7 +22,11 @@ in {
 
     programs.zsh.enable = true;
     # users.users."${username}".ignoreShellProgramCheck = true;
-    home-manager.users."${username}" = {...} @ hm: {
+    myhm = {...} @ hm: {
+      home.packages = with pkgs; [
+        exa
+        ripgrep
+      ];
       programs.fzf = {
         enable = true;
         enableZshIntegration = true;

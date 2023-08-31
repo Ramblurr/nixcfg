@@ -92,6 +92,7 @@ in {
   users.groups = {
     k8s-nfs.gid = 2000;
     proxmox.gid = 1004;
+    photo-backup.gid = 3000;
   };
   users.users = {
     k8s-nfs = {
