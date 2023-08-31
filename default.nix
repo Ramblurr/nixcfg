@@ -86,5 +86,6 @@ with lib.my; {
     git
     git-crypt
     sops
+    gnupg
   ];
 }

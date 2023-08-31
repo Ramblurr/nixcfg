@@ -1,0 +1,71 @@
+---
+version: "3"
+
+#env:
+
+includes:
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task -l
+
+  check:
+    cmds:
+      - nix flake check --all-systems
+
+  update:
+    desc: Update the flake inputs
+    cmds:
+      - nix flake update
+
+  nixos-rebuild:
+    internal: true
+    cmds:
+      - nixos-rebuild {{.ACTION}} --fast --use-remote-sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}}
+
+  switch:quine:
+    desc: Switch quine
+    cmds:
+      - sudo nixos-rebuild --flake  .#quine switch
+
+  build:quine:
+    desc: Build quine
+    cmds:
+      - sudo nixos-rebuild --flake  .#quine build
+
+  test:quine:
+    desc: Test quine
+    cmds:
+      - sudo nixos-retest --flake  .#quine test
+  test:mali:
+    desc: Test mali
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: test
+          BUILD_HOST: newmali
+          TARGET_HOST: newmali
+          FLAKE_URI: .#mali
+
+
+  build:mali:
+    desc: Build mali
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: newmali
+          TARGET_HOST: newmali
+          FLAKE_URI: .#mali
+
+  switch:mali:
+    desc: Switch  mali
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: newmali
+          TARGET_HOST: newmali
+          FLAKE_URI: .#mali
