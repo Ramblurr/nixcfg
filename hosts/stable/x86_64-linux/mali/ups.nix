@@ -24,6 +24,10 @@
     format = "binary";
     sopsFile = ./upsmon.sops.conf;
   };
+  sops.secrets.upsAdminPassword = {
+    mode = "0440";
+    group = "nut";
+  };
   environment.etc."nut/upsd.users".source =
     config.sops.secrets.upsd-users.path;
   environment.etc."nut/upsmon.conf".source =
