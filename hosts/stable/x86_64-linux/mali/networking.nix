@@ -77,12 +77,12 @@
       "10-lagg0" = {
         matchConfig = {name = "lagg0";};
       };
-      "11-igb0" = {
-        matchConfig = {name = "igb0";};
+      "11-eno1" = {
+        matchConfig = {name = "eno1";};
         networkConfig = {Bond = "lagg0";};
       };
-      "12-igb0" = {
-        matchConfig = {name = "igb1";};
+      "12-eno1" = {
+        matchConfig = {name = "eno2";};
         networkConfig = {Bond = "lagg0";};
       };
       "20-vlan4" = {
@@ -118,13 +118,13 @@
           Description = "mgmt";
         };
       };
-      "60-ix1" = {
-        matchConfig = {name = "ix1";};
+      "60-enp1s0f0" = {
+        matchConfig = {name = "enp1s0f0";};
         networkConfig = {Description = "10gbe";};
         linkConfig = {MTUBytes = "9000";};
       };
       "70-vlan11" = {
-        matchConfig = {name = "ix1";};
+        matchConfig = {name = "enp1s0f0";};
         networkConfig = {VLAN = "vlan11";};
       };
       "80-bridge11" = {

@@ -5,6 +5,11 @@
   modulesPath,
   ...
 }: {
+  # notes
+  # /dev/sdd is the truenas disk
+  # /dev/sdf is a usb stick sandisk 3.2gen1 32gb - nixos installer
+  # /dev/sdg is a usb stick 16 gb ultrafit - for boot key
+  # /dev/nvme0n1 is zfs fast pool
   # TODO(qemu)
   # imports = [
   #   (modulesPath + "/installer/scan/not-detected.nix")
