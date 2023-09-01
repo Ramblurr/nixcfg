@@ -122,6 +122,7 @@ in {
           "utcnow" = "date -u +\"%Y-%m-%d %H:%M:%S\"";
           "task" = "go-task";
           "k" = "kubectl";
+          rsync = "rsync --info=progress2";
           # systemd
           log = "sudo journalctl --output cat -u"; # log sshd -f
           logu = "journalctl --user --output cat -u"; # log sshd -f
@@ -134,7 +135,7 @@ in {
           ssu = "systemctl stop --user";
           sru = "systemctl reload --user";
           sRu = "systemctl restart --user";
-          rsync = "rsync --info=progress2";
+          list-units = "systemctl list-units --type=service | awk '/.service/ {print $1}'";
         };
 
         envExtra = ''
