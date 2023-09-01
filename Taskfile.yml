@@ -45,8 +45,8 @@ tasks:
       - task: nixos-rebuild
         vars:
           ACTION: test
-          BUILD_HOST: malinew
-          TARGET_HOST: malinew
+          BUILD_HOST: mali.int.socozy.casa
+          TARGET_HOST: mali.int.socozy.casa
           FLAKE_URI: .#mali
 
 
@@ -56,8 +56,8 @@ tasks:
       - task: nixos-rebuild
         vars:
           ACTION: build
-          BUILD_HOST: malinew
-          TARGET_HOST: malinew
+          BUILD_HOST: mali.int.socozy.casa
+          TARGET_HOST: mali.int.socozy.casa
           FLAKE_URI: .#mali
 
   switch:mali:
@@ -66,6 +66,6 @@ tasks:
       - task: nixos-rebuild
         vars:
           ACTION: switch
-          BUILD_HOST: malinew
-          TARGET_HOST: malinew
+          BUILD_HOST: mali.int.socozy.casa
+          TARGET_HOST: mali.int.socozy.casa
           FLAKE_URI: .#mali
