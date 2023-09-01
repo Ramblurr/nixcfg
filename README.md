@@ -3,7 +3,7 @@
 
 ---
 
-In the processes of nixifying everything.
+In the processes of nixifying everything (except maybe my [k8s@home cluster](https://github.com/ramblurr/home-ops))!
 
 ## Hosts
 
@@ -11,20 +11,27 @@ In the processes of nixifying everything.
 
 [![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
--> [hosts/unstable/x86_64-linux/quine/README.md](./hosts/unstable/x86_64-linux/quine/README.md)
+[hosts/unstable/x86_64-linux/quine/README.md](./hosts/unstable/x86_64-linux/quine/README.md)
 
-``` sh
-sudo nixos-rebuild --flake  .#quine build
+```sh
+task build:quine
+task test:quine
+task switch:quine
 ```
 
-### Mali - workstation
+### Mali - NAS
 
-[![NixOS Stable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+[![NixOS Stable](https://img.shields.io/badge/NixOS-stable-green.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
--> [hosts/stable/x86_64-linux/mali/README.md](./hosts/stable/x86_64-linux/mali/README.md)
+[hosts/stable/x86_64-linux/mali/README.md](./hosts/stable/x86_64-linux/mali/README.md)
 
-``` sh
-sudo nixos-rebuild --flake  .#mali build
+
+Deploy remotely!
+
+```sh
+task build:mali
+task test:mali
+task switch:mali
 ```
 
 # License and Inspiration
