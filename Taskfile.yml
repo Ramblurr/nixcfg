@@ -23,7 +23,7 @@ tasks:
   nixos-rebuild:
     internal: true
     cmds:
-      - nixos-rebuild {{.ACTION}} --fast --use-remote-sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}}
+      - nixos-rebuild --fast --use-remote-sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}}
 
   switch:quine:
     desc: Switch quine
@@ -38,15 +38,15 @@ tasks:
   test:quine:
     desc: Test quine
     cmds:
-      - sudo nixos-retest --flake  .#quine test
+      - sudo nixos-rebuild --flake  .#quine test
   test:mali:
     desc: Test mali
     cmds:
       - task: nixos-rebuild
         vars:
           ACTION: test
-          BUILD_HOST: newmali
-          TARGET_HOST: newmali
+          BUILD_HOST: malinew
+          TARGET_HOST: malinew
           FLAKE_URI: .#mali
 
 
@@ -56,8 +56,8 @@ tasks:
       - task: nixos-rebuild
         vars:
           ACTION: build
-          BUILD_HOST: newmali
-          TARGET_HOST: newmali
+          BUILD_HOST: malinew
+          TARGET_HOST: malinew
           FLAKE_URI: .#mali
 
   switch:mali:
@@ -66,6 +66,6 @@ tasks:
       - task: nixos-rebuild
         vars:
           ACTION: switch
-          BUILD_HOST: newmali
-          TARGET_HOST: newmali
+          BUILD_HOST: malinew
+          TARGET_HOST: malinew
           FLAKE_URI: .#mali

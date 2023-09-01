@@ -5,20 +5,20 @@
   ...
 }: let
   backupUser = "borg";
-  backupDir = "/mnt/tank/backup/borg_repos";
+  backupDir = "/mnt/tank2/backups/borg_repos";
 in {
   users.users."${backupUser}" = {};
-  # systemd.tmpfiles.rules = ["d ${backupDir} 0755 root root - -"];
+  systemd.tmpfiles.rules = ["d ${backupDir} 0755 root root - -"];
   services.borgbackup.repos = {
     aquinas = {
-      path = "/mnt/tank/backup/borg_repos/aquinas";
+      path = "/mnt/tank2/backups/borg_repos/aquinas";
       authorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFUmi4lHn11g1eo0KFax0R2gQEKmn3J+quvM5Nx0UipJ"
         "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBM9LkzTZXu/qsSuj+rdy24BBySWOLSmjcfA142AZcXJ5bDIrjWPHBg5pm0iroaRqC5eArWCD6VFA4e8cQzTzJE4="
       ];
     };
     proxmox = {
-      path = "/mnt/tank/backup/borg_repos/proxmox";
+      path = "/mnt/tank2/backups/borg_repos/proxmox";
       authorizedKeys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDVhO6fCS/WBKebnGaNLxUDg5jWyMTv7nXvirPONXY3a"
       ];

@@ -8,6 +8,7 @@
   networking.firewall.allowedTCPPorts = [9811 3478];
   services.zrepl = {
     enable = false;
+    # my remote zrepl host uses the latest zrepl
     package = inputs.unstable.zrepl;
     settings = {
       global = {
