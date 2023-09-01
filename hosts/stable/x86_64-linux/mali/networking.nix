@@ -64,9 +64,9 @@
           MTUBytes = "1500";
         };
       };
-      "70-vlmgmt11" = {
+      "70-vldata11" = {
         netdevConfig = {
-          Name = "vlmgmt11";
+          Name = "vldata11";
           Kind = "vlan";
           MTUBytes = "9000";
         };
@@ -142,10 +142,10 @@
         matchConfig = {Name = "enp2s0f1";};
         networkConfig = {Description = "10gbe";};
         linkConfig = {MTUBytes = "9000";};
-        vlan = ["vlmgmt11"];
+        vlan = ["vldata11"];
       };
-      "70-vlmgmt11" = {
-        matchConfig = {Name = "vlmgmt11";};
+      "70-vldata11" = {
+        matchConfig = {Name = "vldata11";};
         networkConfig = {
           Bridge = "brdata11";
         };
