@@ -15,19 +15,25 @@
   services.samba = {
     enable = true;
     securityType = "user";
-    # enableNmbd = false;
-    # enableWinbindd = false;
+    enableNmbd = true; # namespace and browsing suport
+    enableWinbindd = true; # integrations linux user auth
     openFirewall = true;
     extraConfig = ''
+      server string = smbnix
+      netbios name = smbnix
       workgroup = WORKGROUP
       browseable = yes
-      smb encrypt = required
+      smb encrypt = auto
       load printers = no
       printcap name = /dev/null
       guest account = nobody
       map to guest = bad user
+      hosts allow = 192.168.1.83 10.9.6.23 127.0.0.1 localhost
+      hosts deny = 0.0.0.0/0
     '';
+    # log level = 3
 
+    # Don't forget to run `smbpasswd -a <user>` to set the passwords (the user must already exit)
     shares = {
       roon = {
         path = "/mnt/tank2/backups/roon";
@@ -43,7 +49,7 @@
         browseable = "yes";
         "force user" = "roon";
         "guest ok" = "no";
-        "read only" = "no";
+        "read only" = "yes";
         writeable = "no";
       };
       music-other = {
@@ -51,9 +57,17 @@
         browseable = "yes";
         "force user" = "roon";
         "guest ok" = "no";
-        "read only" = "no";
+        "read only" = "yes";
         writeable = "no";
       };
+    };
+  };
+
+  environment.persistence = {
+    "/persist" = {
+      directories = [
+        "/var/lib/samba"
+      ];
     };
   };
 }
