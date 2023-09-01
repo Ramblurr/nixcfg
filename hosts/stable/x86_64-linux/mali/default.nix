@@ -115,6 +115,7 @@ in {
   users.groups = {
     k8s-nfs.gid = 2000;
     proxmox.gid = 1004;
+    hassos.gid = 1018;
     photo-backup.gid = 3000;
   };
   users.users = {
@@ -127,6 +128,12 @@ in {
       group = "proxmox";
       uid = 1004;
       isSystemUser = true;
+    };
+
+    hassos = {
+      group = "hassos";
+      isSystemUser = true;
+      uid = 1008;
     };
   };
   services.smartd.enable = true;
