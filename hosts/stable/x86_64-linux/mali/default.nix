@@ -22,6 +22,7 @@ in {
     ./syncthing.nix
     ./borgbackup-server.nix
     ./ups.nix
+    ./avahi.nix
   ];
   # TODO
   # mail notifications ups, zfs issues
