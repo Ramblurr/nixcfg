@@ -54,6 +54,14 @@ in {
         domains = domains;
         dhcpV4Config.Use6RD = "yes";
         dhcpV4Config.RouteMetric = 512;
+        routes = [
+          {
+            routeConfig = {
+              Destination = "192.168.8.0/22";
+              Gateway = "10.9.4.27";
+            };
+          }
+        ];
       };
       "40-vlmgmt9" = {
         matchConfig.Name = "vlmgmt9";
