@@ -20,7 +20,7 @@
       # minio s3 endpoint
       "s3.data.socozy.casa" = {
         useACMEHost = "s3.data.socozy.casa";
-        addSSL = true;
+        forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:9000";
           extraConfig = ''
@@ -47,7 +47,7 @@
       };
       # minio admin console
       "minio.data.socozy.casa" = {
-        addSSL = true;
+        forceSSL = true;
         useACMEHost = "s3.data.socozy.casa";
         extraConfig = ''
           # To allow special characters in headers
