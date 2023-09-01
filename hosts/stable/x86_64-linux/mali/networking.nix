@@ -5,27 +5,33 @@
   ...
 }: {
   networking.usePredictableInterfaceNames = true;
+  networking.firewall.allowPing = true;
 
   # Useful if you need to troubleshoot systemd-networkd
-  systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
+  # systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
 
   systemd.network = {
     netdevs = {
-      "10-lagg0" = {
+      "10-bond0" = {
         netdevConfig = {
-          Name = "lagg0";
+          Name = "bond0";
           Kind = "bond";
-          MACAddress = "00:25:90:bb:78:3e";
-          MTUBytes = "1500";
-          Description = "Lagg0 bonded interface";
+          #MACAddress = "00:25:90:bb:78:3e";
+          #MTUBytes = "1500";
+          Description = "Bond0 bonded interface";
         };
         bondConfig = {
           Mode = "802.3ad";
+          MIIMonitorSec = "1s";
+          LACPTransmitRate = "fast";
+          UpDelaySec = "2s";
+          DownDelaySec = "8s";
+          TransmitHashPolicy = "layer3+4";
         };
       };
-      "20-vlan4" = {
+      "20-vlprim4" = {
         netdevConfig = {
-          Name = "vlan4";
+          Name = "vlprim4";
           Kind = "vlan";
           MTUBytes = "1500";
         };
@@ -33,16 +39,16 @@
           Id = 4;
         };
       };
-      "30-bridge4" = {
+      "30-brprim4" = {
         netdevConfig = {
-          Name = "bridge4";
+          Name = "brprim4";
           Kind = "bridge";
           MTUBytes = "1500";
         };
       };
-      "40-vlan9" = {
+      "40-vlmgmt9" = {
         netdevConfig = {
-          Name = "vlan9";
+          Name = "vlmgmt9";
           Kind = "vlan";
           MTUBytes = "1500";
         };
@@ -50,16 +56,16 @@
           Id = 9;
         };
       };
-      "50-bridge9" = {
+      "50-brmgmt9" = {
         netdevConfig = {
-          Name = "bridge9";
+          Name = "brmgmt9";
           Kind = "bridge";
           MTUBytes = "1500";
         };
       };
-      "70-vlan11" = {
+      "70-vlmgmt11" = {
         netdevConfig = {
-          Name = "vlan11";
+          Name = "vlmgmt11";
           Kind = "vlan";
           MTUBytes = "9000";
         };
@@ -67,9 +73,9 @@
           Id = 11;
         };
       };
-      "80-bridge11" = {
+      "80-brdata11" = {
         netdevConfig = {
-          Name = "bridge11";
+          Name = "brdata11";
           Kind = "bridge";
           MTUBytes = "9000";
         };
@@ -77,25 +83,33 @@
     };
 
     networks = {
-      "10-lagg0" = {
-        matchConfig = {name = "lagg0";};
+      "10-bond0" = {
+        matchConfig = {Name = "bond0";};
+        vlan = ["vlmgmt9" "vlprim4"];
+        networkConfig = {
+          BindCarrier = "eno1 eno2";
+          DHCP = "no";
+          LinkLocalAddressing = "no";
+        };
       };
       "11-eno1" = {
-        matchConfig = {name = "eno1";};
-        networkConfig = {Bond = "lagg0";};
+        matchConfig = {Name = "eno1";};
+        networkConfig = {Bond = "bond0";};
       };
       "12-eno1" = {
-        matchConfig = {name = "eno2";};
-        networkConfig = {Bond = "lagg0";};
+        matchConfig = {Name = "eno2";};
+        networkConfig = {Bond = "bond0";};
       };
-      "20-vlan4" = {
-        matchConfig = {name = "lagg0";};
-        networkConfig = {VLAN = "vlan4";};
-      };
-      "30-bridge4" = {
-        matchConfig = {name = "vlan4";};
+      "20-vlprim4" = {
+        matchConfig = {Name = "vlprim4";};
         networkConfig = {
-          Bridge = "bridge4";
+          Bridge = "brprim4";
+        };
+      };
+      "30-brprim4" = {
+        matchConfig = {Name = "brprim4";};
+        networkConfig = {
+          DHCP = "no";
           Address = "10.9.4.10/22";
           Description = "primary";
           Gateway = "10.9.4.1";
@@ -109,31 +123,36 @@
           }
         ];
       };
-      "40-vlan9" = {
-        matchConfig = {name = "lagg0";};
-        networkConfig = {VLAN = "vlan9";};
-      };
-      "50-bridge9" = {
-        matchConfig = {name = "vlan9";};
+      "40-vlmgmt9" = {
+        matchConfig = {Name = "vlmgmt9";};
         networkConfig = {
-          Bridge = "bridge9";
+          Bridge = "brmgmt9";
+        };
+      };
+      "50-brmgmt9" = {
+        matchConfig = {Name = "brmgmt9";};
+        networkConfig = {
+          DHCP = "no";
           Address = "10.9.8.3/23";
           Description = "mgmt";
         };
       };
-      "60-enp1s0f0" = {
-        matchConfig = {name = "enp1s0f0";};
+      "60-enp2s0f1" = {
+        matchConfig = {Name = "enp2s0f1";};
         networkConfig = {Description = "10gbe";};
         linkConfig = {MTUBytes = "9000";};
+        vlan = ["vlmgmt11"];
       };
-      "70-vlan11" = {
-        matchConfig = {name = "enp1s0f1";};
-        networkConfig = {VLAN = "vlan11";};
-      };
-      "80-bridge11" = {
-        matchConfig = {name = "vlan11";};
+      "70-vlmgmt11" = {
+        matchConfig = {Name = "vlmgmt11";};
         networkConfig = {
-          Bridge = "bridge11";
+          Bridge = "brdata11";
+        };
+      };
+      "80-brdata11" = {
+        matchConfig = {Name = "brdata11";};
+        networkConfig = {
+          DHCP = "no";
           Address = "10.9.10.10/24";
           Description = "data";
         };
