@@ -27,6 +27,7 @@ in {
         enable = true;
       };
       home.packages = with pkgs; [
+        nfs-utils
         inotify-tools
         roc-toolkit
         direnv
