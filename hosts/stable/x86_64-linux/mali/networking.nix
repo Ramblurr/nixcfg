@@ -6,6 +6,7 @@
 }: {
   networking.usePredictableInterfaceNames = true;
   networking.firewall.allowPing = true;
+  networking.nameservers = ["192.168.1.3" "10.9.4.4"];
 
   # Useful if you need to troubleshoot systemd-networkd
   # systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];

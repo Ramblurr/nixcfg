@@ -11,6 +11,11 @@
     recommendedOptimisation = true;
     recommendedProxySettings = true;
     recommendedTlsSettings = true;
+    commonHttpConfig = lib.mkForce ''
+      server_names_hash_bucket_size 128;
+      proxy_headers_hash_max_size 1024;
+      proxy_headers_hash_bucket_size 256;
+    '';
     virtualHosts = {
       # minio s3 endpoint
       "s3.data.socozy.casa" = {
