@@ -113,7 +113,6 @@
           DHCP = "no";
           Address = "10.9.4.10/22";
           Description = "primary";
-          Gateway = "10.9.4.1";
         };
         routes = [
           {
@@ -156,6 +155,7 @@
           DHCP = "no";
           Address = "10.9.10.10/24";
           Description = "data";
+          Gateway = "10.9.10.1";
         };
       };
     };
