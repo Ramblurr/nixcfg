@@ -29,15 +29,17 @@
     CF_ZONE_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareZoneToken"}
   '';
   security.acme.certs = {
-    "mali" = {
-      domain = "mali.int.socozy.casa";
-      extraDomainNames = [];
-      group = "nginx";
-    };
-    "s3" = {
+    #"mali" = {
+    #  domain = "mali.int.socozy.casa";
+    #  extraDomainNames = [];
+    #  group = "nginx";
+    #  directory = "/persist/var/lib/acme/mali";
+    #};
+    "s3.data.socozy.casa" = {
       domain = "s3.data.socozy.casa";
-      extraDomainNames = ["*.s3.data.socozy.casa"];
-      group = "minio";
+      extraDomainNames = ["*.s3.data.socozy.casa" "minio.data.socozy.casa"];
+      postRun = "systemctl reload nginx.service";
+      group = "nginx";
     };
   };
 
