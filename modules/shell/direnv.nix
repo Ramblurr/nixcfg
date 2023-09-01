@@ -35,5 +35,12 @@ in {
     nixpkgs.overlays = [
       (self: super: {nix-direnv = super.nix-direnv.override {enableFlakes = true;};})
     ];
+    myhm = {
+      persistence = mkIf withImpermanence {
+        directories = [
+          ".local/share/direnv"
+        ];
+      };
+    };
   };
 }
