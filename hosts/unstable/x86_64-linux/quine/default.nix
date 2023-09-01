@@ -13,6 +13,7 @@ in {
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     ./hardware-configuration.nix
+    ./networking.nix
     ./wireplumber.nix
     ./syncthing.nix
   ];
