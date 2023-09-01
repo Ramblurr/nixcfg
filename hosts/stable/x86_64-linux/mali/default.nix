@@ -26,13 +26,6 @@ in {
   ];
   # TODO
   # mail notifications ups, zfs issues
-  # users
-  #   zigbee2mqtt
-  #   roon
-  #   homeassistant / hassos?
-  #   phoniebox ?
-  #   media ?
-  #
   # rclone
   # firewall check
   # impermanence for all custom config
@@ -116,6 +109,7 @@ in {
   users.groups = {
     k8s-nfs.gid = 2000;
     proxmox.gid = 1004;
+    zigbee2mqtt.gid = 1006;
     roon.gid = 1017;
     hassos.gid = 1018;
     photo-backup.gid = 3000;
@@ -125,6 +119,14 @@ in {
       group = "k8s-nfs";
       uid = 2000;
       isSystemUser = true;
+    };
+    zigbee2mqtt = {
+      group = "zigbee2mqtt";
+      uid = 1006;
+      isNormalUser = true;
+      openssh.authorizedKeys.keys = [
+        ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
+      ];
     };
     proxmox = {
       group = "proxmox";
