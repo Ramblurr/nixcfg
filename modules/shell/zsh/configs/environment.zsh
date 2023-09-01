@@ -73,6 +73,9 @@ if command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
   export DOCKER_HOST=unix:///run/user/1000/podman/podman.sock
 fi
 
+#█▓▒░ fzf should ignore things
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+#█▓▒░ direnv is a thing
 if command -v direnv &>/dev/null; then
   eval "$(direnv hook zsh)"
 fi
