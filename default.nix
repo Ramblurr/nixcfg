@@ -81,6 +81,7 @@ with lib.my; {
     unzip
     killall
     nvd
+    lsof
 
     # These are used by the flake tooling
     git
