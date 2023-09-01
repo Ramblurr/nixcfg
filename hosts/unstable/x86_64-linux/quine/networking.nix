@@ -52,6 +52,8 @@ in {
         };
 
         domains = domains;
+        dhcpV4Config.Use6RD = "yes";
+        dhcpV4Config.RouteMetric = 512;
       };
       "40-vlmgmt9" = {
         matchConfig.Name = "vlmgmt9";
