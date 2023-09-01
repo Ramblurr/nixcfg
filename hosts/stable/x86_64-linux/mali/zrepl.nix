@@ -2,14 +2,15 @@
   config,
   pkgs,
   inputs,
+  unstable,
   lib,
   ...
 }: {
   networking.firewall.allowedTCPPorts = [9811 3478];
   services.zrepl = {
-    enable = false;
+    enable = true;
     # my remote zrepl host uses the latest zrepl
-    package = inputs.unstable.zrepl;
+    package = unstable.zrepl;
     settings = {
       global = {
         logging = [
@@ -19,14 +20,6 @@
             format = "human";
           }
         ];
-        control = {
-          sockpath = "/mnt/tank2/iocage/jails/zrepl/root/var/run/zrepl/control";
-        };
-        serve = {
-          stdinserver = {
-            sockdir = "/mnt/tank2/iocage/jails/zrepl/root/var/run/zrepl/stdinserver";
-          };
-        };
         monitoring = [
           {
             type = "prometheus";
@@ -49,6 +42,7 @@
             client_cns = ["ludwig"];
           };
           filesystems = {
+            "rpool<" = false;
             "tank/backup<" = false;
             "tank2<" = true;
             "tank2/media<" = false;
