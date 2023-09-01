@@ -13,6 +13,7 @@ in {
     ./hardware-configuration.nix
     ./networking.nix
     ./nfs.nix
+    ./email.nix
     ./samba.nix
     ./zrepl.nix
     ./monitoring.nix
@@ -25,7 +26,6 @@ in {
     ./avahi.nix
   ];
   # TODO
-  # mail notifications ups, zfs issues
   # rclone
   # firewall check
   # impermanence for all custom config
