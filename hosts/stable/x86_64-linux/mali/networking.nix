@@ -6,6 +6,9 @@
 }: {
   networking.usePredictableInterfaceNames = true;
 
+  # Useful if you need to troubleshoot systemd-networkd
+  systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
+
   systemd.network = {
     netdevs = {
       "10-lagg0" = {
@@ -124,7 +127,7 @@
         linkConfig = {MTUBytes = "9000";};
       };
       "70-vlan11" = {
-        matchConfig = {name = "enp1s0f0";};
+        matchConfig = {name = "enp1s0f1";};
         networkConfig = {VLAN = "vlan11";};
       };
       "80-bridge11" = {

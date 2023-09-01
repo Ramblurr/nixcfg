@@ -17,6 +17,7 @@ in {
     ./zrepl.nix
     ./monitoring.nix
     ./acme.nix
+    ./nginx.nix
     ./minio.nix
     ./syncthing.nix
     ./borgbackup-server.nix
@@ -34,7 +35,7 @@ in {
   # rclone
   # firewall check
   # impermanence for all custom config
-  # zrepl use unstable https://github.com/danderson/homelab/blob/30b7aa0907831d07959323084e0e536d03a78219/lib/zrepl.nix#L4
+  # atuin sycn services.atuin https://github.com/Mic92/dotfiles/blob/3ffb89b624ea21d3be3584f44d1335237e3daf9a/nixos/eve/modules/atuin.nix#L6
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
@@ -67,7 +68,7 @@ in {
       rootPool = "rpool";
       scrubPools = ["rpool"];
       autoSnapshot.enable = false;
-      # extraPools = ["tank" "tank2" "fast"];
+      extraPools = ["tank" "tank2" "fast"];
     };
     vpn.tailscale.enable = true;
     firewall.enable = true;
@@ -87,6 +88,28 @@ in {
         "wheel"
       ];
     };
+  };
+
+  sops.secrets."tank2Key" = {
+    mode = "400";
+    owner = "root";
+    group = "root";
+  };
+
+  sops.secrets."fastKey" = {
+    mode = "400";
+    owner = "root";
+    group = "root";
+  };
+
+  environment.etc."mali-keys/tank2.key" = {
+    user = "root";
+    source = config.sops.secrets.tank2Key.path;
+  };
+
+  environment.etc."mali-keys/fast.key" = {
+    user = "root";
+    source = config.sops.secrets.fastKey.path;
   };
 
   users.groups = {
