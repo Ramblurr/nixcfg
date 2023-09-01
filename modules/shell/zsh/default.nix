@@ -122,6 +122,19 @@ in {
           "utcnow" = "date -u +\"%Y-%m-%d %H:%M:%S\"";
           "task" = "go-task";
           "k" = "kubectl";
+          # systemd
+          log = "sudo journalctl --output cat -u"; # log sshd -f
+          logu = "journalctl --user --output cat -u"; # log sshd -f
+          log-previous-boot = "sudo journalctl --boot=-1";
+          st = "sudo systemctl status";
+          ss = "sudo systemctl stop";
+          sr = "sudo systemctl reload";
+          sR = "sudo systemctl restart";
+          stu = "systemctl status --user";
+          ssu = "systemctl stop --user";
+          sru = "systemctl reload --user";
+          sRu = "systemctl restart --user";
+          rsync = "rsync --info=progress2";
         };
 
         envExtra = ''
