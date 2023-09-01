@@ -115,6 +115,7 @@ in {
   users.groups = {
     k8s-nfs.gid = 2000;
     proxmox.gid = 1004;
+    roon.gid = 1017;
     hassos.gid = 1018;
     photo-backup.gid = 3000;
   };
@@ -129,7 +130,11 @@ in {
       uid = 1004;
       isSystemUser = true;
     };
-
+    roon = {
+      group = "roon";
+      isSystemUser = true;
+      uid = 1007;
+    };
     hassos = {
       group = "hassos";
       isSystemUser = true;
