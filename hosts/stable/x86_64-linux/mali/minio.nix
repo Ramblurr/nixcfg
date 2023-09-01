@@ -12,8 +12,9 @@
     dataDir = ["/mnt/tank2/services/minio"];
     package = pkgs.minio;
     rootCredentialsFile = config.sops.secrets.minio-root-credentials.path;
+    listenAddress = "127.0.0.1:9000";
+    consoleAddress = "127.0.0.1:8889";
   };
-  networking.firewall.allowedTCPPorts = [9000 9001];
 
   environment.persistence."/persist" = {
     directories = [

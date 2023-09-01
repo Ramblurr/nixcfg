@@ -39,6 +39,7 @@
         enable = true;
         port = 9005;
         nutUser = "admin";
+        group = "nut";
         passwordPath = config.sops.secrets.upsAdminPassword.path;
       };
     };
