@@ -29,11 +29,68 @@ in {
     configFile = mkOption {
       description = "The config path that hacompanion uses";
       type = types.path;
-      default = pkgs.writeText "hacompanion-config" (toTOML cfg.settings);
+      default = pkgs.writeText "hacompanion-config" (toTOML (cfg.settings // cfg.settingsDefault));
     };
     settings = mkOption {
       type = tomlFormat.type;
       default = {};
+    };
+    settingsDefault = mkOption {
+      type = tomlFormat.type;
+      default = {
+        companion = {
+          update_interval = "15s";
+          registration_file = "~/.config/hacompanion/registration.json";
+        };
+        sensor = {
+          webcam = {
+            enabled = true;
+            name = "Webcam Process Count";
+          };
+          cpu_temp = {
+            enabled = true;
+            name = "CPU Temperature";
+            meta = {celsius = true;};
+          };
+          cpu_usage = {
+            enabled = true;
+            name = "CPU Usage";
+          };
+          uptime = {
+            enabled = true;
+            name = "Last Boot";
+          };
+          memory = {
+            enabled = true;
+            name = "Memory";
+          };
+          power = {
+            enabled = false;
+            name = "Power";
+            meta = {battery = "BAT0";};
+          };
+          companion_running = {
+            enabled = true;
+            name = "Companion Is Running";
+          };
+          online_check = {
+            enabled = true;
+            name = "Is Online";
+            meta = {
+              target = "https://google.com";
+              mode = "http";
+            };
+          };
+          load_avg = {
+            enabled = true;
+            name = "Load Avg";
+          };
+          audio_volume = {
+            enabled = true;
+            name = "Audio Volume";
+          };
+        };
+      };
     };
     unitAfter = mkOption {
       type = types.listOf types.str;
