@@ -4,6 +4,9 @@
   pkgs,
   ...
 }: {
+  environment.systemPackages = with pkgs; [
+    minio-client
+  ];
   sops.secrets.minio-root-credentials = {
     owner = "minio";
   };
