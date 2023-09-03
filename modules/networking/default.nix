@@ -31,6 +31,7 @@ in {
     };
     services.resolved = {
       enable = true;
+      dnssec = "false";
     };
     services.timesyncd.enable = true;
 
