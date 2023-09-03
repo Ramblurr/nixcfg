@@ -42,7 +42,7 @@ in {
       path = with pkgs; [python3 dunst systemd];
       serviceConfig = {
         EnvironmentFile = config.sops.secrets.HA_SHUTDOWN_TOKEN.path;
-        ExecStart = "${pkgs.python3}/bin/python ${shutdownScript} --timeout ${toString cfg.timeout} --port ${toString cfg.listenPort} ";
+        ExecStart = "${pkgs.python3}/bin/python -u ${shutdownScript} --timeout ${toString cfg.timeout} --port ${toString cfg.listenPort} ";
         Restart = "always";
         RestartSec = "10s";
         StandardError = "journal";
