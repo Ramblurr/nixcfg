@@ -24,6 +24,19 @@ in {
   services.udev.extraRules = ''
     KERNEL=="ttyACM0", MODE:="666"
   '';
+
+  sops.secrets.HASS_TOKEN = {
+    owner = "ramblurr";
+    mode = "0400";
+  };
+  sops.templates.hacompanion-env = {
+    owner = "ramblurr";
+    mode = "0400";
+    content = ''
+      HASS_TOKEN=${config.sops.placeholder."HASS_TOKEN"}
+      HASS_DEVICE_NAME=quine
+    '';
+  };
   modules = {
     desktop = {
       enable = true;
@@ -43,6 +56,80 @@ in {
         chromium.enable = true;
       };
       gaming.enable = true;
+      services = {
+        ha-shutdown = {
+          enable = true;
+        };
+        hacompanion = {
+          enable = true;
+          environmentFile = config.sops.templates.hacompanion-env.path;
+          unitAfter = ["sops-nix.service"];
+          listenPort = 6669;
+          settings = {
+            homeassistant = {
+              device_name = "quine";
+              host = "https://home.***REMOVED***";
+            };
+            companion = {
+              update_interval = "15s";
+              registration_file = "~/.config/hacompanion/registration.json";
+            };
+            notifications = {
+              push_url = "http://10.9.4.3:6669/notifications";
+              listen = ":6669";
+            };
+
+            sensor = {
+              webcam = {
+                enabled = true;
+                name = "Webcam Process Count";
+              };
+              cpu_temp = {
+                enabled = true;
+                name = "CPU Temperature";
+                meta = {celsius = true;};
+              };
+              cpu_usage = {
+                enabled = true;
+                name = "CPU Usage";
+              };
+              uptime = {
+                enabled = true;
+                name = "Last Boot";
+              };
+              memory = {
+                enabled = true;
+                name = "Memory";
+              };
+              power = {
+                enabled = false;
+                name = "Power";
+                meta = {battery = "BAT0";};
+              };
+              companion_running = {
+                enabled = true;
+                name = "Companion Is Running";
+              };
+              online_check = {
+                enabled = true;
+                name = "Is Online";
+                meta = {
+                  target = "https://google.com";
+                  mode = "http";
+                };
+              };
+              load_avg = {
+                enabled = true;
+                name = "Load Avg";
+              };
+              audio_volume = {
+                enabled = true;
+                name = "Audio Volume";
+              };
+            };
+          };
+        };
+      };
       programs = {
         onepassword.enable = true;
         calibre.enable = true;
