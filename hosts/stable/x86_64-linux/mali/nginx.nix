@@ -63,13 +63,40 @@
             proxyPass = "http://127.0.0.1:8999";
             extraConfig = ''
               proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-NginX-Proxy true;
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
               proxy_set_header X-Forwarded-Proto $scheme;
+              # proxy_set_header Host $http_host;
               # proxy_set_header Host $host;
+              # This is necessary to pass the correct IP to be hashed
+              real_ip_header X-Real-IP;
               proxy_connect_timeout 300;
-              # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
+              # To support websocket
               proxy_http_version 1.1;
-              proxy_set_header Connection "";
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+            '';
+          };
+          "/minio/ui/" = {
+            proxyPass = "http://127.0.0.1:8999";
+            extraConfig = ''
+              rewrite ^/minio/ui/(.*) /$1 break;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-NginX-Proxy true;
+
+              # This is necessary to pass the correct IP to be hashed
+              real_ip_header X-Real-IP;
+
+              proxy_connect_timeout 300;
+
+              # To support websockets in MinIO versions released after January 2023
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+
               chunked_transfer_encoding off;
             '';
           };

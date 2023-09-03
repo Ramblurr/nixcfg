@@ -113,6 +113,7 @@
           DHCP = "no";
           Address = "10.9.4.10/22";
           Description = "primary";
+          DNSSEC = "no";
         };
         routes = [
           {
@@ -156,6 +157,7 @@
           Address = "10.9.10.10/24";
           Description = "data";
           Gateway = "10.9.10.1";
+          DNSSEC = "no";
         };
       };
     };
