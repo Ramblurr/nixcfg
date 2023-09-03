@@ -167,7 +167,7 @@ in {
       enable = true;
       name = "aquinas.***REMOVED***-mali";
       repositories = [
-        "ssh://aquinas@borgbackup-host.int.***REMOVED***/mnt/backup/borg_repos/aquinas/home"
+        "ssh://borg@mali.int.***REMOVED***/mnt/tank2/backups/borg_repos/aquinas"
         "\${OFFSITE_REPOSITORY}"
       ];
       exclude-patterns = [
