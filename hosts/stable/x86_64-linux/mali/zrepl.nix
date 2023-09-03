@@ -7,6 +7,10 @@
   ...
 }: {
   networking.firewall.allowedTCPPorts = [9811 3478];
+
+  sops.secrets."zrepl/ludwigCert" = {};
+  sops.secrets."zrepl/maliCert" = {};
+  sops.secrets."zrepl/maliKey" = {};
   services.zrepl = {
     enable = true;
     # my remote zrepl host uses the latest zrepl
@@ -36,9 +40,9 @@
           serve = {
             type = "tls";
             listen = "10.9.10.10:3478";
-            ca = "/mnt/tank2/iocage/jails/zrepl/root/usr/local/etc/zrepl/ludwig.crt";
-            cert = "/mnt/tank2/iocage/jails/zrepl/root/usr/local/etc/zrepl/mali.crt";
-            key = "/mnt/tank2/iocage/jails/zrepl/root/usr/local/etc/zrepl/mali.key";
+            ca = config.sops.secrets."zrepl/ludwigCert".path;
+            cert = config.sops.secrets."zrepl/maliCert".path;
+            key = config.sops.secrets."zrepl/maliKey".path;
             client_cns = ["ludwig"];
           };
           filesystems = {
