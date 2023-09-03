@@ -42,7 +42,7 @@ in {
       enable = true;
       setupCommands = ''
         xrandr \
-          --output DP-1 --mode 5120x1440 --auto
+          --output DP-2 --mode 5120x1440 --auto
         xrandr \
         --output HDMI-A-1 --mode 3840x2160 --auto
       '';
