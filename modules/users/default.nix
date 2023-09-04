@@ -68,7 +68,7 @@ in {
 
     users = {
       mutableUsers = cfg.mutableUsers;
-      users.root.initialHashedPassword = null;
+      users.root.initialHashedPassword = mkForce null;
       users.root.passwordFile = mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
 
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;

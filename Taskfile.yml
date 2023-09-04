@@ -59,7 +59,7 @@ tasks:
           FLAKE_URI: .#mali
 
   switch:mali:
-    desc: Switch  mali
+    desc: Switch mali
     cmds:
       - task: nixos-rebuild
         vars:
@@ -88,7 +88,7 @@ tasks:
           FLAKE_URI: .#ovos-kitchen
 
   switch:ovos-kitchen:
-    desc: Switch  ovos-kitchen
+    desc: Switch ovos-kitchen
     cmds:
       - task: nixos-rebuild
         vars:
@@ -97,5 +97,7 @@ tasks:
           TARGET_HOST: ovos-kitchen.int.***REMOVED***
           FLAKE_URI: .#ovos-kitchen
 
-  build:rpizero2:
-    desc: Build the SD Card image for an rpi zero 2
+  image:ovos-kitchen:
+    desc: Build the SD Card image for ovos-kitchen
+    cmds:
+      - nix build .#images.ovos-kitchen
