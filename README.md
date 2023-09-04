@@ -7,49 +7,24 @@ In the processes of nixifying everything (except maybe my [k8s@home cluster](htt
 
 ## Hosts
 
-### Quine - workstation
+| Hostname               | Purpose                                                             | Channel                     | Source                                                                                             |
+|------------------------|---------------------------------------------------------------------|-----------------------------|----------------------------------------------------------------------------------------------------|
+| Quine                  | My [primary workstation][workstation]                                              | ![NixOS Unstable][unstable] | [hosts/unstable/x86_64-linux/quine/](./hosts/unstable/x86_64-linux/quine/)                         |
+| Mali                   | [Home office NAS][NAS]                                              | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/mali/](./hosts/stable/x86_64-linux/mali/)                               |
+| OVOS Kitchen           | My [OpenVoiceOS][ovos] instance (replaces Mycroft) for the kitchen. | ![NixOS Unstable][unstable] | [hosts/unstable/aarch64-linux/ovos-kitchen/](./hosts/unstable/aarch64-linux/ovos-kitchen/)         |
+| OVOS Kitchen Satellite | The microphone satellite that feeds audio back to OVOS Kitchen.     | ![NixOS Unstable][unstable] | [hosts/unstable/aarch64-linux/ovos-kitchen-sat/](./hosts/unstable/aarch64-linux/ovos-kitchen-sat/) |
 
-[![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
 
-[hosts/unstable/x86_64-linux/quine/README.md](./hosts/unstable/x86_64-linux/quine/README.md)
+Example build commands:
 
 ```sh
 task build:quine
 task test:quine
 task switch:quine
+task image:ovos-kitchen
 ```
 
-### Mali - NAS
-
-[![NixOS Stable](https://img.shields.io/badge/NixOS-stable-green.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
-
-[hosts/stable/x86_64-linux/mali/README.md](./hosts/stable/x86_64-linux/mali/README.md)
-
-
-Deploy remotely!
-
-```sh
-task build:mali
-task test:mali
-task switch:mali
-```
-
-### OVOS Kitchen
-
-[![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
-
-[hosts/unstable/aarch64-linux/ovos-kitchen/README.md](./hosts/unstable/aarch64-linux/ovos-kitchen/README.md)
-
-My [OpenVoiceOS][ovos] instance (replaces Mycroft) for the kitchen.
-
-### OVOS Kitchen Satellite
-
-[![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
-
-[hosts/unstable/aarch64-linux/ovos-kitchen-sat/README.md](./hosts/unstable/aarch64-linux/ovos-kitchen-sat/README.md)
-
-The microphone satellite that feeds audio back to OVOS Kitchen.
-
+---
 
 ## Future
 
@@ -73,3 +48,7 @@ I got help from some cool configs like:
 
 
 [ovos]: https://github.com/OpenVoiceOS/
+[unstable]: https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white
+[stable]: https://img.shields.io/badge/NixOS-stable-green.svg?style=flat-square&logo=NixOS&logoColor=white
+[NAS]: https://notes.binaryelysium.com/HomeOps/NAS/
+[workstation]: https://notes.binaryelysium.com/HomeOps/PrimaryWorkstation/
