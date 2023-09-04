@@ -6,9 +6,9 @@
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs";
 
-    ovos-nixos.url = "github:ramblurr/ovos-rpi-nixos/dev";
-    ovos-nixos.inputs.nixpkgs.follows = "nixpkgs";
-    ovos-nixos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
+    nixos-ovos.url = "github:ramblurr/ovos-rpi-nixos/dev";
+    nixos-ovos.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-ovos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
 
     talhelper.url = "github:budimanjojo/talhelper";
     talhelper.inputs.nixpkgs.follows = "nixpkgs";
@@ -94,14 +94,14 @@
         system = "x86_64-linux";
         mkPkgs = mkPkgs;
         home-manager = inputs.home-manager-stable;
-        #   }
-        # // mapHosts ./hosts/stable/aarch64-linux
-        #   {
-        #     nixpkgs = inputs.nixpkgs-stable;
-        #     unstable = nixpkgs;
-        #     system = "aarch64-linux";
-        #     mkPkgs = mkPkgs;
-        #     home-manager = inputs.home-manager-stable;
+      }
+      // mapHosts ./hosts/unstable/aarch64-linux
+      {
+        nixpkgs = nixpkgs;
+        unstable = nixpkgs;
+        system = "aarch64-linux";
+        mkPkgs = mkPkgs;
+        home-manager = inputs.home-manager-stable;
       };
 
     # breaks `nix flake check` with

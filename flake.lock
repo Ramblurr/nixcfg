@@ -235,11 +235,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1693754593,
-        "narHash": "sha256-Bn8MWftUY88BpZkXfdlyQtyDlO+N2MVgBc+cffhpib4=",
+        "lastModified": 1693825916,
+        "narHash": "sha256-DGHMrk5Uxl+biq8n4+XT1zKavJBt+iTVuoGVXfBCU/k=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "8fefb180b1f4bd62cd866f4c3d1d93ed3f019536",
+        "rev": "35df4693eaacaf95054af93eca687047355fcd26",
         "type": "github"
       },
       "original": {
@@ -394,6 +394,30 @@
         "type": "github"
       }
     },
+    "nixos-ovos": {
+      "inputs": {
+        "nixos-raspberrypi": [
+          "nixos-raspberrypi"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1693827717,
+        "narHash": "sha256-M4giTGoj3qON4GFggdRZ86rInD6BJ6c3m5Irt9uDcbk=",
+        "owner": "ramblurr",
+        "repo": "ovos-rpi-nixos",
+        "rev": "1bc09eb3c80ef85d447d4c8fc1ee56f5d861e74c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ramblurr",
+        "ref": "dev",
+        "repo": "ovos-rpi-nixos",
+        "type": "github"
+      }
+    },
     "nixos-raspberrypi": {
       "inputs": {
         "nixos-hardware": "nixos-hardware_2",
@@ -402,11 +426,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1693822242,
-        "narHash": "sha256-xxuil61HjcKh7P3giPNoT/0Hb75uQS3SvxCyWQtL4yU=",
+        "lastModified": 1693827417,
+        "narHash": "sha256-t8qDqV1ixpc+ORs/KQ0M4LznsW/URZYXWhAh7mIwwDM=",
         "owner": "ramblurr",
         "repo": "nixos-raspberrypi",
-        "rev": "18925928d45096303d3e6304779fa3605dac2f21",
+        "rev": "1b2e7cfe5a297f437b36dcae512e65af2c268285",
         "type": "github"
       },
       "original": {
@@ -484,11 +508,11 @@
     },
     "nixpkgs-stable": {
       "locked": {
-        "lastModified": 1693636127,
-        "narHash": "sha256-ZlS/lFGzK7BJXX2YVGnP3yZi3T9OLOEtBCyMJsb91U8=",
+        "lastModified": 1693771906,
+        "narHash": "sha256-32EnPCaVjOiEERZ+o/2Ir7JH9pkfwJZJ27SKHNvt4yk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "9075cba53e86dc318d159aee55dc9a7c9a4829c1",
+        "rev": "da5adce0ffaff10f6d0fee72a02a5ed9d01b52fc",
         "type": "github"
       },
       "original": {
@@ -554,30 +578,6 @@
         "type": "github"
       }
     },
-    "ovos-nixos": {
-      "inputs": {
-        "nixos-raspberrypi": [
-          "nixos-raspberrypi"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1693824306,
-        "narHash": "sha256-vbUFXmCwbXlvP5uYvlXrmp028C0PDkbb/WX3Id4KwvU=",
-        "owner": "ramblurr",
-        "repo": "ovos-rpi-nixos",
-        "rev": "f543ed3e902cbc67195fd0a15c4a2285de0c459b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "ramblurr",
-        "ref": "dev",
-        "repo": "ovos-rpi-nixos",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "firefox-nightly": "firefox-nightly",
@@ -589,11 +589,11 @@
         "impermanence": "impermanence",
         "nix-gaming": "nix-gaming",
         "nixos-hardware": "nixos-hardware",
+        "nixos-ovos": "nixos-ovos",
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-stable": "nixpkgs-stable",
         "nixpkgs-wayland": "nixpkgs-wayland",
-        "ovos-nixos": "ovos-nixos",
         "sops-nix": "sops-nix",
         "talhelper": "talhelper"
       }
