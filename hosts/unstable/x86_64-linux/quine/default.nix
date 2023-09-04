@@ -146,6 +146,7 @@ in {
     hardware.nvidia.enable = true;
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
+    users.enable = true;
     users.primaryUser = {
       username = "ramblurr";
       name = "Casey Link";
