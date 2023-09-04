@@ -21,6 +21,7 @@ in {
 
   raspberry-pi.hardware.hifiberry-dacplusadc.enable = true;
   raspberry-pi.hardware.platform.type = "rpi4";
+  services.timesyncd.enable = true;
 
   ovos.password.enable = true;
   ovos.gui.enable = false;
