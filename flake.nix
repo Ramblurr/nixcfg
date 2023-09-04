@@ -52,6 +52,7 @@
   outputs = inputs @ {
     self,
     nixpkgs,
+    nixos-raspberrypi,
     ...
   }: let
     inherit (lib.my) mapModules mapModulesRec mapHosts;
@@ -103,6 +104,10 @@
         mkPkgs = mkPkgs;
         home-manager = inputs.home-manager-stable;
       };
+
+    images = {
+      ovos-kitchen = (import ./hosts/unstable/aarch64-linux/ovos-kitchen/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;
+    };
 
     # breaks `nix flake check` with
     #   error: flake attribute 'packages.x86_64-linux.packages' is not a derivation
