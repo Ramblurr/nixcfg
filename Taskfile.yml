@@ -48,8 +48,6 @@ tasks:
           BUILD_HOST: mali.int.***REMOVED***
           TARGET_HOST: mali.int.***REMOVED***
           FLAKE_URI: .#mali
-
-
   build:mali:
     desc: Build mali
     cmds:
@@ -69,3 +67,35 @@ tasks:
           BUILD_HOST: mali.int.***REMOVED***
           TARGET_HOST: mali.int.***REMOVED***
           FLAKE_URI: .#mali
+
+  test:kitchen-ovos-satellite:
+    desc: Test kitchen-ovos-satellite
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: test
+          BUILD_HOST: kitchen-ovos-satellite.int.***REMOVED***
+          TARGET_HOST: kitchen-ovos-satellite.int.***REMOVED***
+          FLAKE_URI: .#kitchen-ovos-satellite
+  build:kitchen-ovos-satellite:
+    desc: Build kitchen-ovos-satellite
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: kitchen-ovos-satellite.int.***REMOVED***
+          TARGET_HOST: kitchen-ovos-satellite.int.***REMOVED***
+          FLAKE_URI: .#kitchen-ovos-satellite
+
+  switch:kitchen-ovos-satellite:
+    desc: Switch  kitchen-ovos-satellite
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: kitchen-ovos-satellite.int.***REMOVED***
+          TARGET_HOST: kitchen-ovos-satellite.int.***REMOVED***
+          FLAKE_URI: .#kitchen-ovos-satellite
+
+  build:rpizero2:
+    desc: Build the SD Card image for an rpi zero 2

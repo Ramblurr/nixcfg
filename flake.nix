@@ -3,6 +3,13 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-23.05";
 
+    nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
+    nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs";
+
+    ovos-nixos.url = "github:ramblurr/ovos-rpi-nixos/dev";
+    ovos-nixos.inputs.nixpkgs.follows = "nixpkgs";
+    ovos-nixos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
+
     talhelper.url = "github:budimanjojo/talhelper";
     talhelper.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -97,10 +104,13 @@
         #     home-manager = inputs.home-manager-stable;
       };
 
-    packages."${system}" = import ./packages {inherit pkgs;};
+    # breaks `nix flake check` with
+    #   error: flake attribute 'packages.x86_64-linux.packages' is not a derivation
+    # packages."${system}" = import ./packages {inherit pkgs;};
 
     overlay = final: prev: {
-      my = self.packages."${system}";
+      # my = self.packages."${system}";
+      my = import ./packages {inherit pkgs;};
     };
 
     overlays = mapModules ./overlays import;
