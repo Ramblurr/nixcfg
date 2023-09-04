@@ -34,10 +34,26 @@ task test:mali
 task switch:mali
 ```
 
+### OVOS Kitchen
+
+[![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+
+[hosts/unstable/aarch64-linux/ovos-kitchen/README.md](./hosts/unstable/aarch64-linux/ovos-kitchen/README.md)
+
+My [OpenVoiceOS][ovos] instance (replaces Mycroft) for the kitchen.
+
+### OVOS Kitchen Satellite
+
+[![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square&logo=NixOS&logoColor=white)](https://nixos.org)
+
+[hosts/unstable/aarch64-linux/ovos-kitchen-sat/README.md](./hosts/unstable/aarch64-linux/ovos-kitchen-sat/README.md)
+
+The microphone satellite that feeds audio back to OVOS Kitchen.
+
+
 ## Future
 
 ```
-ccf2e2f97ab74fa49a7968b5d772565b
 35ffd069f08245019cee53cbc850bf7e
 fa286d89865747e9a9208e13beb24c59
 f0c2388e13fb4818ac67d59baa93d578
@@ -54,3 +70,6 @@ I got help from some cool configs like:
 
 
 [Licensed under MIT](./LICENSE), have at it!
+
+
+[ovos]: https://github.com/OpenVoiceOS/
