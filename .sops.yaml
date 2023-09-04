@@ -7,6 +7,7 @@ keys:
       - &quine age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
       - &mali age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
       - &ovos-kitchen age1vfgnjj357pa8xq0vpl9cnfxhtczl7dgnafxlqal3pn9v4ud0kees4xua20
+      - &ovos-kitchen-sat age12zdskqd632afljf4nffxafup4mhd0kl53psvqer8zup8qz9gn3qqtp7858
 creation_rules:
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
@@ -34,6 +35,14 @@ creation_rules:
     key_groups:
       - age:
           - *ovos-kitchen
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
+
+  - path_regex: hosts/unstable/aarch64-linux/ovos-kitchen-sat/.*.sops.*$
+    key_groups:
+      - age:
+          - *ovos-kitchen-sat
           - *disaster-recovery
         pgp:
           - *ramblurr

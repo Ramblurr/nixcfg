@@ -16,9 +16,16 @@ tasks:
       - nix flake check --all-systems
 
   update:
-    desc: Update the flake inputs
+    desc: Update all the flake inputs
     cmds:
       - nix flake update
+
+  update:input:
+    desc: Update a specific flake input (e.g., task update:input input=nixpkgs)
+    vars:
+      input: '{{ or .input (fail "Flake input name `input` is required") }}'
+    cmds:
+      - nix flake lock --update-input {{.input}}
 
   nixos-rebuild:
     internal: true
@@ -101,3 +108,37 @@ tasks:
     desc: Build the SD Card image for ovos-kitchen
     cmds:
       - nix build .#images.ovos-kitchen
+
+  test:ovos-kitchen-sat:
+    desc: Test ovos-kitchen-sat
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: test
+          BUILD_HOST: ovos-kitchen-sat.int.***REMOVED***
+          TARGET_HOST: ovos-kitchen-sat.int.***REMOVED***
+          FLAKE_URI: .#ovos-kitchen-sat
+  build:ovos-kitchen-sat:
+    desc: Build ovos-kitchen-sat
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: ovos-kitchen-sat.int.***REMOVED***
+          TARGET_HOST: ovos-kitchen-sat.int.***REMOVED***
+          FLAKE_URI: .#ovos-kitchen-sat
+
+  switch:ovos-kitchen-sat:
+    desc: Switch ovos-kitchen-sat
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: ovos-kitchen-sat.int.***REMOVED***
+          TARGET_HOST: ovos-kitchen-sat.int.***REMOVED***
+          FLAKE_URI: .#ovos-kitchen-sat
+
+  image:ovos-kitchen-sat:
+    desc: Build the SD Card image for ovos-kitchen-sat
+    cmds:
+      - nix build .#images.ovos-kitchen-sat

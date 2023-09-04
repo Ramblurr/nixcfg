@@ -404,11 +404,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1693827717,
-        "narHash": "sha256-M4giTGoj3qON4GFggdRZ86rInD6BJ6c3m5Irt9uDcbk=",
+        "lastModified": 1693829761,
+        "narHash": "sha256-hsBIrT+muN+8ENzwnEhznGj2JQgmWvo5Mov0gxPkDro=",
         "owner": "ramblurr",
         "repo": "ovos-rpi-nixos",
-        "rev": "1bc09eb3c80ef85d447d4c8fc1ee56f5d861e74c",
+        "rev": "9e7f131a282c45410262672bcfaa74029b7a9bfd",
         "type": "github"
       },
       "original": {
@@ -426,11 +426,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1693827417,
-        "narHash": "sha256-t8qDqV1ixpc+ORs/KQ0M4LznsW/URZYXWhAh7mIwwDM=",
+        "lastModified": 1693832396,
+        "narHash": "sha256-21HskbpDe9ArI5bOLeZH/GMviRJ/twvra2rx4UwlbYI=",
         "owner": "ramblurr",
         "repo": "nixos-raspberrypi",
-        "rev": "1b2e7cfe5a297f437b36dcae512e65af2c268285",
+        "rev": "d47bfd932418d7bd2f51f9f54101902559f0aa63",
         "type": "github"
       },
       "original": {
