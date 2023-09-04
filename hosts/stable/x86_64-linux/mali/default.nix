@@ -69,6 +69,7 @@ in {
     security.default.enable = true;
     networking.default.enable = true;
     networking.default.hostName = hn;
+    users.enable = true;
     users.primaryUser = {
       username = ramblurr.username;
       name = ramblurr.name;

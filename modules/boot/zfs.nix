@@ -12,7 +12,7 @@ with lib.my; let
 in {
   options = {
     modules.boot.zfs = {
-      enable = mkBoolOpt true;
+      enable = mkBoolOpt false;
       encrypted = mkBoolOpt true;
       usePlymouth = mkBoolOpt true;
       skipMitigations = mkBoolOpt true;
@@ -29,7 +29,7 @@ in {
     };
   };
 
-  config = {
+  config = mkIf cfg.enable {
     ## BOOT #################################################################
     ## WARNING this module makes assumptions about your disk partition layout
     console.earlySetup = true; # needed for LUKS
