@@ -15,6 +15,7 @@ with lib.my; let
 in {
   options = {
     modules.users = {
+      enable = mkBoolOpt false;
       rootPassword.enable = mkBoolOpt true;
       mutableUsers = mkBoolOpt false;
       primaryUser = {
@@ -28,6 +29,7 @@ in {
         passwordSecretKey = mkStrOpt "ramblurr-password";
         defaultSopsFile = mkOption {
           type = types.nullOr (types.path);
+          default = null;
         };
         shell = mkOption {
           type = types.nullOr (types.either types.shellPackage (types.passwdEntry types.path));
@@ -55,7 +57,7 @@ in {
   imports = [
     (mkAliasOptionModule ["myhm"] ["home-manager" "users" cfg.primaryUser.username])
   ];
-  config = {
+  config = mkIf cfg.enable {
     sops = {
       age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
       gnupg.sshKeyPaths = [];

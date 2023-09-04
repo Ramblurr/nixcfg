@@ -12,7 +12,7 @@ with lib.my; let
 in {
   options = {
     modules.networking.default = {
-      enable = mkBoolOpt true;
+      enable = mkBoolOpt false;
       hostName = mkStrOpt null;
     };
   };
