@@ -12,6 +12,7 @@ with lib.my; let
   isEd25519 = k: k.type == "ed25519";
   getKeyPath = k: k.path;
   keys = builtins.filter isEd25519 config.services.openssh.hostKeys;
+  withImpermanence = config.modules.impermanence.enable;
 in {
   options = {
     modules.users = {
@@ -59,7 +60,7 @@ in {
   ];
   config = mkIf cfg.enable {
     sops = {
-      age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
+      age.sshKeyPaths = ["${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"];
       gnupg.sshKeyPaths = [];
       secrets.root-password = mkIf cfg.rootPassword.enable {
         neededForUsers = true;

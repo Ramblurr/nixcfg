@@ -20,13 +20,14 @@ in {
   };
 
   config = mkIf cfg.enable {
-    # enable cross-compilation for aarch64
-    boot.binfmt.emulatedSystems = ["aarch64-linux"];
+    # enable cross-compilation
+    boot.binfmt.emulatedSystems = ["aarch64-linux" "armv6l-linux"];
     myhm = {
       programs.gh = {
         enable = true;
       };
       home.packages = with pkgs; [
+        rpi-imager
         nfs-utils
         inotify-tools
         roc-toolkit

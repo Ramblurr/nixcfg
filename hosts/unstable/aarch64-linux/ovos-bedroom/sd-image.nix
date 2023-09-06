@@ -6,10 +6,10 @@
   sd-image =
     (self.nixosConfigurations.ovos-kitchen-sat.extendModules {
       modules = [
-        nixos-raspberrypi.nixosModules.sd-image-rpizero2
+        nixos-raspberrypi.nixosModules.sd-image-rpi3
         {
           system.nixos.variant_id = "ovos-sat";
-          sdImage.imageBaseName = "ovos-kitchen-sat-rpizero2-nix-sd-image";
+          sdImage.imageBaseName = "ovos-kitchen-sat-rpi3-nix-sd-image";
         }
       ];
     })

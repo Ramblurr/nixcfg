@@ -21,7 +21,7 @@ in {
     # };
 
     sops.secrets.ssh_host_ed25519_key_pub = {
-      path = "/persist/etc/ssh/ssh_host_ed25519_key.pub";
+      path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
     };
 
     #sops.secrets.ssh_host_rsa_key = {
@@ -48,7 +48,7 @@ in {
       ];
     };
 
-    environment.persistence."/persist" = {
+    environment.persistence."/persist" = mkIf withImpermanence {
       files = [
         "/root/.ssh/known_hosts"
       ];

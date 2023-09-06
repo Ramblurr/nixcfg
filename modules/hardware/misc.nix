@@ -11,7 +11,7 @@ in {
   options = {
     modules.hardware = {
       fwupd.enable = mkBoolOpt true;
-      udisk2.enable = mkBoolOpt true;
+      udisks2.enable = mkBoolOpt true;
       enableRedistributableFirmware = mkBoolOpt true;
       usbModeSwitch.enable = mkBoolOpt false;
     };
@@ -19,7 +19,7 @@ in {
   config = {
     ## MISC HARDWARE RELATED ################################################
     services.fwupd.enable = cfg.fwupd.enable;
-    services.udisks2.enable = cfg.udisk2.enable;
+    services.udisks2.enable = cfg.udisks2.enable;
     hardware.enableRedistributableFirmware = cfg.enableRedistributableFirmware;
     # TODO(upgrade) hardware.usbWwan to hardware.usb-modeswitch once everything is on 23.11
     hardware.usbWwan.enable = cfg.usbModeSwitch.enable;
