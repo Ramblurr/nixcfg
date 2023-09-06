@@ -32,6 +32,11 @@ tasks:
     cmds:
       - nixos-rebuild --fast --use-remote-sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}}
 
+  nixos-rebuild-local:
+    internal: true
+    cmds:
+      - nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}}
+
   switch:quine:
     desc: Switch quine
     cmds:
@@ -78,29 +83,27 @@ tasks:
   test:ovos-kitchen:
     desc: Test ovos-kitchen
     cmds:
-      - task: nixos-rebuild
+      - task: nixos-rebuild-local
         vars:
           ACTION: test
-          BUILD_HOST: ovos-kitchen.int.***REMOVED***
-          TARGET_HOST: ovos-kitchen.int.***REMOVED***
+          TARGET_HOST: ovos@ovos-kitchen.int.***REMOVED***
           FLAKE_URI: .#ovos-kitchen
+
   build:ovos-kitchen:
-    desc: Build ovos-kitchen
+    desc: Build ovos-kitchen-local
     cmds:
       - task: nixos-rebuild
         vars:
           ACTION: build
-          BUILD_HOST: ovos-kitchen.int.***REMOVED***
           TARGET_HOST: ovos-kitchen.int.***REMOVED***
           FLAKE_URI: .#ovos-kitchen
 
   switch:ovos-kitchen:
     desc: Switch ovos-kitchen
     cmds:
-      - task: nixos-rebuild
+      - task: nixos-rebuild-local
         vars:
           ACTION: switch
-          BUILD_HOST: ovos-kitchen.int.***REMOVED***
           TARGET_HOST: ovos-kitchen.int.***REMOVED***
           FLAKE_URI: .#ovos-kitchen
 
@@ -109,36 +112,33 @@ tasks:
     cmds:
       - nix build .#images.ovos-kitchen
 
-  test:ovos-kitchen-sat:
-    desc: Test ovos-kitchen-sat
+  test:ovos-bedroom:
+    desc: Test ovos-bedroom
     cmds:
-      - task: nixos-rebuild
+      - task: nixos-rebuild-local
         vars:
           ACTION: test
-          BUILD_HOST: ovos-kitchen-sat.int.***REMOVED***
-          TARGET_HOST: ovos-kitchen-sat.int.***REMOVED***
-          FLAKE_URI: .#ovos-kitchen-sat
-  build:ovos-kitchen-sat:
-    desc: Build ovos-kitchen-sat
+          TARGET_HOST: ovos-bedroom.int.***REMOVED***
+          FLAKE_URI: .#ovos-bedroom
+  build:ovos-bedroom:
+    desc: Build ovos-bedroom
     cmds:
-      - task: nixos-rebuild
+      - task: nixos-rebuild-local
         vars:
           ACTION: build
-          BUILD_HOST: ovos-kitchen-sat.int.***REMOVED***
-          TARGET_HOST: ovos-kitchen-sat.int.***REMOVED***
-          FLAKE_URI: .#ovos-kitchen-sat
+          TARGET_HOST: ovos-bedroom.int.***REMOVED***
+          FLAKE_URI: .#ovos-bedroom
 
-  switch:ovos-kitchen-sat:
-    desc: Switch ovos-kitchen-sat
+  switch:ovos-bedroom:
+    desc: Switch ovos-bedroom
     cmds:
-      - task: nixos-rebuild
+      - task: nixos-rebuild-local
         vars:
           ACTION: switch
-          BUILD_HOST: ovos-kitchen-sat.int.***REMOVED***
-          TARGET_HOST: ovos-kitchen-sat.int.***REMOVED***
-          FLAKE_URI: .#ovos-kitchen-sat
+          TARGET_HOST: ovos-bedroom.int.***REMOVED***
+          FLAKE_URI: .#ovos-bedroom
 
-  image:ovos-kitchen-sat:
-    desc: Build the SD Card image for ovos-kitchen-sat
+  image:ovos-bedroom:
+    desc: Build the SD Card image for ovos-bedroom
     cmds:
-      - nix build .#images.ovos-kitchen-sat
+      - nix build .#images.ovos-bedroom
