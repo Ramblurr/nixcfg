@@ -25,9 +25,9 @@
 ;; `load-theme' function. This is the default:
 ;; (setq doom-theme 'doom-one)
 (setq doom-theme 'doom-gruvbox)
-;(setq doom-font (font-spec :family "IosevkaTerm Nerd Font Medium" :size 18))
+                                        ;(setq doom-font (font-spec :family "IosevkaTerm Nerd Font Medium" :size 18))
 (setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 18))
-;(setq doom-themes-treemacs-enable-variable-pitch nil)
+                                        ;(setq doom-themes-treemacs-enable-variable-pitch nil)
 (setq display-line-numbers-type 'relative)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -259,19 +259,19 @@ Null prefix argument turns off the mode."
   (add-to-list 'treemacs-pre-file-insert-predicates #'treemacs-is-file-git-ignored?))
 
 ;; Snippets
-;(use-package doom-snippets
-;  :load-path "~/.config/doom-snippets"
-;  :after yasnippet)
+                                        ;(use-package doom-snippets
+                                        ;  :load-path "~/.config/doom-snippets"
+                                        ;  :after yasnippet)
 
 
 (evil-define-command rm/lispyville-insert-at-end-of-list (count)
-                       "same as `lispyville-insert-at-end-of-list', but adds a newline."
-                       (interactive "<c>")
-                       ;; TODO if already at the end of the list, add a newline above
-                       (when (lispyville--out-forward (or count 1))
-                         (backward-char)
-                         (newline-and-indent)
-                         (evil-change-state lispyville-preferred-state)))
+  "same as `lispyville-insert-at-end-of-list', but adds a newline."
+  (interactive "<c>")
+  ;; TODO if already at the end of the list, add a newline above
+  (when (lispyville--out-forward (or count 1))
+    (backward-char)
+    (newline-and-indent)
+    (evil-change-state lispyville-preferred-state)))
 
 ;; Lispyville needs Lispy, but I don't want to ever use the insane lispy-mode
 ;; bindings.
@@ -390,7 +390,7 @@ Null prefix argument turns off the mode."
 (after! flycheck
   ;; flycheck-next-error will navigate to errors before warnings
   (setq flycheck-navigation-minimum-level 'error)
-)
+  )
 
 
 ;; Tell the LSP to not monitor vendor dirs
@@ -419,13 +419,13 @@ Null prefix argument turns off the mode."
 (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
 
 ;; accept completion from copilot and fallback to company
- (use-package! copilot
-   :hook (prog-mode . copilot-mode)
-   :bind (("C-TAB" . 'copilot-accept-completion-by-word)
-          ("C-<tab>" . 'copilot-accept-completion-by-word)
-          :map copilot-completion-map
-          ("<tab>" . 'copilot-accept-completion)
-          ("TAB" . 'copilot-accept-completion)))
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (("C-TAB" . 'copilot-accept-completion-by-word)
+         ("C-<tab>" . 'copilot-accept-completion-by-word)
+         :map copilot-completion-map
+         ("<tab>" . 'copilot-accept-completion)
+         ("TAB" . 'copilot-accept-completion)))
 
 
 (defun my/copilot-tab ()
@@ -457,12 +457,39 @@ Null prefix argument turns off the mode."
 
 (use-package! gptel
   :config
+  (setq-default gptel-model "gpt-4")
   (setq gptel-model "gpt-4")
   (setq gptel-directives '((default . "You are a large language model living in Emacs and a helpful coding assistant. Respond concisely.")
-                            (programming . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
-                            (writing . "You are a large language model and a writing assistant. Respond concisely.")
-                            (chat . "You are a large language model and a conversation partner. Respond concisely."))))
+                           (programming . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
+                           (writing . "You are a large language model and a writing assistant. Respond concisely.")
+                           (chat . "You are a large language model and a conversation partner. Respond concisely."))))
+;; source: https://www.armindarvish.com/en/post/use_emacs_as_a_chatgpt_client/
+(defun ad/ai-from-anywhere ()
+  (interactive)
+  (let* ((screen-width (display-pixel-width))
+         (screen-height (display-pixel-height))
+         (frame-width (/ screen-width 3))
+         (frame-height screen-height)
+         (frame-left 0)
+         (frame-top 0)
+         (chat-frame (make-frame `((window-system . x)
+                                   (top . ,frame-top)
+                                   (left . ,frame-left)
+                                   (width . (text-pixels . ,frame-width))
+                                   (heigth . (text-pixels . ,frame-height))
+                                   (name . "MyAI")
+                                   (minibuffer . t)
+                                   ))))
+    (select-frame chat-frame)
+    )
 
+  (setq gptel-model "gpt-4")
+  (add-hook 'gptel-post-response-hook (lambda () (goto-char (point-max))))
+  (gptel "My:AI Chat" gptel-api-key nil)
+  (switch-to-buffer "My:AI Chat")
+  (delete-other-windows)
+  )
+;; (ad/ai-from-anywhere)
 
 (load! "+bindings.el")
 (load! "+dashboard.el")
