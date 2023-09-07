@@ -107,7 +107,7 @@
 
     images = {
       ovos-kitchen = (import ./hosts/unstable/aarch64-linux/ovos-kitchen/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;
-      ovos-kitchen-sat = (import ./hosts/unstable/aarch64-linux/ovos-kitchen-sat/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;
+      ovos-bedroom = (import ./hosts/unstable/aarch64-linux/ovos-bedroom/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;
     };
 
     # breaks `nix flake check` with
