@@ -37,6 +37,11 @@ tasks:
     cmds:
       - nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}}
 
+  deploy-key:
+    cmds:
+      - sops -d --extract "['ssh_host_ed25519_key']" ./hosts/unstable/{{.arch}}-linux/{{.host}}/secrets.sops.yaml | ssh {{.host}}.int.socozy.casa 'cat - | sudo tee  /etc/ssh/ssh_host_ed25519_key'
+      - sops -d --extract "['ssh_host_ed25519_key_pub']" ./hosts/unstable/{{.arch}}-linux/{{.host}}/secrets.sops.yaml | ssh {{.host}}.int.socozy.casa 'cat - | sudo tee /etc/ssh/ssh_host_ed25519_key.pub'
+
   switch:quine:
     desc: Switch quine
     cmds:
@@ -135,7 +140,8 @@ tasks:
       - task: nixos-rebuild-local
         vars:
           ACTION: switch
-          TARGET_HOST: ovos-bedroom.int.socozy.casa
+          #BUILD_HOST: root@ovos-bedroom.int.socozy.casa
+          TARGET_HOST: root@ovos-bedroom.int.socozy.casa
           FLAKE_URI: .#ovos-bedroom
 
   image:ovos-bedroom:
