@@ -92,6 +92,110 @@
       },
     }
   '';
+
+  networking.firewall.allowedTCPPorts = [10001 10002 10003];
+  environment.etc."pipewire/pipewire.conf.d/101-roc-recv.conf" = {
+    text =
+      builtins.toJSON
+      {
+        "context.modules" = [
+          {
+            name = "libpipewire-module-roc-source";
+            args = {
+              "local.ip" = "0.0.0.0";
+              "resampler.profile" = "medium";
+              "fec.code" = "rs8m";
+              #"sess.latency.msec" = 60;
+              "local.source.port" = 10001;
+              "local.repair.port" = 10002;
+              "source.name" = "ROC Source";
+              "source.props" = {
+                "node.name" = "roc-recv-source";
+                "node.description" = "ROC Recv Source";
+                "media.class" = "Audio/Source";
+                #"role" = "Speech-High";
+              };
+            };
+          }
+          {
+            "name" = "libpipewire-module-filter-chain";
+            "args" = {
+              "node.description" = "Noise Canceling source";
+              "media.name" = "Noise Canceling source";
+              "filter.graph" = {
+                "nodes" = [
+                  {
+                    "type" = "ladspa";
+                    "name" = "rnnoise";
+                    "plugin" = "${pkgs.rnnoise-plugin}/lib/ladspa/librnnoise_ladspa.so";
+                    "label" = "noise_suppressor_stereo";
+                    "control" = {
+                      "VAD Threshold (%)" = 95.0;
+                      "VAD Grace Period (ms)" = 200;
+                      "Retroactive VAD Grace (ms)" = 0;
+                    };
+                  }
+                ];
+              };
+              "audio.position" = ["FL" "FR"];
+              "capture.props" = {
+                "node.name" = "effect_input.rnnoise";
+                "node.passive" = true;
+              };
+              "playback.props" = {
+                "node.name" = "effect_output.rnnoise";
+                "media.class" = "Audio/Source";
+              };
+            };
+          }
+        ];
+      };
+  };
+
+  environment.etc."wireplumber/main.lua.d/51-disable-builtin-rpi-audio.lua".text = ''
+    rule = {
+      matches = {
+        {
+          { "node.name", "equals", "alsa_output.platform-bcm2835_audio.stereo-fallback" },
+        },
+      },
+      apply_properties = {
+        ["device.disabled"] = true,
+        ["node.description"] = "snd_rpi_builtin"
+      },
+    }
+
+    table.insert(alsa_monitor.rules,rule)
+  '';
+
+  environment.etc."wireplumber/main.lua.d/51-rename-devices.lua".text = ''
+    rule = {
+      matches = {
+        {
+          { "node.name", "equals", "alsa_output.platform-soc_sound.stereo-fallback" },
+
+        },
+      },
+      apply_properties = {
+          ["node.description"] = "snd_rpi_hifiberry_dacplus_sink"
+      },
+    }
+
+    table.insert(alsa_monitor.rules,rule)
+    rule2 = {
+      matches = {
+        {
+          { "node.name", "equals", "alsa_input.platform-soc_sound.stereo-fallback" },
+
+        },
+      },
+      apply_properties = {
+          ["node.description"] = "snd_rpi_hifiberry_dacplus_source"
+      },
+    }
+
+    table.insert(alsa_monitor.rules,rule2)
+  '';
 }
 # pw-link  "alsa_input.platform-soc_sound.stereo-fallback:capture_FL" "control.endpoint.multimedia:playback_FL"
 # pw-link "alsa_input.platform-soc_sound.stereo-fallback:capture_FR" "control.endpoint.multimedia:playback_FR"

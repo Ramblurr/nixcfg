@@ -23,6 +23,7 @@ in {
   environment.etc."machine-id".text = "ccf2e2f97ab74fa49a7968b5d772565b";
 
   raspberry-pi.hardware.platform.type = "rpi3";
+  raspberry-pi.hardware.hifiberry-dacplus.enable = true;
   raspberry-pi.hardware.apply-overlays-dtmerge.enable = true;
   environment.systemPackages = with pkgs; [
     roc-toolkit
@@ -31,7 +32,13 @@ in {
     i2c-tools
   ];
 
-  networking.hostName = hn;
+  networking = {
+    hostName = hn;
+    useDHCP = true;
+    interfaces.eth0 = {
+      useDHCP = true;
+    };
+  };
   services.nscd.enableNsncd = false;
 
   modules = {
@@ -48,6 +55,7 @@ in {
     };
     services = {
       sshd.enable = true;
+      sshd.permitRootLogin.enable = true;
     };
     editors = {
       vim.enable = true;

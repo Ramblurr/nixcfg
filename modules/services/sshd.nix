@@ -13,6 +13,7 @@ with lib.my; let
 in {
   options.modules.services.sshd = {
     enable = mkBoolOpt true;
+    permitRootLogin.enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
     # Should exist already as it is used for sops bootstrapping
@@ -36,7 +37,11 @@ in {
     services.openssh = {
       enable = true;
       settings = {
-        PermitRootLogin = lib.mkForce "no";
+        PermitRootLogin = lib.mkForce (
+          if cfg.permitRootLogin.enable
+          then "without-password"
+          else "no"
+        );
         PasswordAuthentication = false;
         StreamLocalBindUnlink = true;
       };
