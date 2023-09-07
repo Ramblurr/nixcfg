@@ -105,6 +105,7 @@ in {
       ];
       home.stateVersion = "21.11";
       home.homeDirectory = cfg.primaryUser.homeDirectory;
+      sops.defaultSopsFile = cfg.primaryUser.defaultSopsFile;
 
       manual.manpages.enable = true;
       systemd.user.startServices = true;
