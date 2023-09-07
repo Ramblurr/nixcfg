@@ -17,7 +17,6 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
-    services.emacs.enable = true;
     # TODO(upgrade) to fonts.packages once everything is on 23.11
     fonts.fonts = [pkgs.emacs-all-the-icons-fonts];
 
@@ -42,6 +41,12 @@ in {
       programs.emacs = {
         enable = true;
         package = pkgs.emacs;
+      };
+
+      services.emacs.enable = true;
+      systemd.user.services.emacs.Unit = {
+        After = ["graphical-session-pre.target"];
+        PartOf = ["graphical-session.target"];
       };
 
       sops.secrets.authinfo = {
@@ -101,7 +106,7 @@ in {
           GenericName=Text Editor
           Comment=Edit text
           MimeType=text/english;text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-moc;text/x-pascal;text/x-tcl;text/x-tex;application/x-shellscript;text/x-c;text/x-c++;text/x-markdown;text/html;application/xhtml+xml
-          Exec=emacs %F
+          Exec=emacsclient -c %F
           Icon=${hm.config.home.homeDirectory}/.local/share/icons/doom.png
           Type=Application
           Terminal=false
