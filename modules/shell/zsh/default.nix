@@ -16,6 +16,7 @@ in {
   options.modules.shell.zsh = {
     enable = mkBoolOpt false;
     starship.enable = mkBoolOpt false;
+    profileExtra = mkStrOpt "";
   };
   config = mkIf cfg.enable {
     environment.pathsToLink = ["/share/zsh"];
@@ -160,8 +161,7 @@ in {
           source ~/.config/zsh/init.zsh
         '';
 
-        profileExtra = ''
-        '';
+        profileExtra = cfg.profileExtra;
       };
     };
   };
