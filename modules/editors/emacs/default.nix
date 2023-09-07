@@ -43,6 +43,12 @@ in {
         enable = true;
         package = pkgs.emacs;
       };
+
+      sops.secrets.authinfo = {
+        mode = "0400";
+        path = ".authinfo";
+      };
+
       home.packages = with pkgs; [
         ## Doom dependencies
         git

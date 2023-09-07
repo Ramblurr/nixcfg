@@ -38,6 +38,9 @@
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/docs/org/")
 
+;; Nix managed authinfo
+(add-to-list 'auth-sources "~/.authinfo")
+
 ;; Aggressive auto backup feature
 ;; I've been bit y undo corruption too many times to fully trust emacs with my
 ;; code. Since we don't have an intellij style Local History feature, we just
@@ -394,6 +397,13 @@ Null prefix argument turns off the mode."
 (after! lsp-mode
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]vendor\\'" t))
 
+;; use ns rather than file name for clj buffer name
+(use-package! clj-ns-name
+  :after clojure-mode
+  :config
+  (clj-ns-name-install))
+
+
 (defun tramp-abort ()
   (interactive)
   (recentf-cleanup)
@@ -444,6 +454,15 @@ Null prefix argument turns off the mode."
   treemacs (treemacs-follow-mode 1))
 
 (set-formatter! 'alejandra "alejandra --quiet" :modes '(nix-mode))
+
+(use-package! gptel
+  :config
+  (setq gptel-model "gpt-4")
+  (setq gptel-directives '((default . "You are a large language model living in Emacs and a helpful coding assistant. Respond concisely.")
+                            (programming . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
+                            (writing . "You are a large language model and a writing assistant. Respond concisely.")
+                            (chat . "You are a large language model and a conversation partner. Respond concisely."))))
+
 
 (load! "+bindings.el")
 (load! "+dashboard.el")

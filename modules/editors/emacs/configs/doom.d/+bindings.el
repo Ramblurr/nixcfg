@@ -111,19 +111,31 @@
                ))
 
 (map!
+  :leader
+  (:prefix-map ("a" . "AI/ChatGPT")
+    :desc "Open gptel Buffer" :n "q" #'gptel
+    :desc "Submit prompt to AT" :n "a" #'gptel-send
+    :desc "Send entire buffer to AI" :n "b" #'gptel-ext-send-whole-buffer
+    :desc "Load buffer into session" :n "l" #'gptel-ext-ask-document
+    :desc "Rewrite region" :n "R" #'gptel-ext-rewrite-and-replace
+    :desc "Refactor" :n "r" #'gptel-ext-refactor
+    )
+  )
+
+(map!
   :after clojure-mode
   :map (clojure-mode-map clojurescript-mode-map clojurec-mode-map)
   (:localleader
     (:prefix-map ("e" . "eval")
-    "D" nil
-    "D" 'my/eval-defun-and-reload-browser
-    "c" 'my/eval-rcf
-    ;; "e" 'cider-tap-last-sexp
-    ;; "E" 'cider-eval-last-sexp
-    )
+      "D" nil
+      "D" 'my/eval-defun-and-reload-browser
+      "c" 'my/eval-rcf
+      ;; "e" 'cider-tap-last-sexp
+      ;; "E" 'cider-eval-last-sexp
+      )
     (:prefix-map ("n" . "namespace")
-    "s" 'clojure-sort-ns
-    )))
+      "s" 'clojure-sort-ns
+      )))
 
 (map! :map doom-leader-map "o g" #'elpher)
 
