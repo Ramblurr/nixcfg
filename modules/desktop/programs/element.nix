@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  edge,
   inputs,
   ...
 }:
@@ -22,7 +23,7 @@ in {
       config,
       ...
     } @ hm: {
-      home.packages = with pkgs; [element-desktop];
+      home.packages = [edge.element-desktop];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
           {

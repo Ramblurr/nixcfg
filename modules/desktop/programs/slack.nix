@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  edge,
   inputs,
   ...
 }:
@@ -22,8 +23,8 @@ in {
       config,
       ...
     } @ hm: {
-      home.packages = with pkgs; [
-        slack
+      home.packages = [
+        edge.slack
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [

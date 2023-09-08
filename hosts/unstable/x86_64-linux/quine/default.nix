@@ -78,21 +78,22 @@ in {
         };
       };
       programs = {
-        onepassword.enable = true;
         calibre.enable = true;
-        element.enable = true;
-        kdeconnect.enable = true;
+        chrysalis.enable = true;
         discord.enable = true;
+        element.enable = true;
         junction.enable = true;
+        kdeconnect.enable = true;
         kitty.enable = true;
-        wezterm.enable = true;
         logseq.enable = true;
         nextcloud.enable = true;
         nheko.enable = true;
         obs.enable = true;
+        onepassword.enable = true;
         signal.enable = true;
         slack.enable = true;
         thunderbird.enable = true;
+        wezterm.enable = true;
       };
     };
     shell = {

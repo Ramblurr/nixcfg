@@ -1,6 +1,7 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-bleeding-edge.url = "github:NixOS/nixpkgs/master";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-23.05";
 
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
@@ -84,6 +85,7 @@
       {
         nixpkgs = nixpkgs;
         unstable = nixpkgs;
+        edge = inputs.nixpkgs-bleeding-edge;
         system = "x86_64-linux";
         mkPkgs = mkPkgs;
         home-manager = inputs.home-manager;
@@ -92,6 +94,7 @@
       {
         nixpkgs = inputs.nixpkgs-stable;
         unstable = nixpkgs;
+        edge = inputs.nixpkgs-bleeding-edge;
         system = "x86_64-linux";
         mkPkgs = mkPkgs;
         home-manager = inputs.home-manager-stable;
@@ -100,6 +103,7 @@
       {
         nixpkgs = nixpkgs;
         unstable = nixpkgs;
+        edge = inputs.nixpkgs-bleeding-edge;
         system = "aarch64-linux";
         mkPkgs = mkPkgs;
         home-manager = inputs.home-manager-stable;

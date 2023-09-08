@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  edge,
   inputs,
   ...
 }:
@@ -23,8 +24,8 @@ in {
       ...
     } @ hm: {
       home.packages = with pkgs; [
-        discord
-        betterdiscordctl
+        edge.discord
+        edge.betterdiscordctl
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
