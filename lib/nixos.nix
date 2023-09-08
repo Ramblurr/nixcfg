@@ -9,6 +9,7 @@ with lib.my; {
   mkHost = path: attrs @ {
     nixpkgs,
     unstable,
+    edge,
     system,
     mkPkgs,
     home-manager,
@@ -19,6 +20,7 @@ with lib.my; {
       specialArgs = {
         inherit lib inputs system;
         unstable = mkPkgs unstable system;
+        edge = mkPkgs edge system;
       };
       modules = [
         {
@@ -29,7 +31,7 @@ with lib.my; {
         ({...}: {
           modules.sops.secretsFile = builtins.getEnv "SOPS_SECRETS_FILE";
         })
-        (filterAttrs (n: v: !elem n ["nixpkgs" "unstable" "system" "mkPkgs" "home-manager"]) attrs)
+        (filterAttrs (n: v: !elem n ["nixpkgs" "unstable" "edge" "system" "mkPkgs" "home-manager"]) attrs)
         ../. # /default.nix
         (import path)
       ];
@@ -38,6 +40,7 @@ with lib.my; {
   mapHosts = dir: attrs @ {
     nixpkgs,
     unstable,
+    edge,
     system,
     mkPkgs,
     home-manager,

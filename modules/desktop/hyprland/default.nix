@@ -82,7 +82,7 @@ in {
         wl-clipboard # Clipboard daemon
         hyprpicker # color picker
         gtk-layer-shell # shell components on wayland
-        inputs.hyprNStack.packages.${pkgs.system}.hyprNStack
+        #inputs.hyprNStack.packages.${pkgs.system}.hyprNStack
         inputs.hy3.packages.x86_64-linux.hy3
       ];
     };
@@ -249,10 +249,12 @@ in {
             ''
               exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XAUTHORITY DISPLAY && systemctl --user start hyprland-session.target
             ''
-            + ''
-              plugin = ${inputs.hyprNStack.packages.${pkgs.system}.hyprNStack}/lib/libhyprNStack.so
-              plugin = ${inputs.hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
-            ''
+            #+ ''
+            #  plugin = ${inputs.hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
+            #''
+            #+ ''
+            #  plugin = ${inputs.hyprNStack.packages.${pkgs.system}.hyprNStack}/lib/libhyprNStack.so
+            #''
             + builtins.readFile ./configs/hyprland.conf;
           onChange = ''
             (  # execute in subshell so that `shopt` won't affect other scripts

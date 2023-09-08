@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  edge,
   inputs,
   ...
 }:
@@ -18,8 +19,8 @@ in {
   };
   config = mkIf cfg.enable {
     myhm = {...} @ hm: {
-      home.packages = with pkgs; [
-        logseq
+      home.packages = [
+        edge.logseq
       ];
       persistence = mkIf withImpermanence {
         directories = [
