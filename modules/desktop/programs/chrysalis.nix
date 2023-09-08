@@ -18,6 +18,7 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    services.udev.packages = [edge.chrysalis];
     home-manager.users."${username}" = {
       pkgs,
       config,
