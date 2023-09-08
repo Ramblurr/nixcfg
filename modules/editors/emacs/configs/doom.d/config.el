@@ -491,5 +491,39 @@ Null prefix argument turns off the mode."
   )
 ;; (ad/ai-from-anywhere)
 
+(with-eval-after-load 'tramp
+
+  (tramp-set-completion-function "ssh"
+                                 '((tramp-parse-sconfig "~/.ssh/config.d/70-outskirts-labs")
+                                   (tramp-parse-sconfig "~/.ssh/config.d/99-home-network")
+                                   (tramp-parse-sconfig "~/.ssh/config.d/00-config")))
+
+  (with-eval-after-load 'tramp-cache
+    (setq tramp-persistency-file-name "~/.emacs.d/tramp"))
+  (setq
+   tramp-default-method "ssh"
+   ;; clobber the default user list so it always prefers usernames from the ssh config
+   tramp-default-user-alist
+   '(("ssh" nil nil)
+     ("ssh" ".*" nil)
+     ("\\`\\(?:doas\\|ksu\\|su\\(?:do\\)?\\)\\'" nil "root")
+     ("\\`smb\\'" nil nil)
+     ("\\`sudoedit\\'" nil "root"))
+   ;; use the settings in ~/.ssh/config instead of Tramp's
+   tramp-use-ssh-controlmaster-options nil
+   ;; don't generate backups for remote files opened as root (security hazzard)
+   backup-enable-predicate
+   (lambda (name)
+     (and (normal-backup-enable-predicate name)
+          (not (let ((method (file-remote-p name 'method)))
+                 (when (stringp method)
+                   (member method '("su" "sudo")))))))))
+(defun my-vc-off-if-remote ()
+  (if (file-remote-p (buffer-file-name))
+    (setq-local vc-handled-backends '(Git))))
+(add-hook 'find-file-hook 'my-vc-off-if-remote)
+
+;; (setq vc-handled-backends '(Git))
+
 (load! "+bindings.el")
 (load! "+dashboard.el")
