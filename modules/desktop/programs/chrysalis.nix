@@ -9,12 +9,12 @@
 }:
 with lib;
 with lib.my; let
-  cfg = config.modules.desktop.programs.signal;
+  cfg = config.modules.desktop.programs.chrysalis;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.programs.signal = {
+  options.modules.desktop.programs.chrysalis = {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
@@ -24,11 +24,12 @@ in {
       ...
     } @ hm: {
       home.packages = [
-        edge.signal-desktop
+        # It is a statically linked AppImage, so we always want the latest
+        edge.chrysalis
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
-          ".config/Signal"
+          ".config/chrysalis"
         ];
       };
     };

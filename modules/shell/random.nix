@@ -86,7 +86,6 @@ in {
         mosh
         vifm
         smartmontools
-        chrysalis
         pwgen-secure
         alejandra
       ];
