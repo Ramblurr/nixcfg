@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  unstable,
   inputs,
   ...
 }:
@@ -25,7 +26,7 @@ in {
     # users.users."${username}".ignoreShellProgramCheck = true;
     myhm = {...} @ hm: {
       home.packages = with pkgs; [
-        exa
+        unstable.eza
         ripgrep
       ];
       programs.fzf = {
@@ -89,7 +90,7 @@ in {
           "open" = "re.sonny.Junction";
           "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";
           "reshell!" = "exec $SHELL -l";
-          "exa" = "exa --group-directories-first";
+          "eza" = "eza --group-directories-first";
           ".." = "cd ..";
           "..." = "cd ../..";
           "...." = "cd ../../../";
@@ -117,7 +118,7 @@ in {
           "mkdir" = "mkdir -p";
           "cp" = "cp -r";
           "scp" = "scp -r";
-          "ls" = "exa -l --group-directories-first";
+          "ls" = "eza -l --group-directories-first";
           "ll" = "ls -lahF --color=auto --group-directories-first";
           "lsl" = "ls -lhF --color=auto --group-directories-first";
           "utcnow" = "date -u +\"%Y-%m-%d %H:%M:%S\"";
