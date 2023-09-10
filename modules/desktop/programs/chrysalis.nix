@@ -31,6 +31,7 @@ in {
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
           ".config/chrysalis"
+          ".config/Chrysalis"
         ];
       };
     };
