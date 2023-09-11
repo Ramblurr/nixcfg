@@ -47,7 +47,7 @@
                 "node.target" = "alsa_input.platform-soc_sound.stereo-fallback";
               };
               "playback.props" = {
-                "monitor.channel-volumes" = true;
+                "monitor.channel-volumes" = false;
                 "media.role" = "Multimedia";
                 #"device.intended-roles" = "Multimedia";
               };
@@ -94,6 +94,7 @@
   '';
 
   networking.firewall.allowedTCPPorts = [10001 10002 10003];
+  networking.firewall.allowedUDPPorts = [10001 10002 10003];
   environment.etc."pipewire/pipewire.conf.d/101-roc-recv.conf" = {
     text =
       builtins.toJSON
@@ -113,7 +114,7 @@
                 "node.name" = "roc-recv-source";
                 "node.description" = "ROC Recv Source";
                 "media.class" = "Audio/Source";
-                #"role" = "Speech-High";
+                "media.role" = "Speech";
               };
             };
           }
@@ -137,14 +138,16 @@
                   }
                 ];
               };
-              "audio.position" = ["FL" "FR"];
               "capture.props" = {
+                "audio.position" = ["FL" "FR"];
                 "node.name" = "effect_input.rnnoise";
                 "node.passive" = true;
               };
               "playback.props" = {
+                "audio.position" = ["FL" "FR"];
                 "node.name" = "effect_output.rnnoise";
                 "media.class" = "Audio/Source";
+                "media.role" = "Speech";
               };
             };
           }
@@ -197,8 +200,22 @@
     table.insert(alsa_monitor.rules,rule2)
   '';
 }
+# Link the music system input manually:
 # pw-link  "alsa_input.platform-soc_sound.stereo-fallback:capture_FL" "control.endpoint.multimedia:playback_FL"
 # pw-link "alsa_input.platform-soc_sound.stereo-fallback:capture_FR" "control.endpoint.multimedia:playback_FR"
-# pw-link "roc-recv-source:receive_FR" "control.endpoint.speech_high:playback_FR"
-# pw-link "roc-recv-source:receive_FL" "control.endpoint.speech_high:playback_FL"
+#
+# To hear the mic input on the speakers:
+# pw-link "roc-recv-source:receive_FR" "control.endpoint.speech:playback_FR"
+# pw-link "roc-recv-source:receive_FL" "control.endpoint.speech:playback_FL"
+#
+# pw-link -d "roc-recv-source:receive_FL" "control.endpoint.capture:playback_FL"
+# pw-link -d "roc-recv-source:receive_FR" "control.endpoint.capture:playback_FR"
+# pw-link -d "roc-recv-source:receive_FR" "input.music-to-speakers-bridge:input_FR"
+# pw-link -d "roc-recv-source:receive_FL" "input.music-to-speakers-bridge:input_FL"
+# This was required to get the mic input into ovos
+# pw-link "roc-recv-source:receive_FR" "ALSA Capture:input_FR"
+# pw-link "roc-recv-source:receive_FL" "ALSA Capture:input_FL"
+#    or this one for noise reduction (only use one or the other)
+# pw-link  "effect_output.rnnoise:capture_FR" "ALSA Capture:input_FR"
+# pw-link  "effect_output.rnnoise:capture_FL" "ALSA Capture:input_FL"
 
