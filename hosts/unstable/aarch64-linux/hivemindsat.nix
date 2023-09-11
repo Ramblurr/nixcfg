@@ -22,7 +22,7 @@
       name = "ovos";
       group = "ovos";
       isNormalUser = true;
-      extraGroups = ["wheel" "audio" "spi" "gpio"];
+      extraGroups = ["wheel" "audio" "spi" "gpio" "input" "plugdev"];
       shell = pkgs.zsh;
     };
   };
@@ -198,6 +198,7 @@
       description = "Podman hivemind-sat";
       after = ["network-online.target"];
       wantedBy = ["default.target"];
+      partOf = ["pipewire.service"];
 
       enable = true;
       unitConfig = {
@@ -241,8 +242,6 @@
             --volume /home/ovos/config/mycroft:/home/ovos/.config/mycroft \
             --volume /home/ovos/share/hivemind:/home/ovos/.local/share/hivemind \
             --volume /home/ovos/share/mycroft:/home/ovos/.local/share/mycroft \
-            --volume /dev:/dev \
-            --volume /sys:/sys \
             ${image}:${tag}
         '';
         ExecStop = "${podman} stop --ignore -t 10 --cidfile=%t/%n.ctr-id";
