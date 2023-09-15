@@ -22,7 +22,7 @@
 
   :dev/reloaded
   {:extra-paths ["dev" "test"]
-   :extra-deps  {djblue/portal               {:mvn/version "0.46.0"} ; portal data inspector
+   :extra-deps  {djblue/portal               {:mvn/version "0.47.0"} ; portal data inspector
                  clj-commons/clj-yaml        {:mvn/version "1.0.27"} ; portal yaml support (optional)
                  integrant/repl              {:mvn/version "0.3.3"}
                  org.clojure/tools.namespace {:mvn/version "1.4.4"}
@@ -35,10 +35,10 @@
                  criterium/criterium         {:mvn/version "0.4.6"}}}
 
   :inspect/portal-cli
-  {:extra-deps {djblue/portal {:mvn/version "0.46.0"}}}
+  {:extra-deps {djblue/portal {:mvn/version "0.47.0"}}}
 
   :inspect/portal-cli-cider
-  {:extra-deps {djblue/portal                 {:mvn/version "0.46.0"}
+  {:extra-deps {djblue/portal                 {:mvn/version "0.47.0"}
                 nrepl/nrepl                   {:mvn/version "1.0.0"}
                 cider/cider-nrepl             {:mvn/version "0.37.1"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.9.0"}}
