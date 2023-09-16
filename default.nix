@@ -72,9 +72,9 @@ with lib.my; {
 
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
 
-  environment.enableAllTerminfo = true;
   # Just the bare necessities...
   environment.systemPackages = with pkgs; [
+    kitty.terminfo
     cached-nix-shell
     dig
     jq
