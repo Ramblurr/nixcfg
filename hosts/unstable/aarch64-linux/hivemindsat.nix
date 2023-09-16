@@ -183,8 +183,8 @@
 
   systemd.user.services = {
     hivemind-sat = let
-      image = "ghcr.io/ramblurr/hivemind-voice-sat";
-      tag = "alpha";
+      image = "ghcr.io/ramblurr/hivemind-voice-sat-dev";
+      tag = "rolling";
       xdgRuntimeDir = "/run/user/1000";
       pullPolicy = "missing";
       podman = "${config.virtualisation.podman.package}/bin/podman";
