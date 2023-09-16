@@ -23,7 +23,8 @@ in {
       config,
       ...
     } @ hm: {
-      home.packages = [edge.element-desktop];
+      home.packages = [(edge.element-desktop.override {electron = edge.electron_26;})];
+
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
           {

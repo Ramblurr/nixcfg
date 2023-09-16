@@ -27,6 +27,7 @@ in {
         enable = true;
       };
       home.packages = with pkgs; [
+        cue
         rpi-imager
         nfs-utils
         inotify-tools
