@@ -25,6 +25,9 @@ export LANGUAGE=en_US.UTF-8
 export LESSCHARSET=utf-8
 
 
+#█▓▒░ kde file picker > gnome file picker
+export GTK_USE_PORTAL=1
+
 #█▓▒░ stop barebacking my ~/ goddammit
 export XDG_CACHE_HOME=$HOME/.cache
 export XDG_DATA_HOME=$HOME/.local/share
