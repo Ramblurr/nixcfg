@@ -28,7 +28,7 @@
       printcap name = /dev/null
       guest account = nobody
       map to guest = bad user
-      hosts allow = 192.168.1.83 10.9.6.23 127.0.0.1 localhost
+      hosts allow = 192.168.1.83 10.9.6.23 10.9.5.1 127.0.0.1 localhost
       hosts deny = 0.0.0.0/0
     '';
     # log level = 3
@@ -59,6 +59,15 @@
         "guest ok" = "no";
         "read only" = "yes";
         writeable = "no";
+      };
+      paperless = {
+        path = "/mnt/tank2/services/paperless.k8s.socozy.casa";
+        browseable = "yes";
+        "force user" = "k8s-nfs";
+        "guest ok" = "no";
+        public = "no";
+        "read only" = "no";
+        writeable = "yes";
       };
     };
   };
