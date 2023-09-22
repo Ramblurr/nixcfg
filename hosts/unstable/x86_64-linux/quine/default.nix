@@ -91,6 +91,7 @@ in {
         obs.enable = true;
         onepassword.enable = true;
         signal.enable = true;
+        kicad.enable = true;
         slack.enable = true;
         thunderbird.enable = true;
         wezterm.enable = true;

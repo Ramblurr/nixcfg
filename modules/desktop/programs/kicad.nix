@@ -23,7 +23,7 @@ in {
       config,
       ...
     } @ hm: {
-      home.packages = [
+      home.packages = with pkgs; [
         kicad
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
