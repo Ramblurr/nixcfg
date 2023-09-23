@@ -28,7 +28,7 @@ in {
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
-          ".config/slack"
+          ".config/Slack"
         ];
       };
     };
