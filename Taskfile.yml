@@ -35,7 +35,7 @@ tasks:
   nixos-rebuild-local:
     internal: true
     cmds:
-      - nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}}
+      - nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace
 
   deploy-key:
     cmds:
