@@ -17,6 +17,7 @@ with lib.my; let
       sed -i 's/zext_workspace_handle_v1_activate(workspace_handle_);/const std::string command = "hyprctl dispatch workspace " + name_;\n\tsystem(command.c_str());/g' src/modules/wlr/workspace_manager.cpp
     '';
   });
+  startupScript = pkgs.writeScript "hyprland-startup.sh" (builtins.readFile ./hyprland-startup.sh);
 in {
   options.modules.desktop.hyprland = {
     enable = mkBoolOpt false;
@@ -92,6 +93,11 @@ in {
         hy3_layouter
       ];
 
+      home.file.".local/bin/hyprland-startup.sh" = {
+        enable = true;
+        executable = true;
+        source = startupScript;
+      };
       systemd.user.targets.hyprland-session = {
         Unit = {
           Description = "hyprland compositor session";
