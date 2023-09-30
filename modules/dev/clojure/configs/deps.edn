@@ -29,7 +29,7 @@
                  org.clojure/tools.trace     {:mvn/version "0.7.11"}
                  org.slf4j/slf4j-nop         {:mvn/version "2.0.9"}
                  com.brunobonacci/mulog      {:mvn/version "0.9.0"}
-                 lambdaisland/kaocha         {:mvn/version "1.86.1355"}
+                 lambdaisland/kaocha         {:mvn/version "1.87.1366"}
                  org.clojure/test.check      {:mvn/version "1.1.1"}
                  ring/ring-mock              {:mvn/version "0.4.0"}
                  criterium/criterium         {:mvn/version "0.4.6"}}}
