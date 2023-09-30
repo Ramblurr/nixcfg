@@ -42,10 +42,10 @@ in {
     };
 
     security.polkit.enable = true;
-    security.pam.services.login.enableKwallet = true;
-    security.pam.services.login.enableGnomeKeyring = true;
-    security.pam.services.sddm.enableKwallet = true;
-    security.pam.services.sddm.enableGnomeKeyring = true;
+    security.pam.services.kwallet = {
+      name = "kwallet";
+      enableKwallet = true;
+    };
     # see https://github.com/NixOS/nixpkgs/issues/158025
     security.pam.services.swaylock = {};
     systemd.user.services.polkit-gnome-authentication-agent-1 = {
@@ -108,29 +108,30 @@ in {
         };
       };
       services.swayidle = {
-        enable = false;
-        events = [
-          {
-            event = "before-sleep";
-            command = "${pkgs.pkgs.swaylock-effects}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
-          }
-          {
-            event = "lock";
-            command = "lock";
-          }
-        ];
+        enable = true;
+        # events = [
+        #   {
+        #     event = "before-sleep";
+        #     command = "${pkgs.pkgs.swaylock-effects}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
+        #   }
+        #   {
+        #     event = "lock";
+        #     command = "lock";
+        #   }
+        # ];
         timeouts = [
           {
-            timeout = 430;
-            command = "${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/breeze/preferences/22/preferences-desktop-screensaver.svg  \"Idle timeout\" \"Screen is locking soon\"";
+            timeout = 549;
+            command = "${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/breeze/preferences/22/preferences-desktop-screensaver.svg  \"Idle timeout\" \"Screen is locking in 1 minute\"";
           }
-          {
-            timeout = 500;
-            command = "${pkgs.swaylock-effects}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
-          }
+          #{
+          #  timeout = 500;
+          #  command = "${pkgs.swaylock-effects}/bin/swaylock -f --config ${hm.config.home.homeDirectory}/.config/swaylock/config";
+          #}
           {
             timeout = 550;
-            command = "${pkgs.hyprland}/bin/ dispatch dpms off";
+            command = "${pkgs.hyprland}/bin/hyprctl dispatch dpms off";
+            resumeCommand = "${pkgs.hyprland}/bin/hyprctl dispatch dpms on";
           }
         ];
         systemdTarget = "xdg-desktop-portal-hyprland.service";

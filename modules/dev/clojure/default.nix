@@ -19,7 +19,14 @@ in {
   };
 
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = {
+    home-manager.users."${username}" = let
+      devSDKs = with pkgs; {
+        openjfx = javaPackages.openjfx19;
+        gtk3 = gtk3;
+        libXxf86vm = xorg.libXxf86vm;
+        jogl_2_4_0 = javaPackages.jogl_2_4_0;
+      };
+    in {
       home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
@@ -27,9 +34,22 @@ in {
         clojure
         clojure-lsp
         clj-kondo
+        leiningen
         babashka
         polylith
+        javaPackages.openjfx19
+        javaPackages.jogl_2_4_0
+        gtk3
+        xorg.libXxf86vm
       ];
+      home.file.".local/dev".source = let
+        mkEntry = name: value: {
+          inherit name;
+          path = value;
+        };
+        entries = lib.mapAttrsToList mkEntry devSDKs;
+      in
+        pkgs.linkFarm "local-dev" entries;
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
           ".config/maven"
