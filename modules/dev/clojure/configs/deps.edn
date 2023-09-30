@@ -9,11 +9,10 @@
  :mvn/local-repo "/home/ramblurr/.cache/maven/repository"
 
  :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
-             "clojars" {:url "https://repo.clojars.org/"} #_ ()}
-
+             "clojars" {:url "https://repo.clojars.org/"} #_()}
 
  :aliases
- { ;; Include `dev` directory on the class path to auto-load `dev/user.clj` on REPL startup
+ {;; Include `dev` directory on the class path to auto-load `dev/user.clj` on REPL startup
   ;; http://practicalli.github.io/clojure/clojure-tools/configure-repl-startup.html
 
   ;; clojure -M:env/dev
@@ -43,15 +42,15 @@
                 cider/cider-nrepl             {:mvn/version "0.38.1"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.9.0"}}
    :main-opts  ["-m" "nrepl.cmdline"
-               "--middleware" "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware,portal.nrepl/wrap-portal]"]}
+                "--middleware" "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware,portal.nrepl/wrap-portal]"]}
 
   :inspect/rebl ;; for JDK 11+
   {:extra-deps {com.cognitect/rebl          {:mvn/version "0.9.245"}
-                org.openjfx/javafx-fxml     {:mvn/version "22-ea+9"}
-                org.openjfx/javafx-controls {:mvn/version "22-ea+9"}
-                org.openjfx/javafx-swing    {:mvn/version "22-ea+9"}
-                org.openjfx/javafx-base     {:mvn/version "22-ea+9"}
-                org.openjfx/javafx-web      {:mvn/version "22-ea+9"}}
+                org.openjfx/javafx-fxml     {:mvn/version "22-ea+11"}
+                org.openjfx/javafx-controls {:mvn/version "22-ea+11"}
+                org.openjfx/javafx-swing    {:mvn/version "22-ea+11"}
+                org.openjfx/javafx-base     {:mvn/version "22-ea+11"}
+                org.openjfx/javafx-web      {:mvn/version "22-ea+11"}}
    :main-opts  ["-m" "cognitect.rebl"]}
 
   :inspect/reveal-cider
@@ -61,4 +60,4 @@
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.9.0"}}
    :jvm-opts   ["-Dvlaaad.reveal.prefs={:theme,:dark,:font-family,\"file://var/home/ramblurr/.local/share/fonts/iosevka-extended.ttf\",:font-size,16}"]
    :main-opts  ["-m" "nrepl.cmdline"
-               "--middleware" "[vlaaad.reveal.nrepl/middleware,refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"]}}}
+                "--middleware" "[vlaaad.reveal.nrepl/middleware,refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"]}}}
