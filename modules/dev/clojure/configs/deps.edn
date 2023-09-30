@@ -50,7 +50,7 @@
                 org.openjfx/javafx-fxml     {:mvn/version "22-ea+9"}
                 org.openjfx/javafx-controls {:mvn/version "22-ea+9"}
                 org.openjfx/javafx-swing    {:mvn/version "22-ea+9"}
-                org.openjfx/javafx-base     {:mvn/version "22-ea+9"}
+                org.openjfx/javafx-base     {:mvn/version "22-ea+11"}
                 org.openjfx/javafx-web      {:mvn/version "22-ea+9"}}
    :main-opts  ["-m" "cognitect.rebl"]}
 
