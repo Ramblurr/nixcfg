@@ -3,10 +3,9 @@
   "packageRules": [
     {
     "matchDatasources": ["maven", "deps-edn"],
-    "matchPackagePatterns": ["openjfx"],
+    "matchPackagePatterns": ["openjfx", "javafx"],
     "groupName": "org.openjfx clojure libraries",
     "groupSlug": "org-openjfx",
-    "separateMinorPatch": true,
     "group": {
       "commitMessageTopic": "{{{groupName}}} group"
     }
