@@ -118,155 +118,8 @@ Null prefix argument turns off the mode."
  :n "C-e" #'persp-switch-to-buffer
  :n "C-n" #'projectile-find-file)
 
-;; (add-hook! clojure-mode
-;;   (set-formatter! 'cljstyle "/home/ramblurr/.local/bin/cljstyle pipe" :modes '(clojure-mode))
-;;   (add-hook 'before-save-hook 'format-all-buffer t t))
-
-(after! clojure-mode
-  (setq clojure-toplevel-inside-comment-form t)
-  (setq cider-save-file-on-load t)
-  (define-clojure-indent
-    (>defn :defn)
-    (>defn- :defn)
-    (defresolver :defn)
-    (defcomponent :defn)
-    (defnc :defn)
-    (defnc- :defn)
-    (defui :defn)
-    (defui- :defn)
-    (fn-traced :defn)
-    (defn-traced :defn))
-  (setq cider-default-cljs-repl 'shadow)
-  (setq clojure-align-forms-automatically t)
-  (put '>defn 'clojure-doc-string-elt 2)
-  (put '>defn- 'clojure-doc-string-elt 2)
-  (put 'defsys 'clojure-doc-string-elt 2)
-  (put 'defevent-db 'clojure-doc-string-elt 2)
-  (put 'defevent-fx 'clojure-doc-string-elt 2)
-  (put 'defsub 'clojure-doc-string-elt 2)
-  (put 'defhandler 'clojure-doc-string-elt 2)
-  (put 'defstream 'clojure-doc-string-elt 2)
-  (put 'defn-traced 'clojure-doc-string-elt 2)
-  (put 'defui 'clojure-doc-string-elt 2)
-  (put 'defui- 'clojure-doc-string-elt 2)
-  (put 'defnc 'clojure-doc-string-elt 2)
-  (put 'defnc- 'clojure-doc-string-elt 2)
-  (put 'defresolver 'clojure-doc-string-elt 2)
 
 
-  (setq cljr-magic-require-namespaces
-        '(("io" . "clojure.java.io")
-          ("sh" . "clojure.java.shell")
-          ("jdbc" . "clojure.java.jdbc")
-          ("set" . "clojure.set")
-          ("string" . "clojure.string")
-          ("gstring" . "goog.string")
-          ("time" . "java-time")
-          ("path" . "pathetic.core")
-          ("walk" . "clojure.walk")
-          ("zip" . "clojure.zip")
-          ("async" . "clojure.core.async")
-          ("component" . "com.stuartsierra.component")
-          ("http" . "clj-http.client")
-          ("url" . "cemerick.url")
-          ("sql" . "honeysql.core")
-          ("csv" . "clojure.data.csv")
-          ("json" . "jsonista.core")
-          ("s" . "clojure.spec.alpha")
-          ("fs" . "me.raynes.fs")
-          ("ig" . "integrant.core")
-          ("cp" . "com.climate.claypoole")
-          ("re-frame" . "re-frame.core")
-          ("rf" . "re-frame.core")
-          ("rf.db" . "re-frame.db")
-          ("re" . "reagent.core")
-          ("reagent" . "reagent.core")
-          ("gen" . "clojure.spec.gen.alpha")
-          ("log" . "taoensso.timbre")
-          ("enc" . "taoensso.encore")
-          ("t" . "tick.alpha.api")
-          ("d" . "datahike.api")
-          ("dc" . "datahike.core")
-          ("p" . "com.wsscode.pathom.core")
-          ("pc" . "com.wsscode.pathom.connect")
-          ("uism" . "com.fulcrologic.fulcro.ui-state-machines")
-          ("df" . "com.fulcrologic.fulcro.data-fetch")
-          ("dr" . "com.fulcrologic.fulcro.routing.dynamic-routing")
-          ("dom" . "com.fulcrologic.fulcro.dom")
-          ("ent" . "com.fulcrologic.fulcro.dom.html-entities")
-          ("evt" . "com.fulcrologic.fulcro.dom.events")
-          ("comp" . "com.fulcrologic.fulcro.components")
-          ("mu" . "com.fulcrologic.fulcro.mutations")
-          ("merge" . "com.fulcrologic.fulcro.algorithms.merge")
-          ("fs" . "com.fulcrologic.fulcro.algorithms.form-state")
-          ("m" . "medley.core")))
-
-  (defun my/clojure-reload-browser ()
-    "Reload the browser on eval"
-    (interactive)
-    (cider-interactive-eval
-     (format "(browser/refresh)" (cider-last-sexp))))
-
-  (defun my/eval-defun-and-reload-browser ()
-    "Reload the browser on eval"
-    (interactive)
-    (cider-eval-defun-at-point)
-    (my/clojure-reload-browser))
-
-  (defun my/eval-rcf ()
-    (interactive) ;; you have to do this to be able to bind it to a key or M-x it
-    (save-excursion      ;; this is what returns the point to where you started
-      (goto-char (point-max))              ;; go to end of buffer
-      (if (re-search-backward " *;; rcf" nil t) ;; search backward, don't throw an error
-          (cider-eval-last-sexp) ;; the cider fn which evals the last form
-        (message "No rcf found!")))) ;; if the search fails, show a message in the echo area
-
-
-  (defun my/clojure-dev-reset ()
-    (interactive)
-    (cider-interactive-eval
-     ;; (format "(ol.app.dev.dev-extras/reset)"
-     ;;         (cider-last-sexp))
-
-     (format "(dev/reset)"
-             (cider-last-sexp))))
-
-  (defun my/clojure-reveal-clear-output ()
-    (interactive)
-    (cider-interactive-eval
-     (format "{:vlaaad.reveal/command '(clear-output)}"
-             (cider-last-sexp))))
-
-  ;; Leverage an existing cider nrepl connection to evaluate portal.api functions
-  ;; and map them to convenient key bindings.
-
-  ;; def portal to the dev namespace to allow dereferencing via @dev/portal
-  (defun portal.api/open ()
-    (interactive)
-    (cider-nrepl-sync-request:eval
-     "(do (ns dev) (def portal ((requiring-resolve 'portal.api/open))) (add-tap (requiring-resolve 'portal.api/submit)))"))
-
-  (defun portal.api/clear ()
-    (interactive)
-    (cider-nrepl-sync-request:eval "(portal.api/clear)"))
-
-  (defun portal.api/close ()
-    (interactive)
-    (cider-nrepl-sync-request:eval "(portal.api/close)"))
-
-  ;; Example key mappings for doom emacs
-  (map! :map clojure-mode-map
-        ;; cmd  + o
-        :n "s-o" #'portal.api/open
-        ;; ctrl + l
-        :n "C-l" #'portal.api/clear)
-
-  ;; NOTE: You do need to have portal on the class path and the easiest way I know
-  ;; how is via a clj user or project alias.
-  (setq cider-clojure-cli-global-options "-A:portal"))
-
-(after! lsp-clojure
-  (setq lsp-lens-enable t))
 
 (after! company
   (setq company-auto-complete t
@@ -420,13 +273,6 @@ Null prefix argument turns off the mode."
 (after! lsp-mode
   (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]vendor\\'" t))
 
-;; use ns rather than file name for clj buffer name
-(use-package! clj-ns-name
-  :after clojure-mode
-  :config
-  (clj-ns-name-install))
-
-
 (defun tramp-abort ()
   (interactive)
   (recentf-cleanup)
@@ -550,3 +396,4 @@ Null prefix argument turns off the mode."
 
 (load! "+bindings.el")
 (load! "+dashboard.el")
+(load! "+clojure.el")
