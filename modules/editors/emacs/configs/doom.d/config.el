@@ -20,6 +20,8 @@
 ;; refresh your font settings. If Emacs still can't find your font, it likely
 ;; wasn't installed correctly. Font issues are rarely Doom issues!
 
+(setq custom-file                     (expand-file-name "custom-nixos.el"    user-emacs-directory))
+
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
@@ -106,6 +108,8 @@ Null prefix argument turns off the mode."
                                        ("~/src" . 1)
                                        ("~/src/sno" . 1)
                                        ("~/src/many-stars" . 1)
+                                       ("~/src/ovos" . 1)
+                                       ("~/src/clojure-playground" . 1)
                                        ("~/work/vollers/src". 1)
                                        ))
 ;; show me projects in LIFO order
@@ -118,27 +122,18 @@ Null prefix argument turns off the mode."
  :n "C-e" #'persp-switch-to-buffer
  :n "C-n" #'projectile-find-file)
 
-
-
-
 (after! company
   (setq company-auto-complete t
         ;; complete on clojure namespaces
         company-auto-complete-chars "/"))
 
-(after! treemacs
-  ;; follow the current project file
-  (setq treemacs-follow-mode t)
-  (setq +treemacs-git-mode 'deferred)
-  ;; single click expand/collapse nodes
-  (define-key treemacs-mode-map [mouse-1] #'treemacs-single-click-expand-action)
-  (add-to-list 'treemacs-pre-file-insert-predicates #'treemacs-is-file-git-ignored?))
-
-;; Snippets
-                                        ;(use-package doom-snippets
-                                        ;  :load-path "~/.config/doom-snippets"
-                                        ;  :after yasnippet)
-
+;; (after! treemacs
+;;   ;; follow the current project file
+;;   (setq treemacs-follow-mode t)
+;;   (setq +treemacs-git-mode 'deferred)
+;;   ;; single click expand/collapse nodes
+;;   (define-key treemacs-mode-map [mouse-1] #'treemacs-single-click-expand-action)
+;;   (add-to-list 'treemacs-pre-file-insert-predicates #'treemacs-is-file-git-ignored?))
 
 (evil-define-command rm/lispyville-insert-at-end-of-list (count)
   "same as `lispyville-insert-at-end-of-list', but adds a newline."
@@ -157,8 +152,6 @@ Null prefix argument turns off the mode."
  :map lispyville-mode-map
  :n "M-L" #'lispyville-beginning-of-next-defun
  :v "(" #'lispy-parens)
-
-
 
 (require 'evil-nerd-commenter)
 (use-package! lispyville
@@ -204,7 +197,6 @@ Null prefix argument turns off the mode."
 
   (remove-hook 'clojure-mode-hook 'parinfer-mode)
   (remove-hook 'emacs-lisp-mode-hook 'parinfer-mode)
-  " string a is long"
 
   ;; make w/e/b move by words inside strings and comments
   (defun fn--lispyville-e-handler ()
@@ -288,36 +280,35 @@ Null prefix argument turns off the mode."
 (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
 
 ;; accept completion from copilot and fallback to company
+
 (use-package! copilot
   :hook (prog-mode . copilot-mode)
-  :bind (("C-TAB" . 'copilot-accept-completion-by-word)
-         ("C-<tab>" . 'copilot-accept-completion-by-word)
-         :map copilot-completion-map
-         ("<tab>" . 'copilot-accept-completion)
-         ("TAB" . 'copilot-accept-completion)))
+  :bind (:map copilot-completion-map
+              ("C-SPC" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word))
+  :config
+  (set-face-foreground 'copilot-overlay-face "pink")
+  (customize-set-variable 'copilot-enable-predicates '(evil-insert-state-p))
 
 
-(defun my/copilot-tab ()
-  (interactive)
-  (or (copilot-accept-completion)
-      (indent-for-tab-command)))
+  (defun my/copilot-tab ()
+    (interactive)
+    (or (copilot-accept-completion)
+        (indent-for-tab-command)))
 
-(with-eval-after-load 'copilot
-  (evil-define-key 'insert copilot-mode-map
-    (kbd "<tab>") #'my/copilot-tab))
+  (with-eval-after-load 'copilot
+    (evil-define-key 'insert copilot-mode-map
+      (kbd "<tab>") #'my/copilot-tab))
 
-;; Disable Copilot when editing Lisp
-;; Copilot really sucks in Lisp
-(setq copilot-disable-predicates
-      (list
-       (lambda () (when (derived-mode-p 'clojure-mode 'lisp-mode 'emacs-lisp-mode) t))))
-
-(use-package! python-black
-  :after python
-  :hook (python-mode . python-black-on-save-mode-enable-dwim))
+  ;; Disable Copilot when editing Lisp
+  ;; Copilot really sucks in Lisp
+  ;; (setq copilot-disable-predicates
+  ;;   (list
+  ;;     (lambda () (when (derived-mode-p 'clojure-mode 'lisp-mode 'emacs-lisp-mode) t))))
+  )
 
 (after! python
-  (setq lsp-ui-doc-enabled nil))
+  :hook (python-mode . python-black-on-save-mode-enable-dwim))
 
 (after!
   treemacs (treemacs-follow-mode 1))
@@ -394,6 +385,39 @@ Null prefix argument turns off the mode."
 
 ;; (setq vc-handled-backends '(Git))
 
+(use-package! zoxide
+  :defer t
+  :init
+  (defun +zoxide-add (&optional path &rest _)
+    "Add PATH to zoxide database.  This function is called asynchronously."
+    (interactive "Dpath: ")
+    (unless path
+      (setq path default-directory))
+    (zoxide-run t "add" path)
+
+    (require 's)
+    (let ((b (buffer-file-name)))
+      (unless (or (s-ends-with? ".git" b)
+                  (s-contains? "/.git/" b))
+        (zoxide-run t "add" b))))
+  (add-hook! 'find-file-hook #'+zoxide-add)
+  (defvar consult-dir--source-zoxide
+    `(:name "Zoxide dirs"
+      :narrow ?z
+      :category file
+      :face consult-file
+      :history file-name-history
+      :enabled ,(lambda () (executable-find "zoxide"))
+      :items ,#'zoxide-query)
+    "Zoxide directory source for `consult-dir'.")
+  (after! consult-dir
+    (pushnew! consult-dir-sources 'consult-dir--source-zoxide)))
+
+
 (load! "+bindings.el")
 (load! "+dashboard.el")
 (load! "+clojure.el")
+
+(put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
+(put 'cider-clojure-cli-global-options 'safe-local-variable (lambda (_) t))
+(put 'cider-shadow-cljs-default-options 'safe-local-variable (lambda (_) t))
