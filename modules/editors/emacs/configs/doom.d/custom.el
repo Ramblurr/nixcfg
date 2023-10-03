@@ -9,6 +9,7 @@
    '((eval progn
       (make-variable-buffer-local 'cider-jack-in-nrepl-middlewares)
       (add-to-list 'cider-jack-in-nrepl-middlewares "cider.nrepl/cider-middleware"))
+     (cider-clojurec-eval-destination . 'cljs)
      (cider-repl-display-help-banner)
      (cider-redirect-server-output-to-repl . t)
      (cider-preferred-build-tool . clojure-cli)
