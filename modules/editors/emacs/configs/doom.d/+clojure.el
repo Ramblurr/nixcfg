@@ -5,6 +5,14 @@
 ;; Custom Clojure functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;; evaluate some code in a CLJ repl regardless of what type of buffer you're in
+(defun my/eval-clojure-code-sync (code)
+  (cider-nrepl-sync-request:eval
+   code
+   (cider-current-repl 'clj 'ensure)
+   (cider-current-ns)))
+
 ;; Rich Comment Form evaluator
 ;; Evaluates the *last* form in a clojure buffer that has the ';; rcf' before it.
 (defun my/eval-rcf ()
@@ -53,7 +61,11 @@
 
 (defun portal.api/clear ()
   (interactive)
-  (cider-nrepl-sync-request:eval "(#?(:clj portal.api/clear :cljs portal.web/clear))"))
+  (my/eval-clojure-code-sync "(portal.api/clear)")
+  ;; (cider-nrepl-sync-request:eval "#?(:clj (portal.api/clear))")
+  ;; (cider-nrepl-sync-request:eval "#?(:cljs (portal.web/clear))")
+  ;; (cider-nrepl-sync-request:eval "(#?(:clj portal.api/clear :cljs portal.web/clear))")
+  )
 
 (defun portal/invoke-portal-command (command-str)
   (cider-nrepl-sync-request:eval

@@ -58,18 +58,22 @@
 (package! elpher)
 (package! ox-gemini)
 
+;; New-fangled LLM toys
 (package! copilot
    :recipe (:host github :repo "zerolfx/copilot.el" :files ("*.el" "dist")))
 
-(package! python-black)
-
-
-(package! clj-ns-name
-  :recipe (:host github
-           :repo "plexus/plexmacs"
-            :files ("clj-ns-name/clj-ns-name.el")))
-
-(package! gptel :recipe (:host github :repo "karthink/gptel"))
+(package! gptel
+  :recipe (:host github :repo "karthink/gptel"))
 
 (package! gptel-extensions
   :recipe (:host github :repo "kamushadenes/gptel-extensions.el" :files ("gptel-extensions.el")))
+
+;; Clojure
+(package! clj-ns-name
+  :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
+
+(unpin! cider clojure-mode clj-refactor)
+
+
+;; Zoxide
+(package! zoxide)
