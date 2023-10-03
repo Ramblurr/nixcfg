@@ -57,6 +57,7 @@ in {
       home.packages = with pkgs; [
         ## Doom dependencies
         git
+        zoxide
         (ripgrep.override {withPCRE2 = true;})
         gnutls # for TLS connectivity
         kitty
@@ -82,6 +83,13 @@ in {
         # :lang beancount
         beancount
         fava
+        (python311.withPackages (ps:
+          with ps; [
+            virtualenv
+            black
+            python-lsp-black
+            setuptools
+          ]))
       ];
       persistence = mkIf withImpermanence {
         directories = [
@@ -94,7 +102,6 @@ in {
         recursive = true; # symlink the whole dirj
         onChange = builtins.readFile ./configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
       };
-
       home.file.".local/share/icons/doom.png" = {
         source = ./configs/icons/doom.png;
         recursive = true;
