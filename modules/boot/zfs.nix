@@ -15,7 +15,7 @@ in {
       enable = mkBoolOpt false;
       encrypted = mkBoolOpt true;
       usePlymouth = mkBoolOpt true;
-      skipMitigations = mkBoolOpt true;
+      skipMitigations = mkBoolOpt false;
       autoSnapshot.enable = mkBoolOpt true;
       rootPool = mkStrOpt "rpool";
       scrubPools = mkOption {

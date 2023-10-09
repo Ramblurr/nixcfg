@@ -50,7 +50,7 @@ with lib.my; let
     ];
   };
 in {
-  imports = [inputs.nix-gaming.nixosModules.default];
+  imports = [inputs.nix-gaming.nixosModules.pipewireLowLatency];
   options.modules.hardware.pipewire = {
     enable = mkBoolOpt false;
     denoise.enable = mkBoolOpt false;
@@ -58,7 +58,6 @@ in {
   config = mkIf cfg.enable {
     security.rtkit.enable = true;
     sound.enable = true;
-    #nixpkgs.config.pulseaudio = true;
     hardware.pulseaudio.enable = pkgs.lib.mkForce false;
 
     environment.systemPackages = with pkgs; [

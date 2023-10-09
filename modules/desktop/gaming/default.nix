@@ -12,6 +12,7 @@ with lib.my; let
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
 in {
+  imports = [inputs.nix-gaming.nixosModules.steamCompat];
   options.modules.desktop.gaming = {
     enable = mkBoolOpt false;
   };
@@ -35,6 +36,50 @@ in {
     programs = {
       steam = {
         enable = true;
+        package = pkgs.steam.override {
+          extraPkgs = pkgs: let
+            # TODO(upgrade) fonts.fonts to fonts.packages once everything is on 23.11
+            fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
+              mkdir -p "$out/share/fonts"
+              font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
+              find ${toString (config.fonts.fonts)} -regex "$font_regexp" \
+                -exec ln -sf -t "$out/share/fonts" '{}' \;
+            '');
+          in
+            with pkgs; [
+              (fontsPkg pkgs)
+              at-spi2-atk
+              #binutils  # this conflicts with the gcc package
+              fmodex
+              gtk3
+              gtk3-x11
+              harfbuzz
+              icu
+              glxinfo
+              inetutils
+              keyutils
+              libgdiplus
+              libkrb5
+              libpng
+              libpulseaudio
+              libthai
+              libvorbis
+              mono5
+              pango
+              stdenv.cc.cc.lib
+              strace
+              xorg.libXcursor
+              xorg.libXi
+              xorg.libXinerama
+              xorg.libXScrnSaver
+              zlib
+              libunwind # for titanfall 2 Northstart launcher
+            ];
+        };
+        extraCompatPackages = [
+          inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+        ];
+        remotePlay.openFirewall = true;
       };
       gamemode = {
         enable = true;
@@ -42,50 +87,6 @@ in {
       };
     };
 
-    # Override Steam package to provide extra libraries for games
-    nixpkgs.config.packageOverrides = pkgs: let
-      # TODO(upgrade) fonts.fonts to fonts.packages once everything is on 23.11
-      fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
-        mkdir -p "$out/share/fonts"
-        font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-        find ${toString (config.fonts.fonts)} -regex "$font_regexp" \
-          -exec ln -sf -t "$out/share/fonts" '{}' \;
-      '');
-    in {
-      steam = pkgs.steam.override {
-        #withJava = true;
-        extraPkgs = pkgs:
-          with pkgs; [
-            (fontsPkg pkgs)
-            at-spi2-atk
-            #binutils  # this conflicts with the gcc package
-            fmodex
-            gtk3
-            gtk3-x11
-            harfbuzz
-            icu
-            glxinfo
-            inetutils
-            keyutils
-            libgdiplus
-            libkrb5
-            libpng
-            libpulseaudio
-            libthai
-            libvorbis
-            mono5
-            pango
-            stdenv.cc.cc.lib
-            strace
-            xorg.libXcursor
-            xorg.libXi
-            xorg.libXinerama
-            xorg.libXScrnSaver
-            zlib
-            libunwind # for titanfall 2 Northstart launcher
-          ];
-      };
-    };
     hardware = {
       steam-hardware.enable = true;
 
