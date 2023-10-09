@@ -27,6 +27,17 @@ in {
         jetbrains.idea-ultimate
         jetbrains.datagrip
         jetbrains.gateway
+        jetbrains.rider
+        #dotnet-sdk_7
+        #dotnet-sdk
+        msbuild
+        #mono
+        mono4
+        (with dotnetCorePackages;
+          combinePackages [
+            sdk_6_0
+            sdk_7_0
+          ])
       ];
 
       persistence = mkIf withImpermanence {
