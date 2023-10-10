@@ -54,7 +54,7 @@ in {
           [Desktop Entry]
           Actions=new-private-window
           Categories=Network;WebBrowser
-          Exec=firefox -P work --name firefox-work --class=firefox-work %U
+          Exec=firefox-nightly -P work --name firefox-work --class=firefox-work %U
           GenericName=Work Web Browser
           Icon=firefox
           MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
@@ -65,7 +65,7 @@ in {
           Type=Application
           Version=1.4
           [Desktop Action new-private-window]
-          Exec=firefox -P work --name firefox-work --class=firefox-work --private-window %U
+          Exec=firefox-nightly -P work --name firefox-work --class=firefox-work --private-window %U
           Name=New Work Private Window
         '';
       };
@@ -74,7 +74,7 @@ in {
           [Desktop Entry]
           Actions=new-private-window
           Categories=Network;WebBrowser
-          Exec=firefox -P personal --name firefox-personal --class=firefox-personal %U
+          Exec=firefox-nightly -P personal --name firefox-personal --class=firefox-personal %U
           GenericName=Personal Web Browser
           Icon=firefox
           MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
@@ -85,7 +85,7 @@ in {
           Type=Application
           Version=1.4
           [Desktop Action new-private-window]
-          Exec=firefox -P personal --name firefox-personal --class=firefox-personal --private-window %U
+          Exec=firefox-nightly -P personal --name firefox-personal --class=firefox-personal --private-window %U
           Name=New Personal Private Window
         '';
       };
