@@ -64,6 +64,7 @@ in {
     environment = {
       systemPackages = with pkgs; [
         (python311.withPackages (ps: with ps; [requests]))
+        wlr-randr
         baobab # Disk usage analyser
         blueberry # Bluetooth manager
         clipman # Clipboard manager for wayland
