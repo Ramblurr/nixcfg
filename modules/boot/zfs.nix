@@ -87,7 +87,7 @@ in {
       kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
       kernelParams = mkIf cfg.skipMitigations ["mitigations=off"];
       kernel.sysctl = {
-        "fs.file-max" = 100000;
+        "fs.file-max" = 1048576;
         "fs.inotify.max_user_instances" = 256;
         "fs.inotify.max_user_watches" = 99999999;
       };
