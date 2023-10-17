@@ -45,8 +45,9 @@ in {
 
       services.emacs.enable = true;
       systemd.user.services.emacs.Unit = {
-        After = ["graphical-session-pre.target"];
-        PartOf = ["graphical-session.target"];
+        requires = ["graphical-session.target"];
+        partOf = ["graphical-session.target"];
+        WantedBy = ["graphical-session.target"];
       };
 
       sops.secrets.authinfo = {
