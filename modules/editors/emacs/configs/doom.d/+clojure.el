@@ -158,18 +158,48 @@
               "D" #'cljr-destructure-keys
               ))
 
-;; This is needed to send the result of cider evaluate to portal
 (after! cider-mode
-  (defun cider-tap (&rest r)
-    (cons (concat "(let [__value "
-                  (caar r)
-                  "] (tap> __value) __value)")
-          (cdar r)))
+  (setq cider-show-error-buffer t                        ; show stacktrace buffer
+        cider-print-fn 'puget                            ; pretty printing with sorted keys / set values
+        cider-result-overlay-position 'at-point          ; results shown right after expression
+        cider-overlays-use-font-lock t
 
-  (advice-add 'cider-nrepl-request:eval
-              :filter-args #'cider-tap))
+        ;; LSP features over Cider features
+        cider-font-lock-dynamically nil                  ; use lsp semantic tokens
+        cider-eldoc-display-for-symbol-at-point nil      ; use lsp
+        cider-use-xref nil                               ; cider xref to find definitions
+
+        ;; minimise the repl buffer activity
+        cider-repl-buffer-size-limit 100                 ; limit lines shown in REPL buffer
+        cider-repl-display-help-banner nil               ; disable help banner
+        cider-repl-history-size 10                       ; limit command history
+        cider-repl-history-file nil                      ; write repl buffer commands to file DOOMDIR/.local/cider-repl-history
+        cider-repl-history-highlight-current-entry nil   ; cider default
+        cider-repl-history-highlight-inserted-item nil   ; cider default
+        cider-repl-history-quit-action 'quit-window      ; restores previous emacs window config (cider default )
+        cider-repl-pop-to-buffer-on-connect nil          ; REPL buffer shown at starup (nil does not show buffer)
+        cider-repl-use-clojure-font-lock nil
+        cider-repl-use-pretty-printing nil
+        cider-repl-wrap-history t)
+  (set-lookup-handlers! '(cider-mode cider-repl-mode) nil) ; use lsp
+  (set-popup-rule! "*cider-test-report*" :side 'right :width 0.4)
+  (set-popup-rule! "^\\*cider-repl" :side 'bottom :quit nil)
+  ;; use lsp completion
+  (add-hook 'cider-mode-hook (lambda () (remove-hook 'completion-at-point-functions #'cider-complete-at-point)))
+  ;; This is needed to send the result of cider evaluate to portal
+  ;; (defun cider-tap (&rest r)
+  ;;   (cons (concat "(let [__value "
+  ;;           (caar r)
+  ;;           "] (tap> __value) __value)")
+  ;;     (cdar r)))
+
+  ;; (advice-add 'cider-nrepl-request:eval
+  ;;             :filter-args #'cider-tap)
+  )
 
 (after! clojure-mode
+  (setq clojure-indent-style 'align-arguments)
+  ;; evaluate expressions in comment as top level
   (setq clojure-toplevel-inside-comment-form t)
   (setq cider-save-file-on-load t)
   (define-clojure-indent
