@@ -48,6 +48,9 @@
       url = "github:outfoxxed/hy3";
       inputs.hyprland.follows = "hyprland";
     };
+    nur = {
+      url = "github:nix-community/NUR";
+    };
   };
 
   outputs = inputs @ {

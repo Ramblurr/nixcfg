@@ -307,13 +307,15 @@ Null prefix argument turns off the mode."
   ;;     (lambda () (when (derived-mode-p 'clojure-mode 'lisp-mode 'emacs-lisp-mode) t))))
   )
 
-(after! python
+(use-package! python-black
+  :demand t
+  :after python
   :hook (python-mode . python-black-on-save-mode-enable-dwim))
 
 (after!
   treemacs (treemacs-follow-mode 1))
 
-(set-formatter! 'alejandra "alejandra --quiet" :modes '(nix-mode))
+(set-formatter! 'alejandra "/etc/profiles/per-user/ramblurr/bin/alejandra --quiet" :modes '(nix-mode))
 
 (use-package! gptel
   :config
@@ -417,6 +419,8 @@ Null prefix argument turns off the mode."
 (load! "+bindings.el")
 (load! "+dashboard.el")
 (load! "+clojure.el")
+(load! "+vterm.el")
+(load! "+lsp.el")
 
 (put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
 (put 'cider-clojure-cli-global-options 'safe-local-variable (lambda (_) t))
