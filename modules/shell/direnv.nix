@@ -17,11 +17,10 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
-    environment.systemPackages = with pkgs; [
-      direnv
-      nix-direnv
-    ];
-
+    programs.direnv = {
+      enable = true;
+      package = pkgs.direnv;
+    };
     # Nix options for derivations to persist garbage collection
     nix.extraOptions = ''
       keep-outputs = true
@@ -31,10 +30,6 @@ in {
       "/share/nix-direnv"
     ];
 
-    # Flake support
-    nixpkgs.overlays = [
-      (self: super: {nix-direnv = super.nix-direnv.override {enableFlakes = true;};})
-    ];
     myhm = {
       persistence = mkIf withImpermanence {
         directories = [

@@ -123,10 +123,11 @@ in {
     };
     dev = {
       clojure.enable = true;
-      python.enable = true;
-      node.enable = true;
-      k8s.enable = true;
+      fennel.enable = true;
       jetbrains.enable = true;
+      k8s.enable = true;
+      node.enable = true;
+      python.enable = true;
       random.enable = true;
     };
 
