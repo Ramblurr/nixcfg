@@ -17,7 +17,7 @@ in {
   };
 
   config = mkIf cfg.enable {
-    systemd.extraConfig = "DefaultLimitNOFILE=1048576";
+    #systemd.extraConfig = "DefaultLimitNOFILE=1048576";
     security = {
       sudo.enable = true;
       sudo.wheelNeedsPassword = false;
@@ -39,14 +39,14 @@ in {
       ];
       please.enable = true;
       please.wheelNeedsPassword = false;
-      pam.loginLimits = [
-        {
-          domain = "*";
-          type = "soft";
-          item = "nofile";
-          value = "1048576";
-        }
-      ];
+      #pam.loginLimits = [
+      #  {
+      #    domain = "*";
+      #    type = "soft";
+      #    item = "nofile";
+      #    value = "1048576";
+      #  }
+      #];
     };
   };
 }
