@@ -40,6 +40,7 @@ in {
           libnotify # `notify-send`
           gparted
           inkscape
+          krita
           meld
           gimp-with-plugins
           pdfgrep
@@ -78,6 +79,11 @@ in {
           ".config/GIMP"
           ".cache/gimp"
           ".config/rclone"
+          ".local/share/krita"
+        ];
+        files = [
+          ".config/kritarc"
+          ".config/kritadisplayrc"
         ];
       };
     };

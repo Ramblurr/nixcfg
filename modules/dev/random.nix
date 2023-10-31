@@ -4,7 +4,6 @@
   inputs,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
@@ -22,6 +21,13 @@ in {
   config = mkIf cfg.enable {
     # enable cross-compilation
     boot.binfmt.emulatedSystems = ["aarch64-linux" "armv6l-linux"];
+    virtualisation.spiceUSBRedirection.enable = true;
+    environment.systemPackages = with pkgs; [
+      spice-gtk
+      quickemu
+      quickgui
+    ];
+
     myhm = {
       programs.gh = {
         enable = true;
