@@ -38,7 +38,8 @@ in {
           Name=Personal Visual Studio Code
           Comment=Code Editing. Redefined.
           GenericName=Text Editor
-          Exec=/etc/profiles/per-user/${username}/bin/code --user-data-dir /home/${username}/.config/code-personal --unity-launch %F
+          Environment=NIXOS_OZONE_WL=
+          Exec=/etc/profiles/per-user/${username}/bin/code --use-gl=desktop --user-data-dir /home/${username}/.config/code-personal --unity-launch %F
           Icon=com.visualstudio.code
           Type=Application
           StartupNotify=false
@@ -88,7 +89,8 @@ in {
           Name=Work Visual Studio Code
           Comment=Code Editing. Redefined.
           GenericName=Text Editor
-          Exec=/etc/profiles/per-user/${username}/bin/code --user-data-dir /home/${username}/.config/code-work --unity-launch %F
+          Environment=NIXOS_OZONE_WL=
+          Exec=/etc/profiles/per-user/${username}/bin/code --use-gl=desktop --user-data-dir /home/${username}/.config/code-work --unity-launch %F
           Icon=com.visualstudio.code
           Type=Application
           StartupNotify=false
