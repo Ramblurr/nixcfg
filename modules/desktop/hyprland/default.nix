@@ -65,6 +65,7 @@ in {
       systemPackages = with pkgs; [
         (python311.withPackages (ps: with ps; [requests]))
         wlr-randr
+        waypipe
         baobab # Disk usage analyser
         blueberry # Bluetooth manager
         clipman # Clipboard manager for wayland
