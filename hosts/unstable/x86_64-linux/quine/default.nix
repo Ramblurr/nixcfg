@@ -78,6 +78,7 @@ in {
         };
       };
       programs = {
+        aseprite.enable = true;
         calibre.enable = true;
         chrysalis.enable = true;
         discord.enable = true;

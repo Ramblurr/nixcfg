@@ -8,3 +8,5 @@ wl-paste -t text --watch clipman store &
 /run/current-system/sw/bin/mullvad-vpn &
 sudo systemctl restart microsocks &
 kitty --class startup-kitty --session ~/.config/kitty/kitty.session &
+systemctl --user restart emacs.service &
+systemctl --user restart swayidle.service &
