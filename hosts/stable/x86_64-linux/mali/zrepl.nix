@@ -52,6 +52,8 @@
             "tank2/media<" = false;
             "tank2/media/music/mine" = true;
             "tank2/replication<" = false;
+            "tank2/proxmox<" = false;
+            "tank2/backups/gamsjaegers<" = false;
           };
           # "send.compressed" = true;
           snapshotting = {

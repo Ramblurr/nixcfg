@@ -27,6 +27,7 @@ in {
         jogl_2_4_0 = javaPackages.jogl_2_4_0;
       };
     in {
+      home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
       home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
       home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
       home.packages = with pkgs; [
