@@ -307,10 +307,10 @@ Null prefix argument turns off the mode."
   ;;     (lambda () (when (derived-mode-p 'clojure-mode 'lisp-mode 'emacs-lisp-mode) t))))
   )
 
-(use-package! python-black
-  :demand t
-  :after python
-  :hook (python-mode . python-black-on-save-mode-enable-dwim))
+;; (use-package! python-black
+;;   :demand t
+;;   :after python
+;;   :hook (python-mode . python-black-on-save-mode-enable-dwim))
 
 (after!
   treemacs (treemacs-follow-mode 1))

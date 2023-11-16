@@ -54,6 +54,8 @@ in {
         gnumake
         nix-prefetch-docker
         docker-compose
+        hashcat
+        hashcat-utils
         dig
         dogdns
         whois

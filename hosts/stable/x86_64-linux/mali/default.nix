@@ -147,6 +147,7 @@ in {
   };
   services.smartd.enable = true;
   environment.systemPackages = with pkgs; [
+    python311
     dosfstools
     smartmontools
     ncdu
