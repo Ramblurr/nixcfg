@@ -65,7 +65,10 @@ in {
         zip
         asciinema
         findutils
-        rsync
+        # https://github.com/NixOS/nixpkgs/issues/265014
+        (pkgs.rsync.overrideAttrs (_: _: {
+          hardeningDisable = ["fortify"];
+        }))
         wget
         jq
         openssh

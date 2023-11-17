@@ -56,6 +56,7 @@ tasks:
     desc: Test quine
     cmds:
       - sudo nixos-rebuild --flake  .#quine test
+
   test:mali:
     desc: Test mali
     cmds:
@@ -84,6 +85,33 @@ tasks:
           BUILD_HOST: mali.int.socozy.casa
           TARGET_HOST: mali.int.socozy.casa
           FLAKE_URI: .#mali
+
+
+  test:vpn:
+    desc: Test vpn
+    cmds:
+      - task: nixos-rebuild-local
+        vars:
+          ACTION: test
+          TARGET_HOST: vpn.socozy.casa
+          FLAKE_URI: .#vpn
+  build:vpn:
+    desc: Build vpn
+    cmds:
+      - task: nixos-rebuild-local
+        vars:
+          ACTION: build
+          TARGET_HOST: ramblurr@vpn.socozy.casa
+          FLAKE_URI: .#vpn
+
+  switch:vpn:
+    desc: Switch vpn
+    cmds:
+      - task: nixos-rebuild-local
+        vars:
+          ACTION: switch
+          TARGET_HOST: ramblurr@vpn.socozy.casa
+          FLAKE_URI: .#vpn
 
   test:ovos-kitchen:
     desc: Test ovos-kitchen
