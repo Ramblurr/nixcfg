@@ -74,5 +74,6 @@ in {
     rclone
     sshfs
     lshw
+    iperf3
   ];
 }
