@@ -4,4 +4,5 @@ pkgs.lib.makeScope pkgs.newScope (self: let
 in {
   microsocks = callPackage ./microsocks {};
   hacompanion = callPackage ./hacompanion {};
+  bootleg = callPackage ./bootleg {};
 })

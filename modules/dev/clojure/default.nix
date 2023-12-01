@@ -43,6 +43,7 @@ in {
         javaPackages.jogl_2_4_0
         gtk3
         xorg.libXxf86vm
+        pkgs.my.bootleg
       ];
       home.file.".local/dev".source = let
         mkEntry = name: value: {
