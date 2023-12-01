@@ -68,6 +68,17 @@ in {
       };
       settings.consistency = {
         prefix = "${cfg.name}";
+        check_last = 3;
+        checks = [
+          {
+            name = "repository";
+            frequency = "4 weeks";
+          }
+          {
+            name = "archives";
+            frequency = "6 weeks";
+          }
+        ];
       };
       settings.hooks = {
         healthchecks = "\${HEALTHCHECK_URL}";
