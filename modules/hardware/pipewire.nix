@@ -67,7 +67,7 @@ in {
       pulseaudio
       pulsemixer
       libcamera
-      pw-viz
+      #pw-viz # TODO(disabled 2023-12-01 compilation error) https://github.com/NixOS/nixpkgs/issues/268450
     ];
     programs.dconf.enable = true;
     systemd.user.services.pipewire-pulse.path = [pkgs.pulseaudio];
