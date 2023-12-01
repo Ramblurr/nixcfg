@@ -147,6 +147,7 @@ in {
   };
   services.smartd.enable = true;
   environment.systemPackages = with pkgs; [
+    mktorrent
     python311
     dosfstools
     smartmontools

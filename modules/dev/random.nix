@@ -57,6 +57,7 @@ in {
         hashcat
         hashcat-utils
         dig
+        gitleaks
         dogdns
         whois
         nmap

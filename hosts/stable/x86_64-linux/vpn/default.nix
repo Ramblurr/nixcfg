@@ -8,6 +8,7 @@
   hn = "vpn-gateway";
   defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
+  vpn = builtins.fromJSON (builtins.readFile ../../../../secrets/vpn.secrets);
 in {
   imports = [
     ./hardware-configuration.nix
@@ -67,6 +68,21 @@ in {
   };
 
   services.smartd.enable = false;
+  services.vnstat.enable = true;
+  services.netdata = {
+    enable = true;
+    config = {
+      global = {
+        "default port" = "19999";
+        "bind to" = vpn.tailscaleip;
+        "history" = "604800";
+        "error log" = "syslog";
+        "debug log" = "syslog";
+      };
+    };
+  };
+
+  networking.firewall.allowedTCPPorts = [19999];
   environment.systemPackages = with pkgs; [
     python311
     dosfstools
@@ -75,5 +91,6 @@ in {
     sshfs
     lshw
     iperf3
+    vnstat
   ];
 }

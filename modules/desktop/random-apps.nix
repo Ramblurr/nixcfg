@@ -17,10 +17,10 @@ in {
   config = mkIf cfg.enable {
     myhm = {...} @ hm: {
       home.packages = lib.mkMerge [
-        (lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
-          # x86_64-linux only
-          zenith # system monitor
-        ]))
+        #(lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
+        #  # x86_64-linux only
+        #  zenith # system monitor
+        #]))
         (lib.mkIf (pkgs.hostPlatform.system == "aarch_64-linux") (with pkgs; [
           # aarch64-linux only
         ]))

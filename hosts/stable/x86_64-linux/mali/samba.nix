@@ -60,6 +60,14 @@
         "read only" = "yes";
         writeable = "no";
       };
+      audiobooks = {
+        path = "/mnt/tank2/media/audiobooks";
+        browseable = "yes";
+        "force user" = "roon";
+        "guest ok" = "no";
+        "read only" = "yes";
+        writeable = "no";
+      };
       paperless = {
         path = "/mnt/tank2/services/paperless.k8s.***REMOVED***";
         browseable = "yes";
