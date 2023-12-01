@@ -60,4 +60,7 @@
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.9.0"}}
    :jvm-opts   ["-Dvlaaad.reveal.prefs={:theme,:dark,:font-family,\"file://var/home/ramblurr/.local/share/fonts/iosevka-extended.ttf\",:font-size,16}"]
    :main-opts  ["-m" "nrepl.cmdline"
-                "--middleware" "[vlaaad.reveal.nrepl/middleware,refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"]}}}
+                "--middleware" "[vlaaad.reveal.nrepl/middleware,refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"]}
+  :outdated {;; Note that it is `:deps`, not `:extra-deps`
+             :deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+             :main-opts ["-m" "antq.core"]}}}
