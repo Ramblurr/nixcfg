@@ -110,7 +110,7 @@ tasks:
       - task: nixos-rebuild-local
         vars:
           ACTION: switch
-          TARGET_HOST: ramblurr@vpn.socozy.casa
+          TARGET_HOST: root@100.95.47.3 #ramblurr@vpn.socozy.casa
           FLAKE_URI: .#vpn
 
   test:ovos-kitchen:
