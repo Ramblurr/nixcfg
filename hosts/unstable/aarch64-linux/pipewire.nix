@@ -21,6 +21,52 @@
     pipewire.wantedBy = ["default.target"];
     wireplumber.wantedBy = ["default.target"];
   };
+  systemd.user.services = {
+    # Required until wireplumber 0.5
+    # Ref: https://gitlab.freedesktop.org/pipewire/wireplumber/-/issues/499
+    analog-in-music-loopback = {
+      enable = false;
+      path = [
+        pkgs.pipewire
+        pkgs.wireplumber
+        pkgs.coreutils
+      ];
+      description = "Loopback analog in to Multimedia Role";
+      after = ["wireplumber.service"];
+      wantedBy = ["wireplumber.service"];
+      bindsTo = ["wireplumber.service"];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 1;
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
+        ExecStart = ''
+          ${pkgs.pipewire}/bin/pw-loopback --name analog-music-bridge --group analog-music-bridge --capture-props='[node.target=alsa_input.platform-soc_sound.stereo-fallback]' --playback-props='[media.role=Multimedia monitor.channel-volumes=true]'
+        '';
+        Type = "simple";
+      };
+    };
+    digital-in-music-loopback = {
+      enable = false;
+      path = [
+        pkgs.pipewire
+        pkgs.wireplumber
+        pkgs.coreutils
+      ];
+      description = "Loopback digital in to Multimedia Role";
+      after = ["wireplumber.service"];
+      wantedBy = ["wireplumber.service"];
+      bindsTo = ["wireplumber.service"];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = 1;
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
+        ExecStart = ''
+          ${pkgs.pipewire}/bin/pw-loopback --name digital-music-bridge --group digital-music-bridge  --capture-props='[node.target=alsa_input.usb-262a_UR23_USB_SPDIF_Rx-01.analog-stereo]' --playback-props='[media.role=Multimedia monitor.channel-volumes=true]'
+        '';
+        Type = "simple";
+      };
+    };
+  };
   environment.etc."pipewire/pipewire.conf.d/100-user.conf" = {
     text =
       builtins.toJSON
@@ -37,23 +83,26 @@
             };
             flags = ["ifexists" "nofail"];
           }
-          {
-            name = "libpipewire-module-loopback";
-            args = {
-              "node.name" = "music-to-speakers-bridge";
-              "node.description" = "music-to-speakers-bridge";
-              "audio.position" = ["FL" "FR"];
-              "target.delay.sec" = 0;
-              "capture.props" = {
-                "node.target" = "alsa_input.platform-soc_sound.stereo-fallback";
-              };
-              "playback.props" = {
-                "monitor.channel-volumes" = true;
-                "media.role" = "Multimedia";
-                #"device.intended-roles" = "Multimedia";
-              };
-            };
-          }
+          # Disabled until wireplumber 0.5
+          # Ref: https://gitlab.freedesktop.org/pipewire/wireplumber/-/issues/499
+          # {
+          #   name = "libpipewire-module-loopback";
+          #   args = {
+          #     "node.name" = "music-to-speakers-bridge";
+          #     "node.description" = "music-to-speakers-bridge";
+          #     "audio.position" = ["FL" "FR"];
+          #     "target.delay.sec" = 0;
+          #     "capture.props" = {
+          #       "node.target" = "alsa_input.platform-soc_sound.stereo-fallback";
+          #     };
+          #     "playback.props" = {
+          #
+          #       "monitor.channel-volumes" = true;
+          #       "media.role" = "Multimedia";
+          #       #"device.intended-roles" = "Multimedia";
+          #     };
+          #   };
+          # }
         ];
       };
   };
@@ -192,8 +241,8 @@
           ["node.description"] = "snd_rpi_hifiberry_dacplus_sink"
       },
     }
-
     table.insert(alsa_monitor.rules,rule)
+
     rule2 = {
       matches = {
         {
@@ -205,8 +254,35 @@
           ["node.description"] = "snd_rpi_hifiberry_dacplus_source"
       },
     }
-
     table.insert(alsa_monitor.rules,rule2)
+
+    rule3 = {
+      matches = {
+        {
+          { "node.name", "equals", "alsa_input.usb-262a_UR23_USB_SPDIF_Rx-01.analog-stereo"},
+        },
+      },
+      apply_properties = {
+          ["node.description"] = "snd_usb_ur23_spdif_source",
+          ["audio.rate"] = 96000,
+          --["api.alsa.use_hw"] = true,
+          --["api.alsa.fix_rate"] = true,
+          ["audio.format"] = "S32LE"
+      },
+    }
+    --table.insert(alsa_monitor.rules,rule3)
+
+    rule4 = {
+      matches = {
+        {
+          { "node.name", "equals", "alsa_input.usb-ANKER_Anker_PowerConf_S330_ACCUDP1D20502303-00.analog-stereo"},
+        },
+      },
+      apply_properties = {
+          ["node.description"] = "snd_usb_anker_powerconf_s330_source"
+      },
+    }
+    table.insert(alsa_monitor.rules,rule4)
   '';
 }
 # Link the music system input manually:
