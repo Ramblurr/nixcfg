@@ -44,6 +44,7 @@ in {
         gtk3
         xorg.libXxf86vm
         pkgs.my.bootleg
+        jdt-language-server
       ];
       home.file.".local/dev".source = let
         mkEntry = name: value: {
