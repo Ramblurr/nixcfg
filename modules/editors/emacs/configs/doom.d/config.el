@@ -419,7 +419,7 @@ Null prefix argument turns off the mode."
 (load! "+bindings.el")
 (load! "+dashboard.el")
 (load! "+clojure.el")
-(load! "+vterm.el")
+;(load! "+vterm.el")
 (load! "+lsp.el")
 
 (put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
