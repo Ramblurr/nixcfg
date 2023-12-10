@@ -67,6 +67,9 @@
       import pkgsArg {
         system = systemArg;
         config.allowUnfree = true;
+        config.permittedInsecurePackages = [
+          "electron-25.9.0"
+        ];
         overlays = [self.overlay] ++ (lib.attrValues self.overlays);
       };
 
@@ -80,9 +83,7 @@
     });
   in {
     lib = lib.my;
-
     nixosModules = mapModulesRec ./modules import;
-
     nixosConfigurations =
       mapHosts ./hosts/unstable/x86_64-linux
       {
