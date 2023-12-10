@@ -40,7 +40,7 @@ in {
     myhm = {...} @ hm: {
       programs.emacs = {
         enable = true;
-        package = pkgs.emacs;
+        package = pkgs.emacs29;
         extraPackages = epkgs: [epkgs.vterm];
       };
 
