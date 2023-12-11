@@ -65,6 +65,13 @@ in {
         kitty
 
         ## Optional dependencies
+        dockfmt # docker
+        clang-tools # java format
+        pandoc # markdown
+        shfmt # shell format
+        html-tidy # html format
+        stylelint # css lint
+        nodePackages.js-beautify # js/css/html format
         fd # faster projectile indexing
         imagemagick # for image-dired
         zstd # for undo-fu-session/undo-tree compression
