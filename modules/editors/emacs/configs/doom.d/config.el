@@ -29,6 +29,7 @@
 (setq doom-theme 'doom-gruvbox)
                                         ;(setq doom-font (font-spec :family "IosevkaTerm Nerd Font Medium" :size 18))
 (setq doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 18))
+(setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf"))
                                         ;(setq doom-themes-treemacs-enable-variable-pitch nil)
 (setq display-line-numbers-type 'relative)
 
@@ -419,7 +420,7 @@ Null prefix argument turns off the mode."
 (load! "+bindings.el")
 (load! "+dashboard.el")
 (load! "+clojure.el")
-;(load! "+vterm.el")
+                                        ;(load! "+vterm.el")
 (load! "+lsp.el")
 
 (put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
