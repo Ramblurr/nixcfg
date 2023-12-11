@@ -39,6 +39,18 @@
     neededForBoot = true;
   };
 
+  fileSystems."/persist/extra" = {
+    device = "rpool/encrypted/safe/persist/extra";
+    fsType = "zfs";
+    neededForBoot = true;
+  };
+
+  fileSystems."/persist/extra/atuin" = {
+    device = "rpool/encrypted/safe/persist/extra/atuin";
+    fsType = "zfs";
+    neededForBoot = true;
+  };
+
   fileSystems."/srv/data" = {
     device = "/dev/mapper/cryptxdata";
     fsType = "ext4";
