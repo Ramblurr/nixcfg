@@ -109,7 +109,8 @@ in {
       tmux.enable = true;
       zoxide.enable = true;
       zsh.enable = true;
-      zsh.starship.enable = true;
+      zsh.starship.enable = false;
+      zsh.powerlevel10k.enable = true;
       random.enable = true;
     };
     services = {

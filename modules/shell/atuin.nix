@@ -18,6 +18,10 @@ in {
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
+      pkgs,
+      config,
+      ...
+    } @ hm: {
       programs.atuin = {
         enable = true;
         enableBashIntegration = true;
@@ -28,8 +32,10 @@ in {
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
           ".config/atuin"
-          ".local/share/atuin"
         ];
+      };
+      home.file = {
+        ".local/share/atuin".source = config.lib.file.mkOutOfStoreSymlink "/persist/extra/atuin";
       };
     };
   };

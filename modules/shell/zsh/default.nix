@@ -17,6 +17,7 @@ in {
   options.modules.shell.zsh = {
     enable = mkBoolOpt false;
     starship.enable = mkBoolOpt false;
+    powerlevel10k.enable = mkBoolOpt false;
     profileExtra = mkStrOpt "";
   };
   config = mkIf cfg.enable {
@@ -43,6 +44,12 @@ in {
         enable = cfg.starship.enable;
         enableBashIntegration = false;
         enableZshIntegration = false;
+        settings = {
+          git_status = {
+            ignore_submodules = true;
+            untracked = "";
+          };
+        };
       };
       # NOTE: I am keeping zsh's history in a directory, and persisting that directory
       # Before I tried just keeping the histfile in the normal location and persisting
@@ -85,6 +92,13 @@ in {
             "zstyle *"
           ];
         };
+        plugins = mkIf cfg.powerlevel10k.enable [
+          {
+            name = "powerlevel10k-config";
+            src = lib.cleanSource ./configs/p10k-config;
+            file = "p10k.zsh";
+          }
+        ];
         shellAliases = {
           "mvm" = "mvn -gs \"$XDG_CONFIG_HOME\"/maven/settings.xml";
           "open" = "re.sonny.Junction";
@@ -158,9 +172,19 @@ in {
           }
         '';
 
-        initExtra = ''
-          source ~/.config/zsh/init.zsh
-        '';
+        initExtra =
+          if cfg.powerlevel10k.enable
+          then ''
+            if [[ "$TERM" != 'dumb' && -z "$INSIDE_EMACS" ]]; then
+              source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+              [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+            fi
+          ''
+          else
+            ""
+            + ''
+              source ~/.config/zsh/init.zsh
+            '';
 
         profileExtra = cfg.profileExtra;
       };
