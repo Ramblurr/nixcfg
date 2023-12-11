@@ -161,6 +161,7 @@
 (after! cider-mode
   (setq cider-show-error-buffer t                        ; show stacktrace buffer
         cider-print-fn 'puget                            ; pretty printing with sorted keys / set values
+        cider-enrich-classpath t
         cider-result-overlay-position 'at-point          ; results shown right after expression
         cider-overlays-use-font-lock t
 
