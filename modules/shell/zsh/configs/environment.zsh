@@ -28,6 +28,9 @@ export LESSCHARSET=utf-8
 #█▓▒░ kde file picker > gnome file picker
 export GTK_USE_PORTAL=1
 
+#█▓▒░ emacs-lsp vroom
+export LSP_USE_PLISTS=true
+
 #█▓▒░ stop barebacking my ~/ goddammit
 export XDG_CACHE_HOME=$HOME/.cache
 export XDG_DATA_HOME=$HOME/.local/share
