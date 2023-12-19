@@ -316,8 +316,6 @@ Null prefix argument turns off the mode."
 (after!
   treemacs (treemacs-follow-mode 1))
 
-(set-formatter! 'alejandra "/etc/profiles/per-user/ramblurr/bin/alejandra --quiet" :modes '(nix-mode))
-
 (use-package! gptel
   :config
   (setq-default gptel-model "gpt-4")
