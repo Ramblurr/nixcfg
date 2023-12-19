@@ -53,6 +53,7 @@ in {
           "electron-flags25.conf".text = flags;
           "electron-flags26.conf".text = flags;
           "electron-flags27.conf".text = flags;
+          "electron-flags28.conf".text = flags;
         };
       # Chromium's PWA/SSB "installed" web apps don't open because the wrong path to chromium is used.
       # This fixes it to whatever is currently set in the nix profile.

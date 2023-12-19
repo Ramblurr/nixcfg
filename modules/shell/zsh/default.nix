@@ -156,7 +156,7 @@ in {
 
         envExtra = ''
           # SESSION
-          ${hm.config.lib.shell.exportAll config.environment.sessionVariables}
+          {hm.config.lib.shell.exportAll config.environment.sessionVariables}
 
           # HM SESSION
           ${hm.config.lib.shell.exportAll hm.config.home.sessionVariables}
