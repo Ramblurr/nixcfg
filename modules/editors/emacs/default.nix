@@ -99,6 +99,21 @@ in {
             python-lsp-black
             setuptools
           ]))
+
+        # :lang nix
+        (stdenv.mkDerivation {
+          name = "alejandra-posing-as-nixfmt";
+          buildInputs = [alejandra];
+          phases = ["installPhase"];
+          installPhase = ''
+            mkdir -p $out/bin
+            cat <<EOF > $out/bin/nixfmt
+            #!/bin/sh
+            exec ${alejandra}/bin/alejandra --quiet "\$@"
+            EOF
+            chmod +x $out/bin/nixfmt
+          '';
+        })
       ];
       persistence = mkIf withImpermanence {
         directories = [
