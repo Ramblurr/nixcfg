@@ -154,9 +154,9 @@ in {
           list-units = "systemctl list-units --type=service | awk '/.service/ {print $1}'";
         };
 
+        #${hm.config.lib.shell.exportAll config.environment.sessionVariables}
         envExtra = ''
           # SESSION
-          {hm.config.lib.shell.exportAll config.environment.sessionVariables}
 
           # HM SESSION
           ${hm.config.lib.shell.exportAll hm.config.home.sessionVariables}
