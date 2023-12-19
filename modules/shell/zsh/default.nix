@@ -156,35 +156,26 @@ in {
 
         envExtra = ''
           # SESSION
-          ${
-            ""
-            /*
-            hm.config.lib.shell.exportAll config.environment.sessionVariables
-            */
-          }
+          ${hm.config.lib.shell.exportAll config.environment.sessionVariables}
 
           # HM SESSION
-          ${
-            ""
-            /*
-            hm.config.lib.shell.exportAll hm.config.home.sessionVariables
-            */
-          }
+          ${hm.config.lib.shell.exportAll hm.config.home.sessionVariables}
         '';
 
         initExtra =
-          if cfg.powerlevel10k.enable
-          then ''
-            if [[ "$TERM" != 'dumb' && -z "$INSIDE_EMACS" ]]; then
-              source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
-              [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-            fi
-          ''
-          else
-            ""
-            + ''
-              source ~/.config/zsh/init.zsh
-            '';
+          (
+            if cfg.powerlevel10k.enable
+            then ''
+              if [[ "$TERM" != 'dumb' && -z "$INSIDE_EMACS" ]]; then
+                source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+                [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+              fi
+            ''
+            else ""
+          )
+          + ''
+            source ~/.config/zsh/init.zsh
+          '';
 
         profileExtra = cfg.profileExtra;
       };
