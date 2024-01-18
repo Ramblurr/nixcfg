@@ -24,7 +24,7 @@
    :extra-deps  {djblue/portal               {:mvn/version "0.51.0"} ; portal data inspector
                  clj-commons/clj-yaml        {:mvn/version "1.0.27"} ; portal yaml support (optional)
                  integrant/repl              {:mvn/version "0.3.3"}
-                 org.clojure/tools.namespace {:mvn/version "1.4.4"}
+                 org.clojure/tools.namespace {:mvn/version "1.4.5"}
                  org.clojure/tools.trace     {:mvn/version "0.7.11"}
                  org.slf4j/slf4j-nop         {:mvn/version "2.0.10"}
                  com.brunobonacci/mulog      {:mvn/version "0.9.0"}
