@@ -16,6 +16,7 @@ in {
     ./networking.nix
     ./wireplumber.nix
     ./syncthing.nix
+    ./roon-bridge.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;

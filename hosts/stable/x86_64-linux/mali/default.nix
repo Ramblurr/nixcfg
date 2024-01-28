@@ -24,6 +24,7 @@ in {
     ./borgbackup-server.nix
     ./ups.nix
     ./avahi.nix
+    ./beets.nix
   ];
   # TODO
   # rclone
@@ -81,6 +82,7 @@ in {
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
+        "k8s-nfs"
       ];
     };
   };
@@ -155,6 +157,7 @@ in {
     rclone
     sshfs
     lshw
+    vifm
   ];
   environment.persistence."/persist" = {
     hideMounts = true;

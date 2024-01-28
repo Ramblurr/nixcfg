@@ -34,7 +34,7 @@ in {
           ".config/atuin"
         ];
       };
-      home.file = {
+      home.file = mkIf withImpermanence {
         ".local/share/atuin".source = config.lib.file.mkOutOfStoreSymlink "/persist/extra/atuin";
       };
     };

@@ -1,5 +1,6 @@
 {
   options,
+  edge,
   config,
   lib,
   pkgs,
@@ -13,7 +14,6 @@ in {
   options.modules.desktop.random-apps = {
     enable = mkBoolOpt false;
   };
-
   config = mkIf cfg.enable {
     myhm = {...} @ hm: {
       home.packages = lib.mkMerge [
@@ -25,6 +25,9 @@ in {
           # aarch64-linux only
         ]))
         (with pkgs; [
+          appimage-run
+          pkgs.my.muse-sounds-manager
+          musescore
           pavucontrol
           brightnessctl
           virt-viewer
@@ -54,6 +57,7 @@ in {
           beancount
           keepassxc
           dex
+          qpwgraph
         ])
       ];
 
@@ -80,6 +84,14 @@ in {
           ".cache/gimp"
           ".config/rclone"
           ".local/share/krita"
+          ".config/MuseScore"
+          ".local/share/MuseScore"
+          ".local/state/MuseScore"
+          ".config/audacity"
+          ".cache/audacity"
+          ".local/share/audacity"
+          ".local/state/audacity"
+          ".local/state/muse-sounds-manager"
         ];
         files = [
           ".config/kritarc"
