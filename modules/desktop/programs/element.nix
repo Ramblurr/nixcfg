@@ -24,8 +24,7 @@ in {
       ...
     } @ hm: {
       home.packages = [
-        pkgs.element-desktop-wayland
-        #(edge.element-desktop.override {electron = edge.electron_26;})
+        (edge.element-desktop.override {electron = pkgs.electron_28;})
       ];
 
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
