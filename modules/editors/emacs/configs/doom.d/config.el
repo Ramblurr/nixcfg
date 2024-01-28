@@ -32,6 +32,8 @@
 (setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf"))
                                         ;(setq doom-themes-treemacs-enable-variable-pitch nil)
 (setq display-line-numbers-type 'relative)
+(setq-default tab-width 2)
+(setq-default indent-tabs-mode nil)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.

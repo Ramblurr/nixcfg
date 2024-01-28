@@ -4,7 +4,8 @@
   pkgs,
   ...
 }: {
-  home-manager.users."${config.modules.users.primaryUser.username}" = {pkgs, ...} @ hm: {
+  myhm = {...} @ hm: {
+    #home-manager.users."${config.modules.users.primaryUser.username}" = {pkgs, ...} @ hm: {
     xdg.configFile."wireplumber/main.lua.d/51-disable-hdmi-sinks.lua".text = ''
       rule = {
         matches = {
@@ -85,5 +86,14 @@
 
       table.insert(bluez_monitor.rules,rule)
     '';
+    xdg.configFile."pipewire/pipewire.conf.d/90-roon-loopback.conf" = {
+      source = ./pipewire/90-roon-loopback.conf;
+    };
+    xdg.configFile."wireplumber/main.lua.d/91-user-scripts.lua" = {
+      source = ./wireplumber/91-user-scripts.lua;
+    };
+    xdg.configFile."wireplumber/scripts/auto-connect-ports.lua" = {
+      source = ./wireplumber/auto-connect-ports.lua;
+    };
   };
 }
