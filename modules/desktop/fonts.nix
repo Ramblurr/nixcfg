@@ -35,9 +35,8 @@ in {
     };
   };
   config = mkIf cfg.enable {
-    # TODO(upgrade) fonts.fonts to fonts.packages once everything is on 23.11
     fonts = {
-      fonts =
+      packages =
         (map (p: p.package)
           [
             cfg.sans
