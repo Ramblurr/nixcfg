@@ -57,7 +57,8 @@ in {
           beancount
           keepassxc
           dex
-          qpwgraph
+          qpwgraph # pipewire wiring gui tool
+          easyeffects # pipewire eq
         ])
       ];
 
@@ -92,6 +93,7 @@ in {
           ".local/share/audacity"
           ".local/state/audacity"
           ".local/state/muse-sounds-manager"
+          ".config/easyeffects"
         ];
         files = [
           ".config/kritarc"

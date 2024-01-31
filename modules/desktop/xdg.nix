@@ -21,10 +21,17 @@ in {
       enable = true;
       extraPortals = with pkgs; [
         # hyprland module enables its own portal
-        # xdg-desktop-portal-hyprland
-        libsForQt5.xdg-desktop-portal-kde
-        #xdg-desktop-portal-gtk
+        #libsForQt5.xdg-desktop-portal-kde
+        xdg-desktop-portal-gtk
       ];
+      xdgOpenUsePortal = true;
+      config = {
+        common = {
+          default = "gtk";
+          "org.freedesktop.impl.portal.Screencast" = "hyprland";
+          "org.freedesktop.impl.portal.Screenshot" = "hyprland";
+        };
+      };
     };
     myhm = {pkgs, ...} @ hm: {
       home.packages = with pkgs; [
