@@ -18,9 +18,14 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
-    myhm = {...} @ hm: {
+    home-manager.users."${username}" = {
+      pkgs,
+      config,
+      ...
+    } @ hm: {
       home.packages = [
         edge.logseq
+        #(edge.logseq.override {electron_27 = pkgs.electron_28;})
       ];
       persistence = mkIf withImpermanence {
         directories = [
