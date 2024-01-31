@@ -12,6 +12,23 @@ with lib.my; let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+  repository = with types;
+    submodule {
+      options = {
+        path = mkOption {
+          type = str;
+          description = mdDoc ''
+            Path to the repository
+          '';
+        };
+        label = mkOption {
+          type = str;
+          description = mdDoc ''
+            Label to the repository
+          '';
+        };
+      };
+    };
 in {
   options.modules.services.borgmatic = {
     enable = mkBoolOpt false;
@@ -24,10 +41,18 @@ in {
       default = [];
     };
     repositories = mkOption {
-      type = types.listOf types.str;
+      type = types.nullOr (types.listOf repository);
       description = "Paths to repositories.";
-      example =
-        literalExpression ''["ssh://myuser@myrepo.myserver.com/./repo"]'';
+      example = [
+        {
+          path = "ssh://user@backupserver/./sourcehostname.borg";
+          label = "backupserver";
+        }
+        {
+          path = "/mnt/backup";
+          label = "local";
+        }
+      ];
     };
   };
   config = mkIf cfg.enable {
@@ -46,42 +71,42 @@ in {
     systemd.timers.borgmatic.wantedBy = ["timers.target"];
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
-      settings.location = {
+      settings = {
         repositories = cfg.repositories;
         source_directories = ["/persist"];
         exclude_caches = true;
         exclude_patterns = cfg.exclude-patterns;
         exclude_if_present = [".nobackup"];
-      };
-      settings.storage = {
-        encryption_passphrase = "\${PASSPHRASE}";
-        ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
-        archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
-      };
-      settings.retention = {
-        keep_within = "1d";
-        keep_daily = 7;
-        keep_weekly = 4;
-        keep_monthly = 6;
-        keep_yearly = 2;
-        prefix = "${cfg.name}";
-      };
-      settings.consistency = {
-        prefix = "${cfg.name}";
-        check_last = 3;
-        checks = [
-          {
-            name = "repository";
-            frequency = "4 weeks";
-          }
-          {
-            name = "archives";
-            frequency = "6 weeks";
-          }
-        ];
-      };
-      settings.hooks = {
-        healthchecks = "\${HEALTHCHECK_URL}";
+        storage = {
+          encryption_passphrase = "\${PASSPHRASE}";
+          ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
+          archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
+        };
+        retention = {
+          keep_within = "1d";
+          keep_daily = 7;
+          keep_weekly = 4;
+          keep_monthly = 6;
+          keep_yearly = 2;
+          prefix = "${cfg.name}";
+        };
+        consistency = {
+          prefix = "${cfg.name}";
+          check_last = 3;
+          checks = [
+            {
+              name = "repository";
+              frequency = "4 weeks";
+            }
+            {
+              name = "archives";
+              frequency = "6 weeks";
+            }
+          ];
+        };
+        hooks = {
+          healthchecks = "\${HEALTHCHECK_URL}";
+        };
       };
     };
   };
