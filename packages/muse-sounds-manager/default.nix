@@ -6,7 +6,20 @@
 }:
 buildFHSUserEnv {
   name = "muse-sounds-manager";
-  targetPkgs = pkgs: [pkgs.my.muse-sounds-deb];
+  targetPkgs = pkgs: (with pkgs; [
+    # dotnet
+    curl
+    icu
+    libunwind
+    libuuid
+    openssl
+    zlib
+
+    # mono
+    krb5
+
+    pkgs.my.muse-sounds-deb
+  ]);
   multiPkgs = pkgs: [pkgs.dpkg];
-  runScript = "hello";
+  runScript = "/opt/muse-sounds-manager/Muse.Client.Linux";
 }
