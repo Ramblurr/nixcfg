@@ -27,7 +27,7 @@ in {
     # users.users."${username}".ignoreShellProgramCheck = true;
     myhm = {...} @ hm: {
       home.packages = with pkgs; [
-        unstable.eza
+        eza
         ripgrep
       ];
       programs.fzf = {
@@ -68,9 +68,7 @@ in {
         autocd = true;
         enableAutosuggestions = true;
         enableCompletion = true;
-        # TODO(upgrade) `enableSyntaxHighlighting` is deprecated, use `syntaxHighlighting.enable` instead once 23.11 arrives
-        enableSyntaxHighlighting = true;
-        #syntaxHighlighting.enable = true;
+        syntaxHighlighting.enable = true;
         dotDir = ".config/zsh";
         history = {
           size = 5000000;

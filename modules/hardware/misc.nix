@@ -21,9 +21,7 @@ in {
     services.fwupd.enable = cfg.fwupd.enable;
     services.udisks2.enable = cfg.udisks2.enable;
     hardware.enableRedistributableFirmware = cfg.enableRedistributableFirmware;
-    # TODO(upgrade) hardware.usbWwan to hardware.usb-modeswitch once everything is on 23.11
-    hardware.usbWwan.enable = cfg.usbModeSwitch.enable;
-    # hardware.usb-modeswitch.enable = cfg.usbModeSwitch.enable;
+    hardware.usb-modeswitch.enable = cfg.usbModeSwitch.enable;
     hardware.cpu.amd.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
     hardware.cpu.intel.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
   };
