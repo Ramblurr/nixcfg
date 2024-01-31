@@ -5,6 +5,9 @@ in {
   microsocks = callPackage ./microsocks {};
   hacompanion = callPackage ./hacompanion {};
   bootleg = callPackage ./bootleg {};
+  filetote = callPackage ./filetote {};
+  beets-audible = callPackage ./beets-audible {};
+  beets-filetote = callPackage ./beets-filetote {inherit (pkgs.my) beets-audible;};
   muse-sounds-deb = callPackage ./muse-sounds-deb {inherit pkgs;};
   #muse-sounds-manager = callPackage ./muse-sounds-manager {};
   muse-sounds-manager = (
