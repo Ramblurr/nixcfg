@@ -70,7 +70,7 @@ in {
     users = {
       mutableUsers = cfg.mutableUsers;
       users.root.initialHashedPassword = mkForce null;
-      users.root.passwordFile = mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
+      users.root.hashedPasswordFile = mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
 
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;
       users."${cfg.primaryUser.username}" = {
@@ -78,7 +78,7 @@ in {
         home = cfg.primaryUser.homeDirectory;
         description = cfg.primaryUser.name;
         openssh.authorizedKeys.keys = cfg.primaryUser.authorizedKeys;
-        passwordFile = mkIf cfg.primaryUser.passwordEnable config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
+        hashedPasswordFile = mkIf cfg.primaryUser.passwordEnable config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
         extraGroups = cfg.primaryUser.extraGroups;
         uid = cfg.primaryUser.uid;
         group = cfg.primaryUser.username;

@@ -13,8 +13,6 @@
   sops.secrets."zrepl/maliKey" = {};
   services.zrepl = {
     enable = true;
-    # my remote zrepl host uses the latest zrepl
-    package = unstable.zrepl;
     settings = {
       global = {
         logging = [
