@@ -54,13 +54,21 @@
           "scrub"
           "types"
         ];
-        replaygain = {backend = "command";};
+        replaygain = {
+          auto = true;
+          threads = 2;
+          parallel_on_import = true; # don't forget to run `beet write` after import
+          backend = "ffmpeg";
+        };
         import = {
           write = true;
+          copy = false;
           move = true;
           timid = false;
           log = "/mnt/tank2/media/music/other/other2/import.log";
           duplicate_action = "skip";
+          incremental = true;
+          resume = true;
         };
         filetote = {
           extensions = [".cue"];
@@ -101,14 +109,14 @@
         };
         match = {
           strong_rec_thresh = 0.10;
-          max_rec.missing_tracks = "strong";
+          max_rec.missing_tracks = "low";
           required = ["year"]; #[ "year" "label" "country"];
           preferred = {
             countries = ["XW" "US"];
             media = ["Digital Media|File" "CD"];
             original_year = true;
           };
-          ignored = ["length"];
+          ignored = "missing_tracks unmatched_tracks";
           ignored_media = [
             "Data CD"
             "DVD"
