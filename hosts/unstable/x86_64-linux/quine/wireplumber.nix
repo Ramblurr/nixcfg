@@ -29,6 +29,21 @@
         },
         apply_properties = {
           ["node.description"] = "KEF LSX"
+          ["audio.allowed-rates"]    = "44100,48000,88200,96000,176400,192000",
+        },
+      }
+      table.insert(alsa_monitor.rules,rule)
+    '';
+    xdg.configFile."wireplumber/main.lua.d/51-schiit-modi-multibit2.lua".text = ''
+      rule = {
+        matches = {
+          {
+            { "node.name", "equals", "alsa_output.usb-Schiit_Audio_Schiit_Unison_Modi_Multi_2-00.analog-stereo" },
+          },
+        },
+        apply_properties = {
+          ["node.description"]       = "Schiit Modi Multi 2",
+          ["audio.allowed-rates"]    = "44100,48000,88200,96000,176400,192000"
         },
       }
       table.insert(alsa_monitor.rules,rule)
@@ -86,6 +101,14 @@
 
       table.insert(bluez_monitor.rules,rule)
     '';
+    xdg.configFile."pipewire/pipewire.conf.d/50-dac.conf" = {
+      text = ''
+        context.properties = {
+          default.clock.allowed-rates = [ 44100 48000 88200 96000 176400 192000 ]
+        }
+      '';
+    };
+
     xdg.configFile."pipewire/pipewire.conf.d/90-roon-loopback.conf" = {
       source = ./pipewire/90-roon-loopback.conf;
     };
