@@ -28,7 +28,7 @@
       printcap name = /dev/null
       guest account = nobody
       map to guest = bad user
-      hosts allow = 192.168.1.83 10.9.6.23 10.9.5.1 127.0.0.1 localhost
+      hosts allow = 10.9.8.33 10.9.4.3 192.168.1.83 10.9.6.23 10.9.5.1 127.0.0.1 localhost
       hosts deny = 0.0.0.0/0
     '';
     # log level = 3
