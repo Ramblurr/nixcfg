@@ -1,9 +1,4 @@
-{stdenv}: {
-  lib,
-  stdenv,
-  fetchzip,
-  buildFHSUserEnv,
-}:
+{buildFHSUserEnv}:
 buildFHSUserEnv {
   name = "muse-sounds-manager";
   targetPkgs = pkgs: (with pkgs; [
@@ -14,10 +9,8 @@ buildFHSUserEnv {
     libuuid
     openssl
     zlib
-
     # mono
     krb5
-
     pkgs.my.muse-sounds-deb
   ]);
   multiPkgs = pkgs: [pkgs.dpkg];
