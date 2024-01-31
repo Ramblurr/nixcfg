@@ -174,8 +174,14 @@ in {
       enable = true;
       name = "aquinas.socozy.casa-mali";
       repositories = [
-        "ssh://borg@mali.int.socozy.casa/mnt/tank2/backups/borg_repos/aquinas"
-        "\${OFFSITE_REPOSITORY}"
+        {
+          label = "mali";
+          path = "ssh://borg@mali.int.socozy.casa/mnt/tank2/backups/borg_repos/aquinas";
+        }
+        {
+          label = "offsite";
+          path = "\${OFFSITE_REPOSITORY}";
+        }
       ];
       exclude-patterns = [
         "etc/ssl"
