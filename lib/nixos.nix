@@ -3,49 +3,36 @@
   lib,
   pkgs,
   ...
-}:
-with lib;
-with lib.my; {
-  mkHost = path: attrs @ {
-    nixpkgs,
-    unstable,
+}: let
+  inherit (lib) mkDefault removeSuffix;
+  inherit (lib.my) mapModules;
+
+  # nixosSystem: the flake system builder, accessed from the nixpkgs flake using nixpkgs.lib.nixosSystem
+  mkHost = path: {
+    nixosSystem,
     edge,
     system,
-    mkPkgs,
     home-manager,
-    ...
+    overlays,
   }:
-    nixpkgs.lib.nixosSystem {
+    nixosSystem {
       inherit system;
       specialArgs = {
-        inherit lib inputs system;
-        unstable = mkPkgs unstable system;
-        edge = mkPkgs edge system;
+        inherit lib inputs;
+        edge = edge;
       };
       modules = [
         {
-          nixpkgs.pkgs = mkPkgs nixpkgs system;
           networking.hostName = mkDefault (removeSuffix ".nix" (baseNameOf path));
+          nixpkgs.overlays = overlays;
         }
         home-manager.nixosModules.home-manager
-        ({...}: {
-          modules.sops.secretsFile = builtins.getEnv "SOPS_SECRETS_FILE";
-        })
-        (filterAttrs (n: v: !elem n ["nixpkgs" "unstable" "edge" "system" "mkPkgs" "home-manager"]) attrs)
-        ../. # /default.nix
         (import path)
+        ../. # /default.nix
       ];
     };
-
-  mapHosts = dir: attrs @ {
-    nixpkgs,
-    unstable,
-    edge,
-    system,
-    mkPkgs,
-    home-manager,
-    ...
-  }:
+in {
+  mapHosts = dir: attrs:
     mapModules dir
     (hostPath: mkHost hostPath attrs);
 }
