@@ -7,7 +7,25 @@
   myhm = {pkgs, ...} @ hm: {
     programs.beets = {
       enable = true;
-      package = pkgs.beets-unstable;
+
+      #package = pkgs.beets-unstable;
+      package = pkgs.beets-unstable.override {
+        pluginOverrides = {
+          filetote = {
+            enable = true;
+            propagatedBuildInputs = [pkgs.my.beets-filetote];
+          };
+          dynamicrange = {
+            enable = true;
+            propagatedBuildInputs = [pkgs.my.beets-dynamicrange];
+          };
+          # hack, remove eventually:
+          limit.builtin = true;
+          substitute.builtin = true;
+          advancedrewrite.builtin = true;
+          autobpm.builtin = true;
+        };
+      };
       settings = {
         directory = "/mnt/tank2/media/music/other/other2";
         library = "/mnt/tank2/media/music/other/other2/library.db";
@@ -23,13 +41,14 @@
           "fromfilename"
           "ftintitle"
           "fuzzy"
+          "filetote"
           "info"
           "inline"
           "limit"
           #"lyrics"
           "mbsync"
           "missing"
-          "permissions"
+          #"permissions"
           "replaygain"
           "rewrite"
           "scrub"
@@ -42,6 +61,14 @@
           timid = false;
           log = "/mnt/tank2/media/music/other/other2/import.log";
           duplicate_action = "skip";
+        };
+        filetote = {
+          extensions = [".cue"];
+          pairing = {
+            enabled = true;
+            pairing_only = true;
+            extensions = [".lrc"];
+          };
         };
         item_fields = {
           multidisc = "1 if disctotal > 1 else 0";
@@ -75,7 +102,7 @@
         match = {
           strong_rec_thresh = 0.10;
           max_rec.missing_tracks = "strong";
-          required = ["year" "label" "country"];
+          required = ["year"]; #[ "year" "label" "country"];
           preferred = {
             countries = ["XW" "US"];
             media = ["Digital Media|File" "CD"];
