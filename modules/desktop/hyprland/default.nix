@@ -251,9 +251,10 @@ in {
         # when we login.
         # Also we get a nice hyprland reload when the config changes
         "hypr/hyprland.conf" = {
+          #exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XAUTHORITY DISPLAY && systemctl --user start hyprland-session.target
           text =
             ''
-              exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XAUTHORITY DISPLAY && systemctl --user start hyprland-session.target
+              exec-once = ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all && systemctl --user restart hyprland-session.target
             ''
             #+ ''
             #  plugin = ${inputs.hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
