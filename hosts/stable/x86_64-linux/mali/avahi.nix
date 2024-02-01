@@ -6,7 +6,7 @@
 }: {
   services.avahi = {
     enable = false;
-    nssmdns4 = true;
+    nssmdns = true;
     openFirewall = true;
     publish = {
       enable = true;
