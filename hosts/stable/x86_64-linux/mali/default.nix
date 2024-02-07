@@ -13,7 +13,6 @@ in {
     ./hardware-configuration.nix
     ./networking.nix
     ./nfs.nix
-    ./email.nix
     ./samba.nix
     ./zrepl.nix
     ./monitoring.nix
@@ -59,12 +58,14 @@ in {
     impermanence.enable = true;
     boot.zfs = {
       enable = true;
+      zed.enable = true;
       encrypted = true;
       rootPool = "rpool";
       scrubPools = ["rpool"];
       autoSnapshot.enable = false;
       extraPools = ["tank" "tank2" "fast"];
     };
+    server.smtp-external-relay.enable = true;
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;

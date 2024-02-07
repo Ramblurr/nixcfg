@@ -17,6 +17,7 @@ in {
       usePlymouth = mkBoolOpt true;
       skipMitigations = mkBoolOpt false;
       autoSnapshot.enable = mkBoolOpt true;
+      zed.enable = mkBoolOpt false;
       rootPool = mkStrOpt "rpool";
       scrubPools = mkOption {
         type = types.listOf types.str;
@@ -155,6 +156,21 @@ in {
         enable = cfg.autoSnapshot.enable;
         frequent = 8; # keep the latest eight 15-minute snapshots (instead of four)
         monthly = 1; # keep only one monthly snapshot (instead of twelve)
+      };
+    };
+    services.zfs.zed = mkIf cfg.zed.enable {
+      enableMail = false;
+      settings = {
+        ZED_NOTIFY_VERBOSE = true;
+        ZED_DEBUG_LOG = "/tmp/zed.debug.log";
+
+        ZED_EMAIL_ADDR = [config.modules.server.smtp-external-relay.emailTo];
+        ZED_EMAIL_PROG = "${pkgs.msmtp}/bin/msmtp";
+        ZED_EMAIL_OPTS = "-a 'FROM:${config.modules.server.smtp-external-relay.emailFrom}' -s '@SUBJECT@' @ADDRESS@";
+
+        ZED_NOTIFY_INTERVAL_SECS = 3600;
+        ZED_USE_ENCLOSURE_LEDS = true;
+        ZED_SCRUB_AFTER_RESILVER = true;
       };
     };
   };
