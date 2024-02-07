@@ -66,14 +66,13 @@ in {
       "40-vlmgmt9" = {
         matchConfig.Name = "vlmgmt9";
         addresses = map (addr: {addressConfig.Address = addr;}) [
-          "10.9.8.33/32"
+          "10.9.8.33/23"
         ];
         networkConfig = {
           DHCP = "no";
           #IPForward = "yes";
           DNSSEC = "no";
         };
-
         domains = domains;
       };
     };
