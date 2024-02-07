@@ -5,6 +5,9 @@
   ...
 }: {
   myhm = {pkgs, ...} @ hm: {
+    programs.zsh.shellAliases = {
+      beet-mine = "beet --config ~/.config/beets/config.mine.yaml";
+    };
     programs.beets = {
       enable = true;
 
@@ -27,7 +30,7 @@
         };
       };
       settings = {
-        directory = "/mnt/tank2/media/music/other/other2";
+        directory = "/mnt/tank2/media/music/other";
         library = "/mnt/tank2/media/music/other/other2/library.db";
         embedart.auto = true;
         per_disc_numbering = true;
@@ -42,6 +45,7 @@
           "ftintitle"
           "fuzzy"
           "filetote"
+          #"dynamicrange"
           "info"
           "inline"
           "limit"
@@ -49,29 +53,30 @@
           "mbsync"
           "missing"
           #"permissions"
-          "replaygain"
+          #"replaygain"
           "rewrite"
           "scrub"
           "types"
         ];
         replaygain = {
           auto = true;
-          threads = 2;
+          threads = 4;
           parallel_on_import = true; # don't forget to run `beet write` after import
           backend = "ffmpeg";
         };
         import = {
-          write = true;
-          copy = false;
+          duplicate_action = "ask";
+          log = "/mnt/tank2/media/music/other/import.log";
           move = true;
-          timid = false;
-          log = "/mnt/tank2/media/music/other/other2/import.log";
-          duplicate_action = "skip";
-          incremental = true;
-          resume = true;
+          copy = false;
+          #timid = false;
+          write = true;
+          incremental = false;
+          resume = false;
         };
         filetote = {
-          extensions = [".cue"];
+          extensions = [".cue" ".pdf"];
+          filenames = "cover.jpg cover.png";
           pairing = {
             enabled = true;
             pairing_only = true;
