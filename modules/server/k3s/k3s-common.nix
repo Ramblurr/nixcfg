@@ -38,7 +38,7 @@ in {
 
     systemd.services.containerd.serviceConfig = {
       ExecStartPre = [
-        "-${pkgs.zfs}/bin/zfs create -o mountpoint=/var/lib/containerd/io.containerd.snapshotter.v1.zfs zroot/containerd"
+        "-${pkgs.zfs}/bin/zfs create -o mountpoint=/var/lib/containerd/io.containerd.snapshotter.v1.zfs rpool/encrypted/containerd"
       ];
     };
 
