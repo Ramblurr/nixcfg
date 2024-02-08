@@ -10,7 +10,9 @@
   ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
 in {
   imports = [
-    ./networking.nix
+    ./hardware.nix
+    #./networking.nix
+    ./disk-config.nix
   ];
   system.stateVersion = "23.11";
   sops.defaultSopsFile = defaultSopsFile;
@@ -18,6 +20,9 @@ in {
   i18n.defaultLocale = "en_US.utf8";
   sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
   environment.etc."machine-id".text = "0cbc5a0908b84c809b0d02f64837ec05";
+
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
@@ -36,16 +41,16 @@ in {
     };
     editors = {
       vim.enable = true;
+      emacs.enable = false;
     };
     impermanence.enable = true;
     boot.zfs = {
       enable = true;
       zed.enable = false;
-      encrypted = false;
+      encrypted = true;
       rootPool = "rpool";
       scrubPools = ["rpool"];
       autoSnapshot.enable = false;
-      extraPools = ["tank" "tank2" "fast"];
     };
     server = {
       smtp-external-relay.enable = false;
@@ -75,6 +80,11 @@ in {
       ];
     };
   };
+
+  # Ensures that /persist/home/ramblurr exists with the correct ownership and perms before the home-manager service runs
+  systemd.tmpfiles.rules = [
+    "d /persist/home/ramblurr 700 ${ramblurr.username} ${ramblurr.username}"
+  ];
 
   services.smartd.enable = true;
   environment.systemPackages = with pkgs; [

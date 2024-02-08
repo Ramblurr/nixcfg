@@ -14,6 +14,7 @@
     system,
     home-manager,
     overlays,
+    extraModules,
   }:
     nixosSystem {
       inherit system;
@@ -21,15 +22,17 @@
         inherit lib inputs;
         edge = edge;
       };
-      modules = [
-        {
-          networking.hostName = mkDefault (removeSuffix ".nix" (baseNameOf path));
-          nixpkgs.overlays = overlays;
-        }
-        home-manager.nixosModules.home-manager
-        (import path)
-        ../. # /default.nix
-      ];
+      modules =
+        extraModules
+        ++ [
+          {
+            networking.hostName = mkDefault (removeSuffix ".nix" (baseNameOf path));
+            nixpkgs.overlays = overlays;
+          }
+          home-manager.nixosModules.home-manager
+          (import path)
+          ../. # /default.nix
+        ];
     };
 in {
   mapHosts = dir: attrs:

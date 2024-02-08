@@ -12,6 +12,9 @@
     nixos-ovos.inputs.nixpkgs.follows = "nixpkgs";
     nixos-ovos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
 
+    disko-stable.url = "github:nix-community/disko";
+    disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
+
     talhelper.url = "github:budimanjojo/talhelper";
     talhelper.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -93,11 +96,14 @@
             nixpkgs = nixpkgs;
             edge = inputs.nixpkgs-bleeding-edge;
             home-manager = inputs.home-manager;
+            extraModules = [];
           };
+
           stable = {
             nixpkgs = inputs.nixpkgs-stable;
             unstable = nixpkgs;
             home-manager = inputs.home-manager-stable;
+            extraModules = [inputs.disko-stable.nixosModules.disko];
           };
         }
         .${nixpkgsType};
@@ -113,6 +119,7 @@
     in
       thisLib.my.mapHosts path
       {
+        extraModules = table.extraModules;
         nixosSystem = table.nixpkgs.lib.nixosSystem;
         system = system;
         edge = mkPkgs table.edge system;
