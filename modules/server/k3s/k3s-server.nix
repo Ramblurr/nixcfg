@@ -4,12 +4,13 @@
   lib,
   pkgs,
   inputs,
+  unstable,
   ...
 }:
 with lib;
 with lib.my; let
   cfg = config.modules.server.k3s-server;
-  k3s-package = pkgs.unstable.k3s_1_29;
+  k3s-package = unstable.k3s_1_29;
   hostName = config.networking.hostName;
   domain = config.networking.domain;
 in {
@@ -29,22 +30,22 @@ in {
       "--node-label \"k3s-upgrade=false\""
       "--disable-cloud-controller"
       "--disable-kube-proxy"
-      "--embedded-registry"
+      #"--embedded-registry" # TODO: enable once 1.29.1 drops
       "--etcd-expose-metrics"
       "--disable-network-policy"
       "--kube-apiserver-arg anonymous-auth=true"
       "--kube-controller-manager-arg bind-address=0.0.0.0"
       "--kube-scheduler-arg bind-address=0.0.0.0"
-      "--kubelet-arg image-gc-low-threshold=50,image-gc-high-threshold=55"
+      "--kubelet-arg image-gc-low-threshold=50"
+      "--kubelet-arg image-gc-high-threshold=55"
       "--node-ip ${cfg.nodeIp}"
       "--pause-image registry.k8s.io/pause:3.9"
       "--secrets-encryption"
-      "--service-cidr 10.33.0.0/16"
       "--tls-san ${cfg.endpointVip}"
       "--write-kubeconfig-mode 0644"
       "--cluster-cidr ${cfg.clusterCidr}"
       "--service-cidr ${cfg.serviceCidr}"
-      "--container-runtime-endpoint unix:///run/containerd/containerd.sock"
+      #"--container-runtime-endpoint unix:///run/containerd/containerd.sock"
     ];
     disableFlags = map (service: "--disable ${service}") disabledServices;
     combinedFlags = concatLists [disableFlags extraFlags];
@@ -55,6 +56,7 @@ in {
         enable = true;
         package = k3s-package;
         role = "server";
+        #clusterInit = true;
         tokenFile = cfg.tokenFile;
         extraFlags = concatStringsSep " " combinedFlags;
       };
