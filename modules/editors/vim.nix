@@ -15,6 +15,10 @@ with lib.my; let
 in {
   options.modules.editors.vim = {
     enable = mkBoolOpt false;
+    extraPlugins = mkOption {
+      type = types.listOf types.package;
+      default = [];
+    };
   };
   config = mkIf cfg.enable {
     myhm = {...} @ hm: {
@@ -25,14 +29,12 @@ in {
           undodir = ["${hm.config.xdg.cacheHome}/vim/undo"];
         };
         defaultEditor = true;
-        plugins = with pkgs.vimPlugins; [
-          vim-airline
-          tabular
-          vim-beancount
-          vim-nix
-          vim-surround
-          gruvbox-community
-        ];
+        plugins = with pkgs.vimPlugins;
+          [
+            gruvbox-community
+            vim-surround
+          ]
+          ++ cfg.extraPlugins;
         extraConfig = ''
           " use vim settings, rather than vi settings
           " must be first, because it changes other options as a side effect
