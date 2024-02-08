@@ -94,14 +94,12 @@
         {
           unstable = {
             nixpkgs = nixpkgs;
-            edge = inputs.nixpkgs-bleeding-edge;
             home-manager = inputs.home-manager;
             extraModules = [];
           };
 
           stable = {
             nixpkgs = inputs.nixpkgs-stable;
-            unstable = nixpkgs;
             home-manager = inputs.home-manager-stable;
             extraModules = [inputs.disko-stable.nixosModules.disko];
           };
@@ -121,8 +119,9 @@
       {
         extraModules = table.extraModules;
         nixosSystem = table.nixpkgs.lib.nixosSystem;
+        unstable = mkPkgs inputs.nixpkgs system;
         system = system;
-        edge = mkPkgs table.edge system;
+        edge = mkPkgs inputs.nixpkgs-bleeding-edge system;
         home-manager = table.home-manager;
         overlays = allOverlays;
       };
