@@ -136,7 +136,16 @@ in {
 
     editors = {
       emacs.enable = true;
-      vim.enable = true;
+      vim = {
+        enable = true;
+        extraPlugins = with pkgs.vimPlugins; [
+          vim-airline
+          tabular
+          vim-nix
+          vim-surround
+          gruvbox-community
+        ];
+      };
       vscode.enable = true;
     };
     impermanence.enable = true;
