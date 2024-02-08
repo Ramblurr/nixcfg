@@ -11,6 +11,7 @@
   mkHost = path: {
     nixosSystem,
     edge,
+    unstable,
     system,
     home-manager,
     overlays,
@@ -21,6 +22,7 @@
       specialArgs = {
         inherit lib inputs;
         edge = edge;
+        unstable = unstable;
       };
       modules =
         extraModules
