@@ -12,6 +12,7 @@ in {
   imports = [
     ./hardware.nix
     #./networking.nix
+    ./k3s.nix
     ./disk-config.nix
   ];
   system.stateVersion = "23.11";
@@ -54,11 +55,6 @@ in {
     };
     server = {
       smtp-external-relay.enable = false;
-      k3s-server = {
-        enable = false;
-        endpointVip = "";
-        nodeIp = "";
-      };
     };
     vpn.tailscale.enable = false;
     firewall.enable = true;
@@ -83,10 +79,14 @@ in {
 
   # Ensures that /persist/home/ramblurr exists with the correct ownership and perms before the home-manager service runs
   systemd.tmpfiles.rules = [
-    "d /persist/home/ramblurr 700 ${ramblurr.username} ${ramblurr.username}"
+    "d /persist/home/${ramblurr.username} 700 ${ramblurr.username} ${ramblurr.username}"
+    "d /persist/var/lib/rancher 755 root root"
+    "d /persist/var/lib/cni 755 root root"
+    "d /persist/etc/rancher 755 root root"
   ];
 
-  services.smartd.enable = true;
+  # TODO: enable on bare metal
+  services.smartd.enable = false;
   environment.systemPackages = with pkgs; [
     python312
     smartmontools
@@ -98,7 +98,10 @@ in {
     hideMounts = true;
     directories = [
       "/var/lib/nixos"
+      "/var/lib/rancher"
       "/var/lib/systemd/coredump"
+      "/etc/rancher"
+      "/var/lib/cni"
     ];
     files = [
     ];

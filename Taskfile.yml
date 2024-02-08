@@ -39,8 +39,8 @@ tasks:
 
   deploy-key:
     cmds:
-      - sops -d --extract "['ssh_host_ed25519_key']" ./hosts/unstable/{{.arch}}-linux/{{.host}}/secrets.sops.yaml | ssh {{.host}}.int.socozy.casa 'cat - | sudo tee  /etc/ssh/ssh_host_ed25519_key'
-      - sops -d --extract "['ssh_host_ed25519_key_pub']" ./hosts/unstable/{{.arch}}-linux/{{.host}}/secrets.sops.yaml | ssh {{.host}}.int.socozy.casa 'cat - | sudo tee /etc/ssh/ssh_host_ed25519_key.pub'
+      - sops -d --extract "['ssh_host_ed25519_key']" ./hosts/unstable/{{.arch}}-linux/{{.host}}/secrets.sops.yaml | ssh {{.host}} 'cat - | sudo tee  /etc/ssh/ssh_host_ed25519_key'
+      - sops -d --extract "['ssh_host_ed25519_key_pub']" ./hosts/unstable/{{.arch}}-linux/{{.host}}/secrets.sops.yaml | ssh {{.host}} 'cat - | sudo tee /etc/ssh/ssh_host_ed25519_key.pub'
 
   switch:quine:
     desc: Switch quine
@@ -85,7 +85,6 @@ tasks:
           BUILD_HOST: mali.int.socozy.casa
           TARGET_HOST: mali.int.socozy.casa
           FLAKE_URI: .#mali
-
 
   test:vpn:
     desc: Test vpn
@@ -176,3 +175,23 @@ tasks:
     desc: Build the SD Card image for ovos-bedroom
     cmds:
       - nix build .#images.ovos-bedroom
+
+  build:k3s-test1:
+    desc: Build k3s-test1
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: k3s-test1
+          TARGET_HOST: k3s-test1
+          FLAKE_URI: .#k3s-test1
+
+  switch:k3s-test1:
+    desc: Switch k3s-test1
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: k3s-test1
+          TARGET_HOST: k3s-test1
+          FLAKE_URI: .#k3s-test1
