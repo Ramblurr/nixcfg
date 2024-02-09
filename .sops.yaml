@@ -9,7 +9,7 @@ keys:
       - &ovos-kitchen age1vfgnjj357pa8xq0vpl9cnfxhtczl7dgnafxlqal3pn9v4ud0kees4xua20
       - &ovos-bedroom age12zdskqd632afljf4nffxafup4mhd0kl53psvqer8zup8qz9gn3qqtp7858
       - &vpn age1fejrfw2c8z8g02z6j9fv4ddwm7y4valtmstxmpl0yktk7dm49phspxglgf
-      - &ibnsina age1s9e6xdf5dhc600h7npxnym7t2ecyuju0c78ew0gxhhlw6pz779rqe5rec8
+      - &ibnsina age1rd4msy9hc7t7703kwypmt20r8qwkuqxyxuk3sd95sw2sc9gvjydqe67dn2
       - &k3s-test age1j4ga2thelk9t42s6shaeuen0pst32dcx9lyu9rzsq2qacnuchdsq80tvey
 creation_rules:
   - path_regex: secrets/secrets.sops.ya?ml$
