@@ -195,3 +195,23 @@ tasks:
           BUILD_HOST: k3s-test1
           TARGET_HOST: k3s-test1
           FLAKE_URI: .#k3s-test1
+
+  build:ibnsina:
+    desc: Build ibnsina
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: ibnsina
+          TARGET_HOST: ibnsina
+          FLAKE_URI: .#ibnsina
+
+  switch:ibnsina:
+    desc: Switch ibnsina
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: ibnsina
+          TARGET_HOST: ibnsina
+          FLAKE_URI: .#ibnsina
