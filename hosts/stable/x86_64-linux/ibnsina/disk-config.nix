@@ -126,6 +126,9 @@
               mountpoint = "legacy";
             };
           };
+          "encrypted/safe/vms" = {
+            type = "zfs_fs";
+          };
           "encrypted/safe/extra" = {
             type = "zfs_fs";
             mountpoint = "/persist/extra";

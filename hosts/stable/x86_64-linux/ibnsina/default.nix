@@ -26,4 +26,8 @@ in {
     user = ramblurr;
     defaultSopsFile = defaultSopsFile;
   };
+  modules.server.virtd-host = {
+    enable = true;
+    zfsStorage.enable = true;
+  };
 }
