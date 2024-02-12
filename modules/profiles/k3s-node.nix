@@ -102,6 +102,7 @@ in {
           defaultSopsFile = cfg.defaultSopsFile;
           shell = pkgs.zsh;
           extraGroups = [
+            "libvirtd"
             "wheel"
           ];
         };
@@ -184,14 +185,19 @@ in {
 
       systemd.network = {
         netdevs = {
+          "20-vlprim4" = {
+            netdevConfig = {
+              Kind = "vlan";
+              Name = "vlprim4";
+            };
+            vlanConfig.Id = 4;
+          };
           "20-vlmgmt9" = {
             netdevConfig = {
               Kind = "vlan";
               Name = "vlmgmt9";
             };
-            vlanConfig = {
-              Id = 9;
-            };
+            vlanConfig.Id = 9;
           };
           "20-vldata11" = {
             netdevConfig = {
@@ -199,8 +205,12 @@ in {
               Name = "vldata11";
               MTUBytes = "9000";
             };
-            vlanConfig = {
-              Id = 11;
+            vlanConfig.Id = 11;
+          };
+          "30-brprim4" = {
+            netdevConfig = {
+              Name = "brprim4";
+              Kind = "bridge";
             };
           };
           "30-brmgmt9" = {
@@ -223,6 +233,7 @@ in {
             matchConfig.Name = "eno1";
             vlan = [
               "vlmgmt9"
+              "vlprim4"
             ];
           };
           "40-enp6s0" = {
@@ -232,6 +243,12 @@ in {
             vlan = [
               "vldata11"
             ];
+          };
+          "45-vlprim4" = {
+            matchConfig = {Name = "vlprim4";};
+            networkConfig = {
+              Bridge = "brprim4";
+            };
           };
           "45-vldata11" = {
             matchConfig = {Name = "vldata11";};
@@ -245,13 +262,21 @@ in {
               Bridge = "brmgmt9";
             };
           };
+
+          "50-brprim4" = {
+            matchConfig = {Name = "brprim4";};
+            networkConfig = {
+              DHCP = "no";
+              Description = "Bridge for primary vlan, only for VMs.";
+            };
+          };
           "50-brmgmt9" = {
             matchConfig = {Name = "brmgmt9";};
             networkConfig = {
               DHCP = "no";
               Address = nodeSettings.mgmtAddress;
               Gateway = cfg.clusterSettings.mgmtGateway;
-              Description = "mgmt";
+              Description = "mgmt VLAN";
             };
           };
           "50-brdata11" = {
@@ -259,7 +284,7 @@ in {
             networkConfig = {
               DHCP = "no";
               Address = nodeSettings.dataAddress;
-              Description = "data";
+              Description = "data 10GbE VLAN";
             };
           };
         };
