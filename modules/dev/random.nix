@@ -33,6 +33,7 @@ in {
         enable = true;
       };
       home.packages = with pkgs; [
+        virt-manager
         cue
         rpi-imager
         nfs-utils
