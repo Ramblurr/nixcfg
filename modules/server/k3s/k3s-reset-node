@@ -7,5 +7,5 @@ find /sys/fs/cgroup/systemd/system.slice/containerd.service* /sys/fs/cgroup/kube
     xargs -0 -r cat | xargs -r kill -9
 mount | awk '/\/var\/lib\/kubelet|\/run\/netns|\/run\/containerd/ {print $3}' | xargs -r umount
 zfs destroy -R rpool/encrypted/containerd
-rm -rf /persist/var/lib/rancher/ /var/lib/containerd /persist/etc/rancher /run/containerd/ /persist/var/lib/cni/
+rm -rf /persist/var/lib/rancher/* /var/lib/containerd/* /persist/etc/rancher/* /run/containerd/* /persist/var/lib/cni/*
 systemctl start k3s
