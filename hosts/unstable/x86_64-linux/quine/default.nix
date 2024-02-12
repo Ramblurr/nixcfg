@@ -142,7 +142,6 @@ in {
           vim-airline
           tabular
           vim-nix
-          vim-surround
           gruvbox-community
         ];
       };

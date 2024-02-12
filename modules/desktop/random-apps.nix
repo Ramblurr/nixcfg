@@ -71,6 +71,7 @@ in {
           "work"
           "vendor"
           "nixcfg"
+          ".cache/virt-manager"
           ".local/bin"
           ".config/gnupg"
           ".config/gh"
