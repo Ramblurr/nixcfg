@@ -71,6 +71,12 @@
         configurationLimit = 20;
       };
     };
+    kernel.sysctl = {
+      "fs.file-max" = 1048576;
+      "fs.inotify.max_user_instances" = 256;
+      "fs.inotify.max_user_watches" = 99999999;
+    };
+
     initrd = {
       availableKernelModules = ["nvme" "xhci_pci" "ahci" "usb_storage" "usbhid" "sd_mod" "aesni_intel" "cryptd"];
 

@@ -82,16 +82,10 @@ in {
             );
         };
       };
-      kernelModules = ["kvm-intel"];
       extraModulePackages = [];
 
       kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
       kernelParams = mkIf cfg.skipMitigations ["mitigations=off"];
-      kernel.sysctl = {
-        "fs.file-max" = 1048576;
-        "fs.inotify.max_user_instances" = 256;
-        "fs.inotify.max_user_watches" = 99999999;
-      };
     };
 
     ## LEGACYBOOT - we use stage-1/systemd so have a fallback ###############
@@ -106,8 +100,6 @@ in {
     services.udisks2.enable = true;
     hardware.enableRedistributableFirmware = true;
     hardware.usb-modeswitch.enable = false; # dual role usb/cdrom stick thing
-    hardware.cpu.amd.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
-    hardware.cpu.intel.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
 
     environment = {
       systemPackages = with pkgs; [
