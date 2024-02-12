@@ -13,20 +13,64 @@ with lib.my; let
   k3s-package = unstable.k3s_1_29;
   hostName = config.networking.hostName;
   domain = config.networking.domain;
+  kubeVipDaemonSet = pkgs.writeTextFile {
+    name = "kube-vip-ds.yaml";
+    text = builtins.readFile (
+      pkgs.substituteAll {
+        src = ./kube-vip-ds.yaml;
+        endpointVip = cfg.endpointVip;
+      }
+    );
+  };
+  kubeVipRBAC = pkgs.writeTextFile {
+    name = "kube-vip-rbac.yaml";
+    text = builtins.readFile ./kube-vip-rbac.yaml;
+  };
+
+  ciliumInitHelmchart = pkgs.writeTextFile {
+    name = "custom-cilium-helmchart.yaml";
+    text = builtins.readFile (
+      pkgs.substituteAll {
+        src = ./custom-cilium-helmchart.yaml;
+        clusterCIDR = cfg.clusterCIDR;
+        clusterName = cfg.clusterName;
+        routingIface = cfg.routingIface;
+      }
+    );
+  };
+  ciliumPythonEnv = pkgs.python311.withPackages (python-pkgs: [
+    python-pkgs.kubernetes
+  ]);
+  ciliumInstallScript = pkgs.writeTextFile {
+    name = "cilium-install.py";
+    text = builtins.readFile (
+      pkgs.substituteAll {
+        src = ./cilium-install.py;
+        kubeconfig = "/etc/rancher/k3s/k3s.yaml";
+        nodename = hostName;
+      }
+    );
+  };
 in {
   options.modules.server.k3s-server = {
     enable = mkBoolOpt false;
+    bootstrapEnable = mkBoolOpt false;
+    cilium.enable = mkBoolOpt false;
     tokenFile = mkStrOpt "/etc/k3s-token";
-    clusterCidr = mkStrOpt "10.69.0.0/16";
-    serviceCidr = mkStrOpt "10.96.0.0/16";
+    clusterCIDR = mkStrOpt "10.69.0.0/16";
+    serviceCIDR = mkStrOpt "10.96.0.0/16";
+    clusterName = mkStrOpt "home-kubernetes";
     endpointVip = mkStrOpt "";
     nodeIp = mkStrOpt "";
+    routingIface = mkStrOpt "brmgmt9";
   };
   config = let
-    disabledServices = ["coredns" "flannel" "local-storage" "metrics-server" "servicelb" "traefik"];
+    disabledServices = ["flannel" "local-storage" "metrics-server" "servicelb" "traefik"];
     extraFlags = [
+      # We will use cilium instead of flannel
       "--flannel-backend=none"
-      "--node-taint \"node-role.kubernetes.io/control-plane=true:NoSchedule\""
+      #"--node-taint \"node-role.kubernetes.io/control-plane=true:NoSchedule\""
+      # Prevent the node from being upgraded by k3s (we use NixOS instead)
       "--node-label \"k3s-upgrade=false\""
       "--disable-cloud-controller"
       "--disable-kube-proxy"
@@ -43,27 +87,61 @@ in {
       "--secrets-encryption"
       "--tls-san ${cfg.endpointVip}"
       "--write-kubeconfig-mode 0644"
-      "--cluster-cidr ${cfg.clusterCidr}"
-      "--service-cidr ${cfg.serviceCidr}"
+      # Specify IP address allocation range for pods
+      "--cluster-cidr ${cfg.clusterCIDR}"
+      "--service-cidr ${cfg.serviceCIDR}"
       #"--container-runtime-endpoint unix:///run/containerd/containerd.sock"
     ];
     disableFlags = map (service: "--disable ${service}") disabledServices;
     combinedFlags = concatLists [disableFlags extraFlags];
   in
     mkIf cfg.enable {
-      modules.agent.k3s-common.enable = true;
+      modules.server.k3s-common.enable = true;
       services.k3s = {
         enable = true;
         package = k3s-package;
         role = "server";
-        #clusterInit = true;
+        clusterInit = cfg.bootstrapEnable;
         tokenFile = cfg.tokenFile;
         extraFlags = concatStringsSep " " combinedFlags;
       };
 
-      environment.systemPackages = with pkgs; [k3s-package unstable.kubectl];
+      environment.systemPackages = with pkgs; [
+        k3s-package
+        unstable.kubectl
+        ciliumPythonEnv
+      ];
       networking.firewall.allowedTCPPorts = [
         6443 # KubeApi (TCP)
       ];
+      systemd.tmpfiles.rules =
+        [
+          "d /var/lib/rancher/k3s/server/manifests 0775 root root -"
+          "d /etc/rancher/custom 0775 root root -"
+          "L+ /var/lib/rancher/k3s/server/manifests/kube-vip-0-rbac.yaml - - - - ${kubeVipRBAC}"
+          "L+ /var/lib/rancher/k3s/server/manifests/kube-vip-1-ds.yaml - - - - ${kubeVipDaemonSet}"
+        ]
+        ++ (
+          if cfg.cilium.enable
+          then [
+            "L /etc/rancher/custom/custom-cilium-helmchart.yaml - - - - ${ciliumInitHelmchart}"
+          ]
+          else []
+        );
+      systemd.services.cilium-bootstrap = mkIf cfg.cilium.enable {
+        after = ["k3s.service"];
+        description = "Bootstrap Cilium";
+        requires = ["k3s.service"];
+        serviceConfig = {Type = "oneshot";};
+        wantedBy = ["multi-user.target"];
+        serviceConfig = {
+          ExecStart = "${ciliumPythonEnv}/bin/python3 -u ${ciliumInstallScript}";
+        };
+      };
+
+      #k3s = {
+      #  after = ["tailscale-up.service"];
+      #  requires = ["tailscale-up.service"];
+      #};
     };
 }

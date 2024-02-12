@@ -23,7 +23,7 @@ in {
     combinedFlags = concatLists [extraFlags];
   in
     mkIf cfg.enable {
-      modules.agent.k3s-common.enable = true;
+      modules.server.k3s-common.enable = true;
       services.k3s = {
         enable = true;
         package = k3s-package;
