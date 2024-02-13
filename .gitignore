@@ -6,3 +6,4 @@ archive
 .clj-kondo
 .lsp
 modules/editors/emacs/configs/doom.d/flycheck_*
+.direnv
