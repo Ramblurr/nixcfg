@@ -10,9 +10,9 @@
       mountOptions = ["defaults" "size=16G" "mode=1777"];
     };
     disk = {
-      vda = {
+      micron5300 = {
         type = "disk";
-        device = "/dev/vda";
+        device = "/dev/disk/by-id/ata-Micron_5300_MTFDDAK1T9TDT_2215373ACA1A";
         content = {
           type = "gpt";
           partitions = {
@@ -125,6 +125,9 @@
               "com.sun:auto-snapshot" = "true";
               mountpoint = "legacy";
             };
+          };
+          "encrypted/safe/vms" = {
+            type = "zfs_fs";
           };
           "encrypted/safe/extra" = {
             type = "zfs_fs";

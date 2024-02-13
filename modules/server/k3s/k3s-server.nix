@@ -10,7 +10,6 @@
 with lib;
 with lib.my; let
   cfg = config.modules.server.k3s-server;
-  k3s-package = unstable.k3s_1_29;
   hostName = config.networking.hostName;
   domain = config.networking.domain;
   kubeVipDaemonSet = pkgs.writeTextFile {
@@ -55,7 +54,8 @@ in {
   options.modules.server.k3s-server = {
     enable = mkBoolOpt false;
     bootstrapEnable = mkBoolOpt false;
-    cilium.enable = mkBoolOpt false;
+    bootstrapAddr = mkStrOpt "";
+    ciliumBootstrap.enable = mkBoolOpt false;
     tokenFile = mkStrOpt "/etc/k3s-token";
     clusterCIDR = mkStrOpt "10.69.0.0/16";
     serviceCIDR = mkStrOpt "10.96.0.0/16";
@@ -99,21 +99,24 @@ in {
       modules.server.k3s-common.enable = true;
       services.k3s = {
         enable = true;
-        package = k3s-package;
         role = "server";
+        serverAddr = cfg.bootstrapAddr;
         clusterInit = cfg.bootstrapEnable;
         tokenFile = cfg.tokenFile;
         extraFlags = concatStringsSep " " combinedFlags;
       };
 
       environment.systemPackages = with pkgs; [
-        k3s-package
         unstable.kubectl
         ciliumPythonEnv
       ];
+
       networking.firewall.allowedTCPPorts = [
         6443 # KubeApi (TCP)
+        2379 # etcd clients
+        2380 # etcd peers
       ];
+
       systemd.tmpfiles.rules =
         [
           "d /var/lib/rancher/k3s/server/manifests 0775 root root -"
@@ -122,13 +125,14 @@ in {
           "L+ /var/lib/rancher/k3s/server/manifests/kube-vip-1-ds.yaml - - - - ${kubeVipDaemonSet}"
         ]
         ++ (
-          if cfg.cilium.enable
+          if cfg.ciliumBootstrap.enable
           then [
             "L /etc/rancher/custom/custom-cilium-helmchart.yaml - - - - ${ciliumInitHelmchart}"
           ]
           else []
         );
-      systemd.services.cilium-bootstrap = mkIf cfg.cilium.enable {
+
+      systemd.services.cilium-bootstrap = mkIf cfg.ciliumBootstrap.enable {
         after = ["k3s.service"];
         description = "Bootstrap Cilium";
         requires = ["k3s.service"];

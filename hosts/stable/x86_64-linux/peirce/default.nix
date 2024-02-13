@@ -5,8 +5,8 @@
   inputs,
   ...
 }: let
-  hn = "ibnsina";
-  machine-id = "0cbc5a0908b84c809b0d02f64837ec05";
+  hn = "peirce";
+  machine-id = "990ad480d2bf4eacb5d0086ab46ea3f9";
   defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
   k3s-main = builtins.fromJSON (builtins.readFile ../../../../secrets/k3s-main.secrets);

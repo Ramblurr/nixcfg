@@ -3,9 +3,11 @@
 set -eux -o pipefail
 shopt -s nullglob
 systemctl stop k3s containerd
+if systemctl list-units --full -all | grep -Fq 'cilium-bootstrap.service'; then
+  systemctl stop cilium-bootstrap.service
+fi
 find /sys/fs/cgroup/systemd/system.slice/containerd.service* /sys/fs/cgroup/kubepods* -name cgroup.procs -print0 | \
     xargs -0 -r cat | xargs -r kill -9
 mount | awk '/\/var\/lib\/kubelet|\/run\/netns|\/run\/containerd/ {print $3}' | xargs -r umount
 zfs destroy -R rpool/encrypted/containerd
 rm -rf /persist/var/lib/rancher/* /var/lib/containerd/* /persist/etc/rancher/* /run/containerd/* /persist/var/lib/cni/*
-systemctl start k3s

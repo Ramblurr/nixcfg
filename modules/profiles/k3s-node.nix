@@ -9,6 +9,7 @@
 with lib;
 with lib.my; let
   cfg = config.modules.profiles.k3s-node;
+  cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in {
   options.modules.profiles.k3s-node = {
     enable = mkBoolOpt false;
@@ -21,17 +22,17 @@ in {
       default = {};
       description = "User config.";
     };
-    server.enable = mkBoolOpt false;
-    agent.enable = mkBoolOpt false;
     clusterSettings = mkOption {
       type = types.attrs;
-      default = {
-        k3s-token = mkStrOpt "";
-      };
+      description = "Cluster and node settings";
     };
   };
   config = let
     nodeSettings = cfg.clusterSettings.servers.${cfg.hostname};
+    bootstrapNode = cfg.clusterSettings.bootstrapNode;
+    bootstrapNodeAddr = cidrToIp cfg.clusterSettings.servers.${bootstrapNode}.mgmtCIDR;
+    bootstrapEnable = nodeSettings.bootstrapEnable or false;
+    isControlPlane = nodeSettings.isControlPlane or false;
   in
     mkIf cfg.enable {
       ###########
@@ -77,13 +78,22 @@ in {
         };
         server = {
           smtp-external-relay.enable = false;
-          k3s-server = mkIf cfg.server.enable {
+          k3s-server = mkIf isControlPlane {
             enable = true;
-            cilium.enable = true;
+            ciliumBootstrap.enable = bootstrapEnable;
             endpointVip = cfg.clusterSettings.endpointVip;
             clusterName = cfg.clusterSettings.clusterName;
-            nodeIp = nodeSettings.nodeIp;
-            bootstrapEnable = nodeSettings.bootstrapEnable;
+            nodeIp = cidrToIp nodeSettings.mgmtCIDR;
+            bootstrapEnable = bootstrapEnable;
+            bootstrapAddr =
+              if bootstrapEnable
+              then ""
+              else "https://${bootstrapNodeAddr}:6443";
+          };
+          k3s-agent = mkIf (!isControlPlane) {
+            enable = true;
+            serverAddr = "https://${bootstrapNodeAddr}:6443";
+            nodeIp = cidrToIp nodeSettings.mgmtCIDR;
           };
         };
         # vpn.tailscale.enable = true;
@@ -139,7 +149,7 @@ in {
       environment.etc."k3s-token" = {
         user = "root";
         mode = "0600";
-        text = cfg.clusterSettings.k3s-token;
+        text = cfg.clusterSettings.k3sToken;
       };
 
       environment.persistence."/persist" = {
@@ -229,16 +239,16 @@ in {
         };
 
         networks = {
-          "40-eno1" = {
-            matchConfig.Name = "eno1";
+          "40-${nodeSettings.mgmtIface}" = {
+            matchConfig.Name = "${nodeSettings.mgmtIface}";
             vlan = [
               "vlmgmt9"
               "vlprim4"
             ];
           };
-          "40-enp6s0" = {
-            matchConfig = {Name = "enp6s0";};
-            networkConfig = {Description = "10gbe";};
+          "40-${nodeSettings.dataIface}" = {
+            matchConfig = {Name = "${nodeSettings.dataIface}";};
+            networkConfig = {Description = "physical 10gbe";};
             linkConfig = {MTUBytes = "9000";};
             vlan = [
               "vldata11"
@@ -274,7 +284,7 @@ in {
             matchConfig = {Name = "brmgmt9";};
             networkConfig = {
               DHCP = "no";
-              Address = nodeSettings.mgmtAddress;
+              Address = nodeSettings.mgmtCIDR;
               Gateway = cfg.clusterSettings.mgmtGateway;
               Description = "mgmt VLAN";
             };
@@ -283,7 +293,7 @@ in {
             matchConfig = {Name = "brdata11";};
             networkConfig = {
               DHCP = "no";
-              Address = nodeSettings.dataAddress;
+              Address = nodeSettings.dataCIDR;
               Description = "data 10GbE VLAN";
             };
           };

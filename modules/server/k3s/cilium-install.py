@@ -17,11 +17,12 @@ from pathlib import Path
 
 import kubernetes
 
+from kubernetes.client.rest import ApiException
 from kubernetes.dynamic.exceptions import NotFoundError
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.resource import Resource, ResourceField, ResourceInstance
 
-# import pprint
+import pprint
 
 
 ### CONFIGURATION ###
@@ -37,7 +38,7 @@ BOOLEANS_FALSE = frozenset(("n", "no", "off", "0", "false", "f", 0, 0.0, False))
 MANIFESTS_DIR = "/var/lib/rancher/k3s/server/manifests/"
 INSTALL_MARKER = Path(MANIFESTS_DIR) / ".cilium-install-complete"
 
-# pp = pprint.PrettyPrinter(indent=4)
+pp = pprint.PrettyPrinter(indent=4)
 
 
 def coerce_bool(v: Any) -> bool:
@@ -72,6 +73,24 @@ def status_condition(condition: Dict, resource: ResourceInstance) -> bool:
             return match.reason == condition["reason"]
         return True
     return False
+
+
+def wait_for_api_connection(client, node_name, timeout=360):
+    start_time = time.time()
+    while True:
+        elapsed = time.time() - start_time
+        try:
+            client.read_node(name=node_name)
+            return True
+        except ApiException as e:
+            # pp.pprint(f"ApiException: {e}")
+            print("trying again")
+
+        if elapsed > timeout:
+            print("Timeout reached")
+            return None, elapsed
+
+        time.sleep(1)
 
 
 def waiter(client, namespace, kind, resource_name, condition, timeout=360):
@@ -115,11 +134,6 @@ def info(client, namespace, kind, resource_name) -> ResourceInstance:
 
 
 def wait_for_cilium_installed(client):
-    cilium_helmchart = info(client, "kube-system", "HelmChart", "cilium")
-    if not cilium_helmchart:
-        print("Cilium helm chart not found. Aborting early.")
-        return True
-
     job, elapsed = waiter(
         client,
         "kube-system",
@@ -135,9 +149,13 @@ def wait_for_cilium_installed(client):
 
 
 def unmanage_cilium(client):
+    print("Fetching HelmChart")
     helmchart_type = fetch_resource_type(client, "kube-system", "HelmChart")
-    if not helmchart_type:
-        print("HelmChart resource type not found")
+
+    try:
+        helmchart_type.get(name="cilium", namespace="kube-system")
+    except NotFoundError:
+        print("HelmChart/cilium not found")
         return False
 
     patch = [
@@ -147,6 +165,8 @@ def unmanage_cilium(client):
             "value": "true",
         }
     ]
+
+    print("Patching HelmChart to be unmanaged")
     helmchart_type.patch(
         body=patch,
         name="cilium",
@@ -154,20 +174,12 @@ def unmanage_cilium(client):
         content_type="application/json-patch+json",
     )
 
-    sleep(5)
-
-    cilium_helmchart = fetch(client, "kube-system", "HelmChart", "cilium")
-    if not cilium_helmchart:
-        print("HelmChart/cilium not found (ns=kube-system)")
-        return False
-    helmchart_type.patch(
-        body=patch,
-        name="cilium",
-        namespace="kube-system",
-        content_type="application/json-patch+json",
-    )
+    print("Waiting a bit")
+    time.sleep(5)
 
     helmchart_type.delete(name="cilium", namespace="kube-system")
+
+    print("Deleted HelmChart")
 
     patch = [{"op": "replace", "path": "/metadata/finalizers", "value": []}]
     helmchart_type.patch(
@@ -176,6 +188,8 @@ def unmanage_cilium(client):
         namespace="kube-system",
         content_type="application/json-patch+json",
     )
+
+    print("Force Deleted HelmChart")
     return True
 
 
@@ -196,21 +210,14 @@ def cleanup_custom_manifests(client, custom_manifests, directory):
             print(f"Deleting Addon/{addon.metadata.name} (ns=kube-system) ")
 
 
-def wait_for_node(client, nodename, timeout=360):
-    condition = {"type": "Ready", "status": "True"}
-    node, elapsed = waiter(client, "kube-system", "Node", nodename, condition, timeout)
-    if not node:
-        print(f"Node/{NODENAME} not found")
-        return None
-    return node
-
-
 def check_cilium_exists(client):
-    ds = fetch_resource_type(client, "kube-system", "DaemonSet")
-    cilium = ds.get(name="cilium", namespace="kube-system")
-    if not cilium:
+    try:
+        ds = fetch_resource_type(client, "kube-system", "DaemonSet")
+        cilium = ds.get(name="cilium", namespace="kube-system")
+    except NotFoundError:
         print("DaemonSet/cilium not found (ns=kube-system)")
         return False
+
     return True
 
 
@@ -221,7 +228,7 @@ def install_cilium(client):
         print(f"File {helmchart_file} does not exist")
         sys.exit(1)
     shutil.copy(helmchart_file, "/var/lib/rancher/k3s/server/manifests/")
-    # Give k3s some time to start installing the helm chart
+    print("Waiting a bit to give k3s time to see the manifests")
     time.sleep(5)
 
 
@@ -230,37 +237,35 @@ if __name__ == "__main__":
         print(f"Install marker detected at {INSTALL_MARKER}. Exiting cleanly.")
         sys.exit(0)
 
-    # Give k3s some time to start up
-    time.sleep(10)
-
     kubernetes.config.load_kube_config(KUBECONFIG)
     client = DynamicClient(kubernetes.client.ApiClient())
 
-    ok = wait_for_node(client, NODENAME, timeout=600)
-    if not ok:
-        print(f"Node/{NODENAME} did not become ready after 10 minutes. Aborting.")
-        sys.exit(1)
+    print("Waiting for k8s api connection...")
+    wait_for_api_connection(kubernetes.client.CoreV1Api(), NODENAME)
+    print("Connected!")
 
     cilium_exists = check_cilium_exists(client)
     if not cilium_exists:
         print("Cilium does not appear to exist, installing the HelmChart")
         install_cilium(client)
+        if not wait_for_cilium_installed(client):
+            print("Cilium helm manifest was copied, but cilium doesn't seem to exist.")
+            sys.exit(1)
     else:
         print(
             "Cilium appears to already be installed. Continuing to ensure it is is unmanaged."
         )
 
-    ok = wait_for_cilium_installed(client)
+    ok = unmanage_cilium(client)
     if ok:
-        ok = unmanage_cilium(client)
-        if not ok:
-            print("Could not unmanage cilium successfully")
-            sys.exit(1)
+        print("Cilium installed and unmanaged!")
     else:
         if cilium_exists:
             print("Cilium is running and has already been unmanaged")
-        print("Cilium did not install successfully")
-        sys.exit(1)
+        else:
+            print("Cilium could not be unmanaged.. something is wrong")
+            sys.exit(1)
 
     cleanup_custom_manifests(client, ["custom-cilium-helmchart.yaml"], MANIFESTS_DIR)
     INSTALL_MARKER.touch()
+    print("Complete.")
