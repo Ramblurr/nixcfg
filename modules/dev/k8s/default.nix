@@ -28,6 +28,7 @@ in {
         k9s
         kubernetes-helm
         kubectl
+        kubeconform
         krew
         kustomize
         cilium-cli

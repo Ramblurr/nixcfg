@@ -215,3 +215,63 @@ tasks:
           BUILD_HOST: ibnsina
           TARGET_HOST: ibnsina
           FLAKE_URI: .#ibnsina
+
+  build:debord:
+    desc: Build debord
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: debord
+          TARGET_HOST: debord
+          FLAKE_URI: .#debord
+
+  switch:debord:
+    desc: Switch debord
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: debord
+          TARGET_HOST: debord
+          FLAKE_URI: .#debord
+
+  build:dewey:
+    desc: Build dewey
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: dewey
+          TARGET_HOST: dewey
+          FLAKE_URI: .#dewey
+
+  switch:dewey:
+    desc: Switch dewey
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: dewey
+          TARGET_HOST: dewey
+          FLAKE_URI: .#dewey
+
+  build:peirce:
+    desc: Build peirce
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: build
+          BUILD_HOST: peirce
+          TARGET_HOST: peirce
+          FLAKE_URI: .#peirce
+
+  switch:peirce:
+    desc: Switch peirce
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: peirce
+          TARGET_HOST: peirce
+          FLAKE_URI: .#peirce
