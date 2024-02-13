@@ -10,7 +10,6 @@
   # nixosSystem: the flake system builder, accessed from the nixpkgs flake using nixpkgs.lib.nixosSystem
   mkHost = path: {
     nixosSystem,
-    edge,
     unstable,
     system,
     home-manager,
@@ -21,7 +20,6 @@
       inherit system;
       specialArgs = {
         inherit lib inputs;
-        edge = edge;
         unstable = unstable;
       };
       modules =
