@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  edge,
   inputs,
   ...
 }:
@@ -24,8 +23,8 @@ in {
       ...
     } @ hm: {
       home.packages = [
-        edge.logseq
-        #(edge.logseq.override {electron_27 = pkgs.electron_28;})
+        pkgs.logseq
+        #(pkgs.logseq.override {electron_27 = pkgs.electron_28;})
       ];
       persistence = mkIf withImpermanence {
         directories = [

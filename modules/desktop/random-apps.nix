@@ -1,6 +1,5 @@
 {
   options,
-  edge,
   config,
   lib,
   pkgs,

@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-bleeding-edge.url = "github:NixOS/nixpkgs/master";
     nixpkgs-oldstable.url = "github:NixOS/nixpkgs/nixos-23.05";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-23.11";
 
@@ -121,7 +120,6 @@
         nixosSystem = table.nixpkgs.lib.nixosSystem;
         unstable = mkPkgs inputs.nixpkgs system;
         system = system;
-        edge = mkPkgs inputs.nixpkgs-bleeding-edge system;
         home-manager = table.home-manager;
         overlays = allOverlays;
       };
@@ -132,34 +130,6 @@
     nixosConfigurations =
       (mapHosts ./hosts/unstable/x86_64-linux "unstable" "x86_64-linux")
       // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux");
-    #// (mapHosts ./hosts/stable/aarch64-linux "stable" "aarch64-linux");
-    #mapHosts ./hosts/unstable/x86_64-linux
-    #{
-    #  nixpkgs = nixpkgs;
-    #  unstable = nixpkgs;
-    #  edge = inputs.nixpkgs-bleeding-edge;
-    #  system = "x86_64-linux";
-    #  mkPkgs = mkPkgs;
-    #  home-manager = inputs.home-manager;
-    #}
-    #// mapHosts ./hosts/stable/x86_64-linux
-    #{
-    #  nixpkgs = inputs.nixpkgs-stable;
-    #  unstable = nixpkgs;
-    #  edge = inputs.nixpkgs-bleeding-edge;
-    #  system = "x86_64-linux";
-    #  mkPkgs = mkPkgs;
-    #  home-manager = inputs.home-manager-stable;
-    #}
-    #// mapHosts ./hosts/unstable/aarch64-linux
-    #{
-    #  nixpkgs = nixpkgs;
-    #  unstable = nixpkgs;
-    #  edge = inputs.nixpkgs-bleeding-edge;
-    #  system = "aarch64-linux";
-    #  mkPkgs = mkPkgs;
-    #  home-manager = inputs.home-manager-stable;
-    #};
 
     images = {
       ovos-kitchen = (import ./hosts/unstable/aarch64-linux/ovos-kitchen/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;

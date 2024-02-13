@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  edge,
   inputs,
   ...
 }:
@@ -18,15 +17,14 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
-    services.udev.packages = [edge.chrysalis];
+    services.udev.packages = [pkgs.chrysalis];
     home-manager.users."${username}" = {
       pkgs,
       config,
       ...
     } @ hm: {
       home.packages = [
-        # It is a statically linked AppImage, so we always want the latest
-        edge.chrysalis
+        pkgs.chrysalis
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
