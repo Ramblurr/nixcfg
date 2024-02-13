@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  edge,
   inputs,
   ...
 }:
@@ -24,7 +23,7 @@ in {
       ...
     } @ hm: {
       home.packages = [
-        edge.signal-desktop
+        pkgs.signal-desktop
       ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [

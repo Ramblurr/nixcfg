@@ -3,7 +3,6 @@
   config,
   lib,
   pkgs,
-  edge,
   inputs,
   ...
 }:
@@ -24,7 +23,7 @@ in {
       ...
     } @ hm: {
       home.packages = [
-        (edge.element-desktop.override {electron = pkgs.electron_28;})
+        (pkgs.element-desktop.override {electron = pkgs.electron_28;})
       ];
 
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {

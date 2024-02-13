@@ -558,22 +558,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-bleeding-edge": {
-      "locked": {
-        "lastModified": 1706637757,
-        "narHash": "sha256-FDcXdaNEZO6mj4YroXd8gj7AgnHk8uNcV6vB2WpzXJw=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "056a4d8d52b00ac50eb4aacf56ab15e111bea0c1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "master",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1706402708,
@@ -758,7 +742,6 @@
         "nixos-ovos": "nixos-ovos",
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixpkgs": "nixpkgs_2",
-        "nixpkgs-bleeding-edge": "nixpkgs-bleeding-edge",
         "nixpkgs-oldstable": "nixpkgs-oldstable",
         "nixpkgs-stable": "nixpkgs-stable",
         "nixpkgs-wayland": "nixpkgs-wayland",
