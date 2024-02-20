@@ -17,10 +17,15 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    programs._1password = {enable = true;};
+    programs._1password-gui = {
+      enable = true;
+      polkitPolicyOwners = [username];
+    };
     myhm = {
-      # Using flatpak 1password for now because native wayland 1password has a broken clipboard
-      #users.users."${username}".packages = with pkgs; [
-      #  _1password-gui
+      #home.packages = [
+      #  pkgs._1password-gui
+      #  pkgs._1password
       #];
       persistence = mkIf withImpermanence {
         directories = [
