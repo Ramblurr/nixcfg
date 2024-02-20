@@ -37,7 +37,13 @@
     #};
     "s3.data.***REMOVED***" = {
       domain = "s3.data.***REMOVED***";
-      extraDomainNames = ["*.s3.data.***REMOVED***" "minio.data.***REMOVED***"];
+      extraDomainNames = [
+        "*.s3.data.***REMOVED***"
+        "minio.data.***REMOVED***"
+        "*.s3.mgmt.***REMOVED***"
+        "minio.mgmt.***REMOVED***"
+        "s3.mgmt.***REMOVED***"
+      ];
       postRun = "systemctl reload nginx.service";
       group = "nginx";
     };
