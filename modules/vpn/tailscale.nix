@@ -18,7 +18,7 @@ in {
   config = mkIf cfg.enable {
     services.tailscale.enable = lib.mkIf cfg.enable true;
 
-    boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
+    boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkForce true;
 
     networking.firewall.trustedInterfaces = ["tailscale0"];
     systemd.services.tailscaled.serviceConfig.ExecStart = mkIf config.modules.vpn.mullvad.enable [

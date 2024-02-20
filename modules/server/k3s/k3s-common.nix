@@ -34,6 +34,7 @@ in {
 
     environment.systemPackages = [
       k3s-package
+      pkgs.gptfdisk
       (pkgs.writeShellScriptBin "k3s-reset-node" (builtins.readFile ./k3s-reset-node))
     ];
     systemd.services.k3s = {
@@ -47,7 +48,17 @@ in {
       ];
     };
 
+    networking.firewall.allowedTCPPortRanges = [
+      {
+        from = 6800;
+        to = 7300;
+      } # Ceph OSDs
+    ];
     networking.firewall.allowedTCPPorts = [
+      80 # Ceph RGW
+      6789 # Ceph monitor
+      8080 # Ceph dashboard
+      3300 # Ceph monitor
       7472 # MetalLB (TCP+UDP)
       7473 # MetalLB FRR (TCP+UDP)
       7946 # MetalLB (TCP+UDP)

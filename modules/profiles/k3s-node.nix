@@ -122,6 +122,41 @@ in {
       ##############
       services.smartd.enable = true;
 
+      services.prometheus = {
+        exporters = {
+          node = {
+            enable = true;
+            enabledCollectors = ["systemd"];
+            disabledCollectors = ["textfile"];
+          };
+          zfs = {
+            enable = true;
+            port = 9002;
+          };
+          smartctl = {
+            enable = true;
+            port = 9003;
+          };
+        };
+      };
+
+      networking.firewall.allowedTCPPorts = [
+        config.services.prometheus.exporters.node.port
+        config.services.prometheus.exporters.zfs.port
+        config.services.prometheus.exporters.smartctl.port
+        9926 # ceph-exporter
+        9283 # ceph mgr exporter
+        #9080 # csi-rbdplugin-metrics
+        #9081 # csi-cephfsplugin-metrics
+        9962 # cilium agent exporter
+        9963 # cilium operator exporter
+        9965 # cilium hubble exporter
+        10257 # kube-controller-manager exporter
+        2381 # kube-etcd exporter
+        10259 # kube-scheduler exporter
+        9633 # smartctl exporter
+      ];
+
       ##############
       ## Packages ##
       ##############

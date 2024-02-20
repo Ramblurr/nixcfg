@@ -151,6 +151,7 @@ in {
   services.smartd.enable = true;
   environment.systemPackages = with pkgs; [
     mktorrent
+    tcpdump
     python311
     dosfstools
     smartmontools
