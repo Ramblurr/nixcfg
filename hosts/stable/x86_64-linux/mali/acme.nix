@@ -37,7 +37,13 @@
     #};
     "s3.data.socozy.casa" = {
       domain = "s3.data.socozy.casa";
-      extraDomainNames = ["*.s3.data.socozy.casa" "minio.data.socozy.casa"];
+      extraDomainNames = [
+        "*.s3.data.socozy.casa"
+        "minio.data.socozy.casa"
+        "*.s3.mgmt.socozy.casa"
+        "minio.mgmt.socozy.casa"
+        "s3.mgmt.socozy.casa"
+      ];
       postRun = "systemctl reload nginx.service";
       group = "nginx";
     };

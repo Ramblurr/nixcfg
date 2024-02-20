@@ -20,6 +20,7 @@
       # minio s3 endpoint
       "s3.data.socozy.casa" = {
         useACMEHost = "s3.data.socozy.casa";
+        serverAliases = ["s3.mgmt.socozy.casa"];
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:9000";
@@ -43,10 +44,14 @@
           client_max_body_size 0;
           # To disable buffering
           proxy_buffering off;
+          allow 10.9.10.0/23;
+          allow 10.9.8.0/23;
+          deny all;
         '';
       };
       # minio admin console
       "minio.data.socozy.casa" = {
+        serverAliases = ["minio.mgmt.socozy.casa"];
         forceSSL = true;
         useACMEHost = "s3.data.socozy.casa";
         extraConfig = ''
@@ -57,6 +62,9 @@
           client_max_body_size 0;
           # To disable buffering
           proxy_buffering off;
+          allow 10.9.10.0/23;
+          allow 10.9.8.0/23;
+          deny all;
         '';
         locations = {
           "/" = {
