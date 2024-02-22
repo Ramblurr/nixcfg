@@ -22,6 +22,7 @@ in {
       home.packages = with pkgs; [
         # <rust pkgs>
         bat
+        restic
         du-dust
         fd
         gitui
