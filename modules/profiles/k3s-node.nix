@@ -121,11 +121,12 @@ in {
       ## Services ##
       ##############
       services.smartd.enable = true;
+      services.rpcbind.enable = true;
 
       services.prometheus = {
         exporters = {
           node = {
-            enable = true;
+            enable = false;
             enabledCollectors = ["systemd"];
             disabledCollectors = ["textfile"];
           };
@@ -134,7 +135,7 @@ in {
             port = 9002;
           };
           smartctl = {
-            enable = true;
+            enable = false;
             port = 9003;
           };
         };
@@ -168,6 +169,7 @@ in {
         vifm
         yq-go
         jq
+        python311
 
         fluxcd
         kubectl
