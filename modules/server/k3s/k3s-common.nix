@@ -34,6 +34,8 @@ in {
 
     environment.systemPackages = [
       k3s-package
+      pkgs.nfs-utils
+      pkgs.cryptsetup
       pkgs.gptfdisk
       (pkgs.writeShellScriptBin "k3s-reset-node" (builtins.readFile ./k3s-reset-node))
     ];
@@ -74,6 +76,8 @@ in {
       hideMounts = true;
       directories = [
         "/var/lib/rancher"
+        "/var/lib/kubelet"
+        "/var/lib/containerd"
         "/etc/rancher"
         "/var/lib/cni"
         "/var/openebs"
@@ -82,8 +86,10 @@ in {
       ];
     };
     systemd.tmpfiles.rules = mkIf withImpermanence [
+      "d /persist/var/lib/containerd 755 root root"
       "d /persist/var/lib/rancher 755 root root"
       "d /persist/var/lib/cni 755 root root"
+      "d /persist/var/lib/kubelet 755 root root"
       "d /persist/etc/rancher 755 root root"
       "d /persist/var/openebs 755 root root"
     ];
