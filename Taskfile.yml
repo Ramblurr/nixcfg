@@ -32,6 +32,11 @@ tasks:
     cmds:
       - nixos-rebuild --fast --use-remote-sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}}
 
+  nixos-rebuild-local-root:
+    internal: true
+    cmds:
+      - nixos-rebuild --fast  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace
+
   nixos-rebuild-local:
     internal: true
     cmds:
@@ -89,15 +94,16 @@ tasks:
   test:vpn:
     desc: Test vpn
     cmds:
-      - task: nixos-rebuild-local
+      - task: nixos-rebuild-local-root
         vars:
           ACTION: test
           TARGET_HOST: vpn.socozy.casa
           FLAKE_URI: .#vpn
+
   build:vpn:
     desc: Build vpn
     cmds:
-      - task: nixos-rebuild-local
+      - task: nixos-rebuild-local-root
         vars:
           ACTION: build
           TARGET_HOST: ramblurr@vpn.socozy.casa
@@ -106,7 +112,7 @@ tasks:
   switch:vpn:
     desc: Switch vpn
     cmds:
-      - task: nixos-rebuild-local
+      - task: nixos-rebuild-local-root
         vars:
           ACTION: switch
           TARGET_HOST: root@100.95.47.3 #ramblurr@vpn.socozy.casa
