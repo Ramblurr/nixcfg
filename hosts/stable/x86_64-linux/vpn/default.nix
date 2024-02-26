@@ -84,6 +84,7 @@ in {
 
   networking.firewall.allowedTCPPorts = [19999];
   environment.systemPackages = with pkgs; [
+    tcpdump
     python311
     dosfstools
     ncdu
