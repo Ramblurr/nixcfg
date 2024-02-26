@@ -12,6 +12,7 @@ with lib.my; let
 in {
   options.modules.server.k3s-agent = {
     enable = mkBoolOpt false;
+    started = mkBoolOpt true;
     tokenFile = mkStrOpt "/etc/k3s-token";
     serverAddr = mkStrOpt "";
     nodeIp = mkStrOpt "";
@@ -29,7 +30,7 @@ in {
     mkIf cfg.enable {
       modules.server.k3s-common.enable = true;
       services.k3s = {
-        enable = true;
+        enable = cfg.started;
         role = "agent";
         serverAddr = cfg.serverAddr;
         tokenFile = cfg.tokenFile;

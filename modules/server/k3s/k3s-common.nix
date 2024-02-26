@@ -52,6 +52,11 @@ in {
 
     networking.firewall.allowedTCPPortRanges = [
       {
+        from = 2379;
+        to = 2380;
+      } # cilium etcd access
+
+      {
         from = 6800;
         to = 7300;
       } # Ceph OSDs
@@ -67,12 +72,23 @@ in {
       7946 # MetalLB (TCP+UDP)
       10250 # K3s Metrics Server (TCP)
       10254 # MetalLB Metrics Export (TCP)
+      4240 # cilium healthcheck
+      4244 # cilium hubble server
+      4245 # cilium hubble relay
+      4250 # cilium mutual auth
+      4251 # cilium spire agent healthcheck
+      9962 # cilium-agent Prometheus metrics
+      9963 # cilium-operator Prometheus metrics
+      9964 # cilium-envoy Prometheus metrics
     ];
     networking.firewall.allowedUDPPorts = [
       7472 # MetalLB (TCP+UDP)
       7473 # MetalLB FRR (TCP+UDP)
       7946 # MetalLB (TCP+UDP)
+      8472 # cilium  VXLAN
+      51871 # WireGuard encryption tunnel endpoint
     ];
+
     environment.etc = {
       "rancher/k3s/registries.yaml" = {
         source = ./registries.yaml;
