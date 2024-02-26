@@ -28,6 +28,8 @@ in {
           pkgs.my.muse-sounds-manager
           musescore
           pavucontrol
+          freecad
+          prusa-slicer
           brightnessctl
           virt-viewer
           evince
