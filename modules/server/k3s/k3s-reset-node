@@ -88,22 +88,20 @@ do_unmount_and_remove() {
     set -x
 }
 
-ip netns show 2>/dev/null | grep cni- | xargs -r -t -n 1 ip netns delete
+ip netns show 2>/dev/null | grep cni- | awk '{print $1}' | xargs -r -t -n 1 ip netns delete
 ip link delete cilium_net
 
 
 systemctl reset-failed
-systemctl disable k3s containerd
 systemctl daemon-reload
 
 echo "Killing all containers"
 find /sys/fs/cgroup/system.slice/containerd.service* -name cgroup.procs -print0 | xargs -0 -r cat | xargs -r kill -9
 find /sys/fs/cgroup/kubepods* -name cgroup.procs -print0 | xargs -0 -r cat | xargs -r kill -9
 sleep 1
-#killall -9 containerd-shim-runc-v2
+killall -9 containerd-shim-runc-v2
 sleep 1
 echo "Removing mounts"
-mount | awk '/\/var\/lib\/kubelet|\/run\/k3s|\/run\/netns|\/run\/containerd/ {print $3}' | xargs -r umount
 
 
 do_unmount_and_remove '/run/k3s'
@@ -111,6 +109,8 @@ do_unmount_and_remove '/var/lib/rancher/k3s'
 do_unmount_and_remove '/var/lib/kubelet/pods'
 do_unmount_and_remove '/var/lib/kubelet/plugins'
 do_unmount_and_remove '/run/netns/cni-'
+
+mount | awk '/\/var\/lib\/kubelet|\/run\/k3s|\/run\/netns|\/run\/containerd/ {print $3}' | xargs -P 10 -r umount
 
 
 echo "Destroying containerd zfs dataset"
