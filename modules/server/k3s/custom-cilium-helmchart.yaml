@@ -8,11 +8,13 @@ spec:
   repo: https://helm.cilium.io/
   chart: cilium
   # renovate: datasource=helm depName=cilium repository=https://helm.cilium.io
-  version: 1.15.0
+  version: 1.15.1
   targetNamespace: kube-system
   bootstrap: true
   valuesContent: |-
     autoDirectNodeRoutes: true
+    bgpControlPlane:
+      enabled: true
     bpf:
       masquerade: true
     cgroup:
@@ -25,8 +27,8 @@ spec:
     containerRuntime:
       integration: containerd
       socketPath: /var/run/k3s/containerd/containerd.sock
-    devices:
-      - @routingIface@
+    enableRuntimeDeviceDetection: true
+    devices: @ciliumDevices@
     endpointRoutes:
       enabled: true
     hubble:
@@ -39,7 +41,7 @@ spec:
     kubeProxyReplacement: true
     kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
     l2announcements:
-      enabled: true
+      enabled: false
     loadBalancer:
       algorithm: maglev
       mode: dsr

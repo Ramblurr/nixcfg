@@ -81,6 +81,11 @@ in {
           k3s-server = mkIf isControlPlane {
             enable = true;
             ciliumBootstrap.enable = bootstrapEnable;
+            ciliumDevices = [
+              "brmgmt9"
+              "brdata11"
+              "brprim4"
+            ];
             endpointVip = cfg.clusterSettings.endpointVip;
             clusterName = cfg.clusterSettings.clusterName;
             nodeIp = cidrToIp nodeSettings.mgmtCIDR;
@@ -171,6 +176,7 @@ in {
         jq
         python311
 
+        tcpdump
         fluxcd
         kubectl
         cilium-cli

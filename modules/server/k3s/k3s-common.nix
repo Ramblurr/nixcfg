@@ -61,6 +61,7 @@ in {
       6789 # Ceph monitor
       8080 # Ceph dashboard
       3300 # Ceph monitor
+      5001 # k3s embedded container registry
       7472 # MetalLB (TCP+UDP)
       7473 # MetalLB FRR (TCP+UDP)
       7946 # MetalLB (TCP+UDP)
@@ -72,6 +73,12 @@ in {
       7473 # MetalLB FRR (TCP+UDP)
       7946 # MetalLB (TCP+UDP)
     ];
+    environment.etc = {
+      "rancher/k3s/registries.yaml" = {
+        source = ./registries.yaml;
+        mode = "0600";
+      };
+    };
     environment.persistence."/persist" = mkIf withImpermanence {
       hideMounts = true;
       directories = [
