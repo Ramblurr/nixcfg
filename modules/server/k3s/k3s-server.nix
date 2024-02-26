@@ -33,7 +33,7 @@ with lib.my; let
         src = ./custom-cilium-helmchart.yaml;
         clusterCIDR = cfg.clusterCIDR;
         clusterName = cfg.clusterName;
-        routingIface = cfg.routingIface;
+        devices = builtins.toJSON (cfg.ciliumDevices);
       }
     );
   };
@@ -62,7 +62,10 @@ in {
     clusterName = mkStrOpt "home-kubernetes";
     endpointVip = mkStrOpt "";
     nodeIp = mkStrOpt "";
-    routingIface = mkStrOpt "brmgmt9";
+    ciliumDevices = mkOption {
+      type = types.listOf types.str;
+      default = [];
+    };
   };
   config = let
     disabledServices = ["flannel" "local-storage" "metrics-server" "servicelb" "traefik"];
@@ -74,7 +77,7 @@ in {
       "--node-label \"k3s-upgrade=false\""
       "--disable-cloud-controller"
       "--disable-kube-proxy"
-      #"--embedded-registry" # TODO: enable once 1.29.1 drops
+      "--embedded-registry"
       "--etcd-expose-metrics"
       "--disable-network-policy"
       "--kube-apiserver-arg anonymous-auth=true"
