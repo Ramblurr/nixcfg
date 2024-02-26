@@ -80,6 +80,7 @@ in {
           smtp-external-relay.enable = false;
           k3s-server = mkIf isControlPlane {
             enable = true;
+            started = true;
             ciliumBootstrap.enable = bootstrapEnable;
             ciliumDevices = [
               "brmgmt9"
@@ -97,6 +98,7 @@ in {
           };
           k3s-agent = mkIf (!isControlPlane) {
             enable = true;
+            started = true;
             serverAddr = "https://${bootstrapNodeAddr}:6443";
             nodeIp = cidrToIp nodeSettings.mgmtCIDR;
           };

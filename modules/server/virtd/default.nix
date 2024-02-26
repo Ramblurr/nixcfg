@@ -36,7 +36,7 @@ in {
       };
     };
   };
-  config = {
+  config = mkIf cfg.enable {
     assertions = [
       {
         assertion = config.modules.impermanence.enable;
