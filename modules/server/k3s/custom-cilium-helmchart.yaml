@@ -15,6 +15,7 @@ spec:
     autoDirectNodeRoutes: true
     bgpControlPlane:
       enabled: true
+
     bpf:
       masquerade: true
     cgroup:

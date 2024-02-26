@@ -33,7 +33,7 @@ with lib.my; let
         src = ./custom-cilium-helmchart.yaml;
         clusterCIDR = cfg.clusterCIDR;
         clusterName = cfg.clusterName;
-        devices = builtins.toJSON (cfg.ciliumDevices);
+        ciliumDevices = builtins.toJSON (cfg.ciliumDevices);
       }
     );
   };
@@ -53,6 +53,7 @@ with lib.my; let
 in {
   options.modules.server.k3s-server = {
     enable = mkBoolOpt false;
+    started = mkBoolOpt true;
     bootstrapEnable = mkBoolOpt false;
     bootstrapAddr = mkStrOpt "";
     ciliumBootstrap.enable = mkBoolOpt false;
@@ -101,7 +102,7 @@ in {
     mkIf cfg.enable {
       modules.server.k3s-common.enable = true;
       services.k3s = {
-        enable = true;
+        enable = cfg.started;
         role = "server";
         serverAddr = cfg.bootstrapAddr;
         clusterInit = cfg.bootstrapEnable;
