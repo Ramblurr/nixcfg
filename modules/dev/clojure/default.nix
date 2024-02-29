@@ -24,7 +24,7 @@ in {
         openjfx = javaPackages.openjfx19;
         gtk3 = gtk3;
         libXxf86vm = xorg.libXxf86vm;
-        jogl_2_4_0 = javaPackages.jogl_2_4_0;
+        #jogl_2_4_0 = javaPackages.jogl_2_4_0;
       };
     in {
       home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
@@ -40,7 +40,7 @@ in {
         babashka
         polylith
         javaPackages.openjfx19
-        javaPackages.jogl_2_4_0
+        #javaPackages.jogl_2_4_0
         gtk3
         xorg.libXxf86vm
         pkgs.my.bootleg
