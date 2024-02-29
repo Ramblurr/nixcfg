@@ -63,23 +63,24 @@ in {
     ];
     networking.firewall.allowedTCPPorts = [
       80 # Ceph RGW
-      6789 # Ceph monitor
-      8080 # Ceph dashboard
       3300 # Ceph monitor
-      5001 # k3s embedded container registry
-      7472 # MetalLB (TCP+UDP)
-      7473 # MetalLB FRR (TCP+UDP)
-      7946 # MetalLB (TCP+UDP)
-      10250 # K3s Metrics Server (TCP)
-      10254 # MetalLB Metrics Export (TCP)
       4240 # cilium healthcheck
       4244 # cilium hubble server
       4245 # cilium hubble relay
       4250 # cilium mutual auth
       4251 # cilium spire agent healthcheck
+      5001 # k3s embedded registry p2p
+      6443 # k3s embedded registry local OCI registry
+      6789 # Ceph monitor
+      7472 # MetalLB (TCP+UDP)
+      7473 # MetalLB FRR (TCP+UDP)
+      7946 # MetalLB (TCP+UDP)
+      8080 # Ceph dashboard
       9962 # cilium-agent Prometheus metrics
       9963 # cilium-operator Prometheus metrics
       9964 # cilium-envoy Prometheus metrics
+      10250 # K3s Metrics Server (TCP)
+      10254 # MetalLB Metrics Export (TCP)
     ];
     networking.firewall.allowedUDPPorts = [
       7472 # MetalLB (TCP+UDP)
