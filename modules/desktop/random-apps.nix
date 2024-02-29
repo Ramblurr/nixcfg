@@ -25,10 +25,11 @@ in {
         ]))
         (with pkgs; [
           appimage-run
-          pkgs.my.muse-sounds-manager
-          musescore
+          #pkgs.my.muse-sounds-manager
+          #musescore
           pavucontrol
           freecad
+          owncloud-client
           prusa-slicer
           brightnessctl
           virt-viewer
