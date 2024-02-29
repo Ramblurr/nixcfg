@@ -154,8 +154,8 @@ in {
         config.services.prometheus.exporters.smartctl.port
         9926 # ceph-exporter
         9283 # ceph mgr exporter
-        #9080 # csi-rbdplugin-metrics
-        #9081 # csi-cephfsplugin-metrics
+        9080 # csi-rbdplugin-metrics
+        9081 # csi-cephfsplugin-metrics
         9962 # cilium agent exporter
         9963 # cilium operator exporter
         9965 # cilium hubble exporter
