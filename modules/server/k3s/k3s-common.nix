@@ -61,6 +61,12 @@ in {
         to = 7300;
       } # Ceph OSDs
     ];
+    networking.firewall.allowedUDPPortRanges = [
+      {
+        from = 33434;
+        to = 34000;
+      } # traceroute
+    ];
     networking.firewall.allowedTCPPorts = [
       80 # Ceph RGW
       3300 # Ceph monitor

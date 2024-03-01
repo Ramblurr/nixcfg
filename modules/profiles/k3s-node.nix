@@ -319,11 +319,22 @@ in {
           };
 
           "50-brprim4" = {
+            # My k3s nodes do not have an ip address on the primary vlan
+            # however VMs and k8s workloads running on these nodes might want to expose a service
+            # over this vlan, so we configure the bridge interface anyways
             matchConfig = {Name = "brprim4";};
             networkConfig = {
               DHCP = "no";
-              Description = "Bridge for primary vlan, only for VMs.";
+              Description = "Bridge for primary vlan, only for VMs and k8s workloads";
             };
+            # might want this in the future for cilium l2 announcements
+            #routes = [
+            #  {
+            #    routeConfig = {
+            #      Destination = "10.9.4.0/22";
+            #    };
+            #  }
+            #];
           };
           "50-brmgmt9" = {
             matchConfig = {Name = "brmgmt9";};
