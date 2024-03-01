@@ -19,7 +19,7 @@ in {
   config = mkIf cfg.enable {
     myhm = {
       home.packages = [
-        owncloud-client
+        pkgs.owncloud-client
       ];
       persistence = mkIf withImpermanence {
         directories = [
