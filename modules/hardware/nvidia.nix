@@ -23,6 +23,7 @@ in {
         driSupport32Bit = true;
       };
       nvidia = {
+        nvidiaSettings = true;
         modesetting.enable = true; # Required for wayland
         # options: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/os-specific/linux/nvidia-x11/default.nix
         # package = config.boot.kernelPackages.nvidiaPackages.vulkan_beta;
