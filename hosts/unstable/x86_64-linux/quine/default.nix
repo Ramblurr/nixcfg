@@ -117,6 +117,11 @@ in {
     };
     services = {
       docker.enable = true;
+      github-runner = {
+        enable = true;
+        runnerName = hn;
+        url = "https://github.com/Ramblurr/containers";
+      };
       docker.enableOnBoot = false;
       podman.enable = true;
       microsocks.enable = true;
