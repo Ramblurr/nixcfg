@@ -89,6 +89,7 @@ in {
         kitty.enable = true;
         logseq.enable = true;
         nextcloud.enable = true;
+        owncloud.enable = true;
         nheko.enable = true;
         obs.enable = true;
         onepassword.enable = true;
