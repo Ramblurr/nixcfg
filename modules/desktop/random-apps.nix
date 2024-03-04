@@ -29,7 +29,6 @@ in {
           #musescore
           pavucontrol
           freecad
-          owncloud-client
           prusa-slicer
           brightnessctl
           virt-viewer
