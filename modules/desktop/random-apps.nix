@@ -30,6 +30,8 @@ in {
           pavucontrol
           freecad
           prusa-slicer
+          eagle
+          xcircuit
           brightnessctl
           virt-viewer
           evince
