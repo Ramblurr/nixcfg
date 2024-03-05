@@ -26,6 +26,10 @@ in {
     device = "10.9.10.10:/mnt/tank2/media/music/mine";
     fsType = "nfs";
   };
+  fileSystems."/mnt/roon/audiobooks" = {
+    device = "10.9.10.10:/mnt/tank2/media/audiobooks";
+    fsType = "nfs";
+  };
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
