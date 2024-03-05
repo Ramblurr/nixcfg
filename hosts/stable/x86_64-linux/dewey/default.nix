@@ -14,6 +14,7 @@ in {
   imports = [
     ./hardware.nix
     ./disk-config.nix
+    ./roon-server.nix
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = machine-id;
