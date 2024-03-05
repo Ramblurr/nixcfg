@@ -14,6 +14,23 @@ in {
     enable = true;
     openFirewall = true;
   };
+
+  networking.firewall.allowedTCPPorts = [
+    33399 # Roon ARC
+  ];
+  networking.firewall.allowedUDPPorts = [
+    33399 # Roon ARC
+  ];
+  systemd.services.roon-server = {
+    serviceConfig = {
+      IOWeight = "200"; # default, when unspecified is 100
+      OOMScoreAdjust = "-500"; # default, when unspecified is 0. lower means less likely to be oom-killed
+      Nice = "-2"; # default, when unspecified is 0
+      CPUWeight = "300"; # default, when unspecified is 100
+      MemoryLow = "2G";
+      MemoryHigh = "8G";
+    };
+  };
   fileSystems."/mnt/roon/backup" = {
     device = "10.9.10.10:/mnt/tank2/backups/roon";
     fsType = "nfs";
