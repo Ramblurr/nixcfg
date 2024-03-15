@@ -41,6 +41,18 @@ in {
       HASS_DEVICE_NAME=quine
     '';
   };
+  sops.secrets."github_token" = {
+    owner = "ramblurr";
+    mode = "0400";
+  };
+
+  sops.templates."nix.conf".owner = "ramblurr";
+  sops.templates."nix.conf".content = ''
+    access-tokens = github.com=${config.sops.placeholder."github_token"}
+  '';
+  nix.extraOptions = ''
+    !include ${config.sops.templates."nix.conf".path}
+  '';
   modules = {
     desktop = {
       enable = true;
