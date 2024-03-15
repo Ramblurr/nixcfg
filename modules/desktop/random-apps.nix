@@ -48,7 +48,8 @@ in {
           inkscape
           krita
           meld
-          gimp-with-plugins
+          #gimp-with-plugins
+          gimp
           pdfgrep
           nerdfix
           kid3

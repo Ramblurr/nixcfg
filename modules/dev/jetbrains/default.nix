@@ -27,7 +27,7 @@ in {
         jetbrains.idea-ultimate
         jetbrains.datagrip
         jetbrains.gateway
-        #jetbrains.clion
+        jetbrains.clion
         #dotnet-sdk_7
         #dotnet-sdk
         #msbuild

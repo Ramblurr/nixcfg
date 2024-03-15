@@ -170,27 +170,27 @@ function auto_connect_ports(args)
 end
 
 -- Auto connect the stereo null sink to the jack_sink for when the jack server gets started
-auto_connect_ports {
-  output = Constraint { "port.alias", "matches", "RoonLoopback Audio Out:*" },
-  input = Constraint { "port.alias", "matches", "VX1:*" },
-
-  connect = {
-    ["FL"] = "FL",
-    ["FR"] = "FR"
-  },
-
-  -- Don't connect to speakers if there are bluetooth headphones plugged in
-  --unless = Constraint { "object.path", "matches", "bluez_output.*" }
-}
-auto_connect_ports {
-  output = Constraint { "port.alias", "matches", "RoonLoopback Audio Out:*" },
-  input = Constraint { "port.alias", "matches", "Schiit *:*" },
-
-  connect = {
-    ["FL"] = "FL",
-    ["FR"] = "FR"
-  },
-}
+--auto_connect_ports {
+--  output = Constraint { "port.alias", "matches", "RoonLoopback Audio Out:*" },
+--  input = Constraint { "port.alias", "matches", "VX1:*" },
+--
+--  connect = {
+--    ["FL"] = "FL",
+--    ["FR"] = "FR"
+--  },
+--
+--  -- Don't connect to speakers if there are bluetooth headphones plugged in
+--  --unless = Constraint { "object.path", "matches", "bluez_output.*" }
+--}
+--auto_connect_ports {
+--  output = Constraint { "port.alias", "matches", "RoonLoopback Audio Out:*" },
+--  input = Constraint { "port.alias", "matches", "Schiit *:*" },
+--
+--  connect = {
+--    ["FL"] = "FL",
+--    ["FR"] = "FR"
+--  },
+--}
 
 
 -- Auto connect the stereo null sink to bluetooth headphones
