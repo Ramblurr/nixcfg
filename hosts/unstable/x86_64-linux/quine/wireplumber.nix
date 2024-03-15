@@ -28,7 +28,7 @@
           },
         },
         apply_properties = {
-          ["node.description"] = "KEF LSX"
+          ["node.description"] = "KEF LSX",
           ["audio.allowed-rates"]    = "44100,48000,88200,96000,176400,192000",
         },
       }
@@ -109,14 +109,14 @@
       '';
     };
 
-    xdg.configFile."pipewire/pipewire.conf.d/90-roon-loopback.conf" = {
-      source = ./pipewire/90-roon-loopback.conf;
-    };
-    xdg.configFile."wireplumber/main.lua.d/91-user-scripts.lua" = {
-      source = ./wireplumber/91-user-scripts.lua;
-    };
-    xdg.configFile."wireplumber/scripts/auto-connect-ports.lua" = {
-      source = ./wireplumber/auto-connect-ports.lua;
-    };
+    #xdg.configFile."pipewire/pipewire.conf.d/90-roon-loopback.conf" = {
+    #  source = ./pipewire/90-roon-loopback.conf;
+    #};
+    #xdg.configFile."wireplumber/main.lua.d/91-user-scripts.lua" = {
+    #  source = ./wireplumber/91-user-scripts.lua;
+    #};
+    #xdg.configFile."wireplumber/scripts/auto-connect-ports.lua" = {
+    #  source = ./wireplumber/auto-connect-ports.lua;
+    #};
   };
 }

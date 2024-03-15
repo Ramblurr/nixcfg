@@ -22,26 +22,26 @@
  :nv  "gc"   #'evil-commentary
 
  (:map evil-window-map                  ; prefix "C-w"
-  ;; Navigation
-  "C-h"     #'evil-window-left
-  "C-j"     #'evil-window-down
-  "C-k"     #'evil-window-up
-  "C-l"     #'evil-window-right
-  "C-w"     #'ace-window
-  ;; Swapping windows
-  "H"       #'+evil/window-move-left
-  "J"       #'+evil/window-move-down
-  "K"       #'+evil/window-move-up
-  "L"       #'+evil/window-move-right
-  "C-S-w"   #'ace-swap-window
-  ;; Window undo/redo
+       ;; Navigation
+       "C-h"     #'evil-window-left
+       "C-j"     #'evil-window-down
+       "C-k"     #'evil-window-up
+       "C-l"     #'evil-window-right
+       "C-w"     #'ace-window
+       ;; Swapping windows
+       "H"       #'+evil/window-move-left
+       "J"       #'+evil/window-move-down
+       "K"       #'+evil/window-move-up
+       "L"       #'+evil/window-move-right
+       "C-S-w"   #'ace-swap-window
+       ;; Window undo/redo
                                         ;"u"       #'winner-undo
                                         ;"C-u"     #'winner-undo
                                         ;"C-r"     #'winner-redo
-  "o"       #'doom/window-enlargen
-  ;; Delete window
-  "c"       #'+workspace/close-window-or-workspace
-  "C-C"     #'ace-delete-window)
+       "o"       #'doom/window-enlargen
+       ;; Delete window
+       "c"       #'+workspace/close-window-or-workspace
+       "C-C"     #'ace-delete-window)
 
 
  ;; Highjacks space/backspace to:
@@ -62,17 +62,17 @@
  )
 
 
-(map!
-  :leader
-  (:prefix-map ("a" . "AI/ChatGPT")
-    :desc "Open gptel Buffer" :n "q" #'gptel
-    :desc "Submit prompt to AT" :n "a" #'gptel-send
-    :desc "Send entire buffer to AI" :n "b" #'gptel-ext-send-whole-buffer
-    :desc "Load buffer into session" :n "l" #'gptel-ext-ask-document
-    :desc "Rewrite region" :n "R" #'gptel-ext-rewrite-and-replace
-    :desc "Refactor" :n "r" #'gptel-ext-refactor
-    )
-  )
+;; (map!
+;;   :leader
+;;   (:prefix-map ("a" . "AI/ChatGPT")
+;;     :desc "Open gptel Buffer" :n "q" #'gptel
+;;     :desc "Submit prompt to AT" :n "a" #'gptel-send
+;;     :desc "Send entire buffer to AI" :n "b" #'gptel-ext-send-whole-buffer
+;;     :desc "Load buffer into session" :n "l" #'gptel-ext-ask-document
+;;     :desc "Rewrite region" :n "R" #'gptel-ext-rewrite-and-replace
+;;     :desc "Refactor" :n "r" #'gptel-ext-refactor
+;;     )
+;;   )
 
 
 
@@ -84,4 +84,4 @@
 (map! :nv "ghi" #'er/contract-region)
 
 (map!
-  :n "<f2>" 'flycheck-next-error)
+ :n "<f2>" 'flycheck-next-error)
