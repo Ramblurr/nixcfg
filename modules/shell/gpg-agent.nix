@@ -27,7 +27,7 @@ in {
         maxCacheTtl = 120;
         enableExtraSocket = true;
         enableBashIntegration = true;
-        pinentryFlavor = "qt";
+        pinentryPackage = pkgs.pinentry-qt;
         sshKeys = ["978C4D08058BA26EB97CB51820782DBCACFAACDA"];
       };
       programs.gpg = {

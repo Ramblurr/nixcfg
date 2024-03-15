@@ -37,7 +37,6 @@ in {
     boot = {
       tmp.useTmpfs = mkDefault false;
       tmp.cleanOnBoot = true;
-      zfs.enableUnstable = false;
       zfs.requestEncryptionCredentials = cfg.encrypted;
       zfs.extraPools = cfg.extraPools;
 

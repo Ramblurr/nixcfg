@@ -120,7 +120,7 @@ in {
     services = {
       docker.enable = true;
       github-runner = {
-        enable = true;
+        enable = false;
         runnerName = hn;
         url = "https://github.com/Ramblurr/containers";
       };
@@ -184,6 +184,7 @@ in {
         "flatpak"
         "input"
         "plugdev"
+        "libvirtd"
       ];
     };
     services.borgmatic = {

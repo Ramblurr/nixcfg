@@ -9,7 +9,7 @@
   '';
   services.avahi.enable = true;
   services.roon-bridge = {
-    enable = true;
+    enable = false;
     user = "ramblurr";
     group = "ramblurr";
     openFirewall = true;

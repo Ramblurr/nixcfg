@@ -318,40 +318,45 @@ Null prefix argument turns off the mode."
 (after!
   treemacs (treemacs-follow-mode 1))
 
-(use-package! gptel
+(use-package! chatgpt-shell
   :config
-  (setq-default gptel-model "gpt-4")
-  (setq gptel-model "gpt-4")
-  (setq gptel-directives '((default . "You are a large language model living in Emacs and a helpful coding assistant. Respond concisely.")
-                           (programming . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
-                           (writing . "You are a large language model and a writing assistant. Respond concisely.")
-                           (chat . "You are a large language model and a conversation partner. Respond concisely."))))
-;; source: https://www.armindarvish.com/en/post/use_emacs_as_a_chatgpt_client/
-(defun ad/ai-from-anywhere ()
-  (interactive)
-  (let* ((screen-width (display-pixel-width))
-         (screen-height (display-pixel-height))
-         (frame-width (/ screen-width 3))
-         (frame-height screen-height)
-         (frame-left 0)
-         (frame-top 0)
-         (chat-frame (make-frame `((window-system . x)
-                                   (top . ,frame-top)
-                                   (left . ,frame-left)
-                                   (width . (text-pixels . ,frame-width))
-                                   (heigth . (text-pixels . ,frame-height))
-                                   (name . "MyAI")
-                                   (minibuffer . t)
-                                   ))))
-    (select-frame chat-frame)
-    )
+  (setq chatgpt-shell-openai-key
+        (lambda () (auth-source-pick-first-password :host "api.openai.com"))))
 
-  (setq gptel-model "gpt-4")
-  (add-hook 'gptel-post-response-hook (lambda () (goto-char (point-max))))
-  (gptel "My:AI Chat" gptel-api-key nil)
-  (switch-to-buffer "My:AI Chat")
-  (delete-other-windows)
-  )
+;; (use-package! gptel
+;;   :config
+;;   (setq-default gptel-model "gpt-4")
+;;   (setq gptel-model "gpt-4")
+;;   (setq gptel-directives '((default . "You are a large language model living in Emacs and a helpful coding assistant. Respond concisely.")
+;;                            (programming . "You are a large language model and a careful programmer. Provide code and only code as output without any additional text, prompt or note.")
+;;                            (writing . "You are a large language model and a writing assistant. Respond concisely.")
+;;                            (chat . "You are a large language model and a conversation partner. Respond concisely."))))
+;; source: https://www.armindarvish.com/en/post/use_emacs_as_a_chatgpt_client/
+;; (defun ad/ai-from-anywhere ()
+;;   (interactive)
+;;   (let* ((screen-width (display-pixel-width))
+;;          (screen-height (display-pixel-height))
+;;          (frame-width (/ screen-width 3))
+;;          (frame-height screen-height)
+;;          (frame-left 0)
+;;          (frame-top 0)
+;;          (chat-frame (make-frame `((window-system . x)
+;;                                    (top . ,frame-top)
+;;                                    (left . ,frame-left)
+;;                                    (width . (text-pixels . ,frame-width))
+;;                                    (heigth . (text-pixels . ,frame-height))
+;;                                    (name . "MyAI")
+;;                                    (minibuffer . t)
+;;                                    ))))
+;;     (select-frame chat-frame)
+;;     )
+
+;;   (setq gptel-model "gpt-4")
+;;   (add-hook 'gptel-post-response-hook (lambda () (goto-char (point-max))))
+;;   (gptel "My:AI Chat" gptel-api-key nil)
+;;   (switch-to-buffer "My:AI Chat")
+;;   (delete-other-windows)
+;;   )
 ;; (ad/ai-from-anywhere)
 
 (with-eval-after-load 'tramp
