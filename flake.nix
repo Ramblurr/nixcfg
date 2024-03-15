@@ -7,7 +7,7 @@
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs";
 
-    nixos-raspberrypi-stable.url = "github:ramblurr/nixos-raspberrypi";
+    nixos-raspberrypi-stable.url = "github:ramblurr/nixos-raspberrypi/dev";
     nixos-raspberrypi-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     nixos-ovos.url = "github:ramblurr/ovos-rpi-nixos/dev";
