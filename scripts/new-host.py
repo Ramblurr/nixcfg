@@ -92,9 +92,18 @@ yaml_data = {
 }
 
 if host_path.exists():
+    print()
     print(f"The host config path {host_path} already exists.")
-    print("Aborting")
-    sys.exit(1)
+    print()
+    print(f"")
+    options = ["[y] yes [n] no"]
+    terminal_menu = TerminalMenu(
+        options, title="Would you like to overwrite the existing secrets file?"
+    )
+    menu_entry_index = terminal_menu.show()
+    if menu_entry_index != 0:
+        print("Aborting")
+        sys.exit(1)
 else:
     os.mkdir(host_path)
 
@@ -129,10 +138,15 @@ in {
   environment.etc."machine-id".text = machine-id;
 }
 """
-default_path = host_path / "default.nix"
-with open(default_path, "w") as f:
-    c = default_tmpl.replace("%hostname%", hostname)
-    c = c.replace("%machineid%", machine_id)
-    f.write(c)
 
-print(f"Wrote {default_path}")
+default_path = host_path / "default.nix"
+if default_path.exists():
+    print(f"The default.nix file already exists at {default_path}")
+    print("Not overwriting it")
+else:
+    with open(default_path, "w") as f:
+        c = default_tmpl.replace("%hostname%", hostname)
+        c = c.replace("%machineid%", machine_id)
+        f.write(c)
+
+    print(f"Wrote {default_path}")
