@@ -12,7 +12,6 @@ with lib.my; let
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  imports = [inputs.nix-gaming.nixosModules.steamCompat];
   options.modules.desktop.gaming = {
     enable = mkBoolOpt false;
   };
