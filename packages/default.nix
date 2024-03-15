@@ -16,4 +16,5 @@ in {
   };
   muse-sounds-deb = callPackage ./muse-sounds-deb {inherit pkgs;};
   muse-sounds-manager = callPackage ./muse-sounds-manager {};
+  #pigpio = callPackage ./pigpio {};
 })

@@ -281,3 +281,58 @@ tasks:
           BUILD_HOST: peirce
           TARGET_HOST: peirce
           FLAKE_URI: .#peirce
+
+  build:
+    desc: Build a configuration for a remote
+    summary: |
+      host: the hostname to build (required)
+      flake: the flake name if different from host (optional)
+    requires:
+      vars: ["host"]
+    #silent: true
+    cmds:
+      - task: nixos-rebuild-local
+        vars:
+          ACTION: build
+          TARGET_HOST: "{{.host}}"
+          FLAKE_URI: .#{{.flake | default "{{.host}}"}}
+
+  switch:
+    desc: Switch a configuration for a remote
+    summary: |
+      host: the hostname to build (required)
+      flake: the flake name if different from host (optional)
+    requires:
+      vars: ["host"]
+    #silent: true
+    cmds:
+      - task: nixos-rebuild-local
+        vars:
+          ACTION: switch
+          TARGET_HOST: "{{.host}}"
+          FLAKE_URI: .#{{.flake | default "{{.host}}"}}
+
+  switch-remote:
+    desc: Switch a configuration for a remote
+    summary: |
+      host: the hostname to build (required)
+      flake: the flake name if different from host (optional)
+    requires:
+      vars: ["host"]
+    #silent: true
+    cmds:
+      - task: nixos-rebuild
+        vars:
+          ACTION: switch
+          BUILD_HOST: "{{.host}}"
+          TARGET_HOST: "{{.host}}"
+          FLAKE_URI: .#{{.flake | default "{{.host}}"}}
+
+  image:
+    desc: Build the SD Card image for ovos-kitchen
+    summary: |
+      host: the hostname to build (required)
+    requires:
+      vars: ["host"]
+    cmds:
+      - nix build .#images.{{.host}}
