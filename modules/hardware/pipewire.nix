@@ -50,7 +50,7 @@ with lib.my; let
     ];
   };
 in {
-  imports = [inputs.nix-gaming.nixosModules.pipewireLowLatency];
+  imports = [];
   options.modules.hardware.pipewire = {
     enable = mkBoolOpt false;
     denoise.enable = mkBoolOpt false;
@@ -78,7 +78,6 @@ in {
       pulse.enable = true;
       jack.enable = false;
       wireplumber.enable = true;
-      lowLatency.enable = true;
       audio.enable = true;
     };
 
