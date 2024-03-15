@@ -14,6 +14,7 @@ keys:
       - &peirce age18aeezktqhdqyh90zathz7uea2tqhgh52l2m6v6xjy06s008d69cq4glx7c
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
       - &mill age1gxvdmyxmx4rczdaqaah8ysrwwpcladf9llax5ppleutesrwnxp9qxd4l69
+      - &fairybox age17gsltm4knk7d42nstzl3s07m5g6njvetlmhkmv0p7839afn4f5nqyqkn66
 creation_rules:
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
@@ -96,6 +97,14 @@ creation_rules:
     key_groups:
       - age:
           - *ovos-bedroom
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
+
+  - path_regex: hosts/stable/aarch64-linux/fairybox/.*.sops.*$
+    key_groups:
+      - age:
+          - *fairybox
           - *disaster-recovery
         pgp:
           - *ramblurr
