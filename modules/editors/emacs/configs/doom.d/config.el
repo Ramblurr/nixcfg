@@ -290,6 +290,7 @@ Null prefix argument turns off the mode."
               ("C-SPC" . 'copilot-accept-completion)
               ("C-TAB" . 'copilot-accept-completion-by-word))
   :config
+  (setq copilot-indent-offset-warning-disable t)
   (set-face-foreground 'copilot-overlay-face "pink")
   (customize-set-variable 'copilot-enable-predicates '(evil-insert-state-p))
 
