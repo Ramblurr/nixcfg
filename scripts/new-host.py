@@ -38,13 +38,6 @@ else:
 
 host_path = Path("./hosts") / channel / arch / hostname
 
-if host_path.exists():
-    print(f"The host config path {host_path} already exists.")
-    print("Aborting")
-    sys.exit(1)
-else:
-    os.mkdir(host_path)
-
 root_password = getpass.getpass("Enter root password: ")
 ramblurr_password = getpass.getpass("Enter ramblurr password: ")
 
@@ -97,6 +90,14 @@ yaml_data = {
     "age_key_pub": age_key_pub,
     "machine_id": machine_id,
 }
+
+if host_path.exists():
+    print(f"The host config path {host_path} already exists.")
+    print("Aborting")
+    sys.exit(1)
+else:
+    os.mkdir(host_path)
+
 
 secrets_path = host_path / "secrets.sops.yaml"
 with open(secrets_path, "w") as f:
