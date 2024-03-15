@@ -16,6 +16,12 @@ in {
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = pkgs.system == "x86_64-linux";
+        message = "gaming module requires x86_64 system";
+      }
+    ];
     security.wrappers = {
       gamescope = {
         owner = "root";
@@ -32,53 +38,59 @@ in {
       allowedTCPPorts = [3074];
       allowedUDPPorts = [88 500 3074 2075 3544 4500];
     };
+    services.pipewire = {
+      lowLatency.enable = true;
+    };
     programs = {
-      steam = {
-        enable = true;
-        package = pkgs.steam.override {
-          extraPkgs = pkgs: let
-            fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
-              mkdir -p "$out/share/fonts"
-              font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-              find ${toString (config.fonts.packages)} -regex "$font_regexp" \
-                -exec ln -sf -t "$out/share/fonts" '{}' \;
-            '');
-          in
-            with pkgs; [
-              (fontsPkg pkgs)
-              at-spi2-atk
-              #binutils  # this conflicts with the gcc package
-              fmodex
-              gtk3
-              gtk3-x11
-              harfbuzz
-              icu
-              glxinfo
-              inetutils
-              keyutils
-              libgdiplus
-              libkrb5
-              libpng
-              libpulseaudio
-              libthai
-              libvorbis
-              mono5
-              pango
-              stdenv.cc.cc.lib
-              strace
-              xorg.libXcursor
-              xorg.libXi
-              xorg.libXinerama
-              xorg.libXScrnSaver
-              zlib
-              libunwind # for titanfall 2 Northstart launcher
-            ];
-        };
-        extraCompatPackages = [
-          inputs.nix-gaming.packages.${pkgs.system}.proton-ge
-        ];
-        remotePlay.openFirewall = true;
-      };
+      steam =
+        if pkgs.system == "x86_64-linux"
+        then {
+          enable = true;
+          package = pkgs.steam.override {
+            extraPkgs = pkgs: let
+              fontsPkg = pkgs: (pkgs.runCommand "share-fonts" {preferLocalBuild = true;} ''
+                mkdir -p "$out/share/fonts"
+                font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
+                find ${toString (config.fonts.packages)} -regex "$font_regexp" \
+                  -exec ln -sf -t "$out/share/fonts" '{}' \;
+              '');
+            in
+              with pkgs; [
+                (fontsPkg pkgs)
+                at-spi2-atk
+                #binutils  # this conflicts with the gcc package
+                fmodex
+                gtk3
+                gtk3-x11
+                harfbuzz
+                icu
+                glxinfo
+                inetutils
+                keyutils
+                libgdiplus
+                libkrb5
+                libpng
+                libpulseaudio
+                libthai
+                libvorbis
+                mono5
+                pango
+                stdenv.cc.cc.lib
+                strace
+                xorg.libXcursor
+                xorg.libXi
+                xorg.libXinerama
+                xorg.libXScrnSaver
+                zlib
+                libunwind # for titanfall 2 Northstart launcher
+              ];
+          };
+          extraCompatPackages = [
+            inputs.nix-gaming.packages.${pkgs.system}.proton-ge
+          ];
+          remotePlay.openFirewall = true;
+        }
+        else {};
       gamemode = {
         enable = true;
         enableRenice = true;
