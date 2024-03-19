@@ -4,42 +4,22 @@
   lib,
   inputs,
   ...
-}: let
-  build-overlay = overlay:
-    pkgs.runCommandCC overlay {nativeBuildInputs = [pkgs.dtc];} ''
-      mkdir $out
-      cd $out
-      builddtb() {
-        $CC -x assembler-with-cpp -E $1 -o temp
-        # egrep -v '^#' < temp > temp2
-        dtc temp -o $2
-        rm temp
-        # temp2
-      }
-      builddtb ${./overlays}/${overlay}.dts ${overlay}.dtb
-    '';
-  #ov5647 = build-overlay "ov5647";
-  #disable-bt = build-overlay "disable-bt";
-  #uart0 = build-overlay "uart0";
-  #rpi-ft5406 = build-overlay "rpi-ft5406";
-  #spi0 = build-overlay "spi0";
-  #spi4 = build-overlay "spi4";
-  #spi6 = build-overlay "spi6";
-in {
+}: {
   #raspberry-pi.hardware.hifiberry-dac.enable = false;
   #raspberry-pi.hardware.spi0-1cs.enable = false;
   raspberry-pi.hardware.platform.type = "rpi4";
 
-  raspberry-pi.hardware.apply-overlays-dtmerge.enable = lib.mkForce false;
+  raspberry-pi.hardware.apply-overlays-dtmerge.enable = lib.mkForce true;
   hardware = {
     firmware = [pkgs.wireless-regdb];
     i2c.enable = true;
 
     deviceTree = {
       enable = true;
-      filter = "bcm2711-rpi-4-b.dtb";
+      #filter = "bcm2711-rpi-4-b.dtb";
       overlays = [
         {
+          # only enable 1 chip select pin, gpio 8, leaving the other pin free for gpio
           name = "spi0-0cs.dts";
           dtsText = builtins.readFile ./overlays/spi0-0cs-mainline.dts;
         }

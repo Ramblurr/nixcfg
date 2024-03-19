@@ -10,7 +10,7 @@
   ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
 in {
   imports = [
-    ../../../home.nix
+    ../../../home-wifi.nix
     ../pipewire.nix
     ../hivemindsat.nix
     inputs.nixos-raspberrypi.nixosModules.base

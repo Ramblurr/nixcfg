@@ -3,6 +3,7 @@
   pkgs,
   lib,
   inputs,
+  unstable,
   ...
 }: let
   hn = "fairybox";
@@ -19,6 +20,8 @@ in {
     inputs.nixos-raspberrypi-stable.inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ./audio.nix
     ./gpio.nix
+    ./rpi-kernel.nix
+    ../../../home-wifi.nix
   ];
   system.stateVersion = "23.11";
 
@@ -26,36 +29,25 @@ in {
   sops.age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
   sops.defaultSopsFile = defaultSopsFile;
 
-  # only enable 1 chip select pin, gpio 8, leaving the other pin free for gpio
-  boot.kernelParams = [
-    "snd_bcm2835.enable_hdmi=0"
-    "iomem=relaxed"
-    "strict-devmem=0" # rpi kernels only
+  home.wifi.primary.enable = true;
+  networking.firewall.allowedTCPPorts = [
+    22 # ssh
+    80 # http
+    3000 # dev http
+    7000 # nrepl
+    7001 # portal
+    7002 # dev nrepl
   ];
-  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_rpi4);
-  #  #boot.kernelPackages = pkgs.linuxPackages_rpi4;
-  #boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.blacklistedKernelModules = ["snd_bcm2835"];
-  boot.kernelModules = ["pwm_bcm2835" "w1-gpio"];
-  #boot.kernelPatches = [
-  #  {
-  #    # required on mainlin kernels
-  #    name = "allow-devmem";
-  #    patch = null;
-  #    extraConfig = ''
-  #      STRICT_DEVMEM n
-  #    '';
-  #  }
-  #];
-  #system.activationScripts = {
-  #  enableLingering = ''
-  #    # remove all existing lingering users
-  #    rm -r /var/lib/systemd/linger
-  #    mkdir /var/lib/systemd/linger
-  #    # enable for the subset of declared users
-  #    touch /var/lib/systemd/linger/ramblurr
-  #  '';
-  #};
+
+  system.activationScripts = {
+    enableLingering = ''
+      # remove all existing lingering users
+      rm -r /var/lib/systemd/linger
+      mkdir /var/lib/systemd/linger
+      # enable for the subset of declared users
+      touch /var/lib/systemd/linger/ramblurr
+    '';
+  };
   users.groups.gpio = {};
   users.groups.spi = {};
   users.groups.i2c = {};
@@ -69,24 +61,23 @@ in {
   '';
 
   environment.systemPackages = with pkgs; [
-    gcc
-    pigpio-py
     python311
-    python311Packages.pip
-    python311Packages.spidev
+    #pigpio-py
+    #python311Packages.pip
+    #python311Packages.spidev
     # python311Packages.rpi-gpio2
     # python311Packages.libgpiod
-    rpi-gpio2_1
+    #rpi-gpio2_1
     #pylibgpiod_11
-    python311Packages.pylibgpiod_11
-    python311Packages.evdev
+    #python311Packages.pylibgpiod_11
+    #python311Packages.evdev
+    # gcc
+    # dtc
     raspberrypifw
     gpio-utils
-    #pkgs.my.pigpio
     pigpio
     zulu17
     vlc
-    dtc
   ];
 
   systemd.services.pigpiod = {
@@ -97,6 +88,26 @@ in {
       Type = "forking";
       PIDFile = "pigpio.pid";
       ExecStart = "${pigpio}/bin/pigpiod -l -n 127.0.0.1 -t0";
+    };
+  };
+  systemd.tmpfiles.rules = [
+    "d /var/lib/fairybox 750 ramblurr ramblurr"
+  ];
+
+  systemd.services.fairybox = {
+    enable = false;
+    wantedBy = ["multi-user.target"];
+    description = "fairybox";
+    environment = {
+      NREPL_HOST = "10.9.6.33";
+      PORT = "80";
+      DB_PATH = "/var/lib/fairybox/db.edn";
+    };
+    serviceConfig = {
+      Type = "simple";
+      User = "ramblurr";
+      WorkingDirectory = "/var/lib/fairybox";
+      ExecStart = "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /home/ramblurr/box-standalone.jar";
     };
   };
 
