@@ -28,6 +28,7 @@ in {
   environment.etc."machine-id".text = machine-id;
   sops.age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
   sops.defaultSopsFile = defaultSopsFile;
+  services.journald.storage = "volatile";
 
   home.wifi.primary.enable = true;
   networking.firewall.allowedTCPPorts = [
@@ -39,15 +40,6 @@ in {
     7002 # dev nrepl
   ];
 
-  system.activationScripts = {
-    enableLingering = ''
-      # remove all existing lingering users
-      rm -r /var/lib/systemd/linger
-      mkdir /var/lib/systemd/linger
-      # enable for the subset of declared users
-      touch /var/lib/systemd/linger/ramblurr
-    '';
-  };
   users.groups.gpio = {};
   users.groups.spi = {};
   users.groups.i2c = {};
@@ -78,6 +70,7 @@ in {
     pigpio
     zulu17
     vlc
+    unstable.babashka
   ];
 
   systemd.services.pigpiod = {
@@ -97,17 +90,23 @@ in {
   systemd.services.fairybox = {
     enable = false;
     wantedBy = ["multi-user.target"];
+    after = ["pigpiod.service"];
     description = "fairybox";
+    path = [pkgs.util-linux];
     environment = {
-      NREPL_HOST = "10.9.6.33";
+      NREPL_HOST = "0.0.0.0";
       PORT = "80";
       DB_PATH = "/var/lib/fairybox/db.edn";
+      MEDIA_DIR = "/home/ramblurr/media";
+      LD_LIBRARY_PATH = "${pkgs.vlc}/lib:${pigpio}/lib";
     };
     serviceConfig = {
       Type = "simple";
       User = "ramblurr";
+      SupplementaryGroups = "gpio spi i2c audio";
       WorkingDirectory = "/var/lib/fairybox";
-      ExecStart = "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /home/ramblurr/box-standalone.jar";
+      ExecStart = "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /var/lib/fairybox/box-standalone.jar";
+      AmbientCapabilities = "CAP_NET_BIND_SERVICE";
     };
   };
 

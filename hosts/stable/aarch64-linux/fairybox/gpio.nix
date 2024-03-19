@@ -8,7 +8,6 @@
   #raspberry-pi.hardware.hifiberry-dac.enable = false;
   #raspberry-pi.hardware.spi0-1cs.enable = false;
   raspberry-pi.hardware.platform.type = "rpi4";
-
   raspberry-pi.hardware.apply-overlays-dtmerge.enable = lib.mkForce true;
   hardware = {
     firmware = [pkgs.wireless-regdb];
