@@ -1,6 +1,7 @@
 {
   config,
-  attic,
+  inputs,
+  lib,
   ...
 }: {
   #=====================================================
@@ -15,7 +16,7 @@
   #=====================================================
 
   imports = [
-    attic.nixosModules.atticd
+    inputs.attic.nixosModules.atticd
   ];
 
   # Self-Hosted Nix Cache Server
@@ -33,6 +34,14 @@
   #    it's similar to cachix, related docs:
   #    https://docs.attic.rs/reference/attic-cli.html
   #    https://docs.cachix.org/pushing#pushing
+  systemd.services.atticd = {
+    serviceConfig.ReadWritePaths = lib.mkForce "/mnt/fast/attic";
+  };
+  sops.secrets."attic_server_token" = {
+    mode = "400";
+    owner = "root";
+    group = "root";
+  };
   services.atticd = {
     enable = true;
 
@@ -42,10 +51,15 @@
     #
     # Content:
     #   ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64="output from openssl"
-    credentialsFile = config.age.secrets."attic-nix-cache-server.env".path;
+    credentialsFile = config.sops.secrets."attic_server_token".path;
 
     settings = {
-      listen = "[::]:8888";
+      listen = "127.0.0.1:57000";
+      database.url = "sqlite:///mnt/fast/attic/server.db?mode=rwc";
+      storage = {
+        type = "local";
+        path = "/mnt/fast/attic/storage";
+      };
 
       # Data chunking
       #
