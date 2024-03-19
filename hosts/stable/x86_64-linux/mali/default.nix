@@ -24,7 +24,7 @@ in {
     ./ups.nix
     ./avahi.nix
     ./beets.nix
-    ./attic.nix
+    ./atticd.nix
   ];
   # TODO
   # rclone
