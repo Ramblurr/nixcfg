@@ -19,14 +19,8 @@
     restartUnits = [];
   };
 
-  sops.secrets."acmeSecrets/cloudflareZoneToken" = {
-    sopsFile = ./secrets.sops.yaml;
-    restartUnits = [];
-  };
-
   sops.templates.acme-credentials.content = ''
     CF_DNS_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareDnsToken"}
-    CF_ZONE_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareZoneToken"}
   '';
   security.acme.certs = {
     #"mali" = {
@@ -44,6 +38,11 @@
         "minio.mgmt.***REMOVED***"
         "s3.mgmt.***REMOVED***"
       ];
+      postRun = "systemctl reload nginx.service";
+      group = "nginx";
+    };
+    "attic.mgmt.***REMOVED***" = {
+      domain = "attic.mgmt.***REMOVED***";
       postRun = "systemctl reload nginx.service";
       group = "nginx";
     };
