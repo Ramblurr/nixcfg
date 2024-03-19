@@ -9,7 +9,6 @@
   defaultSopsFile = ./secrets.sops.yaml;
 in {
   imports = [
-    ../../../home.nix
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
@@ -28,8 +27,14 @@ in {
   services.udev.extraRules = ''
     KERNEL=="ttyACM0", MODE:="666"
   '';
+  time.timeZone = "Europe/Berlin";
+  i18n.defaultLocale = "en_US.utf8";
 
   sops.secrets.HASS_TOKEN = {
+    owner = "ramblurr";
+    mode = "0400";
+  };
+  sops.secrets.netrc = {
     owner = "ramblurr";
     mode = "0400";
   };
@@ -53,6 +58,9 @@ in {
   nix.extraOptions = ''
     !include ${config.sops.templates."nix.conf".path}
   '';
+  nix.settings.extra-substituters = ["https://attic.mgmt.***REMOVED***/socozy"];
+  nix.settings.extra-trusted-public-keys = ["socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="];
+  nix.settings.netrc-file = config.sops.secrets.netrc.path;
   modules = {
     desktop = {
       enable = true;

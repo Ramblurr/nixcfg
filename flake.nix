@@ -45,18 +45,15 @@
     home-manager-stable.url = "github:nix-community/home-manager/release-23.11";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    hyprNStack = {
-      url = "github:SiriusStarr/hyprNStack";
-      inputs.hyprland.follows = "hyprland";
-    };
+    hyprNStack.url = "github:SiriusStarr/hyprNStack";
+    hyprNStack.inputs.hyprland.follows = "hyprland";
 
-    hy3 = {
-      url = "github:outfoxxed/hy3";
-      inputs.hyprland.follows = "hyprland";
-    };
-    nur = {
-      url = "github:nix-community/NUR";
-    };
+    hy3.url = "github:outfoxxed/hy3";
+    hy3.inputs.hyprland.follows = "hyprland";
+
+    nur.url = "github:nix-community/NUR";
+
+    attic.url = "github:zhaofengli/attic";
   };
 
   outputs = inputs @ {
