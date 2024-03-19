@@ -26,7 +26,7 @@ in {
         (with pkgs; [
           appimage-run
           #pkgs.my.muse-sounds-manager
-          #musescore
+          musescore
           pavucontrol
           freecad
           prusa-slicer

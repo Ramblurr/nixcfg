@@ -33,6 +33,7 @@ in {
         sd
         procs
         # </rust pkgs>
+        inputs.attic.packages.${pkgs.system}.attic-client
         nix-du
         nix-tree
         nix-prefetch
