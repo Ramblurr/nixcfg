@@ -20,7 +20,7 @@ in {
     home-manager.users."${username}" = {
       programs.git = {
         enable = true;
-        signing.key = config.modules.users.primaryUser.signingKey;
+        signing.key = "8865AA3A7BD80355";
         signing.signByDefault = false;
         userEmail = config.modules.users.primaryUser.email;
         userName = config.modules.users.primaryUser.name;
