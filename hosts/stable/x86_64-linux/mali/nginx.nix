@@ -17,6 +17,21 @@
       proxy_headers_hash_bucket_size 256;
     '';
     virtualHosts = {
+      # attic nix cache endpoint
+      "attic.mgmt.socozy.casa" = {
+        useACMEHost = "attic.mgmt.socozy.casa";
+        forceSSL = true;
+        http3 = false;
+        http2 = false;
+        kTLS = true;
+        extraConfig = ''
+          client_header_buffer_size 64k;
+        '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:57000";
+          recommendedProxySettings = true;
+        };
+      };
       # minio s3 endpoint
       "s3.data.socozy.casa" = {
         useACMEHost = "s3.data.socozy.casa";
