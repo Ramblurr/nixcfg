@@ -24,6 +24,7 @@ in {
     ./ups.nix
     ./avahi.nix
     ./beets.nix
+    ./attic.nix
   ];
   # TODO
   # rclone
@@ -117,6 +118,7 @@ in {
     roon.gid = 1017;
     hassos.gid = 1018;
     photo-backup.gid = 3000;
+    atticd.gid = 1019;
   };
   users.users = {
     k8s-nfs = {
@@ -146,6 +148,11 @@ in {
       group = "hassos";
       isSystemUser = true;
       uid = 1008;
+    };
+    atticd = {
+      group = "atticd";
+      isSystemUser = true;
+      uid = 1009;
     };
   };
   services.smartd.enable = true;
