@@ -15,6 +15,8 @@
 | ibnsina      | [Kubernetes worker][home-ops]                                       | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/ibnsina/](./hosts/stable/x86_64-linux/ibnsina/)                 |
 | mali         | [Storage NAS][NAS]                                                  | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/mali/](./hosts/stable/x86_64-linux/mali/)                       |
 | OVOS Kitchen | My [OpenVoiceOS][ovos] instance (replaces Mycroft) for the kitchen. | ![NixOS Unstable][unstable] | [hosts/unstable/aarch64-linux/ovos-kitchen/](./hosts/unstable/aarch64-linux/ovos-kitchen/) |
+| Fairybox     | Raspberry PI RFID Jukebox for my children                           | ![NixOS Stable][stable]     | [hosts/stable/aarch64-linux/fairybox/](./hosts/stable/aarch64-linux/fairybox/)             |
+| VPN          | A VPN gateway  for my LAN                                           | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/vpn](./hosts/stable/x86_64-linux/vpn)                           |
 
 
 Example build commands:
