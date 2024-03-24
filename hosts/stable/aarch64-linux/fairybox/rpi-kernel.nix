@@ -14,5 +14,8 @@
     "strict-devmem=0" # rpi kernels only
   ];
   boot.blacklistedKernelModules = ["snd_bcm2835"];
-  boot.kernelModules = ["pwm_bcm2835" "w1-gpio"];
+  boot.kernelModules = [
+    #"pwm_bcm2835"
+    #"w1-gpio"
+  ];
 }

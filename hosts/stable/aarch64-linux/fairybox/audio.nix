@@ -6,24 +6,26 @@
 }: {
   security.rtkit.enable = false;
   hardware.pulseaudio.enable = pkgs.lib.mkForce false;
+  sound.enable = true;
   services.pipewire = {
-    enable = true;
+    enable = false;
     alsa.enable = true;
     alsa.support32Bit = false;
     pulse.enable = false;
     jack.enable = false;
     wireplumber.enable = true;
     audio.enable = true;
+    #systemWide = true;
   };
 
   environment.systemPackages = with pkgs; [
     alsa-utils
   ];
 
-  systemd.user.services = {
-    pipewire.wantedBy = ["default.target"];
-    wireplumber.wantedBy = ["default.target"];
-  };
+  #systemd.user.services = {
+  #  pipewire.wantedBy = ["default.target"];
+  #  wireplumber.wantedBy = ["default.target"];
+  #};
 
   environment.etc."pipewire/pipewire.conf.d/100-user.conf" = {
     text =
