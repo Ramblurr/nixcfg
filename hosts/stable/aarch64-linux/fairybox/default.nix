@@ -53,23 +53,25 @@ in {
   '';
 
   environment.systemPackages = with pkgs; [
+    #raspberrypi-firmware
+    #raspberrypi-wireless-firmware
+    raspberrypifw
     python311
-    #pigpio-py
-    #python311Packages.pip
-    #python311Packages.spidev
-    # python311Packages.rpi-gpio2
-    # python311Packages.libgpiod
-    #rpi-gpio2_1
-    #pylibgpiod_11
-    #python311Packages.pylibgpiod_11
-    #python311Packages.evdev
-    # gcc
-    # dtc
+    pigpio-py
+    python311Packages.pip
+    python311Packages.spidev
+    #python311Packages.rpi-gpio2
+    #python311Packages.libgpiod
+    rpi-gpio2_1
+    python311Packages.pylibgpiod_11
+    python311Packages.evdev
+    gcc
+    dtc
     raspberrypifw
     gpio-utils
     pigpio
     zulu17
-    vlc
+    libvlc
     unstable.babashka
   ];
 
@@ -85,14 +87,14 @@ in {
   };
   systemd.tmpfiles.rules = [
     "d /var/lib/fairybox 750 ramblurr ramblurr"
+    "f /var/lib/systemd/linger/ramblurr"
   ];
-
   systemd.services.fairybox = {
-    enable = false;
+    enable = true;
     wantedBy = ["multi-user.target"];
     after = ["pigpiod.service"];
     description = "fairybox";
-    path = [pkgs.util-linux];
+    path = [pkgs.util-linux]; # diozero needs this
     environment = {
       NREPL_HOST = "0.0.0.0";
       PORT = "80";
@@ -104,9 +106,12 @@ in {
       Type = "simple";
       User = "ramblurr";
       SupplementaryGroups = "gpio spi i2c audio";
+      #SupplementaryGroups = "gpio spi i2c audio pipewire";
       WorkingDirectory = "/var/lib/fairybox";
       ExecStart = "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /var/lib/fairybox/box-standalone.jar";
       AmbientCapabilities = "CAP_NET_BIND_SERVICE";
+      Restart = "on-failure";
+      TimeoutStopSec = "30";
     };
   };
 
@@ -145,6 +150,7 @@ in {
         "spi"
         "i2c"
         "audio"
+        #"pipewire"
       ];
     };
   };
