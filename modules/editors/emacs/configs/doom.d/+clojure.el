@@ -128,7 +128,7 @@
  :map (clojure-mode-map clojurescript-mode-map clojurec-mode-map)
  (:localleader
   :desc "Reload REPL" :n "R"  #'my/clojure-dev-reset
-  (:prefix-map ("x" . "Portal Inspector")
+  (:prefix ("x" . "Portal Inspector")
    :desc "Select Root"    :n "r"   #'portal.ui.commands/select-root
    :desc "Select next"    :n "j"   #'portal.ui.commands/select-next
    :desc "Select prev"    :n "k"   #'portal.ui.commands/select-prev
@@ -137,26 +137,26 @@
    :desc "History back"   :n "C-h" #'portal.ui.commands/history-back
    :desc "Focus selected" :n "RET" #'portal.ui.commands/focus-selected
    :desc "Clear"          :n "x"   #'portal.api/clear)
-  (:prefix-map ("e" . "eval")
+  (:prefix ("e" . "eval")
    "D" nil
    :desc "Eval defn and reload browser" :n"D" 'my/eval-defun-and-reload-browser
    :desc "Evaluate RCF" :n "c" 'my/eval-rcf
    ;; "e" 'cider-tap-last-sexp
    ;; "E" 'cider-eval-last-sexp
    )
-  (:prefix-map ("n" . "namespace")
+  (:prefix ("n" . "namespace")
    :desc "Clean and Sort" :n "s"  #'my/clojure-clean-and-sort-ns
    )))
 
 (map!
  :leader
- (:prefix-map ("k" . "Structural Editing")
-              "dx" #'kill-sexp
-              "dX" #'backward-kill-sexp
-              "c" #'lispy-clone
-              "p" #'cljr-raise
-              "D" #'cljr-destructure-keys
-              ))
+ (:prefix ("k" . "Structural Editing")
+          "dx" #'kill-sexp
+          "dX" #'backward-kill-sexp
+          "c" #'lispy-clone
+          "p" #'cljr-raise
+          "D" #'cljr-destructure-keys
+          ))
 
 (after! cider-mode
   (setq cider-show-error-buffer t                        ; show stacktrace buffer
@@ -204,17 +204,17 @@
   (setq clojure-toplevel-inside-comment-form t)
   (setq cider-save-file-on-load t)
   (define-clojure-indent
-    (>defn :defn)
-    (>defn- :defn)
-    (defresolver :defn)
-    (defcomponent :defn)
-    (defscene :defn)
-    (defnc :defn)
-    (defnc- :defn)
-    (defui :defn)
-    (defui- :defn)
-    (fn-traced :defn)
-    (defn-traced :defn))
+   (>defn :defn)
+   (>defn- :defn)
+   (defresolver :defn)
+   (defcomponent :defn)
+   (defscene :defn)
+   (defnc :defn)
+   (defnc- :defn)
+   (defui :defn)
+   (defui- :defn)
+   (fn-traced :defn)
+   (defn-traced :defn))
   (setq cider-default-cljs-repl 'shadow)
   (setq clojure-align-forms-automatically t)
   (put '>defn 'clojure-doc-string-elt 2)

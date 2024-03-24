@@ -28,7 +28,7 @@ in {
 
           if [ ! -d "$EMACS" ]; then
             ${pkgs.git}/bin/git clone https://github.com/hlissner/doom-emacs.git $EMACS
-            yes | $EMACS/bin/doom install
+            ${pkgs.coreutils}/bin/yes | $EMACS/bin/doom install
             $EMACS/bin/doom sync
           else
             $EMACS/bin/doom sync
@@ -43,11 +43,14 @@ in {
         extraPackages = epkgs: [epkgs.vterm];
       };
 
-      services.emacs.enable = true;
-      systemd.user.services.emacs.Unit = {
-        requires = ["graphical-session.target"];
-        partOf = ["graphical-session.target"];
-        WantedBy = ["graphical-session.target"];
+      services.emacs = {
+        enable = true;
+        startWithUserSession = "graphical";
+      };
+      systemd.user.services.emacs = {
+        Service = {
+          TimeoutStartSec = 300;
+        };
       };
 
       sops.secrets.authinfo = {
