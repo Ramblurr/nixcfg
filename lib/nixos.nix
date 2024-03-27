@@ -16,6 +16,7 @@ let
         actual-nixpkgs = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs-unstable;
       };
       modules = extraModules ++ [
+        { node.secretsDir = /.${path}/secrets; }
         {
           networking.hostName = mkDefault (removeSuffix ".nix" (baseNameOf path));
           nixpkgs.overlays = overlays;
