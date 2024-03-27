@@ -22,10 +22,10 @@
 Example build commands:
 
 ```sh
-task build:quine
-task test:quine
-task switch:quine
-task image:ovos-kitchen
+task build host=quine
+task test host=quine
+task switch host=quine
+task image host=ovos-kitchen
 ```
 
 ---
@@ -38,6 +38,7 @@ I got help from some cool configs like:
 * [hlissner/dotfiles](https://github.com/hlissner/dotfiles)
 * [colemickens/nixcfg](https://github.com/colemickens/nixcfg)
 * [huantianad/nixos-config](https://github.com/huantianad/nixos-config)
+* [oddlama/nix-config](https://github.com/oddlama/nix-config)
 
 
 [Licensed under MIT](./LICENSE), have at it!

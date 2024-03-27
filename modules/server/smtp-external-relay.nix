@@ -7,8 +7,8 @@ let
 in {
   options.modules.server.smtp-external-relay = {
     enable = mkBoolOpt false;
-    emailTo = mkStrOpt "casey@***REMOVED***";
-    emailFrom = mkStrOpt "notifications@***REMOVED***";
+    emailTo = mkStrOpt config.repo.secrets.global.email.work;
+    emailFrom = mkStrOpt config.repo.secrets.global.email.home;
     smtpHost = mkStrOpt "10.5.0.3";
   };
   config = let

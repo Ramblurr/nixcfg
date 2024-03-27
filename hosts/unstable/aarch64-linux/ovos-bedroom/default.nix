@@ -71,7 +71,7 @@ in {
   #  ];
   #  enable = true;
   #  description = "roc-send remote audio to a ovos instance";
-  #  script = "${pkgs.roc-toolkit}/bin/roc-send --input alsa://hw:1,0 --source ovos-kitchen.int.***REMOVED***:10001 --repair ovos-kitchen.int.***REMOVED***:10002";
+  #  script = "${pkgs.roc-toolkit}/bin/roc-send --input alsa://hw:1,0 --source ovos-kitchen.CHANGEME:10001 --repair ovos-kitchen.int.CHANGEME:10002";
   #  wants = ["network-online.target"];
   #  after = ["network-online.target"];
   #  wantedBy = ["default.target"];
