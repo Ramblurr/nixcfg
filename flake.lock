@@ -79,6 +79,26 @@
         "type": "github"
       }
     },
+    "disko-unstable": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1711462743,
+        "narHash": "sha256-3wKGpHy9Kyh98DrziqC/s//60Q0pE17NgbY93L0uWng=",
+        "owner": "nix-community",
+        "repo": "disko",
+        "rev": "a6717b1afee7ae955c61eefdf0ce8f864ef78115",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "disko",
+        "type": "github"
+      }
+    },
     "firefox-nightly": {
       "inputs": {
         "cachix": "cachix",
@@ -723,21 +743,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-davis": {
-      "locked": {
-        "lastModified": 1710749515,
-        "narHash": "sha256-O2nGCrFm6UMLeD73t65reZeQ43KX9rBLBGQUwK85Ko8=",
-        "ref": "refs/heads/master",
-        "rev": "ce2c33e0be160e07c19d6672822c7f38feb44421",
-        "revCount": 598613,
-        "type": "git",
-        "url": "file:/home/ramblurr/src/nixpkgs"
-      },
-      "original": {
-        "type": "git",
-        "url": "file:/home/ramblurr/src/nixpkgs"
-      }
-    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1711241261,
@@ -804,20 +809,16 @@
         "type": "github"
       }
     },
-    "nixpkgs-oldstable": {
+    "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1704290814,
-        "narHash": "sha256-LWvKHp7kGxk/GEtlrGYV68qIvPHkU9iToomNFGagixU=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "70bdadeb94ffc8806c0570eb5c2695ad29f0e421",
-        "type": "github"
+        "lastModified": 1711530770,
+        "narHash": "sha256-7ivvSm6B7MsCu88anAKpE45FppEp/FcM9aauuwSpeYs=",
+        "path": "/home/ramblurr/src/nixpkgs",
+        "type": "path"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-23.05",
-        "repo": "nixpkgs",
-        "type": "github"
+        "path": "/home/ramblurr/src/nixpkgs",
+        "type": "path"
       }
     },
     "nixpkgs-stable": {
@@ -943,6 +944,7 @@
       "inputs": {
         "attic": "attic",
         "disko-stable": "disko-stable",
+        "disko-unstable": "disko-unstable",
         "firefox-nightly": "firefox-nightly",
         "home-manager": "home-manager",
         "home-manager-stable": "home-manager-stable",
@@ -956,8 +958,7 @@
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixos-raspberrypi-stable": "nixos-raspberrypi-stable",
         "nixpkgs": "nixpkgs_3",
-        "nixpkgs-davis": "nixpkgs-davis",
-        "nixpkgs-oldstable": "nixpkgs-oldstable",
+        "nixpkgs-mine": "nixpkgs-mine",
         "nixpkgs-stable": "nixpkgs-stable_2",
         "nixpkgs-wayland": "nixpkgs-wayland",
         "nur": "nur",

@@ -1,10 +1,8 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-oldstable.url = "github:NixOS/nixpkgs/nixos-23.05";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-23.11";
-    #nixpkgs-davis.url = "github:ramblurr/nixpkgs/add-davis";
-    nixpkgs-davis.url = "git+file:/home/ramblurr/src/nixpkgs";
+    nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs";
@@ -15,6 +13,9 @@
     nixos-ovos.url = "github:ramblurr/ovos-rpi-nixos/dev";
     nixos-ovos.inputs.nixpkgs.follows = "nixpkgs";
     nixos-ovos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
+
+    disko-unstable.url = "github:nix-community/disko";
+    disko-unstable.inputs.nixpkgs.follows = "nixpkgs";
 
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -89,7 +90,8 @@
             unstable = {
               nixpkgs = nixpkgs;
               home-manager = inputs.home-manager;
-              extraModules = [ ];
+              extraModules = [ inputs.disko-unstable.nixosModules.disko ]
+                ++ lib.my.mapModulesRec' ./modules-unstable import;
             };
 
             stable = {
@@ -117,7 +119,8 @@
         };
     in {
       lib = lib.my;
-      nixosModules = lib.my.mapModulesRec ./modules import;
+      # Nobody should really be consuming my modules from this flake
+      # nixosModules = lib.my.mapModulesRec ./modules import;
 
       nixosConfigurations = (mapHosts ./hosts/unstable/x86_64-linux "unstable" "x86_64-linux")
         // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux")
