@@ -12,7 +12,6 @@
         netdevConfig = {
           Name = "bond0";
           Kind = "bond";
-          #MACAddress = "00:25:90:bb:78:3e";
           #MTUBytes = "1500";
           Description = "Bond0 bonded interface";
         };

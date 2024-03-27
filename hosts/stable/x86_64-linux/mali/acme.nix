@@ -1,8 +1,10 @@
-{ lib, pkgs, config, ... }: {
+{ lib, pkgs, config, ... }:
+let inherit (config.repo.secrets.global) domain;
+in {
   security.acme = {
     acceptTerms = true;
     defaults = {
-      email = "acme@***REMOVED***";
+      email = domain.acme.email;
       dnsProvider = "cloudflare";
       credentialsFile = config.sops.templates.acme-credentials.path;
       extraLegoFlags = [ "--dns.resolvers=1.1.1.1:53" ];
@@ -19,25 +21,25 @@
   '';
   security.acme.certs = {
     #"mali" = {
-    #  domain = "mali.int.***REMOVED***";
+    #  domain = "mali.int.${domain.home}";
     #  extraDomainNames = [];
     #  group = "nginx";
     #  directory = "/persist/var/lib/acme/mali";
     #};
-    "s3.data.***REMOVED***" = {
-      domain = "s3.data.***REMOVED***";
+    "s3.data.${domain.home}" = {
+      domain = "s3.data.${domain.home}";
       extraDomainNames = [
-        "*.s3.data.***REMOVED***"
-        "minio.data.***REMOVED***"
-        "*.s3.mgmt.***REMOVED***"
-        "minio.mgmt.***REMOVED***"
-        "s3.mgmt.***REMOVED***"
+        "*.s3.data.${domain.home}"
+        "minio.data.${domain.home}"
+        "*.s3.mgmt.${domain.home}"
+        "minio.mgmt.${domain.home}"
+        "s3.mgmt.${domain.home}"
       ];
       postRun = "systemctl reload nginx.service";
       group = "nginx";
     };
-    "attic.mgmt.***REMOVED***" = {
-      domain = "attic.mgmt.***REMOVED***";
+    "attic.mgmt.${domain.home}" = {
+      domain = "attic.mgmt.${domain.home}";
       postRun = "systemctl reload nginx.service";
       group = "nginx";
     };
