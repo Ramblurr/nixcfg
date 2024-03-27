@@ -24,7 +24,6 @@ in {
         cilium-cli
         talosctl
         fluxcd
-        inputs.talhelper.packages.${pkgs.stdenv.hostPlatform.system}.default
         cloudflared
       ];
 
