@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop;
   username = config.modules.users.primaryUser.username;
 in {
@@ -25,38 +19,28 @@ in {
         settings.X11.UserAuthFile = ".local/share/sddm/Xauthority";
       };
 
-      importedVariables = [
-        "XDG_SESSION_TYPE"
-        "XDG_CURRENT_DESKTOP"
-        "XDG_SESSION_DESKTOP"
-      ];
+      importedVariables = [ "XDG_SESSION_TYPE" "XDG_CURRENT_DESKTOP" "XDG_SESSION_DESKTOP" ];
 
-      setupCommands =
-        ''
-          export XDG_RUNTIME_DIR=/run/user/$(id --user)
-          export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id --user)/bus
+      setupCommands = ''
+        export XDG_RUNTIME_DIR=/run/user/$(id --user)
+        export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id --user)/bus
 
-        ''
-        + cfg.setupCommands;
+      '' + cfg.setupCommands;
     };
 
     #services.dbus.packages = with pkgs; [pkgs.dconf];
 
     environment.persistence."/persist" = mkIf config.modules.impermanence.enable {
-      directories = [
-        "/var/lib/sddm/.config"
-      ];
-      files = [
-        "/var/lib/sddm/state.conf"
-      ];
+      directories = [ "/var/lib/sddm/.config" ];
+      files = [ "/var/lib/sddm/state.conf" ];
     };
 
-    myhm = {...} @ hm: {
+    myhm = { ... }@hm: {
       # home-manager/#2064
       systemd.user.targets.tray = {
         Unit = {
           Description = "Home Manager System Tray";
-          Requires = ["graphical-session-pre.target"];
+          Requires = [ "graphical-session-pre.target" ];
         };
       };
       gtk = {

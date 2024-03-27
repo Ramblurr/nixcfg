@@ -1,14 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
-  cfg = config.modules.networking.default;
+with lib.my;
+let cfg = config.modules.networking.default;
 in {
   options = {
     modules.networking.default = {
@@ -22,8 +15,7 @@ in {
     networking = {
       hostName = cfg.hostName;
       hostId = pkgs.lib.concatStringsSep "" (pkgs.lib.take 8
-        (pkgs.lib.stringToCharacters
-          (builtins.hashString "sha256" config.networking.hostName)));
+        (pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)));
       useDHCP = true;
       useNetworkd = true;
       dhcpcd.wait = "background";
@@ -42,7 +34,7 @@ in {
       # leave the kernel dummy devies unmanagaed
       networks."10-dummy" = {
         matchConfig.Name = "dummy*";
-        networkConfig = {};
+        networkConfig = { };
         # linkConfig.ActivationPolicy = "always-down";
         linkConfig.Unmanaged = "yes";
       };

@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.users;
   isEd25519 = k: k.type == "ed25519";
   getKeyPath = k: k.path;
@@ -38,7 +32,7 @@ in {
         };
         extraGroups = mkOption {
           type = types.listOf types.str;
-          default = [];
+          default = [ ];
           description = lib.mdDoc "The user's auxiliary groups.";
         };
         authorizedKeys = mkOption {
@@ -55,22 +49,21 @@ in {
       };
     };
   };
-  imports = [
-    (mkAliasOptionModule ["myhm"] ["home-manager" "users" cfg.primaryUser.username])
-  ];
+  imports =
+    [ (mkAliasOptionModule [ "myhm" ] [ "home-manager" "users" cfg.primaryUser.username ]) ];
   config = mkIf cfg.enable {
     sops = {
-      age.sshKeyPaths = ["${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"];
-      gnupg.sshKeyPaths = [];
-      secrets.root-password = mkIf cfg.rootPassword.enable {
-        neededForUsers = true;
-      };
+      age.sshKeyPaths =
+        [ "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key" ];
+      gnupg.sshKeyPaths = [ ];
+      secrets.root-password = mkIf cfg.rootPassword.enable { neededForUsers = true; };
     };
 
     users = {
       mutableUsers = cfg.mutableUsers;
       users.root.initialHashedPassword = mkForce null;
-      users.root.hashedPasswordFile = mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
+      users.root.hashedPasswordFile =
+        mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
 
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;
       users."${cfg.primaryUser.username}" = {
@@ -78,7 +71,8 @@ in {
         home = cfg.primaryUser.homeDirectory;
         description = cfg.primaryUser.name;
         openssh.authorizedKeys.keys = cfg.primaryUser.authorizedKeys;
-        hashedPasswordFile = mkIf cfg.primaryUser.passwordEnable config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
+        hashedPasswordFile = mkIf cfg.primaryUser.passwordEnable
+          config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
         extraGroups = cfg.primaryUser.extraGroups;
         uid = cfg.primaryUser.uid;
         group = cfg.primaryUser.username;
@@ -97,11 +91,15 @@ in {
     };
     # This is an alias for
     # home-manager.users."${username}" = ...
-    myhm = {pkgs, ...} @ hm: {
+    myhm = { pkgs, ... }@hm: {
       imports = [
         inputs.impermanence.nixosModules.home-manager.impermanence
         inputs.sops-nix.homeManagerModule
-        (mkAliasOptionModule ["persistence"] ["home" "persistence" "/persist${cfg.primaryUser.homeDirectory}"])
+        (mkAliasOptionModule [ "persistence" ] [
+          "home"
+          "persistence"
+          "/persist${cfg.primaryUser.homeDirectory}"
+        ])
       ];
       home.stateVersion = "21.11";
       home.homeDirectory = cfg.primaryUser.homeDirectory;
@@ -109,24 +107,18 @@ in {
 
       manual.manpages.enable = true;
       systemd.user.startServices = true;
-      programs = {
-        home-manager.enable = true;
-      };
-      home.extraOutputsToInstall = ["info" "man" "share" "icons" "doc"];
+      programs = { home-manager.enable = true; };
+      home.extraOutputsToInstall = [ "info" "man" "share" "icons" "doc" ];
       home.sessionVariables = {
         EDITOR = "vim";
         CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
-        NIX_PATH = "nixpkgs=flake:nixpkgs$\{NIX_PATH:+:$NIX_PATH}";
+        NIX_PATH = "nixpkgs=flake:nixpkgs\${NIX_PATH:+:$NIX_PATH}";
       };
       nix.registry.nixpkgs.flake = inputs.nixpkgs;
-      sops = {
-        gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
-      };
+      sops = { gnupg.home = "${hm.config.xdg.configHome}/.gnupg"; };
       # This is an alias for
       #home.persistence."/persist/home/${cfg.primaryUser.username}" = ..
-      persistence = mkIf config.modules.impermanence.enable {
-        allowOther = true;
-      };
+      persistence = mkIf config.modules.impermanence.enable { allowOther = true; };
     };
   };
 }
