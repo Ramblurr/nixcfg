@@ -1,11 +1,4 @@
-{
-  pkgs,
-  lib,
-  fetchFromGitHub,
-  beets,
-  poetry-core,
-  python3Packages,
-}:
+{ pkgs, lib, fetchFromGitHub, beets, poetry-core, python3Packages, }:
 python3Packages.buildPythonApplication rec {
   pname = "beets-filetote";
   version = "0.4.8";
@@ -22,34 +15,21 @@ python3Packages.buildPythonApplication rec {
     sed -i -e '/audible/d' tests/helper.py
   '';
 
-  nativeBuildInputs = [
-    poetry-core
-  ];
+  nativeBuildInputs = [ poetry-core ];
 
-  pytestFlagsArray = [
-    "-r fEs"
-  ];
+  pytestFlagsArray = [ "-r fEs" ];
 
-  disabledTests = [
-    "test_audible_m4b_files.py"
-  ];
+  disabledTests = [ "test_audible_m4b_files.py" ];
 
-  nativeCheckInputs = with python3Packages; [
-    pytestCheckHook
-    beets
-    toml
-  ];
+  nativeCheckInputs = with python3Packages; [ pytestCheckHook beets toml ];
 
-  pythonImportsCheck = [
-    "beetsplug.filetote"
-    "beetsplug.filetote_dataclasses"
-  ];
+  pythonImportsCheck = [ "beetsplug.filetote" "beetsplug.filetote_dataclasses" ];
 
   meta = with lib; {
     description = "Beets plugin to move non-music files during the import process";
     homepage = "https://github.com/gtronset/beets-filetote";
     changelog = "https://github.com/gtronset/beets-filetote/blob/${src.rev}/CHANGELOG.md";
-    maintainers = with maintainers; [dansbandit];
+    maintainers = with maintainers; [ dansbandit ];
     license = licenses.mit;
     inherit (beets.meta) platforms;
   };
