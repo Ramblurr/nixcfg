@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}:
+{ options, config, pkgs, lib, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.server.virtd-host;
   localZfsStorageXml = pkgs.writeText "zfs-local.xml" ''
     <pool type='zfs'>
@@ -37,40 +31,29 @@ in {
     };
   };
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = config.modules.impermanence.enable;
-        message = "virtd-host requires impermanence";
-      }
-    ];
-    systemd.tmpfiles.rules =
-      [
-        "d /persist/var/lib/libvirt 0775 root root -"
-        "d /persist/var/lib/libvirt/storage 0775 root root -"
-      ]
-      ++ (
-        if cfg.zfsStorage.enable
-        then [
-          "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
-        ]
-        else []
-      );
-    environment.persistence."/persist".directories = ["/var/lib/libvirt"];
+    assertions = [{
+      assertion = config.modules.impermanence.enable;
+      message = "virtd-host requires impermanence";
+    }];
+    systemd.tmpfiles.rules = [
+      "d /persist/var/lib/libvirt 0775 root root -"
+      "d /persist/var/lib/libvirt/storage 0775 root root -"
+    ] ++ (if cfg.zfsStorage.enable then
+      [ "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}" ]
+    else
+      [ ]);
+    environment.persistence."/persist".directories = [ "/var/lib/libvirt" ];
 
-    virtualisation.libvirtd = {
-      enable = true;
-    };
+    virtualisation.libvirtd = { enable = true; };
     boot.kernel.sysctl = {
       "net.ipv4.conf.all.forwarding" = true;
       #"net.ipv6.conf.all.forwarding" = true;
     };
     networking.firewall = {
-      trustedInterfaces = ["virbr0"];
+      trustedInterfaces = [ "virbr0" ];
       # Needed for host <-> vm communication
       checkReversePath = lib.mkForce false;
     };
-    boot.kernelModules = [
-      "vfio-pci"
-    ];
+    boot.kernelModules = [ "vfio-pci" ];
   };
 }

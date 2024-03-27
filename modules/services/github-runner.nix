@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.github-runner;
   withImpermanence = config.modules.impermanence.enable;
 in {
@@ -17,28 +11,21 @@ in {
     url = mkStrOpt "";
     extraLabels = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
     };
   };
   config = mkIf cfg.enable {
-    sops.secrets."github-runner.token" = {};
+    sops.secrets."github-runner.token" = { };
     services.github-runners."${cfg.runnerName}" = {
       enable = true;
       replace = true;
       name = cfg.runnerName;
-      nodeRuntimes = ["node20"];
-      extraPackages = with pkgs; [
-        gh
-        docker
-        gawk
-        nix
-      ];
+      nodeRuntimes = [ "node20" ];
+      extraPackages = with pkgs; [ gh docker gawk nix ];
       url = cfg.url;
       tokenFile = "/run/secrets/github-runner.token";
       extraLabels = cfg.extraLabels;
-      serviceOverrides = {
-        Group = "docker";
-      };
+      serviceOverrides = { Group = "docker"; };
     };
     #environment.persistence."/persist" = {
     #  directories = [

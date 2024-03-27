@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.editors.vim;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
@@ -17,25 +11,20 @@ in {
     enable = mkBoolOpt false;
     extraPlugins = mkOption {
       type = types.listOf types.package;
-      default = [];
+      default = [ ];
     };
   };
   config = mkIf cfg.enable {
-    myhm = {...} @ hm: {
+    myhm = { ... }@hm: {
       programs.vim = {
         enable = true;
         settings = {
           undofile = true;
-          undodir = ["${hm.config.xdg.cacheHome}/vim/undo"];
+          undodir = [ "${hm.config.xdg.cacheHome}/vim/undo" ];
         };
         defaultEditor = true;
         plugins = with pkgs.vimPlugins;
-          [
-            editorconfig-vim
-            gruvbox-community
-            vim-surround
-          ]
-          ++ cfg.extraPlugins;
+          [ editorconfig-vim gruvbox-community vim-surround ] ++ cfg.extraPlugins;
         extraConfig = ''
           " use vim settings, rather than vi settings
           " must be first, because it changes other options as a side effect

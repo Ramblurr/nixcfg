@@ -1,28 +1,20 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
-  cfg = config.modules.desktop.random-apps;
+with lib.my;
+let cfg = config.modules.desktop.random-apps;
 in {
-  options.modules.desktop.random-apps = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.random-apps = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    myhm = {...} @ hm: {
+    myhm = { ... }@hm: {
       home.packages = lib.mkMerge [
         #(lib.mkIf (pkgs.hostPlatform.system == "x86_64-linux") (with pkgs; [
         #  # x86_64-linux only
         #  zenith # system monitor
         #]))
-        (lib.mkIf (pkgs.hostPlatform.system == "aarch_64-linux") (with pkgs; [
-          # aarch64-linux only
-        ]))
+        (lib.mkIf (pkgs.hostPlatform.system == "aarch_64-linux") (with pkgs;
+          [
+            # aarch64-linux only
+          ]))
         (with pkgs; [
           appimage-run
           #pkgs.my.muse-sounds-manager
@@ -100,10 +92,7 @@ in {
           ".local/state/muse-sounds-manager"
           ".config/easyeffects"
         ];
-        files = [
-          ".config/kritarc"
-          ".config/kritadisplayrc"
-        ];
+        files = [ ".config/kritarc" ".config/kritadisplayrc" ];
       };
     };
   };

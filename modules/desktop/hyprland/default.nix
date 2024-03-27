@@ -1,27 +1,20 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.hyprland;
   username = config.modules.users.primaryUser.username;
-  hy3_layouter = pkgs.writeScriptBin "hy3-layouter.sh" (builtins.readFile ./configs/scripts/hy3-layouter.sh);
+  hy3_layouter =
+    pkgs.writeScriptBin "hy3-layouter.sh" (builtins.readFile ./configs/scripts/hy3-layouter.sh);
   hyprland_waybar = pkgs.waybar.overrideAttrs (oldAttrs: {
-    mesonFlags = oldAttrs.mesonFlags ++ ["-Dexperimental=true"];
+    mesonFlags = oldAttrs.mesonFlags ++ [ "-Dexperimental=true" ];
     postPatch = ''
       sed -i 's/zext_workspace_handle_v1_activate(workspace_handle_);/const std::string command = "hyprctl dispatch workspace " + name_;\n\tsystem(command.c_str());/g' src/modules/wlr/workspace_manager.cpp
     '';
   });
   startupScript = pkgs.writeScript "hyprland-startup.sh" (builtins.readFile ./hyprland-startup.sh);
 in {
-  options.modules.desktop.hyprland = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.hyprland = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     modules.desktop.wayland.enable = true;
     services = {
@@ -44,12 +37,12 @@ in {
       enableKwallet = true;
     };
     # see https://github.com/NixOS/nixpkgs/issues/158025
-    security.pam.services.swaylock = {};
+    security.pam.services.swaylock = { };
     systemd.user.services.polkit-gnome-authentication-agent-1 = {
       description = "polkit-gnome-authentication-agent-1";
-      wantedBy = ["hyprland-session.target"];
-      wants = ["hyprland-session.target"];
-      after = ["hyprland-session.target"];
+      wantedBy = [ "hyprland-session.target" ];
+      wants = [ "hyprland-session.target" ];
+      after = [ "hyprland-session.target" ];
       serviceConfig = {
         Type = "simple";
         ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
@@ -60,7 +53,7 @@ in {
     };
     environment = {
       systemPackages = with pkgs; [
-        (python311.withPackages (ps: with ps; [requests]))
+        (python311.withPackages (ps: with ps; [ requests ]))
         wlr-randr
         waypipe
         baobab # Disk usage analyser
@@ -87,10 +80,8 @@ in {
       ];
     };
 
-    home-manager.users."${username}" = {pkgs, ...} @ hm: {
-      home.packages = [
-        hy3_layouter
-      ];
+    home-manager.users."${username}" = { pkgs, ... }@hm: {
+      home.packages = [ hy3_layouter ];
 
       home.file.".local/bin/hyprland-startup.sh" = {
         enable = true;
@@ -100,10 +91,10 @@ in {
       systemd.user.targets.hyprland-session = {
         Unit = {
           Description = "hyprland compositor session";
-          Documentation = ["man:systemd.special(7)"];
-          BindsTo = ["graphical-session.target"];
-          Wants = ["graphical-session-pre.target"];
-          After = ["graphical-session-pre.target"];
+          Documentation = [ "man:systemd.special(7)" ];
+          BindsTo = [ "graphical-session.target" ];
+          Wants = [ "graphical-session-pre.target" ];
+          After = [ "graphical-session-pre.target" ];
         };
       };
       services.swayidle = {
@@ -121,7 +112,8 @@ in {
         timeouts = [
           {
             timeout = 549;
-            command = "${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/breeze/preferences/22/preferences-desktop-screensaver.svg  \"Idle timeout\" \"Screen is locking in 1 minute\"";
+            command = ''
+              ${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/breeze/preferences/22/preferences-desktop-screensaver.svg  "Idle timeout" "Screen is locking in 1 minute"'';
           }
           #{
           #  timeout = 500;
@@ -252,10 +244,9 @@ in {
         # Also we get a nice hyprland reload when the config changes
         "hypr/hyprland.conf" = {
           #exec-once=${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XAUTHORITY DISPLAY && systemctl --user start hyprland-session.target
-          text =
-            ''
-              exec-once = ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all && systemctl --user restart hyprland-session.target
-            ''
+          text = ''
+            exec-once = ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd --all && systemctl --user restart hyprland-session.target
+          ''
             #+ ''
             #  plugin = ${inputs.hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
             #''
@@ -283,7 +274,7 @@ in {
         "waybar" = {
           source = ./configs/waybar;
           recursive = true;
-          onChange = ''systemctl --user restart waybar'';
+          onChange = "systemctl --user restart waybar";
         };
 
         "rofi/config.rasi" = {

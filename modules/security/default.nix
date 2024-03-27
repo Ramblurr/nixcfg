@@ -1,20 +1,9 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
-  cfg = config.modules.security.default;
+with lib.my;
+let cfg = config.modules.security.default;
 in {
-  options = {
-    modules.security.default = {
-      enable = mkBoolOpt true;
-    };
-  };
+  options = { modules.security.default = { enable = mkBoolOpt true; }; };
 
   config = mkIf cfg.enable {
     #systemd.extraConfig = "DefaultLimitNOFILE=1048576";
@@ -26,17 +15,13 @@ in {
         systemPath = "/nix/store/*-activatable-nixos-system-${config.networking.hostName}-*";
         nopasswd = command: {
           inherit command;
-          options = ["NOPASSWD" "SETENV"];
+          options = [ "NOPASSWD" "SETENV" ];
         };
-      in [
-        {
-          groups = ["wheel"];
-          runAs = "root";
-          commands = [
-            (nopasswd "/run/current-system/sw/bin/systemctl reboot")
-          ];
-        }
-      ];
+      in [{
+        groups = [ "wheel" ];
+        runAs = "root";
+        commands = [ (nopasswd "/run/current-system/sw/bin/systemctl reboot") ];
+      }];
       please.enable = true;
       please.wheelNeedsPassword = false;
       #pam.loginLimits = [

@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.fonts;
   username = config.modules.users.primaryUser.username;
 in {
@@ -36,31 +30,25 @@ in {
   };
   config = mkIf cfg.enable {
     fonts = {
-      packages =
-        (map (p: p.package)
-          [
-            cfg.sans
-            cfg.serif
-            cfg.monospace
-            cfg.fallback
-            cfg.emoji
-          ])
+      packages = (map (p: p.package) [ cfg.sans cfg.serif cfg.monospace cfg.fallback cfg.emoji ])
         ++ (with pkgs; [
           liberation_ttf # free corefonts-metric-compatible replacement
           ttf_bitstream_vera
           gelasio # metric-compatible with Georgia
           powerline-symbols
-          (nerdfonts.override {fonts = ["Iosevka" "FiraCode" "Mononoki" "JetBrainsMono" "NerdFontsSymbolsOnly"];})
+          (nerdfonts.override {
+            fonts = [ "Iosevka" "FiraCode" "Mononoki" "JetBrainsMono" "NerdFontsSymbolsOnly" ];
+          })
         ]);
 
       fontDir.enable = true;
 
       fontconfig = {
         defaultFonts = {
-          serif = [cfg.serif.family];
-          sansSerif = [cfg.sans.family];
-          monospace = [cfg.sans.family];
-          emoji = [cfg.emoji.family];
+          serif = [ cfg.serif.family ];
+          sansSerif = [ cfg.sans.family ];
+          monospace = [ cfg.sans.family ];
+          emoji = [ cfg.emoji.family ];
         };
       };
     };

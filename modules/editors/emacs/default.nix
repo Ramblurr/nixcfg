@@ -1,23 +1,15 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.editors.emacs;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.editors.emacs = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.editors.emacs = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    fonts.packages = [pkgs.emacs-all-the-icons-fonts];
+    fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
 
     system.userActivationScripts = {
       # Installation script every time nixos-rebuild is run. So not during initial install.
@@ -36,22 +28,18 @@ in {
         ''; # It will always sync when rebuild is done. So changes will always be applied.
       };
     };
-    myhm = {...} @ hm: {
+    myhm = { ... }@hm: {
       programs.emacs = {
         enable = true;
         package = pkgs.emacs29;
-        extraPackages = epkgs: [epkgs.vterm];
+        extraPackages = epkgs: [ epkgs.vterm ];
       };
 
       services.emacs = {
         enable = true;
         startWithUserSession = "graphical";
       };
-      systemd.user.services.emacs = {
-        Service = {
-          TimeoutStartSec = 300;
-        };
-      };
+      systemd.user.services.emacs = { Service = { TimeoutStartSec = 300; }; };
 
       sops.secrets.authinfo = {
         mode = "0400";
@@ -62,7 +50,7 @@ in {
         ## Doom dependencies
         git
         zoxide
-        (ripgrep.override {withPCRE2 = true;})
+        (ripgrep.override { withPCRE2 = true; })
         gnutls # for TLS connectivity
         kitty
 
@@ -81,7 +69,7 @@ in {
 
         ## Module dependencies
         # :checkers spell
-        (aspellWithDicts (ds: with ds; [en en-computers en-science de]))
+        (aspellWithDicts (ds: with ds; [ en en-computers en-science de ]))
         hunspell
         hunspellDicts.en_US
         hunspellDicts.de_AT
@@ -95,26 +83,17 @@ in {
         # :lang beancount
         beancount
         fava
-        (python311.withPackages (ps:
-          with ps; [
-            virtualenv
-            black
-            python-lsp-black
-            setuptools
-          ]))
+        (python311.withPackages (ps: with ps; [ virtualenv black python-lsp-black setuptools ]))
         # :lang nix
         nixfmt
       ];
-      persistence = mkIf withImpermanence {
-        directories = [
-          ".emacs.d"
-        ];
-      };
+      persistence = mkIf withImpermanence { directories = [ ".emacs.d" ]; };
       home.file.".doom.d" = {
         # Get Doom Emacs
         source = ./configs/doom.d; # Sets up symlink name ".doom.d" for file "doom.d"
         recursive = true; # symlink the whole dirj
-        onChange = builtins.readFile ./configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
+        onChange = builtins.readFile
+          ./configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
       };
       home.file.".local/share/icons/doom.png" = {
         source = ./configs/icons/doom.png;

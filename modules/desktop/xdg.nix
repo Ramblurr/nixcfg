@@ -1,29 +1,22 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.xdg;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.xdg = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.xdg = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     xdg.portal = {
       enable = true;
-      extraPortals = with pkgs; [
-        # hyprland module enables its own portal
-        #libsForQt5.xdg-desktop-portal-kde
-        xdg-desktop-portal-gtk
-      ];
+      extraPortals = with pkgs;
+        [
+          # hyprland module enables its own portal
+          #libsForQt5.xdg-desktop-portal-kde
+          xdg-desktop-portal-gtk
+        ];
       xdgOpenUsePortal = true;
       config = {
         common = {
@@ -33,31 +26,25 @@ in {
         };
       };
     };
-    myhm = {pkgs, ...} @ hm: {
-      home.packages = with pkgs; [
-        xdg-utils
-        xdg-user-dirs
-      ];
+    myhm = { pkgs, ... }@hm: {
+      home.packages = with pkgs; [ xdg-utils xdg-user-dirs ];
       xdg = {
         enable = true;
         userDirs = {
           enable = true;
-          desktop = "\$HOME/desktop";
-          documents = "\$HOME/docs";
-          download = "\$HOME/downloads";
-          music = "\$HOME/tmp/music";
-          pictures = "\$HOME/docs/img";
-          publicShare = "\$HOME/docs/public";
-          templates = "\$HOME/docs/templates";
-          videos = "\$HOME/tmp/videos";
-          extraConfig = {
-            XDG_SCREENSHOTS_DIR = "${hm.config.xdg.userDirs.pictures}/screenshots";
-          };
+          desktop = "$HOME/desktop";
+          documents = "$HOME/docs";
+          download = "$HOME/downloads";
+          music = "$HOME/tmp/music";
+          pictures = "$HOME/docs/img";
+          publicShare = "$HOME/docs/public";
+          templates = "$HOME/docs/templates";
+          videos = "$HOME/tmp/videos";
+          extraConfig = { XDG_SCREENSHOTS_DIR = "${hm.config.xdg.userDirs.pictures}/screenshots"; };
         };
         mimeApps = {
           enable = true;
-          defaultApplications = let
-            browser = ["re.sonny.Junction.desktop"];
+          defaultApplications = let browser = [ "re.sonny.Junction.desktop" ];
           in {
             "x-scheme-handler/file" = browser;
             "inode/directory" = browser;
@@ -67,7 +54,7 @@ in {
             "x-scheme-handler/about" = browser;
             "x-scheme-handler/unknown" = browser;
             "x-scheme-handler/vscode" = browser;
-            "x-scheme-handler/discord" = ["discord.desktop"];
+            "x-scheme-handler/discord" = [ "discord.desktop" ];
             "audio/*" = browser;
             "video/*" = browser;
             "image/*" = browser;
@@ -77,15 +64,16 @@ in {
             "image/webp" = browser;
           };
           associations.added = {
-            "image/jpeg" = ["org.kde.gwenview.desktop"];
-            "inode/directory" = ["org.kde.dolphin.desktop"];
-            "image/svg+xml" = ["org.inkscape.Inkscape.desktop"];
-            "x-scheme-handler/https" = ["firefox-personal.desktop" "firefox-work.desktop;firefox.desktop"];
-            "image/png" = ["org.kde.gwenview.desktop"];
-            "x-scheme-handler/vscode" = ["code-work-url-handler.desktop"];
-            "application/pdf" = ["okularApplication_pdf.desktop"];
-            "text/html" = ["firefox-personal.desktop" "firefox-work.desktop;firefox.desktop"];
-            "x-scheme-handler/http" = ["firefox.desktop"];
+            "image/jpeg" = [ "org.kde.gwenview.desktop" ];
+            "inode/directory" = [ "org.kde.dolphin.desktop" ];
+            "image/svg+xml" = [ "org.inkscape.Inkscape.desktop" ];
+            "x-scheme-handler/https" =
+              [ "firefox-personal.desktop" "firefox-work.desktop;firefox.desktop" ];
+            "image/png" = [ "org.kde.gwenview.desktop" ];
+            "x-scheme-handler/vscode" = [ "code-work-url-handler.desktop" ];
+            "application/pdf" = [ "okularApplication_pdf.desktop" ];
+            "text/html" = [ "firefox-personal.desktop" "firefox-work.desktop;firefox.desktop" ];
+            "x-scheme-handler/http" = [ "firefox.desktop" ];
           };
         };
       };

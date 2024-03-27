@@ -1,20 +1,12 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.hardware.nvidia;
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.hardware.nvidia = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.hardware.nvidia = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     hardware = {
       opengl = {
@@ -56,15 +48,11 @@ in {
       WLR_NO_HARDWARE_CURSORS = "1";
     };
 
-    boot.kernel.sysctl = {"vm.max_map_count" = 2147483642;};
-    boot.blacklistedKernelModules = ["nouveau" "mt7921e"];
-    services.xserver.videoDrivers = ["nvidia"]; # Install the nvidia drivers
+    boot.kernel.sysctl = { "vm.max_map_count" = 2147483642; };
+    boot.blacklistedKernelModules = [ "nouveau" "mt7921e" ];
+    services.xserver.videoDrivers = [ "nvidia" ]; # Install the nvidia drivers
     virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
-    environment.systemPackages = [
-      pkgs.nvitop
-      pkgs.nvtop-nvidia
-      pkgs.libva-utils
-    ];
+    environment.systemPackages = [ pkgs.nvitop pkgs.nvtop-nvidia pkgs.libva-utils ];
 
     # force use of up to date nixos packages egl-wayland library, not the old one bundled in the nvidia driver
     # ref: https://github.com/NixOS/nixpkgs/issues/202454#issuecomment-1657230960
@@ -74,7 +62,9 @@ in {
         {
             "file_format_version" : "1.0.0",
             "ICD" : {
-                "library_path" : "${inputs.nixpkgs.legacyPackages.${pkgs.hostPlatform.system}.egl-wayland}/lib/libnvidia-egl-wayland.so"
+                "library_path" : "${
+                  inputs.nixpkgs.legacyPackages.${pkgs.hostPlatform.system}.egl-wayland
+                }/lib/libnvidia-egl-wayland.so"
             }
         }
       '';
@@ -86,11 +76,10 @@ in {
             }
         }
       '';
-    in
-      lib.mkForce (pkgs.runCommandLocal "nvidia-egl-hack" {} ''
-        mkdir -p $out
-        cp ${nvidia_wayland} $out/10_nvidia_wayland.json
-        cp ${nvidia_gbm} $out/15_nvidia_gbm.json
-      '');
+    in lib.mkForce (pkgs.runCommandLocal "nvidia-egl-hack" { } ''
+      mkdir -p $out
+      cp ${nvidia_wayland} $out/10_nvidia_wayland.json
+      cp ${nvidia_gbm} $out/15_nvidia_gbm.json
+    '');
   };
 }

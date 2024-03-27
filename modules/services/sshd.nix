@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.sshd;
   withImpermanence = config.modules.impermanence.enable;
 in {
@@ -32,31 +26,23 @@ in {
     #sops.secrets.ssh_host_rsa_key_pub = {
     #  path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
     #};
-    networking.firewall.allowedTCPPorts = [22];
+    networking.firewall.allowedTCPPorts = [ 22 ];
 
     services.openssh = {
       enable = true;
       settings = {
-        PermitRootLogin = lib.mkForce (
-          if cfg.permitRootLogin.enable
-          then "without-password"
-          else "no"
-        );
+        PermitRootLogin =
+          lib.mkForce (if cfg.permitRootLogin.enable then "without-password" else "no");
         PasswordAuthentication = false;
         StreamLocalBindUnlink = true;
       };
-      hostKeys = [
-        {
-          path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key";
-          type = "ed25519";
-        }
-      ];
+      hostKeys = [{
+        path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key";
+        type = "ed25519";
+      }];
     };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      files = [
-        "/root/.ssh/known_hosts"
-      ];
-    };
+    environment.persistence."/persist" =
+      mkIf withImpermanence { files = [ "/root/.ssh/known_hosts" ]; };
   };
 }

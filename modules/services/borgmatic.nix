@@ -1,13 +1,7 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.services.borgmatic;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
@@ -32,13 +26,11 @@ with lib.my; let
 in {
   options.modules.services.borgmatic = {
     enable = mkBoolOpt false;
-    name = mkOption {
-      type = types.str;
-    };
+    name = mkOption { type = types.str; };
 
     exclude-patterns = mkOption {
       type = types.listOf types.str;
-      default = [];
+      default = [ ];
     };
     repositories = mkOption {
       type = types.nullOr (types.listOf repository);
@@ -56,30 +48,30 @@ in {
     };
   };
   config = mkIf cfg.enable {
-    /*
-    To use this module you must provide the secrets with the yaml:
+    /* To use this module you must provide the secrets with the yaml:
        borgmatic-ssh-key: |
          ..the ssh private key for the repos here..
        borgmatic-env:
          PASSPHRASE=ssh key passphrase here
          HEALTHCHECK_URL=https://
     */
-    environment.systemPackages = with pkgs; [borgbackup borgmatic openssl];
-    sops.secrets.borgmatic-ssh-key = {};
-    sops.secrets.borgmatic-env = {};
+    environment.systemPackages = with pkgs; [ borgbackup borgmatic openssl ];
+    sops.secrets.borgmatic-ssh-key = { };
+    sops.secrets.borgmatic-env = { };
     systemd.services.borgmatic.serviceConfig.EnvironmentFile = "/run/secrets/borgmatic-env";
-    systemd.timers.borgmatic.wantedBy = ["timers.target"];
+    systemd.timers.borgmatic.wantedBy = [ "timers.target" ];
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
       settings = {
         repositories = cfg.repositories;
-        source_directories = ["/persist"];
+        source_directories = [ "/persist" ];
         exclude_caches = true;
         exclude_patterns = cfg.exclude-patterns;
-        exclude_if_present = [".nobackup"];
+        exclude_if_present = [ ".nobackup" ];
         storage = {
           encryption_passphrase = "\${PASSPHRASE}";
-          ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
+          ssh_command =
+            "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
           archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
         };
         retention = {
@@ -104,9 +96,7 @@ in {
             }
           ];
         };
-        hooks = {
-          healthchecks = "\${HEALTHCHECK_URL}";
-        };
+        hooks = { healthchecks = "\${HEALTHCHECK_URL}"; };
       };
     };
   };
