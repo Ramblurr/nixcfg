@@ -1,17 +1,7 @@
-{
-  inputs,
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ inputs, config, lib, pkgs, actual-nixpkgs, ... }:
 with lib;
 with lib.my; {
-  imports =
-    [
-      inputs.impermanence.nixosModules.impermanence
-      inputs.sops-nix.nixosModules.sops
-    ]
+  imports = [ inputs.impermanence.nixosModules.impermanence inputs.sops-nix.nixosModules.sops ]
     ++ (mapModulesRec' (toString ./modules) import);
 
   # https://nix-community.github.io/home-manager/index.html#sec-install-nixos-module
@@ -47,7 +37,7 @@ with lib.my; {
         #"arm.cachix.org-1:5BZ2kjoL1q6nWhlnrbAl+G7ThY7+HaBRD9PZzqZkbnM="
         "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       ];
-      trusted-users = ["root" "@wheel"];
+      trusted-users = [ "root" "@wheel" ];
       auto-optimise-store = true;
     };
 
@@ -57,16 +47,12 @@ with lib.my; {
       options = "--delete-older-than 7d";
     };
 
-    registry.nixpkgs.flake = inputs.nixpkgs;
+    registry.nixpkgs.flake = actual-nixpkgs;
 
-    nixPath = [
-      "nixpkgs=/etc/nixpkgs/channels/nixpkgs"
-    ];
+    nixPath = [ "nixpkgs=/etc/nixpkgs/channels/nixpkgs" ];
   };
 
-  systemd.tmpfiles.rules = [
-    "L+ /etc/nixpkgs/channels/nixpkgs - - - - ${inputs.nixpkgs}"
-  ];
+  systemd.tmpfiles.rules = [ "L+ /etc/nixpkgs/channels/nixpkgs - - - - ${actual-nixpkgs}" ];
 
   programs.command-not-found.enable = false;
   #home-manager.users.huantian.programs.nix-index.enable = true;

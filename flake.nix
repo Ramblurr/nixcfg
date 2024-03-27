@@ -1,21 +1,21 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-23.11";
     nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
-    nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     nixos-raspberrypi-stable.url = "github:ramblurr/nixos-raspberrypi/dev";
     nixos-raspberrypi-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     nixos-ovos.url = "github:ramblurr/ovos-rpi-nixos/dev";
-    nixos-ovos.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-ovos.inputs.nixpkgs.follows = "nixpkgs-unstable";
     nixos-ovos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
 
     disko-unstable.url = "github:nix-community/disko";
-    disko-unstable.inputs.nixpkgs.follows = "nixpkgs";
+    disko-unstable.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -23,24 +23,24 @@
     hyprland.url = "github:hyprwm/Hyprland";
 
     firefox-nightly.url = "github:colemickens/flake-firefox-nightly";
-    firefox-nightly.inputs.nixpkgs.follows = "nixpkgs";
+    firefox-nightly.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     nix-gaming.url = "github:fufexan/nix-gaming";
-    nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
+    nix-gaming.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     impermanence.url = "github:nix-community/impermanence";
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
     sops-nix.url = "github:Mic92/sops-nix";
-    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     sops-nix.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
 
     nixpkgs-wayland.url = "github:nix-community/nixpkgs-wayland/master";
-    nixpkgs-wayland.inputs.nixpkgs.follows = "nixpkgs";
+    nixpkgs-wayland.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     home-manager-stable.url = "github:nix-community/home-manager/release-23.11";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -56,7 +56,7 @@
     attic.url = "github:zhaofengli/attic";
   };
 
-  outputs = inputs@{ self, nixpkgs, nixos-raspberrypi, nixos-raspberrypi-stable, ... }:
+  outputs = inputs@{ self, nixpkgs-unstable, nixos-raspberrypi, nixos-raspberrypi-stable, ... }:
     let
       defaultSystem = "x86_64-linux";
 
@@ -67,14 +67,13 @@
           system = systemArg;
           config.allowUnfree = true;
           config.permittedInsecurePackages = [ "electron-25.9.0" "electron-24.8.6" ];
-
           overlays = allOverlays;
         };
 
-      pkgs = mkPkgs nixpkgs defaultSystem;
+      pkgs = mkPkgs nixpkgs-unstable defaultSystem;
       pkgs-stable = mkPkgs inputs.nixpkgs-stable defaultSystem;
 
-      lib = nixpkgs.lib.extend (self: super: {
+      lib = nixpkgs-unstable.lib.extend (self: super: {
         my = import ./lib {
           inherit pkgs inputs;
           lib = self;
@@ -85,13 +84,15 @@
         let
           table = {
             unstable = {
-              nixpkgs = nixpkgs;
+              isStable = false;
+              nixpkgs = nixpkgs-unstable;
               home-manager = inputs.home-manager;
               extraModules = [ inputs.disko-unstable.nixosModules.disko ]
                 ++ lib.my.mapModulesRec' ./modules-unstable import;
             };
 
             stable = {
+              isStable = true;
               nixpkgs = inputs.nixpkgs-stable;
               home-manager = inputs.home-manager-stable;
               extraModules = [ inputs.disko-stable.nixosModules.disko ];
@@ -107,6 +108,7 @@
             };
           });
         in thisLib.my.mapHosts path {
+          isStable = table.isStable;
           extraModules = table.extraModules;
           nixosSystem = table.nixpkgs.lib.nixosSystem;
           unstable = mkPkgs inputs.nixpkgs system;

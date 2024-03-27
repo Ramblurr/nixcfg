@@ -5,12 +5,15 @@ let
 
   # nixosSystem: the flake system builder, accessed from the nixpkgs flake using nixpkgs.lib.nixosSystem
   mkHost = path:
-    { nixosSystem, unstable, system, home-manager, overlays, extraModules, }:
+    { nixosSystem, unstable, system, home-manager, overlays, extraModules, isStable }:
     nixosSystem {
       inherit system;
       specialArgs = {
         inherit lib inputs;
         unstable = unstable;
+        # this provides modules a way to get a handle on what would normally be `inputs.nixpkgs`
+        # but in a way that will ensure they get the input that corresponds to their stable/unstable version.
+        actual-nixpkgs = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs-unstable;
       };
       modules = extraModules ++ [
         {

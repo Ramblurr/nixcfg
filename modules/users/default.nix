@@ -1,4 +1,4 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{ options, config, lib, pkgs, inputs, actual-nixpkgs, ... }:
 with lib;
 with lib.my;
 let
@@ -114,7 +114,7 @@ in {
         CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
         NIX_PATH = "nixpkgs=flake:nixpkgs\${NIX_PATH:+:$NIX_PATH}";
       };
-      nix.registry.nixpkgs.flake = inputs.nixpkgs;
+      nix.registry.nixpkgs.flake = actual-nixpkgs;
       sops = { gnupg.home = "${hm.config.xdg.configHome}/.gnupg"; };
       # This is an alias for
       #home.persistence."/persist/home/${cfg.primaryUser.username}" = ..
