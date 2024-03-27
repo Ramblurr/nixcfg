@@ -1,13 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  modulesPath,
-  ...
-}: {
-  imports = [
-    (modulesPath + "/installer/scan/not-detected.nix")
-  ];
+{ config, lib, pkgs, modulesPath, ... }: {
+  imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
   fileSystems."/" = {
     device = "rpool/encrypted/local/root";
     fsType = "zfs";
@@ -49,16 +41,12 @@
     fsType = "zfs";
     neededForBoot = true;
   };
-  swapDevices = [
-    {device = "/dev/mapper/cryptswap";}
-  ];
+  swapDevices = [{ device = "/dev/mapper/cryptswap"; }];
 
   boot = {
     zfs.devNodes = "/dev/disk/by-partuuid";
     loader = {
-      efi = {
-        canTouchEfiVariables = true;
-      };
+      efi = { canTouchEfiVariables = true; };
       systemd-boot = {
         enable = true;
         configurationLimit = 20;
@@ -77,7 +65,7 @@
         "xhci_pci"
       ];
 
-      kernelModules = ["usb_storage"];
+      kernelModules = [ "usb_storage" ];
 
       luks.devices = {
         cryptkey = {

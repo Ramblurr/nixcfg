@@ -1,13 +1,8 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, pkgs, lib, inputs, ... }:
+let
   hn = "ovos-kitchen";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
+  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
 in {
   imports = [
     ../../../home-wifi.nix
@@ -19,7 +14,7 @@ in {
   ];
   system.stateVersion = "23.11";
   sops.defaultSopsFile = defaultSopsFile;
-  sops.age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "feedb33df4cc4cbf8e64e91cf837d8b2";
 
   raspberry-pi.hardware.hifiberry-dacplusadc.enable = true;
@@ -37,12 +32,8 @@ in {
       udisks2.enable = false;
       fwupd.enable = false;
     };
-    services = {
-      sshd.enable = true;
-    };
-    editors = {
-      vim.enable = true;
-    };
+    services = { sshd.enable = true; };
+    editors = { vim.enable = true; };
     users.enable = true;
     users.primaryUser = {
       username = ramblurr.username;
@@ -54,14 +45,10 @@ in {
       passwordSecretKey = ramblurr.passwordSecretKey;
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-      ];
+      extraGroups = [ "wheel" ];
     };
   };
-  myhm = {
-    systemd.user.startServices = lib.mkForce false;
-  };
+  myhm = { systemd.user.startServices = lib.mkForce false; };
 
   #ovos.password.enable = true;
   #ovos.gui.enable = false;

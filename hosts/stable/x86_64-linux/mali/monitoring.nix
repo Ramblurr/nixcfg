@@ -1,13 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
-  environment.systemPackages = with pkgs; [
-    ipmitool
-    lm_sensors
-  ];
+{ config, lib, pkgs, ... }: {
+  environment.systemPackages = with pkgs; [ ipmitool lm_sensors ];
   networking.firewall.allowedTCPPorts = [
     config.services.prometheus.exporters.node.port
     config.services.prometheus.exporters.zfs.port
@@ -19,8 +11,8 @@
     exporters = {
       node = {
         enable = true;
-        enabledCollectors = ["systemd"];
-        disabledCollectors = ["textfile"];
+        enabledCollectors = [ "systemd" ];
+        disabledCollectors = [ "textfile" ];
         port = 9001;
       };
       zfs = {
