@@ -46,7 +46,6 @@ in {
           nerdfix
           kid3
           pdfarranger
-          handbrake
           makemkv
           xournal
           fava
