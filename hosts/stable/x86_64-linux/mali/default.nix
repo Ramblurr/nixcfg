@@ -1,13 +1,8 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, pkgs, lib, inputs, unstable, ... }:
+let
   hn = "mali";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
+  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
 in {
   imports = [
     ./hardware-configuration.nix
@@ -35,7 +30,7 @@ in {
   sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
-  sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
+  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "3b3e54988be146febcce587e0f65669b";
 
   documentation.nixos.enable = false;
@@ -50,21 +45,17 @@ in {
       zsh.enable = true;
       zsh.starship.enable = false;
     };
-    services = {
-      sshd.enable = true;
-    };
-    editors = {
-      vim.enable = true;
-    };
+    services = { sshd.enable = true; };
+    editors = { vim.enable = true; };
     impermanence.enable = true;
     boot.zfs = {
       enable = true;
       zed.enable = true;
       encrypted = true;
       rootPool = "rpool";
-      scrubPools = ["rpool"];
+      scrubPools = [ "rpool" ];
       autoSnapshot.enable = false;
-      extraPools = ["tank" "tank2" "fast"];
+      extraPools = [ "tank" "tank2" "fast" ];
     };
     server.smtp-external-relay.enable = true;
     vpn.tailscale.enable = true;
@@ -82,10 +73,7 @@ in {
       passwordSecretKey = ramblurr.passwordSecretKey;
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-        "k8s-nfs"
-      ];
+      extraGroups = [ "wheel" "k8s-nfs" ];
     };
   };
 
@@ -131,7 +119,8 @@ in {
       uid = 1006;
       isNormalUser = true;
       openssh.authorizedKeys.keys = [
-        ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
+        ''
+          command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
       ];
     };
     proxmox = {
@@ -157,6 +146,7 @@ in {
   };
   services.smartd.enable = true;
   environment.systemPackages = with pkgs; [
+    unstable.rsgain
     mktorrent
     tcpdump
     python311
@@ -170,11 +160,7 @@ in {
   ];
   environment.persistence."/persist" = {
     hideMounts = true;
-    directories = [
-      "/var/lib/nixos"
-      "/var/lib/systemd/coredump"
-    ];
-    files = [
-    ];
+    directories = [ "/var/lib/nixos" "/var/lib/systemd/coredump" ];
+    files = [ ];
   };
 }
