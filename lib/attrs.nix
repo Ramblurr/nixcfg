@@ -1,9 +1,8 @@
-{lib, ...}:
+{ lib, ... }:
 with builtins;
 with lib; rec {
   # attrsToList
-  attrsToList = attrs:
-    mapAttrsToList (name: value: {inherit name value;}) attrs;
+  attrsToList = attrs: mapAttrsToList (name: value: { inherit name value; }) attrs;
 
   # mapFilterAttrs ::
   #   (name -> value -> bool)
@@ -15,10 +14,8 @@ with lib; rec {
   genAttrs' = values: f: listToAttrs (map f values);
 
   # anyAttrs :: (name -> value -> bool) attrs
-  anyAttrs = pred: attrs:
-    any (attr: pred attr.name attr.value) (attrsToList attrs);
+  anyAttrs = pred: attrs: any (attr: pred attr.name attr.value) (attrsToList attrs);
 
   # countAttrs :: (name -> value -> bool) attrs
-  countAttrs = pred: attrs:
-    count (attr: pred attr.name attr.value) (attrsToList attrs);
+  countAttrs = pred: attrs: count (attr: pred attr.name attr.value) (attrsToList attrs);
 }
