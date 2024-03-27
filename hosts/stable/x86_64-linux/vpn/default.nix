@@ -3,7 +3,6 @@ let
   hn = "vpn-gateway";
   defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-  vpn = builtins.fromJSON (builtins.readFile ../../../../secrets/vpn.secrets);
 in {
   imports = [ ./hardware-configuration.nix ./networking.nix ];
   system.stateVersion = "23.05";
@@ -58,7 +57,7 @@ in {
     config = {
       global = {
         "default port" = "19999";
-        "bind to" = vpn.tailscaleip;
+        "bind to" = config.repo.secrets.local.tailscaleip;
         "history" = "604800";
         "error log" = "syslog";
         "debug log" = "syslog";
