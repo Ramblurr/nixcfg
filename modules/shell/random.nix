@@ -1,24 +1,16 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.random;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.shell.random = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.shell.random = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     services.pcscd.enable = true;
-    myhm = {...} @ hm: {
+    myhm = { ... }@hm: {
       home.packages = with pkgs; [
         # <rust pkgs>
         bat
@@ -33,7 +25,6 @@ in {
         sd
         procs
         # </rust pkgs>
-        inputs.attic.packages.${pkgs.system}.attic-client
         nix-du
         nix-tree
         nix-prefetch
@@ -68,9 +59,7 @@ in {
         asciinema
         findutils
         # https://github.com/NixOS/nixpkgs/issues/265014
-        (pkgs.rsync.overrideAttrs (_: _: {
-          hardeningDisable = ["fortify"];
-        }))
+        (pkgs.rsync.overrideAttrs (_: _: { hardeningDisable = [ "fortify" ]; }))
         wget
         jq
         openssh
@@ -93,12 +82,11 @@ in {
         smartmontools
         pwgen-secure
         alejandra
+        nixfmt
       ];
-      persistence = mkIf withImpermanence {
-        directories = [
-          "${hm.config.xdg.configHome}/.gnupg"
-        ];
-      };
+
+      persistence =
+        mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };
     };
   };
 }
