@@ -3,6 +3,8 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-oldstable.url = "github:NixOS/nixpkgs/nixos-23.05";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-23.11";
+    #nixpkgs-davis.url = "github:ramblurr/nixpkgs/add-davis";
+    nixpkgs-davis.url = "git+file:/home/ramblurr/src/nixpkgs";
 
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs";
@@ -56,99 +58,91 @@
     attic.url = "github:zhaofengli/attic";
   };
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    nixos-raspberrypi,
-    nixos-raspberrypi-stable,
-    ...
-  }: let
-    defaultSystem = "x86_64-linux";
+  outputs = inputs@{ self, nixpkgs, nixos-raspberrypi, nixos-raspberrypi-stable, ... }:
+    let
+      defaultSystem = "x86_64-linux";
 
-    allOverlays = [self.overlay] ++ (lib.attrValues self.overlays);
+      allOverlays = [ self.overlay ] ++ (lib.attrValues self.overlays);
 
-    mkPkgs = pkgsArg: systemArg:
-      import pkgsArg {
-        system = systemArg;
-        config.allowUnfree = true;
-        config.permittedInsecurePackages = [
-          "electron-25.9.0"
-          "electron-24.8.6"
-        ];
+      mkPkgs = pkgsArg: systemArg:
+        import pkgsArg {
+          system = systemArg;
+          config.allowUnfree = true;
+          config.permittedInsecurePackages = [ "electron-25.9.0" "electron-24.8.6" ];
 
-        overlays = allOverlays;
-      };
+          overlays = allOverlays;
+        };
 
-    pkgs = mkPkgs nixpkgs defaultSystem;
-    pkgs-stable = mkPkgs inputs.nixpkgs-stable defaultSystem;
+      pkgs = mkPkgs nixpkgs defaultSystem;
+      pkgs-stable = mkPkgs inputs.nixpkgs-stable defaultSystem;
 
-    lib = nixpkgs.lib.extend (self: super: {
-      my = import ./lib {
-        inherit pkgs inputs;
-        lib = self;
-      };
-    });
-
-    mapHosts = path: nixpkgsType: system: let
-      table =
-        {
-          unstable = {
-            nixpkgs = nixpkgs;
-            home-manager = inputs.home-manager;
-            extraModules = [];
-          };
-
-          stable = {
-            nixpkgs = inputs.nixpkgs-stable;
-            home-manager = inputs.home-manager-stable;
-            extraModules = [inputs.disko-stable.nixosModules.disko];
-          };
-        }
-        .${nixpkgsType};
-
-      thisPkgs = mkPkgs table.nixpkgs system;
-      thisLib = table.nixpkgs.lib.extend (self: super: {
+      lib = nixpkgs.lib.extend (self: super: {
         my = import ./lib {
-          inherit inputs;
-          pkgs = thisPkgs;
+          inherit pkgs inputs;
           lib = self;
         };
       });
-    in
-      thisLib.my.mapHosts path
-      {
-        extraModules = table.extraModules;
-        nixosSystem = table.nixpkgs.lib.nixosSystem;
-        unstable = mkPkgs inputs.nixpkgs system;
-        system = system;
-        home-manager = table.home-manager;
-        overlays = allOverlays;
+
+      mapHosts = path: nixpkgsType: system:
+        let
+          table = {
+            unstable = {
+              nixpkgs = nixpkgs;
+              home-manager = inputs.home-manager;
+              extraModules = [ ];
+            };
+
+            stable = {
+              nixpkgs = inputs.nixpkgs-stable;
+              home-manager = inputs.home-manager-stable;
+              extraModules = [ inputs.disko-stable.nixosModules.disko ];
+            };
+          }.${nixpkgsType};
+
+          thisPkgs = mkPkgs table.nixpkgs system;
+          thisLib = table.nixpkgs.lib.extend (self: super: {
+            my = import ./lib {
+              inherit inputs;
+              pkgs = thisPkgs;
+              lib = self;
+            };
+          });
+        in thisLib.my.mapHosts path {
+          extraModules = table.extraModules;
+          nixosSystem = table.nixpkgs.lib.nixosSystem;
+          unstable = mkPkgs inputs.nixpkgs system;
+          system = system;
+          home-manager = table.home-manager;
+          overlays = allOverlays;
+        };
+    in {
+      lib = lib.my;
+      nixosModules = lib.my.mapModulesRec ./modules import;
+
+      nixosConfigurations = (mapHosts ./hosts/unstable/x86_64-linux "unstable" "x86_64-linux")
+        // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux")
+        // (mapHosts ./hosts/stable/aarch64-linux "stable" "aarch64-linux");
+
+      images = {
+        ovos-kitchen = (import ./hosts/unstable/aarch64-linux/ovos-kitchen/sd-image.nix {
+          inherit self nixos-raspberrypi;
+        }).sd-image;
+        ovos-bedroom = (import ./hosts/unstable/aarch64-linux/ovos-bedroom/sd-image.nix {
+          inherit self nixos-raspberrypi;
+        }).sd-image;
+        fairybox = (import ./hosts/stable/aarch64-linux/fairybox/sd-image.nix {
+          inherit self nixos-raspberrypi-stable;
+        }).sd-image;
       };
-  in {
-    lib = lib.my;
-    nixosModules = lib.my.mapModulesRec ./modules import;
 
-    nixosConfigurations =
-      (mapHosts ./hosts/unstable/x86_64-linux "unstable" "x86_64-linux")
-      // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux")
-      // (mapHosts ./hosts/stable/aarch64-linux "stable" "aarch64-linux");
+      # breaks `nix flake check` with
+      #   error: flake attribute 'packages.x86_64-linux.packages' is not a derivation
+      # packages."${system}" = import ./packages {inherit pkgs;};
 
-    images = {
-      ovos-kitchen = (import ./hosts/unstable/aarch64-linux/ovos-kitchen/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;
-      ovos-bedroom = (import ./hosts/unstable/aarch64-linux/ovos-bedroom/sd-image.nix {inherit self nixos-raspberrypi;}).sd-image;
-      fairybox = (import ./hosts/stable/aarch64-linux/fairybox/sd-image.nix {inherit self nixos-raspberrypi-stable;}).sd-image;
+      overlay = final: prev: { my = self.packages."${defaultSystem}"; };
+
+      packages."${defaultSystem}" = import ./packages { inherit pkgs-stable; };
+
+      overlays = lib.my.mapModules ./overlays import;
     };
-
-    # breaks `nix flake check` with
-    #   error: flake attribute 'packages.x86_64-linux.packages' is not a derivation
-    # packages."${system}" = import ./packages {inherit pkgs;};
-
-    overlay = final: prev: {
-      my = self.packages."${defaultSystem}";
-    };
-
-    packages."${defaultSystem}" = import ./packages {inherit pkgs-stable;};
-
-    overlays = lib.my.mapModules ./overlays import;
-  };
 }
