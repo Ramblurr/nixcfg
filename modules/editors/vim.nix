@@ -31,6 +31,7 @@ in {
         defaultEditor = true;
         plugins = with pkgs.vimPlugins;
           [
+            editorconfig-vim
             gruvbox-community
             vim-surround
           ]
