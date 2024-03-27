@@ -1,5 +1,5 @@
 { config, lib, pkgs, ... }:
-let vpn = builtins.fromJSON (builtins.readFile ../../../../secrets/vpn.secrets);
+let vpn = config.repo.secrets.local;
 in {
   sops.secrets."wireguard_private_key" = {
     mode = "400";
