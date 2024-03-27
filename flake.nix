@@ -20,9 +20,6 @@
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    talhelper.url = "github:budimanjojo/talhelper";
-    talhelper.inputs.nixpkgs.follows = "nixpkgs";
-
     hyprland.url = "github:hyprwm/Hyprland";
 
     firefox-nightly.url = "github:colemickens/flake-firefox-nightly";
