@@ -70,7 +70,7 @@ in {
               libunwind # for titanfall 2 Northstart launcher
             ];
         };
-        extraCompatPackages = [ inputs.nix-gaming.packages.${pkgs.system}.proton-ge ];
+        extraCompatPackages = [ pkgs.proton-ge-bin.steamcompattool ];
         remotePlay.openFirewall = true;
       } else
         { };
