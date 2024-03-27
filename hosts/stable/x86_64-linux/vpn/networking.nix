@@ -1,10 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: let
-  vpn = builtins.fromJSON (builtins.readFile ../../../../secrets/vpn.secrets);
+{ config, lib, pkgs, ... }:
+let vpn = builtins.fromJSON (builtins.readFile ../../../../secrets/vpn.secrets);
 in {
   sops.secrets."wireguard_private_key" = {
     mode = "400";
@@ -22,12 +17,10 @@ in {
     usePredictableInterfaceNames = lib.mkForce false;
     interfaces = {
       eth0 = {
-        ipv4.addresses = [
-          {
-            address = vpn.ipv4;
-            prefixLength = 32;
-          }
-        ];
+        ipv4.addresses = [{
+          address = vpn.ipv4;
+          prefixLength = 32;
+        }];
         ipv6.addresses = [
           {
             address = vpn.ipv6-1;
@@ -38,24 +31,20 @@ in {
             prefixLength = 64;
           }
         ];
-        ipv4.routes = [
-          {
-            address = vpn.ipv4-route;
-            prefixLength = 32;
-          }
-        ];
-        ipv6.routes = [
-          {
-            address = "fe80::1";
-            prefixLength = 128;
-          }
-        ];
+        ipv4.routes = [{
+          address = vpn.ipv4-route;
+          prefixLength = 32;
+        }];
+        ipv6.routes = [{
+          address = "fe80::1";
+          prefixLength = 128;
+        }];
       };
     };
 
     nat = {
       enable = true;
-      internalInterfaces = ["wg0"];
+      internalInterfaces = [ "wg0" ];
       externalInterface = "eth0";
       forwardPorts = vpn.forwardPorts;
     };
@@ -64,13 +53,13 @@ in {
       enable = true;
       allowPing = true;
       logRefusedConnections = true;
-      allowedTCPPorts = [53] ++ vpn.openPortsTCP;
-      allowedUDPPorts = [53 51820 41641] ++ vpn.openPortsUDP;
+      allowedTCPPorts = [ 53 ] ++ vpn.openPortsTCP;
+      allowedUDPPorts = [ 53 51820 41641 ] ++ vpn.openPortsUDP;
     };
 
     wg-quick.interfaces = {
       wg0 = {
-        address = ["10.100.0.1/24"];
+        address = [ "10.100.0.1/24" ];
         listenPort = 51820;
         postUp = ''
           ${pkgs.iptables}/bin/iptables -A FORWARD -i wg0 -j ACCEPT

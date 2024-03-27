@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{ config, lib, pkgs, ... }: {
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   power.ups = {
     # TODO: use the updated service once this pr is merged: https://github.com/NixOS/nixpkgs/pull/213006
@@ -12,7 +7,7 @@
       driver = "usbhid-ups";
       port = "auto";
       description = "APC UPS";
-      directives = ["default.battery.charge.low = 50"];
+      directives = [ "default.battery.charge.low = 50" ];
     };
   };
 
@@ -28,10 +23,8 @@
     mode = "0440";
     group = "nut";
   };
-  environment.etc."nut/upsd.users".source =
-    config.sops.secrets.upsd-users.path;
-  environment.etc."nut/upsmon.conf".source =
-    config.sops.secrets.upsmon-conf.path;
+  environment.etc."nut/upsd.users".source = config.sops.secrets.upsd-users.path;
+  environment.etc."nut/upsmon.conf".source = config.sops.secrets.upsmon-conf.path;
   environment.etc."nut/upsd.conf".text = ''
     LISTEN 127.0.0.1 3493
   '';
@@ -43,12 +36,10 @@
     group = "nut";
     description = "UPS monitor user";
   };
-  users.groups."nut" = {gid = 84;};
+  users.groups."nut" = { gid = 84; };
 
   environment.persistence."/persist" = {
     hideMounts = true;
-    directories = [
-      "/var/lib/nut"
-    ];
+    directories = [ "/var/lib/nut" ];
   };
 }

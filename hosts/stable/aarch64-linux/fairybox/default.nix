@@ -1,18 +1,12 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  unstable,
-  ...
-}: let
+{ config, pkgs, lib, inputs, unstable, ... }:
+let
   hn = "fairybox";
   machine-id = "1b2d9977b3bb44508d67a72c7425828b";
   defaultSopsFile = ./secrets.sops.yaml;
 
-  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
-  pigpio = pkgs.callPackage ../../../../packages/pigpio {};
-  pigpio-py = pkgs.python311.pkgs.callPackage ../../../../packages/pigpio-py {pigpio-c = pigpio;};
+  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
+  pigpio = pkgs.callPackage ../../../../packages/pigpio { };
+  pigpio-py = pkgs.python311.pkgs.callPackage ../../../../packages/pigpio-py { pigpio-c = pigpio; };
 in {
   imports = [
     inputs.nixos-raspberrypi-stable.nixosModules.base
@@ -26,7 +20,7 @@ in {
   system.stateVersion = "23.11";
 
   environment.etc."machine-id".text = machine-id;
-  sops.age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   sops.defaultSopsFile = defaultSopsFile;
   services.journald.storage = "volatile";
 
@@ -40,9 +34,9 @@ in {
     7002 # dev nrepl
   ];
 
-  users.groups.gpio = {};
-  users.groups.spi = {};
-  users.groups.i2c = {};
+  users.groups.gpio = { };
+  users.groups.spi = { };
+  users.groups.i2c = { };
   services.udev.extraRules = ''
     SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio",MODE="0660"
     SUBSYSTEM=="bcm2711-gpiomem", KERNEL=="gpiomem", GROUP="gpio",MODE="0660"
@@ -77,7 +71,7 @@ in {
 
   systemd.services.pigpiod = {
     enable = true;
-    wantedBy = ["multi-user.target"];
+    wantedBy = [ "multi-user.target" ];
     description = "pigpio daemon";
     serviceConfig = {
       Type = "forking";
@@ -85,16 +79,14 @@ in {
       ExecStart = "${pigpio}/bin/pigpiod -l -n 127.0.0.1 -t0";
     };
   };
-  systemd.tmpfiles.rules = [
-    "d /var/lib/fairybox 750 ramblurr ramblurr"
-    "f /var/lib/systemd/linger/ramblurr"
-  ];
+  systemd.tmpfiles.rules =
+    [ "d /var/lib/fairybox 750 ramblurr ramblurr" "f /var/lib/systemd/linger/ramblurr" ];
   systemd.services.fairybox = {
     enable = true;
-    wantedBy = ["multi-user.target"];
-    after = ["pigpiod.service"];
+    wantedBy = [ "multi-user.target" ];
+    after = [ "pigpiod.service" ];
     description = "fairybox";
-    path = [pkgs.util-linux]; # diozero needs this
+    path = [ pkgs.util-linux ]; # diozero needs this
     environment = {
       NREPL_HOST = "0.0.0.0";
       PORT = "80";
@@ -108,7 +100,8 @@ in {
       SupplementaryGroups = "gpio spi i2c audio";
       #SupplementaryGroups = "gpio spi i2c audio pipewire";
       WorkingDirectory = "/var/lib/fairybox";
-      ExecStart = "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /var/lib/fairybox/box-standalone.jar";
+      ExecStart =
+        "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /var/lib/fairybox/box-standalone.jar";
       AmbientCapabilities = "CAP_NET_BIND_SERVICE";
       Restart = "on-failure";
       TimeoutStopSec = "30";
@@ -127,12 +120,8 @@ in {
       udisks2.enable = false;
       fwupd.enable = false;
     };
-    services = {
-      sshd.enable = true;
-    };
-    editors = {
-      vim.enable = true;
-    };
+    services = { sshd.enable = true; };
+    editors = { vim.enable = true; };
     users.enable = true;
     users.primaryUser = {
       username = ramblurr.username;

@@ -1,20 +1,12 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, pkgs, lib, inputs, ... }:
+let
   hn = "debord";
   machine-id = "498b887325be4df3ac65f32baa3e53a2";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
+  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
   k3s-main = builtins.fromJSON (builtins.readFile ../../../../secrets/k3s-main.secrets);
 in {
-  imports = [
-    ./hardware.nix
-    ./disk-config.nix
-  ];
+  imports = [ ./hardware.nix ./disk-config.nix ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = machine-id;
 

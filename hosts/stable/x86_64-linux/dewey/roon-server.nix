@@ -1,11 +1,5 @@
-{
-  config,
-  fetchurl,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, fetchurl, pkgs, lib, inputs, ... }:
+let
   name = "roon-server";
   user = "roon-server";
   group = "roon-server";
@@ -24,7 +18,8 @@ in {
   systemd.services.roon-server = {
     serviceConfig = {
       IOWeight = "200"; # default, when unspecified is 100
-      OOMScoreAdjust = "-500"; # default, when unspecified is 0. lower means less likely to be oom-killed
+      OOMScoreAdjust =
+        "-500"; # default, when unspecified is 0. lower means less likely to be oom-killed
       Nice = "-2"; # default, when unspecified is 0
       CPUWeight = "300"; # default, when unspecified is 100
       MemoryLow = "2G";
@@ -49,8 +44,6 @@ in {
   };
   environment.persistence."/persist" = {
     hideMounts = true;
-    directories = [
-      "/var/lib/roon-server"
-    ];
+    directories = [ "/var/lib/roon-server" ];
   };
 }

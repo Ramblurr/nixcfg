@@ -1,24 +1,16 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, pkgs, lib, inputs, ... }:
+let
   hn = "vpn-gateway";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
+  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
   vpn = builtins.fromJSON (builtins.readFile ../../../../secrets/vpn.secrets);
 in {
-  imports = [
-    ./hardware-configuration.nix
-    ./networking.nix
-  ];
+  imports = [ ./hardware-configuration.nix ./networking.nix ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
-  sops.age.sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "3ce2eb0b58bf4939865529d1f3b52d95";
 
   boot.tmp.cleanOnBoot = true;
@@ -37,16 +29,10 @@ in {
       zsh.enable = true;
       zsh.starship.enable = false;
     };
-    services = {
-      sshd.enable = true;
-    };
-    editors = {
-      vim.enable = true;
-    };
+    services = { sshd.enable = true; };
+    editors = { vim.enable = true; };
     impermanence.enable = false;
-    boot.zfs = {
-      enable = false;
-    };
+    boot.zfs = { enable = false; };
     vpn.tailscale.enable = true;
     firewall.enable = false;
     security.default.enable = true;
@@ -61,9 +47,7 @@ in {
       passwordSecretKey = ramblurr.passwordSecretKey;
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-      ];
+      extraGroups = [ "wheel" ];
     };
   };
 
@@ -82,7 +66,7 @@ in {
     };
   };
 
-  networking.firewall.allowedTCPPorts = [19999];
+  networking.firewall.allowedTCPPorts = [ 19999 ];
   environment.systemPackages = with pkgs; [
     tcpdump
     python311
