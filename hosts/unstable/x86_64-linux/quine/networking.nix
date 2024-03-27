@@ -1,11 +1,4 @@
-{ config, lib, pkgs, ... }:
-let
-  domains = lib.pipe ../../../../secrets/resolved-domain-secret.secrets [
-    builtins.readFile
-    (lib.splitString "\n")
-    (lib.filter (x: x != ""))
-  ];
-in {
+{ config, lib, pkgs, ... }: {
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   systemd.network = {
     netdevs = {
@@ -40,7 +33,7 @@ in {
           DNSSEC = "no";
         };
 
-        domains = domains;
+        domains = config.repo.secrets.local.dns.domains;
         dhcpV4Config.Use6RD = "yes";
         dhcpV4Config.RouteMetric = 512;
         routes = [{
@@ -58,7 +51,7 @@ in {
           #IPForward = "yes";
           DNSSEC = "no";
         };
-        domains = domains;
+        domains = config.repo.secrets.local.dns.domains;
       };
     };
   };
