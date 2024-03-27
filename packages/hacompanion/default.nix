@@ -1,9 +1,4 @@
-{
-  pkgs,
-  lib,
-  stdenv,
-  fetchFromGitHub,
-}:
+{ pkgs, lib, stdenv, fetchFromGitHub, }:
 pkgs.buildGoModule rec {
   name = "hacompanion";
   version = "1.0.7";
@@ -18,6 +13,6 @@ pkgs.buildGoModule rec {
     description = "Daemon that sends local hardware information to Home Assistant Resources";
     homepage = "https://github.com/tobias-kuendig/hacompanion";
     license = licenses.mit;
-    maintainers = with maintainers; [];
+    maintainers = with maintainers; [ ];
   };
 }
