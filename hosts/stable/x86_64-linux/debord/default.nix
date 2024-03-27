@@ -4,16 +4,16 @@ let
   machine-id = "498b887325be4df3ac65f32baa3e53a2";
   defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-  k3s-main = builtins.fromJSON (builtins.readFile ../../../../secrets/k3s-main.secrets);
 in {
   imports = [ ./hardware.nix ./disk-config.nix ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = machine-id;
+  repo.secretFiles.k3s-main = ../../../../secrets/k3s-main.nix;
 
   modules.profiles.k3s-node = {
     enable = true;
     hostname = hn;
-    clusterSettings = k3s-main;
+    clusterSettings = config.repo.secrets.k3s-main;
     user = ramblurr;
     defaultSopsFile = defaultSopsFile;
   };

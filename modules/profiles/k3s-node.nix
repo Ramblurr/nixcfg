@@ -35,7 +35,6 @@ in {
     sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
     documentation.nixos.enable = false;
     documentation.doc.enable = false;
-
     # Modules and sysctl settings common to k3s nodes
     boot.kernelModules = [ "br_netfilter" "ceph" "ip_vs" "ip_vs_rr" "nbd" "overlay" "rbd" ];
     boot.kernel.sysctl = {
