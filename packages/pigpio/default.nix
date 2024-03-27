@@ -1,9 +1,4 @@
-{
-  stdenv,
-  lib,
-  fetchFromGitHub,
-  cmake,
-}:
+{ stdenv, lib, fetchFromGitHub, cmake, }:
 # C libraries & daemon for pigpio
 stdenv.mkDerivation rec {
   pname = "pigpio";
@@ -18,7 +13,7 @@ stdenv.mkDerivation rec {
 
   #nativeBuildInputs = [cmake];
 
-  makeFlags = ["prefix=$(out)"];
+  makeFlags = [ "prefix=$(out)" ];
 
   postPatch = ''
     substituteInPlace Makefile \
@@ -27,11 +22,12 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with lib; {
-    description = "A C library for the Raspberry Pi which allows control of the General Purpose Input Outputs (GPIO)";
+    description =
+      "A C library for the Raspberry Pi which allows control of the General Purpose Input Outputs (GPIO)";
     homepage = "http://abyz.me.uk/rpi/pigpio/";
     license = licenses.unlicense;
-    platforms = ["aarch64-linux" "armv7l-linux"];
-    maintainers = [];
+    platforms = [ "aarch64-linux" "armv7l-linux" ];
+    maintainers = [ ];
     isRpiPkg = true;
   };
 }

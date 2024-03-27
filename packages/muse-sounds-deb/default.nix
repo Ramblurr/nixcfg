@@ -1,7 +1,4 @@
-{
-  stdenv,
-  pkgs,
-}:
+{ stdenv, pkgs, }:
 stdenv.mkDerivation rec {
   name = "muse-sounds-deb";
   builder = ./builder.sh;

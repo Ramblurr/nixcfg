@@ -1,10 +1,4 @@
-{
-  lib,
-  fetchFromGitHub,
-  python3Packages,
-  beets,
-  dr14_tmeter,
-}:
+{ lib, fetchFromGitHub, python3Packages, beets, dr14_tmeter, }:
 python3Packages.buildPythonApplication rec {
   pname = "beets-dynamicrange";
   version = "unstable-2023-12-05";
@@ -16,9 +10,9 @@ python3Packages.buildPythonApplication rec {
     sha256 = "sha256-ALNGrpZOKdUE3g4np8Ms+0s8uWi6YixF2IVHSgaQVj4=";
   };
 
-  nativeBuildInputs = [beets];
+  nativeBuildInputs = [ beets ];
 
-  propagatedBuildInputs = [dr14_tmeter];
+  propagatedBuildInputs = [ dr14_tmeter ];
 
   postPatch = ''
     substituteInPlace beetsplug/dynamicrange.py \
@@ -31,7 +25,7 @@ python3Packages.buildPythonApplication rec {
     homepage = "https://github.com/auchter/beets-dynamicrange";
     description = "Calculate and store dynamic range of music for beets";
     license = licenses.mit;
-    maintainers = with maintainers; [auchter];
+    maintainers = with maintainers; [ auchter ];
     platforms = platforms.linux;
   };
 }
