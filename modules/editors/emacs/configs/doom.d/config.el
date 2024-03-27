@@ -422,12 +422,16 @@ Null prefix argument turns off the mode."
   (after! consult-dir
     (pushnew! consult-dir-sources 'consult-dir--source-zoxide)))
 
+(after! apheleia
+  (setf (alist-get 'nixfmt apheleia-formatters)
+        '("nixfmt" "--width=100")))
+
 
 (load! "+bindings.el")
 ;; (load! "+dashboard.el")
 (load! "+clojure.el")
 ;; (load! "+vterm.el")
-;; (load! "+lsp.el")
+(load! "+lsp.el")
 
 (put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
 (put 'cider-clojure-cli-global-options 'safe-local-variable (lambda (_) t))
