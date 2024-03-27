@@ -1,22 +1,17 @@
-{
-  lib,
-  pkgs,
-  config,
-  ...
-}: {
+{ lib, pkgs, config, ... }: {
   security.acme = {
     acceptTerms = true;
     defaults = {
       email = "acme@outskirtslabs.com";
       dnsProvider = "cloudflare";
       credentialsFile = config.sops.templates.acme-credentials.path;
-      extraLegoFlags = ["--dns.resolvers=1.1.1.1:53"];
+      extraLegoFlags = [ "--dns.resolvers=1.1.1.1:53" ];
     };
   };
 
   sops.secrets."acmeSecrets/cloudflareDnsToken" = {
     sopsFile = ./secrets.sops.yaml;
-    restartUnits = [];
+    restartUnits = [ ];
   };
 
   sops.templates.acme-credentials.content = ''
@@ -48,11 +43,5 @@
     };
   };
 
-  environment.persistence = {
-    "/persist" = {
-      directories = [
-        "/var/lib/acme"
-      ];
-    };
-  };
+  environment.persistence = { "/persist" = { directories = [ "/var/lib/acme" ]; }; };
 }

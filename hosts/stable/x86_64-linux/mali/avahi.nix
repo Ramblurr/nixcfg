@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{ config, lib, pkgs, ... }: {
   services.avahi = {
     enable = false;
     nssmdns = true;
@@ -16,7 +11,7 @@
       userServices = true;
       workstation = true;
     };
-    allowInterfaces = ["brprim4"];
+    allowInterfaces = [ "brprim4" ];
     extraServiceFiles = {
       smb = ''
         <?xml version="1.0" standalone='no'?><!--*-nxml-*-->

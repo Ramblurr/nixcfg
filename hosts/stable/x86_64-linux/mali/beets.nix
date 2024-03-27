@@ -1,13 +1,6 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
-  myhm = {pkgs, ...} @ hm: {
-    programs.zsh.shellAliases = {
-      beet-mine = "beet --config ~/.config/beets/config.mine.yaml";
-    };
+{ config, lib, pkgs, ... }: {
+  myhm = { pkgs, ... }@hm: {
+    programs.zsh.shellAliases = { beet-mine = "beet --config ~/.config/beets/config.mine.yaml"; };
     programs.beets = {
       enable = true;
 
@@ -16,11 +9,11 @@
         pluginOverrides = {
           filetote = {
             enable = true;
-            propagatedBuildInputs = [pkgs.my.beets-filetote];
+            propagatedBuildInputs = [ pkgs.my.beets-filetote ];
           };
           dynamicrange = {
             enable = true;
-            propagatedBuildInputs = [pkgs.my.beets-dynamicrange];
+            propagatedBuildInputs = [ pkgs.my.beets-dynamicrange ];
           };
           # hack, remove eventually:
           limit.builtin = true;
@@ -75,12 +68,12 @@
           resume = false;
         };
         filetote = {
-          extensions = [".cue" ".pdf"];
+          extensions = [ ".cue" ".pdf" ];
           filenames = "cover.jpg cover.png";
           pairing = {
             enabled = true;
             pairing_only = true;
-            extensions = [".lrc"];
+            extensions = [ ".lrc" ];
           };
         };
         item_fields = {
@@ -113,34 +106,27 @@
           '';
         };
         match = {
-          strong_rec_thresh = 0.10;
+          strong_rec_thresh = 0.1;
           max_rec.missing_tracks = "low";
-          required = ["year"]; #[ "year" "label" "country"];
+          required = [ "year" ]; # [ "year" "label" "country"];
           preferred = {
-            countries = ["XW" "US"];
-            media = ["Digital Media|File" "CD"];
+            countries = [ "XW" "US" ];
+            media = [ "Digital Media|File" "CD" ];
             original_year = true;
           };
           ignored = "missing_tracks unmatched_tracks";
-          ignored_media = [
-            "Data CD"
-            "DVD"
-            "DVD-Video"
-            "Blu-ray"
-            "HD-DVD"
-            "VCD"
-            "SVCD"
-            "UMD"
-            "VHS"
-          ];
+          ignored_media =
+            [ "Data CD" "DVD" "DVD-Video" "Blu-ray" "HD-DVD" "VCD" "SVCD" "UMD" "VHS" ];
         };
-        fetchart = {auto = true;};
-        ftintitle = {auto = true;};
-        edit.itemfields = ["track" "title" "artist" "album" "year" "month" "day"];
-        edit.albumfields = ["album" "albumartist" "albumdisambig" "year" "month" "day"];
+        fetchart = { auto = true; };
+        ftintitle = { auto = true; };
+        edit.itemfields = [ "track" "title" "artist" "album" "year" "month" "day" ];
+        edit.albumfields = [ "album" "albumartist" "albumdisambig" "year" "month" "day" ];
         paths = {
-          "albumtype:soundtrack" = "Soundtracks/%if{$year,$year - }$album%aunique{albumtype albumdisambig year label catalognum releasegroupdisambig} %if{$albumdisambig,($albumdisambig)} - $first_artist [%upper{$format} %if{$bitdepth,\${bitdepth}B-}$samplerate]/%if{$multidisc,$disc-}%if{$track,$track - } $artist - $title";
-          default = "$first_artist/%if{$year,$year - }$album%aunique{albumtype albumdisambig year label catalognum releasegroupdisambig} %if{$albumdisambig,($albumdisambig)} [%upper{$format} %if{$bitdepth,\${bitdepth}B-}$samplerate]/%if{$multidisc,$disc-}%if{$track,$track - }$title";
+          "albumtype:soundtrack" =
+            "Soundtracks/%if{$year,$year - }$album%aunique{albumtype albumdisambig year label catalognum releasegroupdisambig} %if{$albumdisambig,($albumdisambig)} - $first_artist [%upper{$format} %if{$bitdepth,\${bitdepth}B-}$samplerate]/%if{$multidisc,$disc-}%if{$track,$track - } $artist - $title";
+          default =
+            "$first_artist/%if{$year,$year - }$album%aunique{albumtype albumdisambig year label catalognum releasegroupdisambig} %if{$albumdisambig,($albumdisambig)} [%upper{$format} %if{$bitdepth,\${bitdepth}B-}$samplerate]/%if{$multidisc,$disc-}%if{$track,$track - }$title";
           singleton = "$albumartist/Singles/$title";
           comp = "Various Artists/$album%aunique{}/%if{$track,$track - }$title";
         };

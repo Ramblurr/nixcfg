@@ -1,12 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
-  virtualisation.libvirtd = {
-    enable = true;
-  };
+{ config, lib, pkgs, ... }: {
+  virtualisation.libvirtd = { enable = true; };
   services.nfs.server.enable = true;
 
   # Add firewall exception for VirtualBox provider
@@ -16,7 +9,7 @@
 
   # Add firewall exception for libvirt provider when using NFSv4
   networking.firewall.interfaces."virbr1" = {
-    allowedTCPPorts = [2049];
-    allowedUDPPorts = [2049];
+    allowedTCPPorts = [ 2049 ];
+    allowedUDPPorts = [ 2049 ];
   };
 }

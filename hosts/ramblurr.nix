@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: rec {
+{ config, lib, pkgs, ... }: rec {
   username = "ramblurr";
   name = "Casey Link";
   homeDirectory = "/home/ramblurr";
