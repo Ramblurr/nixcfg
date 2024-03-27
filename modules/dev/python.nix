@@ -1,22 +1,14 @@
-{
-  config,
-  options,
-  lib,
-  pkgs,
-  my,
-  ...
-}:
+{ config, options, lib, pkgs, my, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   devCfg = config.modules.dev;
   cfg = devCfg.python;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.dev.python = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.dev.python = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
@@ -35,14 +27,9 @@ in {
         ]))
     ];
     home-manager.users."${username}" = {
-      home.packages = with pkgs; [
-        nodePackages_latest.pyright
-      ];
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        directories = [
-          ".cache/pypoetry/virtualenvs/"
-        ];
-      };
+      home.packages = with pkgs; [ nodePackages_latest.pyright ];
+      home.persistence."/persist${homeDirectory}" =
+        mkIf withImpermanence { directories = [ ".cache/pypoetry/virtualenvs/" ]; };
     };
   };
 }

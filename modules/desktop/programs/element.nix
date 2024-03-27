@@ -1,30 +1,16 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.programs.element;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.programs.element = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.programs.element = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = {
-      pkgs,
-      config,
-      ...
-    } @ hm: {
-      home.packages = [
-        (pkgs.element-desktop.override {electron = pkgs.electron_28;})
-      ];
+    home-manager.users."${username}" = { pkgs, config, ... }@hm: {
+      home.packages = [ (pkgs.element-desktop.override { electron = pkgs.electron_28; }) ];
 
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [

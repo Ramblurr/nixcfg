@@ -1,23 +1,15 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.programs.thunderbird;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.programs.thunderbird = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.programs.thunderbird = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    myhm = {...} @ hm: {
+    myhm = { ... }@hm: {
       programs.thunderbird = {
         enable = true;
         profiles = {
@@ -37,11 +29,7 @@ in {
         };
       };
 
-      persistence = {
-        directories = [
-          ".thunderbird"
-        ];
-      };
+      persistence = { directories = [ ".thunderbird" ]; };
 
       home.file.".local/share/applications/thunderbird-personal.desktop" = {
         text = ''

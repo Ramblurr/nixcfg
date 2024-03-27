@@ -1,14 +1,7 @@
-{
-  config,
-  inputs,
-  options,
-  lib,
-  pkgs,
-  my,
-  ...
-}:
+{ config, inputs, options, lib, pkgs, my, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   devCfg = config.modules.dev;
   cfg = devCfg.fennel;
   username = config.modules.users.primaryUser.username;
@@ -19,9 +12,7 @@ with lib.my; let
     inherit pkgs;
   };
 in {
-  options.modules.dev.fennel = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.dev.fennel = { enable = mkBoolOpt false; };
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
@@ -36,11 +27,8 @@ in {
     home-manager.users."${username}" = {
       #home.packages = with pkgs; [
       #];
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        directories = [
-          ".config/fennel"
-        ];
-      };
+      home.persistence."/persist${homeDirectory}" =
+        mkIf withImpermanence { directories = [ ".config/fennel" ]; };
     };
   };
 }

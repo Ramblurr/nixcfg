@@ -1,26 +1,19 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.browsers.firefox;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.browsers.firefox = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.browsers.firefox = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = {pkgs, ...} @ hm: {
+    home-manager.users."${username}" = { pkgs, ... }@hm: {
       programs.firefox = {
         enable = true;
-        package = inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
+        package =
+          inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
         profiles.personal = {
           id = 0;
           path = "personal";
@@ -42,11 +35,7 @@ in {
       };
 
       home.persistence."/persist${homeDirectory}" = {
-        directories = [
-          ".mozilla/extensions"
-          ".mozilla/firefox"
-          ".cache/mozilla/firefox"
-        ];
+        directories = [ ".mozilla/extensions" ".mozilla/firefox" ".cache/mozilla/firefox" ];
       };
 
       home.file.".local/share/applications/firefox-work.desktop" = {

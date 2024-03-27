@@ -1,23 +1,15 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.browsers.chromium;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.browsers.chromium = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.browsers.chromium = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = {pkgs, ...} @ hm: {
+    home-manager.users."${username}" = { pkgs, ... }@hm: {
       programs.chromium = {
         enable = true;
         commandLineArgs = mkIf config.modules.desktop.wayland.enable [
@@ -26,10 +18,7 @@ in {
         ];
       };
       home.persistence."/persist${homeDirectory}" = {
-        directories = [
-          ".config/chromium"
-          ".cache/chromium"
-        ];
+        directories = [ ".config/chromium" ".cache/chromium" ];
       };
 
       xdg.configFile = let
@@ -37,24 +26,23 @@ in {
           --enable-features=UseOzonePlatform
           --ozone-platform=wayland
         '';
-      in
-        mkIf config.modules.desktop.wayland.enable {
-          "chromium-flags.conf".text = flags;
-          "electron-flags.conf".text = flags;
-          "electron-flags16.conf".text = flags;
-          "electron-flags17.conf".text = flags;
-          "electron-flags18.conf".text = flags;
-          "electron-flags19.conf".text = flags;
-          "electron-flags20.conf".text = flags;
-          "electron-flags21.conf".text = flags;
-          "electron-flags22.conf".text = flags;
-          "electron-flags23.conf".text = flags;
-          "electron-flags24.conf".text = flags;
-          "electron-flags25.conf".text = flags;
-          "electron-flags26.conf".text = flags;
-          "electron-flags27.conf".text = flags;
-          "electron-flags28.conf".text = flags;
-        };
+      in mkIf config.modules.desktop.wayland.enable {
+        "chromium-flags.conf".text = flags;
+        "electron-flags.conf".text = flags;
+        "electron-flags16.conf".text = flags;
+        "electron-flags17.conf".text = flags;
+        "electron-flags18.conf".text = flags;
+        "electron-flags19.conf".text = flags;
+        "electron-flags20.conf".text = flags;
+        "electron-flags21.conf".text = flags;
+        "electron-flags22.conf".text = flags;
+        "electron-flags23.conf".text = flags;
+        "electron-flags24.conf".text = flags;
+        "electron-flags25.conf".text = flags;
+        "electron-flags26.conf".text = flags;
+        "electron-flags27.conf".text = flags;
+        "electron-flags28.conf".text = flags;
+      };
       # Chromium's PWA/SSB "installed" web apps don't open because the wrong path to chromium is used.
       # This fixes it to whatever is currently set in the nix profile.
       home.packages = mkIf config.modules.desktop.wayland.enable [

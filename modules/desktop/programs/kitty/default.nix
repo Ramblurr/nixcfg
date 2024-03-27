@@ -1,34 +1,18 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.programs.kitty;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.desktop.programs.kitty = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.programs.kitty = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = {
-      pkgs,
-      config,
-      ...
-    } @ hm: {
+    home-manager.users."${username}" = { pkgs, config, ... }@hm: {
       home.file = {
-        ".config/kitty/kitty.session" = {
-          source = ./configs/kitty.session;
-        };
-        ".config/kitty/kitty-monitor.session" = {
-          source = ./configs/kitty-monitor.session;
-        };
+        ".config/kitty/kitty.session" = { source = ./configs/kitty.session; };
+        ".config/kitty/kitty-monitor.session" = { source = ./configs/kitty-monitor.session; };
       };
 
       programs.kitty = {

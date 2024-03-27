@@ -1,21 +1,13 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.shell.tmux;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.shell.tmux = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.shell.tmux = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
       programs.tmux = {
