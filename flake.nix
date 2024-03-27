@@ -111,7 +111,7 @@
           isStable = table.isStable;
           extraModules = table.extraModules;
           nixosSystem = table.nixpkgs.lib.nixosSystem;
-          unstable = mkPkgs inputs.nixpkgs system;
+          unstable = mkPkgs inputs.nixpkgs-unstable system;
           system = system;
           home-manager = table.home-manager;
           overlays = allOverlays;
