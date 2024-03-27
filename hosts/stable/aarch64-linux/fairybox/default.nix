@@ -15,7 +15,6 @@ in {
     ./audio.nix
     ./gpio.nix
     ./rpi-kernel.nix
-    ../../../home-wifi.nix
   ];
   system.stateVersion = "23.11";
 
