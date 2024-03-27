@@ -1,10 +1,5 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, pkgs, lib, inputs, ... }:
+let
   hn = "quine";
   defaultSopsFile = ./secrets.sops.yaml;
 in {
@@ -19,10 +14,11 @@ in {
     ./syncthing.nix
     ./roon-bridge.nix
     ./libvirt.nix
+    #./test.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
-  sops.age.sshKeyPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
+  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
   services.udev.extraRules = ''
     KERNEL=="ttyACM0", MODE:="666"
@@ -58,8 +54,10 @@ in {
   nix.extraOptions = ''
     !include ${config.sops.templates."nix.conf".path}
   '';
-  nix.settings.extra-substituters = ["https://attic.mgmt.socozy.casa/socozy"];
-  nix.settings.extra-trusted-public-keys = ["socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="];
+  nix.settings.extra-substituters = [ "https://attic.mgmt.socozy.casa/socozy" ];
+  nix.settings.extra-trusted-public-keys = [
+    "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+  ];
   nix.settings.netrc-file = config.sops.secrets.netrc.path;
   modules = {
     desktop = {
@@ -81,13 +79,11 @@ in {
       };
       gaming.enable = true;
       services = {
-        ha-shutdown = {
-          enable = true;
-        };
+        ha-shutdown = { enable = true; };
         hacompanion = {
           enable = true;
           environmentFile = config.sops.templates.hacompanion-env.path;
-          unitAfter = ["sops-nix.service"];
+          unitAfter = [ "sops-nix.service" ];
           listenPort = 6669;
           settings = {
             homeassistant = {
@@ -126,6 +122,7 @@ in {
     };
     shell = {
       aria2.enable = true;
+      attic.enable = true;
       atuin.enable = true;
       direnv.enable = true;
       git.enable = true;
@@ -150,7 +147,7 @@ in {
       podman.enable = true;
       microsocks.enable = true;
       printing.enable = true;
-      printing.drivers = [pkgs.cups-brother-mfcl2750dw];
+      printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       sshd.enable = true;
       flatpak.enable = true;
     };
@@ -168,18 +165,13 @@ in {
       emacs.enable = true;
       vim = {
         enable = true;
-        extraPlugins = with pkgs.vimPlugins; [
-          vim-airline
-          tabular
-          vim-nix
-          gruvbox-community
-        ];
+        extraPlugins = with pkgs.vimPlugins; [ vim-airline tabular vim-nix gruvbox-community ];
       };
       vscode.enable = true;
     };
     impermanence.enable = true;
     boot.zfs.enable = true;
-    boot.zfs.scrubPools = ["rpool"];
+    boot.zfs.scrubPools = [ "rpool" ];
     vpn.mullvad.enable = true;
     vpn.tailscale.enable = true;
     firewall.enable = true;
@@ -200,14 +192,7 @@ in {
       passwordSecretKey = "ramblurr-password";
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-        "audio"
-        "flatpak"
-        "input"
-        "plugdev"
-        "libvirtd"
-      ];
+      extraGroups = [ "wheel" "audio" "flatpak" "input" "plugdev" "libvirtd" ];
     };
     services.borgmatic = {
       enable = true;
@@ -239,7 +224,7 @@ in {
         "persist/home/*/.npm"
         "persist/home/*/.yarn"
         "persist/home/*/.vagrant.d/boxes"
-        "\'*.pyc\'"
+        "'*.pyc'"
         "'*/.vim*.tmp'"
         "'*/.DS_Store'"
         "'*/node_modules'"
