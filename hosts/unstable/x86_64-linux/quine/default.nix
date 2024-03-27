@@ -7,7 +7,6 @@ in {
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
-    ../../../../modules-unstable/desktop/gaming/default.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./wireplumber.nix
