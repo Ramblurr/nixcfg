@@ -1,9 +1,8 @@
 ---
 version: "3"
 
-#env:
-
-includes:
+vars:
+  LOCAL_HOST: quine
 
 tasks:
   default:
@@ -40,7 +39,12 @@ tasks:
   nixos-rebuild-local:
     internal: true
     cmds:
-      - nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace
+      - |
+        if [[ "{{ .TARGET_HOST }}" == "{{ .LOCAL_HOST }}" ]]; then
+          sudo nixos-rebuild --flake .#quine {{.ACTION}} --show-trace
+        else
+          nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace
+        fi
 
   deploy-key:
     cmds:
@@ -61,227 +65,6 @@ tasks:
     desc: Test quine
     cmds:
       - sudo nixos-rebuild --flake  .#quine test
-
-  test:mali:
-    desc: Test mali
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: test
-          BUILD_HOST: mali.int.***REMOVED***
-          TARGET_HOST: mali.int.***REMOVED***
-          FLAKE_URI: .#mali
-  build:mali:
-    desc: Build mali
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          BUILD_HOST: mali.int.***REMOVED***
-          TARGET_HOST: mali.int.***REMOVED***
-          FLAKE_URI: .#mali
-
-  switch:mali:
-    desc: Switch mali
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: switch
-          BUILD_HOST: mali.int.***REMOVED***
-          TARGET_HOST: mali.int.***REMOVED***
-          FLAKE_URI: .#mali
-
-  test:vpn:
-    desc: Test vpn
-    cmds:
-      - task: nixos-rebuild-local-root
-        vars:
-          ACTION: test
-          TARGET_HOST: vpn.***REMOVED***
-          FLAKE_URI: .#vpn
-
-  build:vpn:
-    desc: Build vpn
-    cmds:
-      - task: nixos-rebuild-local-root
-        vars:
-          ACTION: build
-          TARGET_HOST: ramblurr@vpn.***REMOVED***
-          FLAKE_URI: .#vpn
-
-  switch:vpn:
-    desc: Switch vpn
-    cmds:
-      - task: nixos-rebuild-local-root
-        vars:
-          ACTION: switch
-          TARGET_HOST: root@100.95.47.3 #ramblurr@vpn.***REMOVED***
-          FLAKE_URI: .#vpn
-
-  test:ovos-kitchen:
-    desc: Test ovos-kitchen
-    cmds:
-      - task: nixos-rebuild-local
-        vars:
-          ACTION: test
-          TARGET_HOST: ovos@ovos-kitchen.int.***REMOVED***
-          FLAKE_URI: .#ovos-kitchen
-
-  build:ovos-kitchen:
-    desc: Build ovos-kitchen-local
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          TARGET_HOST: ovos-kitchen.int.***REMOVED***
-          FLAKE_URI: .#ovos-kitchen
-
-  switch:ovos-kitchen:
-    desc: Switch ovos-kitchen
-    cmds:
-      - task: nixos-rebuild-local
-        vars:
-          ACTION: switch
-          TARGET_HOST: ovos-kitchen.int.***REMOVED***
-          FLAKE_URI: .#ovos-kitchen
-
-  image:ovos-kitchen:
-    desc: Build the SD Card image for ovos-kitchen
-    cmds:
-      - nix build .#images.ovos-kitchen
-
-  test:ovos-bedroom:
-    desc: Test ovos-bedroom
-    cmds:
-      - task: nixos-rebuild-local
-        vars:
-          ACTION: test
-          TARGET_HOST: ovos-bedroom.int.***REMOVED***
-          FLAKE_URI: .#ovos-bedroom
-  build:ovos-bedroom:
-    desc: Build ovos-bedroom
-    cmds:
-      - task: nixos-rebuild-local
-        vars:
-          ACTION: build
-          TARGET_HOST: ovos-bedroom.int.***REMOVED***
-          FLAKE_URI: .#ovos-bedroom
-
-  switch:ovos-bedroom:
-    desc: Switch ovos-bedroom
-    cmds:
-      - task: nixos-rebuild-local
-        vars:
-          ACTION: switch
-          #BUILD_HOST: root@ovos-bedroom.int.***REMOVED***
-          TARGET_HOST: root@ovos-bedroom.int.***REMOVED***
-          FLAKE_URI: .#ovos-bedroom
-
-  image:ovos-bedroom:
-    desc: Build the SD Card image for ovos-bedroom
-    cmds:
-      - nix build .#images.ovos-bedroom
-
-  build:k3s-test1:
-    desc: Build k3s-test1
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          BUILD_HOST: k3s-test1
-          TARGET_HOST: k3s-test1
-          FLAKE_URI: .#k3s-test1
-
-  switch:k3s-test1:
-    desc: Switch k3s-test1
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: switch
-          BUILD_HOST: k3s-test1
-          TARGET_HOST: k3s-test1
-          FLAKE_URI: .#k3s-test1
-
-  build:ibnsina:
-    desc: Build ibnsina
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          BUILD_HOST: ibnsina
-          TARGET_HOST: ibnsina
-          FLAKE_URI: .#ibnsina
-
-  switch:ibnsina:
-    desc: Switch ibnsina
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: switch
-          BUILD_HOST: ibnsina
-          TARGET_HOST: ibnsina
-          FLAKE_URI: .#ibnsina
-
-  build:debord:
-    desc: Build debord
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          BUILD_HOST: debord
-          TARGET_HOST: debord
-          FLAKE_URI: .#debord
-
-  switch:debord:
-    desc: Switch debord
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: switch
-          BUILD_HOST: debord
-          TARGET_HOST: debord
-          FLAKE_URI: .#debord
-
-  build:dewey:
-    desc: Build dewey
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          BUILD_HOST: dewey
-          TARGET_HOST: dewey
-          FLAKE_URI: .#dewey
-
-  switch:dewey:
-    desc: Switch dewey
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: switch
-          BUILD_HOST: dewey
-          TARGET_HOST: dewey
-          FLAKE_URI: .#dewey
-
-  build:peirce:
-    desc: Build peirce
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: build
-          BUILD_HOST: peirce
-          TARGET_HOST: peirce
-          FLAKE_URI: .#peirce
-
-  switch:peirce:
-    desc: Switch peirce
-    cmds:
-      - task: nixos-rebuild
-        vars:
-          ACTION: switch
-          BUILD_HOST: peirce
-          TARGET_HOST: peirce
-          FLAKE_URI: .#peirce
-
   build:
     desc: Build a configuration for a remote
     summary: |

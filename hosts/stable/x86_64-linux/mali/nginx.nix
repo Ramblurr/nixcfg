@@ -1,4 +1,6 @@
-{ config, lib, pkgs, ... }: {
+{ config, lib, pkgs, ... }:
+let inherit (config.repo.secrets.global) domain;
+in {
   networking.firewall.allowedTCPPorts = [ 80 443 ];
   services.nginx = {
     enable = true;
@@ -13,8 +15,8 @@
     '';
     virtualHosts = {
       # attic nix cache endpoint
-      "attic.mgmt.***REMOVED***" = {
-        useACMEHost = "attic.mgmt.***REMOVED***";
+      "attic.mgmt.${domain.home}" = {
+        useACMEHost = "attic.mgmt.${domain.home}";
         forceSSL = true;
         http3 = false;
         http2 = false;
@@ -29,9 +31,9 @@
         };
       };
       # minio s3 endpoint
-      "s3.data.***REMOVED***" = {
-        useACMEHost = "s3.data.***REMOVED***";
-        serverAliases = [ "s3.mgmt.***REMOVED***" ];
+      "s3.data.${domain.home}" = {
+        useACMEHost = "s3.data.${domain.home}";
+        serverAliases = [ "s3.mgmt.${domain.home}" ];
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:9000";
@@ -61,10 +63,10 @@
         '';
       };
       # minio admin console
-      "minio.data.***REMOVED***" = {
-        serverAliases = [ "minio.mgmt.***REMOVED***" ];
+      "minio.data.${domain.home}" = {
+        serverAliases = [ "minio.mgmt.${domain.home}" ];
         forceSSL = true;
-        useACMEHost = "s3.data.***REMOVED***";
+        useACMEHost = "s3.data.${domain.home}";
         extraConfig = ''
           # To allow special characters in headers
           ignore_invalid_headers off;

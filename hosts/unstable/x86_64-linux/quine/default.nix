@@ -1,5 +1,6 @@
 { config, pkgs, lib, inputs, ... }:
 let
+  inherit (config.repo.secrets.global) domain;
   hn = "quine";
   defaultSopsFile = ./secrets.sops.yaml;
 in {
@@ -53,7 +54,7 @@ in {
   nix.extraOptions = ''
     !include ${config.sops.templates."nix.conf".path}
   '';
-  nix.settings.extra-substituters = [ "https://attic.mgmt.***REMOVED***/socozy" ];
+  nix.settings.extra-substituters = [ "https://attic.mgmt.${domain.home}/socozy" ];
   nix.settings.extra-trusted-public-keys = [
     "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
   ];
@@ -87,7 +88,7 @@ in {
           settings = {
             homeassistant = {
               device_name = "quine";
-              host = "https://home.***REMOVED***";
+              host = "https://home.${domain.home}";
             };
             notifications = {
               push_url = "http://10.9.4.3:6669/notifications";
@@ -195,11 +196,11 @@ in {
     };
     services.borgmatic = {
       enable = true;
-      name = "aquinas.***REMOVED***-mali";
+      name = "aquinas.${domain.home}-mali";
       repositories = [
         {
           label = "mali";
-          path = "ssh://borg@mali.int.***REMOVED***/mnt/tank2/backups/borg_repos/aquinas";
+          path = "ssh://borg@mali.int.${domain.home}/mnt/tank2/backups/borg_repos/aquinas";
         }
         {
           label = "offsite";

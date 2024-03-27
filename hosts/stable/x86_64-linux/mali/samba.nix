@@ -1,4 +1,6 @@
-{ config, lib, pkgs, ... }: {
+{ config, lib, pkgs, ... }:
+let inherit (config.repo.secrets.global) domain;
+in {
   services.samba-wsdd.enable = true;
   services.samba-wsdd.workgroup = "WORKGROUP";
   networking.firewall.allowedTCPPorts = [
@@ -64,7 +66,7 @@
         writeable = "no";
       };
       paperless = {
-        path = "/mnt/tank2/services/paperless.k8s.***REMOVED***";
+        path = "/mnt/tank2/services/paperless.k8s.${domain.home}";
         browseable = "yes";
         "force user" = "k8s-nfs";
         "guest ok" = "no";

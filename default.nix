@@ -25,7 +25,7 @@ with lib.my; {
         "https://nix-community.cachix.org"
         "https://nix-gaming.cachix.org"
         #"https://arm.cachix.org/"
-        "https://attic.mgmt.***REMOVED***/socozy"
+        "https://attic.mgmt.${config.repo.secrets.global.domain.home}/socozy"
       ];
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
