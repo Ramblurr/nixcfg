@@ -1,10 +1,5 @@
-{
-  config,
-  pkgs,
-  lib,
-  inputs,
-  ...
-}: let
+{ config, pkgs, lib, inputs, ... }:
+let
   # these scripts are for the rpi onoff shim from Pimoroni
   # the gpio-shutoff script is called by systemd when a poweroff command happens
   # the onoff-shim-trigger script is ran as a daemon and monitors the trigger pin and initiates a shutdown
@@ -50,7 +45,7 @@ in {
   raspberry-pi.hardware.platform.type = "rpi4";
   raspberry-pi.hardware.apply-overlays-dtmerge.enable = lib.mkForce true;
   hardware = {
-    firmware = [pkgs.wireless-regdb];
+    firmware = [ pkgs.wireless-regdb ];
     i2c.enable = true;
 
     deviceTree = {
@@ -100,9 +95,9 @@ in {
 
   systemd.services.onoff-trigger = {
     enable = true;
-    wantedBy = ["multi-user.target"];
+    wantedBy = [ "multi-user.target" ];
     description = "OnOff SHIM daemon";
-    path = [pkgs.util-linux];
+    path = [ pkgs.util-linux ];
     serviceConfig = {
       Type = "simple";
       ExecStart = "${onoff-shim-trigger}/bin/onoff-shim-trigger";

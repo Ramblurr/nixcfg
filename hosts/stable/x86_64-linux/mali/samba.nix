@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{ config, lib, pkgs, ... }: {
   services.samba-wsdd.enable = true;
   services.samba-wsdd.workgroup = "WORKGROUP";
   networking.firewall.allowedTCPPorts = [
@@ -80,11 +75,5 @@
     };
   };
 
-  environment.persistence = {
-    "/persist" = {
-      directories = [
-        "/var/lib/samba"
-      ];
-    };
-  };
+  environment.persistence = { "/persist" = { directories = [ "/var/lib/samba" ]; }; };
 }

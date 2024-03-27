@@ -1,10 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
-  networking.firewall.allowedTCPPorts = [80 443];
+{ config, lib, pkgs, ... }: {
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
   services.nginx = {
     enable = true;
     recommendedGzipSettings = true;
@@ -36,7 +31,7 @@
       # minio s3 endpoint
       "s3.data.***REMOVED***" = {
         useACMEHost = "s3.data.***REMOVED***";
-        serverAliases = ["s3.mgmt.***REMOVED***"];
+        serverAliases = [ "s3.mgmt.***REMOVED***" ];
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:9000";
@@ -67,7 +62,7 @@
       };
       # minio admin console
       "minio.data.***REMOVED***" = {
-        serverAliases = ["minio.mgmt.***REMOVED***"];
+        serverAliases = [ "minio.mgmt.***REMOVED***" ];
         forceSSL = true;
         useACMEHost = "s3.data.***REMOVED***";
         extraConfig = ''

@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{ config, lib, pkgs, ... }: {
   boot.extraModprobeConfig = ''
     options snd-aloop id=RoonLoopback
   '';
@@ -26,17 +21,13 @@
         to = 60999;
       }
     ];
-    allowedUDPPorts = [
-      9003
-    ];
-    allowedUDPPortRanges = [
-      {
-        from = 32768;
-        to = 60999;
-      }
-    ];
+    allowedUDPPorts = [ 9003 ];
+    allowedUDPPortRanges = [{
+      from = 32768;
+      to = 60999;
+    }];
   };
-  myhm = {...} @ hm: {
+  myhm = { ... }@hm: {
     #persistence = {
     #  directories = [
     #  ];
@@ -59,9 +50,5 @@
       '';
     };
   };
-  environment.persistence."/persist" = {
-    directories = [
-      "/var/lib/roon-bridge"
-    ];
-  };
+  environment.persistence."/persist" = { directories = [ "/var/lib/roon-bridge" ]; };
 }

@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: {
+{ config, lib, pkgs, ... }: {
   services.timesyncd.enable = true;
   users.defaultUserShell = pkgs.bash;
   users.mutableUsers = false;
@@ -12,8 +7,8 @@
       gid = 1000;
       name = "ovos";
     };
-    spi = {};
-    gpio = {};
+    spi = { };
+    gpio = { };
   };
   users.users = {
     ovos = {
@@ -22,7 +17,7 @@
       name = "ovos";
       group = "ovos";
       isNormalUser = true;
-      extraGroups = ["wheel" "audio" "spi" "gpio" "input" "plugdev"];
+      extraGroups = [ "wheel" "audio" "spi" "gpio" "input" "plugdev" ];
       shell = pkgs.zsh;
     };
   };
@@ -118,9 +113,7 @@
     jless
   ];
 
-  virtualisation.podman = {
-    enable = true;
-  };
+  virtualisation.podman = { enable = true; };
 
   documentation = {
     enable = true;
@@ -158,14 +151,9 @@
   ];
 
   systemd.user.services.podman-auto-update-self = {
-    wants = ["network-online.target"];
-    after = ["network-online.target"];
-    path = [
-      "/run/wrappers"
-      pkgs.coreutils
-      config.virtualisation.podman.package
-      pkgs.shadow
-    ];
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    path = [ "/run/wrappers" pkgs.coreutils config.virtualisation.podman.package pkgs.shadow ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "podman auto-update";
@@ -174,7 +162,7 @@
   };
 
   systemd.user.timers.podman-auto-update-self = {
-    wantedBy = ["timers.target"];
+    wantedBy = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "daily";
       Persistent = true;
@@ -189,21 +177,14 @@
       pullPolicy = "missing";
       podman = "${config.virtualisation.podman.package}/bin/podman";
     in {
-      path = [
-        "/run/wrappers"
-        pkgs.coreutils
-        config.virtualisation.podman.package
-        pkgs.shadow
-      ];
+      path = [ "/run/wrappers" pkgs.coreutils config.virtualisation.podman.package pkgs.shadow ];
       description = "Podman hivemind-sat";
-      after = ["network-online.target"];
-      wantedBy = ["default.target"];
-      partOf = ["pipewire.service"];
+      after = [ "network-online.target" ];
+      wantedBy = [ "default.target" ];
+      partOf = [ "pipewire.service" ];
 
       enable = true;
-      unitConfig = {
-        "RequiresMountsFor" = "%t/containers";
-      };
+      unitConfig = { "RequiresMountsFor" = "%t/containers"; };
       serviceConfig = {
         Environment = "PODMAN_SYSTEMD_UNIT=%n";
         Restart = "on-failure";

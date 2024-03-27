@@ -1,14 +1,10 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}: let
+{ config, lib, pkgs, ... }:
+let
   backupUser = "borg";
   backupDir = "/mnt/tank2/backups/borg_repos";
 in {
-  users.users."${backupUser}" = {};
-  systemd.tmpfiles.rules = ["d ${backupDir} 0755 root root - -"];
+  users.users."${backupUser}" = { };
+  systemd.tmpfiles.rules = [ "d ${backupDir} 0755 root root - -" ];
   services.borgbackup.repos = {
     aquinas = {
       path = "/mnt/tank2/backups/borg_repos/aquinas";
@@ -19,27 +15,24 @@ in {
     };
     proxmox = {
       path = "/mnt/tank2/backups/borg_repos/proxmox";
-      authorizedKeys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDVhO6fCS/WBKebnGaNLxUDg5jWyMTv7nXvirPONXY3a"
-      ];
+      authorizedKeys =
+        [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDVhO6fCS/WBKebnGaNLxUDg5jWyMTv7nXvirPONXY3a" ];
     };
   };
-  systemd.services =
-    lib.mapAttrs' (repo: repoCfg: {
-      name = "borgbackup-compact-${repo}";
-      value = {
-        path = with pkgs; [borgbackup];
-        script = "borg compact --verbose ${repoCfg.path}";
-        serviceConfig = {
-          CPUSchedulingPolicy = "idle";
-          IOSchedulingClass = "idle";
-          PrivateTmp = true;
-          ProtectSystem = "strict";
-          ReadWritePaths = repoCfg.path;
-          User = backupUser;
-        };
-        startAt = "Mon 4:55";
+  systemd.services = lib.mapAttrs' (repo: repoCfg: {
+    name = "borgbackup-compact-${repo}";
+    value = {
+      path = with pkgs; [ borgbackup ];
+      script = "borg compact --verbose ${repoCfg.path}";
+      serviceConfig = {
+        CPUSchedulingPolicy = "idle";
+        IOSchedulingClass = "idle";
+        PrivateTmp = true;
+        ProtectSystem = "strict";
+        ReadWritePaths = repoCfg.path;
+        User = backupUser;
       };
-    })
-    config.services.borgbackup.repos;
+      startAt = "Mon 4:55";
+    };
+  }) config.services.borgbackup.repos;
 }

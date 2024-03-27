@@ -1,9 +1,4 @@
-{
-  config,
-  inputs,
-  lib,
-  ...
-}: {
+{ config, inputs, lib, ... }: {
   #=====================================================
   #
   # Attic
@@ -15,9 +10,7 @@
   #
   #=====================================================
 
-  imports = [
-    inputs.attic.nixosModules.atticd
-  ];
+  imports = [ inputs.attic.nixosModules.atticd ];
 
   # Self-Hosted Nix Cache Server
   # https://github.com/zhaofengli/attic
@@ -34,9 +27,7 @@
   #    it's similar to cachix, related docs:
   #    https://docs.attic.rs/reference/attic-cli.html
   #    https://docs.cachix.org/pushing#pushing
-  systemd.services.atticd = {
-    serviceConfig.ReadWritePaths = lib.mkForce "/mnt/fast/attic";
-  };
+  systemd.services.atticd = { serviceConfig.ReadWritePaths = lib.mkForce "/mnt/fast/attic"; };
   sops.secrets."attic_server_token" = {
     mode = "400";
     owner = "root";
