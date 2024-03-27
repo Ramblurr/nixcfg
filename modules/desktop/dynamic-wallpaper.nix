@@ -7,11 +7,12 @@
   lib,
   ...
 }:
-with lib; let
+with lib;
+let
   cfg = config.services.dynamic-wallpaper;
-in {
-  imports = [
-  ];
+in
+{
+  imports = [ ];
 
   options.services.dynamic-wallpaper = {
     enable = mkEnableOption "dynamic wallpaper service";
@@ -78,9 +79,7 @@ in {
   };
 
   config = {
-    environment.systemPackages = with pkgs; [
-      swww
-    ];
+    environment.systemPackages = with pkgs; [ swww ];
     # Service for starting the swww daemon
     systemd.user.services."swww-daemon" = mkIf cfg.enable {
       unitConfig = {
@@ -94,10 +93,8 @@ in {
         ExecStart = "${pkgs.swww}/bin/swww init --no-daemon";
         NotifyAccess = "all";
       };
-      wantedBy = [
-        "graphical-session.target"
-      ];
-      path = [pkgs.swww];
+      wantedBy = [ "graphical-session.target" ];
+      path = [ pkgs.swww ];
     };
     # Service which sets the current wallpaper to the wallpaper corresponding to the current hour
     #   systemctl --user start dynamic-wallpaper@default.service # Use settings specified by this module
@@ -109,53 +106,41 @@ in {
         "PartOf" = "swww-daemon.service";
         "After" = "swww-daemon.service";
       };
-      script = let
-        flags = builtins.concatStringsSep " " (
-          builtins.filter (x: x != "") [
-            "${
-              if cfg.noResize
-              then "--no-resize"
-              else ""
-            }"
-            "${
-              if cfg.noResize
-              then "--fill-color ${cfg.fillColor}"
-              else ""
-            }"
-            "--filter ${cfg.filter}"
-            "${
-              if cfg.sync
-              then "--sync"
-              else ""
-            }"
-            "--transition-type ${cfg.transitionType}"
-            "--transition-step ${toString cfg.transitionStep}"
-            "--transition-duration ${toString cfg.transitionDuration}"
-            "--transition-fps ${toString cfg.transitionFps}"
-            "--transition-angle ${toString cfg.transitionAngle}"
-            "--transition-pos ${cfg.transitionPosition}"
-            "--transition-bezier ${cfg.transitionBezier}"
-            "${
-              if cfg.transitionType == "wave"
-              then "--transition-wave ${cfg.transitionWaveProperties}"
-              else ""
-            }"
-          ]
-        );
-        command = "${pkgs.swww}/bin/swww img";
-      in ''
-        set -eu
-        hour="$(date +%k | xargs)" # xargs removes leading whitespace
-        # Set the directory where the images are stored
-        pickup_directory="$HOME/.config/hypr/wallpaper"
-        # Pick a random image from the directory using shuf
-        selected_image=$(find "$pickup_directory" -not -type d -print0 | shuf -n 1 -z | tr -d '\0')
-        if [ "$1" = "skip" ]; then
-          ${command} --transition-duration 0 "$selected_image"
-        else
-          ${command} ${flags} "$selected_image"
-        fi
-      '';
+      script =
+        let
+          flags = builtins.concatStringsSep " " (
+            builtins.filter (x: x != "") [
+              "${if cfg.noResize then "--no-resize" else ""}"
+              "${if cfg.noResize then "--fill-color ${cfg.fillColor}" else ""}"
+              "--filter ${cfg.filter}"
+              "${if cfg.sync then "--sync" else ""}"
+              "--transition-type ${cfg.transitionType}"
+              "--transition-step ${toString cfg.transitionStep}"
+              "--transition-duration ${toString cfg.transitionDuration}"
+              "--transition-fps ${toString cfg.transitionFps}"
+              "--transition-angle ${toString cfg.transitionAngle}"
+              "--transition-pos ${cfg.transitionPosition}"
+              "--transition-bezier ${cfg.transitionBezier}"
+              "${
+                if cfg.transitionType == "wave" then "--transition-wave ${cfg.transitionWaveProperties}" else ""
+              }"
+            ]
+          );
+          command = "${pkgs.swww}/bin/swww img";
+        in
+        ''
+          set -eu
+          hour="$(date +%k | xargs)" # xargs removes leading whitespace
+          # Set the directory where the images are stored
+          pickup_directory="$HOME/.config/hypr/wallpaper"
+          # Pick a random image from the directory using shuf
+          selected_image=$(find "$pickup_directory" -not -type d -print0 | shuf -n 1 -z | tr -d '\0')
+          if [ "$1" = "skip" ]; then
+            ${command} --transition-duration 0 "$selected_image"
+          else
+            ${command} ${flags} "$selected_image"
+          fi
+        '';
       scriptArgs = "%i";
       serviceConfig = {
         Type = "oneshot";
