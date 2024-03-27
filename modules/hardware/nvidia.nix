@@ -1,4 +1,4 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{ options, config, lib, pkgs, actual-nixpkgs, ... }:
 with lib;
 with lib.my;
 let
@@ -63,7 +63,7 @@ in {
             "file_format_version" : "1.0.0",
             "ICD" : {
                 "library_path" : "${
-                  inputs.nixpkgs.legacyPackages.${pkgs.hostPlatform.system}.egl-wayland
+                  actual-nixpkgs.legacyPackages.${pkgs.hostPlatform.system}.egl-wayland
                 }/lib/libnvidia-egl-wayland.so"
             }
         }
