@@ -1,19 +1,11 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.wayland;
   username = config.modules.users.primaryUser.username;
 in {
-  options.modules.desktop.wayland = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.wayland = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     myhm = {
       home.sessionVariables = {

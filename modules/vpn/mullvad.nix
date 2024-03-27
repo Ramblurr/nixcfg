@@ -1,21 +1,13 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.vpn.mullvad;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
-  options.modules.vpn.mullvad = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.vpn.mullvad = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     services.mullvad-vpn = mkIf cfg.enable {
       enable = true;
@@ -23,11 +15,10 @@ in {
       enableExcludeWrapper = true;
     };
 
-    sops.secrets.mullvad-account = {};
+    sops.secrets.mullvad-account = { };
     systemd.services.mullvad-daemon = {
-      serviceConfig.LoadCredential = ["account:${config.sops.secrets.mullvad-account.path}"];
-      postStart = let
-        mullvad = config.services.mullvad-vpn.package;
+      serviceConfig.LoadCredential = [ "account:${config.sops.secrets.mullvad-account.path}" ];
+      postStart = let mullvad = config.services.mullvad-vpn.package;
       in ''
         #!/bin/sh
         while ! ${mullvad}/bin/mullvad status &>/dev/null; do sleep 1; done
@@ -48,21 +39,16 @@ in {
     };
 
     environment.persistence = mkIf (cfg.enable && config.modules.impermanence.enable) {
-      "/persist".directories = [
-        "/etc/mullvad-vpn"
-        "/var/cache/mullvad-vpn"
-      ];
+      "/persist".directories = [ "/etc/mullvad-vpn" "/var/cache/mullvad-vpn" ];
     };
 
-    home-manager.users."${username}" = {pkgs, ...} @ hm:
+    home-manager.users."${username}" = { pkgs, ... }@hm:
       mkIf cfg.enable {
         home.persistence."/persist${homeDirectory}" = mkIf config.modules.impermanence.enable {
-          directories = [
-            {
-              method = "symlink";
-              directory = ".config/Mullvad VPN";
-            }
-          ];
+          directories = [{
+            method = "symlink";
+            directory = ".config/Mullvad VPN";
+          }];
         };
       };
   };

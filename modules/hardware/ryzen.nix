@@ -1,12 +1,7 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ config, lib, pkgs, ... }:
 with lib;
-with lib.my; let
-  cfg = config.modules.hardware.ryzen;
+with lib.my;
+let cfg = config.modules.hardware.ryzen;
 in {
   options = {
     modules.hardware.ryzen = {
@@ -22,24 +17,22 @@ in {
   };
 
   config = mkIf cfg.enable {
-    boot.kernelModules = ["msr"]; # Needed for zenstates
+    boot.kernelModules = [ "msr" ]; # Needed for zenstates
     hardware.cpu.amd.updateMicrocode = true;
     # Ryzen cpu control
     systemd.services.zenstates = mkIf cfg.undervolt.enable {
       enable = true;
       description = "Ryzen Undervolt";
-      after = ["syslog.target" "systemd-modules-load.service"];
+      after = [ "syslog.target" "systemd-modules-load.service" ];
 
-      unitConfig = {
-        ConditionPathExists = "${pkgs.zenstates}/bin/zenstates";
-      };
+      unitConfig = { ConditionPathExists = "${pkgs.zenstates}/bin/zenstates"; };
 
       serviceConfig = {
         User = "root";
         ExecStart = "${pkgs.zenstates}/bin/zenstates ${cfg.undervolt.value}";
       };
 
-      wantedBy = ["multi-user.target"];
+      wantedBy = [ "multi-user.target" ];
     };
   };
 }

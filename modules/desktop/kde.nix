@@ -1,29 +1,17 @@
-{
-  options,
-  config,
-  lib,
-  pkgs,
-  inputs,
-  ...
-}:
+{ options, config, lib, pkgs, inputs, ... }:
 with lib;
-with lib.my; let
+with lib.my;
+let
   cfg = config.modules.desktop.kde;
   username = config.modules.users.primaryUser.username;
 in {
-  options.modules.desktop.kde = {
-    enable = mkBoolOpt false;
-  };
+  options.modules.desktop.kde = { enable = mkBoolOpt false; };
   config = mkIf cfg.enable {
     services.xserver.desktopManager.plasma5.enable = true;
     services.xserver.desktopManager.plasma5.runUsingSystemd = false;
 
-    home-manager.users."${username}" = {pkgs, ...} @ hm: {
-      home.packages = [
-        pkgs.digikam
-        pkgs.libsForQt5.kfind
-        pkgs.krename
-      ];
+    home-manager.users."${username}" = { pkgs, ... }@hm: {
+      home.packages = [ pkgs.digikam pkgs.libsForQt5.kfind pkgs.krename ];
       xdg.configFile."baloofilerc".text = ''
         [Basic Settings]
         Indexing-Enabled=true
