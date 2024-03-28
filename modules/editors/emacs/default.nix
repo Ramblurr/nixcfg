@@ -115,7 +115,8 @@ in
             ]
           ))
           # :lang nix
-          inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt
+          nixfmt-rfc-style
+          #inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt-rfc-style
         ];
         persistence = mkIf withImpermanence { directories = [ ".emacs.d" ]; };
         home.file.".doom.d" = {
