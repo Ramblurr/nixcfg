@@ -1,8 +1,18 @@
-{ inputs, config, lib, pkgs, actual-nixpkgs, ... }:
+{
+  inputs,
+  config,
+  lib,
+  pkgs,
+  actual-nixpkgs,
+  ...
+}:
 with lib;
-with lib.my; {
-  imports = [ inputs.impermanence.nixosModules.impermanence inputs.sops-nix.nixosModules.sops ]
-    ++ (mapModulesRec' (toString ./modules) import);
+with lib.my;
+{
+  imports = [
+    inputs.impermanence.nixosModules.impermanence
+    inputs.sops-nix.nixosModules.sops
+  ] ++ (mapModulesRec' (toString ./modules) import);
 
   # https://nix-community.github.io/home-manager/index.html#sec-install-nixos-module
   # "use the global pkgs that is configured via the system level nixpkgs options"
@@ -37,7 +47,10 @@ with lib.my; {
         #"arm.cachix.org-1:5BZ2kjoL1q6nWhlnrbAl+G7ThY7+HaBRD9PZzqZkbnM="
         "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       ];
-      trusted-users = [ "root" "@wheel" ];
+      trusted-users = [
+        "root"
+        "@wheel"
+      ];
       auto-optimise-store = true;
     };
 
@@ -79,4 +92,16 @@ with lib.my; {
     sops
     gnupg
   ];
+  system = {
+    # Enable printing changes on nix build etc with nvd
+    activationScripts.report-changes = ''
+      PATH=$PATH:${
+        lib.makeBinPath [
+          pkgs.nvd
+          pkgs.nix
+        ]
+      }
+      nvd diff $(ls -dv /nix/var/nix/profiles/system-*-link | tail -2)
+    '';
+  };
 }
