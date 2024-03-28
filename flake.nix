@@ -134,6 +134,7 @@
           extraModules = table.extraModules;
           nixosSystem = table.nixpkgs.lib.nixosSystem;
           unstable = mkPkgs inputs.nixpkgs-unstable system;
+          mine = mkPkgs inputs.nixpkgs-mine system;
           system = system;
           home-manager = table.home-manager;
           overlays = allOverlays;
