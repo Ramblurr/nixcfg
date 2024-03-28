@@ -24,6 +24,7 @@ in
       { ... }@hm:
       {
         home.packages = with pkgs; [
+          #pkgs.my.mysql-backup
           # <rust pkgs>
           bat
           restic
@@ -94,7 +95,8 @@ in
           smartmontools
           pwgen-secure
           alejandra
-          inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt
+          nixfmt-rfc-style
+          #inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt
         ];
 
         persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };
