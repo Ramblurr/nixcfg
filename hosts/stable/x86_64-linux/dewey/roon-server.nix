@@ -1,9 +1,33 @@
-{ config, fetchurl, pkgs, lib, inputs, ... }:
+{
+  config,
+  fetchurl,
+  pkgs,
+  lib,
+  unstable,
+  ...
+}:
 let
   name = "roon-server";
   user = "roon-server";
   group = "roon-server";
-in {
+  bluOSHosts = [
+    "10.9.4.15"
+    "10.9.4.12"
+    "10.9.6.16"
+    "10.9.4.13"
+  ];
+
+  toRebootCmdLine = map (
+    host: "${lib.getExe pkgs.curl} -X POST http://${host}/reboot --data-raw 'noheader=0&yes='"
+  ) bluOSHosts;
+
+  rebootBluOS = pkgs.writeScript "reboot-bluos.sh" ''
+    #!${pkgs.runtimeShell} -e
+    echo "Rebooting bluos devices"
+    ${lib.concatStringsSep "\n" toRebootCmdLine}
+  '';
+in
+{
   services.roon-server = {
     enable = true;
     openFirewall = true;
@@ -18,12 +42,13 @@ in {
   systemd.services.roon-server = {
     serviceConfig = {
       IOWeight = "200"; # default, when unspecified is 100
-      OOMScoreAdjust =
-        "-500"; # default, when unspecified is 0. lower means less likely to be oom-killed
+      OOMScoreAdjust = "-500"; # default, when unspecified is 0. lower means less likely to be oom-killed
       Nice = "-2"; # default, when unspecified is 0
       CPUWeight = "300"; # default, when unspecified is 100
       MemoryLow = "2G";
       MemoryHigh = "8G";
+      #ExecStart = lib.mkForce "${unstable.roon-server}/bin/RoonServer";
+      ExecStartPost = rebootBluOS;
     };
   };
   fileSystems."/mnt/roon/backup" = {
