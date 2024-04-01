@@ -1,9 +1,16 @@
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
   inherit (config.repo.secrets.global) domain;
   hn = "quine";
   defaultSopsFile = ./secrets.sops.yaml;
-in {
+in
+{
   imports = [
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
@@ -14,12 +21,16 @@ in {
     ./syncthing.nix
     ./roon-bridge.nix
     ./libvirt.nix
+    #./ocis.nix
     #./test.nix
+    #./authentik.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
+
+  # My programmable keyboard
   services.udev.extraRules = ''
     KERNEL=="ttyACM0", MODE:="666"
   '';
@@ -79,7 +90,9 @@ in {
       };
       gaming.enable = true;
       services = {
-        ha-shutdown = { enable = true; };
+        ha-shutdown = {
+          enable = true;
+        };
         hacompanion = {
           enable = true;
           environmentFile = config.sops.templates.hacompanion-env.path;
@@ -165,7 +178,12 @@ in {
       emacs.enable = true;
       vim = {
         enable = true;
-        extraPlugins = with pkgs.vimPlugins; [ vim-airline tabular vim-nix gruvbox-community ];
+        extraPlugins = with pkgs.vimPlugins; [
+          vim-airline
+          tabular
+          vim-nix
+          gruvbox-community
+        ];
       };
       vscode.enable = true;
     };
@@ -192,7 +210,14 @@ in {
       passwordSecretKey = "ramblurr-password";
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [ "wheel" "audio" "flatpak" "input" "plugdev" "libvirtd" ];
+      extraGroups = [
+        "wheel"
+        "audio"
+        "flatpak"
+        "input"
+        "plugdev"
+        "libvirtd"
+      ];
     };
     services.borgmatic = {
       enable = true;
