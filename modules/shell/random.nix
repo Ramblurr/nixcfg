@@ -96,6 +96,7 @@ in
           pwgen-secure
           alejandra
           nixfmt-rfc-style
+          inputs.fast-flake-update.packages.${system}.fast-flake-update
           #inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt
         ];
 
