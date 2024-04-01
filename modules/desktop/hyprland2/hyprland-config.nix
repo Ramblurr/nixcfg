@@ -8,6 +8,7 @@
 
 let
   cfg = config.modules.desktop.hyprland2;
+  username = config.modules.users.primaryUser.username;
   hyprland = inputs.hyprland.packages.${pkgs.system}.hyprland;
 in
 
@@ -25,6 +26,22 @@ in
           categories = [ "X-Preferences" ];
           terminal = false;
         };
+
+        services.swayidle = {
+          enable = true;
+          timeouts = [
+            {
+              timeout = 549;
+              command = ''${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/Qogir-ubuntu-dark/symbolic/actions/screensaver-unlock-symbolic.svg  "Idle timeout" "Screen is locking in 1 minute"'';
+            }
+            {
+              timeout = 550;
+              command = "${pkgs.hyprland}/bin/hyprctl dispatch dpms off";
+              resumeCommand = "${pkgs.hyprland}/bin/hyprctl dispatch dpms on";
+            }
+          ];
+        };
+
         wayland.windowManager.hyprland = {
           enable = true;
           package = hyprland;
