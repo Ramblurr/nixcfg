@@ -6,6 +6,15 @@
 
     nixfmt.url = "github:serokell/nixfmt";
 
+    ags.url = "github:Aylur/ags";
+    ags.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
+    firefox-gnome-theme.url = "github:rafaelmardojai/firefox-gnome-theme";
+    firefox-gnome-theme.flake = false;
+
+    matugen.url = "github:InioX/matugen";
+    matugen.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
@@ -16,13 +25,24 @@
     nixos-ovos.inputs.nixpkgs.follows = "nixpkgs-unstable";
     nixos-ovos.inputs.nixos-raspberrypi.follows = "nixos-raspberrypi";
 
+    flake-utils.url = "github:numtide/flake-utils";
+
     disko-unstable.url = "github:nix-community/disko";
     disko-unstable.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    hyprland.url = "github:hyprwm/Hyprland";
+    hyprland.url = "github:hyprwm/Hyprland/v0.37.1";
+
+    #hyprNStack.url = "github:SiriusStarr/hyprNStack";
+    #hyprNStack.inputs.hyprland.follows = "hyprland";
+
+    #hy3.url = "github:outfoxxed/hy3/hl0.37.1";
+    #hy3.inputs.hyprland.follows = "hyprland";
+
+    fast-flake-update.url = "github:Mic92/fast-flake-update";
+    fast-flake-update.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     firefox-nightly.url = "github:colemickens/flake-firefox-nightly";
     firefox-nightly.inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -47,15 +67,12 @@
     home-manager-stable.url = "github:nix-community/home-manager/release-23.11";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    hyprNStack.url = "github:SiriusStarr/hyprNStack";
-    hyprNStack.inputs.hyprland.follows = "hyprland";
-
-    hy3.url = "github:outfoxxed/hy3";
-    hy3.inputs.hyprland.follows = "hyprland";
-
     nur.url = "github:nix-community/NUR";
 
     attic.url = "github:zhaofengli/attic";
+    attic.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    attic.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+    attic.inputs.flake-utils.follows = "flake-utils";
   };
 
   outputs =

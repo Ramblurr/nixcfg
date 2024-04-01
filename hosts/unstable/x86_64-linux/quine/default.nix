@@ -72,15 +72,7 @@ in
   nix.settings.netrc-file = config.sops.secrets.netrc.path;
   modules = {
     desktop = {
-      enable = true;
-      setupCommands = ''
-        xrandr \
-          --output DP-2 --mode 5120x1440 --auto
-        xrandr \
-        --output HDMI-A-1 --mode 3840x2160 --auto
-      '';
-      fonts.enable = true;
-      hyprland.enable = true;
+      hyprland2.enable = true;
       kde.enable = true;
       xdg.enable = true;
       random-apps.enable = true;
@@ -130,7 +122,6 @@ in
         signal.enable = true;
         slack.enable = true;
         thunderbird.enable = true;
-        wezterm.enable = true;
       };
     };
     shell = {
