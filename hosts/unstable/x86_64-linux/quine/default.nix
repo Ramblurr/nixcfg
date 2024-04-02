@@ -142,6 +142,7 @@ in
     };
     services = {
       docker.enable = true;
+      attic-watch-store.enable = true;
       github-runner = {
         enable = false;
         runnerName = hn;
