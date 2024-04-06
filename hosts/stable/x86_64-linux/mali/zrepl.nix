@@ -66,9 +66,12 @@ in
             recv = {
               properties = {
                 override = {
+                  readonly = "on";
+
+                  # these have been added to the parent dataset
+                  # because this job will include some zvols and you cant set these props on them directly
                   #mountpoint = "none";
                   #canmount = "off";
-                  readonly = "on";
                 };
               };
 
