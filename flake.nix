@@ -2,7 +2,8 @@
   inputs = {
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-23.11";
-    nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
+    nixpkgs-mine.url = "github:ramblurr/nixpkgs/consolidated";
+    #nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
     nixfmt.url = "github:serokell/nixfmt";
 
