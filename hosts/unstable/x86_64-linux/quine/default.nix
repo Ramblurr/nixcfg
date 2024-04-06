@@ -21,20 +21,12 @@ in
     ./syncthing.nix
     ./roon-bridge.nix
     ./libvirt.nix
-    #./ocis.nix
-    #./test.nix
-    ./authentik.nix
-    #./invoiceninja.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
 
-  # My programmable keyboard
-  services.udev.extraRules = ''
-    KERNEL=="ttyACM0", MODE:="666"
-  '';
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
 
