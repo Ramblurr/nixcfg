@@ -23,7 +23,8 @@ in
     ./libvirt.nix
     #./ocis.nix
     #./test.nix
-    #./authentik.nix
+    ./authentik.nix
+    #./invoiceninja.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
