@@ -1,4 +1,5 @@
-{ lib, ... }: {
+{ lib, ... }:
+{
   disko.devices = {
     # Mount `/tmp` on `tmpfs`.
     #
@@ -7,7 +8,11 @@
     # to balance these settings w/ ZRAM-swap (configured elsewhere).
     nodev."/tmp" = {
       fsType = "tmpfs";
-      mountOptions = [ "defaults" "size=16G" "mode=1777" ];
+      mountOptions = [
+        "defaults"
+        "size=16G"
+        "mode=1777"
+      ];
     };
     disk = {
       micron5300 = {
@@ -31,7 +36,10 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "defaults" "umask=0077" ];
+                mountOptions = [
+                  "defaults"
+                  "umask=0077"
+                ];
               };
             };
             cryptkey = {
@@ -126,7 +134,9 @@
               mountpoint = "legacy";
             };
           };
-          "encrypted/safe/vms" = { type = "zfs_fs"; };
+          "encrypted/safe/vms" = {
+            type = "zfs_fs";
+          };
           "encrypted/safe/extra" = {
             type = "zfs_fs";
             mountpoint = "/persist/extra";
@@ -139,6 +149,32 @@
               sync = "disabled";
               "com.sun:auto-snapshot" = "true";
               mountpoint = "legacy";
+            };
+          };
+          "encrypted/safe/svc" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+            };
+          };
+
+          "encrypted/safe/svc/postgresql" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "/var/lib/postgresql";
+              "com.sun:auto-snapshot" = "false";
+              recordsize = "16k";
+              primarycache = "all";
+            };
+          };
+          "encrypted/safe/svc/mariadb" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "/var/lib/mysql";
+              "com.sun:auto-snapshot" = "false";
+              recordsize = "16k";
+              primarycache = "all";
+              logbias = "throughput";
             };
           };
         };

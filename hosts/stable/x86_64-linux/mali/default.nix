@@ -1,9 +1,25 @@
-{ config, pkgs, lib, inputs, unstable, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  unstable,
+  ...
+}:
 let
   hn = "mali";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-in {
+  ramblurr = import ../../../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
+  home-ops = config.repo.secrets.home-ops;
+in
+{
   imports = [
     ./hardware-configuration.nix
     ./networking.nix
@@ -45,8 +61,12 @@ in {
       zsh.enable = true;
       zsh.starship.enable = false;
     };
-    services = { sshd.enable = true; };
-    editors = { vim.enable = true; };
+    services = {
+      sshd.enable = true;
+    };
+    editors = {
+      vim.enable = true;
+    };
     impermanence.enable = true;
     boot.zfs = {
       enable = true;
@@ -55,7 +75,11 @@ in {
       rootPool = "rpool";
       scrubPools = [ "rpool" ];
       autoSnapshot.enable = false;
-      extraPools = [ "tank" "tank2" "fast" ];
+      extraPools = [
+        "tank"
+        "tank2"
+        "fast"
+      ];
     };
     server.smtp-external-relay.enable = true;
     vpn.tailscale.enable = true;
@@ -73,9 +97,14 @@ in {
       passwordSecretKey = ramblurr.passwordSecretKey;
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [ "wheel" "k8s-nfs" ];
+      extraGroups = [
+        "wheel"
+        "k8s-nfs"
+      ];
     };
   };
+
+  repo.secretFiles.home-ops = ../../../../secrets/home-ops.nix;
 
   sops.secrets."tank2Key" = {
     mode = "400";
@@ -107,8 +136,8 @@ in {
     hassos.gid = 1018;
     photo-backup.gid = 3000;
     atticd.gid = 1019;
-  };
-  users.users = {
+  } // home-ops.groups;
+  users.users = home-ops.users // {
     k8s-nfs = {
       group = "k8s-nfs";
       uid = 2000;
@@ -119,8 +148,7 @@ in {
       uid = 1006;
       isNormalUser = true;
       openssh.authorizedKeys.keys = [
-        ''
-          command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
+        ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
       ];
     };
     proxmox = {
@@ -160,7 +188,10 @@ in {
   ];
   environment.persistence."/persist" = {
     hideMounts = true;
-    directories = [ "/var/lib/nixos" "/var/lib/systemd/coredump" ];
+    directories = [
+      "/var/lib/nixos"
+      "/var/lib/systemd/coredump"
+    ];
     files = [ ];
   };
 }

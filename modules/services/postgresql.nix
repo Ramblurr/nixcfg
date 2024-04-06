@@ -7,15 +7,25 @@
 with lib;
 let
   # PostgreSQL nixos module with mandatory S3 PITR backup with pgbackrest
-  cfg = config.modules.server.postgresql;
+  cfg = config.modules.services.postgresql;
   stanza = "db";
 
   withImpermanence = config.modules.impermanence.enable;
 
+  serviceDeps = [
+    "var-lib-postgresql.mount"
+    "zfs-datasets.service"
+  ];
+
+  backupServiceDepsDeps = [
+    "postgresql.service"
+    "pgbackrest-init.service"
+  ] ++ serviceDeps;
+
   fullBackupService = repo: {
     description = "pgBackRest Full Backup repo ${repo}";
-    requires = [ "pgbackrest-init.service" ];
-    after = [ "pgbackrest-init.service" ];
+    requires = backupServiceDepsDeps;
+    after = backupServiceDepsDeps;
     serviceConfig = {
       Type = "oneshot";
       User = "postgres";
@@ -29,14 +39,8 @@ let
 
   diffBackupService = repo: {
     description = "pgBackRest Differential Backup repo ${repo}";
-    requires = [
-      "postgresql.service"
-      "pgbackrest-init.service"
-    ];
-    after = [
-      "postgresql.service"
-      "pgbackrest-init.service"
-    ];
+    requires = backupServiceDepsDeps;
+    after = backupServiceDepsDeps;
     serviceConfig = {
       Type = "oneshot";
       User = "postgres";
@@ -50,14 +54,8 @@ let
 
   incrBackupService = repo: {
     description = "pgBackRest Incremental Backup repo ${repo}";
-    requires = [
-      "postgresql.service"
-      "pgbackrest-init.service"
-    ];
-    after = [
-      "postgresql.service"
-      "pgbackrest-init.service"
-    ];
+    requires = backupServiceDepsDeps;
+    after = backupServiceDepsDeps;
     serviceConfig = {
       Type = "oneshot";
       User = "postgres";
@@ -79,7 +77,7 @@ let
   };
 in
 {
-  options.modules.server.postgresql = {
+  options.modules.services.postgresql = {
     enable = mkEnableOption "postgresql";
 
     package = mkPackageOption pkgs "postgresql_15" { };
@@ -88,7 +86,7 @@ in
       type = types.str;
       example = "/var/lib/postgresql/15";
       default = config.services.postgresql.dataDir;
-      description = "The data directory for the PostgreSQL instance";
+      description = "The data directory for the PostgreSQL instance, it must be under /var/lib/postgresql";
     };
     secretsFile = mkOption {
       type = types.path;
@@ -222,9 +220,16 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = lib.hasPrefix "/var/lib/postgresql" cfg.pgDataDir;
+        message = "The PostgreSQL data directory must be under /var/lib/postgresql";
+      }
+    ];
     environment.etc."pgbackrest/pgbackrest.conf" = {
       user = "postgres";
       group = "postgres";
+      mode = "0600";
       text = ''
         [main]
       '';
@@ -238,6 +243,7 @@ in
     environment.etc."pgbackrest/conf.d/instance.conf" = {
       user = "postgres";
       group = "postgres";
+      mode = "0600";
       text =
         ''
           [global]
@@ -299,30 +305,24 @@ in
 
     environment.persistence."/persist" = mkIf withImpermanence {
       directories = [
-        cfg.pgDataDir
         "/var/log/pgbackrest"
         "/var/spool/pgbackrest"
       ];
     };
-
-    systemd.tmpfiles.rules =
-      let
-        prefix = if withImpermanence then "/persist" else "";
-      in
-      [
-        "d ${prefix}${cfg.pgDataDir} 750 postgres postgres"
-        "d ${prefix}/var/log/pgbackrest 750 postgres postgres"
-        "d ${prefix}/var/spool/pgbackrest 750 postgres postgres"
-      ];
-
-    systemd.services.pgbackrest-diff-backup = {
-      description = "pgBackRest Differential Backup";
-      serviceConfig = {
-        User = "postgres";
-        Group = "postgres";
-      };
-      script = "${pkgs.pgbackrest}/bin/pgbackrest --type=diff --stanza=${stanza} backup";
+    modules.zfs.datasets.properties = {
+      "rpool/encrypted/safe/svc/postgresql"."mountpoint" = "/var/lib/postgresql";
+      "rpool/encrypted/safe/svc/postgresql"."com.sun:auto-snapshot" = "false";
+      "rpool/encrypted/safe/svc/postgresql"."recordsize" = "16k";
+      "rpool/encrypted/safe/svc/postgresql"."primarycache" = "all";
     };
+    systemd.tmpfiles.rules = [
+      "d ${cfg.pgDataDir} 750 postgres postgres"
+      "d /persist/var/log/pgbackrest 750 postgres postgres"
+      "d /persist/var/spool/pgbackrest 750 postgres postgres"
+    ];
+
+    systemd.services.postgresql.requires = serviceDeps;
+    systemd.services.postgresql.wants = serviceDeps;
 
     systemd.services.pgbackrest-full-backup-repo1 = lib.mkIf cfg.repo1.enable (fullBackupService "1");
     systemd.timers.pgbackrest-full-backup-repo1 = lib.mkIf cfg.repo1.enable (
@@ -350,9 +350,15 @@ in
       timerBase cfg.repo2.timers.incr "Incr"
     );
 
-    systemd.services.pgbackrest-init = {
+    systemd.services.pgbackrest-init = lib.mkIf (cfg.repo1.enable || cfg.repo2.enable) {
       enable = true;
+      after = [ "postgresql.service" ];
       description = "pgBackRest initialization";
+      restartTriggers = [
+        config.environment.etc."pgbackrest/pgbackrest.conf".text
+        config.environment.etc."pgbackrest/conf.d/instance.conf".text
+        cfg.secretsFile
+      ];
       serviceConfig = {
         User = "postgres";
         Group = "postgres";
