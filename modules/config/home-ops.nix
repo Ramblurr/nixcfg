@@ -228,8 +228,9 @@ in
             filesystems = {
               "rpool<" = false;
               "rpool/encrypted/safe/svc<" = true;
-              "rpool/encrypted/safe/persist<" = true;
+              "rpool/encrypted/safe/persist<" = false; # TODO: enable after de-k8sifying
               "rpool/encrypted/safe/vms<" = true;
+              "rpool/encrypted/safe/extra/atuin<" = true;
             };
             # "send.compressed" = true;
             snapshotting = {
