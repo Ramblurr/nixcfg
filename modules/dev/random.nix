@@ -1,4 +1,11 @@
-{ config, options, inputs, lib, pkgs, ... }:
+{
+  config,
+  options,
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -7,17 +14,30 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.dev.random = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.dev.random = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     # enable cross-compilation
-    boot.binfmt.emulatedSystems = [ "aarch64-linux" "armv6l-linux" ];
+    boot.binfmt.emulatedSystems = [
+      "aarch64-linux"
+      "armv6l-linux"
+      "armv7l-linux"
+    ];
     virtualisation.spiceUSBRedirection.enable = true;
-    environment.systemPackages = with pkgs; [ spice-gtk quickemu quickgui ];
+    environment.systemPackages = with pkgs; [
+      spice-gtk
+      quickemu
+      quickgui
+    ];
 
     myhm = {
-      programs.gh = { enable = true; };
+      programs.gh = {
+        enable = true;
+      };
       home.packages = with pkgs; [
         virt-manager
         cue
