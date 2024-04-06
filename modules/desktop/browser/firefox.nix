@@ -21,12 +21,14 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.firefoxpwa ];
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
         programs.firefox = {
           enable = true;
           package = firefox-nightly;
+          nativeMessagingHosts = [ pkgs.firefoxpwa ];
           profiles.personal = {
             id = 0;
             path = "personal";
