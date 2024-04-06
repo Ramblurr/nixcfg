@@ -52,6 +52,7 @@ in
       paperless.enable = lib.mkEnableOption "Paperless";
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
+      plex.enable = lib.mkEnableOption "Plex";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -139,6 +140,17 @@ in
       ports.https = home-ops.ports.authentik-https;
       ingress = {
         external = true;
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.plex = lib.mkIf cfg.apps.plex.enable {
+      enable = true;
+      domain = "plex.${home-ops.homeDomain}";
+      user = home-ops.users.plex;
+      group = home-ops.groups.plex;
+      nfsShare = "tank2/media";
+      ingress = {
         domain = home-ops.homeDomain;
       };
     };
