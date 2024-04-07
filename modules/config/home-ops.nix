@@ -53,6 +53,7 @@ in
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
       plex.enable = lib.mkEnableOption "Plex";
+      tautulli.enable = lib.mkEnableOption "Tautulli";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -144,6 +145,18 @@ in
       };
     };
 
+    modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
+      enable = true;
+      domain = "paperless.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.paperless-http;
+      user = home-ops.users.paperless;
+      group = home-ops.groups.paperless;
+      nfsShare = "tank2/services/paperless";
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
     modules.services.plex = lib.mkIf cfg.apps.plex.enable {
       enable = true;
       domain = "plex.${home-ops.homeDomain}";
@@ -155,13 +168,11 @@ in
       };
     };
 
-    modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
+    modules.services.tautulli = lib.mkIf cfg.apps.tautulli.enable {
       enable = true;
-      domain = "paperless.${home-ops.homeDomain}";
-      ports.http = home-ops.ports.paperless-http;
-      user = home-ops.users.paperless;
-      group = home-ops.groups.paperless;
-      nfsShare = "tank2/services/paperless";
+      domain = "tautulli.${home-ops.homeDomain}";
+      user = home-ops.users.tautulli;
+      ports.http = home-ops.ports.tautulli-http;
       ingress = {
         domain = home-ops.homeDomain;
       };
