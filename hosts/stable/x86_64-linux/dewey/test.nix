@@ -29,7 +29,8 @@
       #invoiceninja.enable = true;
       paperless.enable = true;
       ocis-work.enable = true;
-      plex.enable = true;
+      plex.enable = false;
+      tautulli.enable = true;
     };
   };
 }
