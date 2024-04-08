@@ -13,7 +13,6 @@ let
   cfg = config.modules.services.plex;
   home-ops = config.repo.secrets.home-ops;
   localPath = "/mnt/mali/${cfg.nfsShare}";
-
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
 in
 {

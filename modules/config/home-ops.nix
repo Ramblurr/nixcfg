@@ -57,6 +57,7 @@ in
       home-dl.enable = lib.mkEnableOption "Home *arr";
       calibre.enable = lib.mkEnableOption "Calibre";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
+      roon-server.enable = lib.mkEnableOption "Roon Server";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -227,6 +228,8 @@ in
         domain = home-ops.homeDomain;
       };
     };
+
+    modules.servers.roon-server = lib.mkIf cfg.apps.roon-server.enable { enable = true; };
 
     modules.services.ocis =
       if cfg.apps.ocis-work.enable then
