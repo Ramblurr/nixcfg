@@ -72,6 +72,7 @@ in
       '';
     };
     systemd.services.roon-server = {
+      enable = true;
       after = [ "network.target" ] ++ serviceDeps;
       bindsTo = serviceDeps;
       description = "Roon Server";
@@ -82,21 +83,23 @@ in
       };
       serviceConfig = {
         ExecStart = "${lib.getExe pkgs.roon-server}";
-        LimitNOFILE = 8192;
-        DynamicUser = true;
+        #ExecStart = lib.mkForce "${unstable.roon-server}/bin/RoonServer";
+        ExecStartPost = rebootBluOS;
+        StateDirectory = "roon-server";
         SupplementaryGroups = [
           "audio"
           "media"
         ];
-        StateDirectory = "roon-server";
+        RestartSec = "30";
+        Restart = "always";
+        LimitNOFILE = 8192;
         IOWeight = "200"; # default, when unspecified is 100
         OOMScoreAdjust = "-500"; # default, when unspecified is 0. lower means less likely to be oom-killed
         Nice = "-2"; # default, when unspecified is 0
         CPUWeight = "300"; # default, when unspecified is 100
         MemoryLow = "2G";
         MemoryHigh = "8G";
-        #ExecStart = lib.mkForce "${unstable.roon-server}/bin/RoonServer";
-        ExecStartPost = rebootBluOS;
+        DynamicUser = true;
         ReadWritePaths = [ "/mnt/roon/backup" ];
         ReadOnlyPaths = [
           "/mnt/roon/music-other"
