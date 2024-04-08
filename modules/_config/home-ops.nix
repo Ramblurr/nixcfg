@@ -12,10 +12,15 @@
 let
   home-ops = config.repo.secrets.home-ops;
   cfg = config.home-ops;
+  nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
 in
 {
   options.home-ops = {
     enable = lib.mkEnableOption "My modular multi-host Home Ops setup";
+    user = lib.mkOption {
+      type = lib.types.attrs;
+      description = "User config.";
+    };
     postgresql = {
       enable = lib.mkEnableOption "Postgresql";
       onsiteBackup = {
@@ -36,6 +41,9 @@ in
     };
     mariadb = {
       enable = lib.mkEnableOption "MariaDB";
+    };
+    hypervisor = {
+      enable = lib.mkEnableOption "libvirt Hypervisor";
     };
     ingress = {
       enable = lib.mkEnableOption "NGINX Ingress";
@@ -60,6 +68,8 @@ in
       roon-server.enable = lib.mkEnableOption "Roon Server";
     };
   };
+
+  imports = [ ./zrepl.nix ];
   config = lib.mkIf cfg.enable {
     assertions = [
       {
@@ -73,18 +83,117 @@ in
       }
     ];
 
-    environment.systemPackages = [
-      pkgs.ripgrep
-      pkgs.fd
-      pkgs.ncdu
-      pkgs.rclone
-      pkgs.lshw
+    ###########
+    ## Basic ##
+    ###########
+    time.timeZone = "Europe/Berlin";
+    i18n.defaultLocale = "en_US.utf8";
+    sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+    documentation.nixos.enable = false;
+    documentation.doc.enable = false;
+    boot.kernel.sysctl = {
+      "fs.inotify.max_queued_events" = 65536;
+      "fs.inotify.max_user_watches" = 524288;
+      "fs.inotify.max_user_instances" = 8192;
+    };
+
+    ############################
+    ## My Custom Base Modules ##
+    ############################
+    modules = {
+      shell = {
+        htop.enable = true;
+        tmux.enable = true;
+        zsh.enable = true;
+      };
+      services = {
+        sshd.enable = true;
+      };
+      editors = {
+        vim.enable = true;
+      };
+      impermanence.enable = true;
+      boot.zfs = {
+        enable = true;
+        encrypted = true;
+        rootPool = "rpool";
+        scrubPools = [ "rpool" ];
+        extraPools = [ "tank" ];
+        autoSnapshot.enable = false;
+      };
+      zfs.datasets.enable = true;
+      server = {
+        smtp-external-relay.enable = false;
+      };
+      # vpn.tailscale.enable = true;
+      firewall.enable = true;
+      security.default.enable = true;
+      networking.default.enable = true;
+      users.enable = true;
+      users.primaryUser = {
+        username = cfg.user.username;
+        name = cfg.user.name;
+        homeDirectory = cfg.user.homeDirectory;
+        signingKey = cfg.user.signingKey;
+        email = cfg.user.email;
+        passwordSecretKey = cfg.user.passwordSecretKey;
+        shell = pkgs.zsh;
+        extraGroups = [
+          "libvirtd"
+          "wheel"
+        ];
+      };
+    };
+
+    environment.systemPackages = with pkgs; [
+      fd
+      jq
+      lshw
+      ncdu
+      python311
+      rclone
+      ripgrep
+      smartmontools
+      tcpdump
+      vifm
+      yq-go
+      restic
     ];
 
     #
     # Supporting services
     #
+    services.smartd.enable = true;
+    services.rpcbind.enable = true;
     home-ops.zrepl.enable = true;
+    services.prometheus = {
+      exporters = {
+        node = {
+          enable = false;
+          enabledCollectors = [ "systemd" ];
+          disabledCollectors = [ "textfile" ];
+          port = home-ops.ports.node-exporter;
+        };
+        zfs = {
+          enable = true;
+          port = home-ops.ports.zfs-exporter;
+        };
+        smartctl = {
+          enable = false;
+          port = home-ops.ports.smartctl-exporter;
+        };
+      };
+    };
+    networking.firewall.allowedTCPPorts = [
+      config.services.prometheus.exporters.node.port
+      config.services.prometheus.exporters.zfs.port
+      config.services.prometheus.exporters.smartctl.port
+    ];
+
+    modules.server.virtd-host = lib.mkIf cfg.hypervisor.enable {
+      enable = true;
+      zfsStorage.enable = true;
+    };
     sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable {
       sopsFile = ../../configs/home-ops/shared.sops.yml;
       mode = "400";
@@ -118,13 +227,180 @@ in
     virtualisation.podman.enable = cfg.containers.enable;
     virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
 
+    ######################
+    # Impermanence Setup #
+    ######################
+    environment.persistence."/persist" = {
+      hideMounts = true;
+      directories = [
+        "/var/lib/nixos"
+        "/var/lib/systemd/coredump"
+      ];
+      files = [ ];
+    };
+
+    systemd.tmpfiles.rules = [
+      "d /persist/home/${cfg.user.username} 700 ${cfg.user.username} ${cfg.user.username}"
+      "d /persist/home/${cfg.user.username}/.config 0775 ${cfg.user.username} ${cfg.user.username}  -"
+      "d /persist/home/${cfg.user.username}/.local 755 ${cfg.user.username} ${cfg.user.username}"
+      "d /persist/home/${cfg.user.username}/.local/state 755 ${cfg.user.username} ${cfg.user.username}"
+      "d /persist/home/${cfg.user.username}/.local/state/zsh 755 ${cfg.user.username} ${cfg.user.username}"
+    ];
+
+    ################
+    ## Networking ##
+    ################
+    networking.domain = "socozy.casa";
+    networking.usePredictableInterfaceNames = true;
+    networking.firewall.allowPing = true;
+    networking.nameservers = config.repo.secrets.global.nameservers;
+    systemd.network = {
+      netdevs = {
+        "20-vlprim4" = {
+          netdevConfig = {
+            Kind = "vlan";
+            Name = "vlprim4";
+          };
+          vlanConfig.Id = 4;
+        };
+        "20-vlmgmt9" = {
+          netdevConfig = {
+            Kind = "vlan";
+            Name = "vlmgmt9";
+          };
+          vlanConfig.Id = 9;
+        };
+        "20-vldata11" = {
+          netdevConfig = {
+            Kind = "vlan";
+            Name = "vldata11";
+            MTUBytes = "9000";
+          };
+          vlanConfig.Id = 11;
+        };
+        "30-brprim4" = {
+          netdevConfig = {
+            Name = "brprim4";
+            Kind = "bridge";
+          };
+        };
+        "30-brmgmt9" = {
+          netdevConfig = {
+            Name = "brmgmt9";
+            Kind = "bridge";
+          };
+        };
+        "30-brdata11" = {
+          netdevConfig = {
+            Name = "brdata11";
+            Kind = "bridge";
+            MTUBytes = "9000";
+          };
+        };
+      };
+
+      networks = {
+        "40-${nodeSettings.mgmtIface}" = {
+          matchConfig.Name = "${nodeSettings.mgmtIface}";
+          vlan = [
+            "vlmgmt9"
+            "vlprim4"
+          ];
+        };
+        "40-${nodeSettings.dataIface}" = {
+          matchConfig = {
+            Name = "${nodeSettings.dataIface}";
+          };
+          networkConfig = {
+            Description = "physical 10gbe";
+          };
+          linkConfig = {
+            MTUBytes = "9000";
+          };
+          vlan = [ "vldata11" ];
+        };
+        "45-vlprim4" = {
+          matchConfig = {
+            Name = "vlprim4";
+          };
+          networkConfig = {
+            Bridge = "brprim4";
+          };
+        };
+        "45-vldata11" = {
+          matchConfig = {
+            Name = "vldata11";
+          };
+          networkConfig = {
+            Bridge = "brdata11";
+          };
+        };
+        "45-vlmgmt9" = {
+          matchConfig = {
+            Name = "vlmgmt9";
+          };
+          networkConfig = {
+            Bridge = "brmgmt9";
+          };
+        };
+
+        "50-brprim4" =
+          if nodeSettings.vlanPrimaryEnabled then
+            {
+              matchConfig = {
+                Name = "brprim4";
+              };
+              networkConfig = {
+                DHCP = "no";
+                Address = nodeSettings.primCIDR;
+                Description = "primary VLAN";
+              };
+            }
+          else
+            {
+              # My nodes generally do not have an ip address on the primary vlan
+              # however some workloads running on these nodes might want to expose a service
+              # over this vlan, so we configure the bridge interface anyways
+              matchConfig = {
+                Name = "brprim4";
+              };
+              networkConfig = {
+                DHCP = "no";
+                Description = "Bridge for primary vlan";
+              };
+            };
+        "50-brmgmt9" = {
+          matchConfig = {
+            Name = "brmgmt9";
+          };
+          networkConfig = {
+            DHCP = "no";
+            Address = nodeSettings.mgmtCIDR;
+            Gateway = config.repo.secrets.global.mgmtGateway;
+            Description = "mgmt VLAN";
+          };
+        };
+        "50-brdata11" = {
+          matchConfig = {
+            Name = "brdata11";
+          };
+          networkConfig = {
+            DHCP = "no";
+            Address = nodeSettings.dataCIDR;
+            Description = "data 10GbE VLAN";
+          };
+        };
+      };
+    };
+
+    ########################
+    # Application Services #
+    ########################
+
+    # shared media group
     users.groups.${home-ops.groups.media.name} = {
       gid = home-ops.groups.media.gid;
     };
-
-    #
-    # Application Services
-    #
     modules.services.echo-server = lib.mkIf cfg.apps.echo-server.enable {
       enable = true;
       domain = "echo-test.${home-ops.homeDomain}";
