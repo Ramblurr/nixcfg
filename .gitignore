@@ -7,3 +7,5 @@ archive
 .lsp
 modules/editors/emacs/configs/doom.d/flycheck_*
 .direnv
+dumps
+tmp
