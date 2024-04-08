@@ -1,4 +1,12 @@
-{ config, options, inputs, lib, pkgs, my, ... }:
+{
+  config,
+  options,
+  inputs,
+  lib,
+  pkgs,
+  my,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -7,8 +15,11 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.dev.k8s = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.dev.k8s = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [ ];
@@ -28,7 +39,12 @@ in {
       ];
 
       persistence = mkIf withImpermanence {
-        directories = [ ".config/k9s" ".config/kube" ".config/krew" ".influxdbv2" ];
+        directories = [
+          ".config/k9s"
+          ".config/kube"
+          ".config/krew"
+          ".influxdbv2"
+        ];
       };
     };
   };

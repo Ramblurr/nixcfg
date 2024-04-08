@@ -1,4 +1,11 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -7,7 +14,8 @@ let
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
   tomlFormat = pkgs.formats.toml { };
-in {
+in
+{
   options.modules.desktop.services.hacompanion = {
     enable = mkEnableOption "hacompanion";
     package = mkOption {
@@ -16,8 +24,7 @@ in {
     };
 
     environmentFile = mkOption {
-      description =
-        "The full path to a file that contains the secret environment variables to register hacomapnion with Home Assistant";
+      description = "The full path to a file that contains the secret environment variables to register hacomapnion with Home Assistant";
       type = with types; nullOr str;
       default = null;
     };
@@ -45,7 +52,9 @@ in {
           cpu_temp = {
             enabled = true;
             name = "CPU Temperature";
-            meta = { celsius = true; };
+            meta = {
+              celsius = true;
+            };
           };
           cpu_usage = {
             enabled = true;
@@ -62,7 +71,9 @@ in {
           power = {
             enabled = false;
             name = "Power";
-            meta = { battery = "BAT0"; };
+            meta = {
+              battery = "BAT0";
+            };
           };
           companion_running = {
             enabled = true;
@@ -96,14 +107,20 @@ in {
   config = mkIf cfg.enable {
     networking.firewall.allowedTCPPorts = [ cfg.listenPort ];
     systemd.user.services.hacompanion = {
-      after = [ "network.target" "network-online.target" "graphical-session.target" ]
-        ++ cfg.unitAfter;
+      after = [
+        "network.target"
+        "network-online.target"
+        "graphical-session.target"
+      ] ++ cfg.unitAfter;
       requires = [ "graphical-session.target" ];
       partOf = [ "graphical-session.target" ];
       wantedBy = [ "graphical-session.target" ];
       description = "Home Assistant Desktop Companion";
       documentation = [ "https://github.com/tobias-kuendig/hacompanion" ];
-      path = [ cfg.package pkgs.coreutils ];
+      path = [
+        cfg.package
+        pkgs.coreutils
+      ];
       serviceConfig = {
         Type = "simple";
         Restart = "on-failure";

@@ -1,8 +1,14 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   backupUser = "borg";
   backupDir = "/mnt/tank2/backups/borg_repos";
-in {
+in
+{
   users.users."${backupUser}" = { };
   systemd.tmpfiles.rules = [ "d ${backupDir} 0755 root root - -" ];
   services.borgbackup.repos = {
@@ -15,8 +21,9 @@ in {
     };
     proxmox = {
       path = "/mnt/tank2/backups/borg_repos/proxmox";
-      authorizedKeys =
-        [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDVhO6fCS/WBKebnGaNLxUDg5jWyMTv7nXvirPONXY3a" ];
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDVhO6fCS/WBKebnGaNLxUDg5jWyMTv7nXvirPONXY3a"
+      ];
     };
   };
   systemd.services = lib.mapAttrs' (repo: repoCfg: {

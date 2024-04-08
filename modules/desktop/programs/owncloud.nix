@@ -1,4 +1,11 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -6,8 +13,11 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.desktop.programs.owncloud = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.desktop.programs.owncloud = {
+    enable = mkBoolOpt false;
+  };
   config = mkIf cfg.enable {
     myhm = {
       home.packages = [ pkgs.owncloud-client ];

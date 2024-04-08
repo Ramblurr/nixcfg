@@ -1,4 +1,11 @@
-{ options, config, pkgs, lib, inputs, ... }:
+{
+  options,
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -18,7 +25,8 @@ let
       </target>
     </pool>
   '';
-in {
+in
+{
   options.modules.server.virtd-host = {
     enable = mkBoolOpt false;
     zfsStorage = {
@@ -31,20 +39,28 @@ in {
     };
   };
   config = mkIf cfg.enable {
-    assertions = [{
-      assertion = config.modules.impermanence.enable;
-      message = "virtd-host requires impermanence";
-    }];
-    systemd.tmpfiles.rules = [
-      "d /persist/var/lib/libvirt 0775 root root -"
-      "d /persist/var/lib/libvirt/storage 0775 root root -"
-    ] ++ (if cfg.zfsStorage.enable then
-      [ "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}" ]
-    else
-      [ ]);
+    assertions = [
+      {
+        assertion = config.modules.impermanence.enable;
+        message = "virtd-host requires impermanence";
+      }
+    ];
+    systemd.tmpfiles.rules =
+      [
+        "d /persist/var/lib/libvirt 0775 root root -"
+        "d /persist/var/lib/libvirt/storage 0775 root root -"
+      ]
+      ++ (
+        if cfg.zfsStorage.enable then
+          [ "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}" ]
+        else
+          [ ]
+      );
     environment.persistence."/persist".directories = [ "/var/lib/libvirt" ];
 
-    virtualisation.libvirtd = { enable = true; };
+    virtualisation.libvirtd = {
+      enable = true;
+    };
     boot.kernel.sysctl = {
       "net.ipv4.conf.all.forwarding" = true;
       #"net.ipv6.conf.all.forwarding" = true;

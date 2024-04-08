@@ -1,9 +1,23 @@
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
   hn = "ovos-bedroom";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-in {
+  ramblurr = import ../../../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
+in
+{
   imports = [
     ../../../home-wifi.nix
     ../pipewire.nix
@@ -20,12 +34,19 @@ in {
   raspberry-pi.hardware.platform.type = "rpi3";
   raspberry-pi.hardware.hifiberry-dacplus.enable = true;
   raspberry-pi.hardware.apply-overlays-dtmerge.enable = true;
-  environment.systemPackages = with pkgs; [ roc-toolkit openfec alsaUtils i2c-tools ];
+  environment.systemPackages = with pkgs; [
+    roc-toolkit
+    openfec
+    alsaUtils
+    i2c-tools
+  ];
 
   networking = {
     hostName = hn;
     useDHCP = true;
-    interfaces.eth0 = { useDHCP = true; };
+    interfaces.eth0 = {
+      useDHCP = true;
+    };
   };
   services.nscd.enableNsncd = false;
 
@@ -45,7 +66,9 @@ in {
       sshd.enable = true;
       sshd.permitRootLogin.enable = true;
     };
-    editors = { vim.enable = true; };
+    editors = {
+      vim.enable = true;
+    };
     users.enable = true;
     users.primaryUser = {
       username = ramblurr.username;
@@ -57,7 +80,10 @@ in {
       passwordSecretKey = ramblurr.passwordSecretKey;
       defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
-      extraGroups = [ "wheel" "i2c" ];
+      extraGroups = [
+        "wheel"
+        "i2c"
+      ];
     };
   };
   # ALSA only

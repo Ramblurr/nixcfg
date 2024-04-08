@@ -1,4 +1,10 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   power.ups = {
     # TODO: use the updated service once this pr is merged: https://github.com/NixOS/nixpkgs/pull/213006
@@ -36,7 +42,9 @@
     group = "nut";
     description = "UPS monitor user";
   };
-  users.groups."nut" = { gid = 84; };
+  users.groups."nut" = {
+    gid = 84;
+  };
 
   environment.persistence."/persist" = {
     hideMounts = true;

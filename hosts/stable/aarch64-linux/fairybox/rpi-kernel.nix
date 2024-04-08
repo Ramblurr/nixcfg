@@ -1,4 +1,12 @@
-{ config, pkgs, lib, inputs, unstable, ... }: {
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  unstable,
+  ...
+}:
+{
   #boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_rpi4);
   boot.kernelPackages = unstable.linuxPackages_rpi4;
   boot.kernelParams = [

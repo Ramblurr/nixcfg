@@ -1,12 +1,23 @@
-{ options, config, lib, pkgs, inputs, unstable, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  unstable,
+  ...
+}:
 with lib;
 with lib.my;
 let
   cfg = config.modules.server.k3s-common;
   withImpermanence = config.modules.impermanence.enable;
   k3s-package = unstable.k3s_1_29;
-in {
-  options.modules.server.k3s-common = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.server.k3s-common = {
+    enable = mkBoolOpt false;
+  };
   config = mkIf cfg.enable {
     services.k3s.package = k3s-package;
     # Based on https://github.com/TUM-DSE/doctor-cluster-config/tree/master/modules/k3s
@@ -52,11 +63,13 @@ in {
         to = 7300;
       } # Ceph OSDs
     ];
-    networking.firewall.allowedUDPPortRanges = [{
-      from = 33434;
-      to = 34000;
-    } # traceroute
-      ];
+    networking.firewall.allowedUDPPortRanges = [
+      {
+        from = 33434;
+        to = 34000;
+      }
+      # traceroute
+    ];
     networking.firewall.allowedTCPPorts = [
       80 # Ceph RGW
       3300 # Ceph monitor

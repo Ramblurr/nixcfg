@@ -1,8 +1,15 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 with lib.my;
-let cfg = config.modules.hardware.ryzen;
-in {
+let
+  cfg = config.modules.hardware.ryzen;
+in
+{
   options = {
     modules.hardware.ryzen = {
       enable = mkBoolOpt false;
@@ -23,9 +30,14 @@ in {
     systemd.services.zenstates = mkIf cfg.undervolt.enable {
       enable = true;
       description = "Ryzen Undervolt";
-      after = [ "syslog.target" "systemd-modules-load.service" ];
+      after = [
+        "syslog.target"
+        "systemd-modules-load.service"
+      ];
 
-      unitConfig = { ConditionPathExists = "${pkgs.zenstates}/bin/zenstates"; };
+      unitConfig = {
+        ConditionPathExists = "${pkgs.zenstates}/bin/zenstates";
+      };
 
       serviceConfig = {
         User = "root";

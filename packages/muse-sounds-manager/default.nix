@@ -1,7 +1,8 @@
 { buildFHSUserEnv }:
 buildFHSUserEnv {
   name = "muse-sounds-manager";
-  targetPkgs = pkgs:
+  targetPkgs =
+    pkgs:
     (with pkgs; [
       # dotnet
       curl

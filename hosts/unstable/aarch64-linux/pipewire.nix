@@ -1,4 +1,10 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
   security.rtkit.enable = false;
   hardware.pulseaudio.enable = pkgs.lib.mkForce false;
   services.pipewire = {
@@ -21,7 +27,11 @@
     # Ref: https://gitlab.freedesktop.org/pipewire/wireplumber/-/issues/499
     analog-in-music-loopback = {
       enable = false;
-      path = [ pkgs.pipewire pkgs.wireplumber pkgs.coreutils ];
+      path = [
+        pkgs.pipewire
+        pkgs.wireplumber
+        pkgs.coreutils
+      ];
       description = "Loopback analog in to Multimedia Role";
       after = [ "wireplumber.service" ];
       wantedBy = [ "wireplumber.service" ];
@@ -38,7 +48,11 @@
     };
     digital-in-music-loopback = {
       enable = false;
-      path = [ pkgs.pipewire pkgs.wireplumber pkgs.coreutils ];
+      path = [
+        pkgs.pipewire
+        pkgs.wireplumber
+        pkgs.coreutils
+      ];
       description = "Loopback digital in to Multimedia Role";
       after = [ "wireplumber.service" ];
       wantedBy = [ "wireplumber.service" ];
@@ -56,38 +70,42 @@
   };
   environment.etc."pipewire/pipewire.conf.d/100-user.conf" = {
     text = builtins.toJSON {
-      "context.modules" = [{
-        name = "libpipewire-module-rt";
-        args = {
-          "nice.level" = 20;
-          "rt.prio" = 88;
-          "rtportal.enabled" = false;
-          "rtkit.enabled" = false;
-          "rlimits.enabled" = true;
-        };
-        flags = [ "ifexists" "nofail" ];
-      }
-      # Disabled until wireplumber 0.5
-      # Ref: https://gitlab.freedesktop.org/pipewire/wireplumber/-/issues/499
-      # {
-      #   name = "libpipewire-module-loopback";
-      #   args = {
-      #     "node.name" = "music-to-speakers-bridge";
-      #     "node.description" = "music-to-speakers-bridge";
-      #     "audio.position" = ["FL" "FR"];
-      #     "target.delay.sec" = 0;
-      #     "capture.props" = {
-      #       "node.target" = "alsa_input.platform-soc_sound.stereo-fallback";
-      #     };
-      #     "playback.props" = {
-      #
-      #       "monitor.channel-volumes" = true;
-      #       "media.role" = "Multimedia";
-      #       #"device.intended-roles" = "Multimedia";
-      #     };
-      #   };
-      # }
-        ];
+      "context.modules" = [
+        {
+          name = "libpipewire-module-rt";
+          args = {
+            "nice.level" = 20;
+            "rt.prio" = 88;
+            "rtportal.enabled" = false;
+            "rtkit.enabled" = false;
+            "rlimits.enabled" = true;
+          };
+          flags = [
+            "ifexists"
+            "nofail"
+          ];
+        }
+        # Disabled until wireplumber 0.5
+        # Ref: https://gitlab.freedesktop.org/pipewire/wireplumber/-/issues/499
+        # {
+        #   name = "libpipewire-module-loopback";
+        #   args = {
+        #     "node.name" = "music-to-speakers-bridge";
+        #     "node.description" = "music-to-speakers-bridge";
+        #     "audio.position" = ["FL" "FR"];
+        #     "target.delay.sec" = 0;
+        #     "capture.props" = {
+        #       "node.target" = "alsa_input.platform-soc_sound.stereo-fallback";
+        #     };
+        #     "playback.props" = {
+        #
+        #       "monitor.channel-volumes" = true;
+        #       "media.role" = "Multimedia";
+        #       #"device.intended-roles" = "Multimedia";
+        #     };
+        #   };
+        # }
+      ];
     };
   };
   environment.etc."wireplumber/policy.lua.d/50-endpoints-config.lua".text = ''
@@ -136,61 +154,70 @@
         }
   '';
 
-  networking.firewall.allowedTCPPorts = [ 10001 10002 10003 ];
-  networking.firewall.allowedUDPPorts = [ 10001 10002 10003 ];
+  networking.firewall.allowedTCPPorts = [
+    10001
+    10002
+    10003
+  ];
+  networking.firewall.allowedUDPPorts = [
+    10001
+    10002
+    10003
+  ];
   environment.etc."pipewire/pipewire.conf.d/101-roc-recv.conf" = {
     text = builtins.toJSON {
-      "context.modules" = [{
-        name = "libpipewire-module-roc-source";
-        args = {
-          "local.ip" = "0.0.0.0";
-          "resampler.profile" = "medium";
-          "fec.code" = "rs8m";
-          #"sess.latency.msec" = 60;
-          "local.source.port" = 10001;
-          "local.repair.port" = 10002;
-          "source.name" = "ROC Source";
-          "source.props" = {
-            "node.name" = "roc-recv-source";
-            "node.description" = "ROC Recv Source";
-            "media.class" = "Audio/Source";
+      "context.modules" = [
+        {
+          name = "libpipewire-module-roc-source";
+          args = {
+            "local.ip" = "0.0.0.0";
+            "resampler.profile" = "medium";
+            "fec.code" = "rs8m";
+            #"sess.latency.msec" = 60;
+            "local.source.port" = 10001;
+            "local.repair.port" = 10002;
+            "source.name" = "ROC Source";
+            "source.props" = {
+              "node.name" = "roc-recv-source";
+              "node.description" = "ROC Recv Source";
+              "media.class" = "Audio/Source";
+            };
           };
-        };
-      }
-      #{
-      #  "name" = "libpipewire-module-filter-chain";
-      #  "args" = {
-      #    "node.description" = "Noise Canceling source";
-      #    "media.name" = "Noise Canceling source";
-      #    "filter.graph" = {
-      #      "nodes" = [
-      #        {
-      #          "type" = "ladspa";
-      #          "name" = "rnnoise";
-      #          "plugin" = "${pkgs.rnnoise-plugin}/lib/ladspa/librnnoise_ladspa.so";
-      #          "label" = "noise_suppressor_stereo";
-      #          "control" = {
-      #            "VAD Threshold (%)" = 95.0;
-      #            "VAD Grace Period (ms)" = 200;
-      #            "Retroactive VAD Grace (ms)" = 0;
-      #          };
-      #        }
-      #      ];
-      #    };
-      #    "capture.props" = {
-      #      "audio.position" = ["FL" "FR"];
-      #      "node.name" = "effect_input.rnnoise";
-      #      "node.passive" = true;
-      #    };
-      #    "playback.props" = {
-      #      "audio.position" = ["FL" "FR"];
-      #      "node.name" = "effect_output.rnnoise";
-      #      "media.class" = "Audio/Source";
-      #      "media.role" = "Speech";
-      #    };
-      #  };
-      #}
-        ];
+        }
+        #{
+        #  "name" = "libpipewire-module-filter-chain";
+        #  "args" = {
+        #    "node.description" = "Noise Canceling source";
+        #    "media.name" = "Noise Canceling source";
+        #    "filter.graph" = {
+        #      "nodes" = [
+        #        {
+        #          "type" = "ladspa";
+        #          "name" = "rnnoise";
+        #          "plugin" = "${pkgs.rnnoise-plugin}/lib/ladspa/librnnoise_ladspa.so";
+        #          "label" = "noise_suppressor_stereo";
+        #          "control" = {
+        #            "VAD Threshold (%)" = 95.0;
+        #            "VAD Grace Period (ms)" = 200;
+        #            "Retroactive VAD Grace (ms)" = 0;
+        #          };
+        #        }
+        #      ];
+        #    };
+        #    "capture.props" = {
+        #      "audio.position" = ["FL" "FR"];
+        #      "node.name" = "effect_input.rnnoise";
+        #      "node.passive" = true;
+        #    };
+        #    "playback.props" = {
+        #      "audio.position" = ["FL" "FR"];
+        #      "node.name" = "effect_output.rnnoise";
+        #      "media.class" = "Audio/Source";
+        #      "media.role" = "Speech";
+        #    };
+        #  };
+        #}
+      ];
     };
   };
 
@@ -313,4 +340,3 @@
 # pw-link  "alsa_input.platform-soc_sound.stereo-fallback:capture_FR" "input.music-to-speakers-bridge:input_FR"
 # pw-link -d "control.endpoint.capture:monitor_FL" "ALSA Capture:input_FL"
 # pw-link -d "control.endpoint.capture:monitor_FR" "ALSA Capture:input_FR"
-

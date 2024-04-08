@@ -1,6 +1,13 @@
-{ lib, pkgs, config, ... }:
-let inherit (config.repo.secrets.global) domain;
-in {
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+let
+  inherit (config.repo.secrets.global) domain;
+in
+{
   security.acme = {
     acceptTerms = true;
     defaults = {
@@ -45,5 +52,9 @@ in {
     };
   };
 
-  environment.persistence = { "/persist" = { directories = [ "/var/lib/acme" ]; }; };
+  environment.persistence = {
+    "/persist" = {
+      directories = [ "/var/lib/acme" ];
+    };
+  };
 }

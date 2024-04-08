@@ -1,4 +1,11 @@
-{ pkgs, lib, fetchFromGitHub, beets, poetry-core, python3Packages, }:
+{
+  pkgs,
+  lib,
+  fetchFromGitHub,
+  beets,
+  poetry-core,
+  python3Packages,
+}:
 python3Packages.buildPythonApplication rec {
   pname = "beets-filetote";
   version = "0.4.8";
@@ -21,9 +28,16 @@ python3Packages.buildPythonApplication rec {
 
   disabledTests = [ "test_audible_m4b_files.py" ];
 
-  nativeCheckInputs = with python3Packages; [ pytestCheckHook beets toml ];
+  nativeCheckInputs = with python3Packages; [
+    pytestCheckHook
+    beets
+    toml
+  ];
 
-  pythonImportsCheck = [ "beetsplug.filetote" "beetsplug.filetote_dataclasses" ];
+  pythonImportsCheck = [
+    "beetsplug.filetote"
+    "beetsplug.filetote_dataclasses"
+  ];
 
   meta = with lib; {
     description = "Beets plugin to move non-music files during the import process";
