@@ -33,24 +33,26 @@ in
 
   config = lib.mkIf cfg.enable {
     systemd.services.zfs-datasets = {
-      path = [ pkgs.zfs ];
-      restartIfChanged = true;
-
-      wantedBy = [ "local-fs.target" ];
-      before = [ "systemd-tmpfiles-setup.service" ];
-      requires = [ "zfs.target" ];
-      restartTriggers = [ config.systemd.services.zfs-datasets.script ];
-
-      # TODO(24.05) switch to these after unstable becomes 24.05
-      # wantedBy = [ "local-fs.target" ];
-      # requiredBy = [ "sysinit-reactivation.target" ];
-      # before = [ "systemd-tmpfiles-setup.service"  "systemd-tmpfiles-resetup.service" "sysinit-reactivation.target"];
-      # requires = [ "zfs.target" ];
-
+      requiredBy = [
+        "systemd-tmpfiles-setup.service"
+        "systemd-tmpfiles-resetup.service"
+        "sysinit.target"
+        "sysinit-reactivation.target"
+      ];
+      before = [
+        "sysinit.target"
+        "sysinit-reactivation.target"
+        "systemd-tmpfiles-setup.service"
+        "systemd-tmpfiles-resetup.service"
+      ];
+      after = [ "local-fs.target" ];
+      unitConfig.DefaultDependencies = false;
       serviceConfig = {
         Type = "oneshot";
       };
-
+      restartIfChanged = true;
+      restartTriggers = [ config.systemd.services.zfs-datasets.script ];
+      path = [ pkgs.zfs ];
       script = ''
         dsList=(${toString (lib.mapAttrsToList (ds: prop: "${ds}") cfg.properties)})
 
