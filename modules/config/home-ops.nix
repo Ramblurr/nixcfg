@@ -54,6 +54,7 @@ in
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
       plex.enable = lib.mkEnableOption "Plex";
       tautulli.enable = lib.mkEnableOption "Tautulli";
+      home-dl.enable = lib.mkEnableOption "Home *arr";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -67,6 +68,14 @@ in
         assertion = !(cfg.apps.ocis-work.enable && cfg.apps.ocis-home.enable);
         message = "OCIS Work and OCIS Home cannot be enabled at the same time on the same host";
       }
+    ];
+
+    environment.systemPackages = [
+      pkgs.ripgrep
+      pkgs.fd
+      pkgs.ncdu
+      pkgs.rclone
+      pkgs.lshw
     ];
 
     #
@@ -102,6 +111,10 @@ in
 
     virtualisation.podman.enable = cfg.containers.enable;
     virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
+
+    users.groups.${home-ops.groups.media.name} = {
+      gid = home-ops.groups.media.gid;
+    };
 
     #
     # Application Services
@@ -173,6 +186,17 @@ in
       domain = "tautulli.${home-ops.homeDomain}";
       user = home-ops.users.tautulli;
       ports.http = home-ops.ports.tautulli-http;
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.home-dl = lib.mkIf cfg.apps.home-dl.enable {
+      enable = true;
+      baseDomain = home-ops.homeDomain;
+      ports = home-ops.ports.home-dl;
+      mediaNfsShare = "tank2/media";
+      dlNfsShare = "fast/downloads";
       ingress = {
         domain = home-ops.homeDomain;
       };
