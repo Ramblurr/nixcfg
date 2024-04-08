@@ -61,7 +61,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/stable/x86_64-linux/dewey/.*.sops.*$
+  - path_regex: hosts/unstable/x86_64-linux/dewey/.*.sops.*$
     key_groups:
       - age:
           - *dewey
