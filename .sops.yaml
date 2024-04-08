@@ -108,3 +108,15 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
+
+  - path_regex: configs/home-dl/.*.sops.*$
+    key_groups:
+      - age: &all-nodes
+          - *mill
+          - *ibnsina
+          - *peirce
+          - *dewey
+          - *debord
+          - *disaster-recovery
+        pgp:
+          - *ramblurr

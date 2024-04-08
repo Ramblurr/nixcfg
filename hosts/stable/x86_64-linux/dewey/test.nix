@@ -12,7 +12,6 @@
   networking.domain = "socozy.casa";
   repo.secretFiles.home-ops = ../../../../secrets/home-ops.nix;
   modules.zfs.datasets.enable = true;
-
   home-ops = {
     enable = true;
     ingress.enable = true;
@@ -31,6 +30,7 @@
       ocis-work.enable = true;
       plex.enable = false;
       tautulli.enable = true;
+      home-dl.enable = true;
     };
   };
 }
