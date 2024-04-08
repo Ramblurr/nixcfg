@@ -41,6 +41,7 @@ in
     #containers.enable = true;
     #hypervisor.enable = false;
     apps = {
+      roon-server.enable = true;
       #authentik.enable = true;
       #echo-server.enable = true;
       #davis.enable = true;
