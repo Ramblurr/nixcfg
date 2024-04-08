@@ -145,7 +145,7 @@ in
 
     services.nginx.virtualHosts.${cfg.domain} = {
       useACMEHost = cfg.ingress.domain;
-      onlySSL = true;
+      forceSSL = true;
       kTLS = true;
       extraConfig = ''
         client_max_body_size 0;

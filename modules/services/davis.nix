@@ -71,7 +71,7 @@ in
       };
       nginx = {
         useACMEHost = cfg.ingress.domain;
-        onlySSL = true;
+        forceSSL = true;
         kTLS = true;
       };
     };

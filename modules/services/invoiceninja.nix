@@ -53,7 +53,7 @@ in
       environmentFile = config.sops.secrets."invoiceninja/env".path;
       nginx = {
         useACMEHost = cfg.ingress.domain;
-        onlySSL = true;
+        forceSSL = true;
         kTLS = true;
       };
     };
