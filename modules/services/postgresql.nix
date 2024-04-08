@@ -88,6 +88,35 @@ in
       default = config.services.postgresql.dataDir;
       description = "The data directory for the PostgreSQL instance, it must be under /var/lib/postgresql";
     };
+    extraAuthentication = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Extra authentication configuration for the PostgreSQL instance";
+    };
+    ensures = lib.mkOption {
+      description = "List of username, database and/or passwords that should be created.";
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            username = lib.mkOption {
+              type = lib.types.str;
+              description = "Postgres user name.";
+            };
+            databases = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              description = "Postgres database names.";
+            };
+            passwordFile = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              description = "Optional password file for the postgres user. If not given, only peer auth is accepted for this user, otherwise password auth is allowed.";
+              default = null;
+              example = "/run/secrets/postgresql/password";
+            };
+          };
+        }
+      );
+      default = [ ];
+    };
     secretsFile = mkOption {
       type = types.path;
       example = "/run/secrets/pgbackrest.conf";
@@ -295,13 +324,50 @@ in
     services.postgresql = {
       enable = true;
       package = cfg.package;
+      enableTCPIP = true;
       settings = {
         archive_mode = "on";
         archive_command = "${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} archive-push %p";
         max_wal_senders = 3;
         wal_level = "replica";
       };
+      authentication = lib.concatStringsSep "\n" cfg.extraAuthentication;
+      ensureDatabases = lib.flatten (map ({ databases, ... }: databases) cfg.ensures);
+      ensureUsers = lib.flatten (
+        map (
+          { username, databases, ... }:
+          {
+            name = username;
+            ensureDBOwnership = true;
+            ensureClauses.login = true;
+          }
+        ) cfg.ensures
+      );
     };
+    systemd.services.postgresql.postStart =
+      let
+        prefix = ''
+          $PSQL -tA <<'EOF'
+            DO $$
+            DECLARE password TEXT;
+            BEGIN
+        '';
+        suffix = ''
+            END $$;
+          EOF
+        '';
+        exec =
+          { username, passwordFile, ... }:
+          ''
+            password := trim(both from replace(pg_read_file('${passwordFile}'), E'\n', '''));
+            EXECUTE format('ALTER ROLE ${username} WITH PASSWORD '''%s''';', password);
+          '';
+        cfgsWithPasswords = builtins.filter (cfg: cfg.passwordFile != null) cfg.ensures;
+      in
+      if (builtins.length cfgsWithPasswords) == 0 then
+        ""
+      else
+        prefix + (lib.concatStrings (map exec cfgsWithPasswords)) + suffix;
 
     environment.persistence."/persist" = mkIf withImpermanence {
       directories = [
