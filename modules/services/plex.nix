@@ -39,6 +39,7 @@ in
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
+      extraGroups = [ "media" ];
     };
 
     users.groups.${cfg.group.name} = {
