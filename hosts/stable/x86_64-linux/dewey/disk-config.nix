@@ -177,6 +177,13 @@
               logbias = "throughput";
             };
           };
+          "encrypted/safe/svc/containers" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "/var/lib/containers";
+              "com.sun:auto-snapshot" = "false";
+            };
+          };
         };
       };
     };

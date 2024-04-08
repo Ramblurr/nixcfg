@@ -55,6 +55,8 @@ in
       plex.enable = lib.mkEnableOption "Plex";
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
+      calibre.enable = lib.mkEnableOption "Calibre";
+      calibre-web.enable = lib.mkEnableOption "Calibre Web";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -197,6 +199,30 @@ in
       ports = home-ops.ports.home-dl;
       mediaNfsShare = "tank2/media";
       dlNfsShare = "fast/downloads";
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.calibre = lib.mkIf cfg.apps.calibre.enable {
+      enable = true;
+      domain = "calibre.${home-ops.homeDomain}";
+      ports.gui = home-ops.ports.calibre-gui;
+      ports.server = home-ops.ports.calibre-server;
+      mediaNfsShare = "tank2/media";
+      dlNfsShare = "fast/downloads";
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.calibre-web = lib.mkIf cfg.apps.calibre-web.enable {
+      enable = true;
+      domain = "calibre-web.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.calibre-web;
+      mediaNfsShare = "tank2/media";
+      user = home-ops.users.books;
+      group = home-ops.groups.books;
       ingress = {
         domain = home-ops.homeDomain;
       };
