@@ -225,8 +225,8 @@ in
         # we are using PrivateTmp=true
         ${lib.getExe pkgs.xmlstarlet} sel -t -v "//ApiKey" -nl $CREDENTIALS_DIRECTORY/sonarr.xml > /tmp/sonarr.api_key
         ${lib.getExe pkgs.xmlstarlet} sel -t -v "//ApiKey" -nl $CREDENTIALS_DIRECTORY/radarr.xml > /tmp/radarr.api_key
-        ${pkgs.replace-secret}/bin/replace-secret '@SONARR_API_KEY@' /tmp/sonarr.api_key ${stateDirEffective}/recyclarr/recyclarr.yaml
-        ${pkgs.replace-secret}/bin/replace-secret '@RADARR_API_KEY@' /tmp/radarr.api_key ${stateDirEffective}/recyclarr/recyclarr.yaml
+        ${pkgs.replace-secret}/bin/replace-secret 'SONARR_API_KEY' /tmp/sonarr.api_key ${stateDirEffective}/recyclarr/recyclarr.yaml
+        ${pkgs.replace-secret}/bin/replace-secret 'RADARR_API_KEY' /tmp/radarr.api_key ${stateDirEffective}/recyclarr/recyclarr.yaml
       '';
       environment = {
         XDG_CONFIG_HOME = "${stateDirEffective}/recyclarr";
