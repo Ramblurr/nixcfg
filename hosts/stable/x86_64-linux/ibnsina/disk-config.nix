@@ -1,4 +1,5 @@
-{ lib, ... }: {
+{ lib, ... }:
+{
   disko.devices = {
     # Mount `/tmp` on `tmpfs`.
     #
@@ -7,7 +8,11 @@
     # to balance these settings w/ ZRAM-swap (configured elsewhere).
     nodev."/tmp" = {
       fsType = "tmpfs";
-      mountOptions = [ "defaults" "size=16G" "mode=1777" ];
+      mountOptions = [
+        "defaults"
+        "size=16G"
+        "mode=1777"
+      ];
     };
     disk = {
       sda = {
@@ -31,7 +36,10 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
-                mountOptions = [ "defaults" "umask=0077" ];
+                mountOptions = [
+                  "defaults"
+                  "umask=0077"
+                ];
               };
             };
             cryptkey = {
@@ -126,7 +134,9 @@
               mountpoint = "legacy";
             };
           };
-          "encrypted/safe/vms" = { type = "zfs_fs"; };
+          "encrypted/safe/vms" = {
+            type = "zfs_fs";
+          };
           "encrypted/safe/extra" = {
             type = "zfs_fs";
             mountpoint = "/persist/extra";

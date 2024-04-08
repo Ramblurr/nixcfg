@@ -1,4 +1,11 @@
-{ config, options, lib, pkgs, my, ... }:
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  my,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -7,8 +14,11 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.dev.node = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.dev.node = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [ ];
@@ -20,7 +30,11 @@ in {
         recursive = true;
       };
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        directories = [ ".config/npm" ".cache/npm-packages" ".local/share/npm" ];
+        directories = [
+          ".config/npm"
+          ".cache/npm-packages"
+          ".local/share/npm"
+        ];
       };
     };
   };

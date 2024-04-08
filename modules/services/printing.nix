@@ -1,8 +1,17 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
-let cfg = config.modules.services.printing;
-in {
+let
+  cfg = config.modules.services.printing;
+in
+{
   options.modules.services.printing = {
     enable = mkBoolOpt false;
     drivers = mkOption {

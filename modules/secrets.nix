@@ -1,6 +1,11 @@
 # This file is based on the work by oddlama at
 # https://github.com/oddlama/nix-config/blob/main/modules/secrets.nix
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # If the given expression is a bare set, it will be wrapped in a function,
@@ -9,25 +14,27 @@ let
   constSet = x: if builtins.isAttrs x then (_: x) else x;
 
   assertMsg = pred: msg: pred || builtins.throw msg;
-  hasSuffix = suffix: content:
+  hasSuffix =
+    suffix: content:
     let
       lenContent = builtins.stringLength content;
       lenSuffix = builtins.stringLength suffix;
-    in lenContent >= lenSuffix && builtins.substring (lenContent - lenSuffix) lenContent content
-    == suffix;
+    in
+    lenContent >= lenSuffix && builtins.substring (lenContent - lenSuffix) lenContent content == suffix;
 
-  safeImport = nixFile:
+  safeImport =
+    nixFile:
     assert assertMsg (builtins.isPath nixFile)
       "The file to decrypt must be given as a path to prevent impurity.";
     assert assertMsg (hasSuffix ".nix" nixFile)
       "The content of the decrypted file must be a nix expression";
     import nixFile;
 
-  importEncrypted = path:
-    (constSet (if builtins.pathExists path then safeImport path else { })) { };
+  importEncrypted = path: (constSet (if builtins.pathExists path then safeImport path else { })) { };
 
   cfg = config.repo;
-in {
+in
+{
   options.repo = {
     secretFiles = lib.mkOption {
       default = { };

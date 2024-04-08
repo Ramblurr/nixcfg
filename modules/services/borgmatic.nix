@@ -1,4 +1,11 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -6,7 +13,8 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-  repository = with types;
+  repository =
+    with types;
     submodule {
       options = {
         path = mkOption {
@@ -23,7 +31,8 @@ let
         };
       };
     };
-in {
+in
+{
   options.modules.services.borgmatic = {
     enable = mkBoolOpt false;
     name = mkOption { type = types.str; };
@@ -48,14 +57,19 @@ in {
     };
   };
   config = mkIf cfg.enable {
-    /* To use this module you must provide the secrets with the yaml:
-       borgmatic-ssh-key: |
-         ..the ssh private key for the repos here..
-       borgmatic-env:
-         PASSPHRASE=ssh key passphrase here
-         HEALTHCHECK_URL=https://
+    /*
+      To use this module you must provide the secrets with the yaml:
+      borgmatic-ssh-key: |
+        ..the ssh private key for the repos here..
+      borgmatic-env:
+        PASSPHRASE=ssh key passphrase here
+        HEALTHCHECK_URL=https://
     */
-    environment.systemPackages = with pkgs; [ borgbackup borgmatic openssl ];
+    environment.systemPackages = with pkgs; [
+      borgbackup
+      borgmatic
+      openssl
+    ];
     sops.secrets.borgmatic-ssh-key = { };
     sops.secrets.borgmatic-env = { };
     systemd.services.borgmatic.serviceConfig.EnvironmentFile = "/run/secrets/borgmatic-env";
@@ -70,8 +84,7 @@ in {
         exclude_if_present = [ ".nobackup" ];
         storage = {
           encryption_passphrase = "\${PASSPHRASE}";
-          ssh_command =
-            "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
+          ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
           archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
         };
         retention = {
@@ -96,7 +109,9 @@ in {
             }
           ];
         };
-        hooks = { healthchecks = "\${HEALTHCHECK_URL}"; };
+        hooks = {
+          healthchecks = "\${HEALTHCHECK_URL}";
+        };
       };
     };
   };

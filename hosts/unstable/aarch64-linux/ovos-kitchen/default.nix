@@ -1,9 +1,23 @@
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
   hn = "ovos-kitchen";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-in {
+  ramblurr = import ../../../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
+in
+{
   imports = [
     ../../../home-wifi.nix
     ../pipewire.nix
@@ -32,8 +46,12 @@ in {
       udisks2.enable = false;
       fwupd.enable = false;
     };
-    services = { sshd.enable = true; };
-    editors = { vim.enable = true; };
+    services = {
+      sshd.enable = true;
+    };
+    editors = {
+      vim.enable = true;
+    };
     users.enable = true;
     users.primaryUser = {
       username = ramblurr.username;
@@ -48,7 +66,9 @@ in {
       extraGroups = [ "wheel" ];
     };
   };
-  myhm = { systemd.user.startServices = lib.mkForce false; };
+  myhm = {
+    systemd.user.startServices = lib.mkForce false;
+  };
 
   #ovos.password.enable = true;
   #ovos.gui.enable = false;
@@ -69,4 +89,3 @@ in {
 # pw-link -d roc-recv-source:receive_FL input.music-to-speakers-bridge:input_FL
 # pw-link -d roc-recv-source:receive_FR input.music-to-speakers-bridge:input_FR
 # sudo podman images | awk '(NR>1) && ($2!~/none/) {print $1":"$2}' |grep docker.io | xargs -L1 sudo podman pull
-

@@ -1,13 +1,28 @@
-{ config, pkgs, lib, inputs, unstable, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  unstable,
+  ...
+}:
 let
   hn = "fairybox";
   machine-id = "1b2d9977b3bb44508d67a72c7425828b";
   defaultSopsFile = ./secrets.sops.yaml;
 
-  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
+  ramblurr = import ../../../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
   pigpio = pkgs.callPackage ../../../../packages/pigpio { };
   pigpio-py = pkgs.python311.pkgs.callPackage ../../../../packages/pigpio-py { pigpio-c = pigpio; };
-in {
+in
+{
   imports = [
     inputs.nixos-raspberrypi-stable.nixosModules.base
     inputs.nixos-raspberrypi-stable.nixosModules.hardware
@@ -78,8 +93,10 @@ in {
       ExecStart = "${pigpio}/bin/pigpiod -l -n 127.0.0.1 -t0";
     };
   };
-  systemd.tmpfiles.rules =
-    [ "d /var/lib/fairybox 750 ramblurr ramblurr" "f /var/lib/systemd/linger/ramblurr" ];
+  systemd.tmpfiles.rules = [
+    "d /var/lib/fairybox 750 ramblurr ramblurr"
+    "f /var/lib/systemd/linger/ramblurr"
+  ];
   systemd.services.fairybox = {
     enable = true;
     wantedBy = [ "multi-user.target" ];
@@ -99,8 +116,7 @@ in {
       SupplementaryGroups = "gpio spi i2c audio";
       #SupplementaryGroups = "gpio spi i2c audio pipewire";
       WorkingDirectory = "/var/lib/fairybox";
-      ExecStart =
-        "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /var/lib/fairybox/box-standalone.jar";
+      ExecStart = "${pkgs.zulu17}/bin/java -XX:-OmitStackTraceInFastThrow -DPIGPIOD_HOST=127.0.0.1 -jar /var/lib/fairybox/box-standalone.jar";
       AmbientCapabilities = "CAP_NET_BIND_SERVICE";
       Restart = "on-failure";
       TimeoutStopSec = "30";
@@ -119,8 +135,12 @@ in {
       udisks2.enable = false;
       fwupd.enable = false;
     };
-    services = { sshd.enable = true; };
-    editors = { vim.enable = true; };
+    services = {
+      sshd.enable = true;
+    };
+    editors = {
+      vim.enable = true;
+    };
     users.enable = true;
     users.primaryUser = {
       username = ramblurr.username;

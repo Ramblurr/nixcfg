@@ -1,8 +1,17 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
-let cfg = config.modules.boot.zfs;
-in {
+let
+  cfg = config.modules.boot.zfs;
+in
+{
   options = {
     modules.boot.zfs = {
       enable = mkBoolOpt false;
@@ -49,15 +58,20 @@ in {
           unitConfig.DefaultDependencies = "no";
           serviceConfig.Type = "oneshot";
           #cryptsetup close /dev/mapper/cryptkey && \
-          script = mkIf config.modules.impermanence.enable (if cfg.encrypted then ''
-            zfs rollback -r ${cfg.rootPool}/encrypted/local/root@blank && \
-            zfs rollback -r ${cfg.rootPool}/encrypted/local/home@blank && \
-            echo "rollback complete"
-          '' else ''
-            zfs rollback -r ${cfg.rootPool}/local/root@blank && \
-            zfs rollback -r ${cfg.rootPool}/local/home@blank && \
-            echo "rollback complete"
-          '');
+          script = mkIf config.modules.impermanence.enable (
+            if cfg.encrypted then
+              ''
+                zfs rollback -r ${cfg.rootPool}/encrypted/local/root@blank && \
+                zfs rollback -r ${cfg.rootPool}/encrypted/local/home@blank && \
+                echo "rollback complete"
+              ''
+            else
+              ''
+                zfs rollback -r ${cfg.rootPool}/local/root@blank && \
+                zfs rollback -r ${cfg.rootPool}/local/home@blank && \
+                echo "rollback complete"
+              ''
+          );
         };
       };
       extraModulePackages = [ ];
@@ -81,7 +95,9 @@ in {
 
     environment = {
       systemPackages = with pkgs; [ coreutils ];
-      etc."flake.lock" = { source = ../../flake.lock; };
+      etc."flake.lock" = {
+        source = ../../flake.lock;
+      };
     };
 
     ## SILLY CUSTOMIZATION ##################################################
@@ -129,8 +145,7 @@ in {
 
         ZED_EMAIL_ADDR = [ config.modules.server.smtp-external-relay.emailTo ];
         ZED_EMAIL_PROG = "${pkgs.msmtp}/bin/msmtp";
-        ZED_EMAIL_OPTS =
-          "-a 'FROM:${config.modules.server.smtp-external-relay.emailFrom}' -s '@SUBJECT@' @ADDRESS@";
+        ZED_EMAIL_OPTS = "-a 'FROM:${config.modules.server.smtp-external-relay.emailFrom}' -s '@SUBJECT@' @ADDRESS@";
 
         ZED_NOTIFY_INTERVAL_SECS = 3600;
         ZED_USE_ENCLOSURE_LEDS = true;

@@ -1,4 +1,12 @@
-{ config, options, inputs, lib, pkgs, my, ... }:
+{
+  config,
+  options,
+  inputs,
+  lib,
+  pkgs,
+  my,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -7,8 +15,11 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.dev.jetbrains = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.dev.jetbrains = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [ ];
@@ -39,7 +50,9 @@ in {
         ];
       };
 
-      home.file.".ideavimrc" = { source = ./configs/ideavimrc; };
+      home.file.".ideavimrc" = {
+        source = ./configs/ideavimrc;
+      };
       xdg.configFile."ideavim" = {
         source = ./configs/ideavim;
         recursive = true;

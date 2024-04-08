@@ -1,11 +1,28 @@
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
   hn = "mill";
   machine-id = "964beb5f91f644d8bea9f74366d1556d";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-in {
-  imports = [ ./hardware.nix ./disk-config.nix ];
+  ramblurr = import ../../../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
+in
+{
+  imports = [
+    ./hardware.nix
+    ./disk-config.nix
+  ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = machine-id;
   repo.secretFiles.k3s-main = ../../../../secrets/k3s-main.nix;

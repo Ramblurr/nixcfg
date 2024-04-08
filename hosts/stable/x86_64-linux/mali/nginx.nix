@@ -1,7 +1,17 @@
-{ config, lib, pkgs, ... }:
-let inherit (config.repo.secrets.global) domain;
-in {
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  inherit (config.repo.secrets.global) domain;
+in
+{
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
   services.nginx = {
     enable = true;
     recommendedGzipSettings = true;

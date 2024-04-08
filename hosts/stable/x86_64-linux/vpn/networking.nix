@@ -1,6 +1,13 @@
-{ config, lib, pkgs, ... }:
-let vpn = config.repo.secrets.local;
-in {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  vpn = config.repo.secrets.local;
+in
+{
   sops.secrets."wireguard_private_key" = {
     mode = "400";
     owner = "root";
@@ -17,10 +24,12 @@ in {
     usePredictableInterfaceNames = lib.mkForce false;
     interfaces = {
       eth0 = {
-        ipv4.addresses = [{
-          address = vpn.ipv4;
-          prefixLength = 32;
-        }];
+        ipv4.addresses = [
+          {
+            address = vpn.ipv4;
+            prefixLength = 32;
+          }
+        ];
         ipv6.addresses = [
           {
             address = vpn.ipv6-1;
@@ -31,14 +40,18 @@ in {
             prefixLength = 64;
           }
         ];
-        ipv4.routes = [{
-          address = vpn.ipv4-route;
-          prefixLength = 32;
-        }];
-        ipv6.routes = [{
-          address = "fe80::1";
-          prefixLength = 128;
-        }];
+        ipv4.routes = [
+          {
+            address = vpn.ipv4-route;
+            prefixLength = 32;
+          }
+        ];
+        ipv6.routes = [
+          {
+            address = "fe80::1";
+            prefixLength = 128;
+          }
+        ];
       };
     };
 
@@ -54,7 +67,11 @@ in {
       allowPing = true;
       logRefusedConnections = true;
       allowedTCPPorts = [ 53 ] ++ vpn.openPortsTCP;
-      allowedUDPPorts = [ 53 51820 41641 ] ++ vpn.openPortsUDP;
+      allowedUDPPorts = [
+        53
+        51820
+        41641
+      ] ++ vpn.openPortsUDP;
     };
 
     wg-quick.interfaces = {

@@ -1,6 +1,14 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
   environment.systemPackages = with pkgs; [ minio-client ];
-  sops.secrets.minio-root-credentials = { owner = "minio"; };
+  sops.secrets.minio-root-credentials = {
+    owner = "minio";
+  };
   services.minio = {
     enable = true;
     dataDir = [ "/mnt/tank2/services/minio" ];
@@ -10,5 +18,7 @@
     consoleAddress = "127.0.0.1:8999";
   };
 
-  environment.persistence."/persist" = { directories = [ "/var/lib/minio/" ]; };
+  environment.persistence."/persist" = {
+    directories = [ "/var/lib/minio/" ];
+  };
 }
