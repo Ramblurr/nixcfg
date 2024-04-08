@@ -1,7 +1,14 @@
-{ config, inputs, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 
-let local = config.node.secretsDir + "/local.nix";
-in {
+let
+  local = config.node.secretsDir + "/local.nix";
+in
+{
   # Define local repo secrets
   repo.secretFiles = {
     global = ../../secrets/global.nix;

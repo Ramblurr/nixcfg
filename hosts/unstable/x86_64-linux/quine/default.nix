@@ -15,12 +15,14 @@ in
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
+    ../../../../modules/_config/secrets.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./wireplumber.nix
     ./syncthing.nix
     ./roon-bridge.nix
     ./libvirt.nix
+    ./gaming.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
