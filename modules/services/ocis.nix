@@ -74,8 +74,8 @@ in
     modules.networking.systemd-netns-private = {
       enable = true;
       namespaces.ocis = {
-        hostAddr = "192.168.10.1/24";
-        nsAddr = "192.168.10.2/24";
+        hostAddr = "192.168.10.1/29";
+        nsAddr = "192.168.10.2/29";
         services = [ "ocis.service" ];
       };
     };
