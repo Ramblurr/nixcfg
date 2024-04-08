@@ -250,7 +250,7 @@ in
     ################
     ## Networking ##
     ################
-    networking.domain = "socozy.casa";
+    networking.domain = home-ops.homeDomain;
     networking.usePredictableInterfaceNames = true;
     networking.firewall.allowPing = true;
     networking.nameservers = config.repo.secrets.global.nameservers;

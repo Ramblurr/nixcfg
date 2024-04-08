@@ -100,11 +100,6 @@
           "com.sun:auto-snapshot" = "false";
         };
         options.ashift = "12";
-        postCreateHook = ''
-          zfs snapshot tank/encrypted/local/nix@blank
-          zfs snapshot tank/encrypted/local/root@blank
-        '';
-
         datasets = {
           # Static reservation so the pool will never be 100% full.
           #

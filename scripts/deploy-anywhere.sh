@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+#
+# 1. Boot target with NixOS installation media
+# 2. From console set nixos password: `sudo passwd nixos`
+# 3. SSH into the target as nixos user
+# 4. Edit your ssh config so that `ssh hostname` works
+# 5. Run this script with the hostname as the first argument
+
 set -ex
 
 host="$1"

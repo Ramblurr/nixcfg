@@ -32,17 +32,17 @@ in
   home-ops = {
     enable = true;
     user = ramblurr;
-    ingress.enable = true;
-    postgresql = {
-      enable = true;
-      onsiteBackup.enable = true;
-    };
-    mariadb.enable = true;
-    containers.enable = true;
-    hypervisor.enable = false;
+    #ingress.enable = true;
+    #postgresql = {
+    #  enable = true;
+    #  onsiteBackup.enable = true;
+    #};
+    #mariadb.enable = true;
+    #containers.enable = true;
+    #hypervisor.enable = false;
     apps = {
       #authentik.enable = true;
-      echo-server.enable = true;
+      #echo-server.enable = true;
       #davis.enable = true;
       #invoiceninja.enable = true;
       #paperless.enable = true;
@@ -54,9 +54,9 @@ in
       #calibre-web.enable = true;
     };
   };
-  myhm = {
-    persistence = {
-      directories = [ "dumps" ];
-    };
-  };
+  #myhm = {
+  #  persistence = {
+  #    directories = [ "dumps" ];
+  #  };
+  #};
 }

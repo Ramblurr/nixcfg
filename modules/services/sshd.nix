@@ -26,14 +26,6 @@ in
     sops.secrets.ssh_host_ed25519_key_pub = {
       path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
     };
-
-    #sops.secrets.ssh_host_rsa_key = {
-    #  path = "/persist/etc/ssh/ssh_host_rsa_key";
-    #};
-
-    #sops.secrets.ssh_host_rsa_key_pub = {
-    #  path = "/persist/etc/ssh/ssh_host_rsa_key.pub";
-    #};
     networking.firewall.allowedTCPPorts = [ 22 ];
 
     services.openssh = {
