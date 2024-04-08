@@ -1,5 +1,13 @@
-{ config, lib, pkgs, ... }: {
-  virtualisation.libvirtd = { enable = true; };
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
+  virtualisation.libvirtd = {
+    enable = true;
+  };
   services.nfs.server.enable = true;
 
   # Add firewall exception for VirtualBox provider

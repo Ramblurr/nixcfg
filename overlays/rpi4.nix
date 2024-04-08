@@ -46,10 +46,12 @@ final: prev: {
   #  libgpiod = prev.libgpiod_1;
   #};
   python311Packages = prev.python311Packages // {
-    pylibgpiod_11 = prev.python311Packages.toPythonModule (prev.libgpiod_1.override {
-      enablePython = true;
-      python3 = prev.python311;
-    });
+    pylibgpiod_11 = prev.python311Packages.toPythonModule (
+      prev.libgpiod_1.override {
+        enablePython = true;
+        python3 = prev.python311;
+      }
+    );
   };
   spidev_1 = prev.python311Packages.spidev.overrideAttrs (old: {
     version = "3.4";
@@ -66,6 +68,7 @@ final: prev: {
   #  src = prev.libgpiod_1.src;
   #  buildInputs = [prev.libgpiod_1];
   #});
-  rpi-gpio2_1 = prev.python311Packages.rpi-gpio2.overrideAttrs
-    (old: { propagatedBuildInputs = [ prev.libgpiod_1 ]; });
+  rpi-gpio2_1 = prev.python311Packages.rpi-gpio2.overrideAttrs (old: {
+    propagatedBuildInputs = [ prev.libgpiod_1 ];
+  });
 }

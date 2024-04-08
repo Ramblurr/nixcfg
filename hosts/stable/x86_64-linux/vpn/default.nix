@@ -1,10 +1,27 @@
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
   hn = "vpn-gateway";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix { inherit config lib pkgs inputs; };
-in {
-  imports = [ ./hardware-configuration.nix ./networking.nix ];
+  ramblurr = import ../../../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
+in
+{
+  imports = [
+    ./hardware-configuration.nix
+    ./networking.nix
+  ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
@@ -28,10 +45,16 @@ in {
       zsh.enable = true;
       zsh.starship.enable = false;
     };
-    services = { sshd.enable = true; };
-    editors = { vim.enable = true; };
+    services = {
+      sshd.enable = true;
+    };
+    editors = {
+      vim.enable = true;
+    };
     impermanence.enable = false;
-    boot.zfs = { enable = false; };
+    boot.zfs = {
+      enable = false;
+    };
     vpn.tailscale.enable = true;
     firewall.enable = false;
     security.default.enable = true;

@@ -1,4 +1,10 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
   services.timesyncd.enable = true;
   users.defaultUserShell = pkgs.bash;
   users.mutableUsers = false;
@@ -17,7 +23,14 @@
       name = "ovos";
       group = "ovos";
       isNormalUser = true;
-      extraGroups = [ "wheel" "audio" "spi" "gpio" "input" "plugdev" ];
+      extraGroups = [
+        "wheel"
+        "audio"
+        "spi"
+        "gpio"
+        "input"
+        "plugdev"
+      ];
       shell = pkgs.zsh;
     };
   };
@@ -113,7 +126,9 @@
     jless
   ];
 
-  virtualisation.podman = { enable = true; };
+  virtualisation.podman = {
+    enable = true;
+  };
 
   documentation = {
     enable = true;
@@ -153,7 +168,12 @@
   systemd.user.services.podman-auto-update-self = {
     wants = [ "network-online.target" ];
     after = [ "network-online.target" ];
-    path = [ "/run/wrappers" pkgs.coreutils config.virtualisation.podman.package pkgs.shadow ];
+    path = [
+      "/run/wrappers"
+      pkgs.coreutils
+      config.virtualisation.podman.package
+      pkgs.shadow
+    ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "podman auto-update";
@@ -170,66 +190,75 @@
   };
 
   systemd.user.services = {
-    hivemind-sat = let
-      image = "ghcr.io/ramblurr/hivemind-voice-sat-dev";
-      tag = "rolling";
-      xdgRuntimeDir = "/run/user/1000";
-      pullPolicy = "missing";
-      podman = "${config.virtualisation.podman.package}/bin/podman";
-    in {
-      path = [ "/run/wrappers" pkgs.coreutils config.virtualisation.podman.package pkgs.shadow ];
-      description = "Podman hivemind-sat";
-      after = [ "network-online.target" ];
-      wantedBy = [ "default.target" ];
-      partOf = [ "pipewire.service" ];
+    hivemind-sat =
+      let
+        image = "ghcr.io/ramblurr/hivemind-voice-sat-dev";
+        tag = "rolling";
+        xdgRuntimeDir = "/run/user/1000";
+        pullPolicy = "missing";
+        podman = "${config.virtualisation.podman.package}/bin/podman";
+      in
+      {
+        path = [
+          "/run/wrappers"
+          pkgs.coreutils
+          config.virtualisation.podman.package
+          pkgs.shadow
+        ];
+        description = "Podman hivemind-sat";
+        after = [ "network-online.target" ];
+        wantedBy = [ "default.target" ];
+        partOf = [ "pipewire.service" ];
 
-      enable = true;
-      unitConfig = { "RequiresMountsFor" = "%t/containers"; };
-      serviceConfig = {
-        Environment = "PODMAN_SYSTEMD_UNIT=%n";
-        Restart = "on-failure";
-        TimeoutStopSec = 70;
-        TimeoutStartSec = "infinity";
-        RestartSec = 5;
-        ExecStart = ''
-          ${podman} run \
-            --name=hivemind-sat \
-            --cidfile=%t/%n.ctr-id \
-            --cgroups=no-conmon \
-            --rm \
-            --sdnotify=conmon \
-            --replace \
-            --detach \
-            --userns=keep-id \
-            --log-driver=journald \
-            --security-opt label=disable \
-            --pull ${pullPolicy} \
-            --label=io.containers.autoupdate=registry \
-            --device /dev/snd \
-            --device /dev/gpiomem \
-            --group-add 997 \
-            --env TZ=${config.time.timeZone} \
-            --env XDG_RUNTIME_DIR=${xdgRuntimeDir} \
-            --env DBUS_SESSION_BUS_ADDRESS=unix:path=${xdgRuntimeDir}/bus \
-            --env-file ${config.sops.secrets.hivemindSatEnv.path} \
-            --volume ${xdgRuntimeDir}/bus:${xdgRuntimeDir}/bus:ro \
-            --volume ${xdgRuntimeDir}/pipewire-0:${xdgRuntimeDir}/pipewire-0:ro \
-            --volume /tmp/mycroft:/tmp/mycroft:z \
-            --volume /home/ovos/cache/ovos_nltk:/home/ovos/nltk_data \
-            --volume /home/ovos/cache/ovos_listener_records:/home/ovos/.local/share/mycroft/listener \
-            --volume /home/ovos/cache/ovos_models:/home/ovos/.local/share/precise-lite \
-            --volume /home/ovos/cache/ovos_vosk:/home/ovos/.local/share/vosk \
-            --volume /home/ovos/config/hivemind:/home/ovos/.config/hivemind \
-            --volume /home/ovos/config/mycroft:/home/ovos/.config/mycroft \
-            --volume /home/ovos/share/hivemind:/home/ovos/.local/share/hivemind \
-            --volume /home/ovos/share/mycroft:/home/ovos/.local/share/mycroft \
-            ${image}:${tag}
-        '';
-        ExecStop = "${podman} stop --ignore -t 10 --cidfile=%t/%n.ctr-id";
-        ExecStopPost = "${podman} rm -f --ignore -t 10 --cidfile=%t/%n.ctr-id";
-        Type = "notify";
-        NotifyAccess = "all";
+        enable = true;
+        unitConfig = {
+          "RequiresMountsFor" = "%t/containers";
+        };
+        serviceConfig = {
+          Environment = "PODMAN_SYSTEMD_UNIT=%n";
+          Restart = "on-failure";
+          TimeoutStopSec = 70;
+          TimeoutStartSec = "infinity";
+          RestartSec = 5;
+          ExecStart = ''
+            ${podman} run \
+              --name=hivemind-sat \
+              --cidfile=%t/%n.ctr-id \
+              --cgroups=no-conmon \
+              --rm \
+              --sdnotify=conmon \
+              --replace \
+              --detach \
+              --userns=keep-id \
+              --log-driver=journald \
+              --security-opt label=disable \
+              --pull ${pullPolicy} \
+              --label=io.containers.autoupdate=registry \
+              --device /dev/snd \
+              --device /dev/gpiomem \
+              --group-add 997 \
+              --env TZ=${config.time.timeZone} \
+              --env XDG_RUNTIME_DIR=${xdgRuntimeDir} \
+              --env DBUS_SESSION_BUS_ADDRESS=unix:path=${xdgRuntimeDir}/bus \
+              --env-file ${config.sops.secrets.hivemindSatEnv.path} \
+              --volume ${xdgRuntimeDir}/bus:${xdgRuntimeDir}/bus:ro \
+              --volume ${xdgRuntimeDir}/pipewire-0:${xdgRuntimeDir}/pipewire-0:ro \
+              --volume /tmp/mycroft:/tmp/mycroft:z \
+              --volume /home/ovos/cache/ovos_nltk:/home/ovos/nltk_data \
+              --volume /home/ovos/cache/ovos_listener_records:/home/ovos/.local/share/mycroft/listener \
+              --volume /home/ovos/cache/ovos_models:/home/ovos/.local/share/precise-lite \
+              --volume /home/ovos/cache/ovos_vosk:/home/ovos/.local/share/vosk \
+              --volume /home/ovos/config/hivemind:/home/ovos/.config/hivemind \
+              --volume /home/ovos/config/mycroft:/home/ovos/.config/mycroft \
+              --volume /home/ovos/share/hivemind:/home/ovos/.local/share/hivemind \
+              --volume /home/ovos/share/mycroft:/home/ovos/.local/share/mycroft \
+              ${image}:${tag}
+          '';
+          ExecStop = "${podman} stop --ignore -t 10 --cidfile=%t/%n.ctr-id";
+          ExecStopPost = "${podman} rm -f --ignore -t 10 --cidfile=%t/%n.ctr-id";
+          Type = "notify";
+          NotifyAccess = "all";
+        };
       };
-    };
   };
 }

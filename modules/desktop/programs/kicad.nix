@@ -1,4 +1,11 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -6,13 +13,22 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.desktop.programs.kicad = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.desktop.programs.kicad = {
+    enable = mkBoolOpt false;
+  };
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = { pkgs, config, ... }@hm: {
-      home.packages = with pkgs; [ kicad ];
-      home.persistence."/persist${homeDirectory}" =
-        mkIf withImpermanence { directories = [ ".config/kicad" ".config/kicad5" ]; };
-    };
+    home-manager.users."${username}" =
+      { pkgs, config, ... }@hm:
+      {
+        home.packages = with pkgs; [ kicad ];
+        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+          directories = [
+            ".config/kicad"
+            ".config/kicad5"
+          ];
+        };
+      };
   };
 }

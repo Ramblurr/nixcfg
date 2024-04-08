@@ -1,12 +1,22 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
   cfg = config.modules.vpn.tailscale;
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.vpn.tailscale = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.vpn.tailscale = {
+    enable = mkBoolOpt false;
+  };
   config = mkIf cfg.enable {
     services.tailscale.enable = lib.mkIf cfg.enable true;
 
@@ -19,7 +29,10 @@ in {
     ];
 
     environment.persistence = mkIf config.modules.impermanence.enable {
-      "/persist".directories = [ "/var/lib/tailscale" "/var/cache/tailscale" ];
+      "/persist".directories = [
+        "/var/lib/tailscale"
+        "/var/cache/tailscale"
+      ];
     };
   };
 }

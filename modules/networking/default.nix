@@ -1,8 +1,17 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
-let cfg = config.modules.networking.default;
-in {
+let
+  cfg = config.modules.networking.default;
+in
+{
   options = {
     modules.networking.default = {
       enable = mkBoolOpt false;
@@ -14,8 +23,11 @@ in {
     ## NETWORK #######################################################
     networking = {
       hostName = cfg.hostName;
-      hostId = pkgs.lib.concatStringsSep "" (pkgs.lib.take 8
-        (pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)));
+      hostId = pkgs.lib.concatStringsSep "" (
+        pkgs.lib.take 8 (
+          pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)
+        )
+      );
       useDHCP = true;
       useNetworkd = true;
       dhcpcd.wait = "background";

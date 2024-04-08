@@ -1,7 +1,16 @@
-{ config, lib, pkgs, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
   networking.usePredictableInterfaceNames = true;
   networking.firewall.allowPing = true;
-  networking.nameservers = [ "192.168.1.3" "10.9.4.4" ];
+  networking.nameservers = [
+    "192.168.1.3"
+    "10.9.4.4"
+  ];
 
   # Useful if you need to troubleshoot systemd-networkd
   # systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
@@ -30,7 +39,9 @@
           Kind = "vlan";
           MTUBytes = "1500";
         };
-        vlanConfig = { Id = 4; };
+        vlanConfig = {
+          Id = 4;
+        };
       };
       "30-brprim4" = {
         netdevConfig = {
@@ -45,7 +56,9 @@
           Kind = "vlan";
           MTUBytes = "1500";
         };
-        vlanConfig = { Id = 9; };
+        vlanConfig = {
+          Id = 9;
+        };
       };
       "50-brmgmt9" = {
         netdevConfig = {
@@ -60,7 +73,9 @@
           Kind = "vlan";
           MTUBytes = "9000";
         };
-        vlanConfig = { Id = 11; };
+        vlanConfig = {
+          Id = 11;
+        };
       };
       "80-brdata11" = {
         netdevConfig = {
@@ -73,8 +88,13 @@
 
     networks = {
       "10-bond0" = {
-        matchConfig = { Name = "bond0"; };
-        vlan = [ "vlmgmt9" "vlprim4" ];
+        matchConfig = {
+          Name = "bond0";
+        };
+        vlan = [
+          "vlmgmt9"
+          "vlprim4"
+        ];
         networkConfig = {
           BindCarrier = "eno1 eno2";
           DHCP = "no";
@@ -82,38 +102,60 @@
         };
       };
       "11-eno1" = {
-        matchConfig = { Name = "eno1"; };
-        networkConfig = { Bond = "bond0"; };
+        matchConfig = {
+          Name = "eno1";
+        };
+        networkConfig = {
+          Bond = "bond0";
+        };
       };
       "12-eno1" = {
-        matchConfig = { Name = "eno2"; };
-        networkConfig = { Bond = "bond0"; };
+        matchConfig = {
+          Name = "eno2";
+        };
+        networkConfig = {
+          Bond = "bond0";
+        };
       };
       "20-vlprim4" = {
-        matchConfig = { Name = "vlprim4"; };
-        networkConfig = { Bridge = "brprim4"; };
+        matchConfig = {
+          Name = "vlprim4";
+        };
+        networkConfig = {
+          Bridge = "brprim4";
+        };
       };
       "30-brprim4" = {
-        matchConfig = { Name = "brprim4"; };
+        matchConfig = {
+          Name = "brprim4";
+        };
         networkConfig = {
           DHCP = "no";
           Address = "10.9.4.10/22";
           Description = "primary";
           DNSSEC = "no";
         };
-        routes = [{
-          routeConfig = {
-            Destination = "192.168.8.0/22";
-            Gateway = "10.9.4.27";
-          };
-        }];
+        routes = [
+          {
+            routeConfig = {
+              Destination = "192.168.8.0/22";
+              Gateway = "10.9.4.27";
+            };
+          }
+        ];
       };
       "40-vlmgmt9" = {
-        matchConfig = { Name = "vlmgmt9"; };
-        networkConfig = { Bridge = "brmgmt9"; };
+        matchConfig = {
+          Name = "vlmgmt9";
+        };
+        networkConfig = {
+          Bridge = "brmgmt9";
+        };
       };
       "50-brmgmt9" = {
-        matchConfig = { Name = "brmgmt9"; };
+        matchConfig = {
+          Name = "brmgmt9";
+        };
         networkConfig = {
           DHCP = "no";
           Address = "10.9.8.3/23";
@@ -121,17 +163,29 @@
         };
       };
       "60-enp2s0f1" = {
-        matchConfig = { Name = "enp2s0f1"; };
-        networkConfig = { Description = "10gbe"; };
-        linkConfig = { MTUBytes = "9000"; };
+        matchConfig = {
+          Name = "enp2s0f1";
+        };
+        networkConfig = {
+          Description = "10gbe";
+        };
+        linkConfig = {
+          MTUBytes = "9000";
+        };
         vlan = [ "vldata11" ];
       };
       "70-vldata11" = {
-        matchConfig = { Name = "vldata11"; };
-        networkConfig = { Bridge = "brdata11"; };
+        matchConfig = {
+          Name = "vldata11";
+        };
+        networkConfig = {
+          Bridge = "brdata11";
+        };
       };
       "80-brdata11" = {
-        matchConfig = { Name = "brdata11"; };
+        matchConfig = {
+          Name = "brdata11";
+        };
         networkConfig = {
           DHCP = "no";
           Address = "10.9.10.10/24";

@@ -1,4 +1,11 @@
-{ options, config, lib, pkgs, inputs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -6,8 +13,11 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.shell.git = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.shell.git = {
+    enable = mkBoolOpt false;
+  };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
       programs.git = {
@@ -20,7 +30,9 @@ in {
           init.defaultBranch = "main";
           user.editor = "vim";
           pull.rebase = true;
-          safe = { directory = "${homeDirectory}/src/nixcfg"; };
+          safe = {
+            directory = "${homeDirectory}/src/nixcfg";
+          };
         };
         aliases = {
           s = "status -s";
@@ -38,16 +50,13 @@ in {
           cam = "commit -a -m";
           m = "commit --amend --verbose";
           # one-line log
-          l = ''
-            log --pretty=format:"%C(yellow)%h\ %ad%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --date=short'';
+          l = ''log --pretty=format:"%C(yellow)%h\ %ad%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --date=short'';
           rao = "remote add origin";
           ls = ''log --pretty=format:"%C(yellow)%h%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate'';
-          ll = ''
-            log --pretty=format:"%C(yellow)%h%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --numstat'';
+          ll = ''log --pretty=format:"%C(yellow)%h%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --numstat'';
           # no colors, for piping
           lnc = ''log --pretty=format:"%h\ %s\ [%cn]"'';
-          lds = ''
-            log --pretty=format:"%C(yellow)%h\ %ad%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --date=short'';
+          lds = ''log --pretty=format:"%C(yellow)%h\ %ad%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --date=short'';
           filelog = "log -u";
           fl = "log -u";
           # show modified files in last commit:
@@ -59,7 +68,9 @@ in {
           logtree = "log --graph --oneline --decorate --all";
         };
 
-        difftastic = { enable = true; };
+        difftastic = {
+          enable = true;
+        };
       };
     };
   };

@@ -1,4 +1,9 @@
-{ pkgs, lib, stdenv, fetchFromGitHub, }:
+{
+  pkgs,
+  lib,
+  stdenv,
+  fetchFromGitHub,
+}:
 pkgs.buildGoModule rec {
   name = "hacompanion";
   version = "1.0.7";

@@ -1,1 +1,11 @@
-{ config, lib, pkgs, ... }: { services.kubo = { enable = true; }; }
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
+  services.kubo = {
+    enable = true;
+  };
+}

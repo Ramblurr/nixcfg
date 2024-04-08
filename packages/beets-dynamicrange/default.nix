@@ -1,4 +1,10 @@
-{ lib, fetchFromGitHub, python3Packages, beets, dr14_tmeter, }:
+{
+  lib,
+  fetchFromGitHub,
+  python3Packages,
+  beets,
+  dr14_tmeter,
+}:
 python3Packages.buildPythonApplication rec {
   pname = "beets-dynamicrange";
   version = "unstable-2023-12-05";

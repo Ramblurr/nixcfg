@@ -1,4 +1,10 @@
-{ config, pkgs, lib, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 let
   # these scripts are for the rpi onoff shim from Pimoroni
   # the gpio-shutoff script is called by systemd when a poweroff command happens
@@ -39,7 +45,8 @@ let
     echo "Powering Off!"
     ${pkgs.systemd}/bin/systemctl poweroff
   '';
-in {
+in
+{
   #raspberry-pi.hardware.hifiberry-dac.enable = false;
   #raspberry-pi.hardware.spi0-1cs.enable = false;
   raspberry-pi.hardware.platform.type = "rpi4";

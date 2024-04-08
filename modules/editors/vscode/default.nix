@@ -1,4 +1,12 @@
-{ config, options, inputs, lib, pkgs, my, ... }:
+{
+  config,
+  options,
+  inputs,
+  lib,
+  pkgs,
+  my,
+  ...
+}:
 with lib;
 with lib.my;
 let
@@ -6,15 +14,22 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-in {
-  options.modules.editors.vscode = { enable = mkBoolOpt false; };
+in
+{
+  options.modules.editors.vscode = {
+    enable = mkBoolOpt false;
+  };
 
   config = mkIf cfg.enable {
     myhm = {
       home.packages = with pkgs; [ vscode.fhs ];
       persistence = {
-        directories =
-          [ ".vscode/extensions" ".config/Code" ".config/code-work" ".config/code-personal" ];
+        directories = [
+          ".vscode/extensions"
+          ".config/Code"
+          ".config/code-work"
+          ".config/code-personal"
+        ];
       };
 
       home.file.".local/share/applications/code-personal.desktop" = {
