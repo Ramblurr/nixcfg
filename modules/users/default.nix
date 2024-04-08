@@ -96,7 +96,7 @@ in
     };
 
     sops.secrets."${cfg.primaryUser.passwordSecretKey}" = mkIf cfg.primaryUser.passwordEnable {
-      sopsFile = cfg.primaryUser.defaultSopsFile;
+      #sopsFile = cfg.primaryUser.defaultSopsFile;
       neededForUsers = true;
     };
 
@@ -121,7 +121,7 @@ in
         ];
         home.stateVersion = "21.11";
         home.homeDirectory = cfg.primaryUser.homeDirectory;
-        sops.defaultSopsFile = cfg.primaryUser.defaultSopsFile;
+        sops.defaultSopsFile = lib.mkIf (cfg.primaryUser ? defaultSopsFile) cfg.primaryUser.defaultSopsFile;
 
         manual.manpages.enable = true;
         systemd.user.startServices = true;

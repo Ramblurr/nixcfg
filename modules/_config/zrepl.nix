@@ -7,6 +7,7 @@
 
 let
   home-ops = config.repo.secrets.home-ops;
+  nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in
 {
@@ -16,7 +17,7 @@ in
   };
   config = lib.mkIf config.home-ops.zrepl.enable {
     # zrepl - ZFS snapshotting and replication
-    # Every node has a source job and snapshots are pulled by my NAS
+    # Every node has a source job and snapshots are pulled by the NAS
     networking.firewall.allowedTCPPorts = [
       home-ops.ports.zrepl-metrics
       home-ops.ports.zrepl-source
@@ -47,7 +48,7 @@ in
             type = "source";
             serve = {
               type = "tcp";
-              listen = "${cidrToIp config.repo.secrets.local.dataCIDR}:${toString home-ops.ports.zrepl-source}";
+              listen = "${cidrToIp nodeSettings.dataCIDR}:${toString home-ops.ports.zrepl-source}";
               listen_freebind = true;
               clients = {
                 "${config.repo.secrets.global.nodes.mali.data}" = "mali";
