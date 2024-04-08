@@ -32,7 +32,7 @@ in
   home-ops = {
     enable = true;
     user = ramblurr;
-    #ingress.enable = true;
+    ingress.enable = true;
     #postgresql = {
     #  enable = true;
     #  onsiteBackup.enable = true;
@@ -50,7 +50,7 @@ in
       #ocis-work.enable = true;
       #plex.enable = false;
       #tautulli.enable = true;
-      #home-dl.enable = true;
+      home-dl.enable = true;
       #calibre.enable = true;
       #calibre-web.enable = true;
     };
