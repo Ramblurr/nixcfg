@@ -16,8 +16,26 @@
     };
     disk = {
       micron5300 = {
+        # SATA 2TB Micron 5300
         type = "disk";
         device = "/dev/disk/by-id/ata-Micron_5300_MTFDDAK1T9TDT_2215373ACA1A";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "tank";
+              };
+            };
+          };
+        };
+      };
+      micron7400 = {
+        # NVME 800GB Micron 7400
+        type = "disk";
+        device = "/dev/disk/by-id/nvme-Micron_7400_MTFDKBA800TFC_21443B458DD5";
         content = {
           type = "gpt";
           partitions = {
@@ -70,6 +88,50 @@
       };
     };
     zpool = {
+      tank = {
+        type = "zpool";
+        rootFsOptions = {
+          canmount = "off";
+          mountpoint = "none";
+          xattr = "sa";
+          atime = "off";
+          acltype = "posixacl";
+          compression = "zstd";
+          "com.sun:auto-snapshot" = "false";
+        };
+        options.ashift = "12";
+        postCreateHook = ''
+          zfs snapshot tank/encrypted/local/nix@blank
+          zfs snapshot tank/encrypted/local/root@blank
+        '';
+
+        datasets = {
+          # Static reservation so the pool will never be 100% full.
+          #
+          # If a pool fills up completely, delete this & reclaim space; don't
+          # forget to re-create it afterwards!
+          reservation = {
+            type = "zfs_fs";
+            options = {
+              canmount = "off";
+              mountpoint = "none";
+              refreservation = "2G";
+              primarycache = "none";
+              secondarycache = "none";
+            };
+          };
+          encrypted = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              canmount = "off";
+              encryption = "aes-256-gcm";
+              keyformat = "hex";
+              keylocation = "file:///dev/disk/by-partlabel/cryptkey";
+            };
+          };
+        };
+      };
       rpool = {
         type = "zpool";
         rootFsOptions = {
@@ -86,7 +148,6 @@
           zfs snapshot rpool/encrypted/local/nix@blank
           zfs snapshot rpool/encrypted/local/root@blank
         '';
-
         datasets = {
           # Static reservation so the pool will never be 100% full.
           #
@@ -130,7 +191,7 @@
             type = "zfs_fs";
             mountpoint = "/persist";
             options = {
-              "com.sun:auto-snapshot" = "true";
+              "com.sun:auto-snapshot" = "false";
               mountpoint = "legacy";
             };
           };
@@ -147,7 +208,7 @@
             mountpoint = "/persist/extra/atuin";
             options = {
               sync = "disabled";
-              "com.sun:auto-snapshot" = "true";
+              "com.sun:auto-snapshot" = "false";
               mountpoint = "legacy";
             };
           };
@@ -157,7 +218,6 @@
               mountpoint = "none";
             };
           };
-
           "encrypted/safe/svc/postgresql" = {
             type = "zfs_fs";
             options = {
