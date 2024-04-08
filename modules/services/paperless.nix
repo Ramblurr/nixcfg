@@ -61,6 +61,7 @@ in
     };
 
     sops.secrets."paperless/adminPassword" = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.paperless.user;
       mode = "400";
     };

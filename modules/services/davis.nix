@@ -41,11 +41,13 @@ in
       };
     };
     sops.secrets."davis/APP_SECRET" = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.davis.user;
       group = config.services.davis.group;
       mode = "400";
     };
     sops.secrets."davis/ADMIN_PASSWORD" = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.davis.user;
       group = config.services.davis.group;
       mode = "400";

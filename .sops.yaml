@@ -109,7 +109,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: configs/home-dl/.*.sops.*$
+  - path_regex: configs/home-ops/.*.sops.*$
     key_groups:
       - age: &all-nodes
           - *mill

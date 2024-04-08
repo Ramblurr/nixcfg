@@ -85,7 +85,10 @@ in
     # Supporting services
     #
     home-ops.zrepl.enable = true;
-    sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable { mode = "400"; };
+    sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
+      mode = "400";
+    };
     modules.services.postgresql = lib.mkIf cfg.postgresql.enable {
       enable = true;
       package = pkgs.postgresql_15;
@@ -229,7 +232,7 @@ in
       };
     };
 
-    modules.servers.roon-server = lib.mkIf cfg.apps.roon-server.enable { enable = true; };
+    modules.services.roon-server = lib.mkIf cfg.apps.roon-server.enable { enable = true; };
 
     modules.services.ocis =
       if cfg.apps.ocis-work.enable then
