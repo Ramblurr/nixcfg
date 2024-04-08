@@ -60,7 +60,6 @@ in
           p7zip
           sops
           age
-          step-cli
           gptfdisk
           parted
           iotop
