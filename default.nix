@@ -101,7 +101,7 @@ with lib.my;
           pkgs.nix
         ]
       }
-      nvd diff $(ls -dv /nix/var/nix/profiles/system-*-link | tail -2)
+      nvd diff $(ls -dv /nix/var/nix/profiles/system-*-link | tail -2) || true
     '';
   };
 }
