@@ -397,7 +397,13 @@ in
     # Application Services #
     ########################
 
-    # shared media group
+    # shared media user/group
+    users.users.${home-ops.users.media.name} = {
+      name = home-ops.users.media.name;
+      uid = home-ops.users.media.uid;
+      group = home-ops.groups.media.name;
+      isSystemUser = true;
+    };
     users.groups.${home-ops.groups.media.name} = {
       gid = home-ops.groups.media.gid;
     };
@@ -478,7 +484,6 @@ in
       baseDomain = home-ops.homeDomain;
       ports = home-ops.ports.home-dl;
       mediaNfsShare = "tank2/media";
-      dlNfsShare = "fast/downloads";
       ingress = {
         domain = home-ops.homeDomain;
       };
@@ -490,7 +495,6 @@ in
       ports.gui = home-ops.ports.calibre-gui;
       ports.server = home-ops.ports.calibre-server;
       mediaNfsShare = "tank2/media";
-      dlNfsShare = "fast/downloads";
       ingress = {
         domain = home-ops.homeDomain;
       };

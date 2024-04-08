@@ -37,7 +37,7 @@ let
   stateDirActual = "/var/lib/private/home-dl";
   stateDirEffective = "/var/lib/home-dl";
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
-  dlLocalPath = "/mnt/mali/${cfg.dlNfsShare}";
+  dlLocalPath = "/mnt/downloads";
   serviceDeps = [
     "${utils.escapeSystemdPath mediaLocalPath}.mount"
     "${utils.escapeSystemdPath dlLocalPath}.mount"
@@ -91,7 +91,6 @@ in
       overseerr = lib.mkOption { type = lib.types.port; };
     };
     mediaNfsShare = lib.mkOption { type = lib.types.str; };
-    dlNfsShare = lib.mkOption { type = lib.types.str; };
   };
   config = lib.mkIf cfg.enable {
     modules.services.ingress.domains = {
@@ -105,15 +104,17 @@ in
       fsType = "nfs";
     };
 
-    fileSystems."${dlLocalPath}" = {
-      device = "${config.repo.secrets.global.nodes.mali.data}:/mnt/${cfg.dlNfsShare}";
-      fsType = "nfs";
-    };
-
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/home-dl"."mountpoint" = "${stateDirActual}";
       "rpool/encrypted/safe/svc/home-dl"."com.sun:auto-snapshot" = "false";
+      "tank/encrypted/downloads"."mountpoint" = "${dlLocalPath}";
+      "tank/encrypted/downloads"."com.sun:auto-snapshot" = "false";
     };
+
+    systemd.tmpfiles.rules = [
+      "d ${dlLocalPath} 0770 ${home-ops.users.media.name} ${home-ops.groups.media.name}"
+      "A ${dlLocalPath} - - - - d:group:${home-ops.groups.media.name}:rwx"
+    ];
 
     modules.networking.systemd-netns-private = {
       enable = true;
@@ -140,7 +141,7 @@ in
       serviceConfig = {
         Type = "simple";
         StateDirectory = "home-dl/sonarr";
-        SupplementaryGroups = [ "media" ];
+        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
         ExecStart = "${unstable.sonarr}/bin/NzbDrone -nobrowser -data='${stateDirEffective}/sonarr'";
         ReadWritePaths = [
           mediaLocalPath
@@ -156,9 +157,8 @@ in
       serviceConfig = {
         Type = "simple";
         StateDirectory = "home-dl/radarr";
-        SupplementaryGroups = [ "media" ];
+        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
         ExecStart = "${unstable.radarr}/bin/Radarr -nobrowser -data='${stateDirEffective}/radarr'";
-
         ReadWritePaths = [
           mediaLocalPath
           dlLocalPath
@@ -174,7 +174,7 @@ in
         Type = "forking";
         GuessMainPID = "no";
         StateDirectory = "home-dl/sabnzbd";
-        SupplementaryGroups = [ "media" ];
+        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
         ExecStart = "${lib.getExe unstable.sabnzbd} -d -f ${stateDirEffective}/sabnzbd/sabnzbd.ini";
         WorkingDirectory = "${stateDirEffective}/sabnzbd";
         ReadWritePaths = [
@@ -190,7 +190,7 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
-        SupplementaryGroups = [ "media" ];
+        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
         StateDirectory = "home-dl/prowlarr";
         ExecStart = "${lib.getExe unstable.prowlarr} -nobrowser -data=${stateDirEffective}/prowlarr";
         Restart = "on-failure";
