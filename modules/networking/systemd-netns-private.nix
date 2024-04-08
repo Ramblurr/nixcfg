@@ -94,6 +94,29 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
+    assertions =
+      let
+        keepTooLong = list: lib.filter (s: lib.stringLength s > 15) list;
+        hostIfaces = keepTooLong (lib.mapAttrsToList (name: ns: ns.hostIface) cfg.namespaces);
+        nsIfaces = keepTooLong (lib.mapAttrsToList (name: ns: ns.nsIface) cfg.namespaces);
+        ifaces = hostIfaces ++ nsIfaces;
+      in
+      [
+        {
+          assertion = lib.length ifaces == 0;
+          message = "interface names must be 15 characters or less: ${lib.concatStringsSep ", " ifaces}";
+        }
+      ];
+    systemd.tmpfiles.rules =
+      let
+        nsNames = lib.mapAttrsToList (name: ns: ns.name) cfg.namespaces;
+      in
+      lib.flatten (
+        map (ns: [
+          "d /etc/netns/${ns} 0700 root root -"
+          "L+ /etc/netns/${ns}/resolv.conf - - - - /run/systemd/resolve/resolv.conf"
+        ]) nsNames
+      );
     systemd.services =
       let
         mkOverrides =
@@ -111,10 +134,7 @@ in
                 BlockIOAccounting = true;
                 MemoryAccounting = true;
                 TasksAccounting = true;
-                BindReadOnlyPaths = [
-                  "/etc/netns/${ns.name}/resolv.conf:/etc/resolv.conf:norbind"
-                  "/etc/netns/${ns.name}/resolv.conf:/run/systemd/resolve/resolv.conf:norbind"
-                ];
+                BindReadOnlyPaths = [ "/etc/netns/${ns.name}/resolv.conf:/etc/resolv.conf:norbind" ];
               };
             };
           }) ns.services;
@@ -187,7 +207,6 @@ in
                   "${pkgs.iproute}/bin/ip netns exec ${ns.name} ip link set ${ns.nsIface} up"
                   "-${pkgs.iproute}/bin/ip netns exec ${ns.name} ip link set lo up"
                   "-${pkgs.iproute}/bin/ip netns exec ${ns.name} ip route add default via ${cidrToIp ns.hostAddr}"
-                  "-${pkgs.iproute}/bin/ip netns exec ${ns.name} ip route add default via 192.168.10.1"
                   "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${ns.nsAddr} -o brmgmt9 -j MASQUERADE"
                 ];
                 ExecStopPost = [
