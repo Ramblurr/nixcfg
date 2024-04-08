@@ -44,6 +44,7 @@ in
       };
     };
     sops.secrets."authentik/env" = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.authentik.user;
       group = config.services.authentik.group;
       mode = "400";
