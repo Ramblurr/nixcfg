@@ -56,6 +56,20 @@ in
       "rpool/encrypted/safe/svc/tautulli"."com.sun:auto-snapshot" = "false";
     };
 
+    services.nginx.virtualHosts.${cfg.domain} = {
+      useACMEHost = cfg.ingress.domain;
+      forceSSL = true;
+      kTLS = true;
+      extraConfig = ''
+        client_max_body_size 0;
+        client_header_buffer_size 64k;
+      '';
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
+        recommendedProxySettings = true;
+      };
+    };
+
     services.tautulli = {
       enable = true;
       dataDir = "/var/lib/tautulli";
