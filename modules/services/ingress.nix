@@ -159,7 +159,9 @@ in
         }
       ) domainsWithTunnel
       // {
-        "acmeSecrets/cloudflareDnsToken" = { };
+        "acmeSecrets/cloudflareDnsToken" = {
+          sopsFile = ../../configs/home-ops/shared.sops.yml;
+        };
       };
     # First time setup:
     # cloudflared tunnel login

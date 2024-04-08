@@ -71,7 +71,7 @@ let
     #MemoryDenyWriteExecute = true; # does not work on Mono apps like sonarr
   };
   recyclarrYaml = pkgs.writeText "recyclarr.yaml" (
-    builtins.readFile ../../configs/home-dl/recyclarr.yml
+    builtins.readFile ../../configs/home-ops/recyclarr.yml
   );
 in
 {
