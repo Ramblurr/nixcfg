@@ -42,7 +42,7 @@ in
   options.modules.services.roon-server = {
     enable = lib.mkEnableOption "roon-server";
   };
-  config = {
+  config = lib.mkIf cfg.enable {
     networking.firewall = {
       allowedTCPPorts = [
         33399 # Roon ARC
