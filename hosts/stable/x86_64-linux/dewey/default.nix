@@ -22,7 +22,6 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
-    ./roon-server.nix
     ./test.nix
   ];
   system.stateVersion = "23.11";
