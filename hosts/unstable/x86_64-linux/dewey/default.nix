@@ -39,18 +39,19 @@ in
     #  enable = true;
     #  onsiteBackup.enable = true;
     #};
-    #mariadb.enable = true;
-    #containers.enable = true;
+    mariadb.enable = true;
+    containers.enable = true;
     #hypervisor.enable = false;
     apps = {
       roon-server.enable = true;
-      #authentik.enable = true;
+      onepassword-connect.enable = true;
+      authentik.enable = true;
       #echo-server.enable = true;
-      #davis.enable = true;
-      #invoiceninja.enable = true;
-      #paperless.enable = true;
-      #ocis-work.enable = true;
-      #plex.enable = false;
+      davis.enable = true;
+      invoiceninja.enable = true;
+      paperless.enable = true;
+      ocis-work.enable = true;
+      plex.enable = true;
       #tautulli.enable = true;
       home-dl.enable = true;
       #calibre.enable = true;

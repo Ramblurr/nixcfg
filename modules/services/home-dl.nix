@@ -16,22 +16,27 @@ let
     radarr = {
       domain = "radarr.${cfg.baseDomain}";
       port = 7878;
+      forwardAuth = true;
     };
     sonarr = {
       domain = "sonarr.${cfg.baseDomain}";
       port = 8989;
+      forwardAuth = true;
     };
     prowlarr = {
       domain = "prowlarr.${cfg.baseDomain}";
       port = 9696;
+      forwardAuth = true;
     };
     sabnzbd = {
       domain = "sabnzbd.${cfg.baseDomain}";
       port = 8080;
+      forwardAuth = true;
     };
     overseerr = {
-      domain = "requests2.${cfg.baseDomain}";
+      domain = "requests.${cfg.baseDomain}";
       port = cfg.ports.overseerr;
+      forwardAuth = false;
     };
   };
   stateDirActual = "/var/lib/private/home-dl";
@@ -92,6 +97,7 @@ in
       overseerr = lib.mkOption { type = lib.types.port; };
     };
     mediaNfsShare = lib.mkOption { type = lib.types.str; };
+    subnet = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
     modules.services.ingress.domains = {
@@ -120,8 +126,8 @@ in
     modules.networking.systemd-netns-private = {
       enable = true;
       namespaces.home-dl = {
-        hostAddr = "192.168.10.8/29";
-        nsAddr = "192.168.10.9/29";
+        hostAddr = cfg.subnet.hostAddr;
+        nsAddr = cfg.subnet.nsAddr;
         hostIface = "home-dl-host";
         nsIface = "home-dl-ns";
         services = [
@@ -256,16 +262,12 @@ in
       };
     };
 
-    services.nginx.virtualHosts = lib.mapAttrs' (
+    modules.services.ingress.virtualHosts = lib.mapAttrs' (
       name: ingress:
       lib.nameValuePair ingress.domain {
-        useACMEHost = cfg.ingress.domain;
-        forceSSL = true;
-        kTLS = true;
-        locations."/" = {
-          proxyPass = "http://192.168.10.9:${toString ingress.port}";
-          recommendedProxySettings = true;
-        };
+        acmeHost = cfg.ingress.domain;
+        upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
+        forwardAuth = ingress.forwardAuth;
       }
     ) ingresses;
   };
