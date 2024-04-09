@@ -981,6 +981,26 @@
         "type": "github"
       }
     },
+    "quadlet-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1702859573,
+        "narHash": "sha256-/ZEx5hssLBQ52s9MtWV/X36a5ncKJ71nNfm4Lrt8zJ0=",
+        "owner": "SEIAROTg",
+        "repo": "quadlet-nix",
+        "rev": "e93b9d9b633ff4686e1efa6b67c49a756cad100f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SEIAROTg",
+        "repo": "quadlet-nix",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "ags": "ags",
@@ -1007,6 +1027,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixpkgs-wayland": "nixpkgs-wayland",
         "nur": "nur",
+        "quadlet-nix": "quadlet-nix",
         "sops-nix": "sops-nix"
       }
     },

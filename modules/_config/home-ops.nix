@@ -66,6 +66,7 @@ in
       calibre.enable = lib.mkEnableOption "Calibre";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
       roon-server.enable = lib.mkEnableOption "Roon Server";
+      onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
     };
   };
 
@@ -441,8 +442,17 @@ in
       domain = "auth.${home-ops.homeDomain}";
       ports.http = home-ops.ports.authentik-http;
       ports.https = home-ops.ports.authentik-https;
+    };
+
+    modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
+      enable = true;
+      domain = "op.${home-ops.homeDomain}";
+      ports.api = home-ops.ports.onepassword-connect-api;
+      ports.sync = home-ops.ports.onepassword-connect-sync;
+      user = home-ops.users.onepassword-connect;
+      group = home-ops.groups.onepassword-connect;
+      subnet = home-ops.subnets.onepassword-connect.subnet;
       ingress = {
-        external = true;
         domain = home-ops.homeDomain;
       };
     };
