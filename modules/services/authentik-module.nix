@@ -51,6 +51,7 @@ let
       PrivateTmp = true;
       ProtectHome = true;
       ProtectSystem = "strict";
+      PrivateDevices = true;
       ProtectKernelTunables = true;
       ProtectKernelModules = true;
       ProtectControlGroups = true;
