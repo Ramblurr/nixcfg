@@ -11,7 +11,6 @@ let
   cfg = config.modules.services.calibre-web;
   home-ops = config.repo.secrets.home-ops;
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
-  serviceDeps = [ "${utils.escapeSystemdPath mediaLocalPath}.mount" ];
 in
 {
   options.modules.services.calibre-web = {
@@ -19,6 +18,12 @@ in
     domain = lib.mkOption {
       type = lib.types.str;
       description = "The domain to use for the calibre-web";
+    };
+
+    domainKobo = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "The domain to use for the kobo endpoint";
     };
     ingress = lib.mkOption {
       type = lib.types.submodule (
@@ -51,6 +56,16 @@ in
       gid = lib.mkForce cfg.group.gid;
     };
 
+    modules.zfs.datasets.properties = {
+      "rpool/encrypted/safe/svc/calibre-web"."mountpoint" = "/var/lib/calibre-web";
+    };
+
+    systemd.services.calibre-web.unitConfig = {
+      RequiresMountsFor = [
+        mediaLocalPath
+        "/var/lib/calibre-web"
+      ];
+    };
     systemd.services.calibre-web.serviceConfig = {
       LockPersonality = true;
       NoNewPrivileges = true;
@@ -91,6 +106,10 @@ in
       ReadWritePaths = [ "${mediaLocalPath}/books" ];
     };
 
+    systemd.services.calibre-web.serviceConfig = {
+      CacheDirectory = "calibre-web";
+      Environment = [ "CACHE_DIR=/var/cache/calibre-web" ];
+    };
     services.calibre-web = {
       enable = true;
       listen.port = cfg.ports.http;
@@ -100,21 +119,37 @@ in
         enableBookConversion = true;
         enableBookUploading = true;
         enableKepubify = true;
+        reverseProxyAuth = {
+          enable = true;
+          header = "X-authentik-username";
+        };
       };
     };
 
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+      forwardAuth = true;
       extraConfig = ''
         client_max_body_size 0;
         client_header_buffer_size 64k;
       '';
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
-        recommendedProxySettings = true;
-      };
+    };
+
+    modules.services.ingress.virtualHosts.${cfg.domainKobo} = lib.mkIf (cfg.domainKobo != "") {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.http}/kobo/";
+      upstreamExtraConfig = ''
+        proxy_buffering on;
+        proxy_buffers 4 256k;
+        proxy_buffer_size 256k;
+        proxy_busy_buffers_size 256k;
+      '';
+      forwardAuth = true;
+      extraConfig = ''
+        client_max_body_size 0;
+        client_header_buffer_size 64k;
+      '';
     };
   };
 }

@@ -27,7 +27,7 @@ in
         enable = lib.mkEnableOption "Onsite Backup";
         path = lib.mkOption {
           type = lib.types.str;
-          default = "/test/${config.networking.hostName}/repo1";
+          default = "${config.networking.hostName}/repo1";
         };
       };
 
@@ -35,7 +35,7 @@ in
         enable = lib.mkEnableOption "Offsite Backup";
         path = lib.mkOption {
           type = lib.types.str;
-          default = "/test/${config.networking.hostName}/repo2";
+          default = "${config.networking.hostName}/repo2";
         };
       };
     };
@@ -518,7 +518,8 @@ in
 
     modules.services.calibre-web = lib.mkIf cfg.apps.calibre-web.enable {
       enable = true;
-      domain = "calibre-web.${home-ops.homeDomain}";
+      domain = "books.${home-ops.homeDomain}";
+      domainKobo = "books-kobo.${home-ops.homeDomain}";
       ports.http = home-ops.ports.calibre-web;
       mediaNfsShare = "tank2/media";
       user = home-ops.users.books;
