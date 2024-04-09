@@ -54,7 +54,7 @@ in
       plex.enable = true;
       #tautulli.enable = true;
       home-dl.enable = true;
-      #calibre.enable = true;
+      calibre.enable = true;
       #calibre-web.enable = true;
     };
   };
