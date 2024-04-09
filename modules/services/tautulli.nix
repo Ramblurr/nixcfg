@@ -56,14 +56,10 @@ in
       "rpool/encrypted/safe/svc/tautulli"."com.sun:auto-snapshot" = "false";
     };
 
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
-        recommendedProxySettings = true;
-      };
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+      forwardAuth = true;
     };
 
     services.tautulli = {

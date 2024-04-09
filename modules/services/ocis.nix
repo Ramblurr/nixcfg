@@ -124,18 +124,13 @@ in
       };
     };
 
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";
       extraConfig = ''
         client_max_body_size 0;
         client_header_buffer_size 64k;
       '';
-      locations."/" = {
-        proxyPass = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";
-        recommendedProxySettings = true;
-      };
     };
   };
 }

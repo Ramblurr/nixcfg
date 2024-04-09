@@ -79,6 +79,14 @@ in
         useACMEHost = cfg.ingress.domain;
         forceSSL = true;
         kTLS = true;
+        http3 = true;
+        http2 = false;
+        quic = true;
+        locations."/" = {
+          extraConfig = ''
+            add_header Alt-Svc 'h3=":443"; ma=86400';
+          '';
+        };
       };
     };
   };
