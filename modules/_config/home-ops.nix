@@ -148,6 +148,7 @@ in
     environment.systemPackages = with pkgs; [
       fd
       jq
+      htop
       lshw
       ncdu
       python311

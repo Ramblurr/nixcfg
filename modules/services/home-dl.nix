@@ -46,6 +46,7 @@ let
   sharedServiceConfig = {
     UMask = 77;
     DynamicUser = true;
+    RestartSec = "10s";
     Restart = "on-failure";
     ProtectHome = true;
     ProtectSystem = "strict";
