@@ -38,6 +38,7 @@ in
       "rpool/encrypted/safe/svc/invoiceninja"."com.sun:auto-snapshot" = "false";
     };
     sops.secrets."invoiceninja/env" = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.invoiceninja.user;
       group = config.services.invoiceninja.group;
       mode = "400";
