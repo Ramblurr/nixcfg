@@ -52,8 +52,8 @@ in
     };
 
     modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/plex"."mountpoint" = config.services.plex.dataDir;
-      "rpool/encrypted/safe/svc/plex"."com.sun:auto-snapshot" = "false";
+      "tank/encrypted/svc/plex"."mountpoint" = config.services.plex.dataDir;
+      "tank/encrypted/svc/plex"."com.sun:auto-snapshot" = "false";
     };
 
     systemd.services.plex.after = serviceDeps;
