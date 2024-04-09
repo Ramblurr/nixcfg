@@ -525,6 +525,7 @@ in
       group = home-ops.groups.books;
       ingress = {
         domain = home-ops.homeDomain;
+        external = true;
       };
     };
 
