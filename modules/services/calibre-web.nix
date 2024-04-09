@@ -38,11 +38,6 @@ in
     group = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
     users.users.${cfg.user.name} = {
       name = cfg.user.name;
       uid = lib.mkForce cfg.user.uid;
@@ -136,6 +131,11 @@ in
       '';
     };
 
+    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
+      "${cfg.ingress.domain}" = {
+        externalDomains = [ cfg.domain ];
+      };
+    };
     modules.services.ingress.virtualHosts.${cfg.domainKobo} = lib.mkIf (cfg.domainKobo != "") {
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}/kobo/";
