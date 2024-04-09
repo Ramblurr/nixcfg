@@ -38,6 +38,7 @@ let
           nixpkgs.overlays = overlays;
         }
         home-manager.nixosModules.home-manager
+        inputs.quadlet-nix.nixosModules.quadlet
         (import path)
         ../. # /default.nix
       ];
