@@ -12,5 +12,10 @@
       example = "example.com";
       description = "The ingress domain to use";
     };
+    forwardAuth = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to use forward authentication";
+    };
   };
 }

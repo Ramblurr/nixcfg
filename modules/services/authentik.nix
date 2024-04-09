@@ -14,17 +14,20 @@ in
 {
   options.modules.services.authentik = {
     enable = lib.mkEnableOption "authentik";
-    domain = lib.mkOption {
+    domain1 = lib.mkOption {
       type = lib.types.str;
       example = "auth.example.com";
       description = "The domain to use for the authentik";
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
+    domain2 = lib.mkOption {
+      type = lib.types.str;
+      example = "auth.example.com";
+      description = "The domain to use for the authentik";
     };
+    ingress1 = lib.mkOption { type = lib.types.str; };
+    ingress2 = lib.mkOption { type = lib.types.str; };
+
     ports = {
       http = lib.mkOption {
         type = lib.types.port;
@@ -38,9 +41,12 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
+    modules.services.ingress.domains = {
+      "${cfg.ingress1}" = {
+        externalDomains = [ cfg.domain1 ];
+      };
+      "${cfg.ingress2}" = {
+        externalDomains = [ cfg.domain2 ];
       };
     };
     sops.secrets."authentik/env" = {
@@ -59,13 +65,25 @@ in
       environmentFile = config.sops.secrets."authentik/env".path;
     };
 
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
-        recommendedProxySettings = true;
+    services.nginx.virtualHosts = {
+
+      ${cfg.domain1} = {
+        useACMEHost = cfg.ingress1;
+        forceSSL = true;
+        kTLS = true;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
+          recommendedProxySettings = true;
+        };
+      };
+      ${cfg.domain2} = {
+        useACMEHost = cfg.ingress2;
+        forceSSL = true;
+        kTLS = true;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
+          recommendedProxySettings = true;
+        };
       };
     };
   };
