@@ -14,7 +14,7 @@ let
   home-ops = config.repo.secrets.home-ops;
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   stateDir = "/var/lib/calibre";
-  dlLocalPath = "/mnt/mali/${cfg.dlNfsShare}";
+  dlLocalPath = "/mnt/downloads";
   serviceDeps = [
     "${utils.escapeSystemdPath mediaLocalPath}.mount"
     "${utils.escapeSystemdPath dlLocalPath}.mount"
@@ -59,11 +59,6 @@ in
       fsType = "nfs";
     };
 
-    fileSystems."${dlLocalPath}" = {
-      device = "${config.repo.secrets.global.nodes.mali.data}:/mnt/${cfg.dlNfsShare}";
-      fsType = "nfs";
-    };
-
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/calibre"."mountpoint" = stateDir;
       "rpool/encrypted/safe/svc/calibre"."com.sun:auto-snapshot" = "false";
@@ -92,18 +87,15 @@ in
       extraOptions = [ ];
     };
 
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
+    services.nginx.virtualHosts.${cfg.domain}.locations."/".proxyWebsockets = true;
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.gui}";
+      forwardAuth = true;
       extraConfig = ''
         client_max_body_size 0;
         client_header_buffer_size 64k;
       '';
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.gui}";
-        recommendedProxySettings = true;
-      };
     };
   };
 }
