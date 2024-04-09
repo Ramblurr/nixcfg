@@ -139,23 +139,21 @@ in
         PAPERLESS_FILENAME_DATE_ORDER = "YMD";
         PAPERLESS_URL = "https://${cfg.domain}";
         PAPERLESS_OCR_MAX_IMAGE_PIXELS = 956000000;
+        PAPERLESS_ENABLE_HTTP_REMOTE_USER = true;
+        PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME = "X-authentik-username";
         #PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
         PAPERLESS_ACCOUNT_ALLOW_SIGNUPS = "false";
       };
     };
 
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+      forwardAuth = true;
       extraConfig = ''
         client_max_body_size 0;
         client_header_buffer_size 64k;
       '';
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
-        recommendedProxySettings = true;
-      };
     };
   };
 }

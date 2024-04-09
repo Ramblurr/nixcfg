@@ -38,6 +38,7 @@ in
     nfsShare = lib.mkOption { type = lib.types.str; };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
+    subnet = lib.mkOption { type = lib.types.unspecified; };
   };
 
   disabledModules = [
@@ -74,8 +75,8 @@ in
     modules.networking.systemd-netns-private = {
       enable = true;
       namespaces.ocis = {
-        hostAddr = "192.168.10.1/29";
-        nsAddr = "192.168.10.2/29";
+        hostAddr = cfg.subnet.hostAddr;
+        nsAddr = cfg.subnet.nsAddr;
         services = [ "ocis.service" ];
       };
     };
@@ -132,7 +133,7 @@ in
         client_header_buffer_size 64k;
       '';
       locations."/" = {
-        proxyPass = "http://192.168.10.2:${toString cfg.ports.http}";
+        proxyPass = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";
         recommendedProxySettings = true;
       };
     };

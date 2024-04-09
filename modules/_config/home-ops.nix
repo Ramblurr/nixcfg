@@ -223,7 +223,7 @@ in
     };
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
-      domains = home-ops.domains;
+      domains = config.repo.secrets.local.domains;
     };
 
     virtualisation.podman.enable = cfg.containers.enable;
@@ -439,7 +439,10 @@ in
 
     modules.services.authentik = lib.mkIf cfg.apps.authentik.enable {
       enable = true;
-      domain = "auth.${home-ops.homeDomain}";
+      domain1 = "auth.${home-ops.homeDomain}";
+      domain2 = "auth.${home-ops.workDomain}";
+      ingress1 = home-ops.homeDomain;
+      ingress2 = home-ops.workDomain;
       ports.http = home-ops.ports.authentik-http;
       ports.https = home-ops.ports.authentik-https;
     };
@@ -495,8 +498,10 @@ in
       baseDomain = home-ops.homeDomain;
       ports = home-ops.ports.home-dl;
       mediaNfsShare = "tank2/media";
+      subnet = home-ops.subnets.home-dl;
       ingress = {
         domain = home-ops.homeDomain;
+        forwardAuth = true;
       };
     };
 
@@ -534,6 +539,7 @@ in
           user = home-ops.users.ocis-work;
           group = home-ops.groups.ocis-work;
           nfsShare = "tank2/services/work-ocis2";
+          subnet = home-ops.subnets.ocis-work;
           ingress = {
             domain = home-ops.workDomain;
           };
@@ -546,6 +552,7 @@ in
           user = home-ops.users.ocis-home;
           group = home-ops.groups.ocis-home;
           nfsShare = "tank2/services/home-ocis2";
+          subnet = home-ops.subnets.ocis-home;
           ingress = {
             domain = home-ops.homeDomain;
           };
