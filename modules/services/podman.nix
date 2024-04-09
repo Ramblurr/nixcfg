@@ -22,6 +22,8 @@ in
     };
     virtualisation.podman = {
       enable = true;
+      autoPrune.enable = true;
+      autoPrune.dates = "weekly";
       defaultNetwork.settings.dns_enabled = true;
       extraPackages = [ pkgs.zfs ];
     };
