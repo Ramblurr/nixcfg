@@ -23,7 +23,6 @@ in
     ./disk-config.nix
     ../../../../modules/_config/secrets.nix
     ../../../../modules/_config/home-ops.nix
-    inputs.quadlet-nix.nixosModules.quadlet
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
