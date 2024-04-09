@@ -145,7 +145,6 @@ in
         proxy_buffer_size 256k;
         proxy_busy_buffers_size 256k;
       '';
-      forwardAuth = true;
       extraConfig = ''
         client_max_body_size 0;
         client_header_buffer_size 64k;
