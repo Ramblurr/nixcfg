@@ -53,6 +53,11 @@ in
                 type = lib.types.bool;
                 default = false;
               };
+              upstreamExtraConfig = lib.mkOption {
+                type = lib.types.lines;
+                default = "";
+              };
+
               extraConfig = lib.mkOption {
                 type = lib.types.lines;
                 default = "";
@@ -146,6 +151,7 @@ in
               proxyPass = service.upstream;
               recommendedProxySettings = true;
               extraConfig = ''
+                ${service.upstreamExtraConfig}
                 ${lib.optionalString service.forwardAuth ''
                   auth_request        /outpost.goauthentik.io/auth/nginx;
                   error_page          401 = @goauthentik_proxy_signin;
