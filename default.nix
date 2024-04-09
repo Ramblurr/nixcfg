@@ -78,7 +78,7 @@ with lib.my;
     cached-nix-shell
     dig
     jq
-    curl
+    curlHTTP3
     vim
     wget
     unzip
