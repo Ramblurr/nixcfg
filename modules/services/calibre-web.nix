@@ -89,7 +89,6 @@ in
       #];
       CapabilityBoundingSet = "";
       AmbientCapabilities = "";
-      DeviceAllow = "";
       MemoryDenyWriteExecute = true;
       UMask = "0077";
       RestrictAddressFamilies = [
