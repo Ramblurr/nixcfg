@@ -454,7 +454,6 @@ in
       ports.sync = home-ops.ports.onepassword-connect-sync;
       user = home-ops.users.onepassword-connect;
       group = home-ops.groups.onepassword-connect;
-      subnet = home-ops.subnets.onepassword-connect.subnet;
       ingress = {
         domain = home-ops.homeDomain;
       };
