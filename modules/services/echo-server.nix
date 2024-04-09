@@ -45,18 +45,14 @@ in
       autoStart = true;
       ports = [ "127.0.0.1:${httpPort}:8080" ];
     };
-    services.nginx.virtualHosts.${cfg.domain} = {
-      useACMEHost = cfg.ingress.domain;
-      forceSSL = true;
-      kTLS = true;
+
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+      upstream = "http://127.0.0.1:${httpPort}";
       extraConfig = ''
         client_max_body_size 0;
         client_header_buffer_size 64k;
       '';
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${httpPort}";
-        recommendedProxySettings = true;
-      };
     };
   };
 }
