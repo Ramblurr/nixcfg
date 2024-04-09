@@ -32,10 +32,6 @@ in
       api = lib.mkOption { type = lib.types.port; };
       sync = lib.mkOption { type = lib.types.port; };
     };
-    subnet = lib.mkOption {
-      type = lib.types.str;
-      example = "10.123.123.1/29";
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
   };
@@ -70,17 +66,44 @@ in
       "rpool/encrypted/safe/svc/onepassword-connect"."com.sun:auto-snapshot" = "false";
     };
 
+    services.nginx.virtualHosts.${cfg.domain}.locations."/".proxyWebsockets = true;
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.api}";
     };
 
+    systemd.services."podman-create-op-connect" =
+      let
+        podName = "op-connect";
+        ports = [
+          "127.0.0.1:${toString cfg.ports.api}:8080"
+          "127.0.0.1:${toString cfg.ports.sync}:8081"
+        ];
+        portsMapping = lib.concatMapStrings (port: " -p " + port) ports;
+      in
+      {
+        path = [
+          pkgs.coreutils
+          config.virtualisation.podman.package
+        ];
+        script = ''
+          podman pod exists ${podName} || podman pod create -n ${podName} ${portsMapping} --dns ${builtins.head config.repo.secrets.global.nameservers}
+        '';
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = "yes";
+          ExecStop = "podman pod rm -i -f ${podName}";
+        };
+      };
     virtualisation.quadlet = {
       containers = {
         op-connect-api = {
           autoStart = true;
           unitConfig = {
             RequiresMountsFor = [ dataDir ];
+            After = [ "podman-create-op-connect.service" ];
+            Requires = [ "podman-create-op-connect.service" ];
           };
           serviceConfig = {
             RestartSec = "10";
@@ -91,12 +114,15 @@ in
             image = "docker.io/1password/connect-api:1.7.2";
             environments = {
               XDG_DATA_HOME = "/config";
-              HOME = "/config";
+              OP_BUS_PORT = 11220;
+              OP_BUS_PEERS = "localhost:11221";
+              OP_SESSION = "/config/1password-credentials.json";
             };
-            podmanArgs = [ "--user ${toString cfg.user.uid}" ];
-            publishPorts = [ "127.0.0.1:${toString cfg.ports.api}:8080" ];
+            podmanArgs = [
+              "--user ${toString cfg.user.uid}"
+              "--pod op-connect"
+            ];
             volumes = [ "${dataDir}:/config:rw" ];
-            networks = [ "onepassword-connect.network" ];
           };
         };
         op-connect-sync = {
@@ -105,7 +131,7 @@ in
             RequiresMountsFor = [ dataDir ];
           };
           serviceConfig = {
-            RestartSec = "10";
+            RestartSec = "2";
             Restart = "always";
           };
           containerConfig = {
@@ -113,17 +139,18 @@ in
             image = "docker.io/1password/connect-sync:1.7.2";
             environments = {
               XDG_DATA_HOME = "/config";
-              HOME = "/config";
+              OP_BUS_PORT = 11221;
+              OP_HTTP_PORT = 8081;
+              OP_BUS_PEERS = "localhost:11220";
+              OP_SESSION = "/config/1password-credentials.json";
             };
-            podmanArgs = [ "--user ${toString cfg.user.uid}" ];
-            publishPorts = [ "127.0.0.1:${toString cfg.ports.sync}:8080" ];
+            podmanArgs = [
+              "--user ${toString cfg.user.uid}"
+              "--pod op-connect"
+            ];
             volumes = [ "${dataDir}:/config:rw" ];
-            networks = [ "onepassword-connect.network" ];
           };
         };
-      };
-      networks = {
-        onepassword-connect.networkConfig.subnets = [ cfg.subnet ];
       };
     };
   };
