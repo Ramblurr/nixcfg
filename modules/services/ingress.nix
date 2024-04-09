@@ -241,28 +241,66 @@ in
 
     sops.secrets =
       lib.mapAttrs' (
-        name: domain:
-        lib.nameValuePair "cloudflareTunnels/${name}" {
-          mode = "400";
-          owner = config.services.cloudflared.user;
-        }
+        name: domain: lib.nameValuePair "cloudflareTunnels/${name}" { mode = "400"; }
       ) domainsWithTunnel
       // {
         "acmeSecrets/cloudflareDnsToken" = {
           sopsFile = ../../configs/home-ops/shared.sops.yml;
         };
       };
-    # First time setup:
-    # cloudflared tunnel login
-    # cloudflared tunnel create <ingressDomain>
-    # edit secrets files
-    # Remove ~/.cloudflared/
+    # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
+    boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
+    boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 2500000;
+    systemd.services = lib.mapAttrs' (
+      name: domain:
+      lib.nameValuePair "cloudflared-tunnel-${domain.tunnel.tunnelId}" {
+        preStart = ''
+          rm -f $STATE_DIRECTORY/credentials.json
+          cat $CREDENTIALS_DIRECTORY/CREDENTIALS > $STATE_DIRECTORY/credentials.json
+        '';
+        serviceConfig = {
+          UMask = 77;
+          User = lib.mkForce null;
+          Group = lib.mkForce null;
+          DynamicUser = true;
+          LoadCredential = [ "CREDENTIALS:${config.sops.secrets."cloudflareTunnels/${name}".path}" ];
+          StateDirectory = "cloudflared-tunnel/${domain.tunnel.tunnelId}";
+          LockPersonality = true;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateMounts = true;
+          PrivateTmp = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ProtectControlGroups = true;
+          RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6";
+          ProtectClock = true;
+          ProtectProc = "invisible";
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          RemoveIPC = true;
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallFilter = [
+            "@system-service"
+            "~@privileged"
+            "@resources"
+          ];
+          SystemCallArchitectures = "native";
+          MemoryDenyWriteExecute = true;
+        };
+      }
+    ) domainsWithTunnel;
     services.cloudflared = {
       enable = true;
       tunnels = lib.mapAttrs' (
         name: domain:
         lib.nameValuePair domain.tunnel.tunnelId {
-          credentialsFile = config.sops.secrets."cloudflareTunnels/${name}".path;
+          #credentialsFile = config.sops.secrets."cloudflareTunnels/${name}".path;
+          credentialsFile = "/var/lib/cloudflared-tunnel/${domain.tunnel.tunnelId}/credentials.json";
           originRequest.originServerName = "localhost";
           originRequest.noTLSVerify = true;
           ingress = lib.foldl' (
