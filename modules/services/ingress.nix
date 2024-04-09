@@ -87,6 +87,7 @@ in
     ];
     services.nginx = {
       enable = true;
+      package = pkgs.nginxQuic;
       defaultSSLListenPort = 443;
       defaultHTTPListenPort = 8081;
       recommendedBrotliSettings = true;
@@ -146,12 +147,16 @@ in
           forceSSL = true;
           kTLS = true;
           extraConfig = service.extraConfig;
+          http3 = true;
+          http2 = false;
+          quic = true;
           locations = {
             "/" = {
               proxyPass = service.upstream;
               recommendedProxySettings = true;
               extraConfig = ''
                 ${service.upstreamExtraConfig}
+                 add_header Alt-Svc 'h3=":443"; ma=86400';
                 ${lib.optionalString service.forwardAuth ''
                   auth_request        /outpost.goauthentik.io/auth/nginx;
                   error_page          401 = @goauthentik_proxy_signin;

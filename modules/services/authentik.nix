@@ -66,11 +66,13 @@ in
     };
 
     services.nginx.virtualHosts = {
-
       ${cfg.domain1} = {
         useACMEHost = cfg.ingress1;
         forceSSL = true;
         kTLS = true;
+        http3 = true;
+        http2 = false;
+        quic = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
           recommendedProxySettings = true;
@@ -81,6 +83,9 @@ in
         useACMEHost = cfg.ingress2;
         forceSSL = true;
         kTLS = true;
+        http3 = true;
+        http2 = false;
+        quic = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
           recommendedProxySettings = true;
