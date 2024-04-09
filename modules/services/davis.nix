@@ -40,6 +40,10 @@ in
         externalDomains = [ cfg.domain ];
       };
     };
+    modules.zfs.datasets.properties = {
+      "rpool/encrypted/safe/svc/davis"."mountpoint" = config.services.davis.dataDir;
+      "rpool/encrypted/safe/svc/davis"."com.sun:auto-snapshot" = "false";
+    };
     sops.secrets."davis/APP_SECRET" = {
       sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.davis.user;
