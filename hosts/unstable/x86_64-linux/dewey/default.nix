@@ -35,10 +35,10 @@ in
     enable = true;
     user = ramblurr;
     ingress.enable = true;
-    #postgresql = {
-    #  enable = true;
-    #  onsiteBackup.enable = true;
-    #};
+    postgresql = {
+      enable = true;
+      onsiteBackup.enable = true;
+    };
     mariadb.enable = true;
     containers.enable = true;
     #hypervisor.enable = false;
@@ -55,7 +55,7 @@ in
       #tautulli.enable = true;
       home-dl.enable = true;
       calibre.enable = true;
-      #calibre-web.enable = true;
+      calibre-web.enable = true;
     };
   };
   #myhm = {
