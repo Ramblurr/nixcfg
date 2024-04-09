@@ -74,6 +74,7 @@ in
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
           recommendedProxySettings = true;
+          proxyWebsockets = true;
         };
       };
       ${cfg.domain2} = {
@@ -83,6 +84,7 @@ in
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
           recommendedProxySettings = true;
+          proxyWebsockets = true;
         };
       };
     };
