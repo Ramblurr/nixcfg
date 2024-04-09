@@ -543,6 +543,7 @@ in
           subnet = home-ops.subnets.ocis-work;
           ingress = {
             domain = home-ops.workDomain;
+            external = true;
           };
         }
       else if cfg.apps.ocis-home.enable then
@@ -556,6 +557,7 @@ in
           subnet = home-ops.subnets.ocis-home;
           ingress = {
             domain = home-ops.homeDomain;
+            external = true;
           };
         }
       else
