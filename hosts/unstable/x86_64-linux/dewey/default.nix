@@ -59,9 +59,4 @@ in
       linkding.enable = true;
     };
   };
-  #myhm = {
-  #  persistence = {
-  #    directories = [ "dumps" ];
-  #  };
-  #};
 }

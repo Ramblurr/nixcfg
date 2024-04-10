@@ -144,6 +144,7 @@ in
         extraGroups = [
           "libvirtd"
           "wheel"
+          "media"
         ];
       };
     };
