@@ -20,7 +20,7 @@ in
     enable = mkEnableOption "hacompanion";
     package = mkOption {
       type = types.package;
-      default = pkgs.my.hacompanion;
+      default = pkgs.hacompanion;
     };
 
     environmentFile = mkOption {
