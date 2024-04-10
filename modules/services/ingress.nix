@@ -221,6 +221,7 @@ in
     };
 
     users.groups.acme.members = [ "nginx" ];
+    environment.persistence."/persist".directories = [ "/var/lib/acme" ];
     security.acme = {
       acceptTerms = true;
       defaults = {
@@ -234,7 +235,10 @@ in
       certs = lib.mapAttrs' (
         name: domain:
         (lib.nameValuePair name {
-          extraDomainNames = lib.optionals domain.wildcard.enable [ "*.${name}" ];
+          extraDomainNames = lib.optionals domain.wildcard.enable [
+            "*.${name}"
+            "*.int.${name}"
+          ];
         })
       ) cfg.domains;
     };

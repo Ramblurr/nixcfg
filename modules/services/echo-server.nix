@@ -17,13 +17,13 @@ in
     domain = lib.mkOption {
       type = lib.types.str;
       example = "echo-test.example.com";
-      description = "The domain to use for the echo server";
+      description = "The domain to use for the echo-server";
     };
     ports = {
       http = lib.mkOption {
         type = lib.types.port;
         default = 9992;
-        description = "The HTTP port to use for the echo server";
+        description = "The HTTP port to use for the echo-server";
       };
     };
 
@@ -39,6 +39,7 @@ in
         externalDomains = [ cfg.domain ];
       };
     };
+
     virtualisation.oci-containers.containers.echo-server = {
       # renovate: docker-image
       image = "docker.io/mendhak/http-https-echo:31";
