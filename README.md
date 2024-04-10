@@ -8,11 +8,11 @@
 | Hostname     | Purpose                                                             | Channel                     | Source                                                                                     |
 |--------------|---------------------------------------------------------------------|-----------------------------|--------------------------------------------------------------------------------------------|
 | quine        | [Primary workstation][workstation]                                  | ![NixOS Unstable][unstable] | [hosts/unstable/x86_64-linux/quine/](./hosts/unstable/x86_64-linux/quine/)                 |
+| dewey        | [Home Prod Server][home-ops]                                        | ![NixOS Unstable][unstable] | [hosts/unstable/x86_64-linux/dewey/](./hosts/unstable/x86_64-linux/dewey/)                 |
 | peirce       | [Kubernetes control plane][home-ops]                                | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/peirce/](./hosts/stable/x86_64-linux/peirce/)                   |
 | debord       | [Kubernetes control plane][home-ops]                                | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/debord/](./hosts/stable/x86_64-linux/debord/)                   |
-| dewey        | [Kubernetes control plane][home-ops]                                | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/dewey/](./hosts/stable/x86_64-linux/dewey/)                     |
 | mill         | [Kubernetes worker][home-ops]                                       | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/mill/](./hosts/stable/x86_64-linux/mill/)                       |
-| ibnsina      | [Kubernetes worker][home-ops]                                       | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/ibnsina/](./hosts/stable/x86_64-linux/ibnsina/)                 |
+| ibnsina      | [Kubernetes worker][home-ops]                                       | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/ibnsina/](./hosts/stable/x86_64-linux/ibnsina/)                 | -->
 | mali         | [Storage NAS][NAS]                                                  | ![NixOS Stable][stable]     | [hosts/stable/x86_64-linux/mali/](./hosts/stable/x86_64-linux/mali/)                       |
 | OVOS Kitchen | My [OpenVoiceOS][ovos] instance (replaces Mycroft) for the kitchen. | ![NixOS Unstable][unstable] | [hosts/unstable/aarch64-linux/ovos-kitchen/](./hosts/unstable/aarch64-linux/ovos-kitchen/) |
 | Fairybox     | Raspberry PI RFID Jukebox for my children                           | ![NixOS Stable][stable]     | [hosts/stable/aarch64-linux/fairybox/](./hosts/stable/aarch64-linux/fairybox/)             |
