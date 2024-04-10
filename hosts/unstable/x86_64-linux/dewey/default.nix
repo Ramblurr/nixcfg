@@ -55,6 +55,8 @@ in
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
+      archivebox.enable = false;
+      linkding.enable = true;
     };
   };
   #myhm = {
