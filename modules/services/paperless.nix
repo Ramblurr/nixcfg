@@ -111,9 +111,9 @@ in
       [
         "d '${paperless.dataDir}' - ${paperless.user} ${config.users.users.${paperless.user}.group} - -"
       ];
+    systemd.tmpfiles.settings."10-paperless" = lib.mkForce { };
     services.paperless = {
       enable = true;
-      createDirs = false;
       package = unstable.paperless-ngx;
       mediaDir = "${localPath}/media";
       consumptionDir = "${localPath}/consume";

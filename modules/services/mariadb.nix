@@ -61,6 +61,6 @@ in
       "rpool/encrypted/safe/svc/mariadb"."primarycache" = "all";
       "rpool/encrypted/safe/svc/mariadb"."logbias" = "throughput";
     };
-    systemd.tmpfiles.rules = [ "d /var/lib/mysql/data 750 ${mysqlUser} ${mysqlUser}" ];
+    systemd.tmpfiles.rules = [ "z /var/lib/mysql 750 ${mysqlUser} ${mysqlUser}" ];
   };
 }
