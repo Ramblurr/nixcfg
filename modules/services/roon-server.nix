@@ -73,7 +73,10 @@ in
     };
     systemd.services.roon-server = {
       enable = true;
-      after = [ "network.target" ] ++ serviceDeps;
+      after = [
+        "network.target"
+        "network-online.target"
+      ] ++ serviceDeps;
       bindsTo = serviceDeps;
       description = "Roon Server";
       wantedBy = [ "multi-user.target" ];
