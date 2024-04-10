@@ -1,12 +1,22 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "packageRules": [
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  packageRules: [
     {
-    "matchDatasources": ["maven", "deps-edn"],
-    "groupName": "clojure deps.edn",
-    "group": {
-      "commitMessageTopic": "{{{groupName}}} group"
-    }
-  }
-  ]
+      matchDatasources: ["maven", "deps-edn"],
+      groupName: "clojure deps.edn",
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+    },
+    {
+      description: "Immich Group",
+      groupName: "Immich",
+      matchPackagePatterns: ["immich"],
+      matchDatasources: ["docker"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+      separateMinorPatch: true,
+    },
+  ],
 }

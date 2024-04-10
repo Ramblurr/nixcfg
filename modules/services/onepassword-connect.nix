@@ -110,7 +110,7 @@ in
             Restart = "always";
           };
           containerConfig = {
-            # renovate: datasource=docker depName=docker.io/1password/connect-api
+            # renovate: docker-image
             image = "docker.io/1password/connect-api:1.7.2";
             environments = {
               XDG_DATA_HOME = "/config";
@@ -135,7 +135,7 @@ in
             Restart = "always";
           };
           containerConfig = {
-            # renovate: datasource=docker depName=docker.io/1password/connect-sync
+            # renovate: docker-image
             image = "docker.io/1password/connect-sync:1.7.2";
             environments = {
               XDG_DATA_HOME = "/config";
