@@ -16,8 +16,9 @@
     matugen.url = "github:InioX/matugen";
     matugen.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
-    quadlet-nix.url = "github:SEIAROTg/quadlet-nix";
+    quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    quadlet-nix.inputs.home-manager.follows = "home-manager";
 
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -45,7 +46,8 @@
     #hy3.url = "github:outfoxxed/hy3/hl0.37.1";
     #hy3.inputs.hyprland.follows = "hyprland";
 
-    fast-flake-update.url = "github:Mic92/fast-flake-update";
+    #fast-flake-update.url = "github:Mic92/fast-flake-update";
+    fast-flake-update.url = "github:zi3m5f/fast-flake-update/use_git_worktree_cmd";
     fast-flake-update.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     firefox-nightly.url = "github:colemickens/flake-firefox-nightly";
