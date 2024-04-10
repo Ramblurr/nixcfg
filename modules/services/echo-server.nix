@@ -40,7 +40,7 @@ in
       };
     };
     virtualisation.oci-containers.containers.echo-server = {
-      # renovate: datasource=docker depName=mendhak/http-https-echo
+      # renovate: docker-image
       image = "docker.io/mendhak/http-https-echo:31";
       autoStart = true;
       ports = [ "127.0.0.1:${httpPort}:8080" ];

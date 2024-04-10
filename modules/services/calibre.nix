@@ -68,7 +68,7 @@ in
     systemd.services.podman-calibre.bindsTo = serviceDeps;
     virtualisation.oci-containers.containers.calibre = {
       autoStart = true;
-      # renovate: datasource=docker depName=lscr.io/linuxserver/calibre
+      # renovate: docker-image
       image = "lscr.io/linuxserver/calibre:7.6.0";
       ports = [
         "127.0.0.1:${toString cfg.ports.gui}:8080"
