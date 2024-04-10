@@ -44,6 +44,7 @@ in
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
       home = "/var/lib/onepassword-connect";
+      linger = true;
       createHome = false;
       autoSubUidGidRange = true;
     };
@@ -51,12 +52,6 @@ in
     users.groups.${cfg.group.name} = {
       name = cfg.group.name;
       gid = lib.mkForce cfg.group.gid;
-    };
-
-    system.activationScripts = {
-      enableLingering = ''
-        touch /var/lib/systemd/linger/${cfg.user.name}
-      '';
     };
 
     systemd.tmpfiles.rules = [ "d ${dataDir} 0770 ${cfg.user.name} ${cfg.group.name}" ];
