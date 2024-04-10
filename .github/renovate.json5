@@ -1,27 +1,76 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "nix": {
-    "enabled": true
-  },
-  "lockFileMaintenance": {
-    "enabled": true,
-    "extends": ["schedule:weekly"]
-  },
-  "extends": [
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
     "config:recommended",
+    "github>cidverse/renovate-config:default",
     "regexManagers:dockerfileVersions",
-    "github>ramblurr/nixcfg//.github/renovate/groups.json5"
+    "regexManagers:tfvarsVersions",
+    "github>ramblurr/nixcfg//.github/renovate/groups.json5",
   ],
-  "regexManagers": [
+  enabled: true,
+  timezone: "Europe/Berlin",
+  semanticCommits: "enabled",
+  dependencyDashboard: true,
+  assignees: [],
+  reviewers: ["Ramblurr"],
+  vulnerabilityAlerts: {
+    assignees: ["Ramblurr"],
+  },
+  ignorePaths: ["**/archive/**"],
+  rebaseWhen: "behind-base-branch",
+  dependencyDashboardTitle: "Renovate Dashboard",
+  // do not notify on closed unmerged PRs
+  suppressNotifications: ["prIgnoreNotification"],
+  // only rebase PRs when there's a conflict
+  rebaseWhen: "conflicted",
+  regexManagers: [
     {
-      "fileMatch": [".*\\.nix$"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\r?\n.* = \"(?<currentValue>.*)\";"
-      ]
-    }
+      description: ["Generic Docker image Regex manager"],
+      fileMatch: [".*\\.nix$", ".*\\.ya?ml$"],
+      matchStrings: [
+        '# renovate: docker-image( versioning=(?<versioning>.*=?))?\n .*[:|=] "?(?<depName>.*?):(?<currentValue>[^"\n]*=?)"?',
+      ],
+      datasourceTemplate: "docker",
+      versioningTemplate: "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}",
+    },
   ],
-  "enabled": true,
-  "timezone": "Europe/Berlin",
-  "semanticCommits": "enabled",
-  "dependencyDashboard": true
+  nix: {
+    enabled: true,
+  },
+  lockFileMaintenance: {
+    enabled: true,
+    extends: ["schedule:weekly"],
+  },
+  packageRules: [
+    {
+      matchDatasources: ["docker"],
+      enabled: true,
+      matchUpdateTypes: ["major", "minor", "patch"],
+    },
+    {
+      matchDatasources: ["docker"],
+      semanticCommitScope: "images",
+      separateMinorPatch: true,
+    },
+
+    // add labels according to package and update types
+    {
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["major"],
+      commitMessagePrefix: "feat(images)!: ",
+      labels: ["renovate/image", "dep/major"],
+    },
+    {
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["minor"],
+      semanticCommitType: "feat",
+      labels: ["renovate/image", "dep/minor"],
+    },
+    {
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["patch"],
+      semanticCommitType: "fix",
+      labels: ["renovate/image", "dep/patch"],
+    },
+  ],
 }
