@@ -27,7 +27,7 @@ in
         enable = lib.mkEnableOption "Onsite Backup";
         path = lib.mkOption {
           type = lib.types.str;
-          default = "${config.networking.hostName}/repo1";
+          default = "/${config.networking.hostName}/repo1";
         };
       };
 
@@ -35,7 +35,7 @@ in
         enable = lib.mkEnableOption "Offsite Backup";
         path = lib.mkOption {
           type = lib.types.str;
-          default = "${config.networking.hostName}/repo2";
+          default = "/${config.networking.hostName}/repo2";
         };
       };
     };
@@ -67,6 +67,8 @@ in
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
       roon-server.enable = lib.mkEnableOption "Roon Server";
       onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
+      archivebox.enable = lib.mkEnableOption "Archivebox";
+      linkding.enable = lib.mkEnableOption "Linkding";
     };
   };
 
@@ -526,6 +528,26 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         external = true;
+      };
+    };
+
+    modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
+      enable = true;
+      domain = "archive.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.archivebox;
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.linkding = lib.mkIf cfg.apps.linkding.enable {
+      enable = true;
+      domain = "bookmarks.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.linkding;
+      user = home-ops.users.linkding;
+      group = home-ops.groups.linkding;
+      ingress = {
+        domain = home-ops.homeDomain;
       };
     };
 
