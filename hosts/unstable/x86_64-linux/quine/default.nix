@@ -159,6 +159,7 @@ in
       node.enable = true;
       python.enable = true;
       random.enable = true;
+      radicle.enable = true;
     };
 
     editors = {
