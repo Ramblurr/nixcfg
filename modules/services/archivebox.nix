@@ -8,8 +8,9 @@
 }:
 let
   cfg = config.modules.services.archivebox;
-
-  httpPort = toString cfg.ports.http;
+  service = "archivebox";
+  dataDir = "/var/lib/${service}";
+  homeDir = "/home/${cfg.user.name}";
 in
 {
   options.modules.services.archivebox = {
@@ -30,56 +31,36 @@ in
         lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
       );
     };
+    user = lib.mkOption { type = lib.types.unspecified; };
+    group = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
-    modules.zfs.datasets.properties = {
-      "tank/svc/archivebox"."mountpoint" = "/var/lib/private/archivebox";
+    users.users.${cfg.user.name} = {
+      name = cfg.user.name;
+      uid = lib.mkForce cfg.user.uid;
+      isNormalUser = true;
+      group = lib.mkForce cfg.group.name;
+      home = homeDir;
+      linger = true;
+      createHome = false;
+      autoSubUidGidRange = true;
     };
 
-    systemd.services.archivebox = {
-      unitConfig = {
-        RequiresMountsFor = [ "/var/lib/private/archivebox" ];
-      };
-      environment = {
-        REVERSE_PROXY_USER_HEADER = "X-authentik-username";
-        REVERSE_PROXY_WHITELIST = "127.0.0.1/24";
-        PUBLIC_ADD_VIEW = "True";
-      };
-      serviceConfig = {
-        Type = "simple";
-        ExecStart = "${pkgs.archivebox}/bin/archivebox server --quick-init 127.0.0.1:${httpPort}";
-        ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
-        ExecStop = "${pkgs.coreutils}/bin/kill -s QUIT $MAINPID";
-        Restart = "always";
-        RestartSec = "2";
-        StateDirectory = "archivebox";
-        WorkingDirectory = "/var/lib/archivebox";
-        UMask = 77;
-        DynamicUser = true;
-        ProtectHome = true;
-        ProtectSystem = "strict";
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectHostname = true;
-        ProtectClock = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectKernelLogs = true;
-        ProtectControlGroups = true;
-        NoNewPrivileges = true;
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
-        RemoveIPC = true;
-        LockPersonality = true;
-        PrivateMounts = true;
-        PrivateUsers = true;
-        RestrictNamespaces = true;
-        CapabilityBoundingSet = "";
-        SystemCallArchitectures = "native";
-        SystemCallFilter = [ "@system-service" ];
-        MemoryDenyWriteExecute = true;
-      };
+    users.groups.${cfg.group.name} = {
+      name = cfg.group.name;
+      gid = lib.mkForce cfg.group.gid;
     };
+
+    modules.zfs.datasets.properties = {
+      "tank/svc/${service}"."mountpoint" = dataDir;
+    };
+
+    systemd.tmpfiles.rules = [
+      "z '${dataDir}' 750 ${cfg.user.name} ${cfg.group.name} - -"
+      "d '${dataDir}/data' 750 ${cfg.user.name} ${cfg.group.name} - -"
+      "d '${dataDir}/chrome-profile' 750 ${cfg.user.name} ${cfg.group.name} - -"
+      "d ${homeDir} 750 ${cfg.user.name} ${cfg.group.name} - -"
+    ];
 
     modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
       "${cfg.ingress.domain}" = {
@@ -88,12 +69,84 @@ in
     };
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${httpPort}";
+      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
       forwardAuth = true;
-      extraConfig = ''
-        client_max_body_size 0;
-        client_header_buffer_size 64k;
-      '';
     };
+
+    home-manager.users.${cfg.user.name} =
+      { pkgs, config, ... }:
+      {
+        imports = [ inputs.quadlet-nix.homeManagerModules.default ];
+        home.stateVersion = "21.11";
+        home.homeDirectory = homeDir;
+        home.packages = [ pkgs.podman ];
+        systemd.user.startServices = "sd-switch";
+        programs.bash.enable = true;
+        home.sessionVariables.XDG_RUNTIME_DIR = "/run/user/${toString cfg.user.uid}";
+        virtualisation.user.quadlet = {
+          autoUpdate.enable = true;
+          containers =
+            let
+              sharedContainerConfig = {
+                # renovate: docker-image
+                image = "ghcr.io/archivebox/archivebox/archivebox:0.7.2";
+                autoUpdate = "registry";
+                userns = "keep-id:uid=${toString cfg.user.uid},gid=${toString cfg.group.gid}";
+                environments = {
+                  REVERSE_PROXY_USER_HEADER = "X-authentik-username";
+                  REVERSE_PROXY_WHITELIST = "10.0.0.0/16";
+                  PUBLIC_ADD_VIEW = "True";
+                  ALLOWED_HOSTS = "*";
+                  PUBLIC_INDEX = "False";
+                  PUBLIC_SNAPSHOTS = "False";
+                  MEDIA_MAX_SIZE = "1024m";
+                  #CHROME_USER_DATA_DIR = "None";
+                  #CHROME_USER_DATA_DIR = "/chrome-profile";
+                  # these two lines a workaround for chromium crashing with --headless=new
+                  XDG_CONFIG_HOME = "/tmp/xdg";
+                  XDG_CACHE_HOME = "/tmp/xdg";
+                };
+                podmanArgs = [
+                  "--entrypoint /usr/local/bin/python"
+                  "--passwd"
+                  "--passwd-entry archivebox:x:${toString cfg.user.uid}:${toString cfg.group.gid}::/home/archivebox:/bin/sh"
+                ];
+                volumes = [
+                  "${dataDir}/data:/data:rw"
+                  "${dataDir}/chrome-profile:/chrome-profile:rw"
+                ];
+              };
+            in
+            {
+              archivebox-scheduler = {
+                autoStart = true;
+                unitConfig = {
+                  RequiresMountsFor = [ dataDir ];
+                };
+                serviceConfig = {
+                  RestartSec = "10";
+                  Restart = "always";
+                };
+                containerConfig = sharedContainerConfig // {
+                  exec = "/usr/local/bin/archivebox schedule --foreground --update --every=daily";
+                };
+              };
+              archivebox = {
+                autoStart = true;
+                unitConfig = {
+                  RequiresMountsFor = [ dataDir ];
+                };
+                serviceConfig = {
+                  RestartSec = "10";
+                  Restart = "always";
+                };
+                containerConfig = sharedContainerConfig // {
+                  exec = "/usr/local/bin/archivebox server --quick-init 0.0.0.0:8000";
+                  publishPorts = [ "127.0.0.1:${toString cfg.ports.http}:8000" ];
+                };
+              };
+            };
+        };
+      };
   };
 }
