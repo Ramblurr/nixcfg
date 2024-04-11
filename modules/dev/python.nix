@@ -29,7 +29,7 @@ in
           pytest
           virtualenv
           black
-          python-lsp-black
+          #python-lsp-black
           setuptools
           wheel
           requests
