@@ -26,6 +26,7 @@ in
         home.packages = with pkgs; [
           #pkgs.my.mysql-backup
           # <rust pkgs>
+          bandwhich
           bat
           restic
           du-dust
