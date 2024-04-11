@@ -16,6 +16,10 @@
     matugen.url = "github:InioX/matugen";
     matugen.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
+    radicle.url = "git+https://seed.radicle.xyz/z3gqcJUoA1n9HaHKufZs5FCSGazv5.git?rev=54aacc96197a48b79fcc260f94312d824f5e0a34";
+    radicle.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    radicle.inputs.flake-utils.follows = "flake-utils";
+
     quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     quadlet-nix.inputs.home-manager.follows = "home-manager";
