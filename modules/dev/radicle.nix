@@ -3,17 +3,17 @@
   options,
   lib,
   pkgs,
-  my,
+  inputs,
   ...
 }:
 with lib;
 with lib.my;
 let
-  devCfg = config.modules.dev;
-  cfg = devCfg.radicle;
+  cfg = config.modules.dev.radicle;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+  radicle = inputs.radicle.packages.${pkgs.system}.default;
 in
 {
   options.modules.dev.radicle = {
@@ -21,15 +21,43 @@ in
   };
 
   config = mkIf cfg.enable {
-    home-manager.users."${username}" = {
-      home.packages = [ inputs.radicle.packages.${pkgs.system}.default ];
+    systemd.tmpfiles.rules = mkIf withImpermanence [
+      "d '/persist${homeDirectory}/.config/radicle' - ${username} ${username} - -"
+    ];
+    myhm =
+      { ... }@hm:
+      {
+        home.packages = [ radicle ];
 
-      home.sessionVariables = {
-        RAD_HOME = "${hm.config.xdg.configHome}/radicle";
+        home.sessionVariables = {
+          RAD_HOME = "${hm.config.xdg.configHome}/radicle";
+        };
+
+        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+          directories = [ ".config/radicle" ];
+        };
+
+        systemd.user.services.radicle-node = {
+          Unit = {
+            Description = "radicle-cli node ";
+            Documentation = "man:rad(1)";
+          };
+          Install = {
+            WantedBy = [ "default.target" ];
+          };
+          Service = {
+            Type = "simple";
+            Environment = [
+              "PATH=/run/wrappers/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${username}/bin"
+              "RAD_HOME=${hm.config.xdg.configHome}/radicle"
+              "RUST_LOG=debug"
+              "RUST_BACKTRACE=1"
+            ];
+            Restart = "always";
+            RestartSec = "5";
+            ExecStart = "${radicle}/bin/rad node start --foreground";
+          };
+        };
       };
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        directories = [ ".config/radicle" ];
-      };
-    };
   };
 }
