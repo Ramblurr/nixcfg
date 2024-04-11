@@ -73,6 +73,10 @@ in
     };
     systemd.services.roon-server = {
       enable = true;
+      wants = [
+        "network.target"
+        "network-online.target"
+      ];
       after = [
         "network.target"
         "network-online.target"
@@ -82,7 +86,7 @@ in
       wantedBy = [ "multi-user.target" ];
       environment = {
         ROON_DATAROOT = stateDirEffective;
-        ROON_ID_DIR = stateDirActual;
+        ROON_ID_DIR = stateDirEffective;
       };
       serviceConfig = {
         ExecStart = "${lib.getExe pkgs.roon-server}";

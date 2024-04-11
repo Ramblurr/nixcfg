@@ -536,6 +536,8 @@ in
       enable = true;
       domain = "archive.${home-ops.homeDomain}";
       ports.http = home-ops.ports.archivebox;
+      user = home-ops.users.archivebox;
+      group = home-ops.groups.archivebox;
       ingress = {
         domain = home-ops.homeDomain;
       };
