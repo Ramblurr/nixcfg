@@ -218,6 +218,10 @@ in
           label = "offsite";
           path = "\${OFFSITE_REPOSITORY}";
         }
+        {
+          label = "offsite2";
+          path = "\${OFFSITE_REPOSITORY2}";
+        }
       ];
       exclude-patterns = [
         "etc/ssl"
