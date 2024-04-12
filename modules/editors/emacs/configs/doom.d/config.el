@@ -118,12 +118,16 @@ Null prefix argument turns off the mode."
 ;; show me projects in LIFO order
 (setq projectile-sort-order 'recently-active)
 
-;; intellij muscle memory dies hard
-(map!
- :i "C-S-v" 'clipboard-yank
-                                        ;:n "C-e" #'projectile-recentf
- :n "C-e" #'persp-switch-to-buffer
- :n "C-n" #'projectile-find-file)
+;; define a function to set the ssh auth socket to the gpg agent
+(defun set-ssh-auth-to-gpg-socket ()
+  (interactive)
+  (setenv
+   "SSH_AUTH_SOCK"
+   (string-chop-newline
+    (shell-command-to-string "gpgconf --list-dirs | grep \"agent-ssh-socket\" | cut -d: -f2"))))
+
+(after! magit
+  (set-ssh-auth-to-gpg-socket))
 
 (after! company
   (setq company-auto-complete t
@@ -253,26 +257,13 @@ Null prefix argument turns off the mode."
   (add-hook 'elpher-mode-hook #'doom-mark-buffer-as-real-h)
   (advice-add #'elpher-bookmark-jump :after
               (defun +elpher-bookmark-jump-a (_)
-                (switch-to-buffer elpher-buffer-name)))
-  )
+                (switch-to-buffer elpher-buffer-name))))
 
 
 
 (after! flycheck
   ;; flycheck-next-error will navigate to errors before warnings
-  (setq flycheck-navigation-minimum-level 'error)
-  )
-
-
-;; Tell the LSP to not monitor vendor dirs
-(after! lsp-mode
-  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]vendor\\'" t))
-
-(defun tramp-abort ()
-  (interactive)
-  (recentf-cleanup)
-  (tramp-cleanup-all-buffers)
-  (tramp-cleanup-all-connections))
+  (setq flycheck-navigation-minimum-level 'error))
 
 ;; ensure identically named files are shown in the buffer switcher with a directory disambiguation
 (require 'uniquify)
@@ -362,6 +353,7 @@ Null prefix argument turns off the mode."
 
 (with-eval-after-load 'tramp
 
+  (set-ssh-auth-to-gpg-socket)
   (tramp-set-completion-function "ssh"
                                  '((tramp-parse-sconfig "~/.ssh/config.d/70-outskirts-labs")
                                    (tramp-parse-sconfig "~/.ssh/config.d/99-home-network")
@@ -387,9 +379,21 @@ Null prefix argument turns off the mode."
           (not (let ((method (file-remote-p name 'method)))
                  (when (stringp method)
                    (member method '("su" "sudo")))))))))
+
+
+(defun tramp-abort ()
+  (interactive)
+  (recentf-cleanup)
+  (tramp-cleanup-all-buffers)
+  (tramp-cleanup-all-connections))
+
+(after! tramp
+  (set-ssh-auth-to-gpg-socket))
+
 (defun my-vc-off-if-remote ()
   (if (file-remote-p (buffer-file-name))
       (setq-local vc-handled-backends '(Git))))
+
 (add-hook 'find-file-hook 'my-vc-off-if-remote)
 
 ;; (setq vc-handled-backends '(Git))
@@ -432,7 +436,3 @@ Null prefix argument turns off the mode."
 (load! "+clojure.el")
 ;; (load! "+vterm.el")
 (load! "+lsp.el")
-
-(put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
-(put 'cider-clojure-cli-global-options 'safe-local-variable (lambda (_) t))
-(put 'cider-shadow-cljs-default-options 'safe-local-variable (lambda (_) t))

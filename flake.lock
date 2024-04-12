@@ -1029,11 +1029,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1712834472,
-        "narHash": "sha256-Nk4pB6yUwZwtXDU/wd0vRXrcfGMB3dhJrcIXOiXcD10=",
+        "lastModified": 1712834802,
+        "narHash": "sha256-9fMlVKjefPR2+YkKBSGBhfZQE7qCVi16UUBY7I1tWVw=",
         "owner": "Ramblurr",
         "repo": "nixos-quadlet",
-        "rev": "84a9983c2eb4eae7dfe0cbd49784c6cc23be0e04",
+        "rev": "4f9741701b4525c04b46652a232ae6dbe761b77f",
         "type": "github"
       },
       "original": {
