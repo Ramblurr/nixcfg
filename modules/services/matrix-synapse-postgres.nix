@@ -38,7 +38,7 @@ in
       bindMounts = {
         inherit (mounts) pg-matrix-synapse host-socket;
         "/etc/resolv.conf" = {
-          hostPath = "/run/systemd/resolve/resolv.conf";
+          hostPath = "/etc/resolv-external.conf";
           isReadOnly = true;
         };
       };
