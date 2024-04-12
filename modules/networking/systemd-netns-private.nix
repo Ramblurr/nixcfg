@@ -114,7 +114,7 @@ in
       lib.flatten (
         map (ns: [
           "d /etc/netns/${ns} 0700 root root -"
-          "L+ /etc/netns/${ns}/resolv.conf - - - - /run/systemd/resolve/resolv.conf"
+          "L+ /etc/netns/${ns}/resolv.conf - - - - /etc/resolv-external.conf"
         ]) nsNames
       );
     systemd.services =
