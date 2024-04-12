@@ -88,6 +88,7 @@ in
     services.nginx = {
       enable = true;
       package = pkgs.nginxQuic;
+      enableReload = true;
       defaultSSLListenPort = 443;
       defaultHTTPListenPort = 8081;
       recommendedBrotliSettings = true;
