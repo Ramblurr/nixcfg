@@ -49,6 +49,7 @@ in
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
     slidingSyncUser = lib.mkOption { type = lib.types.unspecified; };
+    bridgesGroup = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
     assertions = [
@@ -96,6 +97,7 @@ in
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
       createHome = lib.mkForce false;
+      extraGroups = [ cfg.bridgesGroup.name ];
     };
     users.users.${cfg.slidingSyncUser.name} = {
       uid = cfg.slidingSyncUser.uid;
@@ -105,6 +107,10 @@ in
 
     users.groups.matrix-synapse = {
       gid = lib.mkForce cfg.group.gid;
+    };
+
+    users.groups.${cfg.bridgesGroup.name} = {
+      gid = lib.mkForce cfg.bridgesGroup.gid;
     };
 
     modules.zfs.datasets.properties = {
@@ -125,6 +131,13 @@ in
       unitConfig = {
         RequiresMountsFor = [ cfg.dataDir ];
       };
+    };
+
+    sops.secrets."doublepuppet.yaml" = {
+      sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+      owner = cfg.user.name;
+      group = cfg.bridgesGroup.name;
+      mode = "440";
     };
 
     sops.secrets."signingKey" = {
@@ -156,11 +169,18 @@ in
       User = cfg.slidingSyncUser.name;
     };
 
+    # use mimalloc to improve the memory situation with synapse
+    systemd.services.matrix-synapse.environment = {
+      LD_PRELOAD = "${pkgs.mimalloc}/lib/libmimalloc.so";
+      SYNAPSE_CACHE_FACTOR = "1.0";
+      LimitNOFILE = "4096";
+    };
     services.matrix-synapse = {
       enable = true;
-      withJemalloc = true;
       dataDir = synapseDataDir;
       settings = {
+        app_service_config_files = [ config.sops.secrets."doublepuppet.yaml".path ];
+
         public_baseurl = "https://${cfg.domain}";
         report_stats = true;
         enable_metrics = true;
@@ -173,10 +193,29 @@ in
         suppress_key_server_warning = true;
         enable_search = true;
         allow_public_rooms_over_federation = true;
+        redaction_retention_period = 1;
+        max_upload_size = "200M";
         extra_well_known_client_content = {
           "org.matrix.msc3575.proxy" = {
             "url" = "https://${cfg.domain}";
           };
+        };
+        experimental_features = {
+          # Room summary api
+          msc3266_enabled = true;
+          # Removing account data
+          msc3391_enabled = true;
+          # Thread notifications
+          msc3773_enabled = true;
+          # Remotely toggle push notifications for another client
+          msc3881_enabled = true;
+          # Remotely silence local notifications
+          msc3890_enabled = true;
+        };
+
+        rc_admin_redaction = {
+          per_second = 1000;
+          burst_count = 10000;
         };
         database = {
           name = "psycopg2";
@@ -202,6 +241,31 @@ in
             ];
           }
         ];
+        log_config = builtins.toFile "synapse-log-config.yaml" ''
+          version: 1
+          formatters:
+            journal_fmt:
+              format: '%(name)s: [%(request)s] %(message)s'
+          filters:
+            context:
+              (): synapse.util.logcontext.LoggingContextFilter
+              request: ""
+          handlers:
+            journal:
+              class: systemd.journal.JournalHandler
+              formatter: journal_fmt
+              filters: [context]
+              SYSLOG_IDENTIFIER: synapse
+          disable_existing_loggers: True
+          loggers:
+            synapse:
+              level: WARN
+            synapse.storage.SQL:
+              level: WARN
+          root:
+            level: WARN
+            handlers: [journal]
+        '';
       };
       #extraConfigFiles = [ config.sops.secrets."matrixSynapse/config".path ];
     };

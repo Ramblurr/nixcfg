@@ -65,10 +65,26 @@ in
             isSystemUser = true;
             group = cfg.group.name;
           };
+
+          users.users.${cfg.bridges.discord.user.name} = lib.mkIf cfg.bridges.discord.enable {
+            uid = cfg.bridges.discord.user.uid;
+            isSystemUser = true;
+            group = cfg.bridgesGroup.name;
+          };
+
           users.groups.matrix-synapse = {
             gid = lib.mkForce cfg.group.gid;
           };
-          environment.systemPackages = with pkgs; [ pgbackrest ];
+
+          users.groups.${cfg.bridgesGroup.name} = {
+            gid = lib.mkForce cfg.bridgesGroup.gid;
+          };
+
+          environment.systemPackages = with pkgs; [
+            pgbackrest
+            kitty.terminfo
+          ];
+
           services.postgresql = {
             enable = true;
             package = pkgs.postgresql_15;
@@ -84,10 +100,16 @@ in
                 LC_CTYPE = "C";
               GRANT ALL PRIVILEGES ON DATABASE "matrix-synapse" TO "matrix-synapse";
               ALTER ROLE "matrix-synapse" WITH LOGIN;
+
               CREATE ROLE "matrix-sliding-sync";
               CREATE DATABASE "matrix-sliding-sync" WITH OWNER "matrix-sliding-sync" TEMPLATE template0;
               GRANT ALL PRIVILEGES ON DATABASE "matrix-sliding-sync" TO "matrix-sliding-sync";
               ALTER ROLE "matrix-sliding-sync" WITH LOGIN;
+
+              CREATE ROLE "mautrix-discord";
+              CREATE DATABASE "mautrix-discord" WITH OWNER "mautrix-discord" TEMPLATE template0;
+              GRANT ALL PRIVILEGES ON DATABASE "mautrix-discord" TO "mautrix-discord";
+              ALTER ROLE "mautrix-discord" WITH LOGIN;
             '';
             settings = {
               unix_socket_directories = "/tmp,${mounts.host-socket.mountPoint}";
