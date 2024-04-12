@@ -151,6 +151,7 @@ in
     };
 
     environment.systemPackages = with pkgs; [
+      bandwhich
       fd
       jq
       htop
@@ -259,7 +260,87 @@ in
     networking.domain = home-ops.homeDomain;
     networking.usePredictableInterfaceNames = true;
     networking.firewall.allowPing = true;
-    networking.nameservers = config.repo.secrets.global.nameservers;
+    networking.nameservers = [ "127.0.0.1" ];
+    services.resolved = {
+      enable = lib.mkForce false;
+    };
+    environment.etc."resolv-external.conf" = {
+      mode = "0644";
+      text = ''
+        nameserver ${lib.my.cidrToIp nodeSettings.mgmtCIDR}
+      '';
+    };
+    services.dnsdist = {
+      enable = true;
+      extraConfig =
+        let
+          transformDomainToRegex =
+            domain:
+            let
+              escapedDomain = lib.replaceStrings [ "." ] [ "\\\\." ] domain;
+            in
+            "(^|\\\\.)${escapedDomain}$";
+        in
+        ''
+          -- disable security status polling via DNS
+          setSecurityPollSuffix("")
+
+          -- udp/tcp dns listening
+          setLocal("127.0.0.1:53", {})
+          addLocal("${lib.my.cidrToIp nodeSettings.mgmtCIDR}:53", {})
+
+          -- Local LAN
+          newServer({
+            address = "${lib.elemAt config.repo.secrets.global.nameservers 0}",
+            pool = "local",
+          })
+          newServer({
+            address = "${lib.elemAt config.repo.secrets.global.nameservers 1}",
+            pool = "local",
+          })
+
+          -- CloudFlare DNS over TLS
+          newServer({
+            address = "1.1.1.1:853",
+            tls = "openssl",
+            subjectName = "cloudflare-dns.com",
+            validateCertificates = true,
+            checkInterval = 10,
+            checkTimeout = 2000,
+            pool = "cloudflare"
+          })
+          newServer({
+            address = "1.0.0.1:853",
+            tls = "openssl",
+            subjectName = "cloudflare-dns.com",
+            validateCertificates = true,
+            checkInterval = 10,
+            checkTimeout = 2000,
+            pool = "cloudflare"
+          })
+
+          -- Enable caching
+          pc = newPacketCache(10000, {
+            maxTTL = 86400,
+            minTTL = 0,
+            temporaryFailureTTL = 60,
+            staleTTL = 60,
+            dontAge = false
+          })
+          getPool(""):setCache(pc)
+
+
+          -- Request logging, uncomment to log DNS requests/responses to stdout
+          -- addAction(AllRule(), LogAction("", false, false, true, false, false))
+          -- addResponseAction(AllRule(), LogResponseAction("", false, true, false, false))
+
+          -- Routing rules
+          addAction(RegexRule('${transformDomainToRegex home-ops.homeDomain}'), PoolAction('local'))
+          addAction(RegexRule('${transformDomainToRegex home-ops.workDomain}'), PoolAction('local'))
+          addAction('1.10.in-addr.arpa', PoolAction('local'))
+          addAction(AllRule(), PoolAction("cloudflare"))
+        '';
+    };
     systemd.network = {
       netdevs = {
         "20-vlprim4" = {
