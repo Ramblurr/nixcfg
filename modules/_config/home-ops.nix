@@ -643,11 +643,18 @@ in
       ports.http = home-ops.ports.matrix-synapse;
       ports.slidingSync = home-ops.ports.matrix-sliding-sync;
       user = home-ops.users.matrix-synapse;
-      slidingSyncUser = home-ops.users.matrix-sliding-sync;
       group = home-ops.groups.matrix-synapse;
+      slidingSyncUser = home-ops.users.matrix-sliding-sync;
+      bridgesGroup = home-ops.groups.matrix-bridges;
       ingress = {
         domain = home-ops.workDomain;
         external = true;
+      };
+      bridges.discord = {
+        enable = true;
+        user = home-ops.users.mautrix-discord;
+        group = home-ops.groups.mautrix-discord;
+        ports.http = home-ops.ports.mautrix-discord;
       };
     };
 
