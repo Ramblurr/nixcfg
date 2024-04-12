@@ -19,10 +19,20 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
+    systemd.tmpfiles.rules = mkIf withImpermanence [
+      "d '/persist${homeDirectory}/.config/iamb' - ${username} ${username} - -"
+      "d '/persist${homeDirectory}/.config/Element' - ${username} ${username} - -"
+      "d '/persist${homeDirectory}/.config/Element-work' - ${username} ${username} - -"
+      "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
+    ];
     home-manager.users."${username}" =
       { pkgs, config, ... }@hm:
       {
-        home.packages = [ (pkgs.element-desktop.override { electron = pkgs.electron_28; }) ];
+        home.packages = [
+          (pkgs.element-desktop.override { electron = pkgs.electron_28; })
+          pkgs.iamb
+        ];
 
         home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
           directories = [
@@ -38,6 +48,7 @@ in
               method = "symlink";
               directory = ".config/Element-personal";
             }
+            ".config/iamb"
           ];
         };
         home.file.".local/share/applications/element-desktop-work.desktop" = {
