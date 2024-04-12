@@ -58,6 +58,11 @@ in
                 default = "";
               };
 
+              http3.enable = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+              };
+
               extraConfig = lib.mkOption {
                 type = lib.types.lines;
                 default = "";
@@ -149,16 +154,18 @@ in
           forceSSL = true;
           kTLS = true;
           extraConfig = service.extraConfig;
-          http3 = true;
+          http3 = service.http3.enable;
           http2 = false;
-          quic = true;
+          quic = service.http3.enable;
           locations = {
             "/" = {
               proxyPass = service.upstream;
               recommendedProxySettings = true;
               extraConfig = ''
                 ${service.upstreamExtraConfig}
-                 add_header Alt-Svc 'h3=":443"; ma=86400';
+                ${lib.optionalString service.http3.enable ''
+                  add_header Alt-Svc 'h3=":443"; ma=86400';
+                ''}
                 ${lib.optionalString service.forwardAuth ''
                   auth_request        /outpost.goauthentik.io/auth/nginx;
                   error_page          401 = @goauthentik_proxy_signin;
