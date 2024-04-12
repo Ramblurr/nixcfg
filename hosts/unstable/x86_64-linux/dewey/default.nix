@@ -57,6 +57,15 @@ in
       calibre-web.enable = true;
       archivebox.enable = true;
       linkding.enable = true;
+      matrix-synapse.enable = true;
     };
   };
+
+  myhm =
+    { pkgs, ... }@hm:
+    {
+      home.persistence."/persist${ramblurr.homeDirectory}" = {
+        directories = [ { directory = "work"; } ];
+      };
+    };
 }
