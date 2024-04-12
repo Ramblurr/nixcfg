@@ -199,8 +199,7 @@ in
       serviceConfig = {
         Type = "simple";
         Restart = "always";
-
-        ReadWritePaths = baseNameOf dataDir;
+        ReadWritePaths = [ rootCfg.dataDir ];
         NoNewPrivileges = true;
         MemoryDenyWriteExecute = true;
         PrivateDevices = true;
