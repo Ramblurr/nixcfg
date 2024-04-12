@@ -135,7 +135,8 @@ in
           '"duration": $request_time,'
           '"method": "$request_method",'
           '"http_referrer": "$http_referer",'
-          '"http_user_agent": "$http_user_agent"'
+          '"http_user_agent": "$http_user_agent",'
+          '"upstream_addr": "$upstream_addr"'
         '}';
 
 

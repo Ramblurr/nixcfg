@@ -68,12 +68,23 @@ in
     };
     services.nginx.virtualHosts.${cfg.domain}.locations = {
       "~ ^/(client/|_matrix/client/unstable/org.matrix.msc3575/sync)" = {
+        priority = 800;
         proxyPass = "http://${config.services.matrix-sliding-sync.settings.SYNCV3_BINDADDR}";
         extraConfig = ''
           proxy_set_header Host $host;
           proxy_set_header X-Forwarded-For $remote_addr;
           proxy_set_header X-Forwarded-Proto $scheme;
           proxy_read_timeout 900s;
+        '';
+      };
+      "~ ^(/_matrix|/_synapse/client)" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
+        extraConfig = ''
+          client_max_body_size 100M;
+          proxy_http_version 1.1;
+          proxy_set_header X-Forwarded-For $remote_addr;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header Host $host;
         '';
       };
       "/.well-known/matrix/server".extraConfig =
@@ -134,8 +145,7 @@ in
 
     sops.secrets."slidingSyncEnv" = {
       sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
-      owner = cfg.user.name;
-      group = cfg.group.name;
+      owner = cfg.slidingSyncUser.name;
       mode = "400";
     };
 
@@ -146,13 +156,15 @@ in
       settings = {
         SYNCV3_BINDADDR = "127.0.0.1:${toString cfg.ports.slidingSync}";
         SYNCV3_DB = "postgresql:///matrix-sliding-sync?host=/run/postgresql-matrix-synapse";
-        SYNCV3_SERVER = "http://127.0.0.1:${toString cfg.ports.http}";
+        SYNCV3_SERVER = "https://127.0.0.1:${toString cfg.ports.http}";
       };
     };
+
     systemd.services.matrix-sliding-sync.serviceConfig = {
       DynamicUser = lib.mkForce false;
       User = cfg.slidingSyncUser.name;
     };
+
     services.matrix-synapse = {
       enable = true;
       withJemalloc = true;
