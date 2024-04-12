@@ -49,9 +49,14 @@
  ;;   b) delete space-indented blocks intelligently
  ;;   c) do none of this when inside a string
  ;; :i [remap newline] #'newline-and-indent
-
-
  )
+
+;; intellij muscle memory dies hard
+(map!
+ ;; :n "C-e" #'projectile-recentf
+ :n "C-e" #'persp-switch-to-buffer
+ :n "C-n" #'projectile-find-file)
+
 
 (map!
  :after lispyville

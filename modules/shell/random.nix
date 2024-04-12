@@ -32,6 +32,7 @@ in
           du-dust
           fd
           gitui
+          gitu
           gex
           httpie
           dogdns

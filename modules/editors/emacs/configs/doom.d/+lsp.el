@@ -1,10 +1,15 @@
 ;;; +lsp.el -*- lexical-binding: t; -*-
 
+
+
+;; Tell the LSP to not monitor vendor dirs
+(after! lsp-mode
+  (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]vendor\\'" t))
+
 (use-package! lsp-mode
   :commands lsp
   :config
   ;; Core
-
   (setq
    ;;   ;; https://emacs-lsp.github.io/lsp-mode/page/settings/headerline/
    ;;   lsp-headerline-breadcrumb-enable t           ; Breadcrumb trail
