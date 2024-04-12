@@ -229,6 +229,12 @@ in
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
       domains = config.repo.secrets.local.domains;
+      forwardServices = {
+        "home.${home-ops.homeDomain}" = {
+          upstream = "http://10.9.4.25:8123";
+          acmeHost = home-ops.homeDomain;
+        };
+      };
     };
 
     virtualisation.podman.enable = cfg.containers.enable;
