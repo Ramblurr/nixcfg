@@ -89,13 +89,13 @@ in
             let
               sharedContainerConfig = {
                 # renovate: docker-image
-                image = "ghcr.io/archivebox/archivebox/archivebox:0.7.2";
+                image = "ghcr.io/archivebox/archivebox/archivebox:dev";
                 autoUpdate = "registry";
                 userns = "keep-id:uid=${toString cfg.user.uid},gid=${toString cfg.group.gid}";
                 environments = {
                   REVERSE_PROXY_USER_HEADER = "X-authentik-username";
                   REVERSE_PROXY_WHITELIST = "10.0.0.0/16";
-                  PUBLIC_ADD_VIEW = "True";
+                  PUBLIC_ADD_VIEW = "True"; # needed for firefox extension
                   ALLOWED_HOSTS = "*";
                   PUBLIC_INDEX = "False";
                   PUBLIC_SNAPSHOTS = "False";
@@ -128,7 +128,7 @@ in
                   Restart = "always";
                 };
                 containerConfig = sharedContainerConfig // {
-                  exec = "/usr/local/bin/archivebox schedule --foreground --update --every=daily";
+                  exec = "/usr/local/bin/archivebox schedule --foreground";
                 };
               };
               archivebox = {
