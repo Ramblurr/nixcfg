@@ -294,3 +294,7 @@
   :after clojure-mode
   :config
   (clj-ns-name-install))
+
+(put 'cider-clojurec-eval-destination 'safe-local-variable (lambda (_) t))
+(put 'cider-clojure-cli-global-options 'safe-local-variable (lambda (_) t))
+(put 'cider-shadow-cljs-default-options 'safe-local-variable (lambda (_) t))
