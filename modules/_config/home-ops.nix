@@ -69,6 +69,7 @@ in
       onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
       archivebox.enable = lib.mkEnableOption "Archivebox";
       linkding.enable = lib.mkEnableOption "Linkding";
+      matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
     };
   };
 
@@ -551,6 +552,21 @@ in
       group = home-ops.groups.linkding;
       ingress = {
         domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.matrix-synapse = lib.mkIf cfg.apps.matrix-synapse.enable {
+      enable = true;
+      domain = "matrix.${home-ops.workDomain}";
+      serverName = home-ops.workDomain;
+      ports.http = home-ops.ports.matrix-synapse;
+      ports.slidingSync = home-ops.ports.matrix-sliding-sync;
+      user = home-ops.users.matrix-synapse;
+      slidingSyncUser = home-ops.users.matrix-sliding-sync;
+      group = home-ops.groups.matrix-synapse;
+      ingress = {
+        domain = home-ops.workDomain;
+        external = true;
       };
     };
 
