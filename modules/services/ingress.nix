@@ -22,10 +22,6 @@ in
             options = {
               upstream = lib.mkOption { type = lib.types.str; };
               acmeHost = lib.mkOption { type = lib.types.str; };
-              proxyWebsockets = lib.mkOption {
-                type = lib.types.bool;
-                default = true;
-              };
               extraConfig = lib.mkOption {
                 type = lib.types.lines;
                 default = "";
@@ -186,6 +182,7 @@ in
             locations."/" = {
               proxyPass = service.upstream;
               recommendedProxySettings = true;
+              proxyWebsockets = true;
               extraConfig = ''
                 ${service.upstreamExtraConfig}
                 ${lib.optionalString true ''
