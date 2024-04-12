@@ -65,26 +65,17 @@ in
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+      http3.enable = false;
     };
     services.nginx.virtualHosts.${cfg.domain}.locations = {
       "~ ^/(client/|_matrix/client/unstable/org.matrix.msc3575/sync)" = {
         priority = 800;
         proxyPass = "http://${config.services.matrix-sliding-sync.settings.SYNCV3_BINDADDR}";
-        extraConfig = ''
-          proxy_set_header Host $host;
-          proxy_set_header X-Forwarded-For $remote_addr;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_read_timeout 900s;
-        '';
       };
       "~ ^(/_matrix|/_synapse/client)" = {
         proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
         extraConfig = ''
-          client_max_body_size 100M;
-          proxy_http_version 1.1;
-          proxy_set_header X-Forwarded-For $remote_addr;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_set_header Host $host;
+          client_max_body_size 200M;
         '';
       };
       "/.well-known/matrix/server".extraConfig =
@@ -156,7 +147,7 @@ in
       settings = {
         SYNCV3_BINDADDR = "127.0.0.1:${toString cfg.ports.slidingSync}";
         SYNCV3_DB = "postgresql:///matrix-sliding-sync?host=/run/postgresql-matrix-synapse";
-        SYNCV3_SERVER = "https://127.0.0.1:${toString cfg.ports.http}";
+        SYNCV3_SERVER = "http://127.0.0.1:${toString cfg.ports.http}";
       };
     };
 
