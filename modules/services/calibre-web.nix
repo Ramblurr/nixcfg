@@ -126,7 +126,6 @@ in
       forwardAuth = true;
       extraConfig = ''
         client_max_body_size 0;
-        client_header_buffer_size 64k;
       '';
     };
 
@@ -146,7 +145,6 @@ in
       '';
       extraConfig = ''
         client_max_body_size 0;
-        client_header_buffer_size 64k;
       '';
     };
   };
