@@ -233,6 +233,7 @@ in
       forwardServices = {
         "home.${home-ops.homeDomain}" = {
           upstream = "http://10.9.4.25:8123";
+          external = true;
           acmeHost = home-ops.homeDomain;
         };
       };
