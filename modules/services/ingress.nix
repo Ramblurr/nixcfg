@@ -9,6 +9,9 @@
 let
   cfg = config.modules.services.ingress;
   domainsWithTunnel = lib.filterAttrs (name: domain: domain.tunnel.enable) cfg.domains;
+  forwardServicesWithTunnel = lib.attrNames (
+    lib.filterAttrs (name: service: service.external) cfg.forwardServices
+  );
 in
 {
   options.modules.services.ingress = {
@@ -22,6 +25,10 @@ in
             options = {
               upstream = lib.mkOption { type = lib.types.str; };
               acmeHost = lib.mkOption { type = lib.types.str; };
+              external = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+              };
               extraConfig = lib.mkOption {
                 type = lib.types.lines;
                 default = "";
@@ -353,22 +360,32 @@ in
         };
       }
     ) domainsWithTunnel;
-    services.cloudflared = {
-      enable = true;
-      tunnels = lib.mapAttrs' (
-        name: domain:
-        lib.nameValuePair domain.tunnel.tunnelId {
-          #credentialsFile = config.sops.secrets."cloudflareTunnels/${name}".path;
-          credentialsFile = "/var/lib/cloudflared-tunnel/${domain.tunnel.tunnelId}/credentials.json";
-          originRequest.originServerName = "localhost";
-          originRequest.noTLSVerify = true;
-          ingress = lib.foldl' (
+    services.cloudflared =
+      let
+        mkIngresses =
+          name: domain:
+          let
+            externalDomains = domain.externalDomains;
+            ingressDomains = externalDomains ++ lib.filter (s: lib.hasSuffix name s) forwardServicesWithTunnel;
+          in
+          lib.foldl' (
             acc: extDomain: acc // { "${extDomain}" = "https://localhost:443"; }
-          ) { } domain.externalDomains;
-          # Catch-all if no match
-          default = "http_status:404";
-        }
-      ) domainsWithTunnel;
-    };
+          ) { } ingressDomains;
+      in
+      {
+        enable = true;
+        tunnels = lib.mapAttrs' (
+          name: domain:
+          lib.nameValuePair domain.tunnel.tunnelId {
+            #credentialsFile = config.sops.secrets."cloudflareTunnels/${name}".path;
+            credentialsFile = "/var/lib/cloudflared-tunnel/${domain.tunnel.tunnelId}/credentials.json";
+            originRequest.originServerName = "localhost";
+            originRequest.noTLSVerify = true;
+            ingress = mkIngresses name domain;
+            # Catch-all if no match
+            default = "http_status:404";
+          }
+        ) domainsWithTunnel;
+      };
   };
 }
