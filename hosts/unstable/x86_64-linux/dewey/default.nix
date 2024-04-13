@@ -59,6 +59,7 @@ in
       linkding.enable = true;
       matrix-synapse.enable = true;
       influxdb.enable = true;
+      git-archive.enable = true;
     };
   };
 
