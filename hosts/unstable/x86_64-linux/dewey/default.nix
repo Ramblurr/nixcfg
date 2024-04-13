@@ -58,6 +58,7 @@ in
       archivebox.enable = true;
       linkding.enable = true;
       matrix-synapse.enable = true;
+      influxdb.enable = true;
     };
   };
 
