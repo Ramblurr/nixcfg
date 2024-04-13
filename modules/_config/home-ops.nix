@@ -70,6 +70,7 @@ in
       archivebox.enable = lib.mkEnableOption "Archivebox";
       linkding.enable = lib.mkEnableOption "Linkding";
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
+      influxdb.enable = lib.mkEnableOption "Influxdb";
     };
   };
 
@@ -637,6 +638,15 @@ in
       ports.http = home-ops.ports.linkding;
       user = home-ops.users.linkding;
       group = home-ops.groups.linkding;
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.influxdb = lib.mkIf cfg.apps.influxdb.enable {
+      enable = true;
+      domain = "influxdb.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.influxdb;
       ingress = {
         domain = home-ops.homeDomain;
       };
