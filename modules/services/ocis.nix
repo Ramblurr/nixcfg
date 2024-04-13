@@ -129,7 +129,6 @@ in
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";
       extraConfig = ''
         client_max_body_size 0;
-        client_header_buffer_size 64k;
       '';
     };
   };
