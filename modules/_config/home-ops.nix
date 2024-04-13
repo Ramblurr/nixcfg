@@ -71,6 +71,7 @@ in
       linkding.enable = lib.mkEnableOption "Linkding";
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
       influxdb.enable = lib.mkEnableOption "Influxdb";
+      git-archive.enable = lib.mkEnableOption "Git-Archive";
     };
   };
 
@@ -511,6 +512,8 @@ in
         domain = home-ops.homeDomain;
       };
     };
+
+    modules.services.git-archive = lib.mkIf cfg.apps.git-archive.enable { enable = true; };
 
     modules.services.davis = lib.mkIf cfg.apps.davis.enable {
       enable = true;
