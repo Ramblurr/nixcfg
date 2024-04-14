@@ -40,6 +40,7 @@ in
           sd
           procs
           # </rust pkgs>
+          mat2
           nix-du
           nix-tree
           nix-prefetch
