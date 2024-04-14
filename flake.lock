@@ -1021,19 +1021,16 @@
     },
     "quadlet-nix": {
       "inputs": {
-        "home-manager": [
-          "home-manager"
-        ],
         "nixpkgs": [
           "nixpkgs-unstable"
         ]
       },
       "locked": {
-        "lastModified": 1712834802,
-        "narHash": "sha256-9fMlVKjefPR2+YkKBSGBhfZQE7qCVi16UUBY7I1tWVw=",
+        "lastModified": 1713082003,
+        "narHash": "sha256-Tdp7PKUOx/EAmn769vm6aYAVn1iWq+oZdgNbne8X7RA=",
         "owner": "Ramblurr",
         "repo": "nixos-quadlet",
-        "rev": "4f9741701b4525c04b46652a232ae6dbe761b77f",
+        "rev": "aaf743f8e8d23cbebe79de227f5bc8f810d4cfeb",
         "type": "github"
       },
       "original": {
