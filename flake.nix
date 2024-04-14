@@ -22,7 +22,6 @@
 
     quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    quadlet-nix.inputs.home-manager.follows = "home-manager";
 
     nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
     nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
