@@ -41,6 +41,7 @@ in
           procs
           # </rust pkgs>
           mat2
+          waypipe
           nix-du
           nix-tree
           nix-prefetch
