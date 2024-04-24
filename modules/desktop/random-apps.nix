@@ -35,6 +35,8 @@ in
             #pkgs.my.muse-sounds-manager
             musescore
             pavucontrol
+            openscad-unstable
+            openscad-lsp
             freecad
             prusa-slicer
             eagle
@@ -87,6 +89,8 @@ in
             ".config/gh"
             ".config/Morgen"
             ".config/OpenSCAD"
+            ".local/share/OpenSCAD"
+            ".config/PrusaSlicer"
             ".config/PrusaSlicer-alpha"
             ".config/qobuz-dl"
             ".local/share/fonts"

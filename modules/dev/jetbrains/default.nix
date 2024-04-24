@@ -27,8 +27,8 @@ in
       home.packages = with pkgs; [
         jetbrains.idea-ultimate
         jetbrains.datagrip
-        jetbrains.gateway
-        jetbrains.clion
+        #jetbrains.gateway
+        #jetbrains.clion
         #dotnet-sdk_7
         #dotnet-sdk
         #msbuild
