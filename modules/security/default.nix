@@ -19,7 +19,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    #systemd.extraConfig = "DefaultLimitNOFILE=1048576";
+    systemd.extraConfig = "DefaultLimitNOFILE=1048576";
     security = {
       sudo.enable = true;
       sudo.wheelNeedsPassword = false;

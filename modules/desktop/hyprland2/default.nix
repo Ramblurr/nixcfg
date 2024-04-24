@@ -55,10 +55,12 @@ in
       pam.services.ags = { };
     };
 
+    services.dbus.packages = [ pkgs.gnome.gnome-disk-utility ];
     environment.systemPackages =
       with pkgs;
       with gnome;
       [
+        gnome-disk-utility
         gnome.adwaita-icon-theme
         loupe
         adwaita-icon-theme

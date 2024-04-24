@@ -71,6 +71,7 @@ in
     virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
     environment.systemPackages = [
       pkgs.nvitop
+      # TODO(24.05) pkgs.nvtopPackages.nvidia
       pkgs.nvtop-nvidia
       pkgs.libva-utils
     ];
