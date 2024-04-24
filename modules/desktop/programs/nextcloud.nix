@@ -21,7 +21,7 @@ in
   config = mkIf cfg.enable {
     myhm = {
       services.nextcloud-client = {
-        enable = false;
+        enable = true;
         startInBackground = true;
       };
       persistence = mkIf withImpermanence {

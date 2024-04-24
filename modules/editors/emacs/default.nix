@@ -71,6 +71,7 @@ in
           kitty
 
           ## Optional dependencies
+          openscad-lsp # openscad
           dockfmt # docker
           clang-tools # java format
           pandoc # markdown

@@ -98,20 +98,20 @@ in
         };
       };
       programs = {
-        aseprite.enable = true;
+        aseprite.enable = false;
         calibre.enable = true;
         chrysalis.enable = true;
         discord.enable = true;
         element.enable = true;
-        fritzing.enable = true;
+        fritzing.enable = false;
         junction.enable = true;
         kdeconnect.enable = true;
-        kicad.enable = true;
+        kicad.enable = false;
         kitty.enable = true;
         logseq.enable = true;
         nextcloud.enable = true;
         nheko.enable = true;
-        obs.enable = true;
+        obs.enable = false;
         onepassword.enable = true;
         owncloud.enable = true;
         signal.enable = true;
