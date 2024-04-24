@@ -193,7 +193,9 @@ in
         };
       };
     };
+    networking.firewall.allowedUDPPorts = [ 53 ];
     networking.firewall.allowedTCPPorts = [
+      53
       config.services.prometheus.exporters.node.port
       config.services.prometheus.exporters.zfs.port
       config.services.prometheus.exporters.smartctl.port

@@ -9,7 +9,7 @@ davis:
 invoiceninja:
     env: ENC[AES256_GCM,data:CtoDV7HBpQU9wybVB7Gkj6hmI7WlpXI+cDS9eij6GbDc0TwqSsVPWKEefQ/ay7qYYDMsJV4Hsy9ObrNu,iv:y9x6/uEgZEQ7+wTEHywEudsRx3POmRcPyzpw0Ijes4w=,tag:cVbVO2nfOlegwGcgO8Xf6w==,type:str]
 authentik:
-    env: ENC[AES256_GCM,data:/xS8CM3hKS86qIQ+zjNjyEw2NPd23vv1V4rvNrcJ4Et0toOuUT0l+T8bQER7ZWuPlXDdV+I308lv0XqyKuxsDiycToAjwEQ15E8YeG0lpNlYqAVCKFlqFPo4DgpEx2fl5U/KmJsUHvaZzjz7rEo3wzRivMJNobZsCEIa1DUhfi2a1VO/6q9dayLi1j2F1dDgRsLvjGU5yZdBYItRbJyD0D8k16RJpokxpreL3yZmu/q2X+8Hawm4IhDHdiSKhYEQC+jVGSlRzZm8yo7N/Qljz3SEtZvKwYatY0J0iPJ1jGE14l1I3AfjqE4L33rzDJaoZ0iToHc/Xddl9LB0rkAliZLeeNDu+YnEdNj/0UvF9RU6Q5zmNnH5viO7iqmpADRyLsKgZ440Y/IirVHUNfZHxW3bN7MIUZcegIPOM1yU6lJSITN6V2XnXBV1cOeFT19SptqpBuZJnF3tTlTOXxDqa3vLnjpIOrbevNJnauym1U1iY+AIpFOQGMi00HKXcyhxqEzcNvThmUGW8A==,iv:ViJDGNgFVKWWI2seJeRAtNcwBnLZshiDey5utJLOSXI=,tag:W/+vC7ulWuoedIfJeL7p0g==,type:str]
+    env: ENC[AES256_GCM,data:PlmalXslC7HI3sQxeQ08HARc5BqV6RRnkvgkLvFCp+hzmmhJGm5mPeX9OemJrRXUbfR0hq9TgUlMwK4eFmi+2lypVdV7+CnbYdUAlsnwSS795Z/5TqtcPvgjVghpURg1anNGVxFQ5gZklaNRaOBbuaSrlR6QsSGkRMfg9ViV8apmzG6Uh9YPdQiG9TEm1ltMswrjnHp881RKIketRK2aKnBQ23IrVMph1ehJS0CcOqITF3zKApalcajZ7CBBxKBN185HYZQc/xzt3DQ/H0hcmRKp1q6Yqn9PRFj9wIcpsMwPZQC5BI+vXDGFZTQqQpqe556GTnPrXX5jDbtcYHEzwY+D67lVMJ+e9Zk/ZHXZBxDqz3AP5+gkdWrV+EfrzWBmF5TUFPZFeLEGXRssfIJk7c39s+ficDNLhQAoIivpOJNyDP/9FLSi/xqa1LQ3VnsMa9f6N9upo/pzP01ueN7DgyvbUJmug4NJo1fPQ26nU6qTMrLOpMN/bxIKZkNAIFN5z/hPI/87sfChjgSU8/2Gvg==,iv:n2KXZhfUcFcX7e2fee1vkh/9rqwXO+LEeF5KGveqdiY=,tag:tT3F9chkUSBifd26M9kvAw==,type:str]
 paperless:
     adminPassword: ENC[AES256_GCM,data:l2LBGcEGJrY7utZlFZwb31+8syU=,iv:ptypm68YwYRcCKmBUXfVlfWTbYY0xGGF66QqZ5z3iFI=,tag:79hilJKk++0WwL7Hfuf92A==,type:str]
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
@@ -74,8 +74,8 @@ sops:
             VUR5MzJNZnFsc0w5Yyt6TUF4ZjFha2MKsamWU4y8kfBP0l+Zgr5PoWZcnVZ/0flX
             bj0iQ5DolwtL25UyG7K0ruFt5c4wvGS/KyJ06z4ohxjO8AfjOeOpUw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2024-04-13T10:33:24Z"
-    mac: ENC[AES256_GCM,data:586BX70HBJG1ZdgQLEPNAbXoOh8X/GKXDiFUIKjdhAS54v06tJ5jC+Uf7ulOiXOfjhTgfLg/8rTjrhAer7QGWz5WUWtoTCvzbv49m+5wBRcfENu4tsazZYJT9EQSymrAJpHvID14aCBaJNBEtW1Ide4zi8Tc3At6JmARA80UdDA=,iv:FWtlUZ8ybuCH/JulzRnvYDGpvGl4k7KY68qHCl7hB4E=,tag:x9K8q87OrpiJox8L4C4n/Q==,type:str]
+    lastmodified: "2024-04-24T07:21:09Z"
+    mac: ENC[AES256_GCM,data:bCPMlxP+reRqE865qTZASUWGaDwXqOu8pCj6jBmn3MNvKxDPgq7s9yVEJ8AqYyixn1u/P+A60YPxl1EUn8rf5rv62oIaY8CZbiLFDZfjKbUMZVeWiKbMs7mJdCSaWorgxma9PE5nXODB+5MqE2xIXqeuOsU0Ik/jWNnYEP9qW60=,iv:hG6bkwFLf4PHI1StqckeD0Kln+I+/9p/KxXGqKxvnIQ=,tag:nP1KirNtr3jM10jVgOGGNA==,type:str]
     pgp:
         - created_at: "2024-04-08T13:09:05Z"
           enc: |-
