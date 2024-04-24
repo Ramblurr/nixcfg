@@ -38,12 +38,12 @@ in
     group = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
-    users.users.${cfg.user.name} = {
+    users.users.${cfg.user.name} = lib.mkForce {
       name = cfg.user.name;
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
-      extraGroups = [ "media" ];
+      extraGroups = lib.mkForce [ "media" ];
     };
 
     users.groups.${cfg.group.name} = {
@@ -62,6 +62,7 @@ in
       ];
     };
     systemd.services.calibre-web.serviceConfig = {
+      SupplementaryGroups = [ "media" ];
       LockPersonality = true;
       NoNewPrivileges = true;
       PrivateDevices = true;

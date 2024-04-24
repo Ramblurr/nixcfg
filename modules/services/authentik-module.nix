@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.services.authentik;
+  home-ops = config.repo.secrets.home-ops;
   databaseActuallyCreateLocally =
     cfg.database.createLocally && cfg.database.host == "/run/postgresql";
   hostWithPort = h: p: "${h}:${toString p}";
@@ -21,20 +22,16 @@ let
       {
         AUTHENTIK_REDIS__HOST = cfg.redis.host;
         AUTHENTIK_REDIS__PORT = toString cfg.redis.port;
-
         AUTHENTIK_POSTGRESQL__HOST = cfg.database.host;
         AUTHENTIK_POSTGRESQL__USER = cfg.database.user;
         AUTHENTIK_POSTGRESQL__NAME = cfg.database.name;
-
         AUTHENTIK_LISTEN__HTTP = listenAddress cfg.listen.http;
         AUTHENTIK_LISTEN__HTTPS = listenAddress cfg.listen.https;
-
         # disable outbound connections
         AUTHENTIK_DISABLE_UPDATE_CHECK = "true";
         AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
         AUTHENTIK_DISABLE_STARTUP_ANALYTICS = "true";
         AUTHENTIK_AVATARS = "initials";
-
         AUTHENTIK_LOG_LEVEL = cfg.logLevel;
       }
       // lib.optionalAttrs (!databaseActuallyCreateLocally) {
