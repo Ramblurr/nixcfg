@@ -27,6 +27,8 @@ in
     inputs.nixos-raspberrypi-stable.nixosModules.base
     inputs.nixos-raspberrypi-stable.nixosModules.hardware
     inputs.nixos-raspberrypi-stable.inputs.nixos-hardware.nixosModules.raspberry-pi-4
+    ../../../../modules/_config/secrets.nix
+    #../../../../modules/_config/home-wifi.nix
     ./audio.nix
     ./gpio.nix
     ./rpi-kernel.nix
@@ -38,7 +40,7 @@ in
   sops.defaultSopsFile = defaultSopsFile;
   services.journald.storage = "volatile";
 
-  home.wifi.primary.enable = true;
+  #home.wifi.primary.enable = true;
   networking.firewall.allowedTCPPorts = [
     22 # ssh
     80 # http
