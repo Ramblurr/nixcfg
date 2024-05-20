@@ -30,6 +30,7 @@ in
         lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
       );
     };
+
     ports = {
       http = lib.mkOption {
         type = lib.types.port;
@@ -149,7 +150,7 @@ in
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = true;
+      forwardAuth = false;
       extraConfig = ''
         client_max_body_size 0;
       '';

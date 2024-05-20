@@ -26,6 +26,7 @@ let
   rebootBluOS = pkgs.writeScript "reboot-bluos.sh" ''
     #!${pkgs.runtimeShell} -e
     echo "Rebooting bluos devices"
+    sleep 30
     ${lib.concatStringsSep "\n" toRebootCmdLine}
   '';
   stateDirActual = "/var/lib/private/roon-server";

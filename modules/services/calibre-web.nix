@@ -137,7 +137,7 @@ in
     };
     modules.services.ingress.virtualHosts.${cfg.domainKobo} = lib.mkIf (cfg.domainKobo != "") {
       acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.http}/kobo/";
+      upstream = "http://127.0.0.1:${toString cfg.ports.http}/";
       upstreamExtraConfig = ''
         proxy_buffering on;
         proxy_buffers 4 256k;
