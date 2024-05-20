@@ -24,15 +24,18 @@ let
 in
 {
   imports = [
-    inputs.nixos-raspberrypi-stable.nixosModules.base
-    inputs.nixos-raspberrypi-stable.nixosModules.hardware
-    inputs.nixos-raspberrypi-stable.inputs.nixos-hardware.nixosModules.raspberry-pi-4
+    #inputs.nixos-raspberrypi.nixosModules.base
+    inputs.nixos-raspberrypi.nixosModules.hardware
+    inputs.nixos-raspberrypi.inputs.nixos-hardware.nixosModules.raspberry-pi-4
     ../../../../modules/_config/secrets.nix
-    #../../../../modules/_config/home-wifi.nix
+    ../../../../modules/_config/home-wifi.nix
+    ./hardware.nix
     ./audio.nix
     ./gpio.nix
-    ./rpi-kernel.nix
+    #./rpi-kernel.nix
+    ./mainline-kernel.nix
   ];
+
   system.stateVersion = "23.11";
 
   environment.etc."machine-id".text = machine-id;
@@ -40,7 +43,7 @@ in
   sops.defaultSopsFile = defaultSopsFile;
   services.journald.storage = "volatile";
 
-  #home.wifi.primary.enable = true;
+  home.wifi.primary.enable = true;
   networking.firewall.allowedTCPPorts = [
     22 # ssh
     80 # http
