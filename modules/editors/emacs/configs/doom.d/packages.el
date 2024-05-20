@@ -74,8 +74,13 @@
 ;; Clojure
 (package! clj-ns-name
   :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-
-(unpin! cider clojure-mode clj-refactor)
+(unpin! cider
+        clojure-mode
+        clj-refactor)
+(unpin! lsp-mode
+        lsp-treemacs
+        lsp-mode
+        lsp-ui)
 
 
 ;; Zoxide

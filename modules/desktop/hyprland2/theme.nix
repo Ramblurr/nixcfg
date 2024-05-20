@@ -114,6 +114,7 @@ in
 
         qt = {
           enable = true;
+          # TODO(24.11) The option `qt.platformTheme` has been renamed to `qt.platformTheme.name`.
           platformTheme = "kde";
         };
       };

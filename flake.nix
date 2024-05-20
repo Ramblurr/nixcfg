@@ -23,11 +23,23 @@
     quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
-    nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
-    nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    nixos-hardware.url = "github:nixos/nixos-hardware";
 
-    nixos-raspberrypi-stable.url = "github:ramblurr/nixos-raspberrypi/dev";
-    nixos-raspberrypi-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
+    #clj-nix.url = "github:jlesquembre/clj-nix";
+    #clj-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
+    clojure-lsp.url = "github:clojure-lsp/clojure-lsp";
+    #clojure-lsp.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    #clojure-lsp.inputs.flake-utils.follows = "flake-utils";
+    #clojure-lsp.inputs.clj-nix.follows = "clj-nix";
+
+    #nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi";
+    #nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    #nixos-raspberrypi.inputs.nixos-hardware.follows = "nixos-hardware";
+
+    nixos-raspberrypi.url = "github:ramblurr/nixos-raspberrypi/dev";
+    nixos-raspberrypi.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    nixos-raspberrypi.inputs.nixos-hardware.follows = "nixos-hardware";
 
     nixos-ovos.url = "github:ramblurr/ovos-rpi-nixos/dev";
     nixos-ovos.inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -61,8 +73,6 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
-    nixos-hardware.url = "github:nixos/nixos-hardware";
-
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     sops-nix.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
@@ -89,13 +99,14 @@
       self,
       nixpkgs-unstable,
       nixos-raspberrypi,
-      nixos-raspberrypi-stable,
       ...
     }:
     let
       defaultSystem = "x86_64-linux";
 
-      allOverlays = [ self.overlay ] ++ (lib.attrValues self.overlays);
+      allOverlays = [
+        self.overlay
+      ] ++ (lib.attrValues self.overlays) ++ [ inputs.clojure-lsp.overlays.default ];
 
       mkPkgs =
         pkgsArg: systemArg:
@@ -173,8 +184,9 @@
 
       nixosConfigurations =
         (mapHosts ./hosts/unstable/x86_64-linux "unstable" "x86_64-linux")
-        // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux")
-        // (mapHosts ./hosts/stable/aarch64-linux "stable" "aarch64-linux");
+        // (mapHosts ./hosts/unstable/aarch64-linux "unstable" "aarch64-linux")
+        // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux");
+      #// (mapHosts ./hosts/stable/aarch64-linux "stable" "aarch64-linux");
 
       images = {
         ovos-kitchen =
@@ -186,9 +198,8 @@
             inherit self nixos-raspberrypi;
           }).sd-image;
         fairybox =
-          (import ./hosts/stable/aarch64-linux/fairybox/sd-image.nix {
-            inherit self nixos-raspberrypi-stable;
-          }).sd-image;
+          (import ./hosts/unstable/aarch64-linux/fairybox/sd-image.nix { inherit self nixos-raspberrypi; })
+          .sd-image;
       };
 
       # breaks `nix flake check` with

@@ -53,5 +53,5 @@
    :main-opts  ["-m" "nrepl.cmdline"
                 "--middleware" "[vlaaad.reveal.nrepl/middleware,refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"]}
   :outdated {;; Note that it is `:deps`, not `:extra-deps`
-             :deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+             :deps {com.github.liquidz/antq {:mvn/version "2.8.1194"}}
              :main-opts ["-m" "antq.core"]}}}

@@ -25,6 +25,7 @@ in
       {
         home.packages = with pkgs; [
           (openai-whisper-cpp.override { cudaSupport = true; })
+          openai-whisper
           #pkgs.my.mysql-backup
           # <rust pkgs>
           bandwhich
