@@ -52,6 +52,11 @@
         };
       };
       folders = {
+        "S21Backup" = {
+          id = "kbhu0-k5zxq";
+          path = "/home/ramblurr/docs/backups/samsung-s21";
+          devices = [ "phone" ];
+        };
         "logseq" = {
           id = "lzv9p-tt1gf";
           path = "/home/ramblurr/docs/brain";
