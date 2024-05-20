@@ -65,7 +65,7 @@ in
                   description = "CIDR of the ip address in the namespace";
                 };
                 services = lib.mkOption {
-                  type = lib.types.listOf utils.systemdUtils.lib.unitNameType;
+                  type = lib.types.listOf lib.types.str; # utils.systemdUtils.lib.unitNameType;
                   description = lib.mdDoc "Names of `systemd.services.<name>` to override to use the namespace";
                   default = [ ];
                 };
