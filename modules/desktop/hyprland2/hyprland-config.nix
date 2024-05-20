@@ -226,6 +226,7 @@ in
                 "SUPER, F, fullscreen"
                 "SUPER, M, fakefullscreen"
                 "SUPER SHIFT, Q, killactive"
+                "SUPER, B, togglefloating"
                 # Move focus with mod key + hjkl
                 (mvfocus "L" "r")
                 (mvfocus "H" "l")

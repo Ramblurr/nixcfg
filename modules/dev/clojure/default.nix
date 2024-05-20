@@ -38,6 +38,7 @@ in
           neil
           maven
           clojure
+          cljfmt
           clojure-lsp
           clj-kondo
           leiningen

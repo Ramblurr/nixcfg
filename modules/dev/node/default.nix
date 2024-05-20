@@ -23,17 +23,23 @@ in
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [ ];
     home-manager.users."${username}" = {
-      home.packages = with pkgs; [ nodejs_20 ];
+      home.packages = with pkgs; [
+        nodejs_20
+        yarn
+        volta
+      ];
 
-      xdg.configFile."npm" = {
-        source = ./configs/npm;
-        recursive = true;
-      };
+      #xdg.configFile."npm" = {
+      #  source = ./configs/npm;
+      #  recursive = true;
+      #};
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [
           ".config/npm"
           ".cache/npm-packages"
+          ".config/yarn/"
           ".local/share/npm"
+          ".local/share/volta"
         ];
       };
     };
