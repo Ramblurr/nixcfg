@@ -18,6 +18,7 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    # nixpkgs.config.cudaSupport = true;
     hardware = {
       opengl = {
         enable = true;

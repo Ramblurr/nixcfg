@@ -99,8 +99,21 @@ class Recorder extends Service {
       summary: "Screenshot",
       body: file,
       actions: {
-        "Show in Files": () => sh(`xdg-open ${this.#screenshots}`),
-        View: () => sh(`xdg-open ${file}`),
+        "Show in Files": () => {
+          if (dependencies("re.sonny.Junction")) {
+            sh(`re.sonny.Junction ${this.#screenshots}`);
+          } else {
+            sh(`xdg-open ${this.#screenshots}`);
+          }
+        },
+        View: () => {
+          if (dependencies("re.sonny.Junction")) {
+            sh(`re.sonny.Junction ${file}`);
+          } else {
+            sh(`xdg-open ${file}`);
+          }
+        },
+        Copy: () => sh(`cat ${file} | wl-copy`),
         Edit: () => {
           if (dependencies("satty")) sh(`satty -f ${file}`);
         },
