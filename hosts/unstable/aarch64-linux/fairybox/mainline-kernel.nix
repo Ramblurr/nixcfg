@@ -11,11 +11,26 @@
 
   boot.kernelPatches = [
     {
-      # required on mainlin kernels
+      # required on mainline kernels
       name = "allow-devmem";
       patch = null;
       extraConfig = ''
         STRICT_DEVMEM n
+      '';
+    }
+    {
+      name = "gpio-sysfs-config";
+      patch = null;
+      extraConfig = ''
+        GPIO_SYSFS y
+      '';
+    }
+    {
+      name = "dontwastemytime-config";
+      patch = null;
+      extraConfig = ''
+        DRM n
+        VIRTUALIZATION n
       '';
     }
   ];

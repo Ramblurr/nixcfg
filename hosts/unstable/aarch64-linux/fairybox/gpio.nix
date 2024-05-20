@@ -64,11 +64,11 @@ in
           #name = "spi0-0cs";
           #dtsText = builtins.readFile ./overlays/spi0-0cs-mainline.dts;
 
+          #name = "spi0-0cs.dts";
           #dtsText = builtins.readFile ./overlays/spi0-0cs-overlay.dts;
-          #name = "spi0-1cs.dts";
-          # only enable 1 chip select pin, gpio 8, leaving the other pin free for gpio
 
-          name = "spi0-1cs";
+          # only enable 1 chip select pin, gpio 8, leaving the other pin free for gpio
+          name = "spi0-1cs-overlay";
           dtsText = builtins.readFile ./overlays/spi0-1cs-overlay.dts;
         }
         {
