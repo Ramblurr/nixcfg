@@ -21,9 +21,9 @@ in
   };
 
   config = mkIf cfg.enable {
-    myhm = {
-      home.packages = with pkgs; [ vscode.fhs ];
-      persistence = {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
         directories = [
           ".vscode/extensions"
           ".config/Code"
@@ -31,7 +31,9 @@ in
           ".config/code-personal"
         ];
       };
-
+    };
+    myhm = {
+      home.packages = with pkgs; [ vscode.fhs ];
       home.file.".local/share/applications/code-personal.desktop" = {
         text = ''
           [Desktop Entry]

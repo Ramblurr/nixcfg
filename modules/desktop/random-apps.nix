@@ -75,41 +75,7 @@ in
         ];
 
         persistence = {
-          directories = [
-            "docs"
-            "downloads"
-            "sync"
-            "src"
-            "work"
-            "vendor"
-            "nixcfg"
-            ".cache/virt-manager"
-            ".local/bin"
-            ".config/gnupg"
-            ".config/gh"
-            ".config/Morgen"
-            ".config/OpenSCAD"
-            ".local/share/OpenSCAD"
-            ".config/PrusaSlicer"
-            ".config/PrusaSlicer-alpha"
-            ".config/qobuz-dl"
-            ".local/share/fonts"
-            ".cache/inkscape"
-            ".config/inkscape"
-            ".config/GIMP"
-            ".cache/gimp"
-            ".config/rclone"
-            ".local/share/krita"
-            ".config/MuseScore"
-            ".local/share/MuseScore"
-            ".local/state/MuseScore"
-            ".config/audacity"
-            ".cache/audacity"
-            ".local/share/audacity"
-            ".local/state/audacity"
-            ".local/state/muse-sounds-manager"
-            ".config/easyeffects"
-          ];
+          directories = [ "nixcfg" ];
           files = [
             ".config/kritarc"
             ".config/kritadisplayrc"

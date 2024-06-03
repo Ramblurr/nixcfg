@@ -58,9 +58,9 @@ if [[ -d "$NPM_PACKAGES" ]]; then
 fi
 
 
-if [[ -d "$VOLTA_HOME/bin" ]]; then
-  export PATH=$XDG_DATA_HOME/npm/bin:$VOLTA_HOME/bin:$PATH
-fi
+#if [[ -d "$VOLTA_HOME/bin" ]]; then
+#  export PATH=$XDG_DATA_HOME/npm/bin:$VOLTA_HOME/bin:$PATH
+#fi
 
 if [[ -d "$KRE_ROOT/bin" ]]; then
   export PATH=$KREW_ROOT/bin:$PATH

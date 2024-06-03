@@ -19,6 +19,11 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [ ".thunderbird" ];
+      };
+    };
     myhm =
       { ... }@hm:
       {
@@ -39,10 +44,6 @@ in
               };
             };
           };
-        };
-
-        persistence = {
-          directories = [ ".thunderbird" ];
         };
 
         home.file.".local/share/applications/thunderbird-personal.desktop" = {

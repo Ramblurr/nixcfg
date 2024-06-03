@@ -21,6 +21,20 @@ in
   };
 
   config = mkIf cfg.enable {
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/maven"
+          ".cache/maven"
+          ".config/clojure"
+          ".config/clj-kondo"
+          ".config/clojure-lsp"
+          ".cache/clojure"
+          ".cache/clojure-gitlibs"
+          ".local/share/deps.clj"
+        ];
+      };
+    };
     home-manager.users."${username}" =
       let
         devSDKs = with pkgs; {
@@ -33,7 +47,9 @@ in
       {
         home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
         home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
+        home.file."vendor/jdks/openjdk17".source = pkgs.openjdk17;
         home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
+        home.file."vendor/jdks/openjdk21".source = pkgs.openjdk21;
         home.packages = with pkgs; [
           neil
           maven
@@ -60,18 +76,18 @@ in
             entries = lib.mapAttrsToList mkEntry devSDKs;
           in
           pkgs.linkFarm "local-dev" entries;
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-          directories = [
-            ".config/maven"
-            ".cache/maven"
-            ".config/clojure"
-            ".config/clj-kondo"
-            ".config/clojure-lsp"
-            ".cache/clojure"
-            ".cache/clojure-gitlibs"
-            ".local/share/deps.clj"
-          ];
-        };
+        #home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+        #  directories = [
+        #    ".config/maven"
+        #    ".cache/maven"
+        #    ".config/clojure"
+        #    ".config/clj-kondo"
+        #    ".config/clojure-lsp"
+        #    ".cache/clojure"
+        #    ".cache/clojure-gitlibs"
+        #    ".local/share/deps.clj"
+        #  ];
+        #};
 
         xdg.configFile."clojure/deps.edn" = {
           source = ./configs/deps.edn;

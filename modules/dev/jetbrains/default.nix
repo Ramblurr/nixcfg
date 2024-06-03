@@ -23,6 +23,17 @@ in
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [ ];
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/JetBrains"
+          ".cache/JetBrains"
+          ".local/share/JetBrains"
+          ".java/.userPrefs/jetbrains"
+        ];
+      };
+    };
     myhm = {
       home.packages = with pkgs; [
         jetbrains.idea-ultimate
@@ -40,15 +51,6 @@ in
         #    sdk_7_0
         #  ])
       ];
-
-      persistence = mkIf withImpermanence {
-        directories = [
-          ".config/JetBrains"
-          ".cache/JetBrains"
-          ".local/share/JetBrains"
-          ".java/.userPrefs/jetbrains"
-        ];
-      };
 
       home.file.".ideavimrc" = {
         source = ./configs/ideavimrc;

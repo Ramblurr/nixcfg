@@ -19,16 +19,19 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
-    myhm = {
-      services.nextcloud-client = {
-        enable = true;
-        startInBackground = true;
-      };
-      persistence = mkIf withImpermanence {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
         directories = [
           ".config/Nextcloud"
           ".local/share/Nextcloud"
         ];
+      };
+    };
+    myhm = {
+      services.nextcloud-client = {
+        enable = true;
+        startInBackground = true;
       };
     };
   };

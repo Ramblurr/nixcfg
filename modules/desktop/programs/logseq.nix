@@ -19,6 +19,16 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/Logseq"
+          ".logseq"
+        ];
+      };
+    };
+
     home-manager.users."${username}" =
       { pkgs, config, ... }@hm:
       {
@@ -37,13 +47,6 @@ in
             MimeType=x-scheme-handler/logseq
             Categories=Utility
           '';
-        };
-
-        persistence = mkIf withImpermanence {
-          directories = [
-            ".config/Logseq"
-            ".logseq"
-          ];
         };
       };
   };

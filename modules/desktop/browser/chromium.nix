@@ -19,6 +19,15 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/chromium"
+          ".cache/chromium"
+        ];
+      };
+    };
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
@@ -27,12 +36,6 @@ in
           commandLineArgs = mkIf config.modules.desktop.wayland.enable [
             "--enable-features=UseOzonePlatform"
             "--ozone-platform=wayland"
-          ];
-        };
-        home.persistence."/persist${homeDirectory}" = {
-          directories = [
-            ".config/chromium"
-            ".cache/chromium"
           ];
         };
 
