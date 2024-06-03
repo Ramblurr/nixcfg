@@ -63,19 +63,19 @@ in
         "char-drm rw"
         "/dev/dri rwm"
       ];
-      PrivateUsers = true;
-      PrivateTmp = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      ProtectProc = "invisible";
-      ProtectSystem = "full";
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
+      #PrivateUsers = true;
+      #PrivateTmp = true;
+      #ProtectClock = true;
+      #ProtectControlGroups = true;
+      #ProtectHostname = true;
+      #ProtectKernelLogs = true;
+      #ProtectKernelModules = true;
+      #ProtectKernelTunables = true;
+      #ProtectProc = "invisible";
+      #ProtectSystem = "full";
+      #RestrictRealtime = true;
+      #RestrictSUIDSGID = true;
+      #SystemCallArchitectures = "native";
     };
     systemd.services.plex.after = serviceDeps;
     systemd.services.plex.bindsTo = serviceDeps;

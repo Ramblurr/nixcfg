@@ -28,7 +28,7 @@
     #clj-nix.url = "github:jlesquembre/clj-nix";
     #clj-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
-    clojure-lsp.url = "github:clojure-lsp/clojure-lsp";
+    #clojure-lsp.url = "github:clojure-lsp/clojure-lsp";
     #clojure-lsp.inputs.nixpkgs.follows = "nixpkgs-unstable";
     #clojure-lsp.inputs.flake-utils.follows = "flake-utils";
     #clojure-lsp.inputs.clj-nix.follows = "clj-nix";
@@ -104,9 +104,12 @@
     let
       defaultSystem = "x86_64-linux";
 
-      allOverlays = [
-        self.overlay
-      ] ++ (lib.attrValues self.overlays) ++ [ inputs.clojure-lsp.overlays.default ];
+      allOverlays =
+        [ self.overlay ]
+        ++ (lib.attrValues self.overlays)
+        ++ [
+          #   inputs.clojure-lsp.overlays.default
+        ];
 
       mkPkgs =
         pkgsArg: systemArg:

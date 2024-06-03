@@ -32,7 +32,10 @@ let
       Group = "postgres";
     };
     unitConfig = {
-      ConditionPathExists = "${cfg.pgDataDir}/postgresql.conf";
+      ConditionPathExists = [
+        "${cfg.pgDataDir}/postgresql.conf"
+        "/etc/pgbackrest/conf.d/secrets.conf"
+      ];
     };
     script = "${pkgs.pgbackrest}/bin/pgbackrest --type=full --repo=${repo} --stanza=${stanza} backup";
   };
@@ -47,7 +50,10 @@ let
       Group = "postgres";
     };
     unitConfig = {
-      ConditionPathExists = "${cfg.pgDataDir}/postgresql.conf";
+      ConditionPathExists = [
+        "${cfg.pgDataDir}/postgresql.conf"
+        "/etc/pgbackrest/conf.d/secrets.conf"
+      ];
     };
     script = "${pkgs.pgbackrest}/bin/pgbackrest --type=diff --repo=${repo} --stanza=${stanza} backup";
   };
@@ -62,7 +68,10 @@ let
       Group = "postgres";
     };
     unitConfig = {
-      ConditionPathExists = "${cfg.pgDataDir}/postgresql.conf";
+      ConditionPathExists = [
+        "${cfg.pgDataDir}/postgresql.conf"
+        "/etc/pgbackrest/conf.d/secrets.conf"
+      ];
     };
     script = "${pkgs.pgbackrest}/bin/pgbackrest --type=incr --repo=${repo} --stanza=${stanza} backup";
   };
@@ -425,6 +434,9 @@ in
         config.environment.etc."pgbackrest/conf.d/instance.conf".text
         cfg.secretsFile
       ];
+      unitConfig = {
+        ConditionPathExists = "/etc/pgbackrest/conf.d/secrets.conf";
+      };
       serviceConfig = {
         User = "postgres";
         Group = "postgres";

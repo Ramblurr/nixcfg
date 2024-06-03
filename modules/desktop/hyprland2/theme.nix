@@ -29,13 +29,13 @@ let
     package = nerdfonts;
   };
   cursorTheme = {
-    name = "Qogir";
+    name = "Adwaita";
     size = 24;
-    package = pkgs.qogir-icon-theme;
+    package = pkgs.gnome.adwaita-icon-theme;
   };
   iconTheme = {
-    name = "MoreWaita";
-    package = pkgs.morewaita-icon-theme;
+    name = "Adwaita";
+    package = pkgs.gnome.adwaita-icon-theme;
   };
 in
 
@@ -114,8 +114,7 @@ in
 
         qt = {
           enable = true;
-          # TODO(24.11) The option `qt.platformTheme` has been renamed to `qt.platformTheme.name`.
-          platformTheme = "kde";
+          platformTheme.name = "kde";
         };
       };
   };

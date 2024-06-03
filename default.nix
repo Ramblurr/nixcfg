@@ -27,8 +27,8 @@ with lib.my;
     extraOptions = "experimental-features = nix-command flakes";
 
     settings = {
+      extra-substituters = [ "https://attic.mgmt.${config.repo.secrets.global.domain.home}/socozy" ];
       substituters = [
-        "https://attic.mgmt.${config.repo.secrets.global.domain.home}/socozy"
         "https://hyprland.cachix.org"
         "https://nixpkgs-wayland.cachix.org"
         #"https://unmatched.cachix.org"
