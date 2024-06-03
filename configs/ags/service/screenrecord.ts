@@ -17,6 +17,7 @@ const screenshotDir = () => {
   }
   return Utils.HOME + "/Pictures/Screencasting";
 };
+
 class Recorder extends Service {
   static {
     Service.register(
@@ -45,7 +46,7 @@ class Recorder extends Service {
     Utils.ensureDirectory(this.#recordings);
     this.#file = `${this.#recordings}/${now()}.mp4`;
     sh(
-      `wf-recorder -g ${await sh("slurp")} -f ${this.#file} --pixel-format yuv420p`,
+      `wf-recorder -g "${await sh("slurp")}" -f ${this.#file} --pixel-format yuv420p`,
     );
 
     this.recording = true;
@@ -106,14 +107,7 @@ class Recorder extends Service {
             sh(`xdg-open ${this.#screenshots}`);
           }
         },
-        View: () => {
-          if (dependencies("re.sonny.Junction")) {
-            sh(`re.sonny.Junction ${file}`);
-          } else {
-            sh(`xdg-open ${file}`);
-          }
-        },
-        Copy: () => sh(`cat ${file} | wl-copy`),
+        View: () => sh(`xdg-open ${file}`),
         Edit: () => {
           if (dependencies("satty")) sh(`satty -f ${file}`);
         },

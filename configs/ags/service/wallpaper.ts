@@ -1,15 +1,19 @@
+import options from "options"
 import { dependencies, sh } from "lib/utils"
 
-const wpConfig = {
-    resolution: 1920 as 1920 | 1366 | 3840,
-    format: "json",
-    image_format: "jpg",
-    index: "random",
-    mkt: "random" as "en-US" | "ja-JP" | "en-AU" | "en-GB" | "de-DE" | "en-NZ" | "en-CA" | "random",
-}
+export type Resolution = 1920 | 1366 | 3840
+export type Market =
+    | "random"
+    | "en-US"
+    | "ja-JP"
+    | "en-AU"
+    | "en-GB"
+    | "de-DE"
+    | "en-NZ"
+    | "en-CA"
 
 const WP = `${Utils.HOME}/.config/background`
-const Cache = `${Utils.HOME}/Pictures/Wallpaper/Bing`
+const Cache = `${Utils.HOME}/Pictures/Wallpapers/Bing`
 
 class Wallpaper extends Service {
     static {
@@ -27,6 +31,7 @@ class Wallpaper extends Service {
         sh("hyprctl cursorpos").then(pos => {
             sh([
                 "swww", "img",
+                "--invert-y",
                 "--transition-type", "grow",
                 "--transition-pos", pos.replace(" ", ""),
                 WP,
@@ -47,7 +52,13 @@ class Wallpaper extends Service {
 
     async #fetchBing() {
         const res = await Utils.fetch("https://bing.biturl.top/", {
-            params: wpConfig,
+            params: {
+                resolution: options.wallpaper.resolution.value,
+                format: "json",
+                image_format: "jpg",
+                index: "random",
+                mkt: options.wallpaper.market.value,
+            },
         }).then(res => res.text())
 
         if (!res.startsWith("{"))
@@ -79,11 +90,10 @@ class Wallpaper extends Service {
                 this.#wallpaper()
         })
 
-        Utils.execAsync("swww init")
+        Utils.execAsync("swww-daemon")
             .then(this.#wallpaper)
             .catch(() => null)
     }
 }
 
-export const wallpaper = new Wallpaper
-export default wallpaper
+export default new Wallpaper
