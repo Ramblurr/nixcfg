@@ -34,6 +34,27 @@ in
       quickgui
     ];
 
+    programs.nix-ld = {
+      enable = true;
+      libraries = with pkgs; [
+        stdenv.cc.cc
+        openssl
+        glib
+      ];
+    };
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".local/share/containers"
+          ".config/containers"
+          ".cache/pre-commit"
+          ".config/gh"
+          ".config/github-copilot"
+          ".config/docker"
+        ];
+      };
+    };
     myhm = {
       programs.gh = {
         enable = true;
@@ -78,20 +99,6 @@ in
         shadowsocks-rust
         ssh-to-age
       ];
-
-      persistence = mkIf withImpermanence {
-        directories = [
-          {
-            method = "symlink";
-            directory = ".local/share/containers";
-          }
-          ".config/containers"
-          ".cache/pre-commit"
-          ".config/gh"
-          ".config/github-copilot"
-          ".config/docker"
-        ];
-      };
     };
   };
 }

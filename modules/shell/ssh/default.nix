@@ -19,11 +19,16 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [ ".ssh" ];
+      };
+    };
     home-manager.users."${username}" = {
       # note using home-manager programs.ssh because of
       # https://github.com/nix-community/home-manager/issues/322
       home.file.".ssh/control/.keep".text = "";
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence { directories = [ ".ssh" ]; };
     };
   };
 }

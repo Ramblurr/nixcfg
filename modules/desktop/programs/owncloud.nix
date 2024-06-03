@@ -19,9 +19,14 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [ ".config/ownCloud" ];
+      };
+    };
     myhm = {
       home.packages = [ pkgs.owncloud-client ];
-      persistence = mkIf withImpermanence { directories = [ ".config/ownCloud" ]; };
     };
   };
 }

@@ -26,12 +26,11 @@ in
       enable = true;
       polkitPolicyOwners = [ username ];
     };
-    myhm = {
-      #home.packages = [
-      #  pkgs._1password-gui
-      #  pkgs._1password
-      #];
-      persistence = mkIf withImpermanence { directories = [ ".config/1Password" ]; };
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [ ".config/1Password" ];
+      };
     };
   };
 }

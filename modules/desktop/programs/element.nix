@@ -26,6 +26,17 @@ in
       "d '/persist${homeDirectory}/.config/Element-work' - ${username} ${username} - -"
       "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
     ];
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/Element"
+          ".config/Element-work"
+          ".config/Element-personal"
+          ".config/iamb"
+        ];
+      };
+    };
     home-manager.users."${username}" =
       { pkgs, config, ... }@hm:
       {
@@ -34,23 +45,23 @@ in
           pkgs.iamb
         ];
 
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-          directories = [
-            {
-              method = "symlink";
-              directory = ".config/Element";
-            }
-            {
-              method = "symlink";
-              directory = ".config/Element-work";
-            }
-            {
-              method = "symlink";
-              directory = ".config/Element-personal";
-            }
-            ".config/iamb"
-          ];
-        };
+        #home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+        #  directories = [
+        #    {
+        #      method = "symlink";
+        #      directory = ".config/Element";
+        #    }
+        #    {
+        #      method = "symlink";
+        #      directory = ".config/Element-work";
+        #    }
+        #    {
+        #      method = "symlink";
+        #      directory = ".config/Element-personal";
+        #    }
+        #    ".config/iamb"
+        #  ];
+        #};
         home.file.".local/share/applications/element-desktop-work.desktop" = {
           text = ''
             [Desktop Entry]
