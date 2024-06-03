@@ -70,7 +70,7 @@ in
         programs.zsh = {
           enable = true;
           autocd = true;
-          enableAutosuggestions = true;
+          autosuggestion.enable = true;
           enableCompletion = true;
           syntaxHighlighting.enable = true;
           dotDir = ".config/zsh";

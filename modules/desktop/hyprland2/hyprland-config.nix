@@ -32,7 +32,7 @@ in
           timeouts = [
             {
               timeout = 549;
-              command = ''${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/Qogir-ubuntu-dark/symbolic/actions/screensaver-unlock-symbolic.svg  "Idle timeout" "Screen is locking in 1 minute"'';
+              command = ''${pkgs.libnotify}/bin/notify-send -t 15000 -u critical -i /etc/profiles/per-user/${username}/share/icons/Adwaita/symbolic/status/system-lock-screen-symbolic.svg  "Idle timeout" "Screen is locking in 1 minute"'';
             }
             {
               timeout = 550;
@@ -52,7 +52,7 @@ in
           settings = {
             exec-once = [
               "ags -b hypr"
-              "hyprctl setcursor Qogir 24"
+              "hyprctl setcursor Adwaita 24"
             ];
             monitor = [
               "DP-2,highres,0x2160,1"

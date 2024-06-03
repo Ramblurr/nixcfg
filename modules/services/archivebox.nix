@@ -80,6 +80,10 @@ in
         home.stateVersion = "21.11";
         home.homeDirectory = homeDir;
         home.packages = [ pkgs.podman ];
+        home.sessionVariables = {
+          EDITOR = "vim";
+          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${cfg.user.uid}/bus";
+        };
         systemd.user.startServices = "sd-switch";
         programs.bash.enable = true;
         home.sessionVariables.XDG_RUNTIME_DIR = "/run/user/${toString cfg.user.uid}";

@@ -38,7 +38,7 @@ in
     home-manager.users."${username}" =
       let
         devSDKs = with pkgs; {
-          openjfx = javaPackages.openjfx19;
+          openjfx = javaPackages.openjfx21;
           gtk3 = gtk3;
           libXxf86vm = xorg.libXxf86vm;
           #jogl_2_4_0 = javaPackages.jogl_2_4_0;
@@ -48,7 +48,6 @@ in
         home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
         home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
         home.file."vendor/jdks/openjdk17".source = pkgs.openjdk17;
-        home.file."vendor/jdks/openjdk19".source = pkgs.openjdk19;
         home.file."vendor/jdks/openjdk21".source = pkgs.openjdk21;
         home.packages = with pkgs; [
           neil
@@ -60,11 +59,11 @@ in
           leiningen
           babashka
           polylith
-          javaPackages.openjfx19
+          javaPackages.openjfx21
           #javaPackages.jogl_2_4_0
           gtk3
           xorg.libXxf86vm
-          pkgs.my.bootleg
+          #pkgs.my.bootleg
           jdt-language-server
         ];
         home.file.".local/dev".source =

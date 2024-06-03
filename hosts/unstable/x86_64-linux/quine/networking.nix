@@ -51,16 +51,16 @@
         dhcpV4Config.RouteMetric = 512;
         routes = [
           {
-            routeConfig = {
-              Destination = "192.168.8.0/22";
-              Gateway = "10.9.4.27";
-            };
+            #routeConfig = {
+            Destination = "192.168.8.0/22";
+            Gateway = "10.9.4.27";
+            #};
           }
         ];
       };
       "40-vlmgmt9" = {
         matchConfig.Name = "vlmgmt9";
-        addresses = map (addr: { addressConfig.Address = addr; }) [ "10.9.8.33/23" ];
+        addresses = map (addr: { Address = addr; }) [ "10.9.8.33/23" ];
         networkConfig = {
           DHCP = "no";
           #IPForward = "yes";
