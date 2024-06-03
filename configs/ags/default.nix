@@ -36,7 +36,6 @@ let
     brightnessctl
     swww
     inputs.matugen.packages.${system}.default
-    inputs.hyprland.packages.${system}.default
     slurp
     wf-recorder
     wl-clipboard
@@ -59,8 +58,7 @@ let
     ${ags}/bin/ags -- -c ${config}/greeter.js
   '';
   greeter = writeShellScript "greeter" ''
-    export PATH=$PATH:${addBins dependencies}
-
+     export PATH=$PATH:${addBins dependencies}
     ${cage}/bin/cage -ds -m last ${greeter-inner}
   '';
 
