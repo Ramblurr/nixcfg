@@ -19,6 +19,7 @@ let
 in
 {
   imports = [
+    ../../../../modules/_config/secrets.nix
     ./hardware-configuration.nix
     ./networking.nix
   ];
