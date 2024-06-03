@@ -21,6 +21,7 @@ let
 in
 {
   imports = [
+    ../../../../modules/_config/secrets.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./nfs.nix
@@ -128,7 +129,7 @@ in
     source = config.sops.secrets.fastKey.path;
   };
 
-  users.groups = {
+  users.groups = (removeAttrs home-ops.groups [ "media" ]) // {
     k8s-nfs.gid = 2000;
     proxmox.gid = 1004;
     zigbee2mqtt.gid = 1006;
@@ -136,8 +137,8 @@ in
     hassos.gid = 1018;
     photo-backup.gid = 3000;
     atticd.gid = 1019;
-  } // home-ops.groups;
-  users.users = home-ops.users // {
+  };
+  users.users = (removeAttrs home-ops.users [ "media" ]) // {
     k8s-nfs = {
       group = "k8s-nfs";
       uid = 2000;
@@ -170,6 +171,9 @@ in
       group = "atticd";
       isSystemUser = true;
       uid = 1009;
+    };
+    plex = home-ops.users.plex // {
+      extraGroups = [ "k8s-nfs" ];
     };
   };
   services.smartd.enable = true;

@@ -47,6 +47,7 @@ in
       };
       systemd.services."boot-mail-alert" = {
         wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
         after = [
           "network.target"
           "network-online.target"
@@ -59,6 +60,7 @@ in
       };
       systemd.services."shutdown-mail-alert" = {
         wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
         after = [
           "network.target"
           "network-online.target"
