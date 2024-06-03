@@ -42,12 +42,6 @@ in
     group = lib.mkOption { type = lib.types.unspecified; };
   };
 
-  disabledModules = [
-    "${inputs.nixpkgs-stable}/nixos/modules/services/misc/paperless.nix"
-    "${inputs.nixpkgs-unstable}/nixos/modules/services/misc/paperless.nix"
-  ];
-  imports = [ "${inputs.nixpkgs-mine}/nixos/modules/services/misc/paperless.nix" ];
-
   config = lib.mkIf cfg.enable {
 
     modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
