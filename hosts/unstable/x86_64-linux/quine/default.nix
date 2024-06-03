@@ -217,10 +217,6 @@ in
           path = "ssh://borg@mali.int.${domain.home}/mnt/tank2/backups/borg_repos/aquinas";
         }
         {
-          label = "offsite";
-          path = "\${OFFSITE_REPOSITORY}";
-        }
-        {
           label = "offsite2";
           path = "\${OFFSITE_REPOSITORY2}";
         }
