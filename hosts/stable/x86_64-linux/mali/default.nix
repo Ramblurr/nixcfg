@@ -37,11 +37,10 @@ in
     ./avahi.nix
     ./beets.nix
     ./atticd.nix
+    ./rclone.nix
   ];
   # TODO
-  # rclone
   # firewall check
-  # impermanence for all custom config
   # atuin sycn services.atuin https://github.com/Mic92/dotfiles/blob/3ffb89b624ea21d3be3584f44d1335237e3daf9a/nixos/eve/modules/atuin.nix#L6
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
