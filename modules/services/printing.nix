@@ -23,9 +23,7 @@ in
     services.printing.enable = true;
     services.printing.drivers = cfg.drivers;
     services.avahi.enable = mkDefault true;
-    # TODO(24.05): deprecation once 24.05 hits
-    services.avahi.nssmdns = mkDefault true;
-    # services.avahi.nssmdns4 = mkDefault true;
+    services.avahi.nssmdns4 = mkDefault true;
     # for a WiFi printer
     services.avahi.openFirewall = mkDefault true;
   };

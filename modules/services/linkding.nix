@@ -77,6 +77,10 @@ in
         home.homeDirectory = homeDir;
         home.packages = [ pkgs.podman ];
         systemd.user.startServices = "sd-switch";
+        home.sessionVariables = {
+          EDITOR = "vim";
+          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${cfg.user.uid}/bus";
+        };
         virtualisation.user.quadlet = {
           autoUpdate.enable = true;
           containers = {

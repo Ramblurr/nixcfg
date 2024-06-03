@@ -12,6 +12,51 @@ let
   cfg = config.modules.desktop.gaming;
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
+
+  steam-with-pkgs = pkgs.steam.override {
+    extraPkgs =
+      pkgs:
+      let
+        fontsPkg =
+          pkgs:
+          (pkgs.runCommand "share-fonts" { preferLocalBuild = true; } ''
+            mkdir -p "$out/share/fonts"
+            font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
+            find ${toString (config.fonts.packages)} -regex "$font_regexp" \
+              -exec ln -sf -t "$out/share/fonts" '{}' \;
+          '');
+      in
+      with pkgs;
+      [
+        (fontsPkg pkgs)
+        at-spi2-atk
+        #binutils  # this conflicts with the gcc package
+        fmodex
+        gtk3
+        gtk3-x11
+        harfbuzz
+        icu
+        glxinfo
+        inetutils
+        keyutils
+        libgdiplus
+        libkrb5
+        libpng
+        libpulseaudio
+        libthai
+        libvorbis
+        mono5
+        pango
+        stdenv.cc.cc.lib
+        strace
+        xorg.libXcursor
+        xorg.libXi
+        xorg.libXinerama
+        xorg.libXScrnSaver
+        zlib
+        libunwind # for titanfall 2 Northstart launcher
+      ];
+  };
 in
 {
   options.modules.desktop.gaming = {
@@ -53,50 +98,7 @@ in
         if pkgs.system == "x86_64-linux" then
           {
             enable = true;
-            package = pkgs.steam.override {
-              extraPkgs =
-                pkgs:
-                let
-                  fontsPkg =
-                    pkgs:
-                    (pkgs.runCommand "share-fonts" { preferLocalBuild = true; } ''
-                      mkdir -p "$out/share/fonts"
-                      font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-                      find ${toString (config.fonts.packages)} -regex "$font_regexp" \
-                        -exec ln -sf -t "$out/share/fonts" '{}' \;
-                    '');
-                in
-                with pkgs;
-                [
-                  (fontsPkg pkgs)
-                  at-spi2-atk
-                  #binutils  # this conflicts with the gcc package
-                  fmodex
-                  gtk3
-                  gtk3-x11
-                  harfbuzz
-                  icu
-                  glxinfo
-                  inetutils
-                  keyutils
-                  libgdiplus
-                  libkrb5
-                  libpng
-                  libpulseaudio
-                  libthai
-                  libvorbis
-                  mono5
-                  pango
-                  stdenv.cc.cc.lib
-                  strace
-                  xorg.libXcursor
-                  xorg.libXi
-                  xorg.libXinerama
-                  xorg.libXScrnSaver
-                  zlib
-                  libunwind # for titanfall 2 Northstart launcher
-                ];
-            };
+            package = steam-with-pkgs;
             extraCompatPackages = [ pkgs.proton-ge-bin.steamcompattool ];
             remotePlay.openFirewall = true;
           }
@@ -148,6 +150,13 @@ in
         #  ];
         #};
 
+        home.file.".local/share/Steam/steam_dev.cfg" = {
+          text = ''
+            @nClientDownloadEnableHTTP2PlatformLinux 0
+            @fDownloadRateImprovementToAddAnotherConnection 1.0
+          '';
+        };
+
         home.file.".local/share/applications/steam.desktop" = {
           text = ''
             [Desktop Entry]
@@ -167,10 +176,8 @@ in
           evtest # misc input debug
           linuxConsoleTools # joystick testing
           protonup-ng # latest and greatest proton
-
           vkbasalt
           goverlay
-
           steamtinkerlaunch
           steam-run
           protontricks

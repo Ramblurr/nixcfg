@@ -119,7 +119,7 @@ in
       enable = true;
       settings.default_session.command = pkgs.writeShellScript "greeter" ''
         export XKB_DEFAULT_LAYOUT=${config.services.xserver.xkb.layout}
-        export XCURSOR_THEME=Qogir
+        export XCURSOR_THEME=Adwaita
         ${cfg.ags-config}/bin/greeter
       '';
     };
