@@ -197,5 +197,9 @@ in
       "/var/lib/systemd/coredump"
     ];
     files = [ ];
+
+    users.${ramblurr.username} = {
+      directories = [ ".config/rclone" ];
+    };
   };
 }
