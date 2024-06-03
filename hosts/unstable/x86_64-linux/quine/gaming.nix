@@ -115,29 +115,38 @@ in
       # TODO: fork? test? try with regular xbox controller
       # xboxdrv.enable = true; # userspace xbox driver
     };
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/lutris"
+          ".local/share/lutris"
+          ".local/share/bottles"
+          ".local/share/applications/wine"
+          ".config/heroic"
+          ".config/legendary"
+          ".config/steamtinkerlaunch"
+          ".local/share/Steam"
+          ".steam"
+        ];
+      };
+    };
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
-        home.persistence."/persist/home/${username}" = mkIf withImpermanence {
-          directories = [
-            ".config/lutris"
-            ".local/share/lutris"
-            ".local/share/bottles"
-            ".local/share/applications/wine"
-            ".config/heroic"
-            ".config/legendary"
-            ".config/steamtinkerlaunch"
-            # NOTE this is very important. the steam dirs must be symlinked, otherwise steam will not load properly and the system will hang
-            {
-              method = "symlink";
-              directory = ".local/share/Steam";
-            }
-            {
-              method = "symlink";
-              directory = ".steam";
-            }
-          ];
-        };
+        #home.persistence."/persist/home/${username}" = mkIf withImpermanence {
+        #  directories = [
+        #    # NOTE this is very important. the steam dirs must be symlinked, otherwise steam will not load properly and the system will hang
+        #    {
+        #      method = "symlink";
+        #      directory = ".local/share/Steam";
+        #    }
+        #    {
+        #      method = "symlink";
+        #      directory = ".steam";
+        #    }
+        #  ];
+        #};
 
         home.file.".local/share/applications/steam.desktop" = {
           text = ''

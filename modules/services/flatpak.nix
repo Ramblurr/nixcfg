@@ -20,8 +20,15 @@ in
   };
   config = mkIf cfg.enable {
     services.flatpak.enable = true;
-    environment.persistence."/persist" = {
+    environment.persistence."/persist" = mkIf withImpermanence {
       directories = [ "/var/lib/flatpak" ];
+      users.${username} = {
+        directories = [
+          ".cache/flatpak"
+          ".local/share/flatpak"
+          ".var/app"
+        ];
+      };
     };
     # Workaround for https://github.com/NixOS/nixpkgs/issues/119433#issuecomment-1694123978
     system.fsPackages = [ pkgs.bindfs ];
@@ -68,15 +75,6 @@ in
       timerConfig = {
         OnCalendar = "daily";
         Persistent = "true";
-      };
-    };
-    home-manager.users."${username}" = {
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        directories = [
-          ".cache/flatpak"
-          ".local/share/flatpak"
-          ".var/app"
-        ];
       };
     };
   };

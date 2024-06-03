@@ -19,13 +19,16 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [ ".config/Slack" ];
+      };
+    };
     home-manager.users."${username}" =
       { pkgs, config, ... }@hm:
       {
         home.packages = [ pkgs.slack ];
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-          directories = [ ".config/Slack" ];
-        };
       };
   };
 }

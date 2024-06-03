@@ -21,7 +21,18 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+
     environment.systemPackages = [ pkgs.firefoxpwa ];
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".mozilla/extensions"
+          ".mozilla/firefox"
+          ".cache/mozilla/firefox"
+        ];
+      };
+    };
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
@@ -63,14 +74,6 @@ in
               "browser.sessionstore.resume_from_crash" = false;
             };
           };
-        };
-
-        home.persistence."/persist${homeDirectory}" = {
-          directories = [
-            ".mozilla/extensions"
-            ".mozilla/firefox"
-            ".cache/mozilla/firefox"
-          ];
         };
 
         home.file."firefox-gnome-theme" = {

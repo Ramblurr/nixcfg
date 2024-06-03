@@ -19,17 +19,19 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        directories = [
+          ".config/nheko"
+          ".cache/nheko"
+          ".local/share/nheko"
+        ];
+      };
+    };
     home-manager.users."${username}" =
       { pkgs, config, ... }@hm:
       {
         home.packages = with pkgs; [ nheko ];
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-          directories = [
-            ".config/nheko"
-            ".cache/nheko"
-            ".local/share/nheko"
-          ];
-        };
       };
   };
 }
