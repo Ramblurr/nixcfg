@@ -12,6 +12,7 @@ let
 in
 {
   imports = [
+    inputs.microvm.nixosModules.host
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
@@ -99,7 +100,7 @@ in
         };
       };
       programs = {
-        aseprite.enable = false;
+        aseprite.enable = true;
         calibre.enable = true;
         chrysalis.enable = true;
         discord.enable = true;
@@ -214,7 +215,7 @@ in
       repositories = [
         {
           label = "mali";
-          path = "ssh://borg@mali.int.${domain.home}/mnt/tank2/backups/borg_repos/aquinas";
+          path = "\${NAS_REPOSITORY}";
         }
         {
           label = "offsite2";

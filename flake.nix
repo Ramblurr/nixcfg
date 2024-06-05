@@ -7,6 +7,9 @@
 
     nixfmt.url = "github:serokell/nixfmt";
 
+    microvm.url = "github:astro/microvm.nix";
+    microvm.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
     ags.url = "github:Aylur/ags";
     ags.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
