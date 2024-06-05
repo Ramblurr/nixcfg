@@ -82,7 +82,7 @@ in
         home.packages = [ pkgs.podman ];
         home.sessionVariables = {
           EDITOR = "vim";
-          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${cfg.user.uid}/bus";
+          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString cfg.user.uid}/bus";
         };
         systemd.user.startServices = "sd-switch";
         programs.bash.enable = true;
