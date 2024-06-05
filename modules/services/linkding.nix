@@ -79,7 +79,7 @@ in
         systemd.user.startServices = "sd-switch";
         home.sessionVariables = {
           EDITOR = "vim";
-          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${cfg.user.uid}/bus";
+          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString cfg.user.uid}/bus";
         };
         virtualisation.user.quadlet = {
           autoUpdate.enable = true;
