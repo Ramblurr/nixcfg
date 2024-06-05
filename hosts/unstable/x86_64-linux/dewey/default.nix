@@ -60,6 +60,7 @@ in
       matrix-synapse.enable = true;
       influxdb.enable = true;
       git-archive.enable = true;
+      forgejo.enable = true;
     };
   };
 

@@ -72,6 +72,7 @@ in
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
       influxdb.enable = lib.mkEnableOption "Influxdb";
       git-archive.enable = lib.mkEnableOption "Git-Archive";
+      forgejo.enable = lib.mkEnableOption "Forgejo";
     };
   };
 
@@ -713,5 +714,14 @@ in
         }
       else
         { };
+
+    modules.services.forgejo = lib.mkIf cfg.apps.forgejo.enable {
+      enable = true;
+      domain = "git.${home-ops.homeDomain}";
+      #ports.http = home-ops.ports.forgejo;
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
   };
 }
