@@ -82,36 +82,38 @@ in
         exclude_caches = true;
         exclude_patterns = cfg.exclude-patterns;
         exclude_if_present = [ ".nobackup" ];
-        storage = {
-          encryption_passphrase = "\${PASSPHRASE}";
-          ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
-          archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
+        #storage = {
+        encryption_passphrase = "\${PASSPHRASE}";
+        ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
+        archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
+        #};
+        #retention = {
+        keep_within = "1d";
+        keep_daily = 7;
+        keep_weekly = 4;
+        keep_monthly = 6;
+        keep_yearly = 2;
+        match_archives = "${cfg.name}";
+        #};
+        #consistency = {
+        #prefix = "${cfg.name}";
+        check_last = 3;
+        checks = [
+          {
+            name = "repository";
+            frequency = "4 weeks";
+          }
+          {
+            name = "archives";
+            frequency = "6 weeks";
+          }
+        ];
+        #};
+        #hooks = {
+        healthchecks = {
+          ping_url = "\${HEALTHCHECK_URL}";
         };
-        retention = {
-          keep_within = "1d";
-          keep_daily = 7;
-          keep_weekly = 4;
-          keep_monthly = 6;
-          keep_yearly = 2;
-          prefix = "${cfg.name}";
-        };
-        consistency = {
-          prefix = "${cfg.name}";
-          check_last = 3;
-          checks = [
-            {
-              name = "repository";
-              frequency = "4 weeks";
-            }
-            {
-              name = "archives";
-              frequency = "6 weeks";
-            }
-          ];
-        };
-        hooks = {
-          healthchecks = "\${HEALTHCHECK_URL}";
-        };
+        #};
       };
     };
   };
