@@ -71,6 +71,9 @@ in
 
     home-manager.users.${cfg.user.name} =
       { pkgs, config, ... }:
+      let
+        homeManagerSessionVars = "";
+      in
       {
         imports = [ inputs.quadlet-nix.homeManagerModules.default ];
         home.stateVersion = "21.11";
@@ -80,6 +83,13 @@ in
         home.sessionVariables = {
           EDITOR = "vim";
           DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString cfg.user.uid}/bus";
+          XDG_RUNTIME_DIR = "/run/user/${toString cfg.user.uid}";
+        };
+        programs.bash = {
+          enable = true;
+          initExtra = ''
+            [[ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
+          '';
         };
         virtualisation.user.quadlet = {
           autoUpdate.enable = true;
