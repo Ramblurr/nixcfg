@@ -80,13 +80,18 @@ in
         home.stateVersion = "21.11";
         home.homeDirectory = homeDir;
         home.packages = [ pkgs.podman ];
+        systemd.user.startServices = "sd-switch";
         home.sessionVariables = {
           EDITOR = "vim";
           DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString cfg.user.uid}/bus";
+          XDG_RUNTIME_DIR = "/run/user/${toString cfg.user.uid}";
         };
-        systemd.user.startServices = "sd-switch";
-        programs.bash.enable = true;
-        home.sessionVariables.XDG_RUNTIME_DIR = "/run/user/${toString cfg.user.uid}";
+        programs.bash = {
+          enable = true;
+          initExtra = ''
+            [[ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
+          '';
+        };
         virtualisation.user.quadlet = {
           autoUpdate.enable = true;
           containers =
