@@ -73,6 +73,7 @@ in
       influxdb.enable = lib.mkEnableOption "Influxdb";
       git-archive.enable = lib.mkEnableOption "Git-Archive";
       forgejo.enable = lib.mkEnableOption "Forgejo";
+      actual-server.enable = lib.mkEnableOption "Actual Budget Server";
     };
   };
 
@@ -719,6 +720,15 @@ in
       enable = true;
       domain = "git.${home-ops.homeDomain}";
       #ports.http = home-ops.ports.forgejo;
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.actual-server = lib.mkIf cfg.apps.actual-server.enable {
+      enable = true;
+      domain = "budget.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.actual-server;
       ingress = {
         domain = home-ops.homeDomain;
       };

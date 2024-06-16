@@ -61,6 +61,7 @@ in
       influxdb.enable = true;
       git-archive.enable = true;
       forgejo.enable = true;
+      actual-server.enable = true;
     };
   };
 
