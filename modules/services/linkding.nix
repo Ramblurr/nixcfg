@@ -105,7 +105,7 @@ in
               };
               containerConfig = {
                 # renovate: docker-image
-                image = "docker.io/sissbruecker/linkding:1.30.0";
+                image = "docker.io/sissbruecker/linkding:1.31.0";
                 autoUpdate = "registry";
                 userns = "keep-id";
                 publishPorts = [ "127.0.0.1:${httpPort}:9090" ];
