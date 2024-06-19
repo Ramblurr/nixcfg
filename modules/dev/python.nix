@@ -38,7 +38,7 @@ in
       ))
     ];
     home-manager.users."${username}" = {
-      home.packages = with pkgs; [ nodePackages_latest.pyright ];
+      home.packages = with pkgs; [ pyright ];
       home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
         directories = [ ".cache/pypoetry/virtualenvs/" ];
       };

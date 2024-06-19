@@ -7,8 +7,12 @@
 {
   virtualisation.libvirtd = {
     enable = true;
+    allowedBridges = [
+      "virbr0"
+      "brprim4"
+    ];
   };
-  services.nfs.server.enable = true;
+  #services.nfs.server.enable = true;
 
   # Add firewall exception for VirtualBox provider
   #networking.firewall.extraCommands = ''
@@ -16,8 +20,8 @@
   #'';
 
   # Add firewall exception for libvirt provider when using NFSv4
-  networking.firewall.interfaces."virbr1" = {
-    allowedTCPPorts = [ 2049 ];
-    allowedUDPPorts = [ 2049 ];
-  };
+  #networking.firewall.interfaces."virbr1" = {
+  #  allowedTCPPorts = [ 2049 ];
+  #  allowedUDPPorts = [ 2049 ];
+  #};
 }
