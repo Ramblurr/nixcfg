@@ -59,14 +59,28 @@ in
   sops.templates."nix.conf".content = ''
     access-tokens = github.com=${config.sops.placeholder."github_token"}
   '';
-  nix.extraOptions = ''
-    !include ${config.sops.templates."nix.conf".path}
-  '';
-  nix.settings.extra-substituters = [ "https://attic.mgmt.${domain.home}/socozy" ];
-  nix.settings.extra-trusted-public-keys = [
-    "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-  ];
-  nix.settings.netrc-file = config.sops.secrets.netrc.path;
+
+  nix = {
+    settings = {
+      substituters = [
+        "https://hyprland.cachix.org"
+        "https://nixpkgs-wayland.cachix.org"
+        "https://nix-community.cachix.org"
+        "https://nix-gaming.cachix.org"
+      ];
+      trusted-public-keys = [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+        "nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="
+        "nixpkgs-wayland.cachix.org-1:3lwxaILxMRkVhehr5StQprHdEo4IrE8sRho9R9HOLYA="
+      ];
+      netrc-file = config.sops.secrets.netrc.path;
+    };
+
+    extraOptions = ''
+      !include ${config.sops.templates."nix.conf".path}
+    '';
+  };
   modules = {
     desktop = {
       hyprland2.enable = true;
@@ -111,7 +125,7 @@ in
         kicad.enable = false;
         kitty.enable = true;
         logseq.enable = true;
-        nextcloud.enable = true;
+        nextcloud.enable = false;
         nheko.enable = true;
         obs.enable = false;
         onepassword.enable = true;
@@ -161,7 +175,7 @@ in
       node.enable = true;
       python.enable = true;
       random.enable = true;
-      radicle.enable = true;
+      radicle.enable = false;
     };
 
     editors = {
@@ -202,6 +216,7 @@ in
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
+        "kvm"
         "audio"
         "flatpak"
         "input"
@@ -224,6 +239,7 @@ in
       ];
       exclude-patterns = [
         "etc/ssl"
+        "persist/home/*/.m2"
         "persist/home/*/.cache"
         "persist/home/*/.var"
         "persist/home/*/.local/lib"

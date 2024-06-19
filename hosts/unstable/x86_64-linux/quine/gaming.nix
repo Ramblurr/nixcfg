@@ -183,11 +183,11 @@ in
           protontricks
           prismlauncher
           input-remapper
-          heroic
-          bottles
+          #heroic
+          #bottles
           gamescope
-          lutris
-          wineWowPackages.waylandFull
+          #lutris
+          #wineWowPackages.waylandFull
           winetricks
         ];
         programs = {

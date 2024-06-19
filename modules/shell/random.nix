@@ -24,6 +24,7 @@ in
       { ... }@hm:
       {
         home.packages = with pkgs; [
+          graphviz
           (openai-whisper-cpp.override { cudaSupport = true; })
           openai-whisper
           smem
