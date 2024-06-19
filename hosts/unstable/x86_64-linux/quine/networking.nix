@@ -8,7 +8,7 @@
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   systemd.network = {
     netdevs = {
-      "20-vlmgmt" = {
+      "20-vlprim4" = {
         netdevConfig = {
           Kind = "vlan";
           Name = "vlprim4";
@@ -27,6 +27,20 @@
           Id = 9;
         };
       };
+      "30-brprim4" = {
+        netdevConfig = {
+          Name = "brprim4";
+          Kind = "bridge";
+          MTUBytes = "1500";
+        };
+      };
+
+      #"30-virbr0" = {
+      #  netdevConfig = {
+      #    Kind = "bridge";
+      #    Name = "virbr0";
+      #  };
+      #};
     };
     networks = {
       "10-eno1" = {
@@ -37,8 +51,19 @@
         ];
       };
 
-      "30-vlprim4" = {
-        matchConfig.Name = "vlprim4";
+      "20-vlprim4" = {
+        matchConfig = {
+          Name = [
+            "vlprim4"
+            "vm-*"
+          ];
+        };
+        networkConfig = {
+          Bridge = "brprim4";
+        };
+      };
+      "30-brprim4" = {
+        matchConfig.Name = "brprim4";
         linkConfig.RequiredForOnline = "routable";
         networkConfig = {
           DHCP = "yes";
@@ -51,10 +76,8 @@
         dhcpV4Config.RouteMetric = 512;
         routes = [
           {
-            #routeConfig = {
             Destination = "192.168.8.0/22";
             Gateway = "10.9.4.27";
-            #};
           }
         ];
       };
@@ -68,6 +91,18 @@
         };
         domains = config.repo.secrets.local.dns.domains;
       };
+      #"4-virbr0" = {
+      #  matchConfig.Name = "virbr0";
+      #  enable = true;
+      #  address = [
+      #    "10.0.3.20/24"
+      #    "2001:470:f026:103::20/64"
+      #  ];
+      #  routes = [
+      #    { routeConfig.Gateway = "10.0.3.1"; }
+      #    { routeConfig.Gateway = "2001:470:f026:103::1"; }
+      #  ];
+      #};
     };
   };
 }

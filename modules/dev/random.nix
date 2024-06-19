@@ -60,6 +60,7 @@ in
         enable = true;
       };
       home.packages = with pkgs; [
+        hclfmt
         virt-manager
         cue
         rpi-imager

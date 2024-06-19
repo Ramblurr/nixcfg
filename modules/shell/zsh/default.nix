@@ -102,6 +102,7 @@ in
             }
           ];
           shellAliases = {
+            "borgmatic" = "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env borgmatic";
             "mvm" = ''mvn -gs "$XDG_CONFIG_HOME"/maven/settings.xml'';
             "open" = "re.sonny.Junction";
             "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";
