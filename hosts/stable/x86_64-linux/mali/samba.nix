@@ -73,9 +73,9 @@ in
         writeable = "no";
       };
       paperless = {
-        path = "/mnt/tank2/services/paperless.k8s.${domain.home}";
+        path = "/mnt/tank2/services/paperless";
         browseable = "yes";
-        "force user" = "k8s-nfs";
+        "force user" = "paperless";
         "guest ok" = "no";
         public = "no";
         "read only" = "no";
