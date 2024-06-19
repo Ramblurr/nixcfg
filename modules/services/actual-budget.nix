@@ -104,8 +104,7 @@ in
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:${httpPort}";
-      forwardAuth = true;
-      upstreamExtraConfig = '''';
+      forwardAuth = false;
     };
   };
 }
