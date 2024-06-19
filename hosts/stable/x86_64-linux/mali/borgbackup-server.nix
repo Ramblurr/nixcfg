@@ -19,6 +19,12 @@ in
         "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBM9LkzTZXu/qsSuj+rdy24BBySWOLSmjcfA142AZcXJ5bDIrjWPHBg5pm0iroaRqC5eArWCD6VFA4e8cQzTzJE4="
       ];
     };
+    work = {
+      path = "/mnt/tank2/backups/borg_repos/work";
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDu4mlO4RTeRKGY0Whb2r0u9iM2I6+Rr2hKlQhhlLv25"
+      ];
+    };
     proxmox = {
       path = "/mnt/tank2/backups/borg_repos/proxmox";
       authorizedKeys = [
