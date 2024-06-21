@@ -22,5 +22,6 @@ pkgs-stable.lib.makeScope pkgs-stable.newScope (
     overseerr = callPackage ./overseerr { };
     actual-server = callPackage ./actual-server { };
     cloudflare-utils = callPackage ./cloudflare-utils { };
+    qobuz-dl = callPackage ./qobuz-dl { };
   }
 )

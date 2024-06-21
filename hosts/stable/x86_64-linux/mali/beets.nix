@@ -11,6 +11,8 @@
       programs.zsh.shellAliases = {
         beet-mine = "beet --config ~/.config/beets/config.mine.yaml";
       };
+
+      home.packages = [ pkgs.my.qobuz-dl ];
       programs.beets = {
         enable = true;
 
