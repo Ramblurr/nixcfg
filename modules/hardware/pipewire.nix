@@ -62,7 +62,9 @@ in
   };
   config = mkIf cfg.enable {
     security.rtkit.enable = true;
-    sound.enable = true;
+
+    # Vehemently do not use plain alsa or pulse audio, pipewire has its own alsa and pulse compat support
+    sound.enable = pkgs.lib.mkForce false;
     hardware.pulseaudio.enable = pkgs.lib.mkForce false;
 
     environment.systemPackages = with pkgs; [
@@ -79,7 +81,7 @@ in
     services.pipewire = {
       enable = true;
       alsa.enable = true;
-      alsa.support32Bit = true; # ?
+      alsa.support32Bit = false; # ? lets see if this breaks something
       pulse.enable = true;
       jack.enable = false;
       wireplumber.enable = true;
