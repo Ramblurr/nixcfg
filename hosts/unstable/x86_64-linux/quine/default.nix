@@ -125,7 +125,7 @@ in
         kicad.enable = false;
         kitty.enable = true;
         logseq.enable = true;
-        nextcloud.enable = false;
+        nextcloud.enable = true;
         nheko.enable = true;
         obs.enable = false;
         onepassword.enable = true;

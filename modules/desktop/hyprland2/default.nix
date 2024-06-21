@@ -53,9 +53,10 @@ in
     security = {
       polkit.enable = true;
       pam.services.ags = { };
+      # unlock keyring on login
+      pam.services.greetd.enableGnomeKeyring = true;
     };
 
-    services.dbus.packages = [ pkgs.gnome.gnome-disk-utility ];
     environment.systemPackages =
       with pkgs;
       with gnome;
@@ -101,6 +102,7 @@ in
     };
 
     services = {
+      dbus.packages = [ pkgs.gnome.gnome-disk-utility ];
       gvfs.enable = true;
       devmon.enable = true;
       udisks2.enable = true;
@@ -113,15 +115,14 @@ in
         gnome-keyring.enable = true;
         gnome-online-accounts.enable = true;
       };
-    };
-
-    services.greetd = {
-      enable = true;
-      settings.default_session.command = pkgs.writeShellScript "greeter" ''
-        export XKB_DEFAULT_LAYOUT=${config.services.xserver.xkb.layout}
-        export XCURSOR_THEME=Adwaita
-        ${cfg.ags-config}/bin/greeter
-      '';
+      greetd = {
+        enable = true;
+        settings.default_session.command = pkgs.writeShellScript "greeter" ''
+          export XKB_DEFAULT_LAYOUT=${config.services.xserver.xkb.layout}
+          export XCURSOR_THEME=Adwaita
+          ${cfg.ags-config}/bin/greeter
+        '';
+      };
     };
 
     systemd.tmpfiles.rules =

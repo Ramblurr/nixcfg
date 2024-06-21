@@ -53,6 +53,7 @@ in
             exec-once = [
               "ags -b hypr"
               "hyprctl setcursor Adwaita 24"
+              "easyeffects --gapplication-service"
             ];
             monitor = [
               "DP-2,highres,0x2160,1"
