@@ -198,7 +198,10 @@ in
     files = [ ];
 
     users.${ramblurr.username} = {
-      directories = [ ".config/rclone" ];
+      directories = [
+        ".config/rclone"
+        ".config/qobuz-dl"
+      ];
     };
   };
 }
