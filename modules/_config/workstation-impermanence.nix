@@ -36,6 +36,7 @@ in
         ".config/qobuz-dl"
         ".config/rclone"
         ".local/bin"
+        ".local/share/keyrings"
         ".local/share/audacity"
         ".local/share/fonts"
         ".local/share/krita"
