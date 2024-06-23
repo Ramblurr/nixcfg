@@ -20,11 +20,10 @@ in
   config = mkIf cfg.enable {
     # nixpkgs.config.cudaSupport = true;
     hardware = {
-      opengl = {
-        enable = true;
-        driSupport = true;
-        driSupport32Bit = true;
-      };
+      graphics.enable = true;
+      #opengl = {
+      #  enable = true;
+      #};
       nvidia = {
         nvidiaSettings = true; # Enable `nvidia-settings`
         modesetting.enable = true; # Required for wayland
