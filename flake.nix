@@ -56,7 +56,12 @@
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    hyprland.url = "github:hyprwm/Hyprland/v0.37.1";
+    hyprland = {
+      type = "git";
+      url = "https://github.com/hyprwm/Hyprland?v0.41.1";
+      submodules = true;
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
 
     #hyprNStack.url = "github:SiriusStarr/hyprNStack";
     #hyprNStack.inputs.hyprland.follows = "hyprland";

@@ -42,6 +42,11 @@ in
 {
   config = lib.mkIf cfg.enable {
 
+    environment.systemPackages = [
+      pkgs.qogir-icon-theme
+      pkgs.morewaita-icon-theme
+    ];
+
     fonts = {
 
       packages = with pkgs; [
