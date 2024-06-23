@@ -27,7 +27,7 @@ in
     };
 
     systemd.timers.gickup = {
-      enable = false;
+      enable = true;
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnCalendar = "03:30";
@@ -35,7 +35,7 @@ in
       };
     };
     systemd.services.gickup = {
-      enable = false;
+      enable = true;
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
       unitConfig = {
