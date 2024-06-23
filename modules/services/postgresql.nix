@@ -444,7 +444,7 @@ in
         RemainAfterExit = true;
       };
       script = ''
-        ${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} --log-level-console=info stanza-create
+        ${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} --log-level-console=info stanza-create || true
         ${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} --log-level-console=info check
       '';
     };
