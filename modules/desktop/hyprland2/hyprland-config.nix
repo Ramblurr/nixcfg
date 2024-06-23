@@ -63,7 +63,9 @@ in
             general = {
               layout = "master";
               resize_on_border = true;
-              no_cursor_warps = true;
+            };
+            cursor = {
+              no_warps = true;
             };
             misc = {
               disable_splash_rendering = true;
@@ -91,9 +93,7 @@ in
               # no_gaps_when_only = "yes";
             };
             gestures = {
-              workspace_swipe = true;
-              workspace_swipe_forever = true;
-              workspace_swipe_numbered = true;
+              workspace_swipe = false;
             };
             workspace = [
               "1,monitor:DP-2"
@@ -257,7 +257,6 @@ in
             master = {
               allow_small_split = true;
               mfact = 0.33;
-              new_is_master = false;
               always_center_master = true;
               orientation = "center";
             };

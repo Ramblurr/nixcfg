@@ -61,12 +61,14 @@ in
       with pkgs;
       with gnome;
       [
-        gnome-disk-utility
-        gnome.adwaita-icon-theme
-        loupe
+        morewaita-icon-theme
         adwaita-icon-theme
+        qogir-icon-theme
+        gnome-disk-utility
+        loupe
         nautilus
         baobab
+
         gnome-text-editor
         gnome-calendar
         gnome-boxes
@@ -119,7 +121,7 @@ in
         enable = true;
         settings.default_session.command = pkgs.writeShellScript "greeter" ''
           export XKB_DEFAULT_LAYOUT=${config.services.xserver.xkb.layout}
-          export XCURSOR_THEME=Adwaita
+          export XCURSOR_THEME=Qogir
           ${cfg.ags-config}/bin/greeter
         '';
       };
