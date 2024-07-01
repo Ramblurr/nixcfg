@@ -8,6 +8,7 @@
 {
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
+  boot.supportedFilesystems = [ "ntfs" ];
   # My programmable keyboard
   services.udev.extraRules = ''
     KERNEL=="ttyACM0", MODE:="666"
