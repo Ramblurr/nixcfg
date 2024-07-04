@@ -33,6 +33,7 @@ in
           (with pkgs; [
             appimage-run
             #pkgs.my.muse-sounds-manager
+            audacity
             musescore
             pavucontrol
             openscad-unstable
