@@ -41,7 +41,7 @@ in
       { pkgs, config, ... }@hm:
       {
         home.packages = [
-          (pkgs.element-desktop.override { electron = pkgs.electron_28; })
+          (pkgs.element-desktop.override { electron = pkgs.electron_30; })
           pkgs.iamb
         ];
 

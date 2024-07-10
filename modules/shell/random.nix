@@ -51,7 +51,7 @@ in
           nix-prefetch
           nix-output-monitor
           ncdu
-          binwalk
+          #binwalk # https://github.com/NixOS/nixpkgs/pull/325623
           usbutils
           rclone
           pciutils
@@ -72,11 +72,10 @@ in
           parted
           iotop
           which
-          #binutils.bintools # this conflicts with the gcc package
           unzip
           xz
           zip
-          asciinema
+          # asciinema py12 nose
           findutils
           # https://github.com/NixOS/nixpkgs/issues/265014
           (pkgs.rsync.overrideAttrs (_: _: { hardeningDisable = [ "fortify" ]; }))

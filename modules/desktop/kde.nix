@@ -18,17 +18,11 @@ in
     enable = mkBoolOpt false;
   };
   config = mkIf cfg.enable {
-    services.xserver.desktopManager.plasma5.enable = true;
-    services.xserver.desktopManager.plasma5.runUsingSystemd = false;
+    services.desktopManager.plasma6.enable = true;
 
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
-        home.packages = [
-          pkgs.digikam
-          pkgs.libsForQt5.kfind
-          pkgs.krename
-        ];
         xdg.configFile."baloofilerc".text = ''
           [Basic Settings]
           Indexing-Enabled=true
