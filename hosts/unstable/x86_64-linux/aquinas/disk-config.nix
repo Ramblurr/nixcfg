@@ -105,9 +105,9 @@
               keylocation = "prompt";
             };
             # use this to read the key during boot
-            postCreateHook = ''
-              zfs set keylocation="prompt" "rpool/$name";
-            '';
+            #postCreateHook = ''
+            #  zfs set keylocation="prompt" "rpool/$name";
+            #'';
           };
           "encrypted/local/nix" = {
             type = "zfs_fs";
