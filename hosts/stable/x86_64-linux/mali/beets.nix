@@ -123,7 +123,7 @@
           match = {
             strong_rec_thresh = 0.1;
             max_rec.missing_tracks = "low";
-            required = [ "year" ]; # [ "year" "label" "country"];
+            #required = [ "year" ]; # [ "year" "label" "country"];
             preferred = {
               countries = [
                 "XW"
