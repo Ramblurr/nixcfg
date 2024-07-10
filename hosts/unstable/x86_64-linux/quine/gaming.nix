@@ -184,7 +184,7 @@ in
           prismlauncher
           input-remapper
           #heroic
-          #bottles
+          bottles
           gamescope
           #lutris
           #wineWowPackages.waylandFull

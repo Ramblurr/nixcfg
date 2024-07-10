@@ -18,6 +18,7 @@ in
     inputs.nix-gaming.nixosModules.pipewireLowLatency
     ../../../../modules/_config/secrets.nix
     ../../../../modules/_config/workstation-impermanence.nix
+    ../../../../modules/_config/attic.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./wireplumber.nix
@@ -81,6 +82,7 @@ in
       !include ${config.sops.templates."nix.conf".path}
     '';
   };
+  home.attic.enable = true;
   modules = {
     desktop = {
       hyprland2.enable = true;
