@@ -16,6 +16,7 @@ in
     ../../../../modules/_config/workstation-impermanence.nix
     ./hardware.nix
     ./disk-config.nix
+    ./syncthing.nix
   ];
   system.stateVersion = "24.05";
   sops.defaultSopsFile = defaultSopsFile;
@@ -63,6 +64,33 @@ in
   services.displayManager.sddm.wayland.enable = true;
   services.displayManager.sddm.enable = true;
   programs.dconf.enable = true;
+
+  myhm =
+    { ... }@hm:
+    {
+      programs.starship.settings = pkgs.lib.importTOML ./gruvbox-rainbow.toml;
+      # https://github.com/nix-community/home-manager/issues/2064
+      systemd.user.targets.tray = {
+        Unit = {
+          Description = "Home Manager System Tray";
+          Requires = [ "graphical-session-pre.target" ];
+        };
+      };
+      home.packages = with pkgs; [
+        musescore
+        audacity
+        pavucontrol
+        brightnessctl
+        meld
+        gimp
+        pdfarranger
+        xournal
+        qpwgraph # pipewire wiring gui tool
+        easyeffects # pipewire eq
+      ];
+
+    };
+
   modules = {
     desktop = {
       xdg.enable = true;
@@ -85,19 +113,19 @@ in
     };
     shell = {
       aria2.enable = true;
-      attic.enable = true;
+      attic.enable = false;
       atuin.enable = true;
       direnv.enable = true;
       git.enable = true;
       gpg-agent.enable = true;
       htop.enable = true;
-      random.enable = false;
+      random.enable = true;
       ssh.enable = true;
       tmux.enable = true;
       zoxide.enable = true;
       zsh.enable = true;
-      zsh.powerlevel10k.enable = true;
-      zsh.starship.enable = false;
+      zsh.powerlevel10k.enable = false;
+      zsh.starship.enable = true;
     };
     services = {
       attic-watch-store.enable = false;
@@ -136,9 +164,10 @@ in
     };
     impermanence.enable = true;
     boot.zfs.enable = true;
+    boot.zfs.usePlymouth = false;
     boot.zfs.scrubPools = [ "rpool" ];
-    vpn.mullvad.enable = false;
-    vpn.tailscale.enable = false;
+    vpn.mullvad.enable = true;
+    vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
     networking.default.enable = false;
