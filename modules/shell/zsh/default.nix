@@ -47,7 +47,7 @@ in
         programs.starship = {
           enable = cfg.starship.enable;
           enableBashIntegration = false;
-          enableZshIntegration = false;
+          enableZshIntegration = true;
           settings = {
             git_status = {
               ignore_submodules = true;
