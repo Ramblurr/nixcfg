@@ -188,6 +188,7 @@ in
     sshfs
     lshw
     vifm
+    jless
   ];
   environment.persistence."/persist" = {
     hideMounts = true;
