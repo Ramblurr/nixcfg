@@ -45,30 +45,32 @@ final: prev: {
   #pylibgpiod_1 = prev.python311Packages.libgpiod.override {
   #  libgpiod = prev.libgpiod_1;
   #};
-  python311Packages = prev.python311Packages // {
-    pylibgpiod_11 = prev.python311Packages.toPythonModule (
-      prev.libgpiod_1.override {
-        enablePython = true;
-        python3 = prev.python311;
-      }
-    );
-  };
-  spidev_1 = prev.python311Packages.spidev.overrideAttrs (old: {
-    version = "3.4";
-    pname = "spidev";
-    src = prev.fetchPypi {
-      version = "3.4";
-      pname = "spidev";
-      hash = "sha256-QxTlL1c9lSM8kH8wdViJMxOopgbhl+d7txFSaw4XnoA=";
-    };
-  });
   #overrideAttrs (old: {
   #  pname = prev.libgpiod_1.pname;
   #  version = prev.libgpiod_1.version;
   #  src = prev.libgpiod_1.src;
   #  buildInputs = [prev.libgpiod_1];
   #});
-  rpi-gpio2_1 = prev.python311Packages.rpi-gpio2.overrideAttrs (old: {
-    propagatedBuildInputs = [ prev.libgpiod_1 ];
-  });
+  # NEEDED FOR FAIRYBOX
+  # python311Packages = prev.python311Packages // {
+  #   pylibgpiod_11 = prev.python311Packages.toPythonModule (
+  #     prev.libgpiod_1.override {
+  #       enablePython = true;
+  #       python3 = prev.python311;
+  #     }
+  #   );
+  # };
+  # spidev_1 = prev.python311Packages.spidev.overrideAttrs (old: {
+  #   version = "3.4";
+  #   pname = "spidev";
+  #   src = prev.fetchPypi {
+  #     version = "3.4";
+  #     pname = "spidev";
+  #     hash = "sha256-QxTlL1c9lSM8kH8wdViJMxOopgbhl+d7txFSaw4XnoA=";
+  #   };
+  # });
+  #rpi-gpio2_1 = prev.python311Packages.rpi-gpio2.overrideAttrs (old: {
+  #  propagatedBuildInputs = [ prev.libgpiod_1 ];
+  #});
+
 }
