@@ -16,12 +16,33 @@ in
 {
 
   # https://nixpk.gs/pr-tracker.html?pr=302544
+  #inherit
+  #  (nixpkgs {
+  #    rev = "309cf7f3e44723d6f65355579fbe10c82202fe8d";
+  #    sha256 = "sha256-Wtf9WbMBljUaAHPIzvN95em/54n/oaxWaBP2XkiOFZk=";
+  #  })
+  #  electron_28
+  #  electron_27
+  #  ;
+
+  # https://github.com/NixOS/nixpkgs/issues/325832
   inherit
     (nixpkgs {
-      rev = "309cf7f3e44723d6f65355579fbe10c82202fe8d";
-      sha256 = "sha256-Wtf9WbMBljUaAHPIzvN95em/54n/oaxWaBP2XkiOFZk=";
+      rev = "757873b3468a1d413d6776c7f2e83c41c340cb91";
+      sha256 = "sha256-t4oui8CCZU7asE2+4/MhSp1ZwTyKGFBvQ+0Vw5aeqJY=";
     })
-    electron_28
-    electron_27
+    freecad
+    ;
+
+  # fava doesn't support beancount v3 yet
+  # https://github.com/beancount/fava/issues/1831
+  # https://github.com/NixOS/nixpkgs/issues/325945
+  inherit
+    (nixpkgs {
+      rev = "59b1aef59071cae6e87859dc65de973d2cc595c0";
+      sha256 = "sha256-NnvvuMs5ZRJMFxjheq0VPwB8tltv61TwXa/i1Qogik4=";
+    })
+    beancount
+    fava
     ;
 }
