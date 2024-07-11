@@ -1092,6 +1092,29 @@
         "type": "github"
       }
     },
+    "plasma-manager": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1720603727,
+        "narHash": "sha256-A5qYbCT3rHvVi95u8Zy12cRmW5OPT7yFl1LrTDSejyE=",
+        "owner": "nix-community",
+        "repo": "plasma-manager",
+        "rev": "f0691e1a9fff4684ce399c345c3a941d2ef0fe78",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "plasma-manager",
+        "type": "github"
+      }
+    },
     "quadlet-nix": {
       "inputs": {
         "nixpkgs": [
@@ -1168,6 +1191,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixpkgs-wayland": "nixpkgs-wayland",
         "nur": "nur",
+        "plasma-manager": "plasma-manager",
         "quadlet-nix": "quadlet-nix",
         "radicle": "radicle",
         "sops-nix": "sops-nix"

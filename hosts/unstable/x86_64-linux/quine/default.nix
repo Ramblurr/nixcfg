@@ -86,7 +86,6 @@ in
   modules = {
     desktop = {
       hyprland2.enable = true;
-      kde.enable = true;
       xdg.enable = true;
       random-apps.enable = true;
       browsers = {
@@ -141,6 +140,7 @@ in
       aria2.enable = true;
       attic.enable = true;
       atuin.enable = true;
+      atuin.sync.enable = true;
       direnv.enable = true;
       git.enable = true;
       gpg-agent.enable = true;

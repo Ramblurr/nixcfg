@@ -74,6 +74,7 @@ in
       git-archive.enable = lib.mkEnableOption "Git-Archive";
       forgejo.enable = lib.mkEnableOption "Forgejo";
       actual-server.enable = lib.mkEnableOption "Actual Budget Server";
+      atuin-sync.enable = lib.mkEnableOption "Atuin Sync Server";
     };
   };
 
@@ -729,6 +730,14 @@ in
       enable = true;
       domain = "budget.${home-ops.homeDomain}";
       ports.http = home-ops.ports.actual-server;
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+    modules.services.atuin-sync = lib.mkIf cfg.apps.atuin-sync.enable {
+      enable = true;
+      domain = "atuin.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.atuin-sync;
       ingress = {
         domain = home-ops.homeDomain;
       };

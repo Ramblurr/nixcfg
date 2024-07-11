@@ -23,6 +23,12 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.enable && config.modules.desktop.kde != true;
+        message = "My hyprland config is mutually exclusive with KDE Plasma";
+      }
+    ];
     modules.desktop.wayland.enable = false;
     # dconf
     programs.dconf.enable = true;
