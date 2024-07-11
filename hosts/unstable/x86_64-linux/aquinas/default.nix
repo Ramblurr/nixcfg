@@ -17,6 +17,7 @@ in
     ./hardware.nix
     ./disk-config.nix
     ./syncthing.nix
+    ./power.nix
   ];
   system.stateVersion = "24.05";
   sops.defaultSopsFile = defaultSopsFile;
