@@ -100,6 +100,12 @@
     attic.inputs.nixpkgs.follows = "nixpkgs-unstable";
     attic.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
     attic.inputs.flake-utils.follows = "flake-utils";
+
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.home-manager.follows = "home-manager";
+    };
   };
 
   outputs =

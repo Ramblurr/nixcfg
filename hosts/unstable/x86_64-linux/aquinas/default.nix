@@ -42,10 +42,6 @@ in
     powerOnBoot = false;
     settings.General.Experimental = true;
   };
-  environment.persistence."/persist".directories = [
-    "/var/lib/NetworkManager"
-    "/etc/NetworkManager/system-connections"
-  ];
 
   nix = {
     settings = {
@@ -60,40 +56,9 @@ in
     };
   };
 
-  services.displayManager.enable = true;
-  services.desktopManager.plasma6.enable = true;
-  services.displayManager.sddm.wayland.enable = true;
-  services.displayManager.sddm.enable = true;
-  programs.dconf.enable = true;
-
-  myhm =
-    { ... }@hm:
-    {
-      programs.starship.settings = pkgs.lib.importTOML ./gruvbox-rainbow.toml;
-      # https://github.com/nix-community/home-manager/issues/2064
-      systemd.user.targets.tray = {
-        Unit = {
-          Description = "Home Manager System Tray";
-          Requires = [ "graphical-session-pre.target" ];
-        };
-      };
-      home.packages = with pkgs; [
-        musescore
-        audacity
-        pavucontrol
-        brightnessctl
-        meld
-        gimp
-        pdfarranger
-        xournal
-        qpwgraph # pipewire wiring gui tool
-        easyeffects # pipewire eq
-      ];
-
-    };
-
   modules = {
     desktop = {
+      kde.enable = true;
       xdg.enable = true;
       browsers = {
         firefox.enable = true;
@@ -116,6 +81,7 @@ in
       aria2.enable = true;
       attic.enable = false;
       atuin.enable = true;
+      atuin.sync.enable = true;
       direnv.enable = true;
       git.enable = true;
       gpg-agent.enable = true;
@@ -140,12 +106,12 @@ in
       sshd.enable = true;
     };
     dev = {
-      clojure.enable = false;
+      clojure.enable = true;
       fennel.enable = false;
       jetbrains.enable = false;
       k8s.enable = false;
       node.enable = false;
-      python.enable = false;
+      python.enable = true;
       radicle.enable = false;
       random.enable = false;
     };

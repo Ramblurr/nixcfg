@@ -12,6 +12,7 @@ in
   environment.persistence."/persist" = {
     users.${username} = {
       directories = [
+        "nixcfg"
         "docs"
         "downloads"
         "src"

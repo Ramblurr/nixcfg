@@ -28,21 +28,34 @@
     cert = config.sops.secrets.syncthing-cert.path;
     settings = {
       gui.theme = "black";
+      options = {
+        urAccepted = 1; # allow anonymous usage data report
+        globalAnnounceEnabled = false; # only sync locally or over vpn
+      };
       devices = {
-        "rorty" = {
-          id = "OURFCGA-AT7K6SV-KBT6DDR-UJIGS5A-SYR3SWR-BGIJQ3I-IMP7VCA-MKSGVAB";
-        };
         "ipad" = {
           id = "MV4BQ23-XDBDIG6-WHBCLSE-XYRFJD7-SS7HCJP-Y7CA6EE-USJLP3Z-JDKCGAS";
+          addresses = [
+            "tcp://10.9.6.15:22000"
+            "tcp://100.108.66.109:22000"
+          ];
         };
         "phone" = {
           id = "IZFM24Q-VTKFTBG-57BIZ4G-TJPWO2B-XW6Q2CA-S5SE6Z6-PAZMGKK-TSISTA2";
+          addresses = [
+            "tcp://10.9.6.14:22000"
+            "tcp://100.78.82.102:22000"
+          ];
         };
         "mali" = {
-          id = "SS4DIYV-GL4SUAO-3H6JWGX-Q2PBKNT-UWII65N-ZNTEQBU-N6D7XFQ-V2K7TQU";
+          id = "FUWM2VN-32WHX4C-AFGU6HX-TZAITRE-PO4YKQI-UR6Z54O-DSQORX2-FJPG3AE";
         };
         "aquinas" = {
           id = "37NYWVB-26URNF2-KFOZYXT-H4SNZ6E-OMAUOAU-NIV6RRQ-YRAPTH6-LY4HKQW";
+          addresses = [
+            "tcp://10.9.6.90:22000"
+            "tcp://100.113.239.46:22000"
+          ];
         };
         "v-phone" = {
           id = "HBV2LWT-BIPOYKR-JR6SV27-TZI7PLQ-VK2UIJU-RXVCKFG-LMAFPUR-5ZDX7A2";
@@ -62,7 +75,6 @@
           path = "/home/ramblurr/docs/brain";
           devices = [
             "aquinas"
-            "rorty"
             "phone"
             "ipad"
           ];
@@ -74,13 +86,22 @@
             };
           };
         };
+        "MuseScore4" = {
+          id = "nfnyf-araxw";
+          path = "/home/ramblurr/docs/MuseScore4";
+          devices = [ "aquinas" ];
+          versioning = {
+            type = "staggered";
+            params = {
+              cleanInterval = "3600"; # 1 hour
+              maxAge = "1209600"; # 14 days
+            };
+          };
+        };
         "src" = {
           id = "3afjx-a2sse";
           path = "/home/ramblurr/src";
-          devices = [
-            "aquinas"
-            "rorty"
-          ];
+          devices = [ "aquinas" ];
           versioning = {
             type = "staggered";
             params = {
@@ -92,10 +113,7 @@
         "work-src" = {
           id = "pcdsa-wgsys";
           path = "/home/ramblurr/work";
-          devices = [
-            "aquinas"
-            "rorty"
-          ];
+          devices = [ "aquinas" ];
           versioning = {
             type = "staggered";
             params = {
@@ -109,7 +127,6 @@
           path = "/home/ramblurr/sync/inbox";
           devices = [
             "aquinas"
-            "rorty"
             "phone"
             "ipad"
           ];
@@ -126,7 +143,6 @@
           path = "/home/ramblurr/sync/viki";
           devices = [
             "aquinas"
-            "rorty"
             "phone"
             "ipad"
             "v-phone"

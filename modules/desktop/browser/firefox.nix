@@ -87,7 +87,7 @@ in
             Categories=Network;WebBrowser
             Exec=${firefox-nightly}/bin/firefox-nightly -P work --name firefox-work --class=firefox-work %U
             GenericName=Work Web Browser
-            Icon=firefox
+            Icon=firefox-nightly
             MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
             Name=Work Firefox
             StartupNotify=true
@@ -107,7 +107,7 @@ in
             Categories=Network;WebBrowser
             Exec=${firefox-nightly}/bin/firefox-nightly -P personal --name firefox-personal --class=firefox-personal %U
             GenericName=Personal Web Browser
-            Icon=firefox
+            Icon=firefox-nightly
             MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
             Name=Personal Firefox
             StartupNotify=true
