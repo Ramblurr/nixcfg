@@ -12,6 +12,37 @@ let
   cfg = config.modules.desktop.kde;
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
+
+  nerdfonts = (
+    pkgs.nerdfonts.override {
+      fonts = [
+        #"Noto Sans"
+        "Iosevka"
+        "FiraCode"
+        "Mononoki"
+        "JetBrainsMono"
+        "NerdFontsSymbolsOnly"
+      ];
+    }
+  );
+
+  theme = {
+    name = "adw-gtk3-dark";
+    package = pkgs.adw-gtk3;
+  };
+  font = {
+    name = "Noto Nerd Font";
+    package = nerdfonts;
+  };
+  cursorTheme = {
+    name = "Adwaita";
+    size = 24;
+    package = pkgs.gnome.adwaita-icon-theme;
+  };
+  iconTheme = {
+    name = "Adwaita";
+    package = pkgs.gnome.adwaita-icon-theme;
+  };
 in
 {
   options.modules.desktop.kde = {
@@ -19,6 +50,39 @@ in
   };
   config = mkIf cfg.enable {
     services.desktopManager.plasma6.enable = true;
+
+    fonts = {
+
+      packages = with pkgs; [
+        cantarell-fonts
+        font-awesome
+        theme.package
+        font.package
+        cursorTheme.package
+        iconTheme.package
+        gnome.adwaita-icon-theme
+        papirus-icon-theme
+        iosevka-comfy.comfy-fixed
+        noto-fonts-emoji
+        noto-fonts
+        font-awesome
+        liberation_ttf # free corefonts-metric-compatible replacement
+        ttf_bitstream_vera
+        gelasio # metric-compatible with Georgia
+        powerline-symbols
+      ];
+
+      fontDir.enable = true;
+
+      fontconfig = {
+        defaultFonts = {
+          serif = [ "Noto Serif" ];
+          sansSerif = [ "Noto Sans" ];
+          monospace = [ "Iosevka Comfy Fixed" ];
+          emoji = [ "Noto Color Emoji" ];
+        };
+      };
+    };
 
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
