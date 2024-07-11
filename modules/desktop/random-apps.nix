@@ -76,7 +76,6 @@ in
         ];
 
         persistence = {
-          directories = [ "nixcfg" ];
           files = [
             ".config/kritarc"
             ".config/kritadisplayrc"

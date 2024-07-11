@@ -62,6 +62,8 @@ in
       git-archive.enable = true;
       forgejo.enable = true;
       actual-server.enable = true;
+      atuin-sync.enable = true;
+
     };
   };
 
