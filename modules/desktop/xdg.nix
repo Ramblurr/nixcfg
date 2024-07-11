@@ -21,20 +21,15 @@ in
   config = mkIf cfg.enable {
     xdg.portal = {
       enable = true;
-      extraPortals = with pkgs; [
-        # hyprland module enables its own portal
-        #libsForQt5.xdg-desktop-portal-kde
-        xdg-desktop-portal-gtk
-      ];
       xdgOpenUsePortal = true;
-      config = {
-        common = {
-          default = "gtk";
-          "org.freedesktop.impl.portal.Screencast" = "hyprland";
-          "org.freedesktop.impl.portal.Screenshot" = "hyprland";
-        };
+    };
+
+    environment.persistence."/persist" = mkIf withImpermanence {
+      users.${username} = {
+        files = [ ".config/mimeapps.list" ];
       };
     };
+
     myhm =
       { pkgs, ... }@hm:
       {
@@ -58,48 +53,48 @@ in
               XDG_SCREENSHOTS_DIR = "${hm.config.xdg.userDirs.pictures}/screenshots";
             };
           };
-          mimeApps = {
-            enable = true;
-            defaultApplications =
-              let
-                browser = [ "re.sonny.Junction.desktop" ];
-              in
-              {
-                "x-scheme-handler/file" = browser;
-                "inode/directory" = browser;
-                "text/html" = browser;
-                "x-scheme-handler/http" = browser;
-                "x-scheme-handler/https" = browser;
-                "x-scheme-handler/about" = browser;
-                "x-scheme-handler/unknown" = browser;
-                "x-scheme-handler/vscode" = browser;
-                "x-scheme-handler/discord" = [ "discord.desktop" ];
-                "audio/*" = browser;
-                "video/*" = browser;
-                "image/*" = browser;
-                "image/gif" = browser;
-                "image/jpeg" = browser;
-                "image/png" = browser;
-                "image/webp" = browser;
-              };
-            associations.added = {
-              "image/jpeg" = [ "org.kde.gwenview.desktop" ];
-              "inode/directory" = [ "org.kde.dolphin.desktop" ];
-              "image/svg+xml" = [ "org.inkscape.Inkscape.desktop" ];
-              "x-scheme-handler/https" = [
-                "firefox-personal.desktop"
-                "firefox-work.desktop;firefox.desktop"
-              ];
-              "image/png" = [ "org.kde.gwenview.desktop" ];
-              "x-scheme-handler/vscode" = [ "code-work-url-handler.desktop" ];
-              "application/pdf" = [ "okularApplication_pdf.desktop" ];
-              "text/html" = [
-                "firefox-personal.desktop"
-                "firefox-work.desktop;firefox.desktop"
-              ];
-              "x-scheme-handler/http" = [ "firefox.desktop" ];
-            };
-          };
+          #mimeApps = {
+          #  enable = true;
+          #  defaultApplications =
+          #    let
+          #      browser = [ "re.sonny.Junction.desktop" ];
+          #    in
+          #    {
+          #      "x-scheme-handler/file" = browser;
+          #      "inode/directory" = browser;
+          #      "text/html" = browser;
+          #      "x-scheme-handler/http" = browser;
+          #      "x-scheme-handler/https" = browser;
+          #      "x-scheme-handler/about" = browser;
+          #      "x-scheme-handler/unknown" = browser;
+          #      "x-scheme-handler/vscode" = browser;
+          #      "x-scheme-handler/discord" = [ "discord.desktop" ];
+          #      "audio/*" = browser;
+          #      "video/*" = browser;
+          #      "image/*" = browser;
+          #      "image/gif" = browser;
+          #      "image/jpeg" = browser;
+          #      "image/png" = browser;
+          #      "image/webp" = browser;
+          #    };
+          #  associations.added = {
+          #    "image/jpeg" = [ "org.kde.gwenview.desktop" ];
+          #    "inode/directory" = [ "org.kde.dolphin.desktop" ];
+          #    "image/svg+xml" = [ "org.inkscape.Inkscape.desktop" ];
+          #    "x-scheme-handler/https" = [
+          #      "firefox-personal.desktop"
+          #      "firefox-work.desktop;firefox.desktop"
+          #    ];
+          #    "image/png" = [ "org.kde.gwenview.desktop" ];
+          #    "x-scheme-handler/vscode" = [ "code-work-url-handler.desktop" ];
+          #    "application/pdf" = [ "okularApplication_pdf.desktop" ];
+          #    "text/html" = [
+          #      "firefox-personal.desktop"
+          #      "firefox-work.desktop;firefox.desktop"
+          #    ];
+          #    "x-scheme-handler/http" = [ "firefox.desktop" ];
+          #  };
+          #};
         };
       };
   };
