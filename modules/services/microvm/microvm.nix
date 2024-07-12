@@ -20,7 +20,9 @@ in
   inherit (guestCfg) autostart;
   config = {
     imports = guestCfg.modules ++ [
-      (import ./_common-guest-config.nix guestName guestCfg)
+      (import ./common-guest-config.nix config.modules.users.primaryUser.authorizedKeys guestName
+        guestCfg
+      )
       (
         { config, ... }:
         {
@@ -38,8 +40,8 @@ in
       hypervisor = mkDefault "cloud-hypervisor";
       socket = "control.socket";
 
-      # Give them some juice by default
-      mem = mkDefault (1024 + 2048);
+      mem = mkDefault 1024;
+      vcpu = mkDefault 2;
 
       # Add a writable store overlay, but since this is always ephemeral
       # disable any store optimization from nix.
@@ -78,7 +80,7 @@ in
         );
     };
 
-    networking.renameInterfacesByMac.${guestCfg.networking.mainLinkName} = guestCfg.microvm.mac;
+    #networking.renameInterfacesByMac.${guestCfg.networking.mainLinkName} = guestCfg.microvm.mac;
     systemd.network.networks."10-${guestCfg.networking.mainLinkName}".matchConfig = mkForce {
       MACAddress = guestCfg.microvm.mac;
     };

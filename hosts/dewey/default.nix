@@ -21,7 +21,7 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
-    #./microvms.nix
+    ./guests.nix
     ../../config/secrets.nix
     ../../config/home-ops.nix
   ];
