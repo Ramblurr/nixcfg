@@ -402,11 +402,22 @@ in
           };
         };
 
-        "30-brmicrovm" = {
+        #"30-brmicrovm" = {
+        #  netdevConfig = {
+        #    Kind = "bridge";
+        #    Name = "microvm";
+        #  };
+        #};
+        "30-microvm-self" = {
           netdevConfig = {
-            Kind = "bridge";
-            Name = "microvm";
+            Kind = "macvlan";
+            Name = "microvm-self";
           };
+          extraConfig = ''
+            [MACVLAN]
+            Mode=bridge
+          '';
+
         };
 
       };
@@ -456,31 +467,33 @@ in
           };
         };
 
-        "50-brprim4" =
-          if nodeSettings.vlanPrimaryEnabled then
-            {
-              matchConfig = {
-                Name = "brprim4";
-              };
-              networkConfig = {
-                DHCP = "no";
-                Address = nodeSettings.primCIDR;
-                Description = "primary VLAN";
-              };
-            }
-          else
-            {
-              # My nodes generally do not have an ip address on the primary vlan
-              # however some workloads running on these nodes might want to expose a service
-              # over this vlan, so we configure the bridge interface anyways
-              matchConfig = {
-                Name = "brprim4";
-              };
-              networkConfig = {
-                DHCP = "no";
-                Description = "Bridge for primary vlan";
-              };
-            };
+        "50-brprim4" = {
+          matchConfig = {
+            Name = "brprim4";
+          };
+          networkConfig = {
+            DHCP = "no";
+            Description = "Bridge for primary vlan";
+          };
+
+          extraConfig = ''
+            [Network]
+            MACVLAN=microvm-self
+          '';
+        };
+        "50-microvm-self" = lib.mkIf nodeSettings.vlanPrimaryEnabled {
+          address = [ nodeSettings.primCIDR ];
+          matchConfig.Name = "microvm-self";
+          networkConfig = {
+            IPForward = "yes";
+            # IPv6PrivacyExtensions = "yes";
+            # IPv6SendRA = true;
+            # IPv6AcceptRA = false;
+            #DHCPPrefixDelegation = true;
+            #MulticastDNS = true;
+          };
+          #linkConfig.RequiredForOnline = "routable";
+        };
         "50-brmgmt9" = {
           matchConfig = {
             Name = "brmgmt9";
@@ -502,22 +515,40 @@ in
             Description = "data 10GbE VLAN";
           };
         };
-        "50-microvm" = {
-          matchConfig.Name = "microvm";
-          networkConfig = {
-            DHCPServer = true;
-            IPv6SendRA = true;
-          };
-          addresses = [
-            { Address = config.repo.secrets.home-ops.subnets.dewey-microvm.hostAddr; }
-            { Address = config.repo.secrets.home-ops.subnets.dewey-microvm.hostAddr6; }
-          ];
-          ipv6Prefixes = [ { Prefix = config.repo.secrets.home-ops.subnets.dewey-microvm.prefix6; } ];
-        };
-        "50-microvm-guests" = {
-          matchConfig.Name = "vm-*";
-          # Attach to the bridge that was configured above
-          networkConfig.Bridge = "microvm";
+        # this is old config for the bridge for tap based microvms, but now i uses macvtap for better perf
+        #"50-microvm" = {
+        #  matchConfig.Name = "microvm";
+        #  networkConfig = {
+        #    DHCPServer = true;
+        #    IPv6SendRA = true;
+        #  };
+        #  addresses = [
+        #    { Address = config.repo.secrets.home-ops.subnets.dewey-microvm.hostAddr; }
+        #    { Address = config.repo.secrets.home-ops.subnets.dewey-microvm.hostAddr6; }
+        #  ];
+        #  ipv6Prefixes = [ { Prefix = config.repo.secrets.home-ops.subnets.dewey-microvm.prefix6; } ];
+        #};
+        #"50-microvm-guests" = {
+        #  matchConfig.Name = "vm-*";
+        #  # Attach to the bridge that was configured above
+        #  networkConfig.Bridge = "microvm";
+        #};
+        #"50-microvm" = {
+        #  matchConfig.Name = "brmgt";
+        #  # This interface should only be used from attached macvtaps.
+        #  # So don't acquire a link local address and only wait for
+        #  # this interface to gain a carrier.
+        #  networkConfig.LinkLocalAddressing = "no";
+        #  linkConfig.RequiredForOnline = "carrier";
+        #  extraConfig = ''
+        #    [Network]
+        #    MACVLAN=microvm-self
+        #  '';
+        #};
+        "90-macvtap-ignore" = {
+          matchConfig.Kind = "macvtap";
+          linkConfig.ActivationPolicy = "manual";
+          linkConfig.Unmanaged = "yes";
         };
       };
     };

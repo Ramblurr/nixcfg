@@ -142,6 +142,7 @@
         postCreateHook = ''
           zfs snapshot rpool/encrypted/local/nix@blank
           zfs snapshot rpool/encrypted/local/root@blank
+          zfs snapshot rpool/encrypted/vms@blank
         '';
         datasets = {
           # Static reservation so the pool will never be 100% full.
@@ -182,6 +183,10 @@
             mountpoint = "/";
             options.mountpoint = "legacy";
           };
+          "encrypted/vms" = {
+            type = "zfs_fs";
+            options.mountpoint = "none";
+          };
           "encrypted/safe/persist" = {
             type = "zfs_fs";
             mountpoint = "/persist";
@@ -192,6 +197,7 @@
           };
           "encrypted/safe/vms" = {
             type = "zfs_fs";
+            options.mountpoint = "none";
           };
           "encrypted/safe/extra" = {
             type = "zfs_fs";

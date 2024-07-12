@@ -92,6 +92,7 @@
     ./services/matrix-discord.nix
     ./services/matrix-synapse.nix
     ./services/matrix-synapse-postgres.nix
+    ./services/microvm/default.nix
     ./services/ocis.nix
     ./services/onepassword-connect.nix
     ./services/paperless.nix

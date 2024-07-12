@@ -19,18 +19,17 @@ let
     "${builtins.substring 0 1 hash}2:${c 2}:${c 4}:${c 6}:${c 8}:${c 10}";
 
   # List the necessary mount units for the given guest
-  fsMountUnitsFor =
-    guestCfg:
-    map (x: "${utils.escapeSystemdPath x.hostMountpoint}.mount") (lib.attrValues guestCfg.zfs);
+  fsMountUnitsFor = guestCfg: map (x: x.hostMountpoint) (lib.attrValues guestCfg.zfs);
 
   defineMicrovm = guestName: guestCfg: {
     # Ensure that the zfs dataset exists before it is mounted.
     systemd.services."microvm@${guestName}" = {
-      requires = fsMountUnitsFor guestCfg;
-      after = fsMountUnitsFor guestCfg;
+      unitConfig = {
+        RequiresMountsFor = fsMountUnitsFor guestCfg;
+      };
     };
 
-    microvm.vms.${guestName} = import ./_microvm.nix guestName guestCfg attrs;
+    microvm.vms.${guestName} = import ./microvm.nix guestName guestCfg attrs;
   };
 
 in
@@ -165,57 +164,29 @@ in
       {
         systemd.tmpfiles.rules = [ "d /guests 0700 root root -" ];
 
-        # To enable shared folders we need to do all fileSystems entries ourselfs
-        fileSystems =
+        modules.zfs.datasets.properties =
           let
             zfsDefs = lib.flatten (
               lib.flip lib.mapAttrsToList cfg.guests (
                 _: guestCfg:
                 lib.flip lib.mapAttrsToList guestCfg.zfs (
                   _: zfsCfg: {
-                    path = "${zfsCfg.pool}/${zfsCfg.dataset}";
+                    dataset = "${zfsCfg.dataset}";
                     inherit (zfsCfg) hostMountpoint;
                   }
                 )
               )
             );
-            # Due to limitations in zfs mounting we need to explicitly set an order in which
-            # any dataset gets mounted
-            zfsDefsByPath = lib.flip lib.groupBy zfsDefs (x: x.path);
+            zfsAttrSet = lib.listToAttrs (
+              map (zfsDef: {
+                name = zfsDef.dataset;
+                value = {
+                  mountpoint = zfsDef.hostMountpoint;
+                };
+              }) zfsDefs
+            );
           in
-          lib.mkMerge (
-            lib.flip lib.mapAttrsToList zfsDefsByPath (
-              _: defs:
-              (lib.foldl'
-                (
-                  { prev, res }:
-                  elem: {
-                    prev = elem;
-                    res = res // {
-                      ${elem.hostMountpoint} = {
-                        fsType = "zfs";
-                        options =
-                          [ "zfsutil" ]
-                          ++ lib.optional (prev != null)
-                            "x-systemd.requires-mounts-for=${
-                              lib.warnIf (lib.hasInfix " " prev.hostMountpoint)
-                                "HostMountpoint ${prev.hostMountpoint} cannot contain a space"
-                                prev.hostMountpoint
-                            }";
-                        device = elem.path;
-                      };
-                    };
-                  }
-                )
-                {
-                  prev = null;
-                  res = { };
-                }
-                defs
-              ).res
-            )
-          );
-
+          zfsAttrSet;
         assertions = lib.flatten (
           lib.flip lib.mapAttrsToList cfg.guests (
             guestName: guestCfg:
