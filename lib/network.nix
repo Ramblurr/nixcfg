@@ -1,5 +1,9 @@
-{ lib, ... }:
+_inputs: final: prev:
 
 {
-  cidrToIp = ip: builtins.head (builtins.split "/" ip);
+  lib = prev.lib // {
+    my = prev.lib.my // {
+      cidrToIp = ip: builtins.head (builtins.split "/" ip);
+    };
+  };
 }

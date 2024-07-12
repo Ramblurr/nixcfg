@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.shell.random;
   username = config.modules.users.primaryUser.username;
@@ -16,7 +15,7 @@ let
 in
 {
   options.modules.shell.random = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     services.pcscd.enable = true;
@@ -102,7 +101,7 @@ in
           pwgen-secure
           alejandra
           nixfmt-rfc-style
-          pkgs.my.cloudflare-utils
+          cloudflare-utils
           inputs.fast-flake-update.packages.${system}.fast-flake-update
           #inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt
         ];

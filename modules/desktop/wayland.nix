@@ -7,14 +7,13 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.desktop.wayland;
   username = config.modules.users.primaryUser.username;
 in
 {
   options.modules.desktop.wayland = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     myhm = {

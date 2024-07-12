@@ -5,8 +5,6 @@
   utils,
   pkgs,
   inputs,
-  unstable,
-  mine,
   ...
 }:
 let
@@ -66,7 +64,7 @@ in
       enable = true;
       dataDir = "/var/lib/tautulli";
       openFirewall = false;
-      package = unstable.tautulli;
+      package = pkgs.tautulli;
       port = cfg.ports.http;
       user = cfg.user.name;
       group = cfg.group;

@@ -7,16 +7,21 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.services.github-runner;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.github-runner = {
-    enable = mkBoolOpt false;
-    runnerName = mkStrOpt "my-runner";
-    url = mkStrOpt "";
+    enable = lib.mkEnableOption "";
+    runnerName = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = "my-runner";
+    };
+    url = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = "";
+    };
     extraLabels = mkOption {
       type = types.listOf types.str;
       default = [ ];

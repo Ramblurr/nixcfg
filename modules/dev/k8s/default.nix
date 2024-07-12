@@ -8,7 +8,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.k8s;
@@ -18,7 +17,7 @@ let
 in
 {
   options.modules.dev.k8s = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
 
   config = mkIf cfg.enable {

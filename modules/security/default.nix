@@ -7,14 +7,16 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.security.default;
 in
 {
   options = {
     modules.security.default = {
-      enable = mkBoolOpt true;
+      enable = lib.mkOption {
+        type = types.bool;
+        default = true;
+      };
     };
   };
 

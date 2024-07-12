@@ -5,8 +5,6 @@
   utils,
   pkgs,
   inputs,
-  unstable,
-  mine,
   ...
 }:
 let
@@ -83,7 +81,7 @@ in
     services.plex = {
       enable = true;
       openFirewall = true;
-      package = unstable.plex;
+      package = pkgs.plex;
       user = cfg.user.name;
       group = cfg.group.name;
     };

@@ -4,7 +4,6 @@
   lib,
   pkgs,
   inputs,
-  unstable,
   ...
 }:
 let
@@ -66,7 +65,7 @@ in
         RequiresMountsFor = [ stateDirActual ];
       };
       serviceConfig = {
-        ExecStart = "${pkgs.my.actual-server}/bin/actual";
+        ExecStart = "${pkgs.actual-server}/bin/actual";
         Restart = "always";
         StateDirectory = lib.mkForce (baseNameOf stateDirEffective);
         DynamicUser = true;

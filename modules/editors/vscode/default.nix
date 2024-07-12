@@ -8,7 +8,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.editors.vscode;
   username = config.modules.users.primaryUser.username;
@@ -17,7 +16,7 @@ let
 in
 {
   options.modules.editors.vscode = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
 
   config = mkIf cfg.enable {

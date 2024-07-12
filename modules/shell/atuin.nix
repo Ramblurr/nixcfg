@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.shell.atuin;
   username = config.modules.users.primaryUser.username;
@@ -16,9 +15,12 @@ let
 in
 {
   options.modules.shell.atuin = {
-    enable = mkBoolOpt false;
-    sync.enable = mkBoolOpt false;
-    sync.address = mkStrOpt "https://atuin.socozy.casa";
+    enable = lib.mkEnableOption "";
+    sync.enable = lib.mkEnableOption "";
+    sync.address = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = "https://atuin.socozy.casa";
+    };
   };
   config = lib.mkIf cfg.enable {
 

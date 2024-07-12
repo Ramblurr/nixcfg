@@ -8,7 +8,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.fennel;
@@ -22,7 +21,7 @@ let
 in
 {
   options.modules.dev.fennel = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
 
   config = mkIf cfg.enable {
