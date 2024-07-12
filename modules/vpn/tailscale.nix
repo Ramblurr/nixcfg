@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.vpn.tailscale;
   username = config.modules.users.primaryUser.username;
@@ -15,7 +14,7 @@ let
 in
 {
   options.modules.vpn.tailscale = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     services.tailscale.enable = lib.mkIf cfg.enable true;

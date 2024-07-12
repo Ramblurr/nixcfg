@@ -129,7 +129,7 @@ default_tmpl = """
   hn = "%hostname%";
   machine-id = "%machineid%";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../../../ramblurr.nix {inherit config lib pkgs inputs;};
+  ramblurr = import ../ramblurr.nix {inherit config lib pkgs inputs;};
 in {
   imports = [
     ./hardware.nix

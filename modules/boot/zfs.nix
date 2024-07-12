@@ -7,20 +7,34 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.boot.zfs;
 in
 {
   options = {
     modules.boot.zfs = {
-      enable = mkBoolOpt false;
-      encrypted = mkBoolOpt true;
-      usePlymouth = mkBoolOpt true;
-      skipMitigations = mkBoolOpt false;
-      autoSnapshot.enable = mkBoolOpt true;
-      zed.enable = mkBoolOpt false;
-      rootPool = mkStrOpt "rpool";
+      enable = lib.mkEnableOption "";
+      encrypted = lib.mkOption {
+        type = types.bool;
+        default = true;
+      };
+      usePlymouth = lib.mkOption {
+        type = types.bool;
+        default = true;
+      };
+      skipMitigations = lib.mkOption {
+        type = types.bool;
+        default = false;
+      };
+      autoSnapshot.enable = lib.mkOption {
+        type = types.bool;
+        default = true;
+      };
+      zed.enable = lib.mkEnableOption "";
+      rootPool = lib.mkOption {
+        type = lib.types.uniq lib.types.str;
+        default = "rpool";
+      };
       scrubPools = mkOption {
         type = types.listOf types.str;
         default = [ "rpool" ];

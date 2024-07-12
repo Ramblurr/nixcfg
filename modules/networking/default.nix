@@ -7,15 +7,17 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.networking.default;
 in
 {
   options = {
     modules.networking.default = {
-      enable = mkBoolOpt false;
-      hostName = mkStrOpt null;
+      enable = lib.mkEnableOption "";
+      hostName = lib.mkOption {
+        type = lib.types.uniq lib.types.str;
+        default = null;
+      };
     };
   };
 

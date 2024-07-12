@@ -7,15 +7,17 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.services.sshd;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.sshd = {
-    enable = mkBoolOpt true;
-    permitRootLogin.enable = mkBoolOpt false;
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
+    permitRootLogin.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     # Should exist already as it is used for sops bootstrapping

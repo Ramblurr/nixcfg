@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.clojure;
@@ -17,7 +16,7 @@ let
 in
 {
   options.modules.dev.clojure = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
 
   config = mkIf cfg.enable {

@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.server.virtd-host;
   localZfsStorageXml = pkgs.writeText "zfs-local.xml" ''
@@ -28,9 +27,9 @@ let
 in
 {
   options.modules.server.virtd-host = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
     zfsStorage = {
-      enable = mkBoolOpt false;
+      enable = lib.mkEnableOption "";
       pool = mkOption {
         type = types.str;
         default = "rpool/encrypted/safe/vms";

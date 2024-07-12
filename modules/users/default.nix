@@ -8,7 +8,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.users;
   isEd25519 = k: k.type == "ed25519";
@@ -19,32 +18,65 @@ in
 {
   options = {
     modules.users = {
-      enable = mkBoolOpt false;
-      rootPassword.enable = mkBoolOpt true;
-      mutableUsers = mkBoolOpt false;
+      enable = lib.mkEnableOption "";
+      rootPassword.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+
+      mutableUsers = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+      };
       primaryUser = {
-        username = mkStrOpt "ramblurr";
-        name = mkStrOpt "Ramblurr";
-        email = mkStrOpt "";
-        signingKey = mkStrOpt "";
-        homeDirectory = mkStrOpt "/home/ramblurr";
-        uid = mkIntOpt 1000;
-        passwordEnable = mkBoolOpt true;
-        passwordSecretKey = mkStrOpt "ramblurr-password";
-        defaultSopsFile = mkOption {
+        username = lib.mkOption {
+          type = lib.types.uniq lib.types.str;
+          default = "ramblurr";
+        };
+        name = lib.mkOption {
+          type = lib.types.uniq lib.types.str;
+          default = "Ramblurr";
+        };
+        email = lib.mkOption {
+          type = lib.types.uniq lib.types.str;
+          default = "";
+        };
+        signingKey = lib.mkOption {
+          type = lib.types.uniq lib.types.str;
+          default = "";
+        };
+        homeDirectory = lib.mkOption {
+          type = lib.types.uniq lib.types.str;
+          default = "/home/ramblurr";
+        };
+
+        uid = lib.mkOption {
+          default = 1000;
+          type = lib.types.uniq lib.types.int;
+        };
+
+        passwordEnable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+        };
+        passwordSecretKey = lib.mkOption {
+          type = lib.types.uniq lib.types.str;
+          default = "ramblurr-password";
+        };
+        defaultSopsFile = lib.mkOption {
           type = types.nullOr (types.path);
           default = null;
         };
-        shell = mkOption {
+        shell = lib.mkOption {
           type = types.nullOr (types.either types.shellPackage (types.passwdEntry types.path));
           default = pkgs.bash;
         };
-        extraGroups = mkOption {
+        extraGroups = lib.mkOption {
           type = types.listOf types.str;
           default = [ ];
           description = lib.mdDoc "The user's auxiliary groups.";
         };
-        authorizedKeys = mkOption {
+        authorizedKeys = lib.mkOption {
           type = types.listOf types.str;
           default = [
             "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCzseqIeUgemCgd3/vxkcmJtpVGFS1P3ajBDYaGHHwziIUO/ENkWrEfv/33DvaaY3QQYnSMePRrsHq5ESanwEdjbMBu1quQZZWhyh/M5rQdbfwFoh2BYjCq5hFhaNUl9cjZk3xjQGHVKlTBdFfpuvWtY9wGuh1rf/0hSQauMrxAZsgXVxRhCbY+/+Yjjwm904BrWxXULbrc5yyfpgwHOHhHbpl8NIQIN6OAn3/qcVb7DlGJpLUjfolkdBTY8zGAJxEWecJzjgwwccuWdrzcWliuw0j4fu/MDOonpVQBCY9WcZeKInGHYAKu+eZ/swxAP+9vAR4mc+l/SBYyzCWvM6zG8ebbDK1mkwq2t0G183/0KSxAPJ7OykFD1a/ifb+cXNYJjshCDN+M95A3s6aMEU4VER/9SmQp3YCZvQEDKOBHlqMqlbw0IYAYE/FfU2se+gLI74JizoHBv2OJcduYdV0Ba97fvrb1lYM+tg0VmKUCwCvI9+ZbT2bJH3sM6SE9xt8+3nx6sKzV6h6FlpvDC60Rr2mANsuW3lbqac05Wnmxzk0C8OoJPCqWEmzjyWLJvPq98cG4obJiNlnp7/7xmmhOwyqcy7gDQum1QDwrUJyBKBsJPelJOZJC0pKkerv4LdSZDTSxEVxomstK/WDzmkPK9uUWTEH69VU/bUMuejTNVQ== cardno:000500006944"
@@ -65,19 +97,19 @@ in
       cfg.primaryUser.username
     ])
   ];
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     sops = {
       age.sshKeyPaths = [
         "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"
       ];
       gnupg.sshKeyPaths = [ ];
-      secrets.root-password = mkIf cfg.rootPassword.enable { neededForUsers = true; };
+      secrets.root-password = lib.mkIf cfg.rootPassword.enable { neededForUsers = true; };
     };
 
     users = {
       mutableUsers = cfg.mutableUsers;
-      users.root.initialHashedPassword = mkForce null;
-      users.root.hashedPasswordFile = mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
+      users.root.initialHashedPassword = lib.mkForce null;
+      users.root.hashedPasswordFile = lib.mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
 
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;
       users."${cfg.primaryUser.username}" = {
@@ -95,7 +127,7 @@ in
       };
     };
 
-    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = mkIf cfg.primaryUser.passwordEnable {
+    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.passwordEnable {
       #sopsFile = cfg.primaryUser.defaultSopsFile;
       neededForUsers = true;
     };
@@ -146,7 +178,7 @@ in
         };
         # This is an alias for
         #home.persistence."/persist/home/${cfg.primaryUser.username}" = ..
-        persistence = mkIf config.modules.impermanence.enable { allowOther = true; };
+        persistence = lib.mkIf config.modules.impermanence.enable { allowOther = true; };
       };
   };
 }

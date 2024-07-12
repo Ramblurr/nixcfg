@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.desktop.services.hacompanion;
   username = config.modules.users.primaryUser.username;
@@ -31,7 +30,7 @@ in
     configFile = mkOption {
       description = "The config path that hacompanion uses";
       type = types.path;
-      default = pkgs.writeText "hacompanion-config" (toTOML (cfg.settings // cfg.settingsDefault));
+      default = pkgs.writeText "hacompanion-config" (lib.my.toTOML (cfg.settings // cfg.settingsDefault));
     };
     settings = mkOption {
       type = tomlFormat.type;

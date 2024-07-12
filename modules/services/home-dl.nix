@@ -5,8 +5,6 @@
   utils,
   pkgs,
   inputs,
-  unstable,
-  mine,
   ...
 }:
 let
@@ -149,7 +147,7 @@ in
         Type = "simple";
         StateDirectory = "home-dl/sonarr";
         SupplementaryGroups = [ "${home-ops.users.media.name}" ];
-        ExecStart = "${unstable.sonarr}/bin/NzbDrone -nobrowser -data='${stateDirEffective}/sonarr'";
+        ExecStart = "${pkgs.sonarr}/bin/NzbDrone -nobrowser -data='${stateDirEffective}/sonarr'";
         ReadWritePaths = [
           mediaLocalPath
           dlLocalPath
@@ -165,7 +163,7 @@ in
         Type = "simple";
         StateDirectory = "home-dl/radarr";
         SupplementaryGroups = [ "${home-ops.users.media.name}" ];
-        ExecStart = "${unstable.radarr}/bin/Radarr -nobrowser -data='${stateDirEffective}/radarr'";
+        ExecStart = "${pkgs.radarr}/bin/Radarr -nobrowser -data='${stateDirEffective}/radarr'";
         ReadWritePaths = [
           mediaLocalPath
           dlLocalPath
@@ -182,7 +180,7 @@ in
         GuessMainPID = "no";
         StateDirectory = "home-dl/sabnzbd";
         SupplementaryGroups = [ "${home-ops.users.media.name}" ];
-        ExecStart = "${lib.getExe unstable.sabnzbd} -d -f ${stateDirEffective}/sabnzbd/sabnzbd.ini";
+        ExecStart = "${lib.getExe pkgs.sabnzbd} -d -f ${stateDirEffective}/sabnzbd/sabnzbd.ini";
         WorkingDirectory = "${stateDirEffective}/sabnzbd";
         ReadWritePaths = [
           mediaLocalPath
@@ -199,7 +197,7 @@ in
         Type = "simple";
         SupplementaryGroups = [ "${home-ops.users.media.name}" ];
         StateDirectory = "home-dl/prowlarr";
-        ExecStart = "${lib.getExe unstable.prowlarr} -nobrowser -data=${stateDirEffective}/prowlarr";
+        ExecStart = "${lib.getExe pkgs.prowlarr} -nobrowser -data=${stateDirEffective}/prowlarr";
         Restart = "on-failure";
       } // sharedServiceConfig;
     };
@@ -215,10 +213,10 @@ in
       serviceConfig = {
         Type = "exec";
         StateDirectory = "home-dl/overseerr";
-        WorkingDirectory = "${pkgs.my.overseerr}/libexec/overseerr/deps/overseerr";
-        ExecStart = "${pkgs.my.overseerr}/bin/overseerr";
+        WorkingDirectory = "${pkgs.overseerr}/libexec/overseerr/deps/overseerr";
+        ExecStart = "${pkgs.overseerr}/bin/overseerr";
         BindPaths = [
-          "/var/lib/home-dl/overseerr/:${pkgs.my.overseerr}/libexec/overseerr/deps/overseerr/config/"
+          "/var/lib/home-dl/overseerr/:${pkgs.overseerr}/libexec/overseerr/deps/overseerr/config/"
         ];
       } // sharedServiceConfig // { PrivateMounts = true; };
     };
@@ -240,7 +238,7 @@ in
       };
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${unstable.recyclarr}/bin/recyclarr sync --config ${stateDirEffective}/recyclarr/recyclarr.yaml";
+        ExecStart = "${pkgs.recyclarr}/bin/recyclarr sync --config ${stateDirEffective}/recyclarr/recyclarr.yaml";
         LoadCredential = [
           "sonarr.xml:${stateDirEffective}/sonarr/config.xml"
           "radarr.xml:${stateDirEffective}/radarr/config.xml"

@@ -5,8 +5,6 @@
   utils,
   pkgs,
   inputs,
-  unstable,
-  mine,
   ...
 }:
 let
@@ -109,7 +107,7 @@ in
     systemd.tmpfiles.settings."10-paperless" = lib.mkForce { };
     services.paperless = {
       enable = true;
-      package = unstable.paperless-ngx;
+      package = pkgs.paperless-ngx;
       mediaDir = "${localPath}/media";
       consumptionDir = "${localPath}/consume";
       passwordFile = config.sops.secrets."paperless/adminPassword".path;

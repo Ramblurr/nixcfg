@@ -5,17 +5,25 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.hardware;
 in
 {
   options = {
     modules.hardware = {
-      fwupd.enable = mkBoolOpt true;
-      udisks2.enable = mkBoolOpt true;
-      enableRedistributableFirmware = mkBoolOpt true;
-      usbModeSwitch.enable = mkBoolOpt false;
+      fwupd.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      udisks2.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      enableRedistributableFirmware = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      usbModeSwitch.enable = lib.mkEnableOption "";
     };
   };
   config = {
