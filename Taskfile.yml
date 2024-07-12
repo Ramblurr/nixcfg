@@ -95,6 +95,21 @@ tasks:
           TARGET_HOST: "{{.host}}"
           FLAKE_URI: .#{{.flake | default "{{.host}}"}}
 
+  test:
+    desc: Test a configuration for a remote
+    summary: |
+      host: the hostname to build (required)
+      flake: the flake name if different from host (optional)
+    requires:
+      vars: ["host"]
+    #silent: true
+    cmds:
+      - task: nixos-rebuild-local
+        vars:
+          ACTION: test
+          TARGET_HOST: "{{.host}}"
+          FLAKE_URI: .#{{.flake | default "{{.host}}"}}
+
   switch-remote:
     desc: Switch a configuration for a remote
     summary: |

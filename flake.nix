@@ -10,8 +10,8 @@
     microvm.url = "github:astro/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
-    caddy.url = "github:Ramblurr/nixos-caddy";
-    caddy.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    #caddy.url = "github:Ramblurr/nixos-caddy";
+    #caddy.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     ags.url = "github:Aylur/ags";
     ags.inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -87,9 +87,9 @@
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     sops-nix.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
-    agenix.url = "github:ryantm/agenix";
-    agenix.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    agenix.inputs.darwin.follows = "";
+    #agenix.url = "github:ryantm/agenix";
+    #agenix.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    #agenix.inputs.darwin.follows = "";
 
     nixpkgs-wayland.url = "github:nix-community/nixpkgs-wayland/master";
     nixpkgs-wayland.inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -133,6 +133,7 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
+        "aarch64-darwin"
       ];
     };
 

@@ -37,6 +37,7 @@
       kernelModules = [ ];
       postDeviceCommands = lib.mkAfter ''
         zfs rollback -r rpool/encrypted/local/root@blank && \
+        zfs rollback -r rpool/encrypted/vms@blank && \
         echo "rollback complete"
       '';
     };
