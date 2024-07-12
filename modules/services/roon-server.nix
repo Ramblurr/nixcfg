@@ -4,7 +4,6 @@
   pkgs,
   lib,
   utils,
-  unstable,
   ...
 }:
 let
@@ -91,7 +90,6 @@ in
       };
       serviceConfig = {
         ExecStart = "${lib.getExe pkgs.roon-server}";
-        #ExecStart = lib.mkForce "${unstable.roon-server}/bin/RoonServer";
         ExecStartPost = rebootBluOS;
         StateDirectory = "roon-server";
         SupplementaryGroups = [

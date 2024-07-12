@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.hardware.pipewire;
   username = config.modules.users.primaryUser.username;
@@ -57,8 +56,8 @@ in
 {
   imports = [ ];
   options.modules.hardware.pipewire = {
-    enable = mkBoolOpt false;
-    denoise.enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
+    denoise.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     security.rtkit.enable = true;

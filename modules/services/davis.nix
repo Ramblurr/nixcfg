@@ -4,7 +4,6 @@
   lib,
   pkgs,
   inputs,
-  unstable,
   ...
 }:
 let
@@ -57,7 +56,6 @@ in
     };
     services.davis = {
       enable = true;
-      package = unstable.davis;
       hostname = cfg.domain;
       database = {
         driver = "postgresql";

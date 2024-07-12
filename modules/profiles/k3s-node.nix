@@ -7,15 +7,17 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.profiles.k3s-node;
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in
 {
   options.modules.profiles.k3s-node = {
-    enable = mkBoolOpt false;
-    hostname = mkStrOpt "";
+    enable = lib.mkEnableOption "";
+    hostname = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = "";
+    };
     defaultSopsFile = mkOption { type = lib.types.path; };
     user = mkOption {
       type = types.attrs;

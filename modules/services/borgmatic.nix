@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.services.borgmatic;
   username = config.modules.users.primaryUser.username;
@@ -34,7 +33,7 @@ let
 in
 {
   options.modules.services.borgmatic = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
     name = mkOption { type = types.str; };
 
     exclude-patterns = mkOption {

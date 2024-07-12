@@ -118,128 +118,22 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs-unstable,
-      nixos-raspberrypi,
-      ...
-    }:
-    let
-      defaultSystem = "x86_64-linux";
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        ./nix/hosts.nix
+        ./nix/pkgs.nix
+      ];
 
-      allOverlays =
-        [ self.overlay ]
-        ++ (lib.attrValues self.overlays)
-        ++ [
-          #   inputs.clojure-lsp.overlays.default
-        ];
-
-      mkPkgs =
-        pkgsArg: systemArg:
-        import pkgsArg {
-          system = systemArg;
-          config.allowUnfree = true;
-          config.permittedInsecurePackages = [
-            "electron-25.9.0"
-            "electron-24.8.6"
-            "electron-27.3.11"
-          ];
-          overlays = allOverlays;
-        };
-
-      pkgs = mkPkgs nixpkgs-unstable defaultSystem;
-      pkgs-stable = mkPkgs inputs.nixpkgs-stable defaultSystem;
-
-      lib = nixpkgs-unstable.lib.extend (
-        self: super: {
-          my = import ./lib {
-            inherit pkgs inputs;
-            lib = self;
-          };
-        }
-      );
-
-      mapHosts =
-        path: nixpkgsType: system:
-        let
-          table =
-            {
-              unstable = {
-                isStable = false;
-                nixpkgs = nixpkgs-unstable;
-                home-manager = inputs.home-manager;
-                extraModules = [
-                  inputs.disko-unstable.nixosModules.disko
-                ] ++ lib.my.mapModulesRec' ./modules-unstable import;
-              };
-
-              stable = {
-                isStable = true;
-                nixpkgs = inputs.nixpkgs-stable;
-                home-manager = inputs.home-manager-stable;
-                extraModules = [ inputs.disko-stable.nixosModules.disko ];
-              };
-            }
-            .${nixpkgsType};
-
-          thisPkgs = mkPkgs table.nixpkgs system;
-          thisLib = table.nixpkgs.lib.extend (
-            self: super: {
-              my = import ./lib {
-                inherit inputs;
-                pkgs = thisPkgs;
-                lib = self;
-              };
-            }
-          );
-        in
-        thisLib.my.mapHosts path {
-          isStable = table.isStable;
-          extraModules = table.extraModules;
-          nixosSystem = table.nixpkgs.lib.nixosSystem;
-          unstable = mkPkgs inputs.nixpkgs-unstable system;
-          mine = mkPkgs inputs.nixpkgs-mine system;
-          system = system;
-          home-manager = table.home-manager;
-          overlays = allOverlays;
-        };
-    in
-    {
-      lib = lib.my;
-      # Nobody should really be consuming my modules from this flake
-      # nixosModules = lib.my.mapModulesRec ./modules import;
-
-      nixosConfigurations =
-        (mapHosts ./hosts/unstable/x86_64-linux "unstable" "x86_64-linux")
-        // (mapHosts ./hosts/unstable/aarch64-linux "unstable" "aarch64-linux")
-        // (mapHosts ./hosts/stable/x86_64-linux "stable" "x86_64-linux");
-      #// (mapHosts ./hosts/stable/aarch64-linux "stable" "aarch64-linux");
-
-      images = {
-        ovos-kitchen =
-          (import ./hosts/unstable/aarch64-linux/ovos-kitchen/sd-image.nix {
-            inherit self nixos-raspberrypi;
-          }).sd-image;
-        ovos-bedroom =
-          (import ./hosts/unstable/aarch64-linux/ovos-bedroom/sd-image.nix {
-            inherit self nixos-raspberrypi;
-          }).sd-image;
-        fairybox =
-          (import ./hosts/unstable/aarch64-linux/fairybox/sd-image.nix { inherit self nixos-raspberrypi; })
-          .sd-image;
-      };
-
-      # breaks `nix flake check` with
-      #   error: flake attribute 'packages.x86_64-linux.packages' is not a derivation
-      # packages."${system}" = import ./packages {inherit pkgs;};
-
-      overlay = final: prev: { my = self.packages."${defaultSystem}"; };
-
-      packages."${defaultSystem}" = import ./packages { inherit pkgs-stable; };
-
-      overlays = lib.my.mapModules ./overlays import;
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
     };
+
 }

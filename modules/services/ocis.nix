@@ -5,8 +5,6 @@
   utils,
   pkgs,
   inputs,
-  unstable,
-  mine,
   ...
 }:
 let
@@ -40,12 +38,6 @@ in
     group = lib.mkOption { type = lib.types.unspecified; };
     subnet = lib.mkOption { type = lib.types.unspecified; };
   };
-
-  disabledModules = [
-    "${inputs.nixpkgs-stable}/nixos/modules/services/web-apps/ocis.nix"
-    "${inputs.nixpkgs-unstable}/nixos/modules/services/web-apps/ocis.nix"
-  ];
-  imports = [ "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/ocis.nix" ];
 
   config = lib.mkIf cfg.enable {
 
@@ -89,7 +81,6 @@ in
 
     services.ocis = {
       enable = true;
-      package = unstable.ocis-bin;
       url = "https://${cfg.domain}";
       stateDir = "${localPath}/data";
       configDir = "${localPath}/config";

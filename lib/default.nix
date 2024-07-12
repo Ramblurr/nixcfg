@@ -1,16 +1,10 @@
-{ inputs, lib, pkgs, ... }:
-let
-  inherit (lib) makeExtensible attrValues foldr;
-  inherit (modules) mapModules;
-
-  modules = import ./modules.nix {
-    inherit lib;
-    self.attrs = import ./attrs.nix {
-      inherit lib;
-      self = { };
-    };
-  };
-
-  mylib = makeExtensible
-    (self: with self; mapModules ./. (file: import file { inherit self lib pkgs inputs; }));
-in mylib.extend (self: super: foldr (a: b: a // b) { } (attrValues super))
+inputs: final: prev:
+prev.lib.composeManyExtensions (
+  # Order is important to allow using prev instead of final in more places to
+  # speed up evaluation.
+  map (x: import x inputs) [
+    ./attrs.nix
+    ./network.nix
+    ./toml.nix
+  ]
+) final prev

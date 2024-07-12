@@ -7,14 +7,13 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.services.podman;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.podman = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     environment.persistence."/persist" = {

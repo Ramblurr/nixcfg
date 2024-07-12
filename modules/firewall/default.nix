@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.firewall;
   username = config.modules.users.primaryUser.username;
@@ -17,7 +16,7 @@ let
 in
 {
   options.modules.firewall = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     networking = {

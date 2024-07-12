@@ -7,15 +7,17 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.services.docker;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.docker = {
-    enable = mkBoolOpt false;
-    enableOnBoot = mkBoolOpt true;
+    enable = lib.mkEnableOption "";
+    enableOnBoot = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+    };
   };
   config = mkIf cfg.enable {
     environment.persistence."/persist" = {

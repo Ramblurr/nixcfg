@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.editors.vim;
   username = config.modules.users.primaryUser.username;
@@ -16,7 +15,7 @@ let
 in
 {
   options.modules.editors.vim = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
     extraPlugins = mkOption {
       type = types.listOf types.package;
       default = [ ];

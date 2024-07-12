@@ -5,8 +5,6 @@
   utils,
   pkgs,
   inputs,
-  unstable,
-  mine,
   ...
 }:
 let

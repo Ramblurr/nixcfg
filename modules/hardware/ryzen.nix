@@ -5,16 +5,15 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.hardware.ryzen;
 in
 {
   options = {
     modules.hardware.ryzen = {
-      enable = mkBoolOpt false;
+      enable = lib.mkEnableOption "";
       undervolt = {
-        enable = mkBoolOpt false;
+        enable = lib.mkEnableOption "";
         value = mkOption {
           type = types.str;
           default = "-p 0 -v 30 -f A8"; # Pstate 0, 1.25 voltage, 4200 clock speed

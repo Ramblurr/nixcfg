@@ -5,7 +5,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.desktop.services.ha-shutdown;
   shutdownScript = pkgs.writeScript "ha-shutdown.py" (builtins.readFile ./shutdown.py);

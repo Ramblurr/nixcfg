@@ -15,7 +15,7 @@ let
 in
 {
   options.modules.hardware.nvidia = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     # nixpkgs.config.cudaSupport = true;

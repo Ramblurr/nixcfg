@@ -7,14 +7,13 @@
   ...
 }:
 with lib;
-with lib.my; let
   cfg = config.modules.shell.ZZNAME;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in {
   options.modules.shell.ZZNAME = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
@@ -38,12 +37,11 @@ in {
   ...
 }:
 with lib;
-with lib.my; let
   cfg = config.modules.services.ZZNAME;
   withImpermanence = config.modules.impermanence.enable;
 in {
   options.modules.services.ZZNAME = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
   };

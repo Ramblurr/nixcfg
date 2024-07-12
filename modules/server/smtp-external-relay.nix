@@ -7,17 +7,25 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.server.smtp-external-relay;
   hostName = config.networking.hostName;
 in
 {
   options.modules.server.smtp-external-relay = {
-    enable = mkBoolOpt false;
-    emailTo = mkStrOpt config.repo.secrets.global.email.work;
-    emailFrom = mkStrOpt config.repo.secrets.global.email.home;
-    smtpHost = mkStrOpt "10.5.0.3";
+    enable = lib.mkEnableOption "";
+    emailTo = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = config.repo.secrets.global.email.work;
+    };
+    emailFrom = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = config.repo.secrets.global.email.home;
+    };
+    smtpHost = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = "10.5.0.3";
+    };
   };
   config =
     let

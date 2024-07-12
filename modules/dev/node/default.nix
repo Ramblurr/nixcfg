@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.node;
@@ -17,7 +16,7 @@ let
 in
 {
   options.modules.dev.node = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
 
   config = mkIf cfg.enable {

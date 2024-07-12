@@ -7,7 +7,6 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.desktop.programs.nheko;
   username = config.modules.users.primaryUser.username;
@@ -16,7 +15,7 @@ let
 in
 {
   options.modules.desktop.programs.nheko = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     environment.persistence."/persist" = mkIf withImpermanence {

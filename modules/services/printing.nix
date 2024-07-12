@@ -7,13 +7,12 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.services.printing;
 in
 {
   options.modules.services.printing = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
     drivers = mkOption {
       type = types.listOf types.package;
       default = [ ];

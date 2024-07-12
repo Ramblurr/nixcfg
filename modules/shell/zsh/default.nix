@@ -3,12 +3,10 @@
   config,
   lib,
   pkgs,
-  unstable,
   inputs,
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.shell.zsh;
   username = config.modules.users.primaryUser.username;
@@ -17,10 +15,13 @@ let
 in
 {
   options.modules.shell.zsh = {
-    enable = mkBoolOpt false;
-    starship.enable = mkBoolOpt false;
-    powerlevel10k.enable = mkBoolOpt false;
-    profileExtra = mkStrOpt "";
+    enable = lib.mkEnableOption "";
+    starship.enable = lib.mkEnableOption "";
+    powerlevel10k.enable = lib.mkEnableOption "";
+    profileExtra = lib.mkOption {
+      type = lib.types.uniq lib.types.str;
+      default = "";
+    };
   };
   config = mkIf cfg.enable {
     environment.pathsToLink = [ "/share/zsh" ];

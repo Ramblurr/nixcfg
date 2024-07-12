@@ -7,13 +7,12 @@
   ...
 }:
 with lib;
-with lib.my;
 let
   cfg = config.modules.desktop.random-apps;
 in
 {
   options.modules.desktop.random-apps = {
-    enable = mkBoolOpt false;
+    enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     myhm =
