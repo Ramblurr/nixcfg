@@ -32,7 +32,7 @@
     '';
 
     firewall = {
-      enable = true;
+      enable = false;
       localZoneName = "local";
       snippets = {
         nnf-common.enable = false;
