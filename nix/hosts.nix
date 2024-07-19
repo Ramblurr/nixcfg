@@ -10,6 +10,7 @@
           isStable = false;
           system = "x86_64-linux";
           path = ../hosts/dewey;
+          hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
         };
         aquinas = {
           isStable = false;

@@ -91,18 +91,24 @@ in
               };
             };
 
-            # Options for the container backend
-            container = {
-              macvlan = lib.mkOption {
+            networking = {
+              mainLinkName = lib.mkOption {
                 type = lib.types.str;
-                description = "The host interface to which the container should be attached";
+                description = "The main ethernet link name inside of the guest.";
+                default = submod.config.microvm.macvtap;
               };
-            };
-
-            networking.mainLinkName = lib.mkOption {
-              type = lib.types.str;
-              description = "The main ethernet link name inside of the guest.";
-              default = submod.config.microvm.macvtap;
+              address = lib.mkOption {
+                type = lib.types.str;
+                description = "The IP address of the guest";
+              };
+              gateway = lib.mkOption {
+                type = lib.types.str;
+                description = "The gateway of the guest";
+              };
+              dns = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                description = "The DNS servers of the guest";
+              };
             };
 
             zfs = lib.mkOption {

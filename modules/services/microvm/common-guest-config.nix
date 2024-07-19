@@ -1,5 +1,5 @@
 authorizedKeys: _guestName: guestCfg:
-{ lib, ... }:
+{ lib, pkgs, ... }:
 let
   inherit (lib) mkForce;
 in
@@ -27,33 +27,25 @@ in
     gc.automatic = mkForce false;
   };
 
+  environment.systemPackages = with pkgs; [ kitty.terminfo ];
+
   systemd.network.enable = true;
   networking.useNetworkd = true;
-  #systemd.network.networks."20-lan" = {
-  #  matchConfig.Type = "ether";
-  #  networkConfig = {
-  #    DHCP = "yes";
-  #    ##IPForward = "yes";
-  #    #DNSSEC = "no";
-  #    #Address = [ "10.9.4.201/22" ];
-  #    #Gateway = "10.9.4.1";
-  #    #DNS = [ "10.9.4.4" ];
-  #    #IPv6AcceptRA = true;
-  #    #DHCP = "no";
-  #  };
-  #};
-
   systemd.network.networks."10-${guestCfg.networking.mainLinkName}" = {
     matchConfig.Name = guestCfg.networking.mainLinkName;
-    DHCP = "yes";
+    #matchConfig.Type = "ether";
+    DHCP = "no";
     # XXX: Do we really want this?
-    dhcpV4Config.UseDNS = false;
-    dhcpV6Config.UseDNS = false;
-    ipv6AcceptRAConfig.UseDNS = false;
+    #dhcpV4Config.UseDNS = false;
+    #dhcpV6Config.UseDNS = false;
+    #ipv6AcceptRAConfig.UseDNS = false;
     networkConfig = {
-      IPv6PrivacyExtensions = "yes";
-      MulticastDNS = true;
-      IPv6AcceptRA = true;
+      Address = [ guestCfg.networking.address ];
+      Gateway = guestCfg.networking.gateway;
+      DNS = guestCfg.networking.dns;
+      #IPv6PrivacyExtensions = "yes";
+      #MulticastDNS = true;
+      #IPv6AcceptRA = true;
     };
     linkConfig.RequiredForOnline = "routable";
   };
