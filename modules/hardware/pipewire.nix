@@ -63,7 +63,7 @@ in
     security.rtkit.enable = true;
 
     # Vehemently do not use plain alsa or pulse audio, pipewire has its own alsa and pulse compat support
-    sound.enable = pkgs.lib.mkForce false;
+    #sound.enable = pkgs.lib.mkForce false;
     hardware.pulseaudio.enable = pkgs.lib.mkForce false;
 
     environment.systemPackages = with pkgs; [
