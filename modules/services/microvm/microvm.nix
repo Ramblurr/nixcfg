@@ -20,6 +20,7 @@ in
   inherit (guestCfg) autostart;
   config = {
     imports = guestCfg.modules ++ [
+      inputs.nixos-nftables-firewall.nixosModules.default
       (import ./common-guest-config.nix config.modules.users.primaryUser.authorizedKeys guestName
         guestCfg
       )
