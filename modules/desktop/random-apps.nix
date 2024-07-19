@@ -39,8 +39,8 @@ in
             openscad-lsp
             freecad
             prusa-slicer
-            eagle
-            xcircuit
+            #eagle
+            #xcircuit
             brightnessctl
             virt-viewer
             evince
@@ -55,7 +55,7 @@ in
             libnotify # `notify-send`
             gparted
             inkscape
-            krita
+            #krita
             meld
             #gimp-with-plugins
             gimp
