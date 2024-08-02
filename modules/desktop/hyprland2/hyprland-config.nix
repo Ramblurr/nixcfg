@@ -50,10 +50,13 @@ in
           #extraConfig = builtins.readFile ../hyprland/configs/hyprland.conf;
           # plugins = [ inputs.hy3.packages.x86_64-linux.hy3 ];
           settings = {
+            debug = {
+              disable_logs = true;
+            };
             exec-once = [
               "ags -b hypr"
-              "hyprctl setcursor Adwaita 24"
-              "easyeffects --gapplication-service"
+              #"hyprctl setcursor Adwaita 24"
+              #"easyeffects --gapplication-service"
             ];
             monitor = [
               "DP-2,highres,0x2160,1"

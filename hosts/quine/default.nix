@@ -92,7 +92,7 @@ in
         firefox.enable = true;
         chromium.enable = true;
       };
-      gaming.enable = true;
+      gaming.enable = false;
       services = {
         ha-shutdown = {
           enable = true;
