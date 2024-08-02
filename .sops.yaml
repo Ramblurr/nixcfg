@@ -24,28 +24,28 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
-  - path_regex: hosts/unstable/x86_64-linux/quine/secrets.sops.ya?ml$
+  - path_regex: hosts/quine/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *quine
           - *disaster-recovery
         pgp:
           - *ramblurr
-  - path_regex: hosts/unstable/x86_64-linux/aquinas/secrets.sops.ya?ml$
+  - path_regex: hosts/aquinas/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *aquinas
           - *disaster-recovery
         pgp:
           - *ramblurr
-  - path_regex: hosts/stable/x86_64-linux/mali/.*.sops.*$
+  - path_regex: hosts/mali/.*.sops.*$
     key_groups:
       - age:
           - *mali
           - *disaster-recovery
         pgp:
           - *ramblurr
-  - path_regex: hosts/stable/x86_64-linux/ibnsina/.*.sops.*$
+  - path_regex: hosts/ibnsina/.*.sops.*$
     key_groups:
       - age:
           - *ibnsina
@@ -53,7 +53,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/stable/x86_64-linux/mill/.*.sops.*$
+  - path_regex: hosts/mill/.*.sops.*$
     key_groups:
       - age:
           - *mill
@@ -61,7 +61,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/stable/x86_64-linux/debord/.*.sops.*$
+  - path_regex: hosts/debord/.*.sops.*$
     key_groups:
       - age:
           - *debord
@@ -69,7 +69,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/unstable/x86_64-linux/dewey/.*.sops.*$
+  - path_regex: hosts/dewey/.*.sops.*$
     key_groups:
       - age:
           - *dewey
@@ -77,7 +77,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/stable/x86_64-linux/peirce/.*.sops.*$
+  - path_regex: hosts/peirce/.*.sops.*$
     key_groups:
       - age:
           - *peirce
@@ -85,7 +85,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/stable/x86_64-linux/vpn/.*.sops.*$
+  - path_regex: hosts/vpn/.*.sops.*$
     key_groups:
       - age:
           - *vpn
@@ -93,7 +93,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/unstable/aarch64-linux/ovos-kitchen/.*.sops.*$
+  - path_regex: hosts/ovos-kitchen/.*.sops.*$
     key_groups:
       - age:
           - *ovos-kitchen
@@ -101,7 +101,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/unstable/aarch64-linux/ovos-bedroom/.*.sops.*$
+  - path_regex: hosts/ovos-bedroom/.*.sops.*$
     key_groups:
       - age:
           - *ovos-bedroom
@@ -109,7 +109,7 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/stable/aarch64-linux/fairybox/.*.sops.*$
+  - path_regex: hosts/fairybox/.*.sops.*$
     key_groups:
       - age:
           - *fairybox
