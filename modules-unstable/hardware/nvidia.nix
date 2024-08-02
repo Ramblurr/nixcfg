@@ -34,7 +34,7 @@ in
         # package = config.boot.kernelPackages.nvidiaPackages.beta;
 
         powerManagement.enable = false; # Disable to prevent suspend/resume issues
-        open = true; # Do not use the open source (non-nouveau) driver until it's more stable
+        open = false; # Do not use the open source (non-nouveau) driver until it's more stable
       };
 
       uinput.enable = true;
@@ -68,7 +68,7 @@ in
       "mt7921e"
     ];
     services.xserver.videoDrivers = [ "nvidia" ]; # Install the nvidia drivers
-    virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
+    #virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
     environment.systemPackages = [
       pkgs.nvitop
       pkgs.nvtopPackages.nvidia
