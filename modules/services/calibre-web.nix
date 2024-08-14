@@ -131,7 +131,10 @@ in
 
     modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
       "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
+        externalDomains = [
+          cfg.domain
+          cfg.domainKobo
+        ];
       };
     };
     modules.services.ingress.virtualHosts.${cfg.domainKobo} = lib.mkIf (cfg.domainKobo != "") {
