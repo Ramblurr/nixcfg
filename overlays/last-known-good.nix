@@ -45,4 +45,12 @@ in
     beancount
     fava
     ;
+
+  inherit
+    (nixpkgs {
+      rev = "f008a5b2616de80a25e705e9019d9b7283faab8b";
+      sha256 = "sha256-Lnd9hT46PiBxxZHnjOcRaRqUEt9whJLgd/VNd4xqhII=";
+    })
+    calibre-web
+    ;
 }
