@@ -28,6 +28,7 @@ in
 
       # Apps, apps, apps
       home.packages = with pkgs; [
+        zeal
         musescore
         audacity
         pavucontrol
