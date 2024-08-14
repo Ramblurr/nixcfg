@@ -97,11 +97,11 @@ in
     };
     services = {
       attic-watch-store.enable = false;
-      docker.enable = false;
+      docker.enable = true;
       docker.enableOnBoot = false;
       flatpak.enable = false;
       microsocks.enable = false;
-      podman.enable = false;
+      podman.enable = true;
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       printing.enable = true;
       sshd.enable = true;
@@ -109,12 +109,12 @@ in
     dev = {
       clojure.enable = true;
       fennel.enable = false;
-      jetbrains.enable = false;
+      jetbrains.enable = true;
       k8s.enable = false;
       node.enable = false;
       python.enable = true;
       radicle.enable = false;
-      random.enable = false;
+      random.enable = true;
     };
 
     editors = {
