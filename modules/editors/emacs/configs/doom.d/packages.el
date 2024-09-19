@@ -59,8 +59,8 @@
 ;; (package! ox-gemini)
 
 ;; New-fangled LLM toys
-(package! copilot
-  :recipe (:host github :repo "zerolfx/copilot.el" :files ("*.el" "dist")))
+;; (package! copilot
+;;   :recipe (:host github :repo "zerolfx/copilot.el" :files ("*.el" "dist")))
 
 ;; (package! gptel
 ;;   :recipe (:host github :repo "karthink/gptel"))
@@ -68,8 +68,16 @@
 ;; (package! gptel-extensions
 ;;   :recipe (:host github :repo "kamushadenes/gptel-extensions.el" :files ("gptel-extensions.el")))
 
-(package! chatgpt-shell
-  :recipe (:host github :repo "xenodium/chatgpt-shell"))
+;; (package! chatgpt-shell
+;;   :recipe (:host github :repo "xenodium/chatgpt-shell"))
+
+
+;; Tabby
+(package! tabby :recipe
+  (:type git
+   :host github
+   :files ("*.el" "node_scripts")
+   :repo "alan-w-255/tabby.el"))
 
 ;; Clojure
 (package! clj-ns-name
