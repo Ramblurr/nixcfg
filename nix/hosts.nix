@@ -17,6 +17,11 @@
           system = "x86_64-linux";
           path = ../hosts/aquinas;
         };
+        witt = {
+          isStable = false;
+          system = "x86_64-linux";
+          path = ../hosts/witt;
+        };
         quine = {
           isStable = false;
           system = "x86_64-linux";

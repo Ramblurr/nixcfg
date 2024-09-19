@@ -7,25 +7,31 @@
 }:
 let
   inherit (config.repo.secrets.global) domain;
-  hn = "aquinas";
+  hn = "witt";
+  machine-id = "798016ab36504bd0a5397317013bedba";
   defaultSopsFile = ./secrets.sops.yaml;
+  ramblurr = import ../ramblurr.nix {
+    inherit
+      config
+      lib
+      pkgs
+      inputs
+      ;
+  };
 in
 {
   imports = [
-    ../../config/secrets.nix
-    ../../config/workstation-impermanence.nix
-    ./hardware.nix
     ./disk-config.nix
-    ./syncthing.nix
-    ./power.nix
+    ./hardware.nix
     ./home.nix
+    ../../config/workstation-impermanence.nix
   ];
   system.stateVersion = "24.05";
   sops.defaultSopsFile = defaultSopsFile;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-  environment.etc."machine-id".text = "5733928abbdb4ebc83d96af20dde1d44";
+  environment.etc."machine-id".text = machine-id;
 
-  time.timeZone = "Europe/Berlin";
+  time.timeZone = "America/Denver";
   i18n.defaultLocale = "en_US.utf8";
 
   networking = {
@@ -56,80 +62,7 @@ in
       ];
     };
   };
-
   modules = {
-    desktop = {
-      kde.enable = true;
-      xdg.enable = true;
-      browsers = {
-        firefox.enable = true;
-        chromium.enable = true;
-      };
-      programs = {
-        junction.enable = true;
-        kdeconnect.enable = true;
-        kitty.enable = true;
-        logseq.enable = true;
-        nextcloud.enable = true;
-        nheko.enable = true;
-        onepassword.enable = true;
-        owncloud.enable = true;
-        signal.enable = true;
-        thunderbird.enable = true;
-      };
-    };
-    shell = {
-      aria2.enable = true;
-      attic.enable = false;
-      atuin.enable = true;
-      atuin.sync.enable = true;
-      direnv.enable = true;
-      git.enable = true;
-      gpg-agent.enable = true;
-      htop.enable = true;
-      random.enable = true;
-      ssh.enable = true;
-      tmux.enable = true;
-      zoxide.enable = true;
-      zsh.enable = true;
-      zsh.powerlevel10k.enable = false;
-      zsh.starship.enable = true;
-    };
-    services = {
-      attic-watch-store.enable = false;
-      docker.enable = true;
-      docker.enableOnBoot = false;
-      flatpak.enable = false;
-      microsocks.enable = false;
-      podman.enable = true;
-      printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
-      printing.enable = true;
-      sshd.enable = true;
-    };
-    dev = {
-      clojure.enable = true;
-      fennel.enable = false;
-      jetbrains.enable = true;
-      k8s.enable = false;
-      node.enable = true;
-      python.enable = true;
-      radicle.enable = false;
-      random.enable = true;
-    };
-
-    editors = {
-      emacs.enable = true;
-      vim = {
-        enable = true;
-        extraPlugins = with pkgs.vimPlugins; [
-          vim-airline
-          tabular
-          vim-nix
-          gruvbox-community
-        ];
-      };
-      vscode.enable = true;
-    };
     impermanence.enable = true;
     boot.zfs.enable = true;
     boot.zfs.usePlymouth = false;
@@ -161,5 +94,81 @@ in
         "libvirtd"
       ];
     };
+
+    desktop = {
+      kde.enable = true;
+      xdg.enable = true;
+      browsers = {
+        firefox.enable = true;
+        chromium.enable = true;
+      };
+
+      programs = {
+        junction.enable = true;
+        kdeconnect.enable = true;
+        #kitty.enable = true;
+        logseq.enable = true;
+        #nextcloud.enable = true;
+        nheko.enable = true;
+        onepassword.enable = true;
+        #owncloud.enable = true;
+        signal.enable = true;
+        thunderbird.enable = true;
+      };
+    };
+    shell = {
+      aria2.enable = true;
+      attic.enable = false;
+      atuin.enable = true;
+      atuin.sync.enable = true;
+      direnv.enable = true;
+      git.enable = true;
+      gpg-agent.enable = true;
+      htop.enable = true;
+      random.enable = true;
+      ssh.enable = true;
+      tmux.enable = true;
+      zoxide.enable = true;
+      zsh.enable = true;
+      zsh.powerlevel10k.enable = false;
+      zsh.starship.enable = true;
+    };
+
+    editors = {
+      emacs.enable = true;
+      vim = {
+        enable = true;
+        extraPlugins = with pkgs.vimPlugins; [
+          vim-airline
+          tabular
+          vim-nix
+          gruvbox-community
+        ];
+      };
+      vscode.enable = true;
+    };
+
+    services = {
+      attic-watch-store.enable = false;
+      docker.enable = true;
+      docker.enableOnBoot = false;
+      flatpak.enable = false;
+      microsocks.enable = false;
+      podman.enable = true;
+      printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
+      printing.enable = true;
+      sshd.enable = true;
+    };
+    dev = {
+      clojure.enable = true;
+      fennel.enable = false;
+      jetbrains.enable = true;
+      k8s.enable = false;
+      node.enable = true;
+      python.enable = true;
+      radicle.enable = false;
+      random.enable = true;
+    };
   };
+
 }

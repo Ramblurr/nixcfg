@@ -130,10 +130,10 @@ in
                   shown = [
                     "org.kde.plasma.volume"
                     "org.kde.plasma.battery"
-                  ];
-                  hidden = [
                     "org.kde.plasma.networkmanagement"
                     "org.kde.plasma.bluetooth"
+                  ];
+                  hidden = [
                   ];
                 };
               }
