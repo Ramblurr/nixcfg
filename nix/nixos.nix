@@ -18,6 +18,7 @@ let
     inputs.nixos-extra-modules.overlays.default
     (import ../lib inputs)
     (import ../overlays/last-known-good.nix)
+    (import ../overlays/roon-server.nix)
   ] ++ (import ../pkgs/default.nix inputs);
 
   mkPkgs =
