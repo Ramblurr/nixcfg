@@ -16,6 +16,7 @@ keys:
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
       - &mill age1gxvdmyxmx4rczdaqaah8ysrwwpcladf9llax5ppleutesrwnxp9qxd4l69
       - &fairybox age17gsltm4knk7d42nstzl3s07m5g6njvetlmhkmv0p7839afn4f5nqyqkn66
+      - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
 creation_rules:
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
@@ -28,6 +29,13 @@ creation_rules:
     key_groups:
       - age:
           - *quine
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
+  - path_regex: hosts/witt/secrets.sops.ya?ml$
+    key_groups:
+      - age:
+          - *witt
           - *disaster-recovery
         pgp:
           - *ramblurr
