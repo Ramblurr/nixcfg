@@ -36,7 +36,8 @@ in
       {
         home.packages = [
           pkgs.musescore
-          pkgs.muse-sounds-manager
+          # https://nixpk.gs/pr-tracker.html?pr=341856
+          #pkgs.muse-sounds-manager
         ];
       };
   };
