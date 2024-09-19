@@ -31,6 +31,7 @@
     ./desktop/programs/kicad.nix
     ./desktop/programs/kitty/default.nix
     ./desktop/programs/logseq.nix
+    ./desktop/programs/musescore.nix
     ./desktop/programs/nextcloud.nix
     ./desktop/programs/nheko.nix
     ./desktop/programs/obs.nix
