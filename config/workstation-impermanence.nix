@@ -30,7 +30,6 @@ in
         ".config/gnupg"
         ".config/inkscape"
         ".config/Morgen"
-        ".config/MuseScore"
         ".config/OpenSCAD"
         ".config/PrusaSlicer"
         ".config/PrusaSlicer-alpha"
@@ -43,11 +42,8 @@ in
         ".local/share/fonts"
         ".local/share/krita"
         ".local/share/Zeal"
-        ".local/share/MuseScore"
         ".local/share/OpenSCAD"
         ".local/state/audacity"
-        ".local/state/MuseScore"
-        ".local/state/muse-sounds-manager"
 
         ".config/gtk-3.0" # fuse mounted from /nix/dotfiles/Plasma/.config/gtk-3.0
         ".config/gtk-4.0" # to /home/$USERNAME/.config/gtk-3.0
