@@ -126,6 +126,7 @@ in
         kicad.enable = false;
         kitty.enable = true;
         logseq.enable = true;
+        musescore.enable = true;
         nextcloud.enable = true;
         nheko.enable = true;
         obs.enable = false;
