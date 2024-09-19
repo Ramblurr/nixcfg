@@ -19,24 +19,25 @@ def LS(s):
 
 hostname = input("Enter HOSTNAME: ")
 
-options = ["[x] x86_64-linux", "[a] aarch64-linux"]
-terminal_menu = TerminalMenu(options, title="Arch")
-menu_entry_index = terminal_menu.show()
-if menu_entry_index == 0:
-    arch = "x86_64-linux"
-else:
-    arch = "aarch64-linux"
+#options = ["[x] x86_64-linux", "[a] aarch64-linux"]
+#terminal_menu = TerminalMenu(options, title="Arch")
+#menu_entry_index = terminal_menu.show()
+#if menu_entry_index == 0:
+#    arch = "x86_64-linux"
+#else:
+#    arch = "aarch64-linux"
 
-options = ["[s] stable ", "[u] unstable"]
-terminal_menu = TerminalMenu(options, title="Channel")
-menu_entry_index = terminal_menu.show()
-if menu_entry_index == 0:
-    channel = "stable"
-else:
-    channel = "unstable"
+#options = ["[s] stable ", "[u] unstable"]
+#terminal_menu = TerminalMenu(options, title="Channel")
+#menu_entry_index = terminal_menu.show()
+#if menu_entry_index == 0:
+#    channel = "stable"
+#else:
+#    channel = "unstable"
 
 
-host_path = Path("./hosts") / channel / arch / hostname
+host_path = Path("./hosts") / hostname
+#host_path = Path("./hosts") / channel / arch / hostname
 
 root_password = getpass.getpass("Enter root password: ")
 ramblurr_password = getpass.getpass("Enter ramblurr password: ")
