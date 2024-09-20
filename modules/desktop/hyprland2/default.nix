@@ -76,7 +76,7 @@ in
 
     environment.systemPackages =
       with pkgs;
-      with gnome;
+      #with gnome;
       [
         morewaita-icon-theme
         adwaita-icon-theme
@@ -121,7 +121,7 @@ in
     };
 
     services = {
-      dbus.packages = [ pkgs.gnome.gnome-disk-utility ];
+      dbus.packages = [ pkgs.gnome-disk-utility ];
       gvfs.enable = true;
       devmon.enable = true;
       udisks2.enable = true;
