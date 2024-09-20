@@ -26,6 +26,7 @@ in
     ./roon-bridge.nix
     ./libvirt.nix
     ./gaming.nix
+    #./tabby.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
@@ -85,7 +86,8 @@ in
   home.attic.enable = true;
   modules = {
     desktop = {
-      hyprland2.enable = true;
+      kde.enable = true;
+      #hyprland2.enable = true;
       xdg.enable = true;
       random-apps.enable = true;
       browsers = {
@@ -128,7 +130,7 @@ in
         logseq.enable = true;
         musescore.enable = true;
         nextcloud.enable = true;
-        nheko.enable = true;
+        #nheko.enable = true;
         obs.enable = false;
         onepassword.enable = true;
         owncloud.enable = true;
@@ -172,13 +174,13 @@ in
     };
     dev = {
       clojure.enable = true;
-      fennel.enable = true;
+      #fennel.enable = true;
       jetbrains.enable = true;
       k8s.enable = true;
       node.enable = true;
       python.enable = true;
       random.enable = true;
-      radicle.enable = false;
+      #radicle.enable = true;
     };
 
     editors = {
