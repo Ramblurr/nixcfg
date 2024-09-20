@@ -18,7 +18,7 @@ in
     enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    environment.systemPackages = [ inputs.attic.packages.${pkgs.system}.attic-client ];
+    environment.systemPackages = [ pkgs.attic-client ];
     systemd.tmpfiles.rules = mkIf withImpermanence [
       "d /persist${homeDirectory}/.config/attic 700 ${username} ${username}"
       "d /persist${homeDirectory}/.local/share/attic 700 ${username} ${username}"
