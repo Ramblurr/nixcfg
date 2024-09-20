@@ -31,11 +31,11 @@ let
   cursorTheme = {
     name = "Adwaita";
     size = 24;
-    package = pkgs.gnome.adwaita-icon-theme;
+    package = pkgs.adwaita-icon-theme;
   };
   iconTheme = {
     name = "Adwaita";
-    package = pkgs.gnome.adwaita-icon-theme;
+    package = pkgs.adwaita-icon-theme;
   };
 in
 
@@ -56,7 +56,7 @@ in
         font.package
         cursorTheme.package
         iconTheme.package
-        gnome.adwaita-icon-theme
+        adwaita-icon-theme
         papirus-icon-theme
         iosevka-comfy.comfy-fixed
         noto-fonts-emoji
