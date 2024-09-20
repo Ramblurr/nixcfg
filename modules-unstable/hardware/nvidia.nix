@@ -18,9 +18,10 @@ in
     enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    # nixpkgs.config.cudaSupport = true;
+    nixpkgs.config.cudaSupport = true;
     hardware = {
       graphics.enable = true;
+      graphics.enable32Bit = true; # required for virtualisation.docker.enableNvidia
       #opengl = {
       #  enable = true;
       #};
@@ -68,11 +69,13 @@ in
       "mt7921e"
     ];
     services.xserver.videoDrivers = [ "nvidia" ]; # Install the nvidia drivers
-    #virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
+    virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
+    hardware.nvidia-container-toolkit.enable = true; # Enable nvidia gpu acceleration for docker
     environment.systemPackages = [
       pkgs.nvitop
       pkgs.nvtopPackages.nvidia
       pkgs.libva-utils
+      pkgs.cudaPackages.cudatoolkit
     ];
 
     # force use of up to date nixos packages egl-wayland library, not the old one bundled in the nvidia driver

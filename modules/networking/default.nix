@@ -64,10 +64,10 @@ in
       networks."99-network-defaults-wired" = {
         matchConfig.Name = "en* | eth* | usb*";
         networkConfig = {
-          Description = "Fallback Wired DHCP";
+          #Description = "Fallback Wired DHCP";
           DHCP = "yes";
-          IPForward = "yes";
-          # IPMasquerade = "both";
+          #  IPForward = "yes";
+          #  # IPMasquerade = "both";
         };
         # dhcpV4Config.ClientIdentifier = "mac";
         dhcpV4Config.Use6RD = "yes";

@@ -485,7 +485,10 @@ in
           address = [ nodeSettings.primCIDR ];
           matchConfig.Name = "microvm-self";
           networkConfig = {
-            IPForward = "yes";
+            # no longer works?
+            # IPForward = "yes";
+
+            # disabled for now, but might be useful in the future
             # IPv6PrivacyExtensions = "yes";
             # IPv6SendRA = true;
             # IPv6AcceptRA = false;
