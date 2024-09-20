@@ -46,6 +46,12 @@ in
     services.displayManager.sddm.enable = true;
     programs.dconf.enable = true;
 
+    environment.systemPackages = [
+      pkgs.kdePackages.krohnkite
+      pkgs.kwin6-bismuth-decoration
+      pkgs.klassy
+    ];
+
     environment.plasma6.excludePackages = [ pkgs.kdePackages.khelpcenter ];
 
     environment.persistence."/persist".directories = lib.mkIf withImpermanence [
@@ -81,5 +87,18 @@ in
         };
       };
     };
+
+    myhm =
+      { ... }@hm:
+      {
+        # Make certain user services happy
+        # https://github.com/nix-community/home-manager/issues/2064
+        systemd.user.targets.tray = {
+          Unit = {
+            Description = "Home Manager System Tray";
+            Requires = [ "graphical-session-pre.target" ];
+          };
+        };
+      }; # end home manager
   };
 }
