@@ -10,6 +10,10 @@ let
 in
 {
   environment.persistence."/persist" = {
+    directories = [
+      "/var/lib/nixos"
+      "/var/lib/systemd/coredump"
+    ];
     users.${username} = {
       directories = [
         "nixcfg"
@@ -65,21 +69,24 @@ in
       ];
       files = [
 
-        ".config/digikamrc"
-        ".config/digikam_systemrc"
         ".config/akregatorrc"
         ".config/baloofileinformationrc"
+        ".config/baloofilerc"
         ".config/bluedevilglobalrc"
+        ".config/breezerc"
         ".config/device_automounter_kcmrc"
+        ".config/digikamrc"
+        ".config/digikam_systemrc"
         ".config/dolphinrc"
+        ".config/drkonqirc"
         ".config/filetypesrc"
         ".config/gtkrc"
         ".config/gtkrc-2.0"
         ".config/gwenviewrc"
         ".config/kactivitymanagerd-pluginsrc"
+        ".config/kactivitymanagerdrc"
         ".config/kactivitymanagerd-statsrc"
         ".config/kactivitymanagerd-switcher"
-        ".config/kactivitymanagerdrc"
         ".config/katemetainfos"
         ".config/katerc"
         ".config/kateschemarc"
@@ -92,20 +99,23 @@ in
         ".config/kgammarc"
         ".config/kglobalshortcutsrc"
         ".config/khotkeysrc"
+        ".config/kid3rc"
         ".config/kmixrc"
         ".config/konsolerc"
         ".config/kscreenlockerrc"
         ".config/ksmserverrc"
         ".config/ksplashrc"
         ".config/ktimezonedrc"
+        ".config/kwalletrc"
         ".config/kwinrc"
         ".config/kwinrulesrc"
         ".config/kxkbrc"
         ".config/partitionmanagerrc"
+        ".config/plasma.emojierrc"
         ".config/plasma-localerc"
         ".config/plasma-nm"
-        ".config/plasma-org.kde.plasma.desktop-appletsrc"
         ".config/plasmanotifyrc"
+        ".config/plasma-org.kde.plasma.desktop-appletsrc"
         ".config/plasmarc"
         ".config/plasmashellrc"
         ".config/PlasmaUserFeedback"
@@ -119,8 +129,8 @@ in
         ".config/user-dirs.locale"
         ".local/share/krunnerstaterc"
         ".local/share/user-places.xbel"
-        #".local/share/user-places.xbel.bak"
-        #".local/share/user-places.xbel.tbcache"
+        ".local/share/user-places.xbel.bak"
+        ".local/share/user-places.xbel.tbcache"
       ];
     };
   };
