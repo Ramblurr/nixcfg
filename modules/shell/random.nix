@@ -24,8 +24,8 @@ in
       {
         home.packages = with pkgs; [
           graphviz
-          (openai-whisper-cpp.override { cudaSupport = true; })
-          openai-whisper
+          #(openai-whisper-cpp.override { cudaSupport = true; })
+          #openai-whisper
           smem
           #pkgs.my.mysql-backup
           # <rust pkgs>
@@ -77,7 +77,8 @@ in
           # asciinema py12 nose
           findutils
           # https://github.com/NixOS/nixpkgs/issues/265014
-          (pkgs.rsync.overrideAttrs (_: _: { hardeningDisable = [ "fortify" ]; }))
+          #(pkgs.rsync.overrideAttrs (_: _: { hardeningDisable = [ "fortify" ]; }))
+          rsync
           wget
           jq
           openssh
