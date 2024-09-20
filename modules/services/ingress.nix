@@ -101,17 +101,21 @@ in
       );
     };
   };
-  # TODO(24.05): until pr 277189 lands in stable we have to use the unstable cloudflared nixos module
-  # ref: https://nixpk.gs/pr-tracker.html?pr=277189
-  #disabledModules = [
-  #  "${inputs.nixpkgs-stable}/nixos/modules/services/networking/cloudflared.nix"
-  #  "${inputs.nixpkgs-stable}/nixos/modules/services/web-servers/nginx/default.nix"
-  #  "${inputs.nixpkgs-unstable}/nixos/modules/services/web-servers/nginx/default.nix"
-  #];
-  #imports = [
-  #  "${inputs.nixpkgs-unstable}/nixos/modules/services/networking/cloudflared.nix"
-  #  "${inputs.nixpkgs-mine}/nixos/modules/services/web-servers/nginx/default.nix"
-  #];
+  disabledModules = [
+    #"${inputs.nixpkgs-stable}/nixos/modules/services/networking/cloudflared.nix"
+    #  "${inputs.nixpkgs-stable}/nixos/modules/services/web-servers/nginx/default.nix"
+    #  "${inputs.nixpkgs-unstable}/nixos/modules/services/web-servers/nginx/default.nix"
+
+    #  https://nixpk.gs/pr-tracker.html?pr=342370
+    "${inputs.nixpkgs-unstable}/nixos/modules/services/networking/cloudflared.nix"
+  ];
+  imports = [
+    #  "${inputs.nixpkgs-unstable}/nixos/modules/services/networking/cloudflared.nix"
+    #  "${inputs.nixpkgs-mine}/nixos/modules/services/web-servers/nginx/default.nix"
+
+    #  https://nixpk.gs/pr-tracker.html?pr=342370
+    "${inputs.nixpkgs-mine}/nixos/modules/services/networking/cloudflared.nix"
+  ];
 
   config = lib.mkIf cfg.enable {
     networking.firewall.allowedTCPPorts = [

@@ -32,6 +32,12 @@ in
     };
   };
 
+  disabledModules = [
+    "${inputs.nixpkgs-unstable}/nixos/modules/services/web-apps/davis.nix"
+  ];
+  imports = [
+    "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/davis.nix"
+  ];
   config = lib.mkIf cfg.enable {
     modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
       "${cfg.ingress.domain}" = {
