@@ -21,7 +21,7 @@ in
       {
         home.packages = with pkgs; [
           icon-library
-          gnome.dconf-editor
+          dconf-editor
           inputs.matugen.packages.${system}.default
           cfg.ags-config
           bun

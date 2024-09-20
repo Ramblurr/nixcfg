@@ -22,7 +22,7 @@ in
           name = "Settings";
           comment = "Gnome Control Center";
           icon = "org.gnome.Settings";
-          exec = "env XDG_CURRENT_DESKTOP=gnome ${pkgs.gnome.gnome-control-center}/bin/gnome-control-center";
+          exec = "env XDG_CURRENT_DESKTOP=gnome ${pkgs.gnome-control-center}/bin/gnome-control-center";
           categories = [ "X-Preferences" ];
           terminal = false;
         };
@@ -232,7 +232,7 @@ in
                 "SHIFT, Print,    ${e} -r 'recorder.screenshot(true)'"
                 "SUPER, Return, exec, kitty"
                 "SUPER, F, fullscreen"
-                "SUPER, M, fakefullscreen"
+                "SUPER, M, fullscreenstate, -1 2"
                 "SUPER SHIFT, Q, killactive"
                 "SUPER, B, togglefloating"
                 # Move focus with mod key + hjkl
