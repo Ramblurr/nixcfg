@@ -75,6 +75,7 @@ in
     systemd.timers.borgmatic.wantedBy = [ "timers.target" ];
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
+      enableConfigCheck = false; # We use environment variables in the config which aren't present during the config check
       settings = {
         repositories = cfg.repositories;
         source_directories = [ "/persist" ];
