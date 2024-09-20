@@ -30,7 +30,7 @@ in
     environment.systemPackages = with pkgs; [
       spice-gtk
       quickemu
-      quickgui
+      #quickgui
     ];
 
     programs.nix-ld = {

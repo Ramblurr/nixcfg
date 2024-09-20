@@ -33,7 +33,8 @@ in
             appimage-run
             audacity
             pavucontrol
-            openscad-unstable
+            # upstream is broken https://github.com/NixOS/nixpkgs/issues/341043
+            #openscad-unstable
             openscad-lsp
             freecad
             prusa-slicer
@@ -49,7 +50,7 @@ in
             #hunspellDicts.en_US
             #hunspellDicts.de_AT
             morgen
-            ffmpeg_5-full
+            ffmpeg-full
             libnotify # `notify-send`
             gparted
             inkscape
@@ -61,7 +62,7 @@ in
             nerdfix
             kid3
             pdfarranger
-            makemkv
+            #makemkv
             xournal
             fava
             beancount
