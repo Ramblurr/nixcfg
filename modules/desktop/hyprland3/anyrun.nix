@@ -68,7 +68,7 @@ in
 
             #match {
               padding: 3px;
-              border-radius: 16px;
+              border-radius: 8px;
               border: 1px solid transparent;
             }
 
@@ -80,15 +80,15 @@ in
               background: @color-bg;
               /*border: 1px solid @color-border;*/
               border:0px;
-              border-radius: 16px;
+              border-radius: 8px;
               padding: 8px
             }
 
 
             #entry,
             #plugin:hover {
-              border: 3px solid #b8bb26;
-              border-radius: 16px;
+              border: 2px solid #b8bb26;
+              border-radius: 8px;
             }
 
           '';
