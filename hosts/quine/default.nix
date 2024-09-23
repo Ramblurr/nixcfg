@@ -114,6 +114,12 @@ in
             };
           };
         };
+        swhkd = {
+          enable = true;
+          keybindings = lib.mapAttrs (_: v: lib.mkDefault v) {
+            "super + e" = "kitty";
+          };
+        };
       };
       programs = {
         aseprite.enable = true;
