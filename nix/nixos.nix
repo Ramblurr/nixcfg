@@ -19,6 +19,7 @@ let
     (import ../lib inputs)
     (import ../overlays/last-known-good.nix)
     (import ../overlays/roon-server.nix)
+    (import ../overlays/logseq.nix)
   ] ++ (import ../pkgs/default.nix inputs);
 
   mkPkgs =
