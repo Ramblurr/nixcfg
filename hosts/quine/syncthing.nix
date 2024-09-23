@@ -73,12 +73,18 @@
         };
       };
       folders = {
+        "Pixel9Backup" = {
+          id = "dfkjb-d9yfl";
+          path = "/home/ramblurr/docs/backups/pixel-9";
+          devices = [
+            "phone2"
+          ];
+        };
         "S21Backup" = {
           id = "kbhu0-k5zxq";
           path = "/home/ramblurr/docs/backups/samsung-s21";
           devices = [
             "phone"
-            "phone2"
           ];
         };
         "logseq" = {
