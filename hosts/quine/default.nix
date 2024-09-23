@@ -86,8 +86,7 @@ in
   home.attic.enable = true;
   modules = {
     desktop = {
-      kde.enable = true;
-      #hyprland2.enable = true;
+      hyprland3.enable = true;
       xdg.enable = true;
       random-apps.enable = true;
       browsers = {

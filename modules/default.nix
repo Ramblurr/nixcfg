@@ -16,8 +16,13 @@
     ./desktop/hyprland2/dconf.nix
     ./desktop/hyprland2/default.nix
     ./desktop/hyprland2/hyprland-config.nix
-    ./desktop/hyprland2/template.nix
     ./desktop/hyprland2/theme.nix
+
+    ./desktop/hyprland3/dconf.nix
+    ./desktop/hyprland3/default.nix
+    ./desktop/hyprland3/hyprland-config.nix
+    ./desktop/hyprland3/theme.nix
+    ./desktop/hyprland3/anyrun.nix
     ./desktop/kde.nix
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
