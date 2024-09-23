@@ -79,6 +79,11 @@ in
       fontDir.enable = true;
 
       fontconfig = {
+        hinting = {
+          style = "medium";
+        };
+        subpixel.rgba = "rgb";
+        antialias = true;
         defaultFonts = {
           serif = [ "Noto Serif" ];
           sansSerif = [ "Cabin" ];

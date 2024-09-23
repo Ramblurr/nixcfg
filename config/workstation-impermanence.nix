@@ -27,6 +27,7 @@ in
         ".cache/gimp"
         ".cache/inkscape"
         ".cache/virt-manager"
+        ".config/hacompanion"
         ".config/audacity"
         ".config/easyeffects"
         ".config/sops"
