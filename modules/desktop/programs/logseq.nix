@@ -33,17 +33,21 @@ in
     home-manager.users."${username}" =
       { pkgs, config, ... }@hm:
       {
-        home.packages = [ pkgs.logseq ];
-        home.file.".local/share/applications/logseq.desktop" = {
+        # I am using flatpak logseq, because it is more stable than the nix pkg (as of 2024-09)
+        # ref: https://github.com/NixOS/nixpkgs/issues/264885
+        #      https://github.com/logseq/logseq/issues/10851
+        #home.packages = [ pkgs.logseq ];
+        #Exec=env -u NIXOS_OZONE_WL logseq %u
+        #Icon=logseq
+        home.file.".local/share/applications/logseq-wayland.desktop" = {
           text = ''
             [Desktop Entry]
-            Name=Logseq
-            Exec=env -u NIXOS_OZONE_WL logseq %u
+            Name=Logseq (flatpak wayland)
+            Exec=GDK_BACKEND=wayland flatpak run com.logseq.Logseq --enable-features=UseOzonePlatform --ozone-platform=wayland --enable-features=WaylandWindowDecorations %u
             Terminal=false
             Type=Application
-            Icon=logseq
+            Icon=com.logseq.Logseq
             StartupWMClass=Logseq
-            X-AppImage-Version=0.10.7
             Comment=A privacy-first, open-source platform for knowledge management and collaboration.
             MimeType=x-scheme-handler/logseq
             Categories=Utility

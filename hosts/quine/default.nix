@@ -129,7 +129,7 @@ in
         kitty.enable = true;
         logseq.enable = true;
         musescore.enable = true;
-        nextcloud.enable = true;
+        #nextcloud.enable = true;
         #nheko.enable = true;
         obs.enable = false;
         onepassword.enable = true;
