@@ -54,6 +54,7 @@ in
               disable_logs = true;
             };
             exec-once = [
+              "swhks &"
               #"ags -b hypr"
               #"hyprctl setcursor Adwaita 24"
               #"easyeffects --gapplication-service"

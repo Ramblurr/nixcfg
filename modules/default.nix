@@ -47,6 +47,7 @@
     ./desktop/random-apps.nix
     ./desktop/services/hacompanion.nix
     ./desktop/services/ha-shutdown.nix
+    ./desktop/services/swhkd.nix
     ./desktop/wayland.nix
     ./desktop/xdg.nix
     ./dev/clojure/default.nix
