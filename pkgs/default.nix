@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    swhkd = prev.callPackage ./swhkd { };
     overseerr = prev.callPackage ./overseerr.nix { };
     cloudflare-utils = prev.callPackage ./cloudflare-utils.nix { };
     actual-server = prev.callPackage ./actual-server.nix { };

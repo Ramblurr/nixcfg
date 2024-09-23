@@ -99,6 +99,8 @@ in
         swww
         wlr-randr
         inputs.anyrun.packages.${system}.anyrun
+        swhkd
+
       ];
 
     systemd = {
