@@ -29,7 +29,8 @@
     settings = {
       gui.theme = "black";
       options = {
-        urAccepted = 1; # allow anonymous usage data report
+        urAccepted = -1; # allow anonymous usage data report
+        urSeen = 3;
         globalAnnounceEnabled = false; # only sync locally or over vpn
       };
       devices = {
@@ -45,6 +46,13 @@
           addresses = [
             "tcp://10.9.6.14:22000"
             "tcp://100.78.82.102:22000"
+          ];
+        };
+        "phone2" = {
+          id = "I5V5S76-7X343XH-O6DS27F-XQ6NW27-LQ65D2P-CZQRTE2-4FUI37W-CQYPOQG";
+          addresses = [
+            "tcp://10.9.6.17:22000"
+            "tcp://100.98.61.68:22000"
           ];
         };
         "mali" = {
@@ -68,7 +76,10 @@
         "S21Backup" = {
           id = "kbhu0-k5zxq";
           path = "/home/ramblurr/docs/backups/samsung-s21";
-          devices = [ "phone" ];
+          devices = [
+            "phone"
+            "phone2"
+          ];
         };
         "logseq" = {
           id = "lzv9p-tt1gf";
@@ -76,6 +87,7 @@
           devices = [
             "aquinas"
             "phone"
+            "phone2"
             "ipad"
           ];
           versioning = {
@@ -128,6 +140,7 @@
           devices = [
             "aquinas"
             "phone"
+            "phone2"
             "ipad"
           ];
           versioning = {
@@ -144,6 +157,7 @@
           devices = [
             "aquinas"
             "phone"
+            "phone2"
             "ipad"
             "v-phone"
             "v-pc"
