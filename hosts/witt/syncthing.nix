@@ -29,18 +29,10 @@
     settings = {
       gui.theme = "black";
       options = {
-        urAccepted = -1; # allow anonymous usage data report
-        urSeen = 3;
+        urAccepted = 1; # allow anonymous usage data report
         globalAnnounceEnabled = false; # only sync locally or over vpn
       };
       devices = {
-        "witt" = {
-          id = "TPXTYXZ-UJEBYRU-MJQN4F5-JHM6BVP-EGLQHIL-QMN7TPG-GAYMDBA-SFP26AG";
-          addresses = [
-            "tcp://10.9.6.18:22000"
-            "tcp://100.126.16.31:22000"
-          ];
-        };
         "ipad" = {
           id = "MV4BQ23-XDBDIG6-WHBCLSE-XYRFJD7-SS7HCJP-Y7CA6EE-USJLP3Z-JDKCGAS";
           addresses = [
@@ -64,12 +56,16 @@
         };
         "mali" = {
           id = "FUWM2VN-32WHX4C-AFGU6HX-TZAITRE-PO4YKQI-UR6Z54O-DSQORX2-FJPG3AE";
-        };
-        "aquinas" = {
-          id = "37NYWVB-26URNF2-KFOZYXT-H4SNZ6E-OMAUOAU-NIV6RRQ-YRAPTH6-LY4HKQW";
           addresses = [
-            "tcp://10.9.6.90:22000"
-            "tcp://100.113.239.46:22000"
+            "tcp://10.9.8.3:22000"
+            "tcp://100.114.104.114:22000"
+          ];
+        };
+        "quine" = {
+          id = "RK7O6ZN-OSUW3SM-TP2E2YZ-RBFGWK6-V2MHYEY-Z4HGCJU-EQTC4TO-72WI2QA";
+          addresses = [
+            "tcp://10.9.6.138:22000"
+            "tcp://100.93.18.79:22000"
           ];
         };
         "v-phone" = {
@@ -80,26 +76,11 @@
         };
       };
       folders = {
-        "Pixel9Backup" = {
-          id = "dfkjb-d9yfl";
-          path = "/home/ramblurr/docs/backups/pixel-9";
-          devices = [
-            "phone2"
-          ];
-        };
-        "S21Backup" = {
-          id = "kbhu0-k5zxq";
-          path = "/home/ramblurr/docs/backups/samsung-s21";
-          devices = [
-            "phone"
-          ];
-        };
         "logseq" = {
           id = "lzv9p-tt1gf";
           path = "/home/ramblurr/docs/brain";
           devices = [
-            "aquinas"
-            "witt"
+            "quine"
             "phone"
             "phone2"
             "ipad"
@@ -115,10 +96,7 @@
         "MuseScore4" = {
           id = "nfnyf-araxw";
           path = "/home/ramblurr/docs/MuseScore4";
-          devices = [
-            "aquinas"
-            "witt"
-          ];
+          devices = [ "quine" ];
           versioning = {
             type = "staggered";
             params = {
@@ -130,10 +108,7 @@
         "src" = {
           id = "3afjx-a2sse";
           path = "/home/ramblurr/src";
-          devices = [
-            "aquinas"
-            "witt"
-          ];
+          devices = [ "quine" ];
           versioning = {
             type = "staggered";
             params = {
@@ -145,10 +120,7 @@
         "work-src" = {
           id = "pcdsa-wgsys";
           path = "/home/ramblurr/work";
-          devices = [
-            "aquinas"
-            "witt"
-          ];
+          devices = [ "quine" ];
           versioning = {
             type = "staggered";
             params = {
@@ -161,8 +133,7 @@
           id = "n0zj4-mpb2o";
           path = "/home/ramblurr/sync/inbox";
           devices = [
-            "aquinas"
-            "witt"
+            "quine"
             "phone"
             "phone2"
             "ipad"
@@ -179,8 +150,7 @@
           id = "emomw-9nc2j";
           path = "/home/ramblurr/sync/viki";
           devices = [
-            "aquinas"
-            "witt"
+            "quine"
             "phone"
             "phone2"
             "ipad"

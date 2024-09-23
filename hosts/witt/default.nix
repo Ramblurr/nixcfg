@@ -24,6 +24,7 @@ in
     ./disk-config.nix
     ./hardware.nix
     ./home.nix
+    ./syncthing.nix
     ../../config/workstation-impermanence.nix
   ];
   system.stateVersion = "24.05";
