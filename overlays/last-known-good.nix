@@ -26,25 +26,25 @@ in
   #  ;
 
   # https://github.com/NixOS/nixpkgs/issues/325832
-  inherit
-    (nixpkgs {
-      rev = "757873b3468a1d413d6776c7f2e83c41c340cb91";
-      sha256 = "sha256-t4oui8CCZU7asE2+4/MhSp1ZwTyKGFBvQ+0Vw5aeqJY=";
-    })
-    freecad
-    ;
+  #inherit
+  #  (nixpkgs {
+  #    rev = "757873b3468a1d413d6776c7f2e83c41c340cb91";
+  #    sha256 = "sha256-t4oui8CCZU7asE2+4/MhSp1ZwTyKGFBvQ+0Vw5aeqJY=";
+  #  })
+  #  freecad
+  #  ;
 
   # fava doesn't support beancount v3 yet
   # https://github.com/beancount/fava/issues/1831
   # https://github.com/NixOS/nixpkgs/issues/325945
-  inherit
-    (nixpkgs {
-      rev = "59b1aef59071cae6e87859dc65de973d2cc595c0";
-      sha256 = "sha256-NnvvuMs5ZRJMFxjheq0VPwB8tltv61TwXa/i1Qogik4=";
-    })
-    beancount
-    fava
-    ;
+  #inherit
+  #  (nixpkgs {
+  #    rev = "59b1aef59071cae6e87859dc65de973d2cc595c0";
+  #    sha256 = "sha256-NnvvuMs5ZRJMFxjheq0VPwB8tltv61TwXa/i1Qogik4=";
+  #  })
+  #  beancount
+  #  fava
+  #  ;
 
   inherit
     (nixpkgs {
