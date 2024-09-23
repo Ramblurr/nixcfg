@@ -19,6 +19,9 @@
     firefox-gnome-theme.url = "github:rafaelmardojai/firefox-gnome-theme";
     firefox-gnome-theme.flake = false;
 
+    anyrun.url = "github:anyrun-org/anyrun";
+    anyrun.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
     matugen.url = "github:InioX/matugen";
     matugen.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
