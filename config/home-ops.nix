@@ -75,6 +75,7 @@ in
       forgejo.enable = lib.mkEnableOption "Forgejo";
       actual-server.enable = lib.mkEnableOption "Actual Budget Server";
       atuin-sync.enable = lib.mkEnableOption "Atuin Sync Server";
+      soju.enable = lib.mkEnableOption "Soju IRC bouncer";
     };
   };
 
@@ -803,6 +804,11 @@ in
       ingress = {
         domain = home-ops.homeDomain;
       };
+    };
+    modules.services.soju = lib.mkIf cfg.apps.soju.enable {
+      enable = true;
+      domain = "irc.${home-ops.homeDomain}";
+      ports.irc = home-ops.ports.soju-irc;
     };
   };
 }

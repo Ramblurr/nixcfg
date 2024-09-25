@@ -26,6 +26,7 @@
     ./desktop/hyprland3/hyprpaper.nix
     ./desktop/kde.nix
     ./desktop/programs/1password.nix
+    ./desktop/programs/senpai.nix
     ./desktop/programs/aseprite.nix
     ./desktop/programs/calibre.nix
     ./desktop/programs/chrysalis.nix
@@ -74,6 +75,7 @@
     ./server/smtp-external-relay.nix
     ./server/virtd/default.nix
     ./services/actual-budget.nix
+    ./services/soju.nix
     ./services/archivebox.nix
     ./services/attic-watch-store.nix
     ./services/atuin-sync.nix
