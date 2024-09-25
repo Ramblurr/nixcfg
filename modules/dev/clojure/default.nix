@@ -44,13 +44,15 @@ in
         };
       in
       {
-        home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
+        #home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
         home.file."vendor/jdks/openjdk11".source = pkgs.openjdk11;
         home.file."vendor/jdks/openjdk17".source = pkgs.openjdk17;
         home.file."vendor/jdks/openjdk21".source = pkgs.openjdk21;
+        home.file."vendor/jdks/openjdk22".source = pkgs.openjdk22;
         home.packages = with pkgs; [
           neil
           maven
+          gradle
           clojure
           cljfmt
           clojure-lsp
