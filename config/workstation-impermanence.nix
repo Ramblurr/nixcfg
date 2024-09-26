@@ -69,7 +69,6 @@ in
         ".cache/digikam"
       ];
       files = [
-
         ".config/akregatorrc"
         ".config/baloofileinformationrc"
         ".config/baloofilerc"

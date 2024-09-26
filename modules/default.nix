@@ -114,6 +114,7 @@
     ./services/sshd.nix
     ./services/tautulli.nix
     ./shell/aria2.nix
+    ./shell/ffsend.nix
     ./shell/attic.nix
     ./shell/atuin.nix
     ./shell/direnv.nix
