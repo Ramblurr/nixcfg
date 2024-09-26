@@ -151,6 +151,7 @@ in
       atuin.enable = true;
       atuin.sync.enable = true;
       direnv.enable = true;
+      ffsend.enable = true;
       git.enable = true;
       gpg-agent.enable = true;
       htop.enable = true;
