@@ -236,7 +236,7 @@ in
     };
     modules.services.mariadb = lib.mkIf cfg.mariadb.enable {
       enable = true;
-      package = pkgs.mariadb_110;
+      package = pkgs.mariadb_114;
     };
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
