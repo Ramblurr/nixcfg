@@ -66,6 +66,7 @@ in
       actual-server.enable = true;
       atuin-sync.enable = true;
       soju.enable = true;
+      snowflake-proxy.enable = true;
     };
   };
 
