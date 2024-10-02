@@ -744,6 +744,9 @@ in
         group = home-ops.groups.mautrix-discord;
         ports.http = home-ops.ports.mautrix-discord;
       };
+      bridges.irc = {
+        enable = true;
+      };
     };
 
     modules.services.roon-server = lib.mkIf cfg.apps.roon-server.enable { enable = true; };
