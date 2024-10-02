@@ -66,9 +66,8 @@ in
             [Desktop Entry]
             Categories=Network;InstantMessaging;Chat
             Comment=Element Work
-            Environment=NIXOS_OZONE_WL=
-            #Exec=element-desktop --use-gl=desktop --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
-            Exec=im.riot.Riot --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
+            Exec=element-desktop --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
+            #Exec=im.riot.Riot --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
             GenericName=Matrix Work
             Icon=element
             MimeType=x-scheme-handler/element
@@ -84,9 +83,8 @@ in
             [Desktop Entry]
             Categories=Network;InstantMessaging;Chat
             Comment=Element Personal
-            Environment=NIXOS_OZONE_WL=
-            #Exec=element-desktop --use-gl=desktop --profile=personal --proxy-server=socks5://127.0.0.1:1081 %u
-            Exec=im.riot.Riot --profile=personal --proxy-server=socks5://127.0.0.1:1081 %u
+            Exec=element-desktop --profile=personal %u
+            #Exec=im.riot.Riot --profile=personal --proxy-server=socks5://127.0.0.1:1081 %u
             GenericName=Matrix Personal
             Icon=element
             MimeType=x-scheme-handler/element
