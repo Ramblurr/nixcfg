@@ -100,6 +100,7 @@
     ./services/linkding.nix
     ./services/mariadb.nix
     ./services/matrix-discord.nix
+    ./services/matrix-irc.nix
     ./services/matrix-synapse.nix
     ./services/matrix-synapse-postgres.nix
     ./services/microvm/default.nix
