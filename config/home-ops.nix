@@ -76,6 +76,7 @@ in
       actual-server.enable = lib.mkEnableOption "Actual Budget Server";
       atuin-sync.enable = lib.mkEnableOption "Atuin Sync Server";
       soju.enable = lib.mkEnableOption "Soju IRC bouncer";
+      snowflake-proxy.enable = lib.mkEnableOption "snowflake proxy";
     };
   };
 
@@ -812,6 +813,10 @@ in
       enable = true;
       domain = "irc.${home-ops.homeDomain}";
       ports.irc = home-ops.ports.soju-irc;
+    };
+    services.snowflake-proxy = lib.mkIf cfg.apps.snowflake-proxy.enable {
+      enable = true;
+      capacity = 50;
     };
   };
 }
