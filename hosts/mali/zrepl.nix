@@ -23,9 +23,11 @@ in
   networking.firewall.allowedTCPPorts = [
     9811
     3478
+    3479
   ];
 
   sops.secrets."zrepl/ludwigCert" = { };
+  sops.secrets."zrepl/rsyncnetCert" = { };
   sops.secrets."zrepl/maliCert" = { };
   sops.secrets."zrepl/maliKey" = { };
   services.zrepl = {
@@ -136,7 +138,54 @@ in
           nodeJobs = lib.mapAttrsToList mkNodePullJob nodesWithZReplSources;
         in
         nodeJobs
-        ++ [
+        ++ ([
+          {
+            name = "mali_snap";
+            type = "snap";
+            filesystems = {
+              "rpool<" = false;
+              "tank/backup<" = false;
+              "tank2<" = true;
+              "tank2/media<" = false;
+              "tank2/media/music/mine" = true;
+              "tank2/replication<" = false;
+              "tank2/proxmox<" = false;
+              "tank2/backups/gamsjaegers<" = false;
+            };
+            # "send.compressed" = true;
+            snapshotting = {
+              type = "periodic";
+              prefix = "zrepl_";
+              interval = "6h";
+            };
+            pruning = {
+              keep = [
+                {
+                  # keep snapshots not created by zrepl
+                  type = "regex";
+                  negate = true;
+                  regex = "^zrepl_.*";
+                }
+                {
+                  type = "last_n";
+                  count = 1;
+                }
+                {
+                  # of the last 24 hours keep all snapshots
+                  # of the last 7 days keep 1 snapshot each day
+                  # of the last 30 days keep 1 snapshot each day
+                  # of the last 6 months keep 1 snapshot each month
+                  # DEACT of the last 1 year keep 1 snapshot each year
+                  # discard the rest
+                  # details see: https://zrepl.github.io/configuration/prune.html#policy-grid
+                  type = "grid";
+                  grid = "1x24h(keep=all) | 7x1d(keep=1) | 30x1d(keep=1) | 6x30d(keep=1)";
+                  regex = "^zrepl_.*";
+                }
+
+              ];
+            };
+          }
           {
             name = "mali_source";
             type = "source";
@@ -160,12 +209,36 @@ in
             };
             # "send.compressed" = true;
             snapshotting = {
-              type = "periodic";
-              prefix = "zrepl_";
-              interval = "6h";
+              type = "manual";
             };
           }
-        ];
+          {
+            name = "mali_rsyncnet";
+            type = "source";
+            serve = {
+              type = "tls";
+              listen = "10.9.10.10:3479";
+              ca = config.sops.secrets."zrepl/rsyncnetCert".path;
+              cert = config.sops.secrets."zrepl/maliCert".path;
+              key = config.sops.secrets."zrepl/maliKey".path;
+              client_cns = [ "rsyncnet" ];
+            };
+            filesystems = {
+              "rpool<" = false;
+              "tank/backup<" = false;
+              "tank2<" = true;
+              "tank2/media<" = false;
+              "tank2/media/music/mine" = true;
+              "tank2/replication<" = false;
+              "tank2/proxmox<" = false;
+              "tank2/backups/gamsjaegers<" = false;
+            };
+            # "send.compressed" = true;
+            snapshotting = {
+              type = "manual";
+            };
+          }
+        ]);
     };
   };
 }
