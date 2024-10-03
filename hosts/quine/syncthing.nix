@@ -117,6 +117,8 @@
           path = "/home/ramblurr/docs/MuseScore4";
           devices = [
             "aquinas"
+            "phone2"
+            "ipad"
             "witt"
           ];
           versioning = {
