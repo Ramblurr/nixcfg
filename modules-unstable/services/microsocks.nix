@@ -21,12 +21,14 @@ in
     services.microsocks = {
       enable = true;
       port = 1081;
-      execWrapper = "${pkgs.mullvad-vpn}/bin/mullvad-exclude";
+      execWrapper = lib.optionalString useMullvad "${pkgs.mullvad-vpn}/bin/mullvad-exclude";
     };
 
-    systemd.services.microsocks.after = [ "mullvad-exclusion-init.service" ];
-    systemd.services.microsocks.wants = [ "mullvad-exclusion-init.service" ];
-    systemd.services.microsocks.requires = [ "mullvad-exclusion-init.service" ];
+    systemd.services.microsocks = lib.mkIf useMullvad {
+      after = [ "mullvad-exclusion-init.service" ];
+      wants = [ "mullvad-exclusion-init.service" ];
+      requires = [ "mullvad-exclusion-init.service" ];
+    };
 
     systemd.services.mullvad-exclusion-init = lib.mkIf useMullvad {
       enable = true;
