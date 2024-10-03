@@ -16,7 +16,7 @@
   #
   #=====================================================
 
-  imports = [ inputs.attic.nixosModules.atticd ];
+  imports = [ inputs.attic-stable.nixosModules.atticd ];
 
   # Self-Hosted Nix Cache Server
   # https://github.com/zhaofengli/attic
