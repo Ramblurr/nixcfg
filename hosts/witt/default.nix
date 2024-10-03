@@ -32,7 +32,7 @@ in
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = machine-id;
 
-  time.timeZone = "America/Denver";
+  time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
 
   networking = {
@@ -110,11 +110,12 @@ in
         #kitty.enable = true;
         logseq.enable = true;
         #nextcloud.enable = true;
-        nheko.enable = true;
+        #nheko.enable = true;
         onepassword.enable = true;
         #owncloud.enable = true;
         signal.enable = true;
         thunderbird.enable = true;
+        musescore.enable = true;
       };
     };
     shell = {
