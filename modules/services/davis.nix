@@ -34,6 +34,7 @@ in
 
   disabledModules = [
     "${inputs.nixpkgs-unstable}/nixos/modules/services/web-apps/davis.nix"
+    "${inputs.nixpkgs-stable}/nixos/modules/services/web-apps/davis.nix"
   ];
   imports = [
     "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/davis.nix"
