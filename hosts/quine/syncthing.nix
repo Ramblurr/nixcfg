@@ -113,7 +113,7 @@
           };
         };
         "SNO-Noten" = {
-          id = "nfnyf-araxw";
+          id = "jfi2q-111c3";
           path = "/home/ramblurr/docs/SNO/Noten - Scores";
           devices = [
             "aquinas"
