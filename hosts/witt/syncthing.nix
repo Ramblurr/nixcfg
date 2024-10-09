@@ -93,6 +93,23 @@
             };
           };
         };
+        "SNO-Noten" = {
+          id = "nfnyf-araxw";
+          path = "/home/ramblurr/docs/SNO/Noten - Scores";
+          devices = [
+            "aquinas"
+            "phone2"
+            "ipad"
+            "quine"
+          ];
+          versioning = {
+            type = "staggered";
+            params = {
+              cleanInterval = "3600"; # 1 hour
+              maxAge = "1209600"; # 14 days
+            };
+          };
+        };
         "MuseScore4" = {
           id = "nfnyf-araxw";
           path = "/home/ramblurr/docs/MuseScore4";
