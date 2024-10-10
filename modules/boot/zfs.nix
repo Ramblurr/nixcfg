@@ -89,8 +89,6 @@ in
         };
       };
       extraModulePackages = [ ];
-
-      kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
       kernelParams = mkIf cfg.skipMitigations [ "mitigations=off" ];
     };
 
