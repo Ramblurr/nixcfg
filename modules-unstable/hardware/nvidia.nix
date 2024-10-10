@@ -35,7 +35,7 @@ in
         # package = config.boot.kernelPackages.nvidiaPackages.beta;
 
         powerManagement.enable = false; # Disable to prevent suspend/resume issues
-        open = false; # Do not use the open source (non-nouveau) driver until it's more stable
+        open = true;
       };
 
       uinput.enable = true;
@@ -54,7 +54,6 @@ in
 
     environment.sessionVariables = {
       LIBVA_DRIVER_NAME = "nvidia";
-
       # maybe causes firefox crashed?
       GBM_BACKEND = "nvidia-drm";
       __GLX_VENDOR_LIBRARY_NAME = "nvidia";
