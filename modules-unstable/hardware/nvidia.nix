@@ -53,11 +53,11 @@ in
     ];
 
     environment.sessionVariables = {
-      LIBVA_DRIVER_NAME = "nvidia";
-      # maybe causes firefox crashed?
-      GBM_BACKEND = "nvidia-drm";
-      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-      WLR_NO_HARDWARE_CURSORS = "1";
+      # No longer setting these here, and instead setting them on a per-app basis as needed
+      # GBM_BACKEND = "nvidia-drm";
+      # LIBVA_DRIVER_NAME = "nvidia";
+      # __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+      # WLR_NO_HARDWARE_CURSORS = "1";
     };
 
     boot.kernel.sysctl = {
