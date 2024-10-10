@@ -403,5 +403,5 @@ Null prefix argument turns off the mode."
 (load! "+clojure.el")
 ;; (load! "+vterm.el")
 (load! "+lsp.el")
-;; (load! "+copilot.el")
-(load! "+tabby.el")
+(load! "+copilot.el")
+;; (load! "+tabby.el")
