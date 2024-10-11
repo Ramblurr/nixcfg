@@ -42,7 +42,7 @@
     group = "root";
   };
   services.atticd = {
-    enable = true;
+    enable = false; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749
 
     # Replace with absolute path to your credentials file
     # The HS256 JWT secret can be generated with the openssl:
