@@ -83,7 +83,7 @@ in
       !include ${config.sops.templates."nix.conf".path}
     '';
   };
-  home.attic.enable = true;
+  home.attic.enable = false; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749
   modules = {
     desktop = {
       hyprland3.enable = true;

@@ -16,7 +16,7 @@ in
     nix.settings = {
       extra-substituters = [ "https://attic.mgmt.${config.repo.secrets.global.domain.home}/socozy" ];
       extra-trusted-public-keys = [
-        "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "socozy:6DGMWTIQnpp/tsHzx45lX1lUOn4oiDwg7WX1/pJASwE="
       ];
     };
   };
