@@ -211,7 +211,8 @@ in
 
     modules.server.virtd-host = lib.mkIf cfg.hypervisor.enable {
       enable = true;
-      zfsStorage.enable = true;
+      storage.zfs.enable = true;
+      net.brprim4.enable = true;
     };
     sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable {
       sopsFile = ../configs/home-ops/shared.sops.yml;
@@ -250,7 +251,7 @@ in
       };
     };
 
-    virtualisation.podman.enable = cfg.containers.enable;
+    virtualisation.podman.enable = lib.mkIf cfg.containers.enable true;
     virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
 
     ######################

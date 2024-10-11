@@ -48,10 +48,7 @@ sops -d --extract "['ssh_host_ed25519_key_pub']" "$sops_secrets" > "$temp/persis
 chmod 600 "$temp/persist/etc/ssh/ssh_host_ed25519_key"
 
 
-# WORKAROUND: https://github.com/nix-community/nixos-anywhere/issues/260
-#ssh root@$host "nix-env -iA nixos.rsync"
-
-nix run github:nix-community/nixos-anywhere/1.3.0 -- --flake ".#$host" --extra-files "$temp"  "root@$host"
+nix run github:nix-community/nixos-anywhere/1.4.0 -- --flake ".#$host" --extra-files "$temp"  "root@$host"
 
 echo "done"
 exit 0

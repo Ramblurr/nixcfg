@@ -24,16 +24,32 @@ let
       </target>
     </pool>
   '';
+  # This is the network that will be used to allow guests to get an ip on my primary vlan
+  primaryVlanNetXml = pkgs.writeText "brprim4.xml" ''
+    <network>
+      <name>brprim4</name>
+      <uuid>6dea79f2-1512-40c6-a2a3-ed0b15a9c72d</uuid>
+      <forward mode='bridge'/>
+      <bridge name='brprim4'/>
+    </network>
+  '';
 in
 {
   options.modules.server.virtd-host = {
     enable = lib.mkEnableOption "";
-    zfsStorage = {
-      enable = lib.mkEnableOption "";
-      pool = mkOption {
-        type = types.str;
-        default = "rpool/encrypted/safe/vms";
-        description = "The zfs pool to use for the storage pool";
+    storage = {
+      zfs = {
+        enable = lib.mkEnableOption "Enable the zfs storage pool";
+        pool = lib.mkOption {
+          type = lib.types.str;
+          default = "rpool/encrypted/safe/vms";
+          description = "The zfs pool to use for the storage pool";
+        };
+      };
+    };
+    net = {
+      brprim4 = {
+        enable = lib.mkEnableOption "Enable the brprim4 network";
       };
     };
   };
@@ -49,12 +65,12 @@ in
         "d /persist/var/lib/libvirt 0775 root root -"
         "d /persist/var/lib/libvirt/storage 0775 root root -"
       ]
-      ++ (
-        if cfg.zfsStorage.enable then
-          [ "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}" ]
-        else
-          [ ]
-      );
+      ++ lib.optionals cfg.net.brprim4.enable [
+        "L+ /persist/var/lib/libvirt/qemu/networks/brprim4.xml - - - - ${primaryVlanNetXml}"
+      ]
+      ++ lib.optionals cfg.storage.zfs.enable [
+        "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
+      ];
     environment.persistence."/persist".directories = [ "/var/lib/libvirt" ];
 
     virtualisation.libvirtd = {

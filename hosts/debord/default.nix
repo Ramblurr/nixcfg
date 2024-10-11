@@ -7,7 +7,6 @@
 }:
 let
   hn = "debord";
-  machine-id = "498b887325be4df3ac65f32baa3e53a2";
   defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../ramblurr.nix {
     inherit
@@ -22,20 +21,25 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
+    ../../config/secrets.nix
+    ../../config/home-ops.nix
   ];
-  system.stateVersion = "23.11";
-  environment.etc."machine-id".text = machine-id;
-  repo.secretFiles.k3s-main = ../../secrets/k3s-main.nix;
-
-  modules.profiles.k3s-node = {
+  system.stateVersion = "24.05";
+  environment.etc."machine-id".text = config.repo.secrets.local.machineId;
+  repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
+  sops.defaultSopsFile = ./secrets.sops.yaml;
+  modules.networking.default.hostName = hn;
+  home-ops = {
     enable = true;
-    hostname = hn;
-    clusterSettings = config.repo.secrets.k3s-main;
     user = ramblurr;
-    defaultSopsFile = defaultSopsFile;
+    containers.enable = false;
+    hypervisor.enable = true;
   };
-  modules.server.virtd-host = {
-    enable = true;
-    zfsStorage.enable = true;
-  };
+  myhm =
+    { pkgs, ... }@hm:
+    {
+      #home.persistence."/persist${ramblurr.homeDirectory}" = {
+      #  directories = [ { directory = "work"; } ];
+      #};
+    };
 }

@@ -6,6 +6,12 @@
       mkHosts = (import ./nixos.nix { inherit inputs lib; }).mkHosts;
 
       hosts = {
+        debord = {
+          isStable = false;
+          system = "x86_64-linux";
+          path = ../hosts/debord;
+          #hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
+        };
         dewey = {
           isStable = false;
           system = "x86_64-linux";

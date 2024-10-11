@@ -16,8 +16,26 @@
     };
     disk = {
       micron5300 = {
+        # SATA 1.75TiB Micron 5300
         type = "disk";
         device = "/dev/disk/by-id/ata-Micron_5300_MTFDDAK1T9TDT_221336A16A76";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "tank";
+              };
+            };
+          };
+        };
+      };
+      micron7400 = {
+        # NVME 894 GiB Micron 7450
+        type = "disk";
+        device = "/dev/disk/by-id/nvme-Micron_7450_MTFDKBA960TFR_2319422526D1";
         content = {
           type = "gpt";
           partitions = {
@@ -70,6 +88,45 @@
       };
     };
     zpool = {
+      tank = {
+        type = "zpool";
+        rootFsOptions = {
+          canmount = "off";
+          mountpoint = "none";
+          xattr = "sa";
+          atime = "off";
+          acltype = "posixacl";
+          compression = "zstd";
+          "com.sun:auto-snapshot" = "false";
+        };
+        options.ashift = "12";
+        datasets = {
+          # Static reservation so the pool will never be 100% full.
+          #
+          # If a pool fills up completely, delete this & reclaim space; don't
+          # forget to re-create it afterwards!
+          reservation = {
+            type = "zfs_fs";
+            options = {
+              canmount = "off";
+              mountpoint = "none";
+              refreservation = "2G";
+              primarycache = "none";
+              secondarycache = "none";
+            };
+          };
+          encrypted = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              canmount = "off";
+              encryption = "aes-256-gcm";
+              keyformat = "hex";
+              keylocation = "file:///dev/disk/by-partlabel/cryptkey";
+            };
+          };
+        };
+      };
       rpool = {
         type = "zpool";
         rootFsOptions = {
@@ -85,8 +142,8 @@
         postCreateHook = ''
           zfs snapshot rpool/encrypted/local/nix@blank
           zfs snapshot rpool/encrypted/local/root@blank
+          zfs snapshot rpool/encrypted/vms@blank
         '';
-
         datasets = {
           # Static reservation so the pool will never be 100% full.
           #
@@ -126,16 +183,21 @@
             mountpoint = "/";
             options.mountpoint = "legacy";
           };
+          "encrypted/vms" = {
+            type = "zfs_fs";
+            options.mountpoint = "none";
+          };
           "encrypted/safe/persist" = {
             type = "zfs_fs";
             mountpoint = "/persist";
             options = {
-              "com.sun:auto-snapshot" = "true";
+              "com.sun:auto-snapshot" = "false";
               mountpoint = "legacy";
             };
           };
           "encrypted/safe/vms" = {
             type = "zfs_fs";
+            options.mountpoint = "none";
           };
           "encrypted/safe/extra" = {
             type = "zfs_fs";
@@ -147,8 +209,40 @@
             mountpoint = "/persist/extra/atuin";
             options = {
               sync = "disabled";
-              "com.sun:auto-snapshot" = "true";
+              "com.sun:auto-snapshot" = "false";
               mountpoint = "legacy";
+            };
+          };
+          "encrypted/safe/svc" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+            };
+          };
+          "encrypted/safe/svc/postgresql" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "/var/lib/postgresql";
+              "com.sun:auto-snapshot" = "false";
+              recordsize = "16k";
+              primarycache = "all";
+            };
+          };
+          "encrypted/safe/svc/mariadb" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "/var/lib/mysql";
+              "com.sun:auto-snapshot" = "false";
+              recordsize = "16k";
+              primarycache = "all";
+              logbias = "throughput";
+            };
+          };
+          "encrypted/safe/svc/containers" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "/var/lib/containers";
+              "com.sun:auto-snapshot" = "false";
             };
           };
         };
