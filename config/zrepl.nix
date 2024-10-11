@@ -11,7 +11,6 @@ let
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in
 {
-
   options.home-ops.zrepl = {
     enable = lib.mkEnableOption "Enable zrepl";
   };
