@@ -114,6 +114,7 @@
     ./services/roon-server.nix
     ./services/sshd.nix
     ./services/tautulli.nix
+    ./services/zfs-backup-check.nix
     ./shell/aria2.nix
     ./shell/ffsend.nix
     ./shell/attic.nix

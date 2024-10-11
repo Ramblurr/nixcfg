@@ -25,7 +25,10 @@ in
     3478
     3479
   ];
-
+  modules.services.zfs-backup-check = {
+    enable = true;
+    healthchecks = config.repo.secrets.local.zfsHealthchecks;
+  };
   sops.secrets."zrepl/ludwigCert" = { };
   sops.secrets."zrepl/rsyncnetCert" = { };
   sops.secrets."zrepl/maliCert" = { };
