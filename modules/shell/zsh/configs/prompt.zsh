@@ -51,6 +51,12 @@ if [[ $(hostname) != "toolbox" && -d "$HOME/.local/bin-toolbox" ]]; then
   USER_LEVEL="${COLOR_HOST}"
 fi
 
+if [[ $(whoami) == "ramblurr" ]]; then
+  USER_AND_HOST="r@$(hostname)"
+else
+  USER_AND_HOST="$(whoami)@$(hostname)"
+fi
+
 
 #█▓▒░ git prompt
 GIT_PROMPT() {
@@ -126,6 +132,6 @@ ${USER_LEVEL}└─ - %f'
 ;;
 #█▓▒░ classic
 *)
-PROMPT='${USER_LEVEL}[${COLOR_NORMAL}%~${USER_LEVEL}]$(GIT_PROMPT) ∴ %f'
+PROMPT='${USER_LEVEL}[${USER_AND_HOST}:${COLOR_NORMAL}%~${USER_LEVEL}]$(GIT_PROMPT) ∴ %f'
 ;;
 esac
