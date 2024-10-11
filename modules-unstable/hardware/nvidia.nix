@@ -28,14 +28,14 @@ in
       nvidia = {
         nvidiaSettings = true; # Enable `nvidia-settings`
         modesetting.enable = true; # Required for wayland
+
+        powerManagement.enable = false; # Disable to prevent suspend/resume issues
+        open = false;
         # Driver version options
         # options: https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/os-specific/linux/nvidia-x11/default.nix
         # package = config.boot.kernelPackages.nvidiaPackages.vulkan_beta;
-        package = config.boot.kernelPackages.nvidiaPackages.production;
-        # package = config.boot.kernelPackages.nvidiaPackages.beta;
-
-        powerManagement.enable = false; # Disable to prevent suspend/resume issues
-        open = true;
+        #package = config.boot.kernelPackages.nvidiaPackages.production;
+        package = config.boot.kernelPackages.nvidiaPackages.beta; # as of Aug 2024 this is 560.35.03 which has wayland fixes
       };
 
       uinput.enable = true;
