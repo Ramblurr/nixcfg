@@ -97,7 +97,7 @@ export ZFS_DS_PERSIST="${ZFS_SAFE}/persist"
 
 ################################################################################
 
-prompt_danger "This will destroy all partitions and data on the disk ${DISK_PATH} irrevoably."
+prompt_danger "This will destroy all partitions and data on the disk ${DISK_PATH} irrevocably."
 info "Running the UEFI (GPT) partitioning"
 
 blkdiscard -f "$DISK_PATH"
