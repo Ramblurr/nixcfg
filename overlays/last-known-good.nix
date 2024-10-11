@@ -46,11 +46,19 @@ in
   #  fava
   #  ;
 
+  #inherit
+  #  (nixpkgs {
+  #    rev = "f008a5b2616de80a25e705e9019d9b7283faab8b";
+  #    sha256 = "sha256-Lnd9hT46PiBxxZHnjOcRaRqUEt9whJLgd/VNd4xqhII=";
+  #  })
+  #  calibre-web
+  #  ;
+
   inherit
     (nixpkgs {
-      rev = "f008a5b2616de80a25e705e9019d9b7283faab8b";
-      sha256 = "sha256-Lnd9hT46PiBxxZHnjOcRaRqUEt9whJLgd/VNd4xqhII=";
+      rev = "26ba28ed1d7126641c6e953bd9516fef0207bb10";
+      sha256 = "sha256-2UW72Ioc9Eyv7AmIA26ps2IzoKa6gkpUXbKJB+tRJ4k=";
     })
-    calibre-web
+    go-task
     ;
 }
