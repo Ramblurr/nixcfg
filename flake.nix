@@ -67,9 +67,8 @@
 
     hyprland = {
       type = "git";
-      url = "https://github.com/hyprwm/Hyprland?v0.43.0";
+      url = "https://github.com/hyprwm/Hyprland?v0.44.1";
       submodules = true;
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     #hyprNStack.url = "github:SiriusStarr/hyprNStack";
