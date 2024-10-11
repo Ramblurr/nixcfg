@@ -29,6 +29,8 @@ in
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
   modules.networking.default.hostName = hn;
+
+  modules.vpn.tailscale.enable = true;
   home-ops = {
     enable = true;
     user = ramblurr;
