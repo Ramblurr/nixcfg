@@ -14,7 +14,14 @@ in
 
 {
   config = lib.mkIf cfg.enable {
+    environment.persistence."/persist" = {
+      users.${username} = {
 
+        files = [
+          ".config/hypr/+bindings.conf"
+        ];
+      };
+    };
     myhm =
       { ... }@hm:
       {
@@ -54,7 +61,7 @@ in
               disable_logs = true;
             };
             exec-once = [
-              "swhks &"
+              #"swhks &"
               #"ags -b hypr"
               #"hyprctl setcursor Adwaita 24"
               #"easyeffects --gapplication-service"
@@ -313,8 +320,10 @@ in
                 popups = true;
               };
             };
+
+            source = "~/.config/hypr/+bindings.conf";
             # plugins = { };
-          };
+          }; # end settings
         };
       };
   };
