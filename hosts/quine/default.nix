@@ -84,6 +84,10 @@ in
     '';
   };
   home.attic.enable = false; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749
+
+  networking.firewall.allowedTCPPorts = [
+    8080
+  ];
   modules = {
     desktop = {
       hyprland3.enable = true;
