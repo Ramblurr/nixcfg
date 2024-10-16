@@ -85,6 +85,7 @@
 (unpin! cider
         clojure-mode
         clj-refactor)
+
 (unpin! lsp-mode
         lsp-treemacs
         lsp-mode
