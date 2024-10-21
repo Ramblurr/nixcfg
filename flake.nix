@@ -67,7 +67,8 @@
 
     hyprland = {
       type = "git";
-      url = "https://github.com/hyprwm/Hyprland?v0.44.1";
+      url = "https://github.com/hyprwm/Hyprland";
+      ref = "refs/tags/v0.44.1";
       submodules = true;
     };
 

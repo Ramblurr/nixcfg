@@ -43,14 +43,14 @@ in
           sd
           procs
           # </rust pkgs>
-          mat2
+          proxychains-ng
+          #mat2 # https://github.com/NixOS/nixpkgs/issues/348081
           waypipe
           nix-du
           nix-tree
           nix-prefetch
           nix-output-monitor
           ncdu
-          #binwalk # https://github.com/NixOS/nixpkgs/pull/325623
           usbutils
           rclone
           pciutils
