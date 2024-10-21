@@ -127,7 +127,7 @@ in
       };
       programs = {
         aseprite.enable = true;
-        calibre.enable = true;
+        #calibre.enable = true;
         chrysalis.enable = true;
         discord.enable = true;
         element.enable = true;
@@ -169,7 +169,7 @@ in
     };
     services = {
       docker.enable = true;
-      attic-watch-store.enable = true;
+      #attic-watch-store.enable = true;
       github-runner = {
         enable = false;
         runnerName = hn;

@@ -36,7 +36,7 @@ in
     myhm = {
       home.packages = with pkgs; [
         jetbrains.idea-ultimate
-        jetbrains.datagrip
+        #jetbrains.datagrip
         #jetbrains.gateway
         #jetbrains.clion
         #dotnet-sdk_7
