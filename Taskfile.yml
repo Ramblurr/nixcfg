@@ -134,3 +134,14 @@ tasks:
       vars: ["host"]
     cmds:
       - nix build .#images.{{.host}}
+
+  why-depends:
+    # source: https://discourse.nixos.org/t/better-why-depends-fill-in-the-gaps/31246/8
+    desc: Explain why a NixOS host's configuration depends on some package
+    summary: |
+      host: the NixOs host's system closure to check
+      pkg: the pkg name to investigate
+    requires:
+      vars: ["host", "pkg"]
+    cmds:
+      - nix why-depends .\#nixosConfigurations.{{.host}}.config.system.build.toplevel .\#nixosConfigurations.{{.host}}.pkgs.{{.pkg}} --derivation | cat
