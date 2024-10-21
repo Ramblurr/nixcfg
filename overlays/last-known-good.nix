@@ -54,11 +54,18 @@ in
   #  calibre-web
   #  ;
 
-  inherit
-    (nixpkgs {
-      rev = "26ba28ed1d7126641c6e953bd9516fef0207bb10";
-      sha256 = "sha256-2UW72Ioc9Eyv7AmIA26ps2IzoKa6gkpUXbKJB+tRJ4k=";
-    })
-    go-task
-    ;
+  # not a "last-known", but actually an unmerged PR that fixes it
+  # ref: https://github.com/NixOS/nixpkgs/pull/348697
+  python312Packages = pkgs.python312Packages // {
+    pyqt6 =
+      (nixpkgs {
+        rev = "a4307a33c04135bbfc4b293c1683cc4203109443";
+        sha256 = "sha256-vY06PrwFxll2h1uZv3C7rouvTgduL+IP/ZCvvLe12yA=";
+      }).python312Packages.pyqt6;
+    sip =
+      (nixpkgs {
+        rev = "a4307a33c04135bbfc4b293c1683cc4203109443";
+        sha256 = "sha256-vY06PrwFxll2h1uZv3C7rouvTgduL+IP/ZCvvLe12yA=";
+      }).python312Packages.sip;
+  };
 }

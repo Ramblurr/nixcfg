@@ -16,11 +16,12 @@ in
 {
   options.modules.editors.emacs = {
     enable = lib.mkEnableOption "";
+    activationScript.enable = lib.mkEnableOption "Enable the rebuild/switch activation script";
   };
   config = mkIf cfg.enable {
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
 
-    system.userActivationScripts = {
+    system.userActivationScripts = lib.mkIf cfg.activationScript.enable {
       # Installation script every time nixos-rebuild is run. So not during initial install.
       doomEmacs = {
         text = ''

@@ -25,6 +25,27 @@ _inputs: final: prev: {
       # Useful to merge several top-level configs in a module.
       mergeToplevelConfigs =
         keys: attrs: prev.lib.genAttrs keys (attr: prev.lib.mkMerge (map (x: x.${attr} or { }) attrs));
+
+      # Unlike //, this will deeply merge attrsets (left > right).
+      # mergeAttrs' :: listOf attrs -> attrs
+      mergeAttrs' =
+        attrList:
+        let
+          f =
+            attrPath:
+            prev.lib.zipAttrsWith (
+              n: values:
+              if (prev.lib.tail values) == [ ] then
+                prev.lib.head values
+              else if prev.lib.all prev.lib.isList values then
+                prev.lib.concatLists values
+              else if prev.lib.all prev.lib.isAttrs values then
+                f (attrPath ++ [ n ]) values
+              else
+                prev.lib.last values
+            );
+        in
+        f [ ] attrList;
     };
   };
 
