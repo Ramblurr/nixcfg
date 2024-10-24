@@ -731,10 +731,8 @@ in
       domain = "matrix.${home-ops.workDomain}";
       serverName = home-ops.workDomain;
       ports.http = home-ops.ports.matrix-synapse;
-      ports.slidingSync = home-ops.ports.matrix-sliding-sync;
       user = home-ops.users.matrix-synapse;
       group = home-ops.groups.matrix-synapse;
-      slidingSyncUser = home-ops.users.matrix-sliding-sync;
       bridgesGroup = home-ops.groups.matrix-bridges;
       ingress = {
         domain = home-ops.workDomain;

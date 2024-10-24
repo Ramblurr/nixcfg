@@ -60,11 +60,6 @@ in
             group = cfg.group.name;
             createHome = false;
           };
-          users.users.${cfg.slidingSyncUser.name} = {
-            uid = cfg.slidingSyncUser.uid;
-            isSystemUser = true;
-            group = cfg.group.name;
-          };
 
           users.users.${cfg.bridges.discord.user.name} = lib.mkIf cfg.bridges.discord.enable {
             uid = cfg.bridges.discord.user.uid;
@@ -100,11 +95,6 @@ in
                 LC_CTYPE = "C";
               GRANT ALL PRIVILEGES ON DATABASE "matrix-synapse" TO "matrix-synapse";
               ALTER ROLE "matrix-synapse" WITH LOGIN;
-
-              CREATE ROLE "matrix-sliding-sync";
-              CREATE DATABASE "matrix-sliding-sync" WITH OWNER "matrix-sliding-sync" TEMPLATE template0;
-              GRANT ALL PRIVILEGES ON DATABASE "matrix-sliding-sync" TO "matrix-sliding-sync";
-              ALTER ROLE "matrix-sliding-sync" WITH LOGIN;
 
               CREATE ROLE "mautrix-discord";
               CREATE DATABASE "mautrix-discord" WITH OWNER "mautrix-discord" TEMPLATE template0;
