@@ -147,7 +147,7 @@ in
         proxy_busy_buffers_size 256k;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header X-Scheme https
+        proxy_set_header X-Scheme https;
       '';
       extraConfig = ''
         client_max_body_size 0;
