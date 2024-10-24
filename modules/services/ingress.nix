@@ -243,8 +243,8 @@ in
                   proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;
                   proxy_set_header        Host $host;
                   proxy_set_header        X-Original-URL $scheme://$http_host$request_uri;
-                  add_header              Set-Cookie $auth_cookie;
                   auth_request_set        $auth_cookie $upstream_http_set_cookie;
+                  add_header              Set-Cookie $auth_cookie;
                   proxy_pass_request_body off;
                   proxy_set_header        Content-Length "";
                 '';
@@ -252,6 +252,7 @@ in
               "@goauthentik_proxy_signin" = lib.mkIf service.forwardAuth {
                 extraConfig = ''
                   internal;
+                  auth_request_set $auth_cookie $upstream_http_set_cookie;
                   add_header Set-Cookie $auth_cookie;
                   return 302 /outpost.goauthentik.io/start?rd=$request_uri;
                   # For domain level, use the below error_page to redirect to your authentik server with the full redirect path
