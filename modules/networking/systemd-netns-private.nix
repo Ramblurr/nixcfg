@@ -159,10 +159,10 @@ in
                 Type = "oneshot";
                 RemainAfterExit = true;
                 PrivateNetwork = true;
-                ExecStartPre = "-${pkgs.iproute}/bin/ip netns delete ${ns.name}";
+                ExecStartPre = "-${pkgs.iproute2}/bin/ip netns delete ${ns.name}";
                 ExecStart = [
-                  "${pkgs.iproute}/bin/ip netns add ${ns.name}"
-                  "${pkgs.iproute}/bin/ip netns exec ${ns.name} ${pkgs.iproute}/bin/ip link set lo up"
+                  "${pkgs.iproute2}/bin/ip netns add ${ns.name}"
+                  "${pkgs.iproute2}/bin/ip netns exec ${ns.name} ${pkgs.iproute2}/bin/ip link set lo up"
                   "${pkgs.umount}/bin/umount /var/run/netns/${ns.name}"
                   "${pkgs.mount}/bin/mount --bind /proc/self/ns/net /var/run/netns/${ns.name}"
                 ];
@@ -195,18 +195,18 @@ in
                 RemainAfterExit = true;
                 ExecStartPre = [
                   # Create system process
-                  "-${pkgs.iproute}/bin/ip link add ${ns.hostIface} type veth peer name ${ns.nsIface}"
-                  "-${pkgs.iproute}/bin/ip addr add ${ns.hostAddr} dev ${ns.hostIface}"
-                  "-${pkgs.iproute}/bin/ip link set ${ns.hostIface} up"
+                  "-${pkgs.iproute2}/bin/ip link add ${ns.hostIface} type veth peer name ${ns.nsIface}"
+                  "-${pkgs.iproute2}/bin/ip addr add ${ns.hostAddr} dev ${ns.hostIface}"
+                  "-${pkgs.iproute2}/bin/ip link set ${ns.hostIface} up"
                   "-${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1"
                 ];
 
                 ExecStart = [
-                  "${pkgs.iproute}/bin/ip link set ${ns.nsIface} netns ${ns.name}"
-                  "${pkgs.iproute}/bin/ip netns exec ${ns.name} ip addr add ${ns.nsAddr} dev ${ns.nsIface}"
-                  "${pkgs.iproute}/bin/ip netns exec ${ns.name} ip link set ${ns.nsIface} up"
-                  "-${pkgs.iproute}/bin/ip netns exec ${ns.name} ip link set lo up"
-                  "-${pkgs.iproute}/bin/ip netns exec ${ns.name} ip route add default via ${cidrToIp ns.hostAddr}"
+                  "${pkgs.iproute2}/bin/ip link set ${ns.nsIface} netns ${ns.name}"
+                  "${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip addr add ${ns.nsAddr} dev ${ns.nsIface}"
+                  "${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip link set ${ns.nsIface} up"
+                  "-${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip link set lo up"
+                  "-${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip route add default via ${cidrToIp ns.hostAddr}"
                   "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${ns.nsAddr} -o brmgmt9 -j MASQUERADE"
                 ];
                 ExecStopPost = [

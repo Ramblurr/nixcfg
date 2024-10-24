@@ -57,10 +57,10 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         PrivateNetwork = true;
-        ExecStartPre = "-${pkgs.iproute}/bin/ip netns delete %I";
+        ExecStartPre = "-${pkgs.iproute2}/bin/ip netns delete %I";
         ExecStart = [
-          "${pkgs.iproute}/bin/ip netns add %I"
-          "${pkgs.iproute}/bin/ip netns exec %I ${pkgs.iproute}/bin/ip link set lo up"
+          "${pkgs.iproute2}/bin/ip netns add %I"
+          "${pkgs.iproute2}/bin/ip netns exec %I ${pkgs.iproute2}/bin/ip link set lo up"
           "${pkgs.umount}/bin/umount /var/run/netns/%I"
           "${pkgs.mount}/bin/mount --bind /proc/self/ns/net /var/run/netns/%I"
         ];
@@ -132,8 +132,8 @@ in
           RemainAfterExit = true;
           ExecStartPre = [
             # Create system process
-            "-${pkgs.iproute}/bin/ip link add mv-int link brmgmt9 type macvlan mode bridge"
-            "-${pkgs.iproute}/bin/ip link set mv-int up"
+            "-${pkgs.iproute2}/bin/ip link add mv-int link brmgmt9 type macvlan mode bridge"
+            "-${pkgs.iproute2}/bin/ip link set mv-int up"
             "-${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1"
           ];
           # TODO host side link shim so host can talk to netns
@@ -146,11 +146,11 @@ in
 
           ExecStart = [
             # Pivot link
-            "${pkgs.iproute}/bin/ip link add mv0 link mv-int type macvlan mode bridge"
-            "${pkgs.iproute}/bin/ip link set mv0 netns %i name mv0"
+            "${pkgs.iproute2}/bin/ip link add mv0 link mv-int type macvlan mode bridge"
+            "${pkgs.iproute2}/bin/ip link set mv0 netns %i name mv0"
             # Configure link
-            "-${pkgs.iproute}/bin/ip netns exec %i ip link set lo up"
-            "-${pkgs.iproute}/bin/ip netns exec %i ip link set dev mv0 up"
+            "-${pkgs.iproute2}/bin/ip netns exec %i ip link set lo up"
+            "-${pkgs.iproute2}/bin/ip netns exec %i ip link set dev mv0 up"
             "-${runtimeScript} %i start"
           ];
 
