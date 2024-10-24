@@ -36,10 +36,6 @@ in
         type = lib.types.port;
         description = "The HTTP port to use";
       };
-      slidingSync = lib.mkOption {
-        type = lib.types.port;
-        description = "The port to use for the sliding sync service";
-      };
     };
     ingress = lib.mkOption {
       type = lib.types.submodule (
@@ -48,7 +44,6 @@ in
     };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
-    slidingSyncUser = lib.mkOption { type = lib.types.unspecified; };
     bridgesGroup = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
@@ -69,10 +64,6 @@ in
       http3.enable = false;
     };
     services.nginx.virtualHosts.${cfg.domain}.locations = {
-      "~ ^/(client/|_matrix/client/unstable/org.matrix.msc3575/sync)" = {
-        priority = 800;
-        proxyPass = "http://${config.services.matrix-sliding-sync.settings.SYNCV3_BINDADDR}";
-      };
       "~ ^(/_matrix|/_synapse/client)" = {
         proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
         extraConfig = ''
@@ -99,12 +90,6 @@ in
       createHome = lib.mkForce false;
       extraGroups = [ cfg.bridgesGroup.name ];
     };
-    users.users.${cfg.slidingSyncUser.name} = {
-      uid = cfg.slidingSyncUser.uid;
-      isSystemUser = true;
-      group = cfg.group.name;
-    };
-
     users.groups.matrix-synapse = {
       gid = lib.mkForce cfg.group.gid;
     };
@@ -145,28 +130,6 @@ in
       owner = cfg.user.name;
       group = cfg.group.name;
       mode = "400";
-    };
-
-    sops.secrets."slidingSyncEnv" = {
-      sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
-      owner = cfg.slidingSyncUser.name;
-      mode = "400";
-    };
-
-    services.matrix-sliding-sync = {
-      enable = true;
-      createDatabase = false;
-      environmentFile = config.sops.secrets."slidingSyncEnv".path;
-      settings = {
-        SYNCV3_BINDADDR = "127.0.0.1:${toString cfg.ports.slidingSync}";
-        SYNCV3_DB = "postgresql:///matrix-sliding-sync?host=/run/postgresql-matrix-synapse";
-        SYNCV3_SERVER = "http://127.0.0.1:${toString cfg.ports.http}";
-      };
-    };
-
-    systemd.services.matrix-sliding-sync.serviceConfig = {
-      DynamicUser = lib.mkForce false;
-      User = cfg.slidingSyncUser.name;
     };
 
     # use mimalloc to improve the memory situation with synapse
