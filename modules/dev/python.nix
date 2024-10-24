@@ -28,7 +28,7 @@ in
           pytest
           virtualenv
           black
-          #python-lsp-black
+          isort
           setuptools
           wheel
           requests
