@@ -57,13 +57,13 @@ in
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
-      archivebox.enable = true;
+      archivebox.enable = false;
       linkding.enable = true;
       matrix-synapse.enable = true;
       influxdb.enable = true;
       git-archive.enable = true;
-      forgejo.enable = true;
-      actual-server.enable = true;
+      forgejo.enable = false;
+      actual-server.enable = false;
       atuin-sync.enable = true;
       snowflake-proxy.enable = true;
     };
