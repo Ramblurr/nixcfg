@@ -19,6 +19,22 @@ in
       enable = true;
       homeserver = "https://${config.modules.services.matrix-synapse.domain}";
     };
+
+    systemd.services.heisenbridge = {
+      after = [
+        "network.target"
+        "matrix-synapse.service"
+      ];
+      bindsTo = [ "matrix-synapse.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Restart = "on-failure";
+      };
+      unitConfig = {
+        StartLimitBurst = 3;
+        StartLimitIntervalSec = "30s";
+      };
+    };
     # TODO: Make work in cases where this isn't on the same machine.
     services.matrix-synapse.settings.app_service_config_files = [
       "/var/lib/heisenbridge/registration.yml"
