@@ -10,6 +10,18 @@ let
   cfg = config.modules.desktop.hyprland3;
   username = config.modules.users.primaryUser.username;
   hyprland = inputs.hyprland.packages.${pkgs.system}.hyprland;
+  hyprland-emacs = pkgs.writeScriptBin "hyprland-emacs" ''
+    if [[ $(hyprctl activewindow -j | jq -r .class) == "emacs" ]]; then
+        command="(my/emacs-hypr-integration \"$@\")"
+        #echo "emacs -> $command" >> ~/emacs-wm.log
+        emacsclient -e "$command" >> ~/emacs-wm.log
+    else
+        #echo "hypr -> $@" >> ~/emacs-wm.log
+        hyprctl dispatch "$@"
+    fi
+
+  '';
+
 in
 
 {
@@ -183,8 +195,19 @@ in
                 binding =
                   mod: cmd: key: arg:
                   "${mod}, ${key}, ${cmd}, ${arg}";
-                mvfocus = binding "SUPER" "movefocus";
-                mvwin = binding "SUPER SHIFT" "movewindow";
+
+                binding-emacs =
+                  mod: cmd: key: arg:
+                  binding mod "exec" key "${hyprland-emacs}/bin/hyprland-emacs ${cmd} ${arg}";
+
+                #mvfocus = binding "SUPER" "movefocus";
+                mvfocus =
+                  (if config.modules.editors.emacs.enable then binding-emacs else binding) "SUPER"
+                    "movefocus";
+                #mvwin = binding "SUPER SHIFT" "movewindow";
+                mvwin =
+                  (if config.modules.editors.emacs.enable then binding-emacs else binding) "SUPER SHIFT"
+                    "movewindow";
                 ws = binding "SUPER" "workspace";
                 resizeactive = binding "SUPER CTRL" "resizeactive";
                 mvactive = binding "SUPER ALT" "moveactive";
@@ -230,14 +253,7 @@ in
               in
               [
                 "SUPER, D, exec, anyrun"
-                #"CTRL SHIFT, R, ${e} quit; ags -b hypr"
-                #"SUPER, Tab, ${e} -t overview"
-                #",XF86PowerOff,  ${e} -r 'powermenu.shutdown()'"
-                #",XF86PowerOff,  ${e} -r 'powermenu.shutdown()'"
-                #",XF86Launch4,   ${e} -r 'recorder.start()'"
-                "SUPER SHIFT, Z, exec, grim -g \"${lib.getExe pkgs.slurp}\" - | ${lib.getExe pkgs.satty} -f - -o ~/docs/img/screenshots/scrn-$(date +\"%Y-%m-%d-%H-%M-%S\").png"
-                #"SUPER SHIFT,Z,         ${e} -r 'recorder.screenshot()'"
-                #"SHIFT, Print,    ${e} -r 'recorder.screenshot(true)'"
+                ''SUPER SHIFT,Z, exec, grimblast --freeze save area - | swappy -f - -o ~/docs/img/screenshots/scrn-$(date +"%Y-%m-%d-%H-%M-%S").png''
                 "SUPER, Return, exec, kitty"
                 "SUPER, F, fullscreen"
                 "SUPER, M, fullscreenstate, -1 2"
@@ -272,23 +288,6 @@ in
               orientation = "center";
             };
 
-            #animations = {
-            #  enabled = "yes";
-            #  bezier = [
-            #    "overshot, 0.05, 0.9, 0.1, 1.05"
-            #    "smoothOut, 0.36, 0, 0.66, -0.56"
-            #    "smoothIn, 0.25, 1, 0.5, 1"
-            #  ];
-            #  animation = [
-            #    "windows, 1, 5, overshot, slide"
-            #    "windowsOut, 1, 4, smoothOut, slide"
-            #    "windowsMove, 1, 4, default"
-            #    "border, 1, 10, default"
-            #    "fade, 1, 10, smoothIn"
-            #    "fadeDim, 1, 10, smoothIn"
-            #    "workspaces, 1, 6, default"
-            #  ];
-            #};
             animations = {
               enabled = "yes";
               bezier = "myBezier, 0.05, 0.9, 0.1, 1.05";
