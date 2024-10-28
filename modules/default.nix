@@ -117,13 +117,14 @@
     ./services/tautulli.nix
     ./services/zfs-backup-check.nix
     ./shell/aria2.nix
-    ./shell/ffsend.nix
     ./shell/attic.nix
     ./shell/atuin.nix
     ./shell/direnv.nix
+    ./shell/ffsend.nix
     ./shell/git.nix
     ./shell/gpg-agent.nix
     ./shell/htop/default.nix
+    ./shell/mpv.nix
     ./shell/random.nix
     ./shell/ssh/default.nix
     ./shell/tmux.nix

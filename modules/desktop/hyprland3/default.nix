@@ -44,20 +44,19 @@ in
     programs.hyprland = {
       enable = true;
       package = inputs.hyprland.packages.${pkgs.system}.hyprland;
+      portalPackage = inputs.hyprland.packages.${pkgs.system}.xdg-desktop-portal-hyprland;
       xwayland.enable = true;
     };
 
     xdg.portal = {
       enable = true;
       extraPortals = with pkgs; [
-        # hyprland module enables its own portal
-        #libsForQt5.xdg-desktop-portal-kde
         xdg-desktop-portal-gtk
       ];
       xdgOpenUsePortal = true;
       config = {
         common = {
-          default = "gtk";
+          #    default = "gtk";
           "org.freedesktop.impl.portal.Screencast" = "hyprland";
           "org.freedesktop.impl.portal.Screenshot" = "hyprland";
         };
@@ -74,33 +73,28 @@ in
       with pkgs;
       #with gnome;
       [
-        morewaita-icon-theme
-        adwaita-icon-theme
-        qogir-icon-theme
         gnome-disk-utility
-        loupe
+        loupe # gui image viewer
         nautilus
         baobab
-
-        gnome-text-editor
-        gnome-calendar
-        gnome-boxes
-        gnome-system-monitor
-        gnome-control-center
-        gnome-weather
-        gnome-calculator
-        gnome-clocks
-        gnome-software # for flatpak
         wl-gammactl
         wl-clipboard
-        wayshot
         pavucontrol
         brightnessctl
         swww
         wlr-randr
         inputs.anyrun.packages.${system}.anyrun
         swhkd
-
+        wf-recorder # screen record cli
+        wev # event viewer
+        swappy # screenshot annotate
+        grimblast # select screen area + screenshot in one
+        ksnip
+        # flameshot it great but has very poor wayland support
+        # ref: https://github.com/flameshot-org/flameshot/issues/3757
+        # (flameshot.override {
+        #   enableWlrSupport = true;
+        # })
       ];
 
     systemd = {
