@@ -239,7 +239,7 @@
           ("sh" . "clojure.java.shell")
           ("jdbc" . "clojure.java.jdbc")
           ("set" . "clojure.set")
-          ("string" . "clojure.string")
+          ("str" . "clojure.string")
           ("gstring" . "goog.string")
           ("time" . "java-time")
           ("path" . "pathetic.core")
