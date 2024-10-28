@@ -88,6 +88,8 @@ in
   networking.firewall.allowedTCPPorts = [
     8080
   ];
+
+  # environment.systemPackages = [ pkgs.briss-ng ];
   modules = {
     desktop = {
       hyprland3.enable = true;
@@ -159,6 +161,7 @@ in
       git.enable = true;
       gpg-agent.enable = true;
       htop.enable = true;
+      mpv.enable = true;
       ssh.enable = true;
       tmux.enable = true;
       zoxide.enable = true;
