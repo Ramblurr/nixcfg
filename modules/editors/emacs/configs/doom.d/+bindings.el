@@ -51,12 +51,6 @@
  ;; :i [remap newline] #'newline-and-indent
  )
 
-;; intellij muscle memory dies hard
-(map!
- ;; :n "C-e" #'projectile-recentf
- :n "C-e" #'persp-switch-to-buffer
- :n "C-n" #'projectile-find-file)
-
 
 (map!
  :after lispyville

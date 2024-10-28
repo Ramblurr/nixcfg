@@ -64,7 +64,7 @@
       backup-by-copying t    ; don't clobber symlinks
       backup-directory-alist (list
                               (cons tramp-file-name-regexp nil)
-                              (cons "." (concat doom-cache-dir "backup/"))
+                              (cons "." (concat cache-dir "backup/"))
                               )
       tramp-backup-directory-alist nil
       )
@@ -127,12 +127,12 @@ Null prefix argument turns off the mode."
     (shell-command-to-string "gpgconf --list-dirs | grep \"agent-ssh-socket\" | cut -d: -f2"))))
 
 (after! magit
-  (set-ssh-auth-to-gpg-socket))
+        (set-ssh-auth-to-gpg-socket))
 
 (after! company
-  (setq company-auto-complete t
-        ;; complete on clojure namespaces
-        company-auto-complete-chars "/"))
+        (setq company-auto-complete t
+              ;; complete on clojure namespaces
+              company-auto-complete-chars "/"))
 
 ;; (after! treemacs
 ;;   ;; follow the current project file
@@ -162,108 +162,109 @@ Null prefix argument turns off the mode."
 
 (require 'evil-nerd-commenter)
 (use-package! lispyville
-  :hook ((lisp-mode . lispyville-mode)
-         (emacs-lisp-mode . lispyville-mode)
-         (ielm-mode . lispyville-mode)
-         (scheme-mode . lispyville-mode)
-         (racket-mode . lispyville-mode)
-         (hy-mode . lispyville-mode)
-         (lfe-mode . lispyville-mode)
-         (dune-mode . lispyville-mode)
-         (clojure-mode . lispyville-mode)
-         (fennel-mode . lispyville-mode))
-  :init
-  (setq
-   lispyville-key-theme
-   '(
-     (operators normal)
-     c-w c-u ;; Ctrl-w and Ctrl-u are sexp aware
-     prettify
-     text-objects
-     ;; (atom-movement normal visual)
-     ;; W, B and E will operate on atoms
-     ;; (atom-motions t)
-     atom-motions
-     additional-movement
-     ;; (additional-movement normal visual motion)
-     additional        ;; M-j/k to swap atoms forward/back
-     additional-insert ;;  M-{i,a,o,O} for sexp-aware enter insert
-     (additional-wrap normal insert)
-     (commentary normal visual)
-     slurp/barf-lispy ;; >/< to 'grow' and 'shrink' sexps
-     (escape insert emacs)))
-  :config
-  (lispyville-set-key-theme)
+              :hook ((lisp-mode . lispyville-mode)
+                     (emacs-lisp-mode . lispyville-mode)
+                     (ielm-mode . lispyville-mode)
+                     (scheme-mode . lispyville-mode)
+                     (racket-mode . lispyville-mode)
+                     (hy-mode . lispyville-mode)
+                     (lfe-mode . lispyville-mode)
+                     (dune-mode . lispyville-mode)
+                     (clojure-mode . lispyville-mode)
+                     (fennel-mode . lispyville-mode))
+              :init
+              (setq
+               lispyville-key-theme
+               '(
+                 (operators normal)
+                 c-w c-u ;; Ctrl-w and Ctrl-u are sexp aware
+                 prettify
+                 text-objects
+                 ;; (atom-movement normal visual)
+                 ;; W, B and E will operate on atoms
+                 ;; (atom-motions t)
+                 atom-motions
+                 additional-movement
+                 ;; (additional-movement normal visual motion)
+                 additional        ;; M-j/k to swap atoms forward/back
+                 additional-insert ;;  M-{i,a,o,O} for sexp-aware enter insert
+                 (additional-wrap normal insert)
+                 (commentary normal visual)
+                 slurp/barf-lispy ;; >/< to 'grow' and 'shrink' sexps
+                 (escape insert emacs)))
+              :config
+              (lispyville-set-key-theme)
 
-  (evil-define-key 'normal lispyville-mode-map
-    (kbd "M-o") 'rm/lispyville-insert-at-end-of-list)
+              (evil-define-key 'normal lispyville-mode-map
+                (kbd "M-o") 'rm/lispyville-insert-at-end-of-list)
 
-  (setq
-   lispy-safe-actions-ignore-strings t
-   lispy-safe-actions-ignore-comments t)
+              (setq
+               lispy-safe-actions-ignore-strings t
+               lispy-safe-actions-ignore-comments t)
 
-  (remove-hook 'clojure-mode-hook 'parinfer-mode)
-  (remove-hook 'emacs-lisp-mode-hook 'parinfer-mode)
+              (remove-hook 'clojure-mode-hook 'parinfer-mode)
+              (remove-hook 'emacs-lisp-mode-hook 'parinfer-mode)
 
-  ;; make w/e/b move by words inside strings and comments
-  (defun fn--lispyville-e-handler ()
-    (interactive)
-    (if (or (in-string-p)
-            (evilnc-pure-comment-p (point))
-            )
-        (evil-forward-word-end)
-      (lispyville-forward-atom-end)))
+              ;; make w/e/b move by words inside strings and comments
+              (defun fn--lispyville-e-handler ()
+                (interactive)
+                (if (or (in-string-p)
+                        (evilnc-pure-comment-p (point))
+                        )
+                    (evil-forward-word-end)
+                  (lispyville-forward-atom-end)))
 
-  (defun fn--lispyville-w-handler ()
-    (interactive)
-    (if (or (in-string-p)
-            (evilnc-pure-comment-p (point))
-            )
-        (evil-forward-word-begin)
-      (lispyville-forward-atom-begin)))
+              (defun fn--lispyville-w-handler ()
+                (interactive)
+                (if (or (in-string-p)
+                        (evilnc-pure-comment-p (point))
+                        )
+                    (evil-forward-word-begin)
+                  (lispyville-forward-atom-begin)))
 
-  (defun fn--lispyville-b-handler ()
-    (interactive)
-    (if (or (in-string-p)
-            (evilnc-pure-comment-p (point)))
-        (evil-backward-word-begin)
-      (lispyville-backward-atom-begin)))
+              (defun fn--lispyville-b-handler ()
+                (interactive)
+                (if (or (in-string-p)
+                        (evilnc-pure-comment-p (point)))
+                    (evil-backward-word-begin)
+                  (lispyville-backward-atom-begin)))
 
-  (evil-define-key '(normal visual) lispyville-mode-map
-    (kbd "e") 'fn--lispyville-e-handler
-    (kbd "w") 'fn--lispyville-w-handler
-    (kbd "b") 'fn--lispyville-b-handler))
+              (evil-define-key '(normal visual) lispyville-mode-map
+                (kbd "e") 'fn--lispyville-e-handler
+                (kbd "w") 'fn--lispyville-w-handler
+                (kbd "b") 'fn--lispyville-b-handler)
+              )
 
 
 (use-package! elpher :defer t)
 (after! elpher
-  (map! (:localleader
-         (:map elpher-mode-map)
-         "b" #'elpher-back
-         "r" #'elpher-reload
-         "g" #'elpher-go
-         "B" #'elpher-show-bookmarks
-         "A" #'elpher-bookmark-current
-         "U" #'elpher-copy-link-url
-         "u" #'elpher-copy-current-url
-         "d" #'elpher-download
-         "." #'elpher-view-raw
-         ))
+        (map! (:localleader
+               (:map elpher-mode-map)
+               "b" #'elpher-back
+               "r" #'elpher-reload
+               "g" #'elpher-go
+               "B" #'elpher-show-bookmarks
+               "A" #'elpher-bookmark-current
+               "U" #'elpher-copy-link-url
+               "u" #'elpher-copy-current-url
+               "d" #'elpher-download
+               "." #'elpher-view-raw
+               ))
 
-  (add-hook 'elpher-mode-hook
-            (defun +elpher-clean-up-ui ()
-              (setq cursor-type nil)
-              (hl-line-mode -1)))
-  (add-hook 'elpher-mode-hook #'doom-mark-buffer-as-real-h)
-  (advice-add #'elpher-bookmark-jump :after
-              (defun +elpher-bookmark-jump-a (_)
-                (switch-to-buffer elpher-buffer-name))))
+        (add-hook 'elpher-mode-hook
+                  (defun +elpher-clean-up-ui ()
+                    (setq cursor-type nil)
+                    (hl-line-mode -1)))
+        (add-hook 'elpher-mode-hook #'doom-mark-buffer-as-real-h)
+        (advice-add #'elpher-bookmark-jump :after
+                    (defun +elpher-bookmark-jump-a (_)
+                      (switch-to-buffer elpher-buffer-name))))
 
 
 
 (after! flycheck
-  ;; flycheck-next-error will navigate to errors before warnings
-  (setq flycheck-navigation-minimum-level 'error))
+        ;; flycheck-next-error will navigate to errors before warnings
+        (setq flycheck-navigation-minimum-level 'error))
 
 ;; ensure identically named files are shown in the buffer switcher with a directory disambiguation
 (require 'uniquify)
@@ -280,7 +281,7 @@ Null prefix argument turns off the mode."
 ;;   :hook (python-mode . python-black-on-save-mode-enable-dwim))
 
 (after!
-  treemacs (treemacs-follow-mode 1))
+ treemacs (treemacs-follow-mode 1))
 
 ;; (use-package! gptel
 ;;   :config
@@ -355,7 +356,7 @@ Null prefix argument turns off the mode."
   (tramp-cleanup-all-connections))
 
 (after! tramp
-  (set-ssh-auth-to-gpg-socket))
+        (set-ssh-auth-to-gpg-socket))
 
 (defun my-vc-off-if-remote ()
   (if (file-remote-p (buffer-file-name))
@@ -366,36 +367,36 @@ Null prefix argument turns off the mode."
 ;; (setq vc-handled-backends '(Git))
 
 (use-package! zoxide
-  :defer t
-  :init
-  (defun +zoxide-add (&optional path &rest _)
-    "Add PATH to zoxide database.  This function is called asynchronously."
-    (interactive "Dpath: ")
-    (unless path
-      (setq path default-directory))
-    (zoxide-run t "add" path)
+              :defer t
+              :init
+              (defun +zoxide-add (&optional path &rest _)
+                "Add PATH to zoxide database.  This function is called asynchronously."
+                (interactive "Dpath: ")
+                (unless path
+                  (setq path default-directory))
+                (zoxide-run t "add" path)
 
-    (require 's)
-    (let ((b (buffer-file-name)))
-      (unless (or (s-ends-with? ".git" b)
-                  (s-contains? "/.git/" b))
-        (zoxide-run t "add" b))))
-  (add-hook! 'find-file-hook #'+zoxide-add)
-  (defvar consult-dir--source-zoxide
-    `(:name "Zoxide dirs"
-      :narrow ?z
-      :category file
-      :face consult-file
-      :history file-name-history
-      :enabled ,(lambda () (executable-find "zoxide"))
-      :items ,#'zoxide-query)
-    "Zoxide directory source for `consult-dir'.")
-  (after! consult-dir
-    (pushnew! consult-dir-sources 'consult-dir--source-zoxide)))
+                (require 's)
+                (let ((b (buffer-file-name)))
+                  (unless (or (s-ends-with? ".git" b)
+                              (s-contains? "/.git/" b))
+                    (zoxide-run t "add" b))))
+              (add-hook! 'find-file-hook #'+zoxide-add)
+              (defvar consult-dir--source-zoxide
+                `(:name "Zoxide dirs"
+                        :narrow ?z
+                        :category file
+                        :face consult-file
+                        :history file-name-history
+                        :enabled ,(lambda () (executable-find "zoxide"))
+                        :items ,#'zoxide-query)
+                "Zoxide directory source for `consult-dir'.")
+              (after! consult-dir
+                      (pushnew! consult-dir-sources 'consult-dir--source-zoxide)))
 
 (after! apheleia
-  (setf (alist-get 'nixfmt apheleia-formatters)
-        '("nixfmt" "--width=100")))
+        (setf (alist-get 'nixfmt apheleia-formatters)
+              '("nixfmt" "--width=100")))
 
 
 (load! "+bindings.el")
