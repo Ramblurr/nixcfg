@@ -66,6 +66,7 @@ in
         nfs-utils
         inotify-tools
         roc-toolkit
+        gcc
         direnv
         android-tools
         sshpass

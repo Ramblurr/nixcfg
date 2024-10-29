@@ -114,7 +114,8 @@ in
             "...." = "cd ../../../";
             "j" = "z";
             "v" = "vim";
-            "vi" = "vim";
+            "vi" = "emasclient -nw";
+            "vim" = "emacsclient -nw";
             "ga" = "git add";
             "gap" = "git add --patch";
             "gc" = "git commit";

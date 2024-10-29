@@ -29,6 +29,7 @@ in
           smem
           #pkgs.my.mysql-backup
           # <rust pkgs>
+          rink
           bandwhich
           bat
           restic
@@ -80,6 +81,7 @@ in
           #(pkgs.rsync.overrideAttrs (_: _: { hardeningDisable = [ "fortify" ]; }))
           rsync
           wget
+          jet
           jq
           openssh
           watchman
