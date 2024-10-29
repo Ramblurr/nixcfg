@@ -23,6 +23,7 @@ in
     nixpkgs.overlays = [
       inputs.emacs-overlay.overlays.default
     ];
+    environment.wordlist.enable = true;
     myhm =
       { ... }@hm:
       {
