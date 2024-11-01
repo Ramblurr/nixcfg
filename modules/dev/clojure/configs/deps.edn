@@ -17,7 +17,7 @@
  :aliases
  {:dev/reloaded
   {:extra-paths ["dev" "test"]
-   :extra-deps  {integrant/repl              {:mvn/version "0.3.3"}
+   :extra-deps  {integrant/repl              {:mvn/version "0.4.0"}
                  org.clojure/tools.namespace {:mvn/version "1.5.0"}
                  org.clojure/tools.trace     {:mvn/version "0.8.0"}
                  org.slf4j/slf4j-nop         {:mvn/version "2.0.16"}
