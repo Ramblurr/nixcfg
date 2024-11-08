@@ -4,14 +4,23 @@ self: pkgs:
 
 let
   nixpkgs =
-    args@{ rev, sha256 }:
-    import (pkgs.fetchFromGitHub (
-      args
-      // {
-        owner = "NixOS";
-        repo = "nixpkgs";
-      }
-    )) { system = self.system; };
+    args@{
+      rev,
+      sha256,
+      config ? { },
+    }:
+    import
+      (pkgs.fetchFromGitHub (
+        removeAttrs args [ "config" ]
+        // {
+          owner = "NixOS";
+          repo = "nixpkgs";
+        }
+      ))
+      {
+        inherit config;
+        system = self.system;
+      };
 in
 {
 
@@ -68,4 +77,26 @@ in
   #      sha256 = "sha256-vY06PrwFxll2h1uZv3C7rouvTgduL+IP/ZCvvLe12yA=";
   #    }).python312Packages.sip;
   #};
+  #inherit
+  #  (nixpkgs {
+  #    rev = "5a6d31066e324f3631fde06da482e7d47f674005";
+  #    sha256 = "";
+  #  })
+  #  neatvnc
+  #  wf-recorder
+  #  ;
+
+  # Workaround kernel bug in kernel >= 6.6.57
+  # ref: https://github.com/NixOS/nixpkgs/issues/353709
+  # must add to config:
+  # boot.kernelPackages = pkgs.linuxPackages_6_6;
+  boot.kernelPackages = pkgs.linuxPackages_6_6;
+  inherit
+    (nixpkgs {
+      rev = "b72f50d54d0d0e7428cb39cd39f29e7ed2e7e5ea";
+      sha256 = "sha256-2ipWz8DPaUgOkskpHRSH9su1kon1/XtwozXaKewfCtU=";
+      config = self.config;
+    })
+    linuxPackages_6_6
+    ;
 }
