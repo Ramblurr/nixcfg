@@ -106,6 +106,11 @@ in
               float_switch_override_focus = 2;
               force_no_accel = true;
             };
+            cursor = {
+              # this is an nvidia workaround
+              # https://github.com/hyprwm/Hyprland/issues/4523
+              no_hardware_cursors = true;
+            };
             binds = {
               workspace_back_and_forth = true;
               allow_workspace_cycles = true;
