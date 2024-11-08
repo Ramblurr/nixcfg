@@ -42,7 +42,7 @@
     group = "root";
   };
   services.atticd = {
-    enable = false; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749
+    enable = false; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749, which is when Nixos 24.11 is released
 
     # Replace with absolute path to your credentials file
     # The HS256 JWT secret can be generated with the openssl:
@@ -50,7 +50,7 @@
     #
     # Content:
     #   ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64="output from openssl"
-    credentialsFile = config.sops.secrets."attic_server_token".path;
+    environmentFile = config.sops.secrets."attic_server_token".path;
 
     settings = {
       listen = "127.0.0.1:57000";

@@ -97,17 +97,18 @@
         "crane": "crane",
         "flake-compat": "flake-compat",
         "flake-parts": "flake-parts_2",
+        "nix-github-actions": "nix-github-actions",
         "nixpkgs": [
           "nixpkgs-stable"
         ],
         "nixpkgs-stable": "nixpkgs-stable"
       },
       "locked": {
-        "lastModified": 1729116596,
-        "narHash": "sha256-NnLMLIXGZtAscUF4dCShksuQ1nOGF6Y2dEeyj0rBbUg=",
+        "lastModified": 1730906442,
+        "narHash": "sha256-tBuyb8jWBSHHgcIrOfiyQJZGY1IviMzH2V74t7gWfgI=",
         "owner": "zhaofengli",
         "repo": "attic",
-        "rev": "2b05b7d986cf6009b1c1ef7daa4961cd1a658782",
+        "rev": "d0b66cf897e4d55f03d341562c9821dc4e566e54",
         "type": "github"
       },
       "original": {
@@ -1033,7 +1034,7 @@
     "nix-eval-jobs": {
       "inputs": {
         "flake-parts": "flake-parts_6",
-        "nix-github-actions": "nix-github-actions",
+        "nix-github-actions": "nix-github-actions_2",
         "nixpkgs": "nixpkgs_2",
         "treefmt-nix": "treefmt-nix_2"
       },
@@ -1074,6 +1075,27 @@
       }
     },
     "nix-github-actions": {
+      "inputs": {
+        "nixpkgs": [
+          "attic-stable",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1729742964,
+        "narHash": "sha256-B4mzTcQ0FZHdpeWcpDYPERtyjJd/NIuaQ9+BV1h+MpA=",
+        "owner": "nix-community",
+        "repo": "nix-github-actions",
+        "rev": "e04df33f62cdcf93d73e9a04142464753a16db67",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nix-github-actions",
+        "type": "github"
+      }
+    },
+    "nix-github-actions_2": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs-wayland",
@@ -1293,11 +1315,11 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1726739739,
-        "narHash": "sha256-b64ueXXVBB3775/1tguCjlXBZBV4awXc0mZPbwCFgcE=",
+        "lastModified": 1730715194,
+        "narHash": "sha256-h+YJXik6wcLXJUvWY2aIlseqTi60qy2+2TV6ZwOh55I=",
         "owner": "ramblurr",
         "repo": "nixpkgs",
-        "rev": "6c7e952ac3737f8436ba7d680874f661213e37e6",
+        "rev": "1e8ecb8363e6b461dbcac0fbd5ad4addc9b128fd",
         "type": "github"
       },
       "original": {
