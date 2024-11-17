@@ -47,8 +47,10 @@ in
       enable = true;
       domain = cfg.domain;
       package = mine.invoiceninja;
+      #package = pkgs.invoiceninja-mine;
       environment = {
-        LOG_CHANNEL = "errorlog";
+        EXPANDED_LOGGING = "true";
+        LOG_CHANNEL = "stack";
         LOG_LEVEL = "debug";
       };
       environmentFile = config.sops.secrets."invoiceninja/env".path;

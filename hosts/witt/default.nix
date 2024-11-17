@@ -141,6 +141,7 @@ in
       vim = {
         enable = true;
         extraPlugins = with pkgs.vimPlugins; [
+          vim-surround
           vim-airline
           tabular
           vim-nix
