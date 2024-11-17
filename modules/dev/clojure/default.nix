@@ -34,7 +34,9 @@ in
         ];
       };
     };
-    home-manager.users."${username}" =
+
+    myhm =
+      { ... }@hm:
       let
         devSDKs = with pkgs; {
           openjfx = javaPackages.openjfx21;
@@ -90,7 +92,11 @@ in
         #};
 
         xdg.configFile."clojure/deps.edn" = {
-          source = ./configs/deps.edn;
+          source = pkgs.substituteAll {
+            src = ./configs/deps.edn;
+            name = "clojure-deps-edn";
+            cacheDirectory = "${hm.config.xdg.cacheHome}/.cache/clojure";
+          };
         };
         xdg.configFile."clj-kondo" = {
           source = ./configs/clj-kondo;

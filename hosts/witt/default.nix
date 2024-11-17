@@ -98,7 +98,7 @@ in
 
     desktop = {
       kde.enable = true;
-      kde.sddm.hideUsers = config.users.primaryUser.username;
+      kde.sddm.hideUsers = [ config.modules.users.primaryUser.username ];
       xdg.enable = true;
       browsers = {
         firefox.enable = true;
