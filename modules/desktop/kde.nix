@@ -59,6 +59,9 @@ in
           lib.concatStringsSep "," cfg.sddm.hideUsers
         );
         Users.RememberLastUser = (cfg.sddm.hideUsers == [ ]);
+        Theme.EnableAvatars = false;
+        Users.MinimumUid = 99999;
+        Users.MaximumUid = 99999;
       };
     };
     programs.dconf.enable = true;
