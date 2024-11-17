@@ -50,11 +50,14 @@ in
     ];
     services.displayManager.enable = true;
     services.desktopManager.plasma6.enable = true;
-    services.displayManager.sddm.wayland.enable = true;
-    services.displayManager.sddm.services.displayManager.sddm = {
+    services.displayManager.sddm = {
       enable = true;
+      wayland.enable = true;
       settings = {
-        Users.HideUsers = cfg.sddm.hideUsers;
+        # convert the list of users to a string with , delimiter
+        Users.HideUsers = lib.optionalString (cfg.sddm.hideUsers != [ ]) (
+          lib.concatStringsSep "," cfg.sddm.hideUsers
+        );
         Users.RememberLastUser = (cfg.sddm.hideUsers == [ ]);
       };
     };

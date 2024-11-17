@@ -27,7 +27,6 @@
     ./desktop/hyprland3/dunst.nix
     ./desktop/kde.nix
     ./desktop/programs/1password.nix
-    ./desktop/programs/senpai.nix
     ./desktop/programs/aseprite.nix
     ./desktop/programs/calibre.nix
     ./desktop/programs/chrysalis.nix
