@@ -35,6 +35,13 @@ in
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
 
+  #### TEMPORARY
+  # Workaround kernel bug in kernel >= 6.6.57
+  # ref: https://github.com/NixOS/nixpkgs/issues/353709
+  # see my last-known-good.nix overlay for corresponding overlay pkg
+  boot.kernelPackages = pkgs.linuxPackages_6_6;
+  ### END
+
   networking = {
     networkmanager.enable = true;
     hostName = hn;
@@ -63,6 +70,7 @@ in
       ];
     };
   };
+
   modules = {
     impermanence.enable = true;
     boot.zfs.enable = true;
@@ -78,7 +86,7 @@ in
     users.enable = true;
     users.primaryUser = {
       username = "ramblurr";
-      #name = "Casey Link";
+      name = "Me";
       homeDirectory = "/home/ramblurr";
       signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
       email = "unnamedrambler@gmail.com";
