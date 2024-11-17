@@ -170,7 +170,7 @@ in
       docker.enable = true;
       docker.enableOnBoot = false;
       flatpak.enable = false;
-      microsocks.enable = false;
+      microsocks.enable = true;
       podman.enable = true;
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       printing.enable = true;
