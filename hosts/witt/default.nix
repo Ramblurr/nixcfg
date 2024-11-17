@@ -106,7 +106,7 @@ in
 
       programs = {
         junction.enable = true;
-        kdeconnect.enable = true;
+        #kdeconnect.enable = true;
         #kitty.enable = true;
         logseq.enable = true;
         #nextcloud.enable = true;
