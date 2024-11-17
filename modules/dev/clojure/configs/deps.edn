@@ -27,7 +27,7 @@
                  com.github.gnl/playback     {:mvn/version "0.5.4"}
                  jedi-time/jedi-time         {:mvn/version "0.2.1"}}}
 
-  :inspect/portal-cli-cider
+  :repl/cider
   {:extra-deps {djblue/portal                 {:mvn/version "RELEASE"}
                 clj-commons/clj-yaml          {:mvn/version "1.0.28"} ; portal yaml support (optional)
                 nrepl/nrepl                   {:mvn/version "1.3.0"}
