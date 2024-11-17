@@ -32,6 +32,14 @@ in
 {
   options.modules.desktop.kde = {
     enable = lib.mkEnableOption "";
+    sddm.hideUsers = lib.mkOption {
+      description = "List of users to hide from the SDDM login screen";
+      default = [ ];
+      example = [
+        "alice"
+      ];
+      type = lib.types.listOf lib.types.str;
+    };
   };
   config = mkIf cfg.enable {
     assertions = [
@@ -43,7 +51,13 @@ in
     services.displayManager.enable = true;
     services.desktopManager.plasma6.enable = true;
     services.displayManager.sddm.wayland.enable = true;
-    services.displayManager.sddm.enable = true;
+    services.displayManager.sddm.services.displayManager.sddm = {
+      enable = true;
+      settings = {
+        Users.HideUsers = cfg.sddm.hideUsers;
+        Users.RememberLastUser = (cfg.sddm.hideUsers == [ ]);
+      };
+    };
     programs.dconf.enable = true;
 
     environment.systemPackages = [
