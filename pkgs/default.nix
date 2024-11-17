@@ -7,6 +7,7 @@ inputs: [
     qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
     kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
     klassy = prev.callPackage ./klassy.nix { };
+    invoiceninja-mine = prev.callPackage ./invoiceninja/package.nix { };
     beets-dynamicrange = prev.callPackage ./beets-dynamicrange.nix {
       beets = prev.beetsPackages.beets-minimal;
     };

@@ -8,7 +8,6 @@ let
     python311Packages.passlib
     python311Packages.ruamel-yaml
     python311Packages.pyyaml
-    python311Packages.kubernetes
     python311Packages.simple-term-menu
   ];
 in

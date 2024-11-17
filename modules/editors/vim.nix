@@ -37,7 +37,7 @@ in
             [
               editorconfig-vim
               gruvbox-community
-              vim-surround
+
             ]
             ++ cfg.extraPlugins;
           extraConfig = ''

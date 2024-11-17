@@ -1,0 +1,30 @@
+diff --git a/config/database.php b/config/database.php
+index 32dedf8154..7052612d8a 100644
+--- a/config/database.php
++++ b/config/database.php
+@@ -41,6 +41,7 @@ return [
+             'username'       => env('DB_USERNAME1', env('DB_USERNAME', 'forge')),
+             'password'       => env('DB_PASSWORD1', env('DB_PASSWORD', '')),
+             'port'           => env('DB_PORT1', env('DB_PORT', '3306')),
++            'unix_socket'    => env('DB_SOCKET1', env('DB_SOCKET', '')),
+             'charset'        => 'utf8mb4',
+             'collation'      => 'utf8mb4_unicode_ci',
+             'prefix'         => '',
+@@ -175,6 +176,8 @@ return [
+         'client' => 'predis',
+
+         'default' => [
++            'scheme'   => env('REDIS_SCHEME', 'tcp'),
++            'path'     => env('REDIS_PATH'),
+             'host'     => env('REDIS_HOST', '127.0.0.1'),
+             'password' => env('REDIS_PASSWORD', null),
+             'port'     => env('REDIS_PORT', 6379),
+@@ -182,6 +185,8 @@ return [
+         ],
+
+         'cache' => [
++            'scheme'   => env('REDIS_SCHEME', 'tcp'),
++            'path'     => env('REDIS_PATH'),
+             'host'     => env('REDIS_HOST', '127.0.0.1'),
+             'password' => env('REDIS_PASSWORD', null),
+             'port'     => env('REDIS_PORT', 6379),
