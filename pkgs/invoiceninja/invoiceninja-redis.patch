@@ -1,0 +1,21 @@
+--- config/database.php 2024-10-25 09:02:12.000000000 +0200
++++ config/database.php 11:25:56.661620943 +0100
+@@ -160,6 +160,8 @@
+         'client' => 'predis',
+
+         'default' => [
++            'scheme'   => env('REDIS_SCHEME', 'tcp'),
++            'path'     => env('REDIS_PATH'),
+             'host'     => env('REDIS_HOST', '127.0.0.1'),
+             'password' => env('REDIS_PASSWORD', null),
+             'port'     => env('REDIS_PORT', 6379),
+@@ -167,6 +169,8 @@
+         ],
+
+         'cache' => [
++            'scheme'   => env('REDIS_SCHEME', 'tcp'),
++            'path'     => env('REDIS_PATH'),
+             'host'     => env('REDIS_HOST', '127.0.0.1'),
+             'password' => env('REDIS_PASSWORD', null),
+             'port'     => env('REDIS_PORT', 6379),
+
