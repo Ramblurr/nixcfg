@@ -51,7 +51,10 @@ in
         pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)
       )
     );
+    # oh boy, https://discourse.nixos.org/t/connected-to-mullvadvpn-but-no-internet-connection/35803/11
+    resolvconf.enable = false;
   };
+  services.resolved.enable = true;
   services.timesyncd.enable = true;
   hardware.bluetooth = {
     enable = true;
