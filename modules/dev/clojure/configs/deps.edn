@@ -8,10 +8,10 @@
  :deps {org.clojure/clojure {:mvn/version "RELEASE"}}
 
  ;; do not use ~/.m2
- :mvn/local-repo "/home/ramblurr/.cache/maven/repository"
+ :mvn/local-repo "@cacheDirectory@/maven/repository"
 
  :mvn/repos {"central"  {:url "https://repo1.maven.org/maven2/"}
-             "clojars"  {:url "https://repo.clojars.org/"} #_ ()
+             "clojars"  {:url "https://repo.clojars.org/"} #_()
              "sonatype" {:url "https://oss.sonatype.org/content/repositories/snapshots/"}}
 
  :aliases

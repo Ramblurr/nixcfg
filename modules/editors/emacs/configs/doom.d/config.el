@@ -402,7 +402,6 @@ Null prefix argument turns off the mode."
 (load! "+bindings.el")
 ;; (load! "+dashboard.el")
 (load! "+clojure.el")
-;; (load! "+vterm.el")
 (load! "+lsp.el")
 (load! "+copilot.el")
 ;; (load! "+tabby.el")
