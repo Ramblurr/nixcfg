@@ -46,6 +46,7 @@
     ./desktop/programs/signal.nix
     ./desktop/programs/slack.nix
     ./desktop/programs/thunderbird.nix
+    ./desktop/programs/yubico.nix
     ./desktop/random-apps.nix
     ./desktop/services/hacompanion.nix
     ./desktop/services/ha-shutdown.nix
