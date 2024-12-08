@@ -84,6 +84,7 @@ in
             "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJ6XVIQ8DU60p0cjBti+kJgd/UqM1tV4M5gFIoR+I0tQ5XmWU65V91uxfeJMBG0Owoweod2q1qKhH3xic9tIHHA= casey@ipad"
             "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBkONauJo6DuKW6F49400J5r7HTDf8jPrcmm2CrRFN7FDEfJ8uS6+FJykOobOnBBzkJqSAy2F08TRaovU4eBYNg= casey-ipad-new"
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF7TTPusOHuyKotZBcwWqIH3B+cRRDQM46+lvATGNAWO disaster recovery 2021"
+            "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIEtpfkZ/mmPnaXlmRS8nPc2L5N/bmqXDmBz1oUSQq4VvAAAABHNzaDo= ident-keychain"
           ];
           description = lib.mdDoc "The user's authorized SSH keys.";
         };
