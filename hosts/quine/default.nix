@@ -154,6 +154,7 @@ in
         signal.enable = true;
         slack.enable = true;
         thunderbird.enable = true;
+        yubico.enable = true;
       };
     };
     shell = {

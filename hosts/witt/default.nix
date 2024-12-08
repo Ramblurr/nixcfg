@@ -125,6 +125,7 @@ in
         signal.enable = true;
         thunderbird.enable = true;
         musescore.enable = true;
+        yubico.enable = true;
       };
     };
     shell = {
