@@ -34,7 +34,7 @@ in
             audacity
             pavucontrol
             # upstream is broken https://github.com/NixOS/nixpkgs/issues/341043
-            #openscad-unstable
+            openscad-unstable
             openscad-lsp
             #freecad
             prusa-slicer
