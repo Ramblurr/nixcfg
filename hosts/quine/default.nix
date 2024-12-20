@@ -250,6 +250,7 @@ in
         "libvirtd"
       ];
     };
+    #services.pcscd.readerConfig = '''';
     services.borgmatic = {
       enable = true;
       name = "aquinas.${domain.home}-mali";
