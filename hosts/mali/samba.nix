@@ -18,27 +18,27 @@ in
   ];
   services.samba = {
     enable = true;
-    securityType = "user";
-    enableNmbd = true; # namespace and browsing suport
-    enableWinbindd = true; # integrations linux user auth
+    nmbd.enable = true; # namespace and browsing suport
+    winbindd.enable = true; # integrations linux user auth
     openFirewall = true;
-    extraConfig = ''
-      server string = smbnix
-      netbios name = smbnix
-      workgroup = WORKGROUP
-      browseable = yes
-      smb encrypt = auto
-      load printers = no
-      printcap name = /dev/null
-      guest account = nobody
-      map to guest = bad user
-      hosts allow = 10.9.8.33 10.9.4.3 192.168.1.83 10.9.6.23 10.9.5.1 127.0.0.1 localhost
-      hosts deny = 0.0.0.0/0
-    '';
-    # log level = 3
+    settings = {
+      global = {
+        "security" = "user";
+        "server string" = "smbnix";
+        "netbios name" = "smbnix";
+        "workgroup" = "WORKGROUP";
+        "browseable" = "yes";
+        "smb encrypt" = "auto";
+        "load printers" = "no";
+        "printcap name" = "/dev/null";
+        "guest account" = "nobody";
+        "map to guest" = "bad user";
+        "hosts allow" = "10.9.8.33 10.9.4.3 192.168.1.83 10.9.6.23 10.9.5.1 127.0.0.1 localhost";
+        "hosts deny" = "0.0.0.0/0";
+        # log level = 3
+      };
 
-    # Don't forget to run `smbpasswd -a <user>` to set the passwords (the user must already exit)
-    shares = {
+      # Don't forget to run `smbpasswd -a <user>` to set the passwords (the user must already exit)
       roon = {
         path = "/mnt/tank2/backups/roon";
         browseable = "yes";

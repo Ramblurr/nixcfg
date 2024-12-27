@@ -12,8 +12,8 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
-  radicle = inputs.radicle.packages.${pkgs.system}.default;
 in
+#radicle = inputs.radicle.packages.${pkgs.system}.default;
 {
   options.modules.dev.radicle = {
     enable = lib.mkEnableOption "";

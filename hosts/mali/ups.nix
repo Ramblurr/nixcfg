@@ -17,7 +17,7 @@
     users = {
       upsmon = {
         passwordFile = config.sops.secrets.upsAdminPassword.path;
-        upsmon = "master";
+        upsmon = "primary";
       };
     };
     upsmon = {
