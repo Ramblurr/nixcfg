@@ -136,6 +136,7 @@ in
       programs = {
         #aseprite.enable = true;
         #calibre.enable = true;
+        cad.enable = true;
         chrysalis.enable = true;
         discord.enable = true;
         element.enable = true;
