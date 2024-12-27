@@ -11,8 +11,8 @@ let
   service = "radicle-seed";
   dataDir = "/var/lib/${service}";
   homeDir = "/home/${cfg.user.name}";
-  inherit (inputs.heartwood.packages.${pkgs.stdenv.system}) radicle-cli radicle-node;
 in
+#inherit (inputs.heartwood.packages.${pkgs.stdenv.system}) radicle-cli radicle-node;
 {
   options.modules.services.radicle-seed = {
     enable = lib.mkEnableOption "radicle seed node";
