@@ -42,9 +42,6 @@
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
-    attic-stable.url = "github:zhaofengli/attic";
-    attic-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
-
     #clj-nix.url = "github:jlesquembre/clj-nix";
     #clj-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
