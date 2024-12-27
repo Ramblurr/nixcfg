@@ -10,6 +10,9 @@
     microvm.url = "github:astro/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
+    cadquery.url = "github:marcus7070/cq-flake";
+    cadquery.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
     #caddy.url = "github:Ramblurr/nixos-caddy";
     #caddy.inputs.nixpkgs.follows = "nixpkgs-unstable";
 

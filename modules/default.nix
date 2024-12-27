@@ -36,6 +36,7 @@
     ./desktop/programs/junction.nix
     ./desktop/programs/kdeconnect.nix
     ./desktop/programs/kicad.nix
+    ./desktop/programs/cad.nix
     ./desktop/programs/kitty/default.nix
     ./desktop/programs/logseq.nix
     ./desktop/programs/musescore.nix
