@@ -31,6 +31,7 @@ in
   modules.networking.default.hostName = hn;
 
   modules.vpn.tailscale.enable = true;
+  modules.vpn.tailscale.useRoutingFeatures = "both";
   home-ops = {
     enable = true;
     user = ramblurr;

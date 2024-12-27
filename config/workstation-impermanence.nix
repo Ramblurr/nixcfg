@@ -35,7 +35,6 @@ in
         ".config/gnupg"
         ".config/inkscape"
         ".config/Morgen"
-        ".config/OpenSCAD"
         ".config/PrusaSlicer"
         ".config/PrusaSlicer-alpha"
         ".config/qobuz-dl"
@@ -47,7 +46,6 @@ in
         ".local/share/fonts"
         ".local/share/krita"
         ".local/share/Zeal"
-        ".local/share/OpenSCAD"
         ".local/state/audacity"
 
         ".config/gtk-3.0" # fuse mounted from /nix/dotfiles/Plasma/.config/gtk-3.0

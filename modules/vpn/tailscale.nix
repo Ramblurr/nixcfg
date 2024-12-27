@@ -15,9 +15,21 @@ in
 {
   options.modules.vpn.tailscale = {
     enable = lib.mkEnableOption "";
+    useRoutingFeatures = mkOption {
+      type = types.enum [
+        "none"
+        "client"
+        "server"
+        "both"
+      ];
+      default = "none";
+    };
   };
   config = mkIf cfg.enable {
     services.tailscale.enable = lib.mkIf cfg.enable true;
+    services.tailscale.useRoutingFeatures = cfg.useRoutingFeatures;
+    # ref: https://github.com/tailscale/tailscale/issues/3310
+    networking.firewall.checkReversePath = "loose";
 
     boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkForce true;
 

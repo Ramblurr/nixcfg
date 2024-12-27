@@ -77,7 +77,7 @@
         routes = [
           {
             Destination = "192.168.8.0/22";
-            Gateway = "10.9.4.27";
+            Gateway = "10.9.4.21";
           }
         ];
       };
