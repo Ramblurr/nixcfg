@@ -117,8 +117,10 @@ in
         cad.enable = true;
         junction.enable = true;
         #kdeconnect.enable = true;
-        #kitty.enable = true;
+        kitty.enable = true;
         logseq.enable = true;
+        chrysalis.enable = true;
+        element.eneable = true;
         #nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
