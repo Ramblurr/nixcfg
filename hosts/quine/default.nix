@@ -89,7 +89,7 @@ in
       !include ${config.sops.templates."nix.conf".path}
     '';
   };
-  home.attic.enable = false; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749
+  home.attic.enable = true;
 
   networking.firewall.allowedTCPPorts = [
     8080
@@ -179,7 +179,7 @@ in
     };
     services = {
       docker.enable = true;
-      #attic-watch-store.enable = true;
+      attic-watch-store.enable = true;
       github-runner = {
         enable = false;
         runnerName = hn;

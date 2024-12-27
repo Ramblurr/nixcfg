@@ -17,8 +17,6 @@
   #
   #=====================================================
 
-  #imports = [ inputs.attic-stable.nixosModules.atticd ];
-
   # Self-Hosted Nix Cache Server
   # https://github.com/zhaofengli/attic
   #
@@ -43,7 +41,7 @@
     group = "root";
   };
   services.atticd = {
-    enable = true; # let's wait until we can drop the flake https://github.com/NixOS/nixpkgs/pull/347749, which is when Nixos 24.11 is released
+    enable = true;
 
     # Replace with absolute path to your credentials file
     # The HS256 JWT secret can be generated with the openssl:

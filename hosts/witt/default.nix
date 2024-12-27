@@ -57,7 +57,7 @@ in
     powerOnBoot = false;
     settings.General.Experimental = true;
   };
-
+  home.attic.enable = true;
   nix = {
     settings = {
       substituters = [
@@ -133,7 +133,7 @@ in
     };
     shell = {
       aria2.enable = true;
-      attic.enable = false;
+      attic.enable = true;
       atuin.enable = true;
       atuin.sync.enable = true;
       direnv.enable = true;
@@ -165,7 +165,7 @@ in
     };
 
     services = {
-      attic-watch-store.enable = false;
+      attic-watch-store.enable = true;
       docker.enable = true;
       docker.enableOnBoot = false;
       flatpak.enable = false;
