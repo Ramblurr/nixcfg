@@ -86,7 +86,7 @@
     };
   };
   modules.services.microvm = {
-    enable = true;
+    enable = false;
     guests =
       let
         mkGuest =
