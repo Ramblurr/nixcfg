@@ -1,7 +1,12 @@
 {
   inputs = {
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.05";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
+    home-manager-stable.url = "github:nix-community/home-manager/release-24.11";
+    home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
+
     nixpkgs-mine.url = "github:ramblurr/nixpkgs/consolidated";
     #nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
@@ -28,9 +33,9 @@
     matugen.url = "github:InioX/matugen";
     matugen.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
-    radicle.url = "git+https://seed.radicle.xyz/z3gqcJUoA1n9HaHKufZs5FCSGazv5.git?rev=54aacc96197a48b79fcc260f94312d824f5e0a34";
-    radicle.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    radicle.inputs.flake-utils.follows = "flake-utils";
+    #radicle.url = "git+https://seed.radicle.xyz/z3gqcJUoA1n9HaHKufZs5FCSGazv5.git?rev=54aacc96197a48b79fcc260f94312d824f5e0a34";
+    #radicle.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    #radicle.inputs.flake-utils.follows = "flake-utils";
 
     quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -106,12 +111,6 @@
 
     nixpkgs-wayland.url = "github:nix-community/nixpkgs-wayland/master";
     nixpkgs-wayland.inputs.nixpkgs.follows = "nixpkgs-unstable";
-
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs-unstable";
-
-    home-manager-stable.url = "github:nix-community/home-manager/release-24.05";
-    home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     nur.url = "github:nix-community/NUR";
 
