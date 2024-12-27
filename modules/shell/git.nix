@@ -32,6 +32,10 @@ in
           safe = {
             directory = "${homeDirectory}/src/nixcfg";
           };
+          credential.helper = [
+            "cache --timeout 21600"
+            "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
+          ];
         };
         aliases = {
           s = "status -s";
