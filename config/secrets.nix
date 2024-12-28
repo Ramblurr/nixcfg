@@ -10,7 +10,7 @@ let
 in
 {
   # Define local repo secrets
-  repo.secretFiles = {
+  repo.secretFiles_old = {
     global = ../secrets/global.nix;
   } // lib.optionalAttrs (lib.pathExists local) { inherit local; };
 }

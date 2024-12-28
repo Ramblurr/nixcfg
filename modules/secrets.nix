@@ -36,7 +36,7 @@ let
 in
 {
   options.repo = {
-    secretFiles = lib.mkOption {
+    secretFiles_old = lib.mkOption {
       default = { };
       type = lib.types.attrsOf lib.types.path;
       example = lib.literalExpression "{ local = ./secrets/local.nix }";
@@ -64,9 +64,9 @@ in
         the corresponding file will be decrypted, imported and exposed as {option}`repo.secrets.<name>`.
       '';
     };
-    secrets = lib.mkOption {
+    secrets_old = lib.mkOption {
       readOnly = true;
-      default = lib.mapAttrs (_: x: importEncrypted x) cfg.secretFiles;
+      default = lib.mapAttrs (_: x: importEncrypted x) cfg.secretFiles_old;
       #default = { global = (importEncrypted cfg.secretFiles.global) { }; };
       type = lib.types.unspecified;
       description = "Exposes the loaded repo secrets. This option is read-only.";
