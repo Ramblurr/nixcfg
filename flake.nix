@@ -102,12 +102,26 @@
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     sops-nix.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
-    #agenix.url = "github:ryantm/agenix";
-    #agenix.inputs.nixpkgs.follows = "nixpkgs-unstable";
-    #agenix.inputs.darwin.follows = "";
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.home-manager.follows = "home-manager";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
 
-    nixpkgs-wayland.url = "github:nix-community/nixpkgs-wayland/master";
-    nixpkgs-wayland.inputs.nixpkgs.follows = "nixpkgs-unstable";
+    agenix-rekey = {
+      url = "github:oddlama/agenix-rekey";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
+    nixpkgs-wayland = {
+      url = "github:nix-community/nixpkgs-wayland/master";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
 
     nur.url = "github:nix-community/NUR";
 
@@ -135,6 +149,9 @@
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
+        #./nix/agenix-rekey.nix
+        #./nix/devshell.nix
+        #./nix/globals.nix
         ./nix/hosts.nix
         ./nix/pkgs.nix
       ];
