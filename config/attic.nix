@@ -12,7 +12,6 @@ in
     enable = lib.mkEnableOption "Enable local attic substituters";
   };
   config = lib.mkIf cfg.enable {
-
     nix.settings = {
       extra-substituters = [ "https://attic.mgmt.${config.repo.secrets.global.domain.home}/socozy" ];
       extra-trusted-public-keys = [

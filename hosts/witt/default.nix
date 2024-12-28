@@ -25,6 +25,8 @@ in
     ./hardware.nix
     ./home.nix
     ./syncthing.nix
+    ../../config/secrets.nix
+    ../../config/attic.nix
     ../../config/workstation-impermanence.nix
   ];
   system.stateVersion = "24.05";
@@ -120,7 +122,7 @@ in
         kitty.enable = true;
         logseq.enable = true;
         chrysalis.enable = true;
-        element.eneable = true;
+        element.enable = true;
         #nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
