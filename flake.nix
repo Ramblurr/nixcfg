@@ -149,9 +149,9 @@
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
-        #./nix/agenix-rekey.nix
-        #./nix/devshell.nix
-        #./nix/globals.nix
+        ./nix/agenix-rekey.nix
+        ./nix/devshell.nix
+        ./nix/globals.nix
         ./nix/hosts.nix
         ./nix/pkgs.nix
       ];

@@ -72,7 +72,10 @@ with lib;
     git-crypt
     sops
     gnupg
+    age
+    rage
   ];
+
   system = {
     # Enable printing changes on nix build etc with nvd
     activationScripts.report-changes = ''

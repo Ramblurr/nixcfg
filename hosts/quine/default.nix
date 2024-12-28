@@ -1,12 +1,12 @@
 {
   config,
+  globals,
   pkgs,
   lib,
   inputs,
   ...
 }:
 let
-  inherit (config.repo.secrets.global) domain;
   hn = "quine";
   defaultSopsFile = ./secrets.sops.yaml;
 in
@@ -16,9 +16,11 @@ in
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
-    ../../config/secrets.nix
+    #../../config/secrets.nix
+    ../../config/secrets2.nix
     ../../config/workstation-impermanence.nix
     ../../config/attic.nix
+    ../../users/root
     ./hardware-configuration.nix
     ./networking.nix
     ./wireplumber.nix
@@ -118,7 +120,7 @@ in
           settings = {
             homeassistant = {
               device_name = "quine";
-              host = "https://home.${domain.home}";
+              host = globals.homeAssistantUrlExternal;
             };
             notifications = {
               push_url = "http://10.9.4.3:6669/notifications";
@@ -254,7 +256,7 @@ in
     #services.pcscd.readerConfig = '''';
     services.borgmatic = {
       enable = true;
-      name = "aquinas.${domain.home}-mali";
+      name = config.repo.secrets.local.borgmaticName;
       repositories = [
         {
           label = "mali";
@@ -318,4 +320,18 @@ in
       ];
     };
   };
+
+  # Add the agenix-rekey sandbox path permanently to avoid adding myself to trusted-users
+  nix.settings.extra-sandbox-paths = [ "/var/tmp/agenix-rekey" ];
+
+  environment.persistence."/persist".directories = [
+    {
+      directory = "/var/tmp/agenix-rekey";
+      mode = "1777";
+    }
+    {
+      directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
+      mode = "1777";
+    }
+  ];
 }

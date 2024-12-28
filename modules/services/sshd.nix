@@ -32,10 +32,12 @@ in
 
     services.openssh = {
       enable = true;
+      authorizedKeysFiles = lib.mkForce [ "/etc/ssh/authorized_keys.d/%u" ];
       settings = {
-        PermitRootLogin = lib.mkForce (if cfg.permitRootLogin.enable then "without-password" else "no");
-        PasswordAuthentication = false;
         StreamLocalBindUnlink = true;
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        PermitRootLogin = "yes";
       };
       hostKeys = [
         {
