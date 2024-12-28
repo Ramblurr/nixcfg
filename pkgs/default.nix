@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
     overseerr = prev.callPackage ./overseerr.nix { };
     cloudflare-utils = prev.callPackage ./cloudflare-utils.nix { };

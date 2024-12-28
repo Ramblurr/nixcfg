@@ -1,5 +1,6 @@
 {
   options,
+  globals,
   config,
   lib,
   pkgs,
@@ -78,7 +79,8 @@ in
         };
         authorizedKeys = lib.mkOption {
           type = types.listOf types.str;
-          default = config.repo.secrets.global.pubKeys;
+          #default = config.repo.secrets_old.global.pubKeys;
+          default = globals.pubKeys;
           description = lib.mdDoc "The user's authorized SSH keys.";
         };
       };
@@ -129,6 +131,12 @@ in
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
+      verbose = true;
+      sharedModules = [
+        {
+          home.stateVersion = lib.mkDefault config.system.stateVersion;
+        }
+      ];
     };
     # This is an alias for
     # home-manager.users."${username}" = ...
@@ -145,7 +153,6 @@ in
             "/persist${cfg.primaryUser.homeDirectory}"
           ])
         ];
-        home.stateVersion = "21.11";
         home.homeDirectory = cfg.primaryUser.homeDirectory;
         sops.defaultSopsFile = lib.mkIf (cfg.primaryUser ? defaultSopsFile) cfg.primaryUser.defaultSopsFile;
 
