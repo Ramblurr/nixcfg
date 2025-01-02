@@ -26,6 +26,20 @@ in
     '';
     virtualHosts = {
       # attic nix cache endpoint
+      "attic.int.${domain.home}" = {
+        useACMEHost = "attic.mgmt.${domain.home}";
+        forceSSL = true;
+        http3 = false;
+        http2 = false;
+        kTLS = true;
+        extraConfig = ''
+          client_max_body_size 0;
+        '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:57000";
+          recommendedProxySettings = true;
+        };
+      };
       "attic.mgmt.${domain.home}" = {
         useACMEHost = "attic.mgmt.${domain.home}";
         forceSSL = true;
