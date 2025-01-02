@@ -26,7 +26,7 @@ let
           script = ''
             ${lib.optionalString (healthcheck != null) mkHealthcheckStart healthcheck}
               ${pkgs.rclone}/bin/rclone \
-              --config ${config.sops.secrets."rclone.conf".path} \
+              --config ${config.age.secrets."rclone.conf".path} \
               --transfers 50 \
               --fast-list \
               ${lib.strings.escapeShellArgs extraOpts} \
@@ -76,7 +76,9 @@ let
   jobTimers = mergeServices "timer" builtJobs;
 in
 {
-  sops.secrets."rclone.conf" = { };
+  age.secrets."rclone.conf" = {
+    rekeyFile = ./secrets/rclone.conf.age;
+  };
   systemd.services = jobServices;
   systemd.timers = jobTimers;
 }

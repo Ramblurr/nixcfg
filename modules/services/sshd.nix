@@ -20,15 +20,16 @@ in
     permitRootLogin.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    # Should exist already as it is used for sops bootstrapping
-    # sops.secrets.ssh_host_ed25519_key = {
-    #   path = "/persist/etc/ssh/ssh_host_ed25519_key";
-    # };
+    # The host key :
+    #     /persist/etc/ssh/ssh_host_ed25519_key
+    #     /persist/etc/ssh/ssh_host_ed25519_key.pub
+    # is placed there at boostrap time when we install nix using nixos anywhere.
 
-    sops.secrets.ssh_host_ed25519_key_pub = {
-      path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
-    };
-    networking.firewall.allowedTCPPorts = [ 22 ];
+    sops.secrets.ssh_host_ed25519_key_pub =
+      lib.mkIf (config.modules.users.sops.enable && !config.modules.users.age.enable)
+        {
+          path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
+        };
 
     services.openssh = {
       enable = true;

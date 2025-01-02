@@ -137,6 +137,7 @@
     ./nix.nix
     ./globals.nix
     ./secrets.nix
+    ./secrets_old.nix
     ./meta.nix
     ./zfs-attrs.nix
     ./sops.nix
