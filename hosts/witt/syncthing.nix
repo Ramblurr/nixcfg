@@ -93,22 +93,22 @@
             };
           };
         };
-        "SNO-Noten" = {
-          id = "jfi2q-111c3";
-          path = "/home/ramblurr/docs/SNO/Noten - Scores";
-          devices = [
-            "phone2"
-            "ipad"
-            "quine"
-          ];
-          versioning = {
-            type = "staggered";
-            params = {
-              cleanInterval = "3600"; # 1 hour
-              maxAge = "1209600"; # 14 days
-            };
-          };
-        };
+        #"SNO-Noten" = {
+        #  id = "jfi2q-111c3";
+        #  path = "/home/ramblurr/docs/SNO/Noten - Scores";
+        #  devices = [
+        #    "phone2"
+        #    "ipad"
+        #    "quine"
+        #  ];
+        #  versioning = {
+        #    type = "staggered";
+        #    params = {
+        #      cleanInterval = "3600"; # 1 hour
+        #      maxAge = "1209600"; # 14 days
+        #    };
+        #  };
+        #};
         "MuseScore4" = {
           id = "nfnyf-araxw";
           path = "/home/ramblurr/docs/MuseScore4";
