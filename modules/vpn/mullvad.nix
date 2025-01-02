@@ -24,9 +24,11 @@ in
       enableExcludeWrapper = true;
     };
 
-    sops.secrets.mullvad-account = { };
+    age.secrets.mullvad-account = {
+      rekeyFile = "${config.node.secretsDir}/mullvad-account.age";
+    };
     systemd.services.mullvad-daemon = {
-      serviceConfig.LoadCredential = [ "account:${config.sops.secrets.mullvad-account.path}" ];
+      serviceConfig.LoadCredential = [ "account:${config.age.secrets.mullvad-account.path}" ];
       postStart =
         let
           mullvad = config.services.mullvad-vpn.package;

@@ -41,7 +41,7 @@
         port = 9005;
         nutUser = "admin";
         group = "nut";
-        passwordPath = config.sops.secrets.upsAdminPassword.path;
+        passwordPath = config.age.secrets.upsAdminPassword.path;
       };
     };
   };

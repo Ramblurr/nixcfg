@@ -9,44 +9,41 @@ let
     types
     ;
 
-  nodesType = mkOption {
-    default = { };
-    type = types.attrsOf (
-      types.submodule (hostSubmod: {
-        options = {
-          mgmtCIDR = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-          };
-          dataCIDR = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-          };
-          primCIDR = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-          };
-          vlanPrimaryEnabled = mkOption {
-            type = types.bool;
-            default = false;
-          };
-          mgmtIface = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-          };
-          dataIface = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-          };
-          zreplSource = mkOption {
-            type = types.bool;
-            default = false;
-          };
-
+  nodesType = types.attrsOf (
+    types.submodule (hostSubmod: {
+      options = {
+        mgmtCIDR = mkOption {
+          type = types.nullOr types.str;
+          default = null;
         };
-      })
-    );
-  };
+        dataCIDR = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+        };
+        primCIDR = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+        };
+        vlanPrimaryEnabled = mkOption {
+          type = types.bool;
+          default = false;
+        };
+        mgmtIface = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+        };
+        dataIface = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+        };
+        zreplSource = mkOption {
+          type = types.bool;
+          default = false;
+        };
+
+      };
+    })
+  );
 
 in
 {

@@ -30,17 +30,12 @@ in
   };
   config = mkIf cfg.enable {
     networking.firewall.allowedTCPPorts = [ cfg.listenPort ];
-    sops.secrets.HA_SHUTDOWN_TOKEN = {
-      owner = username;
-      mode = "0400";
-    };
     systemd.user.services.ha-shutdown = {
       description = "HA Shutdown Service";
       wantedBy = [ "default.target" ];
       after = [
         "network.target"
         "network-online.target"
-        "sops-nix.service"
       ];
       path = with pkgs; [
         python3
