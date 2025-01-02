@@ -44,34 +44,27 @@ in
   # see my last-known-good.nix overlay for corresponding overlay pkg
   boot.kernelPackages = pkgs.linuxPackages_6_6;
   ### END
-  age.secrets.HASS_TOKEN = {
+  age.secrets.HA_SHUTDOWN_TOKEN = {
     owner = "ramblurr";
-    mode = "0400";
+    file = ./secrets/HA_SHUTDOWN_TOKEN.age;
   };
   age.secrets.netrc = {
     owner = "ramblurr";
-    mode = "0400";
+    file = ./secrets/netrc.age;
   };
-  sops.templates.hacompanion-env = {
+  age.secrets.ha-companion-env = {
     owner = "ramblurr";
-    mode = "0400";
-    content = ''
-      HASS_TOKEN=${config.sops.placeholder."HASS_TOKEN"}
-      HASS_DEVICE_NAME=quine
-    '';
+    file = ./secrets/ha-companion-env.age;
   };
-
   # tokens classic -> quine
   age.secrets."github_token" = {
     owner = "ramblurr";
-    mode = "0400";
+    file = ./secrets/github_token.age;
   };
-
-  sops.templates."nix.conf".owner = "ramblurr";
-  sops.templates."nix.conf".content = ''
-    access-tokens = github.com=${config.sops.placeholder."github_token"}
-  '';
-
+  age.secrets."nix-extra.conf.age" = {
+    owner = "ramblurr";
+    file = ./secrets/nix-extra.conf.age;
+  };
   nix = {
     settings = {
       substituters = [
@@ -86,11 +79,11 @@ in
         "nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="
         "nixpkgs-wayland.cachix.org-1:3lwxaILxMRkVhehr5StQprHdEo4IrE8sRho9R9HOLYA="
       ];
-      netrc-file = config.sops.secrets.netrc.path;
+      netrc-file = config.age.secrets.netrc.path;
     };
 
     extraOptions = ''
-      !include ${config.sops.templates."nix.conf".path}
+      !include ${config.age.secrets."nix-extra.conf.age".path}
     '';
   };
   home.attic.enable = true;
@@ -112,11 +105,12 @@ in
       gaming.enable = false;
       services = {
         ha-shutdown = {
+          environmentFile = config.age.secrets.HA_SHUTDOWN_TOKEN.path;
           enable = true;
         };
         hacompanion = {
           enable = true;
-          environmentFile = config.sops.templates.hacompanion-env.path;
+          environmentFile = config.age.secrets.ha-companion-env.path;
           unitAfter = [ "sops-nix.service" ];
           listenPort = 6669;
           settings = {

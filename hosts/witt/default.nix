@@ -80,7 +80,7 @@ in
     boot.zfs.enable = true;
     boot.zfs.usePlymouth = false;
     boot.zfs.scrubPools = [ "rpool" ];
-    vpn.mullvad.enable = true;
+    #vpn.mullvad.enable = true;
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
