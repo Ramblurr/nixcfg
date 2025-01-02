@@ -171,11 +171,15 @@ in
       attic-watch-store.enable = true;
       docker.enable = true;
       docker.enableOnBoot = false;
-      flatpak.enable = false;
+      flatpak.enable = true;
       microsocks.enable = true;
       podman.enable = true;
-      printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       printing.enable = true;
+      printing.drivers = [
+        pkgs.hplip
+        pkgs.hplipWithPlugin
+        pkgs.cups-brother-mfcl2750dw
+      ];
       sshd.enable = true;
     };
     dev = {
