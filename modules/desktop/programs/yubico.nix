@@ -24,6 +24,8 @@ in
         yubikey-manager
         yubioath-flutter
         age-plugin-yubikey
+        age
+        rage
       ];
     };
   };
