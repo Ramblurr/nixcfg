@@ -118,7 +118,7 @@ in
       };
 
       programs = {
-        cad.enable = true;
+        #cad.enable = true;
         junction.enable = true;
         #kdeconnect.enable = true;
         kitty.enable = true;
