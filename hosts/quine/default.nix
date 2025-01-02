@@ -44,11 +44,11 @@ in
   # see my last-known-good.nix overlay for corresponding overlay pkg
   boot.kernelPackages = pkgs.linuxPackages_6_6;
   ### END
-  sops.secrets.HASS_TOKEN = {
+  age.secrets.HASS_TOKEN = {
     owner = "ramblurr";
     mode = "0400";
   };
-  sops.secrets.netrc = {
+  age.secrets.netrc = {
     owner = "ramblurr";
     mode = "0400";
   };
@@ -60,7 +60,9 @@ in
       HASS_DEVICE_NAME=quine
     '';
   };
-  sops.secrets."github_token" = {
+
+  # tokens classic -> quine
+  age.secrets."github_token" = {
     owner = "ramblurr";
     mode = "0400";
   };

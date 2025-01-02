@@ -42,4 +42,18 @@ in
       ]
       ++ identities
     );
+
+  # Instead of calling rage directly here, we call a wrapper script that will cache the output
+  # in a predictable path in /var/tmp, which allows us to only require the password for each encrypted
+  # file once.
+  sopsImportEncrypted =
+    nixFile:
+    assert assertMsg (builtins.isPath nixFile)
+      "The file to decrypt must be given as a path to prevent impurity.";
+    assert assertMsg (hasSuffix ".nix.sops" nixFile)
+      "The content of the decrypted file must be a nix expression and should therefore end in .nix.sops ${nixFile}";
+    exec ([
+      ./sops-decrypt-and-cache.sh
+      nixFile
+    ]);
 }
