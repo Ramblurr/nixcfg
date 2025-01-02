@@ -136,8 +136,7 @@
     ./vpn/tailscale.nix
     ./nix.nix
     ./globals.nix
-    #./secrets.nix
-    ./secrets2.nix
+    ./secrets.nix
     ./meta.nix
     ./zfs-attrs.nix
     ./sops.nix

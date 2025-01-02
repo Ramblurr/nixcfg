@@ -6,7 +6,6 @@
   ...
 }:
 let
-  inherit (config.repo.secrets.global) domain;
   hn = "witt";
   machine-id = "798016ab36504bd0a5397317013bedba";
   defaultSopsFile = ./secrets.sops.yaml;
@@ -25,7 +24,7 @@ in
     ./hardware.nix
     ./home.nix
     ./syncthing.nix
-    ../../config/secrets.nix
+    ../../config
     ../../config/attic.nix
     ../../config/workstation-impermanence.nix
   ];
