@@ -29,10 +29,10 @@
         #  isStable = false;
         #  system = "x86_64-linux";
         #};
-        #witt = {
-        #  isStable = false;
-        #  system = "x86_64-linux";
-        #};
+        witt = {
+          isStable = false;
+          system = "x86_64-linux";
+        };
         quine = {
           isStable = false;
           system = "x86_64-linux";

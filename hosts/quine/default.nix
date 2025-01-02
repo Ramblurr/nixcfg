@@ -17,7 +17,7 @@ in
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
     #../../config/secrets.nix
-    ../../config/secrets2.nix
+    ../../config
     ../../config/workstation-impermanence.nix
     ../../config/attic.nix
     ../../users/root
