@@ -45,6 +45,9 @@ in
       domain = "attic.mgmt.${domain.home}";
       postRun = "systemctl reload nginx.service";
       group = "nginx";
+      extraDomainNames = [
+        "attic.int.${domain.home}"
+      ];
     };
   };
 
