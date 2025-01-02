@@ -30,6 +30,18 @@
           pkgs.rage
           pkgs.age
           pkgs.age-plugin-yubikey
+
+          #pkgs.python312
+          (pkgs.python312.withPackages (
+            ps: with ps; [
+
+              passlib
+              ruamel-yaml
+              pyyaml
+              simple-term-menu
+            ]
+          ))
+
         ];
 
         commands = [

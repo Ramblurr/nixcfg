@@ -12,6 +12,7 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+  runtimeSecretsDir = if config.modules.users.age.enable then "/run/agenix" else "/run/secrets";
   repository =
     with types;
     submodule {
@@ -69,9 +70,11 @@ in
       borgmatic
       openssl
     ];
-    sops.secrets.borgmatic-ssh-key = { };
-    sops.secrets.borgmatic-env = { };
-    systemd.services.borgmatic.serviceConfig.EnvironmentFile = "/run/secrets/borgmatic-env";
+    sops.secrets = lib.mkIf (config.modules.users.sops.enable && !config.modules.users.age.enable) {
+      borgmatic-ssh-key = { };
+      borgmatic-env = { };
+    };
+    systemd.services.borgmatic.serviceConfig.EnvironmentFile = "${runtimeSecretsDir}/borgmatic-env";
     systemd.timers.borgmatic.wantedBy = [ "timers.target" ];
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
@@ -84,7 +87,7 @@ in
         exclude_if_present = [ ".nobackup" ];
         #storage = {
         encryption_passphrase = "\${PASSPHRASE}";
-        ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
+        ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i ${runtimeSecretsDir}/borgmatic-ssh-key";
         archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
         #};
         #retention = {

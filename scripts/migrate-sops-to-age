@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+import sys
+import yaml
+import os
+from pathlib import Path
+import subprocess
+
+# List of age recipient public keys
+AGE_RECIPIENTS = [
+    "age1yubikey1qt0lmjdz8l27zy8gqlwu5hpplunz5dcsszuqjau7q7sdnksjqhm5cg2jkkl",
+    "age1yubikey1qvm060q3kense6l22nrjd5a9gqsm9k4eaanhuk5h3hpmvzes8xd6584fsvn",
+    "age15j42dspmmwprjau6l48xp05d97s8ml5s3tjxrfwvm37tvuynssuqtsevkj",
+]
+
+
+def encrypt_file(input_path: Path, output_path: Path, recipients: list[str]):
+    cmd = ["age", "--encrypt"]
+    for recipient in recipients:
+        cmd.extend(["--recipient", recipient])
+    cmd.extend(["--output", str(output_path)])
+
+    with open(input_path, "rb") as f:
+        try:
+            subprocess.run(cmd, stdin=f, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            print(
+                f"Error encrypting {input_path}: {e.stderr.decode()}", file=sys.stderr
+            )
+            raise
+
+
+def flatten_dict(d, parent_key="", sep="/"):
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+
+def main():
+    secrets_dir = Path("secrets")
+    secrets_dir.mkdir(exist_ok=True)
+
+    try:
+        data = flatten_dict(yaml.safe_load(sys.stdin))
+
+        if not isinstance(data, dict):
+            print("Error: Input YAML must have top-level keys", file=sys.stderr)
+            sys.exit(1)
+
+        # Process each top-level key
+        for key, value in data.items():
+            key = key.replace("/", "_").replace("\\", "_")
+            # replace back and forward slashes with underscores
+            # Create plaintext filename
+            plaintext_path = secrets_dir / f"{key}.PLAINTEXT"
+            age_path = secrets_dir / f"{key}.age"
+
+            try:
+                # Write value as string to plaintext file
+                with open(plaintext_path, "w") as f:
+                    f.write(str(value))
+
+                # Encrypt the plaintext file
+                encrypt_file(plaintext_path, age_path, AGE_RECIPIENTS)
+
+                # Remove the plaintext file
+                plaintext_path.unlink()
+
+            except IOError as e:
+                print(f"Error writing file {plaintext_path}: {e}", file=sys.stderr)
+                sys.exit(1)
+
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML: {e}", file=sys.stderr)
+        sys.exit(1)
+    except subprocess.CalledProcessError:
+        # Error message already printed in encrypt_file
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

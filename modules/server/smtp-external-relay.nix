@@ -4,6 +4,7 @@
   lib,
   pkgs,
   inputs,
+  globals,
   ...
 }:
 with lib;
@@ -16,11 +17,11 @@ in
     enable = lib.mkEnableOption "";
     emailTo = lib.mkOption {
       type = lib.types.uniq lib.types.str;
-      default = config.repo.secrets.global.email.work;
+      default = globals.email.work;
     };
     emailFrom = lib.mkOption {
       type = lib.types.uniq lib.types.str;
-      default = config.repo.secrets.global.email.home;
+      default = globals.email.home;
     };
     smtpHost = lib.mkOption {
       type = lib.types.uniq lib.types.str;

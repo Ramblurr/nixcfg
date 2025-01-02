@@ -8,11 +8,13 @@
 {
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8384 ];
 
-  sops.secrets.syncthing-key = {
+  age.secrets.syncthing-key = {
     owner = "ramblurr";
+    rekeyFile = "${config.node.secretsDir}/syncthing-key.age";
   };
-  sops.secrets.syncthing-cert = {
+  age.secrets.syncthing-cert = {
     owner = "ramblurr";
+    rekeyFile = "${config.node.secretsDir}/syncthing-cert.age";
   };
   services.syncthing = {
     enable = true;
@@ -24,8 +26,8 @@
     guiAddress = "127.0.0.1:8384";
     overrideDevices = true;
     overrideFolders = true;
-    key = config.sops.secrets.syncthing-key.path;
-    cert = config.sops.secrets.syncthing-cert.path;
+    key = config.age.secrets.syncthing-key.path;
+    cert = config.age.secrets.syncthing-cert.path;
     settings = {
       gui.theme = "black";
       options = {

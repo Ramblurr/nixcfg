@@ -47,6 +47,7 @@
             wifi
             pubKeys
             nameservers
+            nodes
             ;
         };
     };

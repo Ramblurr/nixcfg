@@ -38,10 +38,10 @@
           system = "x86_64-linux";
           hostOverlays = [ (import ../overlays/qemu.nix) ];
         };
-        #mali = {
-        #  isStable = true;
-        #  system = "x86_64-linux";
-        #};
+        mali = {
+          isStable = true;
+          system = "x86_64-linux";
+        };
       };
     in
     {

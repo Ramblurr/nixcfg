@@ -8,7 +8,6 @@
 }:
 let
   hn = "quine";
-  defaultSopsFile = ./secrets.sops.yaml;
 in
 {
   imports = [
@@ -16,7 +15,6 @@ in
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
-    #../../config/secrets.nix
     ../../config
     ../../config/workstation-impermanence.nix
     ../../config/attic.nix
@@ -31,8 +29,6 @@ in
     #./tabby.nix
   ];
   system.stateVersion = "23.05";
-  sops.defaultSopsFile = defaultSopsFile;
-  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
 
   time.timeZone = "Europe/Berlin";
@@ -46,24 +42,24 @@ in
   ### END
   age.secrets.HA_SHUTDOWN_TOKEN = {
     owner = "ramblurr";
-    file = ./secrets/HA_SHUTDOWN_TOKEN.age;
+    rekeyFile = ./secrets/HA_SHUTDOWN_TOKEN.age;
   };
   age.secrets.netrc = {
     owner = "ramblurr";
-    file = ./secrets/netrc.age;
+    rekeyFile = ./secrets/netrc.age;
   };
-  age.secrets.ha-companion-env = {
+  age.secrets.hacompanion-env = {
     owner = "ramblurr";
-    file = ./secrets/ha-companion-env.age;
+    rekeyFile = ./secrets/hacompanion-env.age;
   };
   # tokens classic -> quine
   age.secrets."github_token" = {
     owner = "ramblurr";
-    file = ./secrets/github_token.age;
+    rekeyFile = ./secrets/github_token.age;
   };
   age.secrets."nix-extra.conf.age" = {
     owner = "ramblurr";
-    file = ./secrets/nix-extra.conf.age;
+    rekeyFile = ./secrets/nix-extra.conf.age;
   };
   nix = {
     settings = {
@@ -110,8 +106,7 @@ in
         };
         hacompanion = {
           enable = true;
-          environmentFile = config.age.secrets.ha-companion-env.path;
-          unitAfter = [ "sops-nix.service" ];
+          environmentFile = config.age.secrets.hacompanion-env.path;
           listenPort = 6669;
           settings = {
             homeassistant = {
@@ -230,6 +225,8 @@ in
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
     users.enable = true;
+    users.sops.enable = false;
+    users.age.enable = true;
     users.primaryUser = {
       username = "ramblurr";
       name = "Casey Link";
@@ -237,7 +234,6 @@ in
       signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
-      defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
