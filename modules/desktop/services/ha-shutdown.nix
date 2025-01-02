@@ -15,7 +15,7 @@ in
     enable = mkEnableOption "ha-shutdown";
     environmentFile = mkOption {
       description = "The full path to a file that contains the secret environment variables needed for the shutdown service";
-      type = with types; nullOr str;
+      type = types.path;
       default = null;
     };
     listenPort = mkOption {
@@ -48,7 +48,7 @@ in
         systemd
       ];
       serviceConfig = {
-        EnvironmentFile = config.sops.secrets.HA_SHUTDOWN_TOKEN.path;
+        EnvironmentFile = cfg.environmentFile;
         ExecStart = "${pkgs.python3}/bin/python -u ${shutdownScript} --timeout ${toString cfg.timeout} --port ${toString cfg.listenPort} ";
         Restart = "always";
         RestartSec = "10s";
