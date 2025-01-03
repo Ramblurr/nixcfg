@@ -51,6 +51,14 @@ in
     beets-unstable
     ;
 
+  inherit
+    (nixpkgs {
+      rev = "3166af96391de5ec29a8a1aeb80c2e5c1f3e243a";
+      sha256 = "";
+    })
+    musescore
+    ;
+
   # Workaround kernel bug in kernel >= 6.6.57
   # ref: https://github.com/NixOS/nixpkgs/issues/353709
   # must add to config:
