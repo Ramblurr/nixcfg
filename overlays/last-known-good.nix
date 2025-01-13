@@ -54,7 +54,8 @@ in
   inherit
     (nixpkgs {
       rev = "3166af96391de5ec29a8a1aeb80c2e5c1f3e243a";
-      sha256 = "";
+      sha256 = "sha256-VCN73VsxSppLmNUyyS0OlQDQo5e7GE+PoMLZiEesmck=";
+
     })
     musescore
     ;
