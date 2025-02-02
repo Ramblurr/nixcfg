@@ -20,11 +20,11 @@
         #  system = "x86_64-linux";
         #  #hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
         #};
-        #dewey = {
-        #  isStable = false;
-        #  system = "x86_64-linux";
-        #  hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
-        #};
+        dewey = {
+          isStable = false;
+          system = "x86_64-linux";
+          hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
+        };
         #aquinas = {
         #  isStable = false;
         #  system = "x86_64-linux";
