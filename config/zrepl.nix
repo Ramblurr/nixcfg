@@ -2,13 +2,12 @@
   config,
   lib,
   pkgs,
-  globals,
   ...
 }:
 
 let
   home-ops = config.repo.secrets.home-ops;
-  nodeSettings = globals.nodes.${config.networking.hostName};
+  nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in
 {
@@ -51,7 +50,7 @@ in
               listen = "${cidrToIp nodeSettings.dataCIDR}:${toString home-ops.ports.zrepl-source}";
               listen_freebind = true;
               clients = {
-                "${lib.my.cidrToIp globals.nodes.mali.dataCIDR}" = "mali";
+                "${lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR}" = "mali";
               };
             };
             filesystems = {
