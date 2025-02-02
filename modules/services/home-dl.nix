@@ -105,7 +105,7 @@ in
     };
 
     fileSystems."${mediaLocalPath}" = {
-      device = "${config.repo.secrets.global.nodes.mali.data}:/mnt/${cfg.mediaNfsShare}";
+      device = "${lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR}:/mnt/${cfg.mediaNfsShare}";
       fsType = "nfs";
     };
 

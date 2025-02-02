@@ -45,7 +45,7 @@ in
     };
 
     fileSystems."${localPath}" = {
-      device = "${config.repo.secrets.global.nodes.mali.data}:/mnt/${cfg.nfsShare}";
+      device = "${lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR}:/mnt/${cfg.nfsShare}";
       fsType = "nfs";
     };
 
