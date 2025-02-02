@@ -77,6 +77,7 @@ in
       atuin-sync.enable = lib.mkEnableOption "Atuin Sync Server";
       soju.enable = lib.mkEnableOption "Soju IRC bouncer";
       snowflake-proxy.enable = lib.mkEnableOption "snowflake proxy";
+      audiobookshelf.enable = lib.mkEnableOption "audiobookshelf";
     };
   };
 
@@ -642,6 +643,17 @@ in
       domain = "plex.${home-ops.homeDomain}";
       user = home-ops.users.plex;
       group = home-ops.groups.plex;
+      nfsShare = "tank2/media";
+      ingress = {
+        domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.audiobookshelf = lib.mkIf cfg.apps.audiobookshelf.enable {
+      enable = true;
+      domain = "audiobookshelf.${home-ops.homeDomain}";
+      user = home-ops.users.audiobookshelf;
+      group = home-ops.groups.audiobookshelf;
       nfsShare = "tank2/media";
       ingress = {
         domain = home-ops.homeDomain;
