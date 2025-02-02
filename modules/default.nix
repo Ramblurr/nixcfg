@@ -77,6 +77,7 @@
     ./server/smtp-external-relay.nix
     ./server/virtd/default.nix
     ./services/actual-budget.nix
+    ./services/audiobookshelf.nix
     ./services/soju.nix
     ./services/archivebox.nix
     ./services/attic-watch-store.nix
