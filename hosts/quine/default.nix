@@ -36,12 +36,6 @@ in
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
 
-  #### TEMPORARY
-  # Workaround kernel bug in kernel >= 6.6.57
-  # ref: https://github.com/NixOS/nixpkgs/issues/353709
-  # see my last-known-good.nix overlay for corresponding overlay pkg
-  boot.kernelPackages = pkgs.linuxPackages_6_6;
-  ### END
   sops.secrets.HASS_TOKEN = {
     owner = "ramblurr";
     mode = "0400";
@@ -95,7 +89,6 @@ in
     8080
   ];
 
-  # environment.systemPackages = [ pkgs.briss-ng ];
   modules = {
     desktop = {
       hyprland3.enable = true;

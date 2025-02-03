@@ -38,7 +38,6 @@ in
   #      sha256 = "sha256-vY06PrwFxll2h1uZv3C7rouvTgduL+IP/ZCvvLe12yA=";
   #    }).python312Packages.sip;
   #};
-
   # ref: https://nixpk.gs/pr-tracker.html?pr=370234
   #      https://github.com/NixOS/nixpkgs/pull/370234
   #      https://github.com/beetbox/beets/pull/5566
@@ -49,28 +48,5 @@ in
       config = self.config;
     })
     beets-unstable
-    ;
-
-  inherit
-    (nixpkgs {
-      rev = "3166af96391de5ec29a8a1aeb80c2e5c1f3e243a";
-      sha256 = "sha256-VCN73VsxSppLmNUyyS0OlQDQo5e7GE+PoMLZiEesmck=";
-
-    })
-    musescore
-    ;
-
-  # Workaround kernel bug in kernel >= 6.6.57
-  # ref: https://github.com/NixOS/nixpkgs/issues/353709
-  # must add to config:
-  # boot.kernelPackages = pkgs.linuxPackages_6_6;
-  boot.kernelPackages = pkgs.linuxPackages_6_6;
-  inherit
-    (nixpkgs {
-      rev = "b72f50d54d0d0e7428cb39cd39f29e7ed2e7e5ea";
-      sha256 = "sha256-2ipWz8DPaUgOkskpHRSH9su1kon1/XtwozXaKewfCtU=";
-      config = self.config;
-    })
-    linuxPackages_6_6
     ;
 }
