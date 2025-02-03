@@ -136,12 +136,9 @@
     ./vpn/mullvad.nix
     ./vpn/tailscale.nix
     ./nix.nix
-    ./globals.nix
     ./secrets.nix
-    ./secrets_old.nix
     ./meta.nix
     ./zfs-attrs.nix
     ./sops.nix
-    ./node.nix
   ];
 }

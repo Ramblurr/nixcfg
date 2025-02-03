@@ -21,7 +21,7 @@ in
     nixpkgs.config.cudaSupport = true;
     hardware = {
       graphics.enable = true;
-      graphics.enable32Bit = true; # required for virtualisation.docker.enableNvidia
+      graphics.enable32Bit = true; # required for hardware.nvidia-container-toolkit.enable
       #opengl = {
       #  enable = true;
       #};
@@ -68,7 +68,6 @@ in
       "mt7921e"
     ];
     services.xserver.videoDrivers = [ "nvidia" ]; # Install the nvidia drivers
-    virtualisation.docker.enableNvidia = true; # Enable nvidia gpu acceleration for docker
     hardware.nvidia-container-toolkit.enable = true; # Enable nvidia gpu acceleration for docker
     environment.systemPackages = [
       pkgs.nvitop

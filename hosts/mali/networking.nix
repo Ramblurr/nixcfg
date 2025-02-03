@@ -137,10 +137,8 @@
         };
         routes = [
           {
-            routeConfig = {
-              Destination = "192.168.8.0/22";
-              Gateway = "10.9.4.21";
-            };
+            Destination = "192.168.8.0/22";
+            Gateway = "10.9.4.21";
           }
         ];
       };

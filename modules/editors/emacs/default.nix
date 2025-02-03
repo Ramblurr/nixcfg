@@ -24,13 +24,6 @@ in
       inputs.emacs-overlay.overlays.default
     ];
     environment.wordlist.enable = true;
-
-    age.secrets.authinfo = {
-      owner = username;
-      rekeyFile = "${config.node.secretsDir}/authinfo.age";
-      path = "${homeDirectory}/.authinfo";
-    };
-
     myhm =
       { ... }@hm:
       {
@@ -48,6 +41,11 @@ in
         services.emacs = {
           enable = true;
           startWithUserSession = "graphical";
+        };
+
+        sops.secrets.authinfo = {
+          mode = "0400";
+          path = ".authinfo";
         };
 
         home.packages = with pkgs; [

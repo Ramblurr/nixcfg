@@ -1,7 +1,6 @@
 {
   inputs,
   lib,
-  config,
   ...
 }:
 
@@ -12,8 +11,6 @@ let
     inputs.quadlet-nix.nixosModules.quadlet
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
-    inputs.agenix.nixosModules.default
-    inputs.agenix-rekey.nixosModules.default
   ];
   unstableDefaultModules = [
     inputs.disko-unstable.nixosModules.disko
@@ -83,7 +80,7 @@ let
         ++ (if isStable then stableDefaultModules else unstableDefaultModules)
         ++ [
           {
-            node.name = lib.mkDefault name;
+            networking.hostName = lib.mkDefault name;
             node.secretsDir = ../hosts/${name}/secrets;
             nixpkgs.overlays = allOverlays;
           }
@@ -94,7 +91,6 @@ let
 
       specialArgs = {
         inherit inputs;
-        inherit (config) nodes globals;
         mine = nixpkgs-mine;
         nixpkgs = nixpkgs';
         pkgs = nixpkgs';

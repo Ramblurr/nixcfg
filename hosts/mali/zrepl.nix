@@ -4,7 +4,6 @@
   inputs,
   unstable,
   lib,
-  globals,
   ...
 }:
 #
@@ -30,18 +29,10 @@ in
     enable = true;
     healthchecks = config.repo.secrets.local.zfsHealthchecks;
   };
-  age.secrets."zrepl_ludwigCert" = {
-    rekeyFile = ./secrets/zrepl_ludwigCert.age;
-  };
-  age.secrets."zrepl_rsyncnetCert" = {
-    rekeyFile = ./secrets/zrepl_rsyncnetCert.age;
-  };
-  age.secrets."zrepl_maliCert" = {
-    rekeyFile = ./secrets/zrepl_maliCert.age;
-  };
-  age.secrets."zrepl_maliKey" = {
-    rekeyFile = ./secrets/zrepl_maliKey.age;
-  };
+  sops.secrets."zrepl/ludwigCert" = { };
+  sops.secrets."zrepl/rsyncnetCert" = { };
+  sops.secrets."zrepl/maliCert" = { };
+  sops.secrets."zrepl/maliKey" = { };
   services.zrepl = {
     enable = true;
     settings = {
@@ -56,7 +47,7 @@ in
         monitoring = [
           {
             type = "prometheus";
-            listen = ":${toString config.repo.secrets_old.home-ops.ports.zrepl-metrics}";
+            listen = ":${toString config.repo.secrets.home-ops.ports.zrepl-metrics}";
             listen_freebind = true;
           }
         ];
@@ -66,7 +57,7 @@ in
         let
           nodesWithZReplSources = lib.filterAttrs (
             name: node: node ? zreplSource && node.zreplSource == true
-          ) globals.nodes;
+          ) config.repo.secrets.global.nodes;
           mkNodePullJob = name: node: {
             name = "${name}";
             type = "pull";
@@ -74,7 +65,7 @@ in
             root_fs = "tank2/replication/${name}";
             connect = {
               type = "tcp";
-              address = "${cidrToIp node.dataCIDR}:${toString config.repo.secrets_old.home-ops.ports.zrepl-source}";
+              address = "${cidrToIp node.dataCIDR}:${toString config.repo.secrets.home-ops.ports.zrepl-source}";
               dial_timeout = "10s";
             };
             recv = {
@@ -205,9 +196,9 @@ in
             serve = {
               type = "tls";
               listen = "10.9.10.10:3478";
-              ca = config.age.secrets."zrepl_ludwigCert".path;
-              cert = config.age.secrets."zrepl_maliCert".path;
-              key = config.age.secrets."zrepl_maliKey".path;
+              ca = config.sops.secrets."zrepl/ludwigCert".path;
+              cert = config.sops.secrets."zrepl/maliCert".path;
+              key = config.sops.secrets."zrepl/maliKey".path;
               client_cns = [ "ludwig" ];
             };
             filesystems = {
@@ -231,9 +222,9 @@ in
             serve = {
               type = "tls";
               listen = "10.9.10.10:3479";
-              ca = config.age.secrets."zrepl_rsyncnetCert".path;
-              cert = config.age.secrets."zrepl_maliCert".path;
-              key = config.age.secrets."zrepl_maliKey".path;
+              ca = config.sops.secrets."zrepl/rsyncnetCert".path;
+              cert = config.sops.secrets."zrepl/maliCert".path;
+              key = config.sops.secrets."zrepl/maliKey".path;
               client_cns = [ "rsyncnet" ];
             };
             filesystems = {

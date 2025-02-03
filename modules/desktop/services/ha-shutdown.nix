@@ -15,7 +15,7 @@ in
     enable = mkEnableOption "ha-shutdown";
     environmentFile = mkOption {
       description = "The full path to a file that contains the secret environment variables needed for the shutdown service";
-      type = types.path;
+      type = with types; nullOr str;
       default = null;
     };
     listenPort = mkOption {
@@ -30,12 +30,17 @@ in
   };
   config = mkIf cfg.enable {
     networking.firewall.allowedTCPPorts = [ cfg.listenPort ];
+    sops.secrets.HA_SHUTDOWN_TOKEN = {
+      owner = username;
+      mode = "0400";
+    };
     systemd.user.services.ha-shutdown = {
       description = "HA Shutdown Service";
       wantedBy = [ "default.target" ];
       after = [
         "network.target"
         "network-online.target"
+        "sops-nix.service"
       ];
       path = with pkgs; [
         python3
@@ -43,7 +48,7 @@ in
         systemd
       ];
       serviceConfig = {
-        EnvironmentFile = cfg.environmentFile;
+        EnvironmentFile = config.sops.secrets.HA_SHUTDOWN_TOKEN.path;
         ExecStart = "${pkgs.python3}/bin/python -u ${shutdownScript} --timeout ${toString cfg.timeout} --port ${toString cfg.listenPort} ";
         Restart = "always";
         RestartSec = "10s";

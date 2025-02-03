@@ -1,13 +1,14 @@
 {
   config,
-  globals,
   pkgs,
   lib,
   inputs,
   ...
 }:
 let
+  inherit (config.repo.secrets.global) domain;
   hn = "quine";
+  defaultSopsFile = ./secrets.sops.yaml;
 in
 {
   imports = [
@@ -15,10 +16,9 @@ in
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
-    ../../config
+    ../../config/secrets.nix
     ../../config/workstation-impermanence.nix
     ../../config/attic.nix
-    ../../users/root
     ./hardware-configuration.nix
     ./networking.nix
     ./wireplumber.nix
@@ -29,6 +29,8 @@ in
     #./tabby.nix
   ];
   system.stateVersion = "23.05";
+  sops.defaultSopsFile = defaultSopsFile;
+  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
 
   time.timeZone = "Europe/Berlin";
@@ -40,27 +42,32 @@ in
   # see my last-known-good.nix overlay for corresponding overlay pkg
   boot.kernelPackages = pkgs.linuxPackages_6_6;
   ### END
-  age.secrets.HA_SHUTDOWN_TOKEN = {
+  sops.secrets.HASS_TOKEN = {
     owner = "ramblurr";
-    rekeyFile = ./secrets/HA_SHUTDOWN_TOKEN.age;
+    mode = "0400";
   };
-  age.secrets.netrc = {
+  sops.secrets.netrc = {
     owner = "ramblurr";
-    rekeyFile = ./secrets/netrc.age;
+    mode = "0400";
   };
-  age.secrets.hacompanion-env = {
+  sops.templates.hacompanion-env = {
     owner = "ramblurr";
-    rekeyFile = ./secrets/hacompanion-env.age;
+    mode = "0400";
+    content = ''
+      HASS_TOKEN=${config.sops.placeholder."HASS_TOKEN"}
+      HASS_DEVICE_NAME=quine
+    '';
   };
-  # tokens classic -> quine
-  age.secrets."github_token" = {
+  sops.secrets."github_token" = {
     owner = "ramblurr";
-    rekeyFile = ./secrets/github_token.age;
+    mode = "0400";
   };
-  age.secrets."nix-extra.conf.age" = {
-    owner = "ramblurr";
-    rekeyFile = ./secrets/nix-extra.conf.age;
-  };
+
+  sops.templates."nix.conf".owner = "ramblurr";
+  sops.templates."nix.conf".content = ''
+    access-tokens = github.com=${config.sops.placeholder."github_token"}
+  '';
+
   nix = {
     settings = {
       substituters = [
@@ -75,11 +82,11 @@ in
         "nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="
         "nixpkgs-wayland.cachix.org-1:3lwxaILxMRkVhehr5StQprHdEo4IrE8sRho9R9HOLYA="
       ];
-      netrc-file = config.age.secrets.netrc.path;
+      netrc-file = config.sops.secrets.netrc.path;
     };
 
     extraOptions = ''
-      !include ${config.age.secrets."nix-extra.conf.age".path}
+      !include ${config.sops.templates."nix.conf".path}
     '';
   };
   home.attic.enable = true;
@@ -101,17 +108,17 @@ in
       gaming.enable = false;
       services = {
         ha-shutdown = {
-          environmentFile = config.age.secrets.HA_SHUTDOWN_TOKEN.path;
           enable = true;
         };
         hacompanion = {
           enable = true;
-          environmentFile = config.age.secrets.hacompanion-env.path;
+          environmentFile = config.sops.templates.hacompanion-env.path;
+          unitAfter = [ "sops-nix.service" ];
           listenPort = 6669;
           settings = {
             homeassistant = {
               device_name = "quine";
-              host = globals.homeAssistantUrlExternal;
+              host = "https://home.${domain.home}";
             };
             notifications = {
               push_url = "http://10.9.4.3:6669/notifications";
@@ -225,8 +232,6 @@ in
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
     users.enable = true;
-    users.sops.enable = false;
-    users.age.enable = true;
     users.primaryUser = {
       username = "ramblurr";
       name = "Casey Link";
@@ -234,6 +239,7 @@ in
       signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
+      defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
@@ -248,7 +254,7 @@ in
     #services.pcscd.readerConfig = '''';
     services.borgmatic = {
       enable = true;
-      name = config.repo.secrets.local.borgmaticName;
+      name = "aquinas.${domain.home}-mali";
       repositories = [
         {
           label = "mali";
@@ -312,18 +318,4 @@ in
       ];
     };
   };
-
-  # Add the agenix-rekey sandbox path permanently to avoid adding myself to trusted-users
-  nix.settings.extra-sandbox-paths = [ "/var/tmp/agenix-rekey" ];
-
-  environment.persistence."/persist".directories = [
-    {
-      directory = "/var/tmp/agenix-rekey";
-      mode = "1777";
-    }
-    {
-      directory = "/var/tmp/nix-import-encrypted"; # Decrypted repo-secrets can be kept
-      mode = "1777";
-    }
-  ];
 }

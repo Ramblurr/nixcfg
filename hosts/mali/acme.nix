@@ -2,26 +2,29 @@
   lib,
   pkgs,
   config,
-  globals,
   ...
 }:
 let
-  inherit (globals) domain;
+  inherit (config.repo.secrets.global) domain email;
 in
 {
-  age.secrets.acmeCredentialsFile = {
-    rekeyFile = ./secrets/acmeCredentialsFile.age;
-  };
   security.acme = {
     acceptTerms = true;
     defaults = {
-      email = globals.email.acme;
+      email = email.acme;
       dnsProvider = "cloudflare";
-      credentialsFile = config.age.secrets.acmeCredentialsFile.path;
+      credentialsFile = config.sops.templates.acme-credentials.path;
       extraLegoFlags = [ "--dns.resolvers=1.1.1.1:53" ];
     };
   };
+  sops.secrets."acmeSecrets/cloudflareDnsToken" = {
+    sopsFile = ./secrets.sops.yaml;
+    restartUnits = [ ];
+  };
 
+  sops.templates.acme-credentials.content = ''
+    CF_DNS_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareDnsToken"}
+  '';
   security.acme.certs = {
     #"mali" = {
     #  domain = "mali.int.${domain.home}";
