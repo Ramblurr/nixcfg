@@ -52,6 +52,7 @@ in
         }:
         {
           # inside here is a separate nixos configuration for the container
+          system.stateVersion = "24.11";
           networking.firewall.enable = false;
           documentation.nixos.enable = false;
           users.users.matrix-synapse = {
@@ -85,7 +86,6 @@ in
             package = pkgs.postgresql_15;
             extraPlugins = with config.services.postgresql.package.pkgs; [ pgaudit ];
             dataDir = mounts.pg-matrix-synapse.mountPoint;
-            port = 5432;
             enableTCPIP = false;
             initialScript = pkgs.writeText "synapse-init.sql" ''
               CREATE ROLE "matrix-synapse";
@@ -103,6 +103,7 @@ in
             '';
             settings = {
               unix_socket_directories = "/tmp,${mounts.host-socket.mountPoint}";
+              port = 5432;
 
               #archive_mode = "on";
               #archive_command = "${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} archive-push %p";
