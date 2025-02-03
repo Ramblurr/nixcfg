@@ -17,28 +17,26 @@ in
       type = lib.types.bool;
       default = true;
     };
-    permitRootLogin.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    # The host key :
-    #     /persist/etc/ssh/ssh_host_ed25519_key
-    #     /persist/etc/ssh/ssh_host_ed25519_key.pub
-    # is placed there at boostrap time when we install nix using nixos anywhere.
+    # Should exist already as it is used for sops bootstrapping
+    # sops.secrets.ssh_host_ed25519_key = {
+    #   path = "/persist/etc/ssh/ssh_host_ed25519_key";
+    # };
 
-    sops.secrets.ssh_host_ed25519_key_pub =
-      lib.mkIf (config.modules.users.sops.enable && !config.modules.users.age.enable)
-        {
-          path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
-        };
+    sops.secrets.ssh_host_ed25519_key_pub = {
+      path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
+    };
+    networking.firewall.allowedTCPPorts = [ 22 ];
 
     services.openssh = {
       enable = true;
       authorizedKeysFiles = lib.mkForce [ "/etc/ssh/authorized_keys.d/%u" ];
       settings = {
-        StreamLocalBindUnlink = true;
+        PermitRootLogin = "yes";
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
-        PermitRootLogin = "yes";
+        StreamLocalBindUnlink = true;
       };
       hostKeys = [
         {

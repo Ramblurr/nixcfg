@@ -2,11 +2,10 @@
   config,
   lib,
   pkgs,
-  globals,
   ...
 }:
 let
-  inherit (globals) domain;
+  inherit (config.repo.secrets.global) domain;
 in
 {
   services.samba-wsdd.enable = true;

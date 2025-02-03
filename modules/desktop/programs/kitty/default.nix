@@ -33,7 +33,8 @@ in
         home.packages = [ pkgs.kitty ];
         programs.kitty = {
           enable = true;
-          theme = "Gruvbox Dark";
+          #theme = "Gruvbox Dark";
+          themeFile = "gruvbox-dark";
           font.name = "Iosevka Comfy Fixed";
           settings = {
             background_opacity = "0.90";

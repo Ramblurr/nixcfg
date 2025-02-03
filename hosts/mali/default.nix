@@ -8,6 +8,7 @@
 }:
 let
   hn = "mali";
+  defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../ramblurr.nix {
     inherit
       config
@@ -16,12 +17,11 @@ let
       inputs
       ;
   };
-  home-ops = config.repo.secrets_old.home-ops;
+  home-ops = config.repo.secrets.home-ops;
 in
 {
   imports = [
-    ../../config
-    ../../users/root
+    ../../config/secrets.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./nfs.nix
@@ -42,8 +42,10 @@ in
   # TODO
   # firewall check
   system.stateVersion = "23.05";
+  sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
+  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = "3b3e54988be146febcce587e0f65669b";
 
   documentation.nixos.enable = false;
@@ -85,8 +87,6 @@ in
     networking.default.enable = true;
     networking.default.hostName = hn;
     users.enable = true;
-    users.sops.enable = false;
-    users.age.enable = true;
     users.primaryUser = {
       username = ramblurr.username;
       name = ramblurr.name;
@@ -94,6 +94,7 @@ in
       signingKey = ramblurr.signingKey;
       email = ramblurr.email;
       passwordSecretKey = ramblurr.passwordSecretKey;
+      defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
@@ -102,24 +103,27 @@ in
     };
   };
 
-  repo.secretFiles_old.home-ops = ../../secrets/home-ops.nix;
-
-  age.secrets."tank2Key" = {
-    rekeyFile = ./secrets/tank2Key.age;
+  repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
+  sops.secrets."tank2Key" = {
+    mode = "400";
+    owner = "root";
+    group = "root";
   };
 
-  age.secrets."fastKey" = {
-    rekeyFile = ./secrets/fastKey.age;
+  sops.secrets."fastKey" = {
+    mode = "400";
+    owner = "root";
+    group = "root";
   };
 
   environment.etc."mali-keys/tank2.key" = {
     user = "root";
-    source = config.age.secrets.tank2Key.path;
+    source = config.sops.secrets.tank2Key.path;
   };
 
   environment.etc."mali-keys/fast.key" = {
     user = "root";
-    source = config.age.secrets.fastKey.path;
+    source = config.sops.secrets.fastKey.path;
   };
 
   users.groups = (removeAttrs home-ops.groups [ "media" ]) // {

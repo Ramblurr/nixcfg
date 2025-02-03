@@ -23,10 +23,10 @@
               enable = true;
               propagatedBuildInputs = [ pkgs.beets-filetote ];
             };
-            dynamicrange = {
-              enable = true;
-              propagatedBuildInputs = [ pkgs.beets-dynamicrange ];
-            };
+            #dynamicrange = {
+            #  enable = true;
+            #  propagatedBuildInputs = [ pkgs.beets-dynamicrange ];
+            #};
             # hack, remove eventually:
             limit.builtin = true;
             substitute.builtin = true;
@@ -58,16 +58,18 @@
             "mbsync"
             "missing"
             #"permissions"
-            #"replaygain"
+            "replaygain"
             "rewrite"
             "scrub"
             "types"
           ];
           replaygain = {
+            # Use ffmpeg as the backend, but specify its path in command
+            backend = "ffmpeg";
+            command = "${pkgs.ffmpeg-headless}/bin/ffmpeg";
             auto = true;
             threads = 4;
             parallel_on_import = true; # don't forget to run `beet write` after import
-            backend = "ffmpeg";
           };
           import = {
             duplicate_action = "ask";
