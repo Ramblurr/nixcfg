@@ -1,6 +1,5 @@
 {
   options,
-  globals,
   config,
   lib,
   pkgs,
@@ -28,14 +27,6 @@ in
       mutableUsers = lib.mkOption {
         type = lib.types.bool;
         default = false;
-      };
-      age.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-      };
-      sops.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
       };
       primaryUser = {
         username = lib.mkOption {
@@ -87,8 +78,7 @@ in
         };
         authorizedKeys = lib.mkOption {
           type = types.listOf types.str;
-          #default = config.repo.secrets_old.global.pubKeys;
-          default = globals.pubKeys;
+          default = config.repo.secrets.global.pubKeys;
           description = lib.mdDoc "The user's authorized SSH keys.";
         };
       };
@@ -102,36 +92,18 @@ in
     ])
   ];
   config = lib.mkIf cfg.enable {
-    sops = lib.mkIf cfg.sops.enable {
+    sops = {
       age.sshKeyPaths = [
         "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"
       ];
       gnupg.sshKeyPaths = [ ];
       secrets.root-password = lib.mkIf cfg.rootPassword.enable { neededForUsers = true; };
-      secrets."${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.passwordEnable {
-        #sopsFile = cfg.primaryUser.defaultSopsFile;
-        neededForUsers = true;
-      };
-
-    };
-    age.secrets = lib.mkIf (cfg.age.enable) {
-      root-password = {
-        rekeyFile = "${config.node.secretsDir}/root-password.age";
-      };
-      "${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.passwordEnable {
-        rekeyFile = "${config.node.secretsDir}/${cfg.primaryUser.passwordSecretKey}.age";
-      };
     };
 
     users = {
       mutableUsers = cfg.mutableUsers;
       users.root.initialHashedPassword = lib.mkForce null;
-      users.root.hashedPasswordFile = lib.mkIf (cfg.rootPassword.enable) (
-        if cfg.age.enable then
-          config.age.secrets.root-password.path
-        else
-          config.sops.secrets.root-password.path
-      );
+      users.root.hashedPasswordFile = lib.mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
 
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;
       users."${cfg.primaryUser.username}" = {
@@ -139,18 +111,19 @@ in
         home = cfg.primaryUser.homeDirectory;
         description = cfg.primaryUser.name;
         openssh.authorizedKeys.keys = cfg.primaryUser.authorizedKeys;
-        hashedPasswordFile = lib.mkIf (cfg.primaryUser.passwordEnable) (
-          if cfg.age.enable then
-            config.age.secrets."${cfg.primaryUser.passwordSecretKey}".path
-          else
-            config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path
-        );
-
+        hashedPasswordFile =
+          mkIf cfg.primaryUser.passwordEnable
+            config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
         extraGroups = cfg.primaryUser.extraGroups;
         uid = cfg.primaryUser.uid;
         group = cfg.primaryUser.username;
         shell = cfg.primaryUser.shell;
       };
+    };
+
+    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.passwordEnable {
+      #sopsFile = cfg.primaryUser.defaultSopsFile;
+      neededForUsers = true;
     };
 
     home-manager = {
@@ -178,12 +151,13 @@ in
             "/persist${cfg.primaryUser.homeDirectory}"
           ])
         ];
+
+        #        home.stateVersion = "21.11";
         home.homeDirectory = cfg.primaryUser.homeDirectory;
-        sops = lib.mkIf cfg.sops.enable {
+        sops = {
           defaultSopsFile = lib.mkIf (cfg.primaryUser ? defaultSopsFile) cfg.primaryUser.defaultSopsFile;
           gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
         };
-
         manual.manpages.enable = true;
         systemd.user.startServices = true;
         programs = {

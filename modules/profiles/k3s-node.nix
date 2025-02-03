@@ -366,9 +366,7 @@ in
                 # might want this in the future for cilium l2 announcements
                 #routes = [
                 #  {
-                #    routeConfig = {
                 #      Destination = "10.9.4.0/22";
-                #    };
                 #  }
                 #];
               };

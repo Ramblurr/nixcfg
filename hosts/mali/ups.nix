@@ -16,7 +16,7 @@
     };
     users = {
       upsmon = {
-        passwordFile = config.age.secrets.upsAdminPassword.path;
+        passwordFile = config.sops.secrets.upsAdminPassword.path;
         upsmon = "primary";
       };
     };
@@ -24,7 +24,7 @@
       monitor."apc" = {
         system = "ups@localhost:3493";
         user = "upsmon";
-        passwordFile = config.age.secrets.upsAdminPassword.path;
+        passwordFile = config.sops.secrets.upsAdminPassword.path;
         powerValue = 1;
       };
       settings = {
@@ -88,11 +88,23 @@
     };
   };
 
-  age.secrets.upsAdminPassword = {
-    rekeyFile = ./secrets/upsAdminPassword.age;
+  #sops.secrets.upsd-users = {
+  #  format = "binary";
+  #  sopsFile = ./upsd.sops.users;
+  #};
+  #sops.secrets.upsmon-conf = {
+  #  format = "binary";
+  #  sopsFile = ./upsmon.sops.conf;
+  #};
+  sops.secrets.upsAdminPassword = {
     mode = "0440";
     group = "nut";
   };
+  #environment.etc."nut/upsd.users".source = config.sops.secrets.upsd-users.path;
+  #environment.etc."nut/upsmon.conf".source = config.sops.secrets.upsmon-conf.path;
+  #environment.etc."nut/upsd.conf".text = ''
+  #  LISTEN 127.0.0.1 3493
+  #'';
   users.users.nut = {
     #uid = 84;
     isSystemUser = true;

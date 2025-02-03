@@ -6,8 +6,10 @@
   ...
 }:
 let
+  inherit (config.repo.secrets.global) domain;
   hn = "witt";
   machine-id = "798016ab36504bd0a5397317013bedba";
+  defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../ramblurr.nix {
     inherit
       config
@@ -23,12 +25,13 @@ in
     ./hardware.nix
     ./home.nix
     ./syncthing.nix
-    ../../users/root
-    ../../config
+    ../../config/secrets.nix
     ../../config/attic.nix
     ../../config/workstation-impermanence.nix
   ];
   system.stateVersion = "24.05";
+  sops.defaultSopsFile = defaultSopsFile;
+  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = machine-id;
 
   time.timeZone = "Europe/Berlin";
@@ -86,8 +89,6 @@ in
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
     users.enable = true;
-    users.sops.enable = false;
-    users.age.enable = true;
     users.primaryUser = {
       username = "ramblurr";
       name = "Me";
@@ -95,6 +96,7 @@ in
       signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
       email = "unnamedrambler@gmail.com";
       passwordSecretKey = "ramblurr-password";
+      defaultSopsFile = defaultSopsFile;
       shell = pkgs.zsh;
       extraGroups = [
         "wheel"
@@ -117,14 +119,14 @@ in
       };
 
       programs = {
-        #cad.enable = true;
+        cad.enable = true;
         junction.enable = true;
         #kdeconnect.enable = true;
         kitty.enable = true;
         logseq.enable = true;
         chrysalis.enable = true;
         element.enable = true;
-        nextcloud.enable = true;
+        #nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
         #owncloud.enable = true;

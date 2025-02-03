@@ -286,7 +286,7 @@ in
     security.acme = {
       acceptTerms = true;
       defaults = {
-        email = config.repo.secrets.global.domain.acme.email;
+        email = config.repo.secrets.global.email.acme;
         credentialsFile = config.sops.templates.acme-credentials.path;
         dnsProvider = "cloudflare";
         dnsPropagationCheck = true;

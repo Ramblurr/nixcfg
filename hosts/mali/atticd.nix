@@ -35,8 +35,10 @@
   systemd.services.atticd = {
     serviceConfig.ReadWritePaths = lib.mkForce "/mnt/fast/attic";
   };
-  age.secrets."attic_server_token" = {
-    rekeyFile = ./secrets/attic_server_token.age;
+  sops.secrets."attic_server_token" = {
+    mode = "400";
+    owner = "root";
+    group = "root";
   };
   services.atticd = {
     enable = true;
@@ -47,7 +49,7 @@
     #
     # Content:
     #   ATTIC_SERVER_TOKEN_HS256_SECRET_BASE64="output from openssl"
-    environmentFile = config.age.secrets."attic_server_token".path;
+    environmentFile = config.sops.secrets."attic_server_token".path;
     package = unstable.attic-server;
 
     settings = {
