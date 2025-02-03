@@ -228,7 +228,17 @@ in
     networking.default.enable = true;
     networking.default.hostName = hn;
     hardware.ryzen.enable = true;
-    hardware.nvidia.enable = true;
+    hardware.easyNvidia = {
+      enable = true;
+      withIntegratedGPU = false;
+      vaapi = {
+        enable = true;
+        firefox = {
+          enable = true;
+          av1Support = true;
+        };
+      };
+    };
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
     users.enable = true;
