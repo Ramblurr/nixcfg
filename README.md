@@ -7,15 +7,11 @@
 
 | Hostname     | Purpose                                                             | Channel                     | Source                                       |   |
 |--------------|---------------------------------------------------------------------|-----------------------------|----------------------------------------------|---|
-| quine        | [Primary workstation][workstation]                                  | ![NixOS Unstable][unstable] | [hosts/quine/](./hosts/quine/)               |   |
-| aquinas      | Travel laptop (Dell XPS 15)                                         | ![NixOS Unstable][unstable] | [hosts/aquinas/](./hosts/aquinas/)           |   |
-| witt         | Travel laptop (Framework 13)                                        | ![NixOS Unstable][unstable] | [hosts/witt/](./hosts/witt/)                 |   |
-| dewey        | [Home Prod Server][home-ops]                                        | ![NixOS Unstable][unstable] | [hosts/dewey/](./hosts/dewey/)               |   |
 | debord       | [Home Prod Server][home-ops] & Home Assistant                       | ![NixOS Unstable][unstable] | [hosts/debord/](./hosts/debord/)             |   |
+| dewey        | [Home Prod Server][home-ops]                                        | ![NixOS Unstable][unstable] | [hosts/dewey/](./hosts/dewey/)               |   |
 | mali         | [Storage NAS][NAS]                                                  | ![NixOS Stable][stable]     | [hosts/mali/](./hosts/mali/)                 |   |
-| OVOS Kitchen | My [OpenVoiceOS][ovos] instance (replaces Mycroft) for the kitchen. | ![NixOS Unstable][unstable] | [hosts/ovos-kitchen/](./hosts/ovos-kitchen/) |   |
-| Fairybox     | Raspberry PI RFID Jukebox for my children                           | ![NixOS Stable][stable]     | [hosts/fairybox/](./hosts/fairybox/)         |   |
-| VPN          | A VPN gateway  for my LAN                                           | ![NixOS Stable][stable]     | [hosts/vpn](./hosts/vpn)                     |   |
+| quine        | [Primary workstation][workstation]                                  | ![NixOS Unstable][unstable] | [hosts/quine/](./hosts/quine/)               |   |
+| witt         | Travel laptop (Framework 13)                                        | ![NixOS Unstable][unstable] | [hosts/witt/](./hosts/witt/)                 |   |
 
 
 Example build commands:
