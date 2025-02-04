@@ -184,6 +184,11 @@ in
           verdict = "accept";
           masquerade = true;
         };
+        ntp = {
+          from = allZones;
+          to = [ localZone ];
+          allowedUDPPorts = [ 123 ];
+        };
         dns = {
           from = allZones;
           to = [ localZone ];
