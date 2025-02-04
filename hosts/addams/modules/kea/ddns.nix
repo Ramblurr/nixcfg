@@ -1,12 +1,23 @@
-{ config, ... }:
+{ lib, config, ... }:
 let
+  dhcpLib = import ./helpers.nix { inherit lib; };
   keaddnsUser = "kea";
 
   pdnsServer = [
     {
-      ip-address = "192.168.10.1";
+      ip-address = "127.0.0.1";
       port = 8853;
     }
+  ];
+
+  vlans = [
+    "local"
+    "guest"
+    "prim"
+    "mgmt"
+    "data"
+    "iot"
+    "not"
   ];
 in
 {
@@ -31,7 +42,6 @@ in
       ddns-update-on-renew = true; # always update when a lease is renewed, in case I lost the DNS server database
       ddns-override-client-update = true; # always generate ddns update request ignoring the client's wishes not to
       ddns-override-no-update = true; # same as above but for different client's wishes
-      ddns-qualifying-suffix = "home.arpa";
     };
     dhcp-ddns = {
       enable = true;
@@ -46,25 +56,18 @@ in
         forward-ddns = {
           ddns-domains = [
             {
-              name = "home.arpa.";
+              name = "${config.repo.secrets.global.domain.home}.";
               key-name = "kea";
               dns-servers = pdnsServer;
             }
           ];
         };
         reverse-ddns = {
-          ddns-domains = [
-            {
-              name = "168.192.in-addr.arpa.";
-              key-name = "kea";
-              dns-servers = pdnsServer;
-            }
-            {
-              name = "10.in-addr.arpa";
-              key-name = "kea";
-              dns-servers = pdnsServer;
-            }
-          ];
+          ddns-domains = map (zone: {
+            key-name = "kea";
+            name = zone;
+            dns-servers = pdnsServer;
+          }) config.repo.secrets.local.reverseZones;
         };
       };
     };
