@@ -53,8 +53,17 @@ in
     };
 
     boot = {
-      kernelPackages = lib.mkForce pkgs.linuxKernel.packages.linux_xanmod;
-
+      #kernelPackages = lib.mkForce pkgs.linuxKernel.packages.linux_xanmod;
+      kernelParams = [
+        #"video=3440x1440@100" # for virtual console resolution
+        "quiet"
+        "splash"
+        "boot.shell_on_fail"
+        "nvidia"
+        "nvidia_modeset"
+        "nvidia-uvm"
+        "nvidia_drm"
+      ];
       extraModprobeConfig =
         "options nvidia "
         + lib.concatStringsSep " " [
@@ -66,7 +75,7 @@ in
           #
           # Current monitor does not support it, but this is useful for
           # the future
-          "NVreg_RegistryDwords=RMUseSwI2c=0x01;RMI2cSpeed=100"
+          #"NVreg_RegistryDwords=RMUseSwI2c=0x01;RMI2cSpeed=100"
         ];
     };
 
