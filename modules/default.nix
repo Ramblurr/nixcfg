@@ -76,6 +76,7 @@
     ./security/default.nix
     ./server/smtp-external-relay.nix
     ./server/virtd/default.nix
+    ./services/udpbroadcastrelay.nix
     ./services/actual-budget.nix
     ./services/audiobookshelf.nix
     ./services/soju.nix
@@ -117,6 +118,7 @@
     ./services/roon-server.nix
     ./services/sshd.nix
     ./services/tautulli.nix
+    ./services/udpbroadcastrelay.nix
     ./services/zfs-backup-check.nix
     ./shell/aria2.nix
     ./shell/attic.nix

@@ -5,18 +5,11 @@ keys:
       - &disaster-recovery age15j42dspmmwprjau6l48xp05d97s8ml5s3tjxrfwvm37tvuynssuqtsevkj
   - hosts:
       - &quine age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
-      - &aquinas age1v0xf0qc66g0gc4pg68wzhswd82vnjw3u9rd2qds77y4s2mu96s2sutzmvy
       - &mali age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
-      - &ovos-kitchen age1vfgnjj357pa8xq0vpl9cnfxhtczl7dgnafxlqal3pn9v4ud0kees4xua20
-      - &ovos-bedroom age12zdskqd632afljf4nffxafup4mhd0kl53psvqer8zup8qz9gn3qqtp7858
-      - &vpn age1fejrfw2c8z8g02z6j9fv4ddwm7y4valtmstxmpl0yktk7dm49phspxglgf
-      - &ibnsina age1rd4msy9hc7t7703kwypmt20r8qwkuqxyxuk3sd95sw2sc9gvjydqe67dn2
       - &debord age1ns0hnk5n6sw9uqdn7v4rynumjk0zd8zfsjhegka74xw55nnluy4qtju5um
-      - &peirce age18aeezktqhdqyh90zathz7uea2tqhgh52l2m6v6xjy06s008d69cq4glx7c
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
-      - &mill age1gxvdmyxmx4rczdaqaah8ysrwwpcladf9llax5ppleutesrwnxp9qxd4l69
-      - &fairybox age17gsltm4knk7d42nstzl3s07m5g6njvetlmhkmv0p7839afn4f5nqyqkn66
       - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
+      - &addams age1t70vans0qsnru7j06fwtj7wq7hpfj59cxreu9a20rrxuahff9fmqsa2wjd
 creation_rules:
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
@@ -39,13 +32,6 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
-  - path_regex: hosts/aquinas/secrets.sops.ya?ml$
-    key_groups:
-      - age:
-          - *aquinas
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
   - path_regex: hosts/mali/.*.sops.*$
     key_groups:
       - age:
@@ -53,22 +39,6 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
-  - path_regex: hosts/ibnsina/.*.sops.*$
-    key_groups:
-      - age:
-          - *ibnsina
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
-  - path_regex: hosts/mill/.*.sops.*$
-    key_groups:
-      - age:
-          - *mill
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
   - path_regex: hosts/debord/.*.sops.*$
     key_groups:
       - age:
@@ -85,42 +55,10 @@ creation_rules:
         pgp:
           - *ramblurr
 
-  - path_regex: hosts/peirce/.*.sops.*$
+  - path_regex: hosts/addams/.*.sops.*$
     key_groups:
       - age:
-          - *peirce
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
-  - path_regex: hosts/vpn/.*.sops.*$
-    key_groups:
-      - age:
-          - *vpn
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
-  - path_regex: hosts/ovos-kitchen/.*.sops.*$
-    key_groups:
-      - age:
-          - *ovos-kitchen
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
-  - path_regex: hosts/ovos-bedroom/.*.sops.*$
-    key_groups:
-      - age:
-          - *ovos-bedroom
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
-  - path_regex: hosts/fairybox/.*.sops.*$
-    key_groups:
-      - age:
-          - *fairybox
+          - *addams
           - *disaster-recovery
         pgp:
           - *ramblurr
@@ -128,9 +66,6 @@ creation_rules:
   - path_regex: configs/home-ops/.*.sops.*$
     key_groups:
       - age: &all-nodes
-          - *mill
-          - *ibnsina
-          - *peirce
           - *dewey
           - *debord
           - *disaster-recovery
