@@ -1,5 +1,6 @@
 {
   inputs,
+  self,
   lib,
   ...
 }:
@@ -90,7 +91,7 @@ let
         ++ hostExtraModules;
 
       specialArgs = {
-        inherit inputs;
+        inherit inputs self;
         mine = nixpkgs-mine;
         nixpkgs = nixpkgs';
         pkgs = nixpkgs';

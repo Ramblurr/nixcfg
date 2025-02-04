@@ -108,7 +108,7 @@ tasks:
           FLAKE_URI: .#{{.flake | default "{{.host}}"}}
 
   image:
-    desc: Build the SD Card image for ovos-kitchen
+    desc: Build the SD Card image for a host
     summary: |
       host: the hostname to build (required)
     requires:
@@ -126,3 +126,8 @@ tasks:
       vars: ["host", "pkg"]
     cmds:
       - nix why-depends .\#nixosConfigurations.{{.host}}.config.system.build.toplevel .\#nixosConfigurations.{{.host}}.pkgs.{{.pkg}} --derivation | cat
+
+  new-host:
+    desc: Scaffold out a new host
+    cmds:
+      - python ./scripts/new-host.py

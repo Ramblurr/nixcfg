@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
     deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
     overseerr = prev.callPackage ./overseerr.nix { };
