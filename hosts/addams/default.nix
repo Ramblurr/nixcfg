@@ -27,6 +27,7 @@ in
     ./modules/chrony.nix
     ./modules/kea
     ./modules/powerdns.nix
+    ./modules/dnsdist.nix
     #./modules/maddy.nix
     ./modules/udpbroadcastrelay.nix
     #./installer.nix
@@ -40,6 +41,7 @@ in
 
   environment.systemPackages = with pkgs; [
     tcpdump
+    pdns
   ];
 
   ############################

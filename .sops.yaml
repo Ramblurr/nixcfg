@@ -11,6 +11,13 @@ keys:
       - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
       - &addams age1t70vans0qsnru7j06fwtj7wq7hpfj59cxreu9a20rrxuahff9fmqsa2wjd
 creation_rules:
+  - path_regex: terraform/secrets.sops.ya?ml$
+    key_groups:
+      - age:
+          - *quine
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
       - age:

@@ -9,19 +9,11 @@ let
   commonDhcpOptions = [
     {
       name = "domain-name-servers";
-      data = lib.my.cidrToIp config.repo.secrets.local.vlan.local.cidr;
+      data = dhcpLib.joinList config.repo.secrets.local.localDNS;
     }
     {
       name = "time-servers";
       data = lib.my.cidrToIp config.repo.secrets.local.vlan.local.cidr;
-    }
-    {
-      name = "domain-name";
-      data = "home.arpa";
-    }
-    {
-      name = "domain-search";
-      data = "home.arpa";
     }
   ];
 
