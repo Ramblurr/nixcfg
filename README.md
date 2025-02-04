@@ -5,13 +5,14 @@
 
 ## Hosts
 
-| Hostname     | Purpose                                                             | Channel                     | Source                                       |   |
-|--------------|---------------------------------------------------------------------|-----------------------------|----------------------------------------------|---|
-| debord       | [Home Prod Server][home-ops] & Home Assistant                       | ![NixOS Unstable][unstable] | [hosts/debord/](./hosts/debord/)             |   |
-| dewey        | [Home Prod Server][home-ops]                                        | ![NixOS Unstable][unstable] | [hosts/dewey/](./hosts/dewey/)               |   |
-| mali         | [Storage NAS][NAS]                                                  | ![NixOS Stable][stable]     | [hosts/mali/](./hosts/mali/)                 |   |
-| quine        | [Primary workstation][workstation]                                  | ![NixOS Unstable][unstable] | [hosts/quine/](./hosts/quine/)               |   |
-| witt         | Travel laptop (Framework 13)                                        | ![NixOS Unstable][unstable] | [hosts/witt/](./hosts/witt/)                 |   |
+| Hostname | Purpose                                       | Channel                     | Source                           |   |
+|----------|-----------------------------------------------|-----------------------------|----------------------------------|---|
+| debord   | [Home Prod Server][home-ops] & Home Assistant | ![NixOS Unstable][unstable] | [hosts/debord/](./hosts/debord/) |   |
+| dewey    | [Home Prod Server][home-ops]                  | ![NixOS Unstable][unstable] | [hosts/dewey/](./hosts/dewey/)   |   |
+| mali     | [Storage NAS][NAS]                            | ![NixOS Stable][stable]     | [hosts/mali/](./hosts/mali/)     |   |
+| quine    | [Primary workstation][workstation]            | ![NixOS Unstable][unstable] | [hosts/quine/](./hosts/quine/)   |   |
+| witt     | Travel laptop (Framework 13)                  | ![NixOS Unstable][unstable] | [hosts/witt/](./hosts/witt/)     |   |
+| addams   | Router                                        | ![NixOS Unstable][unstable] | [hosts/addams/](./hosts/addams/) |   |
 
 
 Example build commands:

@@ -136,6 +136,7 @@
       imports = [
         ./nix/hosts.nix
         ./nix/pkgs.nix
+        ./nix/iso-test.nix
       ];
 
       systems = [
