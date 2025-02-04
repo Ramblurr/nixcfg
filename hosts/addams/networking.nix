@@ -12,11 +12,7 @@
         pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)
       )
     );
-    domain = "home.arpa";
-    nameservers = [
-      "1.1.1.1"
-      "8.8.8.8"
-    ];
+    domain = config.repo.secrets.global.domain.home;
     useDHCP = false;
   };
   systemd.network = {
@@ -115,6 +111,14 @@
       };
     };
     networks = {
+      "30-wlp3s0" = {
+        matchConfig.Name = "wlp3s0";
+        linkConfig = {
+          Unmanaged = "yes";
+          ActivationPolicy = "down";
+        };
+      };
+
       # Disabled interfaces
       "30-lan1" = {
         matchConfig.Name = "lan1";
@@ -138,7 +142,10 @@
       # LAN0
       "30-lan0" = {
         matchConfig.Name = "lan0";
-        address = [ config.repo.secrets.local.vlan.local.cidr ];
+        address = [
+          config.repo.secrets.local.vlan.local.cidr
+          "192.168.1.3/24"
+        ];
         networkConfig.DHCPServer = false;
         linkConfig = {
           MTUBytes = "9000";
@@ -163,7 +170,10 @@
       # PRIMARY VLAN
       "30-vlprim4" = {
         matchConfig.Name = "vlprim4";
-        address = [ config.repo.secrets.local.vlan.prim.cidr ];
+        address = [
+          config.repo.secrets.local.vlan.prim.cidr
+          "10.9.4.4/22"
+        ];
         networkConfig.DHCPServer = false;
         linkConfig.RequiredForOnline = "routable";
       };

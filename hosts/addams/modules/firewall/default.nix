@@ -1,5 +1,8 @@
 { config, lib, ... }:
 let
+  # The local zone is the the router/firewall machine itself
+  # So this applies to traffic on the input chain, rather than the forward chain
+  # Use this zone when allowing traffic to services on the router itself
   localZone = config.networking.nftables.firewall.localZoneName;
 
   helpers = import ./helpers.nix;
@@ -180,6 +183,19 @@ in
           to = [ "wan" ];
           verdict = "accept";
           masquerade = true;
+        };
+        dns = {
+          from = allZones;
+          to = [ localZone ];
+          allowedTCPPorts = [
+            53
+            853
+          ];
+          allowedUDPPorts = [
+            53
+            853
+          ];
+          verdict = "accept";
         };
         temporary = {
           from = allZones;

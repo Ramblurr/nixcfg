@@ -8,9 +8,40 @@ let
   directory = "/var/lib/pdns";
   user = "pdns";
   group = "pdns";
-  localAddress = lib.my.cidrToIp config.repo.secrets.local.vlan.local.cidr;
+  cfg = config.repo.secrets.local;
+  localAddress = lib.my.cidrToIp cfg.vlan.local.cidr;
+
+  homeZone = config.repo.secrets.global.domain.home;
+  workZone = config.repo.secrets.global.domain.work;
+
 in
 {
+  services.resolved.enable = false;
+  networking.resolvconf.useLocalResolver = true;
+
+  services.powerdns = {
+    enable = true;
+    extraConfig = ''
+      local-address=127.0.0.1:8853
+      launch=gsqlite3
+      gsqlite3-database=${directory}/pdns.sqlite3
+      dnsupdate=yes
+      primary=yes
+      default-soa-content=@ hostmaster.@ 0 10800 3600 604800 3600
+      enable-lua-records=yes
+      webserver=no
+      webserver-address=0.0.0.0
+      webserver-allow-from=0.0.0.0/0
+      api=no
+      api-key=$API_KEY_HASH
+      log-dns-queries=no
+      log-dns-details=no
+      loglevel=7
+      query-logging=no
+    '';
+    secretFile = config.sops.secrets."powerdns/env".path;
+  };
+
   modules.zfs.datasets.properties = {
     "rpool/encrypted/safe/svc/powerdns"."mountpoint" = directory;
     "rpool/encrypted/safe/svc/powerdns"."com.sun:auto-snapshot" = "false";
@@ -20,19 +51,6 @@ in
   sops.secrets."powerdns/env" = {
     owner = user;
     group = group;
-  };
-
-  services.powerdns = {
-    enable = true;
-    extraConfig = ''
-      local-address=${localAddress}:8853
-      launch=gsqlite3
-      gsqlite3-database=${directory}/pdns.sqlite3
-      dnsupdate=yes
-      allow-dnsupdate-from=${localAddress}/32
-      default-soa-content=@ gateway.home.arpa. 0 7200 3600 120960 3600
-    '';
-    secretFile = config.sops.secrets."powerdns/env".path;
   };
 
   systemd.services.pdns.serviceConfig = {
@@ -62,13 +80,18 @@ in
         cmd=${pkgs.pdns}/bin/pdnsutil
 
         $cmd create-zone home.arpa. || true
-        $cmd create-zone 168.192.in-addr.arpa. || true
-        $cmd create-zone 10.in-addr.arpa. || true
+        $cmd create-zone ${homeZone}. || true
+        $cmd create-zone ${workZone}. || true
 
         $cmd import-tsig-key kea hmac-sha512 $KEA_TSIG_KEY
-        $cmd set-meta home.arpa. TSIG-ALLOW-DNSUPDATE kea
-        $cmd set-meta 168.192.in-addr.arpa. TSIG-ALLOW-DNSUPDATE kea
-        $cmd set-meta 10.in-addr.arpa. TSIG-ALLOW-DNSUPDATE kea
+        $cmd set-meta ${homeZone}. TSIG-ALLOW-DNSUPDATE kea
+        $cmd set-meta ${workZone}. TSIG-ALLOW-DNSUPDATE kea
+        ${builtins.concatStringsSep "\n" (
+          map (zone: ''
+            $cmd create-zone "${zone}" || true
+            $cmd set-meta "${zone}" TSIG-ALLOW-DNSUPDATE kea
+          '') cfg.reverseZones
+        )}
       ''
     );
   };
