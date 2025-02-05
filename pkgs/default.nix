@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    netns-proxy = prev.callPackage ./netns-proxy.nix { };
     udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
     deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
