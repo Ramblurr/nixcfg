@@ -40,6 +40,9 @@
     quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
+    nix-writers.url = "git+https://cgit.krebsco.de/nix-writers";
+    nix-writers.inputs.nixpkgs.follows = "nixpkgs-unstable";
+
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
     #clj-nix.url = "github:jlesquembre/clj-nix";

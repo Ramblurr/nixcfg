@@ -560,6 +560,21 @@
       }
     },
     "flake-utils_6": {
+      "locked": {
+        "lastModified": 1676283394,
+        "narHash": "sha256-XX2f9c3iySLCw54rJ/CZs+ZK6IQy7GXNY4nSOyu2QG4=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "3db36a8b464d0c4532ba1c7dda728f4576d6d073",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_7": {
       "inputs": {
         "systems": "systems_10"
       },
@@ -577,7 +592,7 @@
         "type": "github"
       }
     },
-    "flake-utils_7": {
+    "flake-utils_8": {
       "inputs": {
         "systems": "systems_12"
       },
@@ -595,7 +610,7 @@
         "type": "github"
       }
     },
-    "flake-utils_8": {
+    "flake-utils_9": {
       "inputs": {
         "systems": "systems_13"
       },
@@ -901,7 +916,7 @@
     },
     "lib-aggregate_2": {
       "inputs": {
-        "flake-utils": "flake-utils_8",
+        "flake-utils": "flake-utils_9",
         "nixpkgs-lib": "nixpkgs-lib_4"
       },
       "locked": {
@@ -1055,9 +1070,30 @@
         "type": "github"
       }
     },
+    "nix-writers": {
+      "inputs": {
+        "flake-utils": "flake-utils_6",
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1677612737,
+        "narHash": "sha256-UaCKZ4PbMZU6UZH7XNFcjRtd5jheswl66rjZDBfQgp8=",
+        "ref": "refs/heads/master",
+        "rev": "66a1f6833464bbb121b6d94247ad769f277351f8",
+        "revCount": 39,
+        "type": "git",
+        "url": "https://cgit.krebsco.de/nix-writers"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://cgit.krebsco.de/nix-writers"
+      }
+    },
     "nixfmt": {
       "inputs": {
-        "flake-utils": "flake-utils_6"
+        "flake-utils": "flake-utils_7"
       },
       "locked": {
         "lastModified": 1729697320,
@@ -1076,7 +1112,7 @@
     "nixos-extra-modules": {
       "inputs": {
         "devshell": "devshell",
-        "flake-utils": "flake-utils_7",
+        "flake-utils": "flake-utils_8",
         "lib-net": "lib-net",
         "nixpkgs": [
           "nixpkgs-unstable"
@@ -1527,6 +1563,7 @@
         "matugen": "matugen",
         "microvm": "microvm",
         "nix-gaming": "nix-gaming",
+        "nix-writers": "nix-writers",
         "nixfmt": "nixfmt",
         "nixos-extra-modules": "nixos-extra-modules",
         "nixos-hardware": "nixos-hardware",
