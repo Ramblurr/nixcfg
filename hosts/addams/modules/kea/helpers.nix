@@ -3,6 +3,28 @@
   ...
 }:
 let
+  mergeByKey =
+    key: list1: list2:
+    let
+      # Create a set of items from list2 indexed by the key
+      list2Set = builtins.listToAttrs (
+        map (item: {
+          name = toString item.${key};
+          value = item;
+        }) list2
+      );
+
+      # Process list1: replace items if they exist in list2Set, keep if they don't
+      merged = map (
+        item:
+        if builtins.hasAttr (toString item.${key}) list2Set then list2Set.${toString item.${key}} else item
+      ) list1;
+
+      # Add any items from list2 whose keys don't exist in list1
+      list1Keys = map (item: toString item.${key}) list1;
+      remainingList2 = builtins.filter (item: !(builtins.elem (toString item.${key}) list1Keys)) list2;
+    in
+    merged ++ remainingList2;
   # Takes a CIDR like "10.9.4.1/22" and returns a list of reverse zones
   toReverseZones =
     cidr:
@@ -61,14 +83,17 @@ let
     {
       name,
       vlanConfig,
-      id,
       commonDhcpOptions,
       leaseOption,
     }:
+    let
+      ddnsEnabled = vlanConfig.dhcp ? domainName;
+    in
     lib.mkIf vlanConfig.dhcp.enable (
       {
-        id = id;
-        interface = vlanConfig.iface;
+        id = if name == "untagged" then 1 else vlanConfig.id;
+        # TODO: this is a hack, fix this eventually, why didn't I leave unttaged in the vlan attrset again?
+        interface = if name == "untagged" then "lan0" else "me-${name}";
         subnet = vlanConfig.cidr;
         pools = [
           {
@@ -77,10 +102,10 @@ let
         ];
         hostname-char-set = "[^A-Za-z0-9.-]";
         hostname-char-replacement = "-";
-        ddns-send-updates = true;
+        ddns-send-updates = ddnsEnabled;
         ddns-replace-client-name = "when-present";
         ddns-generated-prefix = "";
-        ddns-qualifying-suffix = "${vlanConfig.dhcp.domainName}.";
+        ddns-qualifying-suffix = lib.mkIf ddnsEnabled "${vlanConfig.dhcp.domainName}.";
         option-data =
           [
             {
@@ -89,7 +114,7 @@ let
             }
           ]
           ++ (
-            if vlanConfig.dhcp ? domainName then
+            if ddnsEnabled then
               [
                 {
                   name = "domain-name";
@@ -105,7 +130,7 @@ let
           )
           ++ (
             if vlanConfig.dhcp ? optionData then
-              lib.unique (vlanConfig.dhcp.optionData ++ commonDhcpOptions)
+              (mergeByKey "name" commonDhcpOptions vlanConfig.dhcp.optionData)
             else
               commonDhcpOptions
           );
@@ -134,7 +159,6 @@ let
           commonDhcpOptions
           leaseOption
           ;
-        id = index + 1; # Start IDs at 1
       }
     ) (lib.mapAttrsToList lib.nameValuePair enabledVlans);
   joinList = lib.concatStringsSep ", ";

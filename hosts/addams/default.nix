@@ -30,7 +30,7 @@ in
     ./modules/dnsdist.nix
     #./modules/maddy.nix
     ./modules/udpbroadcastrelay.nix
-    #./installer.nix
+    ./modules/mullvad.nix
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
