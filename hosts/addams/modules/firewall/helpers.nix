@@ -1,4 +1,8 @@
 {
+  lib,
+  ...
+}:
+{
   # Takes the port forwards attrset and returns a list of nft rule strings
   mkPortForwards =
     portForwards:
@@ -54,6 +58,80 @@
     in
     removeEmptyStrings (map (rule: mkRule rule.name rule) sortedRules);
 
-}
+  /**
+    Creates an nftables rule string that matches against named sets and performs an accept action.
+    All parameters are optional.
 
-#
+    # Type
+
+    ```
+    setRule :: {
+    destPort :: String?
+    destAddr :: String?
+    srcPort :: String?
+    srcAddr :: String?
+    comment :: String?
+    proto :: [ String ]? # defaults to [ "tcp" "udp" ]
+    } -> String
+    ```
+
+    # Examples
+    :::{.example}
+
+    ## Basic usage with destination ports and source IPs
+
+    ```nix
+    setRule {
+    destPort = "allowed_ports";
+    srcAddr = "trusted_ips";
+    comment = "allow trusted access";
+    }
+
+    => "meta l4proto { tcp, udp } th dport @allowed_ports ip saddr @trusted_ips accept comment "allow trusted access""
+
+    ```
+    ## Single protocol with source port
+    ```nix
+    setRule {
+    srcPort = "some_ports";
+    proto = [ "tcp" ];
+    }
+    => "meta l4proto { tcp } th sport @some_ports accept"
+     ```
+    :::
+  */
+  setRule =
+    {
+      destPort ? null,
+      destAddr ? null,
+      srcPort ? null,
+      srcAddr ? null,
+      comment ? null,
+      proto ? [
+        "tcp"
+        "udp"
+      ],
+      extra ? [ ],
+      verdict ? "accept",
+    }:
+    let
+      mkIfSet = set: expr: if (set != null) then [ expr ] else [ ];
+
+      needsProto = destPort != null || srcPort != null;
+      protoComponent =
+        if needsProto then [ "meta l4proto { ${lib.concatStringsSep ", " proto} }" ] else [ ];
+      commentComponent = if comment != null then [ "comment \"${comment}\"" ] else [ ];
+
+      ruleComponents = lib.flatten [
+        protoComponent
+        (mkIfSet destPort "th dport @${destPort}")
+        (mkIfSet destAddr "ip daddr @${destAddr}")
+        (mkIfSet srcPort "th sport @${srcPort}")
+        (mkIfSet srcAddr "ip saddr @${srcAddr}")
+        extra
+        [ verdict ]
+        commentComponent
+      ];
+    in
+    ''${lib.concatStringsSep " " ruleComponents}'';
+}
