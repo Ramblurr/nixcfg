@@ -10,19 +10,19 @@
         port = 9003;
         id = 1;
         interfaces = [
-          "vlprim4"
+          "me-prim"
           "lan0"
-          "vliot50"
+          "me-iot"
         ];
       };
       mdns = {
         port = 5353;
         id = 2;
         interfaces = [
-          "vlprim4"
+          "me-prim"
           "lan0"
-          "vliot50"
-          "vlnot60"
+          "me-iot"
+          "me-not"
         ];
         multicast = "224.0.0.251";
       };
@@ -30,7 +30,7 @@
         port = 21027;
         id = 3;
         interfaces = [
-          "vlprim4"
+          "me-prim"
           "lan0"
         ];
       };

@@ -8,6 +8,7 @@ let
   cfg = config.repo.secrets.local;
 in
 {
+  environment.persistence."/persist".directories = [ "/var/lib/pdns" ];
   services.dnsdist = {
     enable = true;
     extraConfig =

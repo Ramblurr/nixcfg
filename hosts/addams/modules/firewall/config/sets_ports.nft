@@ -1,0 +1,202 @@
+set tailscale_src_ports {
+  type inet_service
+  elements = {
+    41641
+  }
+}
+set tailscale_dest_ports {
+  type inet_service
+  elements = {
+    3478,
+    1900,
+    5351
+  }
+}
+set blocked_discovery_ports {
+  type inet_service
+  elements = {
+    # plex
+    32410,
+    32412,
+    32413,
+    32414,
+    # bluesound
+    137,
+    11430,
+    # wled, TPM2.NET
+    65506,
+    # syncthing
+    21027,
+    22000,
+    # mikrotik discovery
+    5678,
+    # smb
+    138,
+    # roon
+    9003,
+    32768
+  }
+}
+
+set blocked_discovery_tcp_ports {
+  type inet_service
+  elements = {
+     # syncthing
+     22000
+  }
+}
+
+set http_ports {
+  type inet_service
+  elements = {
+    80,
+    443
+  }
+}
+
+set ssh_ports {
+  type inet_service
+  elements = {
+    22
+  }
+}
+
+set dns_ports {
+  type inet_service
+  elements = {
+    53
+  }
+}
+
+set roon_proxy_ports {
+  type inet_service
+  elements = {
+    8510,
+    443
+  }
+}
+
+set plex_server_ports {
+  type inet_service
+  elements = {
+    32400
+  }
+}
+
+set plex_ports {
+  type inet_service
+  elements = {
+    32414,
+    32413,
+    32412,
+    32410
+  }
+}
+
+set minio_ports {
+  type inet_service
+  elements = { 9100 }
+}
+
+set wireguard_ports {
+  type inet_service
+  elements = { 51820 }
+}
+
+set bluesound_ports {
+  type inet_service
+  elements = {
+    80,
+    11000,
+    11010,
+    11020,
+    11030,
+    11430,
+    32412,
+    32414,
+    137,
+    445
+  }
+}
+
+set roon_ports {
+  type inet_service
+  flags interval
+  auto-merge
+  elements = { 9330-9339, 30000-30010, 42839, 9093, 9003, 9100-9200, 137, 445, 33399 }
+}
+
+set shelly_ports {
+  type inet_service
+  elements = { 5683, 80 }
+}
+
+set esphome_api_ports {
+  type inet_service
+  elements = { 6053, 80 }
+}
+
+set wled_api_ports {
+  type inet_service
+  elements = { 80 }
+}
+
+set roon_arc_ports {
+  type inet_service
+  elements = { 33399 }
+}
+
+set mali_replication_ports {
+  type inet_service
+  flags interval
+  auto-merge
+  elements = { 3478, 3479 }
+}
+
+set truenas_nfs_ports {
+  type inet_service
+  elements = { 111, 2049 }
+}
+
+set truenas_samba_ports {
+  type inet_service
+  flags interval
+  auto-merge
+  elements = { 137, 138, 139, 445 }
+}
+
+set octoprint_ports {
+  type inet_service
+  flags interval
+  auto-merge
+  elements = { 80, 443, 5000 }
+}
+
+set homeassistant_ports {
+  type inet_service
+  elements = { 8123 }
+}
+
+set homeassistant_shelly_ports {
+  type inet_service
+  flags interval
+  auto-merge
+  elements = { 8123, 5683, 5353 }
+}
+
+set syncthing_ports {
+  type inet_service
+  elements = { 22000, 21027 }
+}
+
+set zigbee2mqtt_ports {
+  type inet_service
+  elements = { 8080 }
+}
+
+set kde_connect_ports {
+  type inet_service
+  flags interval
+  auto-merge
+  elements = { 1714-1764 }
+}

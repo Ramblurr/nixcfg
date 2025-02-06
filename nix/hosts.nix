@@ -50,7 +50,10 @@
           # Willard Van Orman Quine - https://en.wikipedia.org/wiki/Willard_Van_Orman_Quine
           isStable = false;
           system = "x86_64-linux";
-          hostOverlays = [ (import ../overlays/qemu.nix) ];
+          hostOverlays = [
+            (import ../overlays/qemu.nix)
+            inputs.nix-writers.overlays.default
+          ];
         };
         mali = {
           isStable = true;
