@@ -1,8 +1,15 @@
+set router_untagged {
+  type ipv4_addr
+  flags interval
+  elements = { 192.168.1.1 }
+}
+
 set offsite1 {
   type ipv4_addr
   flags interval
   elements = { 192.168.8.0/22 }
 }
+
 set ereaders {
   type ipv4_addr
   elements = { 10.9.6.96, 10.9.6.95}
@@ -39,7 +46,7 @@ set shellys {
     10.8.60.25,
     10.8.60.26,
     10.8.60.27,
-    10.8.60.28 # bedroom-dimmer
+    10.8.60.28, # bedroom-dimmer
     10.8.60.31,
     10.8.60.33,
     10.8.60.34,
@@ -55,7 +62,7 @@ set shellys {
     10.8.60.44,
     10.8.60.49,
     10.8.60.50,
-    10.8.60.51, # lr bookshelf
+    10.8.60.51 # lr bookshelf
   }
 }
 
