@@ -1,7 +1,11 @@
+# ──────────────────────────────────────────────────────────────────
+# mullvad-gateway: provides mullvad access to my network
+#
 # This config runs a systemd nspawn container with mullvad-daemon and gost inside
 # Some tricks were required to make mullvad-daemon happy inside a container.
 # The benefit however is that I can namespace the VPN network and expose it via a SOCKS5 proxy to my network.
 # We also expose mullvad multi-hop destinations via socks as well
+# ──────────────────────────────────────────────────────────────────
 {
   config,
   inputs,
@@ -11,32 +15,29 @@
   ...
 }:
 let
+  # these hosts can use the SOCKS proxy
   allowedCidrs = [
     "10.9.4.0/22"
     "10.4.0.2/24"
     "10.8.70.0/24"
   ];
+  # these hosts have their traffic NATed through the gateway
+  allowedNatCidrs = [ "10.8.70.0/24" ];
   hostAddress = "10.4.0.1";
   localAddress = "10.4.0.2";
-  defaultLocation = "de";
-
-  proxies = [
+  routesForNat = [
     {
-      name = "pl1";
-      port = "1081";
-      dest = "pl-waw-wg-socks5-103.relays.mullvad.net:1080";
-    }
-    {
-      name = "bg1";
-      port = "1082";
-      dest = "bg-sof-wg-socks5-001.relays.mullvad.net:1080";
+      address = "10.8.70.0";
+      prefixLength = 24;
+      via = hostAddress;
     }
   ];
+  defaultLocation = "de";
 
   mkProxy = proxy: {
     "gost-${proxy.name}" = {
       serviceConfig = {
-        # these gost instances just do tcp forwarding to the mullvad relay
+        # these gost instances just do tcp and udp forwarding to the mullvad relay
         ExecStart = "${pkgs.gost}/bin/gost -L tcp://${localAddress}:${proxy.port}/${proxy.dest} -L udp://${localAddress}:${proxy.port}/${proxy.dest}";
       };
       wantedBy = [ "multi-user.target" ];
@@ -47,9 +48,6 @@ in
 {
   sops.secrets = {
     "mullvad/account" = { };
-    "mullvad/device" = { };
-    "mullvad/privateKey" = { };
-    "mullvad/server" = { };
   };
   environment.persistence."/persist".directories = [
     "/var/lib/mullvad-vpn"
@@ -74,14 +72,6 @@ in
     ephemeral = true;
     privateNetwork = true;
     enableTun = true;
-    # enableTun = true; # NOTE doesn't work https://github.com/NixOS/nixpkgs/pull/357276
-    allowedDevices = [
-      {
-        # what enableTun should do
-        modifier = "rwm";
-        node = "/dev/net/tun";
-      }
-    ];
     extraFlags = [
       "--network-veth"
     ];
@@ -101,6 +91,7 @@ in
     config =
       let
         hostPkgs = pkgs;
+        hostConfig = config;
       in
       {
         config,
@@ -108,7 +99,6 @@ in
         ...
       }:
       {
-        #imports = [ inputs.nixos-nftables-firewall.nixosModules.default ];
         system.stateVersion = "24.11";
         nixpkgs.pkgs = hostPkgs; # reuse host pkgs for overlays and evaluation speed
         networking.useHostResolvConf = lib.mkForce false;
@@ -131,7 +121,7 @@ in
         ];
         networking.nat = {
           enable = true;
-          internalIPs = [ "10.8.70.0/24" ];
+          internalIPs = allowedNatCidrs;
           externalInterface = "wg0-mullvad";
         };
 
@@ -141,92 +131,18 @@ in
             logfile = "/var/log/ulogd.log";
             stack = [
               "log1:NFLOG,base1:BASE,ifi1:IFINDEX,ip2str1:IP2STR,print1:PRINTPKT,emu1:LOGEMU"
-              "log1:NFLOG,base1:BASE,pcap1:PCAP"
             ];
           };
 
           log1.group = 0;
-
-          pcap1 = {
-            sync = 1;
-            file = "/var/log/ulogd.pcap";
-          };
 
           emu1 = {
             sync = 1;
             file = "/var/log/ulogd_pkts.log";
           };
         };
-        #networking.firewall.enable = false;
-        #networking.nat.enable = false;
-        #networking.nftables.enable = true;
-        #networking.nftables = {
-        #  chains =
-        #    let
-        #      dropRule = label: {
-        #        after = lib.mkForce [ "veryLate" ];
-        #        before = lib.mkForce [ "end" ];
-        #        rules = lib.singleton ''counter log prefix "mullvad_drop_${label} " group 0 accept comment "Default drop rule for ${label} chain"'';
-        #      };
-        #    in
-        #    {
-        #      input.drop = dropRule "input";
-        #      forward.drop = dropRule "forward";
-        #    };
-        #  firewall = {
-        #    enable = true;
-        #    snippets = {
-        #      nnf-common.enable = false;
-        #      nnf-conntrack.enable = true;
-        #      nnf-default-stopRuleset.enable = true;
-        #      nnf-drop.enable = false;
-        #      nnf-loopback.enable = true;
-        #      nnf-dhcpv6.enable = false;
-        #      nnf-icmp.enable = true;
-        #      nnf-ssh.enable = true;
-        #      nnf-nixos-firewall.enable = true;
-        #    };
-        #    zones = {
-        #      eth0.interfaces = [ "eth0" ];
-        #      wg0.interfaces = [ "wg0-mullvad" ];
-        #      clients.ipv4Addresses = allowedCidrs;
-        #      routingClients.ipv4Addresses = [ "10.8.70.0/24" ];
-        #    };
-        #    rules = {
-        #      allow_internal = {
-        #        from = [ "clients" ];
-        #        to = [ "fw" ];
-        #        extraLines = [
-        #          ''counter log prefix "allow_internal " group 0 accept''
-        #        ];
-        #      };
-        #      wan_ingress = {
-        #        from = [ "wg0" ];
-        #        to = "all";
-        #        ruleType = "policy";
-        #        extraLines = [
-        #          ''counter log prefix "wan_ingress " group 0 ''
-        #        ];
-        #      };
-        #      wan_egress = {
-        #        from = [ "routingClients" ];
-        #        to = [ "wg0" ];
-        #        verdict = "accept";
-        #        late = true;
-        #        masquerade = true;
-        #      };
-        #    };
-        #  };
-        #};
-
         networking.interfaces.eth0.ipv4.routes =
-          [
-            {
-              address = "10.8.70.0";
-              prefixLength = 24;
-              via = hostAddress;
-            }
-          ]
+          routesForNat
           ++ (map (
             cidr:
             let
@@ -293,7 +209,7 @@ in
               };
             }
           ]
-          ++ (map mkProxy proxies)
+          ++ (map mkProxy hostConfig.repo.secrets.local.mullvadProxies)
 
         );
 
