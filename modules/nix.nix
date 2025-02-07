@@ -8,14 +8,6 @@
 }:
 with lib;
 {
-  # https://nix-community.github.io/home-manager/index.html#sec-install-nixos-module
-  # "use the global pkgs that is configured via the system level nixpkgs options"
-  # "This saves an extra Nixpkgs evaluation, adds consistency, and removes the dependency on NIX_PATH,
-  #  which is otherwise used for importing Nixpkgs."
-  home-manager.useGlobalPkgs = true;
-
-  # Configure nix and nixpkgs
-  nixpkgs.config.allowUnfree = true;
   environment.variables.NIXPKGS_ALLOW_UNFREE = "1";
   nix = {
     extraOptions = "experimental-features = nix-command flakes";
