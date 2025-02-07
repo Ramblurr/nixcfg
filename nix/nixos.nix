@@ -70,7 +70,7 @@ let
         flake = inputs.nixpkgs;
       };
     in
-    inputs.nixpkgs.lib.nixosSystem {
+    actual-nixpkgs.lib.nixosSystem {
       inherit system;
       modules =
         [
