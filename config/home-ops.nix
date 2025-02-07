@@ -433,6 +433,8 @@ in
             "vlmgmt9"
             "vlprim4"
           ];
+          networkConfig.LinkLocalAddressing = "no";
+          linkConfig.RequiredForOnline = "carrier";
         };
         "40-${nodeSettings.dataIface}" = {
           matchConfig = {
@@ -450,6 +452,7 @@ in
           matchConfig = {
             Name = "vlprim4";
           };
+          linkConfig.RequiredForOnline = "carrier";
           networkConfig = {
             Bridge = "brprim4";
           };
@@ -458,6 +461,7 @@ in
           matchConfig = {
             Name = "vldata11";
           };
+          linkConfig.RequiredForOnline = "carrier";
           networkConfig = {
             Bridge = "brdata11";
           };
@@ -466,6 +470,7 @@ in
           matchConfig = {
             Name = "vlmgmt9";
           };
+          linkConfig.RequiredForOnline = "carrier";
           networkConfig = {
             Bridge = "brmgmt9";
           };
@@ -475,11 +480,8 @@ in
           matchConfig = {
             Name = "brprim4";
           };
-          networkConfig = {
-            DHCP = "no";
-            Description = "Bridge for primary vlan";
-          };
-
+          networkConfig.LinkLocalAddressing = "no";
+          linkConfig.RequiredForOnline = "carrier";
           extraConfig = ''
             [Network]
             MACVLAN=microvm-self
@@ -516,6 +518,7 @@ in
           matchConfig = {
             Name = "brdata11";
           };
+          linkConfig.RequiredForOnline = "routable";
           networkConfig = {
             DHCP = "no";
             Address = nodeSettings.dataCIDR;
