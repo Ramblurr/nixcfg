@@ -47,6 +47,13 @@ set blocked_discovery_tcp_ports {
   }
 }
 
+set ntp_ports {
+  type inet_service
+  elements = {
+        123
+  }
+}
+
 set http_ports {
   type inet_service
   elements = {

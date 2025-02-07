@@ -213,7 +213,13 @@ let
       # otherwise we block the vpn vlan from talking to the rest of the network
       from = [ zones.vlan_vpn ];
       to = internal_zones ++ [ local_zone ];
-      extraLines = [
+      extraLines = mkRules [
+        {
+          comment = "allow vpn clients to ntp server";
+          destPort = "ntp_ports";
+          destAddr = "router_untagged";
+          proto = [ "udp" ];
+        }
         ''counter log prefix "block_vpn_to_lan " reject with icmpx type no-route comment "Reject VPN traffic not going to Mullvad"''
       ];
     };
