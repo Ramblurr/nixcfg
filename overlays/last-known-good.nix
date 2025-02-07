@@ -38,15 +38,16 @@ in
   #      sha256 = "sha256-vY06PrwFxll2h1uZv3C7rouvTgduL+IP/ZCvvLe12yA=";
   #    }).python312Packages.sip;
   #};
+
   # ref: https://nixpk.gs/pr-tracker.html?pr=370234
   #      https://github.com/NixOS/nixpkgs/pull/370234
   #      https://github.com/beetbox/beets/pull/5566
-  inherit
-    (nixpkgs {
-      rev = "a27925d47cf4641e2f01d854385b505988723b5e";
-      sha256 = "sha256-Ar31/wIvszaIPZyG/8sugnSUExN8XVcl77v80YhnnHQ=";
-      config = self.config;
-    })
-    beets-unstable
-    ;
+  #inherit
+  #  (nixpkgs {
+  #    rev = "a27925d47cf4641e2f01d854385b505988723b5e";
+  #    sha256 = "sha256-Ar31/wIvszaIPZyG/8sugnSUExN8XVcl77v80YhnnHQ=";
+  #    config = self.config;
+  #  })
+  #  beets-unstable
+  #  ;
 }

@@ -21,8 +21,8 @@ in
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
-      python311Packages.netaddr
-      (python311.withPackages (
+      python3Packages.netaddr
+      (python3.withPackages (
         ps: with ps; [
           pip
           pytest

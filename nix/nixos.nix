@@ -75,7 +75,7 @@ let
     actual-nixpkgs.lib.nixosSystem {
       inherit system;
       modules =
-        # Everyhost gets these modules
+        # Every host gets these modules
         defaultModules
         # Some modules are only for stable or unstable hosts
         ++ (if isStable then stableDefaultModules else unstableDefaultModules)
@@ -94,7 +94,6 @@ let
         inherit inputs self;
         mine = nixpkgs-mine;
         nixpkgs = nixpkgs';
-        pkgs = nixpkgs';
         # Since we mix unstable and stable, this allows a module to get a handle on the inputs.(nixpkgs|nixpkgs-unstable) for the host
         actual-nixpkgs = actual-nixpkgs;
         unstable = nixpkgs-unstable;

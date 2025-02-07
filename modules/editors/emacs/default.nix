@@ -20,9 +20,6 @@ in
   };
   config = mkIf cfg.enable {
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
-    nixpkgs.overlays = [
-      inputs.emacs-overlay.overlays.default
-    ];
     environment.wordlist.enable = true;
     myhm =
       { ... }@hm:
@@ -91,8 +88,7 @@ in
           texlive.combined.scheme-medium
           # :lang beancount
           beancount
-          fava
-          (python311.withPackages (
+          (python3.withPackages (
             ps: with ps; [
               virtualenv
               black

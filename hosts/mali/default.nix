@@ -178,7 +178,7 @@ in
     unstable.rsgain
     mktorrent
     tcpdump
-    python311
+    python3
     dosfstools
     smartmontools
     ncdu

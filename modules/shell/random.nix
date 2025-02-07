@@ -105,8 +105,6 @@ in
           alejandra
           nixfmt-rfc-style
           cloudflare-utils
-          inputs.fast-flake-update.packages.${system}.fast-flake-update
-          #inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt
         ];
 
         persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };

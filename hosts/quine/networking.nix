@@ -161,10 +161,8 @@
 
         dhcpServerStaticLeases = [
           {
-            dhcpServerStaticLeaseConfig = {
-              Address = config.repo.secrets.local.workIp;
-              MACAddress = config.repo.secrets.local.workMac;
-            };
+            Address = config.repo.secrets.local.workIp;
+            MACAddress = config.repo.secrets.local.workMac;
           }
         ];
 

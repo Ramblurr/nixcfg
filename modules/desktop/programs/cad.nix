@@ -41,7 +41,8 @@ in
       {
         home.packages = with pkgs; [
           freecad
-          (inputs.cadquery.packages.${pkgs.system}.cq-editor)
+          # BLOCKED: https://github.com/NixOS/nixpkgs/issues/375763
+          #(inputs.cadquery.packages.${pkgs.system}.cq-editor)
           openscad-unstable
           openscad-lsp
         ];

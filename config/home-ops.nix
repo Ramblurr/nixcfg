@@ -165,7 +165,7 @@ in
       htop
       lshw
       ncdu
-      python311
+      python3
       rclone
       ripgrep
       smartmontools
