@@ -12,11 +12,6 @@
     ./desktop/browser/chromium.nix
     ./desktop/browser/firefox.nix
     ./desktop/dynamic-wallpaper.nix
-    ./desktop/hyprland2/ags.nix
-    ./desktop/hyprland2/dconf.nix
-    ./desktop/hyprland2/default.nix
-    ./desktop/hyprland2/hyprland-config.nix
-    ./desktop/hyprland2/theme.nix
 
     ./desktop/hyprland3/dconf.nix
     ./desktop/hyprland3/default.nix
