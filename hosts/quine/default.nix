@@ -6,7 +6,7 @@
   ...
 }:
 let
-  inherit (config.repo.secrets.global) domain;
+  inherit (config.repo.secrets.global) domain lanVpnGateway;
   hn = "quine";
   defaultSopsFile = ./secrets.sops.yaml;
 in
@@ -133,6 +133,7 @@ in
         chrysalis.enable = true;
         discord.enable = true;
         element.enable = true;
+        element.workProxy = "${lanVpnGateway}:1081";
         fritzing.enable = false;
         junction.enable = true;
         kdeconnect.enable = true;
@@ -148,6 +149,7 @@ in
         signal.enable = true;
         slack.enable = true;
         thunderbird.enable = true;
+        thunderbird.workProxy = "${lanVpnGateway}:1081";
         yubico.enable = true;
       };
     };
@@ -180,7 +182,7 @@ in
       };
       docker.enableOnBoot = false;
       podman.enable = true;
-      microsocks.enable = true;
+      microsocks.enable = false;
       printing.enable = true;
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       sshd.enable = true;
@@ -214,7 +216,7 @@ in
     impermanence.enable = true;
     boot.zfs.enable = true;
     boot.zfs.scrubPools = [ "rpool" ];
-    vpn.mullvad.enable = true;
+    vpn.mullvad.enable = false;
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;

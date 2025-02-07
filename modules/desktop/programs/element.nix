@@ -16,6 +16,10 @@ in
 {
   options.modules.desktop.programs.element = {
     enable = lib.mkEnableOption "";
+    workProxy = lib.mkOption {
+      type = types.str;
+      description = "The proxy server to use for the work profile";
+    };
   };
   config = mkIf cfg.enable {
 
@@ -67,8 +71,7 @@ in
             [Desktop Entry]
             Categories=Network;InstantMessaging;Chat
             Comment=Element Work
-            Exec=element-desktop --use-gl=desktop --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
-            #Exec=im.riot.Riot --profile=work --proxy-server=socks5://10.64.0.1:1080 %u
+            Exec=element-desktop --use-gl=desktop --profile=work --proxy-server=socks5://${cfg.workProxy} %u
             GenericName=Matrix Work
             Icon=element
             MimeType=x-scheme-handler/element
@@ -85,7 +88,6 @@ in
             Categories=Network;InstantMessaging;Chat
             Comment=Element Personal
             Exec=element-desktop --profile=personal --use-gl=desktop %u
-            #Exec=im.riot.Riot --profile=personal --proxy-server=socks5://127.0.0.1:1081 %u
             GenericName=Matrix Personal
             Icon=element
             MimeType=x-scheme-handler/element
