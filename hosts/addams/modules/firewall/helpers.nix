@@ -2,7 +2,8 @@
   lib,
   ...
 }:
-{
+
+let
   # Takes the port forwards attrset and returns a list of nft rule strings
   mkPortForwards =
     portForwards:
@@ -134,4 +135,27 @@
       ];
     in
     ''${lib.concatStringsSep " " ruleComponents}'';
+
+  # Converts a list of set rules using setRule, but if a member of rules is a string, passes it through unharmed
+  mkRules = rules: map (rule: if builtins.isString rule then rule else setRule rule) rules;
+
+  prefixStringLines =
+    prefix: str: lib.concatMapStringsSep "\n" (line: prefix + line) (lib.splitString "\n" str);
+
+  indent = prefixStringLines "  ";
+  dropRule = label: {
+    after = lib.mkForce [ "veryLate" ];
+    before = lib.mkForce [ "end" ];
+    rules = lib.singleton ''counter log prefix "default_drop_${label} " reject comment "Default drop rule for ${label} chain"'';
+  };
+in
+{
+  inherit
+    mkPortForwards
+    setRule
+    mkRules
+    prefixStringLines
+    indent
+    dropRule
+    ;
 }
