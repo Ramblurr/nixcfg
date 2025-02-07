@@ -60,6 +60,21 @@
       #};
     };
     networks = {
+      "10-eno2" = {
+        matchConfig.Name = "eno2";
+        linkConfig = {
+          Unmanaged = "yes";
+          ActivationPolicy = "down";
+        };
+      };
+      "10-wifi" = {
+        # This is the builtin wifi
+        matchConfig.Name = "wlp8s0";
+        linkConfig = {
+          Unmanaged = "yes";
+          ActivationPolicy = "down";
+        };
+      };
       "10-eno1" = {
         matchConfig.Name = "eno1";
         vlan = [
@@ -67,6 +82,8 @@
           "vlprim4"
           "vlvpn70"
         ];
+        networkConfig.LinkLocalAddressing = "no";
+        linkConfig.RequiredForOnline = "carrier";
       };
 
       "20-vlprim4" = {
@@ -76,6 +93,7 @@
             "vm-*"
           ];
         };
+        linkConfig.RequiredForOnline = "carrier";
         networkConfig = {
           Bridge = "brprim4";
         };
@@ -85,8 +103,6 @@
         linkConfig.RequiredForOnline = "routable";
         networkConfig = {
           DHCP = "yes";
-          #IPForward = "yes";
-          DNSSEC = "no";
         };
 
         domains = config.repo.secrets.local.dns.domains;
@@ -102,20 +118,16 @@
       "40-vlmgmt9" = {
         matchConfig.Name = "vlmgmt9";
         addresses = map (addr: { Address = addr; }) [ "10.9.8.33/23" ];
+        linkConfig.RequiredForOnline = "routable";
         networkConfig = {
           DHCP = "no";
-          #IPForward = "yes";
-          DNSSEC = "no";
         };
         domains = config.repo.secrets.local.dns.domains;
       };
 
       "20-vlvpn70" = {
-        matchConfig = {
-          Name = [
-            "vlvpn70"
-          ];
-        };
+        matchConfig.Name = "vlvpn70";
+        linkConfig.RequiredForOnline = "carrier";
         networkConfig = {
           Bridge = "brvpn70";
         };
@@ -123,9 +135,9 @@
 
       "30-brvpn70" = {
         matchConfig.Name = "brvpn70";
-        linkConfig.RequiredForOnline = "routable";
+        linkConfig.RequiredForOnline = "carrier";
         networkConfig = {
-          DHCP = "no";
+          LinkLocalAddressing = "no";
         };
       };
 
