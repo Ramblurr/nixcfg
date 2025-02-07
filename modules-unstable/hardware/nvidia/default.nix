@@ -79,15 +79,16 @@ in
         ];
     };
 
-    environment.variables = {
-      # Required to run the correct GBM backend for nvidia GPUs on wayland
-      GBM_BACKEND = "nvidia-drm";
-      # Apparently, without this nouveau may attempt to be used instead
-      # (despite it being blacklisted)
-      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-      # Hardware cursors are currently broken on wlroots
-      WLR_NO_HARDWARE_CURSORS = "1";
-    };
+    # No longer setting these here, and instead setting them on a per-app basis as needed
+    #environment.variables = {
+    #  # Required to run the correct GBM backend for nvidia GPUs on wayland
+    #  GBM_BACKEND = "nvidia-drm";
+    #  # Apparently, without this nouveau may attempt to be used instead
+    #  # (despite it being blacklisted)
+    #  __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+    #  # Hardware cursors are currently broken on wlroots
+    #  WLR_NO_HARDWARE_CURSORS = "1";
+    #};
     environment.systemPackages = [
       pkgs.nvitop
       pkgs.nvtopPackages.nvidia
