@@ -131,8 +131,9 @@ in
         #calibre.enable = true;
         cad.enable = true;
         chrysalis.enable = true;
-        discord.enable = true;
+        discord.enable = false;
         element.enable = true;
+        element.work.enable = true;
         element.workProxy = "${lanVpnGateway}:1081";
         fritzing.enable = false;
         junction.enable = true;
@@ -147,8 +148,9 @@ in
         onepassword.enable = true;
         owncloud.enable = true;
         signal.enable = true;
-        slack.enable = true;
+        slack.enable = false;
         thunderbird.enable = true;
+        thunderbird.work.enable = true;
         thunderbird.workProxy = "${lanVpnGateway}:1081";
         yubico.enable = true;
       };
