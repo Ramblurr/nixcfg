@@ -9,7 +9,7 @@
 let
   cfg = config.modules.desktop.hyprland3;
   username = config.modules.users.primaryUser.username;
-  hyprland = inputs.hyprland.packages.${pkgs.system}.hyprland;
+  hyprland = config.programs.hyprland.package;
 in
 {
 

@@ -52,7 +52,7 @@
           system = "x86_64-linux";
           hostOverlays = [
             (import ../overlays/qemu.nix)
-            inputs.nix-writers.overlays.default
+            #inputs.nix-writers.overlays.default
           ];
         };
         mali = {

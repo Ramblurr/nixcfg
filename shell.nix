@@ -4,11 +4,11 @@
 }:
 let
   packages = with pkgs; [
-    python311
-    python311Packages.passlib
-    python311Packages.ruamel-yaml
-    python311Packages.pyyaml
-    python311Packages.simple-term-menu
+    python3
+    python3Packages.passlib
+    python3Packages.ruamel-yaml
+    python3Packages.pyyaml
+    python3Packages.simple-term-menu
   ];
 in
 pkgs.mkShell {

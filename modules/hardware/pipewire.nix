@@ -64,7 +64,7 @@ in
 
     # Vehemently do not use plain alsa or pulse audio, pipewire has its own alsa and pulse compat support
     #sound.enable = pkgs.lib.mkForce false;
-    hardware.pulseaudio.enable = pkgs.lib.mkForce false;
+    services.pulseaudio.enable = pkgs.lib.mkForce false;
 
     environment.systemPackages = with pkgs; [
       alsa-utils # ignore for now cross-compile problem

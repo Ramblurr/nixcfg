@@ -15,7 +15,7 @@ inputs: [
       beets = prev.beetsPackages.beets-minimal;
     };
     beets-filetote = prev.callPackage ./beets-filetote.nix {
-      poetry-core = prev.python311Packages.poetry-core;
+      poetry-core = prev.python3Packages.poetry-core;
       beets = prev.beetsPackages.beets-minimal;
     };
   })

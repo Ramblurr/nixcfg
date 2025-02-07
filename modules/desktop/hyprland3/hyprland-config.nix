@@ -9,7 +9,7 @@
 let
   cfg = config.modules.desktop.hyprland3;
   username = config.modules.users.primaryUser.username;
-  hyprland = inputs.hyprland.packages.${pkgs.system}.hyprland;
+  hyprland = config.programs.hyprland.package;
   hyprland-emacs = pkgs.writeScriptBin "hyprland-emacs" ''
     if [[ $(hyprctl activewindow -j | jq -r .class) == "emacs" ]]; then
         command="(my/emacs-hypr-integration \"$@\")"

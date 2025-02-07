@@ -59,8 +59,8 @@ in
             kid3
             pdfarranger
             #makemkv
-            xournal
-            fava
+            # BLOCKED: https://github.com/NixOS/nixpkgs/issues/380197
+            #fava
             beancount
             keepassxc
             dex
