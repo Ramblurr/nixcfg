@@ -472,6 +472,7 @@ let
     #    ]
     #  );
     #};
+
     temporary_allow_inter_vlan = {
       from = internal_zones;
       to = internal_zones;
@@ -483,7 +484,6 @@ let
       # I allow my admin devices to go everywhere
       from = internal_zones;
       to = internal_zones ++ [ local_zone ];
-      early = true;
       extraLines = mkRules [
         {
           destPort = "ssh_ports";
