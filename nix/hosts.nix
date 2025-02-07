@@ -12,15 +12,17 @@
         mapAttrs'
         nameValuePair
         ;
-      mkHosts =
-        (import ./nixos.nix {
+      hostHelpers = (
+        import ./nixos.nix {
           inherit
             self
             inputs
             lib
             config
             ;
-        }).mkHosts;
+        }
+      );
+      inherit (hostHelpers) mkHosts;
 
       hosts = {
         debord = {
@@ -63,7 +65,7 @@
     in
     {
       nixosConfigurations = (mkHosts hosts) // {
-        addams-installer = inputs.nixpkgs-unstable.lib.nixosSystem {
+        addams-installer = inputs.nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = {
             targetSystem = inputs.self.nixosConfigurations.addams;

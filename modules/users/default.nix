@@ -130,6 +130,9 @@ in
       useGlobalPkgs = true;
       useUserPackages = true;
       verbose = true;
+      extraSpecialArgs = {
+        inherit inputs;
+      };
       sharedModules = [
         {
           home.stateVersion = lib.mkDefault config.system.stateVersion;
