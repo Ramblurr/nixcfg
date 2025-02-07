@@ -12,6 +12,7 @@ set tailscale_dest_ports {
     5351
   }
 }
+
 set blocked_discovery_ports {
   type inet_service
   elements = {
@@ -34,7 +35,7 @@ set blocked_discovery_ports {
     138,
     # roon
     9003,
-    32768
+    32768,
   }
 }
 
