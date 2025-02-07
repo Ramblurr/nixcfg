@@ -37,7 +37,6 @@ in
         meld
         gimp
         pdfarranger
-        xournal
         qpwgraph # pipewire wiring gui tool
         easyeffects # pipewire eq
       ];

@@ -85,4 +85,6 @@ with lib;
       nvd diff $(ls -dv /nix/var/nix/profiles/system-*-link | tail -2) || true
     '';
   };
+
+  documentation.nixos.enable = false;
 }

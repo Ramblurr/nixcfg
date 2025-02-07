@@ -35,7 +35,8 @@ in
     };
     myhm = {
       home.packages = with pkgs; [
-        jetbrains.idea-ultimate
+        # BLOCKED: https://github.com/NixOS/nixpkgs/issues/380196
+        #jetbrains.idea-ultimate
         #jetbrains.datagrip
         #jetbrains.gateway
         #jetbrains.clion
