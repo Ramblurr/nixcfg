@@ -6,7 +6,6 @@
   inputs,
   ...
 }:
-with lib;
 let
   cfg = config.modules.desktop.programs.element;
   username = config.modules.users.primaryUser.username;
@@ -16,28 +15,33 @@ in
 {
   options.modules.desktop.programs.element = {
     enable = lib.mkEnableOption "";
+    work.enable = lib.mkEnableOption "";
     workProxy = lib.mkOption {
-      type = types.str;
+      type = lib.types.str;
       description = "The proxy server to use for the work profile";
     };
   };
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
-    systemd.tmpfiles.rules = mkIf withImpermanence [
-      "d '/persist${homeDirectory}/.config/iamb' - ${username} ${username} - -"
-      "d '/persist${homeDirectory}/.config/Element' - ${username} ${username} - -"
-      "d '/persist${homeDirectory}/.config/Element-work' - ${username} ${username} - -"
-      "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
-    ];
+    systemd.tmpfiles = lib.mkIf withImpermanence {
+      rules =
+        [
+          "d '/persist${homeDirectory}/.config/iamb' - ${username} ${username} - -"
+          "d '/persist${homeDirectory}/.config/Element' - ${username} ${username} - -"
+          "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
+        ]
+        ++ (lib.optionals cfg.work.enable [
+          "d '/persist${homeDirectory}/.config/Element-work' - ${username} ${username} - -"
+        ]);
+    };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
+    environment.persistence."/persist" = lib.mkIf withImpermanence {
       users.${username} = {
         directories = [
           ".config/Element"
-          ".config/Element-work"
           ".config/Element-personal"
           ".config/iamb"
-        ];
+        ] ++ lib.optionals cfg.work.enable [ ".config/Element-work" ];
       };
     };
     home-manager.users."${username}" =
@@ -49,24 +53,7 @@ in
           pkgs.iamb
         ];
 
-        #home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        #  directories = [
-        #    {
-        #      method = "symlink";
-        #      directory = ".config/Element";
-        #    }
-        #    {
-        #      method = "symlink";
-        #      directory = ".config/Element-work";
-        #    }
-        #    {
-        #      method = "symlink";
-        #      directory = ".config/Element-personal";
-        #    }
-        #    ".config/iamb"
-        #  ];
-        #};
-        home.file.".local/share/applications/element-desktop-work.desktop" = {
+        home.file.".local/share/applications/element-desktop-work.desktop" = lib.mkIf cfg.work.enable {
           text = ''
             [Desktop Entry]
             Categories=Network;InstantMessaging;Chat
