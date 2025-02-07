@@ -353,6 +353,12 @@ let
           destPort = "homeassistant_shelly_ports";
           srcAddr = "shellys";
         }
+        {
+          comment = "allow ha voices to homeasssistant";
+          destAddr = "homeassistant";
+          destPort = "homeassistant_ports";
+          srcAddr = "havoice";
+        }
 
         # block everything else
         ''counter log prefix "iot_trusted_block " reject with icmpx type admin-prohibited comment "Drop all other iot/not traffic to trusted zones"''

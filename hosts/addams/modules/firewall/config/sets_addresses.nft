@@ -66,6 +66,15 @@ set shellys {
   }
 }
 
+set havoice {
+  type ipv4_addr
+  elements = {
+    10.8.60.52, # havoice1
+    10.8.60.53, # havoice2
+    10.8.60.54  # havoice3
+  }
+}
+
 set esphome {
   type ipv4_addr
   elements = {
@@ -75,6 +84,7 @@ set esphome {
     10.8.60.48
   }
 }
+
 set wled {
   type ipv4_addr
   elements = {
