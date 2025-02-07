@@ -12,10 +12,18 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+
+  proxyParts = lib.splitString ":" cfg.workProxy;
+  proxyAddr = builtins.elemAt proxyParts 0;
+  proxyPort = builtins.elemAt proxyParts 1;
 in
 {
   options.modules.desktop.programs.thunderbird = {
     enable = lib.mkEnableOption "";
+    workProxy = lib.mkOption {
+      type = types.str;
+      description = "The proxy server to use for the work profile";
+    };
   };
   config = mkIf cfg.enable {
     environment.persistence."/persist" = mkIf withImpermanence {
@@ -36,8 +44,8 @@ in
             work = {
               withExternalGnupg = true;
               settings = {
-                "network.proxy.socks" = "10.64.0.1";
-                "network.proxy.socks_port" = 1080;
+                "network.proxy.socks" = proxyAddr;
+                "network.proxy.socks_port" = proxyPort;
                 "network.proxy.socks_remote_dns" = true;
                 "network.proxy.type" = 1;
               };

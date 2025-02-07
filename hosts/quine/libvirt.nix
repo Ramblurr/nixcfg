@@ -10,6 +10,7 @@
     allowedBridges = [
       "virbr0"
       "brprim4"
+      "brvpn70"
     ];
   };
   #services.nfs.server.enable = true;
