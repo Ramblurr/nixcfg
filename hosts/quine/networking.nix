@@ -51,6 +51,13 @@
           MTUBytes = "1500";
         };
       };
+      "30-brwork" = {
+        netdevConfig = {
+          Name = "brwork";
+          Kind = "bridge";
+          MTUBytes = "1500";
+        };
+      };
 
       #"30-virbr0" = {
       #  netdevConfig = {
@@ -112,6 +119,7 @@
           {
             Destination = "192.168.8.0/22";
             Gateway = "10.9.4.21";
+            GatewayOnLink = true;
           }
         ];
       };
@@ -138,6 +146,33 @@
         linkConfig.RequiredForOnline = "carrier";
         networkConfig = {
           LinkLocalAddressing = "no";
+        };
+      };
+      "30-brwork" = {
+        matchConfig.Name = "brwork";
+        linkConfig.RequiredForOnline = "no";
+        addresses = [
+          config.repo.secrets.local.workBridgeAddress
+        ];
+        networkConfig = {
+          ConfigureWithoutCarrier = true;
+          DHCPServer = "yes";
+        };
+
+        dhcpServerStaticLeases = [
+          {
+            dhcpServerStaticLeaseConfig = {
+              Address = config.repo.secrets.local.workIp;
+              MACAddress = config.repo.secrets.local.workMac;
+            };
+          }
+        ];
+
+        dhcpServerConfig = {
+          PoolOffset = 100;
+          PoolSize = 50;
+          EmitDNS = "no";
+          EmitRouter = "no";
         };
       };
 
