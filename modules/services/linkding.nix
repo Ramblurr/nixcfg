@@ -75,7 +75,7 @@ in
         homeManagerSessionVars = "";
       in
       {
-        imports = [ inputs.quadlet-nix.homeManagerModules.default ];
+        imports = [ inputs.quadlet-nix.homeManagerModules.quadlet ];
         home.stateVersion = "21.11";
         home.homeDirectory = homeDir;
         home.packages = [ pkgs.podman ];
@@ -91,7 +91,7 @@ in
             [[ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
           '';
         };
-        virtualisation.user.quadlet = {
+        virtualisation.quadlet = {
           autoUpdate.enable = true;
           containers = {
             linkding = {
