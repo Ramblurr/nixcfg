@@ -21,6 +21,7 @@ let
 
   defaultOverlays = [
     inputs.nixos-extra-modules.overlays.default
+    inputs.emacs-overlay.overlays.default
     (import ../lib inputs)
     (import ../overlays/last-known-good.nix)
     (import ../overlays/roon-server.nix)
@@ -37,9 +38,6 @@ let
       inherit system overlays;
       config.allowUnfree = true;
       config.permittedInsecurePackages = [
-        #"electron-25.9.0"
-        #"electron-24.8.6"
-        #"electron-27.3.11"
         "olm-3.2.16"
       ];
     };
@@ -54,7 +52,7 @@ let
     }:
     let
       allOverlays = hostOverlays ++ defaultOverlays;
-      actual-nixpkgs = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs-unstable;
+      actual-nixpkgs = if isStable then inputs.nixpkgs-stable else inputs.nixpkgs;
       actual-home-manager = if isStable then inputs.home-manager-stable else inputs.home-manager;
       nixpkgs' = mkPkgs {
         inherit system;
@@ -69,32 +67,30 @@ let
       nixpkgs-unstable = mkPkgs {
         inherit system;
         overlays = allOverlays;
-        flake = inputs.nixpkgs-unstable;
+        flake = inputs.nixpkgs;
       };
     in
-    actual-nixpkgs.lib.nixosSystem {
+    inputs.nixpkgs.lib.nixosSystem {
       inherit system;
       modules =
-        # Every host gets these modules
-        defaultModules
-        # Some modules are only for stable or unstable hosts
-        ++ (if isStable then stableDefaultModules else unstableDefaultModules)
-        ++ [
+        [
+          #inputs.nixpkgs.nixosModules.readOnlyPkgs
           {
             networking.hostName = lib.mkDefault name;
             node.secretsDir = ../hosts/${name}/secrets;
-            nixpkgs.overlays = allOverlays;
+            nixpkgs.pkgs = nixpkgs';
           }
           ../hosts/${name}
           actual-home-manager.nixosModules.home-manager
         ]
+        ++ defaultModules
+        ++ lib.optionals isStable stableDefaultModules
+        ++ lib.optionals (!isStable) unstableDefaultModules
         ++ hostExtraModules;
 
       specialArgs = {
         inherit inputs self;
         mine = nixpkgs-mine;
-        nixpkgs = nixpkgs';
-        # Since we mix unstable and stable, this allows a module to get a handle on the inputs.(nixpkgs|nixpkgs-unstable) for the host
         actual-nixpkgs = actual-nixpkgs;
         unstable = nixpkgs-unstable;
         lib = nixpkgs'.lib;
@@ -103,6 +99,7 @@ let
 
 in
 {
+  inherit mkPkgs;
 
   mkHosts =
     hosts:
