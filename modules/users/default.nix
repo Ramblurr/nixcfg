@@ -144,7 +144,6 @@ in
         imports = [
           inputs.impermanence.nixosModules.home-manager.impermanence
           inputs.sops-nix.homeManagerModule
-          inputs.ags.homeManagerModules.default
           (mkAliasOptionModule [ "persistence" ] [
             "home"
             "persistence"
