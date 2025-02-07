@@ -30,6 +30,7 @@ in
   sops.defaultSopsFile = ./secrets.sops.yaml;
   modules.networking.default.hostName = hn;
 
+  networking.firewall.logRefusedConnections = lib.mkForce true;
   modules.vpn.tailscale.enable = true;
   modules.vpn.tailscale.useRoutingFeatures = "both";
   home-ops = {
