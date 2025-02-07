@@ -21,9 +21,6 @@
     #caddy.url = "github:Ramblurr/nixos-caddy";
     #caddy.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
-    ags.url = "github:Aylur/ags";
-    ags.inputs.nixpkgs.follows = "nixpkgs-unstable";
-
     firefox-gnome-theme.url = "github:rafaelmardojai/firefox-gnome-theme";
     firefox-gnome-theme.flake = false;
 
@@ -37,7 +34,8 @@
     #radicle.inputs.nixpkgs.follows = "nixpkgs-unstable";
     #radicle.inputs.flake-utils.follows = "flake-utils";
 
-    quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
+    #quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
+    quadlet-nix.url = "github:SEIAROTg/quadlet-nix/main";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     nix-writers.url = "git+https://cgit.krebsco.de/nix-writers";
@@ -76,7 +74,7 @@
     hyprland = {
       type = "git";
       url = "https://github.com/hyprwm/Hyprland";
-      ref = "refs/tags/v0.44.1";
+      ref = "refs/tags/v0.47.2";
       submodules = true;
     };
 
