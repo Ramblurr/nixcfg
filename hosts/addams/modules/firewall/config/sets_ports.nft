@@ -192,6 +192,7 @@ set homeassistant_shelly_ports {
   elements = { 8123, 5683, 5353 }
 }
 
+
 set syncthing_ports {
   type inet_service
   elements = { 22000, 21027 }
