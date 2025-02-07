@@ -35,6 +35,23 @@
         };
       };
 
+      "20-vlvpn70" = {
+        netdevConfig = {
+          Kind = "vlan";
+          Name = "vlvpn70";
+        };
+        vlanConfig = {
+          Id = 70;
+        };
+      };
+      "30-brvpn70" = {
+        netdevConfig = {
+          Name = "brvpn70";
+          Kind = "bridge";
+          MTUBytes = "1500";
+        };
+      };
+
       #"30-virbr0" = {
       #  netdevConfig = {
       #    Kind = "bridge";
@@ -48,6 +65,7 @@
         vlan = [
           "vlmgmt9"
           "vlprim4"
+          "vlvpn70"
         ];
       };
 
@@ -91,6 +109,26 @@
         };
         domains = config.repo.secrets.local.dns.domains;
       };
+
+      "20-vlvpn70" = {
+        matchConfig = {
+          Name = [
+            "vlvpn70"
+          ];
+        };
+        networkConfig = {
+          Bridge = "brvpn70";
+        };
+      };
+
+      "30-brvpn70" = {
+        matchConfig.Name = "brvpn70";
+        linkConfig.RequiredForOnline = "routable";
+        networkConfig = {
+          DHCP = "no";
+        };
+      };
+
       #"4-virbr0" = {
       #  matchConfig.Name = "virbr0";
       #  enable = true;
