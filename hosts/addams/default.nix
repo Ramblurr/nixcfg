@@ -31,6 +31,7 @@ in
     #./modules/maddy.nix
     ./modules/udpbroadcastrelay.nix
     ./modules/mullvad-gateway.nix
+    ./modules/ntopng.nix
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
