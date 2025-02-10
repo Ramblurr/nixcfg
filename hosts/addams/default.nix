@@ -42,6 +42,7 @@ in
 
   environment.systemPackages = with pkgs; [
     tcpdump
+    iperf3
     pdns
   ];
 

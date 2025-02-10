@@ -102,7 +102,7 @@ in
         system.stateVersion = "24.11";
         nixpkgs.pkgs = hostPkgs; # reuse host pkgs for overlays and evaluation speed
         networking.useHostResolvConf = lib.mkForce false;
-        services.resolved.enable = true;
+        services.resolved.enable = false;
         networking.firewall.enable = true;
         networking.firewall.checkReversePath = "loose";
         networking.firewall.allowPing = true;
@@ -192,10 +192,12 @@ in
                     fi
 
                     ${mullvad} relay set tunnel-protocol wireguard
-                    ${mullvad} relay set location ${defaultLocation}
+                    ${mullvad} tunnel set wireguard --quantum-resistant off
                     ${mullvad} auto-connect set on
-                    ${mullvad} lockdown-mode set on
+                    ${mullvad} lockdown-mode set off
+                    ${mullvad} obfuscation set mode off
                     ${mullvad} lan set allow
+                    ${mullvad} relay set location ${defaultLocation}
                     ${mullvad} connect
                   '';
                 };
