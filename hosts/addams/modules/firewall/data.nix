@@ -100,13 +100,13 @@ let
     roonArc = {
       priority = 103;
       interfaces = wan_interfaces;
-      protocols = [ "udp" ];
+      protocols = [ "tcp" ];
       destination.port = 33399;
       translation = {
         address = "10.9.8.14";
         port = 33399;
       };
-      comment = "Roon ARC UDP";
+      comment = "Roon ARC";
     };
 
     zreplMali1 = {
@@ -145,7 +145,7 @@ let
     #};
   };
   rules = {
-    wan_ingress = {
+    wan_to_lan_ingress = {
       from = [ zones.wan ];
       to = "all";
       ruleType = "policy";
@@ -154,6 +154,8 @@ let
           comment = "allow roon arc";
           destPort = "roon_arc_ports";
           destAddr = "home_ops_ingress";
+          proto = [ "tcp" ];
+          extra = [ "counter" ];
         }
         {
           comment = "allow mali replication";
@@ -165,7 +167,22 @@ let
           destPort = "plex_server_ports";
           destAddr = "home_ops_ingress";
         }
-        ''counter drop''
+        # ''counter drop''
+        ''counter log prefix "wan_ingress " drop''
+      ];
+    };
+
+    wan_ingress = {
+      from = "all";
+      to = [
+        zones.wan
+        local_zone
+      ];
+      extraLines = mkRules [
+        {
+          comment = "allow plex";
+          destPort = "plex_server_ports";
+        }
       ];
     };
 
@@ -392,20 +409,6 @@ let
         {
           comment = "allow syncthing";
           destPort = "syncthing_ports";
-        }
-      ];
-    };
-
-    plex = {
-      from = "all";
-      to = [
-        zones.wan
-        local_zone
-      ];
-      extraLines = mkRules [
-        {
-          comment = "allow plex";
-          destPort = "plex_server_ports";
         }
       ];
     };
