@@ -50,4 +50,22 @@ in
   #  })
   #  beets-unstable
   #  ;
+  inherit
+    (nixpkgs {
+      rev = "07f09fcbbb58ae91af01f451aea51b6b5a12b21f";
+      sha256 = "sha256-Jw5cmJ7PvNMytGtkeN6yPTJ3+eUhE4dcU9d8WR+8fWo=";
+      config = self.config;
+    })
+    mullvad
+    ;
+
+  inherit
+    (nixpkgs {
+      rev = "b71d04bcc6b5a5526ed493e1c8dda89c9d381e7f";
+      sha256 = "sha256-mvHR8I9HMr0inknIPOxzwHYAj2wk61LEEy1Ju1ISt24=";
+      config = self.config;
+    })
+    ntopng
+    ;
+
 }
