@@ -502,6 +502,11 @@ let
           srcAddr = "admin";
           comment = "allow admin access";
         }
+        {
+          destPort = "admin_ports";
+          srcAddr = "admin";
+          comment = "allow admin access";
+        }
       ];
     };
   };
