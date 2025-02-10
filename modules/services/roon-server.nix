@@ -48,7 +48,6 @@ in
         33399 # Roon ARC
       ];
       allowedUDPPorts = [
-        33399 # Roon ARC
         9003
       ];
       allowedTCPPortRanges = [
