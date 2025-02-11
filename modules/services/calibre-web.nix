@@ -90,7 +90,7 @@ in
       CapabilityBoundingSet = "";
       AmbientCapabilities = "";
       MemoryDenyWriteExecute = true;
-      UMask = "0077";
+      UMask = "0002";
       RestrictAddressFamilies = [
         "AF_UNIX"
         "AF_INET"
