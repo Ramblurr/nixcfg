@@ -68,4 +68,23 @@ in
     ntopng
     ;
 
+  # ref: https://nixpk.gs/pr-tracker.html?pr=380045
+  inherit
+    (nixpkgs {
+      rev = "06f9bc9aa688754d9e7cd72ef21e38ced1c5748b";
+      sha256 = "sha256-ZVdi1juNUXY8O9Sa3JUYapbpFoGA9UI+C5gEKwtnl9Q=";
+      config = self.config;
+    })
+    sonarr
+    ;
+
+  # ref: https://nixpk.gs/pr-tracker.html?pr=377988
+  inherit
+    (nixpkgs {
+      rev = "5bff874fd63b4c972c289a4f3ca30a7f90d17420";
+      sha256 = "sha256-01hwIoQDMKTSOAp0i0GpCOXhdVxyav5NurRHKk0vOAc=";
+      config = self.config;
+    })
+    authentik
+    ;
 }

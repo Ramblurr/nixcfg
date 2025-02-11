@@ -57,7 +57,7 @@ in
     };
     services.authentik = {
       enable = true;
-      package = mine.authentik;
+      package = pkgs.authentik;
       logLevel = "info";
       listen.address = "127.0.0.1";
       listen.http = cfg.ports.http;

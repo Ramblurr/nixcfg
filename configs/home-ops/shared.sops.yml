@@ -13,7 +13,7 @@ authentik:
 paperless:
     adminPassword: ENC[AES256_GCM,data:l2LBGcEGJrY7utZlFZwb31+8syU=,iv:ptypm68YwYRcCKmBUXfVlfWTbYY0xGGF66QqZ5z3iFI=,tag:79hilJKk++0WwL7Hfuf92A==,type:str]
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
-gickup.yaml: ENC[AES256_GCM,data:FCjF4fcVlxH+fM2trQiZn+VDnx93fmNGIQ6cMQMWOhjb+Yh/DpL026iM7VLOcS0wH7wbpIIEiqcrHfJHz+U6J9t+op+qwsFIVUxAcVt5ZSInmB4rGxTvU+lLEFPYV6CxfPiDlD0ERfExAf/g4NKCZ4fEsAW/5Hx/uuePtVzIQxszgvnQCyaes1bEyhztVGpb22Urr0RdofhmuaSKIlVwvGvTa3+Dbqa5aAXm+6/rL4rBvTryzmEak3rTuKfEgDYuTozH0FNRcAyqAKIeXuZ5W6rQzsy0atbz60Y+mVrVdD/1VVitX9HPPAv0tvNFAfvVT9P7NqeyZ8laEqsy8OmX2wtHYwyyLMep9C5Z2+9gYltLLKk8Z8KRnKAUBtils/Uo4/VGcJGc3W7o1pi9D8iwv8Zd1+NbbtADgeKTmEJYJ6/aUUWagK8mOFgrZwzJyYCWcwpkfkk2iaz/CfcLDPFpLPRFXxXGsLUtqkOyuCFP6Bg2TeSiLP95WQbI4d6fkcCJv+NClqsUF2D9b38Q2t8KQUfMOgz6mHuAdhdPEolKSjoqXVz5wVbmgxgoqFYubWmOBMDQ9PVWCXyOe2/eaERqsQxqLz00BDlZivYvcLokaxTxZllao1mqPWdpm6TrLgmCy5+1v3ulk/N0,iv:V5VOEb7qOP73pAwMFU5vt8t4YguiS/NCXqejmdyJnIE=,tag:gAjB47ZU7XVKQ7U7nkHkhQ==,type:str]
+gickup.yaml: ENC[AES256_GCM,data:hiNpgfyYywRBc2MyVBxihzlq2qPGuOX2oZ7vXLuxMTdjO0HbMJXmXo4gq/2J4jBxMNUAXBLv1lcfSLTEJY2SYHKoQOeu+ShYA1/DzFxdvcfI18y+gQC8gZuii7LlPqdAL5ADlulkxc4cmvoXefsNV18WnSdn393Lt7qFXF+Uw1KsRqijhrNHSOp68k3BE8im7zLW5BkOLsuTPlS+l7FmqnGOGFHIhI8bTql5Mf7+uy2YkBL/faSBpBrfwDOAX5sYjLSCdHQPVQv2VveWWxSaIKZnTTmVgVi2nVapwpkUQvhNOKLpebieulgd4jxI+KkfbpHoC15S1KYPhBUFsuj9CxtTxtMlMCDytYoqWTW7lnj/QpHPiNBGz5ET/MvtYPbcFR3UAWJvGSSU3THgbX6Gc9lxsXRt9qbPVmna4FBeWUru5uWZnNzGiUjl06Bfl0zywyhZuN+p7pLHFhEQ0Is04CfmPZC9OwdLT7t/qkR2TkJ1b7XKxTpx1XFozajlArjE84OU4lv7rxzyfe+PrufuKcQ16PLr9Ya2WSbgwAQyNXwreJiO1lGuVMsW1Ypa+OGkF6QDSTqJevnEZSpXP8Gd8pjMcA1JWAhDx/4uxcuoi5nHfI10e6rJj5WK8rQ4FpPXuxkhE3Mq5Mi8,iv:IlgU97zqFlwP3barPmwojWO4XnxV+XarW50L39MhOBc=,tag:OnKYHfe1U85+gaNU1pWiNg==,type:str]
 sops:
     kms: []
     gcp_kms: []
@@ -74,8 +74,8 @@ sops:
             VUR5MzJNZnFsc0w5Yyt6TUF4ZjFha2MKsamWU4y8kfBP0l+Zgr5PoWZcnVZ/0flX
             bj0iQ5DolwtL25UyG7K0ruFt5c4wvGS/KyJ06z4ohxjO8AfjOeOpUw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2024-04-24T07:21:09Z"
-    mac: ENC[AES256_GCM,data:bCPMlxP+reRqE865qTZASUWGaDwXqOu8pCj6jBmn3MNvKxDPgq7s9yVEJ8AqYyixn1u/P+A60YPxl1EUn8rf5rv62oIaY8CZbiLFDZfjKbUMZVeWiKbMs7mJdCSaWorgxma9PE5nXODB+5MqE2xIXqeuOsU0Ik/jWNnYEP9qW60=,iv:hG6bkwFLf4PHI1StqckeD0Kln+I+/9p/KxXGqKxvnIQ=,tag:nP1KirNtr3jM10jVgOGGNA==,type:str]
+    lastmodified: "2025-02-11T11:15:04Z"
+    mac: ENC[AES256_GCM,data:8/Gh5H2HMl7V8n2qc+lXEDfgEhmsMDCWwsn5W2EUSg8qbTxhH0M/T83P/E+bLqLgLHXMOaA76QBAoPNCG4rD7x840ye0ojxvYuS7cvFixiWIy2/gIVRTsvRqOmMbAyI5I8nH2/5I+PxwjoYD5H5/sCL1KWzioSFA3hFh9Uu+eYE=,iv:rmlfA1CI7oCGfsRLLNaRJl9RrV7AB/q7ki4+3RQ3MVg=,tag:ET3AqXVpjOXgUdH9FmVxMw==,type:str]
     pgp:
         - created_at: "2024-04-08T13:09:05Z"
           enc: |-
@@ -99,4 +99,4 @@ sops:
             -----END PGP MESSAGE-----
           fp: 978C4D08058BA26EB97CB51820782DBCACFAACDA
     unencrypted_suffix: _unencrypted
-    version: 3.8.1
+    version: 3.9.4

@@ -132,9 +132,7 @@ in
       mode = "400";
     };
 
-    # use mimalloc to improve the memory situation with synapse
     systemd.services.matrix-synapse.environment = {
-      LD_PRELOAD = "${pkgs.mimalloc}/lib/libmimalloc.so";
       SYNAPSE_CACHE_FACTOR = "1.0";
       LimitNOFILE = "4096";
     };
