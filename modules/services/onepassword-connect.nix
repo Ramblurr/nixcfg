@@ -106,7 +106,7 @@ in
             image = "docker.io/1password/connect-api:1.7.3";
             environments = {
               XDG_DATA_HOME = "/config";
-              OP_BUS_PORT = 11220;
+              OP_BUS_PORT = "11220";
               OP_BUS_PEERS = "localhost:11221";
               OP_SESSION = "/config/1password-credentials.json";
             };
@@ -131,8 +131,8 @@ in
             image = "docker.io/1password/connect-sync:1.7.3";
             environments = {
               XDG_DATA_HOME = "/config";
-              OP_BUS_PORT = 11221;
-              OP_HTTP_PORT = 8081;
+              OP_BUS_PORT = "11221";
+              OP_HTTP_PORT = "8081";
               OP_BUS_PEERS = "localhost:11220";
               OP_SESSION = "/config/1password-credentials.json";
             };

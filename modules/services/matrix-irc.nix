@@ -7,7 +7,6 @@
 let
   cfg = config.modules.services.matrix-synapse.bridges.irc;
   rootCfg = config.modules.services.matrix-synapse;
-  service = "matrix-synapse";
   dataDir = "${rootCfg.dataDir}/mautrix-irc";
 in
 {
@@ -21,11 +20,7 @@ in
     };
 
     systemd.services.heisenbridge = {
-      after = [
-        "network.target"
-        "matrix-synapse.service"
-      ];
-      bindsTo = [ "matrix-synapse.service" ];
+      before = [ "matrix-synapse.service" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Restart = "on-failure";
