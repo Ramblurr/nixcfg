@@ -59,7 +59,6 @@
     ./dev/random.nix
     ./editors/emacs/default.nix
     ./editors/vim.nix
-    ./editors/vscode/default.nix
     ./firewall/default.nix
     ./hardware/misc.nix
     ./hardware/pipewire.nix
