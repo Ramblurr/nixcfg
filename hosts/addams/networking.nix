@@ -15,6 +15,12 @@
     domain = config.repo.secrets.global.domain.home;
     useDHCP = false;
   };
+
+  sops.secrets."wg1/privateKey" = {
+    owner = "root";
+    group = "systemd-network";
+    mode = "0640";
+  };
   systemd.network = {
     enable = true;
 
@@ -30,7 +36,13 @@
       ];
     };
 
-    config.routeTables.vpn = 200;
+    config = {
+      routeTables.vpn = 200;
+      networkConfig = {
+        IPv4Forwarding = true;
+        IPv6Forwarding = true;
+      };
+    };
 
     links = {
       # rename all interface names to be easier to identify
@@ -53,33 +65,94 @@
         linkConfig.Name = "lan1";
       };
     };
-    netdevs = lib.flip lib.concatMapAttrs config.repo.secrets.local.vlan (
-      vlanName: vlanCfg: {
-        "30-vlan-${vlanName}" = {
+    netdevs =
+      {
+        "30-gre1" = {
           netdevConfig = {
-            Kind = "vlan";
-            Name = vlanCfg.iface;
-            MTUBytes = if vlanCfg ? mtu then vlanCfg.mtu else "1500";
+            Kind = "gre";
+            Name = "gre1";
+            MTUBytes = "1480";
           };
-          vlanConfig.Id = vlanCfg.id;
+          tunnelConfig = {
+            Local = lib.my.cidrToIp config.repo.secrets.local.wan0.cidr;
+            Remote = config.repo.secrets.local.gre.endpoint;
+          };
         };
-
-        # Create a MACVTAP on the router, so that it can communicate with
-        # its virtualized guests on the same interface.
-        "40-me-${vlanName}" = {
+        "30-wg1" = {
+          enable = false;
           netdevConfig = {
-            Name = "me-${vlanName}";
-            Kind = "macvlan";
+            Kind = "wireguard";
+            Name = "wg1";
+            MTUBytes = "1400";
           };
-          extraConfig = ''
-            [MACVLAN]
-            Mode=bridge
-          '';
+          wireguardConfig = {
+
+            PrivateKeyFile = config.sops.secrets."wg1/privateKey".path;
+            ListenPort = 51820;
+          };
+          wireguardPeers = [
+            {
+              inherit (config.repo.secrets.local.wg1) Endpoint PublicKey AllowedIPs;
+            }
+          ];
         };
       }
-    );
+      // lib.flip lib.concatMapAttrs config.repo.secrets.local.vlan (
+        vlanName: vlanCfg: {
+          "30-vlan-${vlanName}" = {
+            netdevConfig = {
+              Kind = "vlan";
+              Name = vlanCfg.iface;
+              MTUBytes = if vlanCfg ? mtu then vlanCfg.mtu else "1500";
+            };
+            vlanConfig.Id = vlanCfg.id;
+          };
+
+          # Create a MACVTAP on the router, so that it can communicate with
+          # its virtualized guests on the same interface.
+          "40-me-${vlanName}" = {
+            netdevConfig = {
+              Name = "me-${vlanName}";
+              Kind = "macvlan";
+            };
+            extraConfig = ''
+              [MACVLAN]
+              Mode=bridge
+            '';
+          };
+        }
+      );
     networks =
       {
+        # gre
+        "30-gre1" = {
+          matchConfig.Name = "gre1";
+          address = [
+            config.repo.secrets.local.gre.local
+            config.repo.secrets.local.gre.ipv6Address
+          ];
+          routes = [
+            {
+              Destination = "::/0";
+              Gateway = config.repo.secrets.local.gre.ipv6Gateway;
+              GatewayOnLink = true;
+            }
+          ];
+        };
+
+        # wg1
+        "30-wg1" = {
+          enable = false;
+          matchConfig.Name = "wg1";
+          address = [ config.repo.secrets.local.wg1.Address ];
+          #routes = [
+          #  {
+          #    Destination = "::/0";
+          #    Gateway = config.repo.secrets.local.wg1.Gateway;
+          #    GatewayOnLink = true;
+          #  }
+          #];
+        };
         # Disabled interfaces
         "30-lan1" = {
           matchConfig.Name = "lan1";
@@ -179,14 +252,25 @@
             );
             addresses = lib.optionals (vlanCfg ? addresses) vlanCfg.addresses;
             matchConfig.Name = "me-${vlanName}";
-            networkConfig = {
-              IPv4Forwarding = "yes";
-              MulticastDNS = true;
-              DHCPServer = false;
-            } // lib.optionalAttrs (vlanCfg ? networkConfig) vlanCfg.networkConfig;
+            networkConfig =
+              {
+                IPv4Forwarding = "yes";
+                MulticastDNS = true;
+                DHCPServer = false;
+              }
+              // lib.optionalAttrs ((vlanCfg ? ipv6) && vlanCfg.ipv6.enable) {
+                IPv6SendRA = true;
+                IPv6Forwarding = true;
+              }
+              // lib.optionalAttrs (vlanCfg ? networkConfig) vlanCfg.networkConfig;
             routes = lib.optionals (vlanCfg ? routes) vlanCfg.routes;
             routingPolicyRules = lib.optionals (vlanCfg ? routingPolicyRules) vlanCfg.routingPolicyRules;
             linkConfig.RequiredForOnline = "routable";
+            ipv6Prefixes = lib.optionals ((vlanCfg ? ipv6) && vlanCfg.ipv6.enable) [
+              {
+                ipv6PrefixConfig.Prefix = vlanCfg.ipv6.prefix;
+              }
+            ];
           };
         }
       );
