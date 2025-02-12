@@ -42,6 +42,8 @@ in
 
   environment.systemPackages = with pkgs; [
     tcpdump
+    wireguard-tools
+    inetutils
     iperf3
     pdns
   ];

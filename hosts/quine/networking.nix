@@ -110,6 +110,7 @@
         linkConfig.RequiredForOnline = "routable";
         networkConfig = {
           DHCP = "yes";
+          IPv6AcceptRA = true;
         };
 
         domains = config.repo.secrets.local.dns.domains;

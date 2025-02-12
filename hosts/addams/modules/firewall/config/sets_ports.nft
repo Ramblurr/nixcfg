@@ -65,7 +65,7 @@ set http_ports {
 set admin_ports {
   type inet_service
   elements = {
-    3000 # ntopng
+    3000, # ntopng
   }
 }
 set ssh_ports {

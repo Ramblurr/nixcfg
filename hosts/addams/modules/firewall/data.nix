@@ -44,6 +44,8 @@ let
   # Begin my actual config data
   # ──────────────────────────────────────────────────────────────────
   zone_defs = {
+    wg1.interfaces = [ "wg1" ];
+    gre1.interfaces = [ "gre1" ];
     wan.interfaces = [ config.repo.secrets.local.wan0.iface ];
     untagged.interfaces = [ config.repo.secrets.local.untagged.iface ];
     mullvad.interfaces = [ "ve-mullvad" ];
@@ -167,6 +169,11 @@ let
           destPort = "plex_server_ports";
           destAddr = "home_ops_ingress";
         }
+        {
+          destPort = "wireguard_ports";
+          comment = "allow wireguard";
+          extra = [ "counter" ];
+        }
         # ''counter drop''
         ''counter log prefix "wan_ingress " drop''
       ];
@@ -183,6 +190,11 @@ let
           comment = "allow plex";
           destPort = "plex_server_ports";
         }
+        {
+          destPort = "wireguard_ports";
+          comment = "allow wireguard2";
+          extra = [ "counter" ];
+        }
       ];
     };
 
@@ -192,6 +204,15 @@ let
       verdict = "accept";
       late = true;
       masquerade = true;
+    };
+
+    wan_ipv6_egress = {
+      from = [ zones.vlan_prim ];
+      to = [
+        zones.wg1
+        zones.gre1
+      ];
+      verdict = "accept";
     };
 
     lan_to_mullvad = {
