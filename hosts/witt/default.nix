@@ -166,7 +166,6 @@ in
           gruvbox-community
         ];
       };
-      vscode.enable = true;
     };
 
     services = {
