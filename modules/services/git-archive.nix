@@ -49,7 +49,7 @@ in
           -i $CREDENTIALS_DIRECTORY/config.yaml
       '';
       script = ''
-        ${lib.getExe pkgs.gickup} --dryrun $STATE_DIRECTORY/config.yaml
+        ${lib.getExe pkgs.gickup} $STATE_DIRECTORY/config.yaml
       '';
       serviceConfig = {
         Type = "oneshot";

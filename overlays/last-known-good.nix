@@ -59,6 +59,7 @@ in
     mullvad
     ;
 
+  # ref: https://nixpk.gs/pr-tracker.html?pr=381214
   inherit
     (nixpkgs {
       rev = "b71d04bcc6b5a5526ed493e1c8dda89c9d381e7f";
