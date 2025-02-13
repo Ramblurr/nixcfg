@@ -16,8 +16,8 @@ let
     "prim"
     "mgmt"
     "data"
-    "iot"
-    "not"
+    #"iot"
+    #"not"
   ];
 in
 {

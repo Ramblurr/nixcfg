@@ -19,8 +19,16 @@
   services.ntopng = {
     enable = true;
     interfaces = [
-      config.repo.secrets.local.wan0.iface
-      config.repo.secrets.local.untagged.iface
-    ] ++ lib.mapAttrsToList (name: v: "me-${name}") config.repo.secrets.local.vlan;
+      "wan0"
+      "lan0"
+      "iot"
+      "inot"
+      "mgmt"
+      "vpn"
+      "prim"
+      "guest"
+      "svc"
+      "data"
+    ];
   };
 }

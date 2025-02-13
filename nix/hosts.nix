@@ -61,6 +61,26 @@
           isStable = true;
           system = "x86_64-linux";
         };
+        hello-world = {
+          hostPath = ../guests/hello-world;
+          enableDefaultModules = false;
+          hostExtraModules = [
+            inputs.impermanence.nixosModules.impermanence
+            inputs.microvm.nixosModules.microvm
+            inputs.sops-nix.nixosModules.sops
+            ../config/secrets.nix
+            ../config/common-server.nix
+            ../config/site.nix
+            ../modules/site
+            ../modules/services/sshd.nix
+            ../modules/secrets.nix
+            ../modules/meta.nix
+            ../modules/globals.nix
+            ../modules/impermanence/default.nix
+            ../modules/microvm-guest
+            ../guests/hello-world
+          ];
+        };
       };
     in
     {
@@ -73,8 +93,8 @@
           modules = [
             ../hosts/addams/installer.nix
           ];
-        };
 
+        };
       };
       # True NixOS nodes can define additional guest nodes that are built
       # together with it. We collect all defined guests from each node here

@@ -86,14 +86,13 @@ in
     };
     firewall = {
       enable = true;
-      # Enable some of the module's snippets, but not all
       snippets = {
         nnf-common.enable = false;
         nnf-conntrack.enable = true;
         nnf-default-stopRuleset.enable = true;
         nnf-drop.enable = false; # see above, using our own drop rules
         nnf-loopback.enable = true;
-        nnf-dhcpv6.enable = false; # I'm naughty and don't use ipv6
+        nnf-dhcpv6.enable = false;
         nnf-icmp.enable = false;
         nnf-ssh.enable = true;
         nnf-nixos-firewall.enable = false; # I want to open all my ports on this host manually

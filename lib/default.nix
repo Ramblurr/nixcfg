@@ -4,6 +4,7 @@ prev.lib.composeManyExtensions (
   # speed up evaluation.
   map (x: import x inputs) [
     ./nix-std.nix
+    ./nix-clj.nix
     ./my.nix
     ./attrs.nix
     ./uint.nix

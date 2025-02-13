@@ -26,6 +26,8 @@ in
     ./roon-bridge.nix
     ./libvirt.nix
     ./gaming.nix
+    ./microvm-test.nix
+    ./microvm-test-impl.nix
     #./tabby.nix
   ];
   system.stateVersion = "23.05";
@@ -222,8 +224,7 @@ in
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
-    networking.default.enable = true;
-    networking.default.hostName = hn;
+    networking.default.enable = false;
     hardware.ryzen.enable = true;
     hardware.easyNvidia = {
       enable = true;

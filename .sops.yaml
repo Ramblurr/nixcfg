@@ -2,6 +2,7 @@
 keys:
   - users:
       - &ramblurr 978C4D08058BA26EB97CB51820782DBCACFAACDA
+      - &ramblurr-tmp age1urrpmqc2erg2tg5ene0tyr6cfne925zggtlqn40xwp5wqlqrp5tst8f808
       - &disaster-recovery age15j42dspmmwprjau6l48xp05d97s8ml5s3tjxrfwvm37tvuynssuqtsevkj
   - hosts:
       - &quine age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
@@ -10,6 +11,7 @@ keys:
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
       - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
       - &addams age1t70vans0qsnru7j06fwtj7wq7hpfj59cxreu9a20rrxuahff9fmqsa2wjd
+      - &hello-world age14vg23yfklu7ld6flwnycx4lmfhkkuncejsju7tus2hj5qrryvgxsvvqtng
 creation_rules:
   - path_regex: terraform/secrets.sops.ya?ml$
     key_groups:
@@ -78,3 +80,10 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
+
+  - path_regex: guests/hello-world/.*.sops.*$
+    key_groups:
+      - age:
+          - *hello-world
+          - *disaster-recovery
+          - *ramblurr-tmp
