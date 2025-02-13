@@ -33,7 +33,9 @@ in
       enable = true;
       authorizedKeysFiles = lib.mkForce [ "/etc/ssh/authorized_keys.d/%u" ];
       settings = {
-        PermitRootLogin = "yes";
+        AcceptEnv = "SYSTEMD_PAGER";
+        LoginGraceTime = 30;
+        PermitRootLogin = lib.mkOverride 900 "prohibit-password";
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
         StreamLocalBindUnlink = true;
@@ -47,7 +49,7 @@ in
     };
 
     environment.persistence."/persist" = mkIf withImpermanence {
-      files = [ "/root/.ssh/known_hosts" ];
+      files = [ "${config.users.users.root.home}/.ssh/known_hosts" ];
     };
   };
 }

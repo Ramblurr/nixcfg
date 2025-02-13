@@ -1,9 +1,14 @@
 { config, lib, ... }:
 let
+  inherit (config.networking) hostName;
+  inherit (lib.mori)
+    keys
+    filter
+    first
+    ;
   dhcpLib = import ./helpers.nix { inherit lib; };
-  leaseOption =
-    {
-    };
+  leaseOption = {
+  };
   commonDhcpOptions = [
     {
       name = "domain-name-servers";
@@ -11,9 +16,65 @@ let
     }
     {
       name = "time-servers";
-      data = lib.my.cidrToIp config.repo.secrets.local.untagged.cidr;
+      data = first config.site.net.lan0.hosts4.addams;
     }
   ];
+
+  hostConfig = config.site.hosts.${hostName};
+  dhcpInterfaces = keys (
+    filter (net: iface: config.site.net.${net}.dhcp.enable) hostConfig.interfaces
+  );
+
+  # Helper function to generate a single VLAN subnet configuration
+  mkSubnet =
+    {
+      net,
+      netName,
+      commonDhcpOptions,
+      leaseOption,
+    }:
+    let
+      ddnsEnabled = net ? domainName;
+    in
+    lib.mkIf net.dhcp.enable (
+      {
+        id = net.dhcp.id;
+        interface = netName;
+        subnet = net.subnet4;
+        pools = [
+          {
+            pool = "${net.dhcp.start} - ${net.dhcp.end}";
+          }
+        ];
+        hostname-char-set = "[^A-Za-z0-9.-]";
+        hostname-char-replacement = "-";
+        ddns-send-updates = ddnsEnabled;
+        ddns-replace-client-name = "when-present";
+        ddns-generated-prefix = "";
+        ddns-qualifying-suffix = lib.mkIf ddnsEnabled "${net.domainName}.";
+        option-data =
+          [
+            {
+              name = "routers";
+              data = first config.site.net.${netName}.hosts4.${net.dhcp.router};
+            }
+          ]
+          ++ (
+            if ddnsEnabled then
+              [
+                {
+                  name = "domain-name";
+                  data = net.domainName;
+                }
+              ]
+            else
+              [ ]
+          )
+          ++ (lib.my.mergeByKey "name" commonDhcpOptions net.dhcp.optionData);
+        reservations = net.dhcp.reservations;
+      }
+      // leaseOption
+    );
 
 in
 {
@@ -30,21 +91,23 @@ in
       renew-timer = 3600;
       interfaces-config = {
         dhcp-socket-type = "raw";
-        interfaces = [
-          # TODO: this is a hack, fix this eventually, why didn't I leave unttaged in the vlan attrset again?
-          "lan0"
-        ] ++ lib.mapAttrsToList (name: _: "me-${name}") config.repo.secrets.local.vlan;
+        interfaces = lib.naturalSort dhcpInterfaces;
       };
       match-client-id = false;
       sanity-checks = {
         lease-checks = "fix-del";
       };
-      subnet4 = dhcpLib.mkKeaSubnets {
-        vlans = config.repo.secrets.local.vlan // {
-          "untagged" = config.repo.secrets.local.untagged;
-        };
-        inherit commonDhcpOptions leaseOption;
-      };
+      subnet4 = (
+        map (
+          net:
+          mkSubnet {
+            netName = net;
+            net = config.site.net.${net};
+            inherit commonDhcpOptions leaseOption;
+          }
+        ) (lib.naturalSort dhcpInterfaces)
+      );
+
     };
   };
 }
