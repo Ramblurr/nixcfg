@@ -30,7 +30,9 @@ in
     configFile = mkOption {
       description = "The config path that hacompanion uses";
       type = types.path;
-      default = pkgs.writeText "hacompanion-config" (lib.my.toTOML (cfg.settings // cfg.settingsDefault));
+      default = pkgs.writeText "hacompanion-config" (
+        lib.std.serde.toTOML (cfg.settings // cfg.settingsDefault)
+      );
     };
     settings = mkOption {
       type = tomlFormat.type;
