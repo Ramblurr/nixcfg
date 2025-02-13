@@ -5,7 +5,6 @@
   inputs,
   ...
 }:
-
 let
   cfg = config.modules.desktop.hyprland3;
   username = config.modules.users.primaryUser.username;
@@ -124,6 +123,10 @@ in
               workspace_swipe = false;
             };
             workspace = [
+              "m[HDMI-A-1], layoutopt:orientation:bottom"
+              "m[HDMI-A-1], layoutopt:slave_count_for_center_master:5"
+              "m[HDMI-A-1], layoutopt:allow_small_split:true"
+              "m[HDMI-A-1], layoutopt:mfact:0.33"
               "1,monitor:DP-2"
               "2,monitor:DP-2"
               "3,monitor:DP-2"
@@ -289,7 +292,7 @@ in
             master = {
               allow_small_split = true;
               mfact = 0.33;
-              always_center_master = true;
+              slave_count_for_center_master = 0;
               orientation = "center";
             };
 
@@ -306,10 +309,12 @@ in
             };
 
             decoration = {
-              drop_shadow = "yes";
-              shadow_range = 8;
-              shadow_render_power = 2;
-              "col.shadow" = "rgba(00000044)";
+              shadow = {
+                enabled = true;
+                render_power = 2;
+                range = 8;
+                color = "rgba(00000044)";
+              };
 
               dim_inactive = false;
 
