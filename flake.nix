@@ -10,6 +10,8 @@
     nixpkgs-mine.url = "github:ramblurr/nixpkgs/consolidated";
     #nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
+    nix-std.url = "github:chessai/nix-std";
+
     nixfmt.url = "github:serokell/nixfmt";
 
     microvm.url = "github:astro/microvm.nix";

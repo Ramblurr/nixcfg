@@ -1,6 +1,6 @@
-_inputs: final: prev: {
+_inputs: _final: prev: {
   lib = prev.lib // {
-    my = rec {
+    my = prev.lib.my // rec {
       # attrsToList
       attrsToList = attrs: prev.lib.mapAttrsToList (name: value: { inherit name value; }) attrs;
 
