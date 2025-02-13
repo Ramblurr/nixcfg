@@ -8,6 +8,12 @@ _inputs: _final: prev: {
       */
       cidrToIp = ip: builtins.head (builtins.split "/" ip);
 
+      generateHostId =
+        hostName:
+        prev.lib.concatStringsSep "" (
+          prev.lib.take 8 (prev.lib.stringToCharacters (builtins.hashString "sha256" hostName))
+        );
+
       /*
         generateMacAddress :: string -> string
 

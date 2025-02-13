@@ -46,6 +46,48 @@ _inputs: _final: prev: {
             );
         in
         f [ ] attrList;
+
+      /*
+        mergeByKey :: String -> [AttrSet] -> [AttrSet] -> [AttrSet]
+
+        Merges two lists of attribute sets by matching on a specified key.
+        Attribute sets from both lists that share the same value for the given key
+        will be merged into a single attribute set.
+
+        Type:
+          key: String - The name of the key to match on
+          list1: List of AttrSets - The first list of attribute sets
+          list2: List of AttrSets - The second list of attribute sets
+
+        Example:
+          mergeByKey "id"
+            [ { id = 1; a = 2; z = "qux"; } { id = 2; a = 3; } ]
+            [ { id = 1; a = "WOW"; b = 4; } { id = 3; b = 6; } ]
+          => [ { id = 1; a = "WOW"; b = 4; z = "qux"; } { id = 2; a = 3; } { id = 3; b = 6; } ]
+      */
+
+      mergeByKey =
+        key: list1: list2:
+        let
+          # Create a set of items from list2 indexed by the key
+          list2Set = builtins.listToAttrs (
+            map (item: {
+              name = toString item.${key};
+              value = item;
+            }) list2
+          );
+
+          # Process list1: replace items if they exist in list2Set, keep if they don't
+          merged = map (
+            item:
+            if builtins.hasAttr (toString item.${key}) list2Set then list2Set.${toString item.${key}} else item
+          ) list1;
+
+          # Add any items from list2 whose keys don't exist in list1
+          list1Keys = map (item: toString item.${key}) list1;
+          remainingList2 = builtins.filter (item: !(builtins.elem (toString item.${key}) list1Keys)) list2;
+        in
+        merged ++ remainingList2;
     };
   };
 

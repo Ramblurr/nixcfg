@@ -43,7 +43,7 @@ in
 
     systemd.network = {
       enable = true;
-      wait-online.anyInterface = true;
+      wait-online.anyInterface = lib.mkDefault true;
 
       # leave the kernel dummy devies unmanagaed
       networks."10-dummy" = {

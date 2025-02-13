@@ -36,19 +36,24 @@ let
     }:
     import flake {
       inherit system overlays;
-      config.allowUnfree = true;
-      config.permittedInsecurePackages = [
-        "olm-3.2.16"
-      ];
+      config = {
+        #allowAliases = false;
+        allowUnfree = true;
+        permittedInsecurePackages = [
+          "olm-3.2.16"
+        ];
+      };
     };
 
   mkHost =
     name:
     {
-      isStable,
-      system,
+      isStable ? false,
+      system ? "x86_64-linux",
+      hostPath ? ../hosts/${name},
       hostExtraModules ? [ ],
       hostOverlays ? [ ],
+      enableDefaultModules ? true,
     }:
     let
       allOverlays = hostOverlays ++ defaultOverlays;
@@ -76,14 +81,14 @@ let
         [
           #inputs.nixpkgs.nixosModules.readOnlyPkgs
           {
-            networking.hostName = lib.mkDefault name;
-            node.secretsDir = ../hosts/${name}/secrets;
+            networking.hostName = lib.mkForce name;
+            node.secretsDir = hostPath + "/secrets";
             nixpkgs.pkgs = nixpkgs';
           }
-          ../hosts/${name}
+          hostPath
           actual-home-manager.nixosModules.home-manager
         ]
-        ++ defaultModules
+        ++ lib.optionals enableDefaultModules defaultModules
         ++ lib.optionals isStable stableDefaultModules
         ++ lib.optionals (!isStable) unstableDefaultModules
         ++ hostExtraModules;
@@ -94,6 +99,7 @@ let
         actual-nixpkgs = actual-nixpkgs;
         unstable = nixpkgs-unstable;
         lib = nixpkgs'.lib;
+        hostName = name;
       };
     };
 

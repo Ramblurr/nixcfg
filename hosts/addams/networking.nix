@@ -4,26 +4,36 @@
   lib,
   ...
 }:
+let
+  inherit (lib.mori) keys mapcat vals;
+  inherit (config.networking) hostName;
+in
 {
+
+  imports = [
+    ../../config/site.nix
+    ../../modules/site
+    ../../modules/site-net
+  ];
+
+  # Merge in the site secrets
+  site = config.repo.secrets.site.site;
 
   networking = {
     hostId = pkgs.lib.concatStringsSep "" (
-      pkgs.lib.take 8 (
-        pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)
-      )
+      pkgs.lib.take 8 (pkgs.lib.stringToCharacters (builtins.hashString "sha256" hostName))
     );
-    domain = config.repo.secrets.global.domain.home;
+    domain = config.site.data.networkDomain;
     useDHCP = false;
   };
 
-  sops.secrets."wg1/privateKey" = {
-    owner = "root";
-    group = "systemd-network";
-    mode = "0640";
-  };
+  #sops.secrets."wg1/privateKey" = {
+  #  owner = "root";
+  #  group = "systemd-network";
+  #  mode = "0640";
+  #};
   systemd.network = {
     enable = true;
-
     wait-online = {
       anyInterface = false;
       ignoredInterfaces = [
@@ -35,14 +45,7 @@
         "ve-mullvad"
       ];
     };
-
-    config = {
-      routeTables.vpn = 200;
-      networkConfig = {
-        IPv4Forwarding = true;
-        IPv6Forwarding = true;
-      };
-    };
+    config.routeTables.vpn = 200;
 
     links = {
       # rename all interface names to be easier to identify
@@ -65,110 +68,29 @@
         linkConfig.Name = "lan1";
       };
     };
-    netdevs =
-      {
-        "30-gre1" = {
-          netdevConfig = {
-            Kind = "gre";
-            Name = "gre1";
-            MTUBytes = "1480";
-          };
-          tunnelConfig = {
-            Local = lib.my.cidrToIp config.repo.secrets.local.wan0.cidr;
-            Remote = config.repo.secrets.local.gre.endpoint;
-          };
-        };
-        "30-wg1" = {
-          enable = false;
-          netdevConfig = {
-            Kind = "wireguard";
-            Name = "wg1";
-            MTUBytes = "1400";
-          };
-          wireguardConfig = {
-
-            PrivateKeyFile = config.sops.secrets."wg1/privateKey".path;
-            ListenPort = 51820;
-          };
-          wireguardPeers = [
-            {
-              inherit (config.repo.secrets.local.wg1) Endpoint PublicKey AllowedIPs;
-            }
-          ];
-        };
-      }
-      // lib.flip lib.concatMapAttrs config.repo.secrets.local.vlan (
-        vlanName: vlanCfg: {
-          "30-vlan-${vlanName}" = {
-            netdevConfig = {
-              Kind = "vlan";
-              Name = vlanCfg.iface;
-              MTUBytes = if vlanCfg ? mtu then vlanCfg.mtu else "1500";
-            };
-            vlanConfig.Id = vlanCfg.id;
-          };
-
-          # Create a MACVTAP on the router, so that it can communicate with
-          # its virtualized guests on the same interface.
-          "40-me-${vlanName}" = {
-            netdevConfig = {
-              Name = "me-${vlanName}";
-              Kind = "macvlan";
-            };
-            extraConfig = ''
-              [MACVLAN]
-              Mode=bridge
-            '';
-          };
-        }
-      );
     networks =
-      {
-        # gre
-        "30-gre1" = {
-          matchConfig.Name = "gre1";
-          address = [
-            config.repo.secrets.local.gre.local
-            config.repo.secrets.local.gre.ipv6Address
-          ];
-          routes = [
-            {
-              Destination = "::/0";
-              Gateway = config.repo.secrets.local.gre.ipv6Gateway;
-              GatewayOnLink = true;
-            }
-          ];
-        };
-
-        # wg1
-        "30-wg1" = {
-          enable = false;
-          matchConfig.Name = "wg1";
-          address = [ config.repo.secrets.local.wg1.Address ];
-          #routes = [
-          #  {
-          #    Destination = "::/0";
-          #    Gateway = config.repo.secrets.local.wg1.Gateway;
-          #    GatewayOnLink = true;
-          #  }
-          #];
-        };
-        # Disabled interfaces
-        "30-lan1" = {
-          matchConfig.Name = "lan1";
-          networkConfig.ConfigureWithoutCarrier = true;
-          linkConfig.ActivationPolicy = "always-down";
-          networkConfig.DHCPServer = false;
-        };
-        "30-wlp3s0" = {
-          # This is the builtin wifi
-          matchConfig.Name = "wlp3s0";
-          linkConfig = {
-            Unmanaged = "yes";
-            ActivationPolicy = "down";
-          };
-        };
-
+      # Disabled interfaces
+      (lib.mori.merge (
+        map
+          (iface: {
+            "10-${iface}" = {
+              matchConfig.Name = iface;
+              networkConfig.ConfigureWithoutCarrier = true;
+              linkConfig = {
+                Unmanaged = "yes";
+                ActivationPolicy = "always-down";
+              };
+            };
+          })
+          [
+            "lan1"
+            "wlp3s0"
+            "gre0"
+            "gretap0"
+            "erspan0"
+          ]
+      ))
+      // {
         # Enabled interfaces
         "30-wan0" = {
           matchConfig.Name = "wan0";
@@ -186,19 +108,6 @@
             MTUBytes = "1500";
             RequiredForOnline = "routable";
           };
-        };
-
-        "30-lan0" = {
-          matchConfig.Name = "lan0";
-          address = [
-            config.repo.secrets.local.untagged.cidr
-          ] ++ config.repo.secrets.local.untagged.extraAddrs;
-          networkConfig.DHCPServer = false;
-          linkConfig = {
-            MTUBytes = "9000";
-            RequiredForOnline = "carrier";
-          };
-          vlan = lib.mapAttrsToList (name: v: v.iface) config.repo.secrets.local.vlan;
         };
 
         "30-ve-mullvad" = {
@@ -228,51 +137,13 @@
                   Table = "vpn";
                   Type = "unreachable";
                 };
-                cidrs = lib.mapAttrsToList (name: v: v.cidr) config.repo.secrets.local.vlan;
+                hostNets = (keys config.site.hosts.${hostName}.interfaces);
+                cidr4s = (map (net: config.site.net.${net}.subnet4) hostNets);
+                cidr6s = mapcat (net: (vals config.site.net.${net}.subnets6)) hostNets;
               in
-              map deny cidrs
+              (map deny cidr4s) ++ (map deny cidr6s)
             );
         };
-
-      }
-      // lib.flip lib.concatMapAttrs config.repo.secrets.local.vlan (
-        vlanName: vlanCfg: {
-          "30-vlan-${vlanName}" = {
-            matchConfig.Name = vlanCfg.iface;
-            # This interface should only be used from attached macvlans.
-            # So don't acquire a link local address and only wait for
-            # this interface to gain a carrier.
-            networkConfig.LinkLocalAddressing = "no";
-            networkConfig.MACVLAN = "me-${vlanName}";
-            linkConfig.RequiredForOnline = "carrier";
-          };
-          "40-me-${vlanName}" = {
-            address = lib.optionals (!(vlanCfg ? addresses)) (
-              [ vlanCfg.cidr ] ++ (if vlanCfg ? extraAddrs then vlanCfg.extraAddrs else [ ])
-            );
-            addresses = lib.optionals (vlanCfg ? addresses) vlanCfg.addresses;
-            matchConfig.Name = "me-${vlanName}";
-            networkConfig =
-              {
-                IPv4Forwarding = "yes";
-                MulticastDNS = true;
-                DHCPServer = false;
-              }
-              // lib.optionalAttrs ((vlanCfg ? ipv6) && vlanCfg.ipv6.enable) {
-                IPv6SendRA = true;
-                IPv6Forwarding = true;
-              }
-              // lib.optionalAttrs (vlanCfg ? networkConfig) vlanCfg.networkConfig;
-            routes = lib.optionals (vlanCfg ? routes) vlanCfg.routes;
-            routingPolicyRules = lib.optionals (vlanCfg ? routingPolicyRules) vlanCfg.routingPolicyRules;
-            linkConfig.RequiredForOnline = "routable";
-            ipv6Prefixes = lib.optionals ((vlanCfg ? ipv6) && vlanCfg.ipv6.enable) [
-              {
-                ipv6PrefixConfig.Prefix = vlanCfg.ipv6.prefix;
-              }
-            ];
-          };
-        }
-      );
+      };
   };
 }

@@ -1,9 +1,16 @@
 { config, lib, ... }:
 let
+  inherit (lib.mori)
+    first
+    keys
+    filter
+    merge
+    mapcat
+    ;
+  inherit (config.networking) hostName;
 
   fwLib = import ./helpers.nix { inherit lib; };
   inherit (fwLib)
-    setRule
     mkRules
     ;
 
@@ -21,35 +28,24 @@ let
       "${name}" = name;
     }
   );
-  # The names of all my vlans prefixed with vlan_ example: vlan_guest, vlan_iot
-  vlan_zones = lib.mapAttrsToList (name: v: "vlan_${name}") config.repo.secrets.local.vlan;
 
-  # the vlan zones formatted for networking.nftables.firewall.zones
-  vlan_zone_defs = lib.flip lib.concatMapAttrs config.repo.secrets.local.vlan (
-    vlanName: v: {
-      "vlan_${vlanName}".interfaces = [ "me-${vlanName}" ];
-    }
+  iface_zone_defs = merge (
+    map (name: { ${name}.interfaces = [ name ]; }) (keys config.site.hosts.${hostName}.interfaces)
   );
+  internal_zones = keys config.site.hosts.${hostName}.interfaces;
+  internal_interfaces = [
+    "lan0"
+  ] ++ keys (filter (_: iface: iface.type == "bridge") config.site.hosts.${hostName}.interfaces);
 
-  internal_zones = vlan_zones ++ [ "untagged" ];
-
-  # the iface names of all my vlans, example: vliot50
-  vlan_interfaces = lib.mapAttrsToList (name: v: "me-${name}") config.repo.secrets.local.vlan;
-
-  internal_interfaces = vlan_interfaces ++ [ config.repo.secrets.local.untagged.iface ];
-
-  router_ip = lib.my.cidrToIp config.repo.secrets.local.untagged.cidr;
+  lan0_ip = first config.site.net.lan0.hosts4.${hostName};
 
   # ──────────────────────────────────────────────────────────────────
   # Begin my actual config data
   # ──────────────────────────────────────────────────────────────────
   zone_defs = {
-    wg1.interfaces = [ "wg1" ];
-    gre1.interfaces = [ "gre1" ];
     wan.interfaces = [ config.repo.secrets.local.wan0.iface ];
-    untagged.interfaces = [ config.repo.secrets.local.untagged.iface ];
     mullvad.interfaces = [ "ve-mullvad" ];
-  } // vlan_zone_defs;
+  } // iface_zone_defs;
   port_forwards = {
     ntp = {
       comment = "force NTP for all interfaces";
@@ -57,11 +53,11 @@ let
       interfaces = internal_interfaces;
       protocols = [ "udp" ];
       destination = {
-        address = "!= ${router_ip}";
+        address = "!= ${lan0_ip}";
         port = 123;
       };
       translation = {
-        address = router_ip;
+        address = lan0_ip;
         port = 123;
       };
     };
@@ -69,19 +65,19 @@ let
       comment = "force DNS for iot and not";
       priority = 101;
       interfaces = [
-        "me-iot"
-        "me-not"
+        "iot"
+        "inot"
       ];
       protocols = [
         "tcp"
         "udp"
       ];
       destination = {
-        address = "!= ${router_ip}";
+        address = "!= ${lan0_ip}";
         port = 53;
       };
       translation = {
-        address = router_ip;
+        address = lan0_ip;
         port = 53;
       };
     };
@@ -207,16 +203,15 @@ let
     };
 
     wan_ipv6_egress = {
-      from = [ zones.vlan_prim ];
+      from = [ zones.prim ];
       to = [
-        zones.wg1
-        zones.gre1
+        zones.wan6tun
       ];
       verdict = "accept";
     };
 
     lan_to_mullvad = {
-      from = [ zones.vlan_prim ];
+      from = [ zones.prim ];
       to = [ zones.mullvad ];
       allowedTCPPortRanges = [
         {
@@ -227,7 +222,7 @@ let
     };
 
     vpn_to_mullvad = {
-      from = [ zones.vlan_vpn ];
+      from = [ zones.vpn ];
       to = [ zones.mullvad ];
       extraLines = [
         ''counter accept''
@@ -236,8 +231,8 @@ let
 
     vpn_backup = {
       # Nodes on my vpn vlan are allowed to talk to my borgmatic backup server
-      from = [ zones.vlan_vpn ];
-      to = [ zones.vlan_prim ];
+      from = [ zones.vpn ];
+      to = [ zones.prim ];
 
       extraLines = mkRules [
         {
@@ -249,7 +244,7 @@ let
     };
     vpn_block = {
       # otherwise we block the vpn vlan from talking to the rest of the network
-      from = [ zones.vlan_vpn ];
+      from = [ zones.vpn ];
       to = internal_zones ++ [ local_zone ];
       extraLines = mkRules [
         {
@@ -279,7 +274,7 @@ let
       from = "all";
       to = [
         local_zone
-        zones.untagged
+        zones.lan0
       ];
       extraLines = [
         ''udp sport 68 udp dport 67 counter accept comment "allow router to be dhcp server"''
@@ -316,12 +311,12 @@ let
     trusted_to_iot = {
       # I allow my trusted zones to initiate connections to my iot/not zones
       from = [
-        zones.vlan_prim
-        zones.vlan_mgmt
+        zones.prim
+        zones.mgmt
       ];
       to = [
-        zones.vlan_iot
-        zones.vlan_not
+        zones.iot
+        zones.inot
       ];
       verdict = "accept";
     };
@@ -330,12 +325,12 @@ let
       # My iot/not vlans in general are not allowed to talk to my trusted zones
       # but there are a bunch of exceptions
       from = [
-        zones.vlan_iot
-        zones.vlan_not
+        zones.iot
+        zones.inot
       ];
       to = [
-        zones.vlan_mgmt
-        zones.vlan_prim
+        zones.mgmt
+        zones.prim
       ];
       extraLines = mkRules [
         {
@@ -406,7 +401,7 @@ let
     not_wan_exceptions = {
       # Devices in my not vlan are not allowed to talk to the internet
       # (but there are a few exceptions)
-      from = [ zones.vlan_not ];
+      from = [ zones.inot ];
       to = [ zones.wan ];
 
       extraLines = mkRules [
@@ -421,9 +416,9 @@ let
 
     syncthing = {
       from = [
-        zones.vlan_prim
-        zones.vlan_data
-        zones.vlan_mgmt
+        zones.prim
+        zones.data
+        zones.mgmt
       ];
       to = internal_zones;
       extraLines = mkRules [
@@ -436,9 +431,9 @@ let
 
     roon_server = {
       from = [
-        zones.vlan_prim
-        zones.vlan_data
-        zones.vlan_mgmt
+        zones.prim
+        zones.data
+        zones.mgmt
       ];
       to = internal_zones ++ [
         zones.wan
@@ -493,10 +488,10 @@ let
 
     #prim_to_mgmt = {
     #  from = [
-    #    zones.vlan_prim
+    #    zones.prim
     #  ];
     #  to = [
-    #    zones.vlan_mgmt
+    #    zones.mgmt
     #  ];
     #  extraLines = (
     #    map setRule [
@@ -542,7 +537,6 @@ in
     internal_zones
     internal_interfaces
     port_forwards
-    vlan_zone_defs
     zone_defs
     rules
     ;
