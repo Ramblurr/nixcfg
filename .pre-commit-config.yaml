@@ -37,3 +37,11 @@ repos:
       - id: remove-crlf
       - id: remove-tabs
         exclude: (Makefile)
+
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.23.3
+    hooks:
+      - id: gitleaks
+        args:
+          - --config
+          - .github/lint/gitleaks.toml
