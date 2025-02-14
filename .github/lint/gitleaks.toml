@@ -1,0 +1,25 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[[ rules ]]
+    id = "generic-api-key"
+    [ rules.allowlist ]
+    paths = [ 'secrets/.*\.nix', 'secrets/.*\.secrets' ]
+    regexTarget = "line"
+    regexes= [
+      "signing.key =.*",
+      "signingKey =.*"
+    ]
+
+[allowlist]
+description = "ignore sops encrypted secrets"
+paths = [
+'.*\.sops\.yaml',
+]
+regexTarget = "line"
+regexes= [
+  '''ExAmPl3PA55W0rD''',
+  '''.*ENC\[AES256_GCM,data:.*''',
+]
