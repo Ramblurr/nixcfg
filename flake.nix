@@ -70,6 +70,9 @@
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
+    crowdsec.url = "git+https://codeberg.org/kampka/nix-flake-crowdsec.git";
+    crowdsec.inputs.nixpkgs.follows = "nixpkgs";
+
     #hyprland = {
     #  type = "git";
     #  url = "https://github.com/hyprwm/Hyprland";

@@ -32,6 +32,7 @@ in
     ./modules/udpbroadcastrelay.nix
     ./modules/mullvad-gateway.nix
     ./modules/ntopng.nix
+    ./modules/crowdsec.nix
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
