@@ -294,20 +294,6 @@ let
       ];
     };
 
-    icmp_and_igmp = {
-      after = [
-        "ct"
-        "ssh"
-      ];
-      from = "all";
-      to = [ local_zone ];
-      extraLines = [
-        "meta l4proto ipv6-icmp accept"
-        "meta l4proto icmp accept"
-        "counter ip protocol igmp accept"
-      ];
-    };
-
     trusted_to_iot = {
       # I allow my trusted zones to initiate connections to my iot/not zones
       from = [
