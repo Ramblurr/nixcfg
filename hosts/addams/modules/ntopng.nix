@@ -11,7 +11,11 @@
     enable = true;
     settings = {
       AccountID = config.repo.secrets.local.maxmind.accountId;
-      EditionIDs = config.repo.secrets.local.maxmind.editionIds;
+      EditionIDs = [
+        "GeoLite2-ASN"
+        "GeoLite2-City"
+        "GeoLite2-Country"
+      ];
       LicenseKey = config.sops.secrets."maxmind/licenseKey".path;
     };
   };
