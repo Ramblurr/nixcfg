@@ -85,7 +85,23 @@ in
     ++ (reportCollisions "IPv6 subnet" (x: builtins.attrValues x.subnets6) config.site.net);
 
   config.assertions =
-    (lib.mori.map (name: value: {
+    lib.flatten (
+      lib.mori.map (
+        name: value:
+        (map (
+          ctx:
+          (lib.mori.map (
+            host: addrs:
+            (map (addr: {
+              assertion = !(lib.strings.hasInfix "/" addr);
+              message = "Address '${addr}' for host '${host}' in 'config.site.net.${name}' must not contain a /XX suffix.";
+            }) addrs)
+          ) ctx)
+
+        ) (lib.mori.vals value.hosts6))
+      ) config.site.net
+    )
+    ++ (lib.mori.map (name: value: {
       assertion = value.dhcp.enable -> value.dhcp ? "router";
       message = "Net ${name} has DHCP enabled but no router declared.";
     }) config.site.net)

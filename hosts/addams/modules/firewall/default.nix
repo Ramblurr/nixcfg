@@ -93,7 +93,7 @@ in
         nnf-drop.enable = false; # see above, using our own drop rules
         nnf-loopback.enable = true;
         nnf-dhcpv6.enable = false;
-        nnf-icmp.enable = false;
+        nnf-icmp.enable = true;
         nnf-ssh.enable = true;
         nnf-nixos-firewall.enable = false; # I want to open all my ports on this host manually
       };

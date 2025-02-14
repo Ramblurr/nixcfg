@@ -60,7 +60,9 @@ let
   genAddresses6 =
     net:
     lib.optionals (hasStatic6 net) (
-      mapcat (hosts6: (map (addr: { Address = addr; }) hosts6.${hostName})) (vals nets.${net}.hosts6)
+      mapcat (hosts6: (map (addr: { Address = "${addr}/64"; }) hosts6.${hostName})) (
+        vals nets.${net}.hosts6
+      )
     );
 
   genAddresses = net: (genAddresses4 net) ++ (genAddresses6 net);
@@ -138,10 +140,7 @@ in
     networking.hostId = lib.my.generateHostId hostName;
     networking.useDHCP = false;
     services.timesyncd.enable = true;
-    services.resolved = {
-      enable = true;
-      dnssec = "false";
-    };
+    services.resolved.enable = lib.mkDefault true;
     boot.kernelModules = lib.mkIf (hostGres != [ ]) [ "ip_gre" ];
     systemd.network.config.networkConfig = {
       IPv4Forwarding = hostConfig.isRouter;

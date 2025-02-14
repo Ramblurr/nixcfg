@@ -23,8 +23,8 @@ in
       wan6-gw = [ "192.168.254.2" ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:0::2/128" ];
-      wan6-gw = [ "${prefix6}:0::1/128" ];
+      addams = [ "${prefix6}:0::2" ];
+      wan6-gw = [ "${prefix6}:0::1" ];
     };
   };
   site.net.lan0 = {
@@ -60,7 +60,7 @@ in
       ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:4::1/128" ];
+      addams = [ "${prefix6}:4::1" ];
     };
     dhcp = {
       enable = true;
@@ -80,7 +80,7 @@ in
       quine = [ "10.9.8.33" ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:9::1/128" ];
+      addams = [ "${prefix6}:9::1" ];
     };
     dhcp = {
       enable = true;
@@ -99,7 +99,7 @@ in
       addams = [ "10.8.50.1" ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:50::1/128" ];
+      addams = [ "${prefix6}:50::1" ];
     };
     dhcp = {
       enable = true;
@@ -118,7 +118,7 @@ in
       addams = [ "10.8.60.1" ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:60::1/128" ];
+      addams = [ "${prefix6}:60::1" ];
     };
     dhcp = {
       enable = true;
@@ -137,7 +137,7 @@ in
       addams = [ "10.9.10.1" ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:11::1/128" ];
+      addams = [ "${prefix6}:11::1" ];
     };
     dhcp = {
       enable = true;
@@ -156,7 +156,7 @@ in
       addams = [ "10.8.3.1" ];
     };
     hosts6.main = {
-      addams = [ "${prefix6}:3::1/128" ];
+      addams = [ "${prefix6}:3::1" ];
     };
     dhcp = {
       enable = true;
@@ -175,7 +175,7 @@ in
       addams = [ "10.8.70.1" ];
     };
     hosts6.local = {
-      addams = [ "${prefix6}:70::1/128" ];
+      addams = [ "${prefix6}:70::1" ];
     };
     dhcp = {
       enable = true;
@@ -202,7 +202,7 @@ in
       quine = [ "172.20.20.3" ];
     };
     hosts6.local = {
-      addams = [ "${prefix6}:5::1/128" ];
+      addams = [ "${prefix6}:5::1" ];
     };
   };
 
@@ -272,7 +272,6 @@ in
         role = "server";
         interfaces = genInterfaces [
           "prim"
-          #"mgmt"
           "svc"
         ];
       };
