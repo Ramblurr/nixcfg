@@ -46,6 +46,7 @@
           ]
       ))
       // {
+        "30-prim".linkConfig.MACAddress = config.repo.secrets.local.prim.mac;
         #"30-brprim4" = {
         #  matchConfig.Name = "brprim4";
         #  linkConfig.RequiredForOnline = "routable";

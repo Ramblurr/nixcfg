@@ -74,9 +74,10 @@ let
     #SystemCallFilter =[ "@system-service" ]; # breaks radarr, need to circle back to this with strace or shh
     #MemoryDenyWriteExecute = true; # does not work on Mono apps like sonarr
   };
-  recyclarrYaml = pkgs.writeText "recyclarr.yaml" (
-    builtins.readFile ../../configs/home-ops/recyclarr-plato.yml
-  );
+  recyclarrYaml = pkgs.writeTextFile {
+    name = "recyclarr.yml";
+    text = builtins.readFile ../../configs/home-ops/recyclarr-plato.yml;
+  };
 in
 {
   options.modules.services.home-dl = {
@@ -210,15 +211,20 @@ in
         LOG_LEVEL = "info";
         PORT = toString cfg.ports.overseerr;
       };
-      serviceConfig = {
-        Type = "exec";
-        StateDirectory = "home-dl/overseerr";
-        WorkingDirectory = "${pkgs.overseerr}/libexec/overseerr/deps/overseerr";
-        ExecStart = "${pkgs.overseerr}/bin/overseerr";
-        BindPaths = [
-          "/var/lib/home-dl/overseerr/:${pkgs.overseerr}/libexec/overseerr/deps/overseerr/config/"
-        ];
-      } // sharedServiceConfig // { PrivateMounts = true; };
+      serviceConfig =
+        {
+          Type = "exec";
+          StateDirectory = "home-dl/overseerr";
+          WorkingDirectory = "${pkgs.overseerr}/libexec/overseerr/deps/overseerr";
+          ExecStart = "${pkgs.overseerr}/bin/overseerr";
+          BindPaths = [
+            "/var/lib/home-dl/overseerr/:${pkgs.overseerr}/libexec/overseerr/deps/overseerr/config/"
+          ];
+        }
+        // sharedServiceConfig
+        // {
+          PrivateMounts = true;
+        };
     };
 
     #sops.secrets."home-dl/sonarr/apiKey" = { };
