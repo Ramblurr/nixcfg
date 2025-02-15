@@ -25,12 +25,12 @@ let
     </pool>
   '';
   # This is the network that will be used to allow guests to get an ip on my primary vlan
-  primaryVlanNetXml = pkgs.writeText "brprim4.xml" ''
+  primaryVlanNetXml = pkgs.writeText "prim.xml" ''
     <network>
-      <name>brprim4</name>
+      <name>prim</name>
       <uuid>6dea79f2-1512-40c6-a2a3-ed0b15a9c72d</uuid>
       <forward mode='bridge'/>
-      <bridge name='brprim4'/>
+      <bridge name='${cfg.net.brprim4.iface}'/>
     </network>
   '';
 in
@@ -50,6 +50,10 @@ in
     net = {
       brprim4 = {
         enable = lib.mkEnableOption "Enable the brprim4 network";
+        iface = lib.mkOption {
+          type = lib.types.str;
+          default = "brprim4";
+        };
       };
     };
   };
@@ -75,10 +79,17 @@ in
 
     virtualisation.libvirtd = {
       enable = true;
+      allowedBridges = [
+        "virbr0"
+        "brprim4"
+        "brvpn70"
+        "prim"
+      ];
     };
+
     boot.kernel.sysctl = {
       "net.ipv4.conf.all.forwarding" = true;
-      #"net.ipv6.conf.all.forwarding" = true;
+      "net.ipv6.conf.all.forwarding" = true;
     };
     networking.firewall = {
       trustedInterfaces = [ "virbr0" ];
