@@ -17,6 +17,7 @@ in
 {
   options.home-ops = {
     enable = lib.mkEnableOption "My modular multi-host Home Ops setup";
+    siteNet.enable = lib.mkEnableOption "";
     user = lib.mkOption {
       type = lib.types.attrs;
       description = "User config.";
@@ -140,7 +141,7 @@ in
       # vpn.tailscale.enable = true;
       firewall.enable = true;
       security.default.enable = true;
-      networking.default.enable = true;
+      networking.default.enable = !cfg.siteNet.enable;
       users.enable = true;
       users.primaryUser = {
         username = cfg.user.username;
@@ -282,9 +283,7 @@ in
     networking.usePredictableInterfaceNames = true;
     networking.firewall.allowPing = true;
     networking.nameservers = [ "127.0.0.1" ];
-    services.resolved = {
-      enable = lib.mkForce false;
-    };
+    services.resolved.enable = lib.mkForce false;
     environment.etc."resolv-external.conf" = {
       mode = "0644";
       text = ''
@@ -362,7 +361,7 @@ in
           addAction(AllRule(), PoolAction("cloudflare"))
         '';
     };
-    systemd.network = {
+    systemd.network = lib.mkIf (!cfg.siteNet.enable) {
       netdevs = {
         "20-vlprim4" = {
           netdevConfig = {
