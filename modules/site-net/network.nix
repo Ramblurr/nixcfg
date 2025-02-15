@@ -216,6 +216,16 @@ in
       (reduce genPhys hostPhysicals)
       (reduce genNet hostBridges)
       (reduce genGres hostGres)
+
+      {
+        "20-tailscale-ignore" = {
+          matchConfig.Name = "tailscale*";
+          linkConfig = {
+            Unmanaged = "yes";
+            RequiredForOnline = false;
+          };
+        };
+      }
     ];
   };
 }

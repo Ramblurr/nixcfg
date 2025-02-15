@@ -33,7 +33,6 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
-  #modules.networking.default.hostName = hn;
 
   modules.vpn.tailscale.enable = true;
   home-ops = {
@@ -46,18 +45,15 @@ in
     };
     mariadb.enable = true;
     containers.enable = true;
-    #hypervisor.enable = false;
     apps = {
       roon-server.enable = true;
       onepassword-connect.enable = true;
       authentik.enable = true;
-      #echo-server.enable = true;
       davis.enable = true;
       invoiceninja.enable = true;
       paperless.enable = true;
       ocis-work.enable = true;
       plex.enable = true;
-      #tautulli.enable = true;
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
@@ -81,7 +77,6 @@ in
       };
     };
 
-  modules.networking.default.enable = false;
   site = config.repo.secrets.site.site;
   systemd.network = {
     links = {
@@ -126,5 +121,4 @@ in
         };
     };
   };
-  services.getty.autologinUser = "ramblurr";
 }

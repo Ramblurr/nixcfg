@@ -77,7 +77,6 @@ in
     security.default.enable = true;
     # since this is my router, we handle networking and firealling in this host config
     firewall.enable = false;
-    networking.default.enable = false;
     users.enable = true;
 
     users.primaryUser = ramblurr // {
