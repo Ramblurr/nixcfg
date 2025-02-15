@@ -30,6 +30,7 @@ in
         programs.atuin = {
           enable = true;
           enableBashIntegration = true;
+          daemon.enable = true;
           settings =
             {
               style = "compact";
