@@ -58,6 +58,8 @@ in
         "10.9.4.1"
         "10.9.4.4"
       ];
+      debord = [ "10.9.4.21" ];
+      dewey = [ "10.9.4.17" ];
     };
     hosts6.main = {
       addams = [ "${prefix6}:4::1" ];
@@ -78,6 +80,8 @@ in
     hosts4 = {
       addams = [ "10.9.8.1" ];
       quine = [ "10.9.8.33" ];
+      dewey = [ "10.9.8.14" ];
+      debord = [ "10.9.8.21" ];
     };
     hosts6.main = {
       addams = [ "${prefix6}:9::1" ];
@@ -135,6 +139,9 @@ in
     mtu = 9000;
     hosts4 = {
       addams = [ "10.9.10.1" ];
+      debord = [ "10.9.10.21" ];
+      dewey = [ "10.9.10.14" ];
+      mali = [ "10.9.10.10" ];
     };
     hosts6.main = {
       addams = [ "${prefix6}:11::1" ];
@@ -206,74 +213,101 @@ in
     };
   };
 
-  site.hosts =
-    let
-      genInterfaces =
-        nets:
-        builtins.foldl' (
-          interfaces: net:
-          interfaces
-          // {
-            "${net}".type = "bridge";
-          }
-        ) { } nets;
-    in
-    {
-      addams = {
-        role = "server";
-        isRouter = true;
-        interfaces = {
-          lan0.type = "phys";
-          wan6tun = {
-            type = "gre";
-            routes = [
-              {
-                Destination = "::/0";
-                Gateway = "${prefix6}:0::1";
-                GatewayOnLink = true;
-              }
-            ];
-          };
-          prim = {
-            type = "bridge";
-            routes = [
-              {
-                # allow return traffic to mali for borgmatic
-                Destination = "10.9.4.10/32";
-                Table = "vpn";
-                Metric = 2;
-              }
-              {
-                Destination = "192.168.8.0/22";
-                Gateway = "10.9.4.21";
-              }
-            ];
+  site.hosts = {
+    addams = {
+      role = "server";
+      isRouter = true;
+      interfaces = {
+        lan0.type = "phys";
+        wan6tun = {
+          type = "gre";
+          routes = [
+            {
+              Destination = "::/0";
+              Gateway = "${prefix6}:0::1";
+              GatewayOnLink = true;
+            }
+          ];
+        };
+        prim = {
+          type = "bridge";
+          routes = [
+            {
+              # allow return traffic to mali for borgmatic
+              Destination = "10.9.4.10/32";
+              Table = "vpn";
+              Metric = 2;
+            }
+            {
+              Destination = "192.168.8.0/22";
+              Gateway = "10.9.4.21";
+            }
+          ];
 
-          };
-          mgmt.type = "bridge";
-          iot.type = "bridge";
-          inot.type = "bridge";
-          data.type = "bridge";
-          guest.type = "bridge";
-          vpn = {
-            type = "bridge";
-            routingPolicyRules = [
-              {
-                Family = "both";
-                IncomingInterface = "vpn";
-                Table = "vpn";
-                Priority = 100;
-              }
-            ];
-          };
+        };
+        mgmt.type = "bridge";
+        iot.type = "bridge";
+        inot.type = "bridge";
+        data.type = "bridge";
+        guest.type = "bridge";
+        vpn = {
+          type = "bridge";
+          routingPolicyRules = [
+            {
+              Family = "both";
+              IncomingInterface = "vpn";
+              Table = "vpn";
+              Priority = 100;
+            }
+          ];
         };
       };
-      quine = {
-        role = "server";
-        interfaces = genInterfaces [
-          "prim"
-          "svc"
-        ];
+    };
+    debord = {
+      role = "server";
+      interfaces = {
+        lan0.type = "phys";
+        lan1.type = "phys";
+        prim = {
+          type = "bridge";
+          parent = "lan0";
+        };
+        data = {
+          type = "bridge";
+          parent = "lan1";
+        };
+        mgmt = {
+          type = "bridge";
+          parent = "lan0";
+        };
       };
     };
+    dewey = {
+      role = "server";
+      interfaces = {
+        lan0.type = "phys";
+        lan1.type = "phys";
+        prim = {
+          type = "bridge";
+          parent = "lan0";
+        };
+        data = {
+          type = "bridge";
+          parent = "lan1";
+        };
+        mgmt = {
+          type = "bridge";
+          parent = "lan0";
+        };
+      };
+    };
+    quine = {
+      role = "server";
+      interfaces = {
+        lan0.type = "phys";
+        prim.type = "bridge";
+        svc.type = "bridge";
+      };
+    };
+  };
 }
