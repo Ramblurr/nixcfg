@@ -17,14 +17,21 @@ let
     mapcat
     merge
     nth
+    first
     ;
   nets = config.site.net;
   inSite = config.site.hosts ? ${hostName};
   hostConfig = config.site.hosts.${hostName};
-  hostBridges = keys (filter (_: iface: iface.type == "bridge") hostConfig.interfaces);
+  hostPhysicals = lib.naturalSort (
+    keys (filter (_: iface: iface.type == "phys") hostConfig.interfaces)
+  );
+  hostBridges = lib.naturalSort (
+    keys (filter (_: iface: iface.type == "bridge") hostConfig.interfaces)
+  );
   hostGres = keys (filter (_: iface: iface.type == "gre") hostConfig.interfaces);
-  hasStatic4 = net: (config.site.net.${net}.hosts4 ? ${hostName});
-  hasStatic6 = net: (some (v: containsKey v hostName) (vals config.site.net.${net}.hosts6));
+  hasStatic4 = net: (nets.${net}.hosts4 ? ${hostName});
+  hasStatic6 = net: (some (v: containsKey v hostName) (vals nets.${net}.hosts6));
+  defaultBridgeParent = first hostPhysicals;
 
   genNetDev = net: {
     "20-${net}" = {
@@ -70,7 +77,13 @@ let
   genNet = net: {
     "30-${net}" = {
       matchConfig.Name = net;
-      linkConfig.RequiredForOnline = "routable";
+      linkConfig =
+        {
+          RequiredForOnline = "routable";
+        }
+        // lib.optionalAttrs (hostConfig.interfaces.${net}.hwaddr != null) {
+          MACAddress = hostConfig.interfaces.${net}.hwaddr;
+        };
       networkConfig = merge [
         {
           LLDP = true;
@@ -132,6 +145,39 @@ let
       ];
     };
   };
+  genPhys = net: {
+    "10-${net}" =
+      let
+        vlansForThisIface = (
+          filter (
+            bridgeName:
+            if hostConfig.interfaces.${bridgeName}.parent != null then
+              hostConfig.interfaces.${bridgeName}.parent == net
+            else
+              net == defaultBridgeParent
+          ) hostBridges
+        );
+      in
+      {
+        matchConfig.Name = net;
+        addresses = lib.optionals (containsKey nets.${net}.hosts4 hostName) (
+          map (addr: {
+            Address = "${addr}/${toString nets.${net}.subnet4Len}";
+          }) nets.${net}.hosts4.${hostName}
+        );
+        networkConfig = {
+          DHCPServer = false;
+          VLAN = map (net: "vlan-${net}") vlansForThisIface;
+          LinkLocalAddressing = false;
+          LLDP = true;
+          EmitLLDP = true;
+        };
+        linkConfig = {
+          MTUBytes = nets.${net}.mtu;
+          RequiredForOnline = "carrier";
+        };
+      };
+  };
   reduce = fn: list: builtins.foldl' (result: item: result // (fn item)) { } list;
 in
 {
@@ -160,33 +206,12 @@ in
       ];
     };
 
-    # We assume that the host has configured a systemd.network.link and named their physical link lan0
     systemd.network.netdevs = merge [
       (reduce genNetDev hostBridges)
       (reduce genGreDevs hostGres)
     ];
     systemd.network.networks = merge [
-      {
-        "10-lan0" = {
-          matchConfig.Name = "lan0";
-          addresses = lib.optionals (containsKey nets.lan0.hosts4 hostName) (
-            map (addr: {
-              Address = "${addr}/${toString nets.lan0.subnet4Len}";
-            }) nets.lan0.hosts4.${hostName}
-          );
-          networkConfig = {
-            DHCPServer = false;
-            VLAN = map (net: "vlan-${net}") hostBridges;
-            LinkLocalAddressing = false;
-            LLDP = true;
-            EmitLLDP = true;
-          };
-          linkConfig = {
-            MTUBytes = nets.lan0.mtu;
-            RequiredForOnline = "carrier";
-          };
-        };
-      }
+      (reduce genPhys hostPhysicals)
       (reduce genNet hostBridges)
       (reduce genGres hostGres)
     ];
