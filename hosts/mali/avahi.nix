@@ -17,7 +17,7 @@
       userServices = true;
       workstation = true;
     };
-    allowInterfaces = [ "brprim4" ];
+    allowInterfaces = [ "prim" ];
     extraServiceFiles = {
       smb = ''
         <?xml version="1.0" standalone='no'?><!--*-nxml-*-->

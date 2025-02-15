@@ -10,195 +10,119 @@ in
 {
   networking.usePredictableInterfaceNames = true;
   networking.firewall.allowPing = true;
-  networking.nameservers = [
-    "192.168.1.3"
-    "10.9.4.4"
-  ];
+  networking.nameservers = config.repo.secrets.global.nameservers;
 
   # Useful if you need to troubleshoot systemd-networkd
   # systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
 
-  networking.useNetworkd = true;
-  services.resolved.enable = true;
-  services.timesyncd.enable = true;
-  networking.hostId = lib.my.generateHostId hostName;
-  systemd.network = {
-    netdevs = {
-      "10-bond0" = {
-        netdevConfig = {
-          Name = "bond0";
-          Kind = "bond";
-          #MTUBytes = "1500";
-          Description = "Bond0 bonded interface";
-        };
-        bondConfig = {
-          Mode = "802.3ad";
-          MIIMonitorSec = "1s";
-          LACPTransmitRate = "fast";
-          UpDelaySec = "2s";
-          DownDelaySec = "8s";
-          TransmitHashPolicy = "layer3+4";
-        };
-      };
-      "20-vlprim4" = {
-        netdevConfig = {
-          Name = "vlprim4";
-          Kind = "vlan";
-          MTUBytes = "1500";
-        };
-        vlanConfig = {
-          Id = 4;
-        };
-      };
-      "30-brprim4" = {
-        netdevConfig = {
-          Name = "brprim4";
-          Kind = "bridge";
-          MTUBytes = "1500";
-        };
-      };
-      "40-vlmgmt9" = {
-        netdevConfig = {
-          Name = "vlmgmt9";
-          Kind = "vlan";
-          MTUBytes = "1500";
-        };
-        vlanConfig = {
-          Id = 9;
-        };
-      };
-      "50-brmgmt9" = {
-        netdevConfig = {
-          Name = "brmgmt9";
-          Kind = "bridge";
-          MTUBytes = "1500";
-        };
-      };
-      "70-vldata11" = {
-        netdevConfig = {
-          Name = "vldata11";
-          Kind = "vlan";
-          MTUBytes = "9000";
-        };
-        vlanConfig = {
-          Id = 11;
-        };
-      };
-      "80-brdata11" = {
-        netdevConfig = {
-          Name = "brdata11";
-          Kind = "bridge";
-          MTUBytes = "9000";
-        };
-      };
-    };
+  site = config.repo.secrets.site.site;
+  systemd.network =
+    let
+      hostConfig = config.site.hosts.${hostName};
+      hostBridges = lib.naturalSort (
+        lib.mori.keys (lib.mori.filter (_: iface: iface.type == "bridge") hostConfig.interfaces)
+      );
+      vlansForIface =
+        thisName:
+        (lib.mori.filter (
+          bridgeName:
+          (hostConfig.interfaces.${bridgeName}.parent != null)
+          && (hostConfig.interfaces.${bridgeName}.parent == thisName)
+        ) hostBridges);
+    in
+    {
 
-    networks = {
-      "10-bond0" = {
-        matchConfig = {
-          Name = "bond0";
+      links = {
+        "10-eno1" = {
+          matchConfig.PermanentMACAddress = config.repo.secrets.local.eno1.mac;
+          linkConfig.Name = "eno1";
         };
-        vlan = [
-          "vlmgmt9"
-          "vlprim4"
-        ];
-        networkConfig = {
-          BindCarrier = "eno1 eno2";
-          DHCP = "no";
-          LinkLocalAddressing = "no";
+        "10-eno2" = {
+          matchConfig.PermanentMACAddress = config.repo.secrets.local.eno2.mac;
+          linkConfig.Name = "eno2";
         };
-      };
-      "11-eno1" = {
-        matchConfig = {
-          Name = "eno1";
+        "10-lan1" = {
+          matchConfig.PermanentMACAddress = config.repo.secrets.local.lan1.mac;
+          linkConfig.Name = "lan1";
         };
-        networkConfig = {
-          Bond = "bond0";
+        "10-lan2" = {
+          matchConfig.PermanentMACAddress = config.repo.secrets.local.lan2.mac;
+          linkConfig.Name = "lan2";
         };
       };
-      "12-eno1" = {
-        matchConfig = {
-          Name = "eno2";
-        };
-        networkConfig = {
-          Bond = "bond0";
-        };
-      };
-      "20-vlprim4" = {
-        matchConfig = {
-          Name = "vlprim4";
-        };
-        networkConfig = {
-          Bridge = "brprim4";
-        };
-      };
-      "30-brprim4" = {
-        matchConfig = {
-          Name = "brprim4";
-        };
-        networkConfig = {
-          DHCP = "no";
-          Address = "10.9.4.10/22";
-          Description = "primary";
-          DNSSEC = "no";
-        };
-        routes = [
-          {
-            Destination = "192.168.8.0/22";
-            Gateway = "10.9.4.21";
-          }
-        ];
-      };
-      "40-vlmgmt9" = {
-        matchConfig = {
-          Name = "vlmgmt9";
-        };
-        networkConfig = {
-          Bridge = "brmgmt9";
+      netdevs = {
+        "10-bond0" = {
+          netdevConfig = {
+            Name = "bond0";
+            Kind = "bond";
+            #MTUBytes = "1500";
+            Description = "Bond0 bonded interface";
+          };
+          bondConfig = {
+            Mode = "802.3ad";
+            MIIMonitorSec = "1s";
+            LACPTransmitRate = "fast";
+            UpDelaySec = "2s";
+            DownDelaySec = "8s";
+            TransmitHashPolicy = "layer3+4";
+          };
         };
       };
-      "50-brmgmt9" = {
-        matchConfig = {
-          Name = "brmgmt9";
+      networks =
+        # Disabled interfaces
+        (lib.mori.merge (
+          map
+            (iface: {
+              "10-${iface}" = {
+                matchConfig.Name = iface;
+                networkConfig.ConfigureWithoutCarrier = true;
+                linkConfig = {
+                  Unmanaged = "yes";
+                  ActivationPolicy = "always-down";
+                };
+              };
+            })
+            [
+              "lan2"
+            ]
+        ))
+        // {
+          "11-eno1" = {
+            matchConfig.Name = "eno1";
+            networkConfig.Bond = "bond0";
+          };
+          "11-eno2" = {
+            matchConfig.Name = "eno2";
+            networkConfig.Bond = "bond0";
+          };
+          "10-bond0" =
+            let
+            in
+            {
+              matchConfig.Name = "bond0";
+              linkConfig.RequiredForOnline = "carrier";
+              networkConfig = {
+                BindCarrier = "eno1 eno2";
+                DHCP = false;
+                LinkLocalAddressing = false;
+                VLAN = map (net: "vlan-${net}") (vlansForIface "bond0");
+              };
+            };
+          "10-lan1" = {
+            matchConfig.Name = "lan1";
+            networkConfig = {
+              DHCPServer = false;
+              VLAN = map (net: "vlan-${net}") (vlansForIface "lan1");
+              LinkLocalAddressing = false;
+              LLDP = true;
+              EmitLLDP = true;
+              Description = "I am the 10gbe sfp+ link";
+            };
+            linkConfig = {
+              MTUBytes = 9000;
+              RequiredForOnline = "carrier";
+            };
+          };
         };
-        networkConfig = {
-          DHCP = "no";
-          Address = "10.9.8.3/23";
-          Description = "mgmt";
-        };
-      };
-      "60-enp2s0f1" = {
-        matchConfig = {
-          Name = "enp2s0f1";
-        };
-        networkConfig = {
-          Description = "10gbe";
-        };
-        linkConfig = {
-          MTUBytes = "9000";
-        };
-        vlan = [ "vldata11" ];
-      };
-      "70-vldata11" = {
-        matchConfig = {
-          Name = "vldata11";
-        };
-        networkConfig = {
-          Bridge = "brdata11";
-        };
-      };
-      "80-brdata11" = {
-        matchConfig = {
-          Name = "brdata11";
-        };
-        networkConfig = {
-          DHCP = "no";
-          Address = "10.9.10.10/24";
-          Description = "data";
-          Gateway = "10.9.10.1";
-          DNSSEC = "no";
-        };
-      };
     };
-  };
 }
