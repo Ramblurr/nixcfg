@@ -29,7 +29,7 @@ in
     programs.extra-container.enable = true;
     networking.nat.enable = true;
     networking.nat.internalInterfaces = [ "ve-pg-matrix" ];
-    networking.nat.externalInterface = "brmgmt9";
+    networking.nat.externalInterface = "mgmt";
     containers.pg-matrix = {
       autoStart = true;
       privateNetwork = true;
