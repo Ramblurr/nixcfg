@@ -68,6 +68,11 @@ in
         - phys: (Physical) types.interface from a server
       '';
     };
+    parent = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Parent interface for a bridge or veth";
+    };
     gw4 = mkOption {
       type = types.nullOr types.str;
       default = null;

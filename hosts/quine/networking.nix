@@ -46,26 +46,6 @@
           ]
       ))
       // {
-        "30-prim".linkConfig.MACAddress = config.repo.secrets.local.prim.mac;
-        #"30-brprim4" = {
-        #  matchConfig.Name = "brprim4";
-        #  linkConfig.RequiredForOnline = "routable";
-        #  networkConfig = {
-        #    DHCP = "yes";
-        #    IPv6AcceptRA = true;
-        #  };
-
-        #  domains = config.repo.secrets.local.dns.domains;
-        #  dhcpV4Config.Use6RD = "yes";
-        #  dhcpV4Config.RouteMetric = 512;
-        #  routes = [
-        #    {
-        #      Destination = "192.168.8.0/22";
-        #      Gateway = "10.9.4.21";
-        #      GatewayOnLink = true;
-        #    }
-        #  ];
-        #};
         "30-brwork" = {
           matchConfig.Name = "brwork";
           linkConfig.RequiredForOnline = "no";
