@@ -93,8 +93,8 @@ let
           MulticastDNS = true;
           IPv6AcceptRA = !(hasStatic6 net) && !hostConfig.isRouter;
           IPv6SendRA = hostConfig.isRouter;
-          IPv4Forwarding = hostConfig.isRouter;
-          IPv6Forwarding = hostConfig.isRouter;
+          IPv4Forwarding = true;
+          IPv6Forwarding = true;
           LinkLocalAddressing = "ipv6";
         }
         // lib.optionalAttrs (hostConfig.interfaces.${net}.gw4) {

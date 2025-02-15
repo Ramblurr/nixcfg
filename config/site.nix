@@ -60,6 +60,7 @@ in
       ];
       debord = [ "10.9.4.21" ];
       dewey = [ "10.9.4.17" ];
+      mali = [ "10.9.4.10" ];
     };
     hosts6.main = {
       addams = [ "${prefix6}:4::1" ];
@@ -82,6 +83,7 @@ in
       quine = [ "10.9.8.33" ];
       dewey = [ "10.9.8.14" ];
       debord = [ "10.9.8.21" ];
+      mali = [ "10.9.8.3" ];
     };
     hosts6.main = {
       addams = [ "${prefix6}:9::1" ];
@@ -309,6 +311,30 @@ in
         lan0.type = "phys";
         prim.type = "bridge";
         svc.type = "bridge";
+      };
+    };
+    mali = {
+      role = "server";
+      interfaces = {
+        prim = {
+          type = "bridge";
+          parent = "bond0";
+          routes = [
+            {
+              Destination = "192.168.8.0/22";
+              Gateway = "10.9.4.21";
+            }
+          ];
+        };
+        data = {
+          type = "bridge";
+          parent = "lan1";
+          gw4 = true;
+        };
+        mgmt = {
+          type = "bridge";
+          parent = "bond0";
+        };
       };
     };
   };
