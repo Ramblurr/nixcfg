@@ -30,7 +30,6 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
-  modules.networking.default.enable = false;
 
   networking.firewall.logRefusedConnections = lib.mkForce true;
   modules.vpn.tailscale.enable = true;
