@@ -84,7 +84,7 @@ let
         // lib.optionalAttrs (hostConfig.interfaces.${net}.hwaddr != null) {
           MACAddress = hostConfig.interfaces.${net}.hwaddr;
         };
-      networkConfig = merge [
+      networkConfig =
         {
           LLDP = true;
           EmitLLDP = true;
@@ -97,7 +97,9 @@ let
           IPv6Forwarding = hostConfig.isRouter;
           LinkLocalAddressing = "ipv6";
         }
-      ];
+        // lib.optionalAttrs (hostConfig.interfaces.${net}.gw4) {
+          Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
+        };
       addresses = genAddresses net;
       routes = hostConfig.interfaces.${net}.routes;
       routingPolicyRules = hostConfig.interfaces.${net}.routingPolicyRules;

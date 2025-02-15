@@ -279,6 +279,7 @@ in
         mgmt = {
           type = "bridge";
           parent = "lan0";
+          gw4 = true;
         };
       };
     };
@@ -286,7 +287,7 @@ in
       role = "server";
       interfaces = {
         lan0.type = "phys";
-        lan1.type = "phys";
+        #lan1.type = "phys";
         prim = {
           type = "bridge";
           parent = "lan0";
@@ -298,6 +299,7 @@ in
         mgmt = {
           type = "bridge";
           parent = "lan0";
+          gw4 = true;
         };
       };
     };
