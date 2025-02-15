@@ -17,7 +17,6 @@ in
 {
   options.home-ops = {
     enable = lib.mkEnableOption "My modular multi-host Home Ops setup";
-    siteNet.enable = lib.mkEnableOption "";
     user = lib.mkOption {
       type = lib.types.attrs;
       description = "User config.";
@@ -141,7 +140,6 @@ in
       # vpn.tailscale.enable = true;
       firewall.enable = true;
       security.default.enable = true;
-      networking.default.enable = !cfg.siteNet.enable;
       users.enable = true;
       users.primaryUser = {
         username = cfg.user.username;
@@ -158,6 +156,11 @@ in
         ];
       };
     };
+
+    environment.interactiveShellInit = ''
+      # raise some awareness towards failed services
+      systemctl --no-pager --failed || true
+    '';
 
     environment.systemPackages = with pkgs; [
       bandwhich
@@ -360,206 +363,6 @@ in
           addAction('1.10.in-addr.arpa', PoolAction('local'))
           addAction(AllRule(), PoolAction("cloudflare"))
         '';
-    };
-    systemd.network = lib.mkIf (!cfg.siteNet.enable) {
-      netdevs = {
-        "20-vlprim4" = {
-          netdevConfig = {
-            Kind = "vlan";
-            Name = "vlprim4";
-          };
-          vlanConfig.Id = 4;
-        };
-        "20-vlmgmt9" = {
-          netdevConfig = {
-            Kind = "vlan";
-            Name = "vlmgmt9";
-          };
-          vlanConfig.Id = 9;
-        };
-        "20-vldata11" = {
-          netdevConfig = {
-            Kind = "vlan";
-            Name = "vldata11";
-            MTUBytes = "9000";
-          };
-          vlanConfig.Id = 11;
-        };
-        "30-brprim4" = {
-          netdevConfig = {
-            Name = "brprim4";
-            Kind = "bridge";
-          };
-        };
-        "30-brmgmt9" = {
-          netdevConfig = {
-            Name = "brmgmt9";
-            Kind = "bridge";
-          };
-        };
-        "30-brdata11" = {
-          netdevConfig = {
-            Name = "brdata11";
-            Kind = "bridge";
-            MTUBytes = "9000";
-          };
-        };
-
-        #"30-brmicrovm" = {
-        #  netdevConfig = {
-        #    Kind = "bridge";
-        #    Name = "microvm";
-        #  };
-        #};
-        "30-microvm-self" = {
-          netdevConfig = {
-            Kind = "macvlan";
-            Name = "microvm-self";
-          };
-          extraConfig = ''
-            [MACVLAN]
-            Mode=bridge
-          '';
-
-        };
-
-      };
-
-      networks = {
-        "40-${nodeSettings.mgmtIface}" = {
-          matchConfig.Name = "${nodeSettings.mgmtIface}";
-          vlan = [
-            "vlmgmt9"
-            "vlprim4"
-          ];
-          networkConfig.LinkLocalAddressing = "no";
-          linkConfig.RequiredForOnline = "carrier";
-        };
-        "40-${nodeSettings.dataIface}" = {
-          matchConfig = {
-            Name = "${nodeSettings.dataIface}";
-          };
-          networkConfig = {
-            Description = "physical 10gbe";
-          };
-          linkConfig = {
-            MTUBytes = "9000";
-          };
-          vlan = [ "vldata11" ];
-        };
-        "45-vlprim4" = {
-          matchConfig = {
-            Name = "vlprim4";
-          };
-          linkConfig.RequiredForOnline = "carrier";
-          networkConfig = {
-            Bridge = "brprim4";
-          };
-        };
-        "45-vldata11" = {
-          matchConfig = {
-            Name = "vldata11";
-          };
-          linkConfig.RequiredForOnline = "carrier";
-          networkConfig = {
-            Bridge = "brdata11";
-          };
-        };
-        "45-vlmgmt9" = {
-          matchConfig = {
-            Name = "vlmgmt9";
-          };
-          linkConfig.RequiredForOnline = "carrier";
-          networkConfig = {
-            Bridge = "brmgmt9";
-          };
-        };
-
-        "50-brprim4" = {
-          matchConfig = {
-            Name = "brprim4";
-          };
-          networkConfig.LinkLocalAddressing = "no";
-          linkConfig.RequiredForOnline = "carrier";
-          extraConfig = ''
-            [Network]
-            MACVLAN=microvm-self
-          '';
-        };
-        "50-microvm-self" = lib.mkIf nodeSettings.vlanPrimaryEnabled {
-          address = [ nodeSettings.primCIDR ];
-          matchConfig.Name = "microvm-self";
-          networkConfig = {
-            # no longer works?
-            # IPForward = "yes";
-
-            # disabled for now, but might be useful in the future
-            # IPv6PrivacyExtensions = "yes";
-            # IPv6SendRA = true;
-            # IPv6AcceptRA = false;
-            #DHCPPrefixDelegation = true;
-            #MulticastDNS = true;
-          };
-          #linkConfig.RequiredForOnline = "routable";
-        };
-        "50-brmgmt9" = {
-          matchConfig = {
-            Name = "brmgmt9";
-          };
-          networkConfig = {
-            DHCP = "no";
-            Address = nodeSettings.mgmtCIDR;
-            Gateway = config.repo.secrets.global.mgmtGateway;
-            Description = "mgmt VLAN";
-          };
-        };
-        "50-brdata11" = {
-          matchConfig = {
-            Name = "brdata11";
-          };
-          linkConfig.RequiredForOnline = "routable";
-          networkConfig = {
-            DHCP = "no";
-            Address = nodeSettings.dataCIDR;
-            Description = "data 10GbE VLAN";
-          };
-        };
-        # this is old config for the bridge for tap based microvms, but now i uses macvtap for better perf
-        #"50-microvm" = {
-        #  matchConfig.Name = "microvm";
-        #  networkConfig = {
-        #    DHCPServer = true;
-        #    IPv6SendRA = true;
-        #  };
-        #  addresses = [
-        #    { Address = config.repo.secrets.home-ops.subnets.dewey-microvm.hostAddr; }
-        #    { Address = config.repo.secrets.home-ops.subnets.dewey-microvm.hostAddr6; }
-        #  ];
-        #  ipv6Prefixes = [ { Prefix = config.repo.secrets.home-ops.subnets.dewey-microvm.prefix6; } ];
-        #};
-        #"50-microvm-guests" = {
-        #  matchConfig.Name = "vm-*";
-        #  # Attach to the bridge that was configured above
-        #  networkConfig.Bridge = "microvm";
-        #};
-        #"50-microvm" = {
-        #  matchConfig.Name = "brmgt";
-        #  # This interface should only be used from attached macvtaps.
-        #  # So don't acquire a link local address and only wait for
-        #  # this interface to gain a carrier.
-        #  networkConfig.LinkLocalAddressing = "no";
-        #  linkConfig.RequiredForOnline = "carrier";
-        #  extraConfig = ''
-        #    [Network]
-        #    MACVLAN=microvm-self
-        #  '';
-        #};
-        "90-macvtap-ignore" = {
-          matchConfig.Kind = "macvtap";
-          linkConfig.ActivationPolicy = "manual";
-          linkConfig.Unmanaged = "yes";
-        };
-      };
     };
 
     ########################

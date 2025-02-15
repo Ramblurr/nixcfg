@@ -74,14 +74,14 @@ in
       description = "Parent interface for a bridge or veth";
     };
     gw4 = mkOption {
-      type = types.nullOr types.str;
-      default = null;
-      description = "IPv4 gateway";
+      type = types.bool;
+      default = false;
+      description = "To use the router for this net as the default IPv4 gateway";
     };
     gw6 = mkOption {
-      type = types.nullOr types.str;
-      default = null;
-      description = "IPv6 gateway";
+      type = types.bool;
+      default = false;
+      description = "To use the router for this net as the default IPv6 gateway";
     };
     routes = mkOption {
       type = types.listOf (types.attrsOf types.anything);

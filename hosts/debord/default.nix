@@ -6,7 +6,6 @@
   ...
 }:
 let
-  hn = "debord";
   defaultSopsFile = ./secrets.sops.yaml;
   ramblurr = import ../ramblurr.nix {
     inherit
@@ -38,7 +37,6 @@ in
   modules.vpn.tailscale.useRoutingFeatures = "both";
   home-ops = {
     enable = true;
-    siteNet.enable = true;
     user = ramblurr;
     containers.enable = false;
     hypervisor.enable = true;

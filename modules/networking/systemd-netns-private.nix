@@ -207,10 +207,10 @@ in
                   "${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip link set ${ns.nsIface} up"
                   "-${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip link set lo up"
                   "-${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip route add default via ${cidrToIp ns.hostAddr}"
-                  "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${ns.nsAddr} -o brmgmt9 -j MASQUERADE"
+                  "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${ns.nsAddr} -o mgmt -j MASQUERADE"
                 ];
                 ExecStopPost = [
-                  "${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${ns.nsAddr} -o brmgmt9 -j MASQUERADE"
+                  "${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${ns.nsAddr} -o mgmt -j MASQUERADE"
                   "${pkgs.iproute2}/bin/ip link del ${ns.nsIface}"
                   "${pkgs.iproute2}/bin/ip link del ${ns.hostIface}"
                 ];

@@ -132,12 +132,12 @@ in
           RemainAfterExit = true;
           ExecStartPre = [
             # Create system process
-            "-${pkgs.iproute2}/bin/ip link add mv-int link brmgmt9 type macvlan mode bridge"
+            "-${pkgs.iproute2}/bin/ip link add mv-int link mgmt type macvlan mode bridge"
             "-${pkgs.iproute2}/bin/ip link set mv-int up"
             "-${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1"
           ];
           # TODO host side link shim so host can talk to netns
-          # ip link add ocis-shim link brmgmt9 type macvlan mode bridge
+          # ip link add ocis-shim link mgmt type macvlan mode bridge
           # ip addr add 10.9.8.102/32 dev foobar-shim
           # ip link set foobar-shim up
           # ip route add 10.9.8.100/32 dev foobar-shim
