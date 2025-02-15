@@ -64,7 +64,6 @@
     ./hardware/pipewire.nix
     ./hardware/ryzen.nix
     ./impermanence/default.nix
-    ./networking/default.nix
     ./networking/systemd-netns.nix
     ./networking/systemd-netns-private.nix
     ./security/default.nix

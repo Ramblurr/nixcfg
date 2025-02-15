@@ -224,7 +224,6 @@ in
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
-    networking.default.enable = false;
     hardware.ryzen.enable = true;
     hardware.easyNvidia = {
       enable = true;

@@ -4,6 +4,9 @@
   pkgs,
   ...
 }:
+let
+  inherit (config.networking) hostName;
+in
 {
   networking.usePredictableInterfaceNames = true;
   networking.firewall.allowPing = true;
@@ -15,6 +18,10 @@
   # Useful if you need to troubleshoot systemd-networkd
   # systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
 
+  networking.useNetworkd = true;
+  services.resolved.enable = true;
+  services.timesyncd.enable = true;
+  networking.hostId = lib.my.generateHostId hostName;
   systemd.network = {
     netdevs = {
       "10-bond0" = {
