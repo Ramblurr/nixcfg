@@ -113,6 +113,7 @@ in
             LinkLocalAddressing = false;
             LLDP = true;
             EmitLLDP = true;
+            Description = "I am the 10gbe sfp+ link";
           };
           linkConfig = {
             MTUBytes = 9000;
