@@ -203,6 +203,7 @@ in
       } // sharedServiceConfig;
     };
     systemd.services.overseerr = {
+      enable = false;
       description = "Request management and media discovery tool for the Plex ecosystem";
       after = [ "network.target" ] ++ serviceDeps;
       bindsTo = serviceDeps;

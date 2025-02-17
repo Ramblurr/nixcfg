@@ -13,6 +13,7 @@ let
     inputs.quadlet-nix.nixosModules.quadlet
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
+    inputs.microvm.nixosModules.host
   ];
   unstableDefaultModules = [
     inputs.disko-unstable.nixosModules.disko
@@ -105,13 +106,46 @@ let
       };
     };
 
+  mkGuest =
+    name:
+    {
+      system ? "x86_64-linux",
+      hostPath ? ../guests/${name},
+      extraModules ? [ ],
+    }:
+    let
+      pkgs = mkPkgs {
+        inherit system;
+        flake = inputs.nixpkgs;
+        overlays = defaultOverlays;
+      };
+    in
+    inputs.nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = {
+        # Use the correct instance lib that has our overlays
+        inherit (pkgs) lib;
+        inherit (config) nodes;
+        inherit inputs;
+      };
+      modules = [
+        ../config/guests.nix
+        {
+          node.secretsDir = hostPath + "/secrets";
+          sops.defaultSopsFile = hostPath + "/secrets.sops.yaml";
+          node.name = name;
+          nixpkgs.config.allowUnfree = true;
+          modules.microvm-guest.enable = true;
+        }
+        ../guests/${name}
+      ] ++ extraModules;
+    };
+
+  mkMkHosts =
+    fn: hosts:
+    lib.genAttrs (builtins.attrNames hosts) (hostName: fn hostName (builtins.getAttr hostName hosts));
 in
 {
-  inherit mkPkgs;
-
-  mkHosts =
-    hosts:
-    lib.genAttrs (builtins.attrNames hosts) (
-      hostName: mkHost hostName (builtins.getAttr hostName hosts)
-    );
+  mkHosts = mkMkHosts mkHost;
+  mkGuests = mkMkHosts mkGuest;
 }

@@ -22,7 +22,7 @@
             ;
         }
       );
-      inherit (hostHelpers) mkHosts;
+      inherit (hostHelpers) mkHosts mkGuests;
 
       hosts = {
         debord = {
@@ -46,7 +46,7 @@
           # John Dewey - https://en.wikipedia.org/wiki/John_Dewey
           isStable = false;
           system = "x86_64-linux";
-          hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
+          hostExtraModules = [ ];
         };
         witt = {
           # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
@@ -66,43 +66,53 @@
           isStable = true;
           system = "x86_64-linux";
         };
-        hello-world = {
-          hostPath = ../guests/hello-world;
-          enableDefaultModules = false;
-          hostExtraModules = [
-            inputs.impermanence.nixosModules.impermanence
-            inputs.microvm.nixosModules.microvm
-            inputs.sops-nix.nixosModules.sops
-            ../config/secrets.nix
-            ../config/common-server.nix
-            ../config/site.nix
-            ../modules/site
-            ../modules/services/sshd.nix
-            ../modules/secrets.nix
-            ../modules/meta.nix
-            ../modules/globals.nix
-            ../modules/impermanence/default.nix
-            ../modules/microvm-guest
-            ../guests/hello-world
-          ];
-        };
+        #_hello-world = {
+        #  hostPath = ../guests/hello-world;
+        #  enableDefaultModules = false;
+        #  hostExtraModules = [
+        #    inputs.impermanence.nixosModules.impermanence
+        #    inputs.microvm.nixosModules.microvm
+        #    inputs.sops-nix.nixosModules.sops
+        #    ../config
+        #    ../config/common-server.nix
+        #    ../modules/microvm-guest
+        #    ../modules/site
+        #    ../modules/services/sshd.nix
+        #    ../modules/secrets.nix
+        #    ../modules/meta.nix
+        #    ../modules/globals.nix
+        #    ../modules/impermanence/default.nix
+        #    ../guests/hello-world
+        #  ];
+        #};
+      };
+      guestNames = builtins.attrNames (
+        lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../guests)
+      );
+      guests = (lib.genAttrs guestNames (name: { })) // {
+        # set guest overrides
+        # hello-world = { system ...};
       };
     in
     {
-      nixosConfigurations = (mkHosts hosts) // {
-        addams-installer = inputs.nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = {
-            targetSystem = inputs.self.nixosConfigurations.addams;
-          };
-          modules = [
-            ../hosts/addams/installer.nix
-          ];
+      nixosConfigurations =
+        (mkHosts hosts)
+        // (mkGuests guests)
+        // {
+          addams-installer = inputs.nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+            specialArgs = {
+              targetSystem = inputs.self.nixosConfigurations.addams;
+            };
+            modules = [
+              ../hosts/addams/installer.nix
+            ];
 
+          };
         };
-      };
       # All nixosSystem instanciations are collected here, so that we can refer
       # to any system via nodes.<name>
-      nodes = config.nixosConfigurations;
+      #nodes = config.nixosConfigurations;
+      nodes = { };
     };
 }

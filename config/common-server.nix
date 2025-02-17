@@ -18,7 +18,13 @@
     }
   ];
 
-  users.users.root.openssh.authorizedKeys.keys = config.site.sshPubKeys;
+  users.users.root = {
+    initialHashedPassword = lib.mkForce null;
+    openssh.authorizedKeys.keys = config.site.sshPubKeys;
+    shell = pkgs.zsh;
+  };
+
+  programs.zsh.enable = true;
 
   boot = {
     enableContainers = false; # should be enabled explicitly
@@ -154,6 +160,7 @@
       defaultEditor = true;
     };
   };
+
   modules.services.sshd.enable = true;
 
   security.acme = {

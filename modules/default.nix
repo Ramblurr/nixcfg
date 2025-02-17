@@ -135,5 +135,7 @@
     ./secrets.nix
     ./sops.nix
     ./zfs-attrs.nix
+    # ./microvm-guest # explicitly not included in default modules
+    ./microvm-host
   ];
 }
