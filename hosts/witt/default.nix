@@ -7,17 +7,9 @@
 }:
 let
   inherit (config.repo.secrets.global) domain;
-  hn = "witt";
+  inherit (config.modules.users.primaryUser) username;
   machine-id = "798016ab36504bd0a5397317013bedba";
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../ramblurr.nix {
-    inherit
-      config
-      lib
-      pkgs
-      inputs
-      ;
-  };
 in
 {
   imports = [
@@ -25,8 +17,7 @@ in
     ./hardware.nix
     ./home.nix
     ./syncthing.nix
-    ../../config/secrets.nix
-    ../../config/attic.nix
+    ../../config
     ../../config/workstation-impermanence.nix
   ];
   system.stateVersion = "24.05";
@@ -46,7 +37,6 @@ in
 
   networking = {
     networkmanager.enable = true;
-    hostName = hn;
     hostId = pkgs.lib.concatStringsSep "" (
       pkgs.lib.take 8 (
         pkgs.lib.stringToCharacters (builtins.hashString "sha256" config.networking.hostName)
@@ -88,29 +78,19 @@ in
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
     users.enable = true;
-    users.primaryUser = {
-      username = "ramblurr";
-      name = "Me";
-      homeDirectory = "/home/ramblurr";
-      signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
-      email = "unnamedrambler@gmail.com";
-      passwordSecretKey = "ramblurr-password";
-      defaultSopsFile = defaultSopsFile;
-      shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-        "kvm"
-        "audio"
-        "flatpak"
-        "input"
-        "plugdev"
-        "libvirtd"
-      ];
-    };
+    users.primaryUser.extraGroups = [
+      "wheel"
+      "kvm"
+      "audio"
+      "flatpak"
+      "input"
+      "plugdev"
+      "libvirtd"
+    ];
 
     desktop = {
       kde.enable = true;
-      kde.sddm.hideUsers = [ config.modules.users.primaryUser.username ];
+      kde.sddm.hideUsers = [ username ];
       xdg.enable = true;
       browsers = {
         firefox.enable = true;
