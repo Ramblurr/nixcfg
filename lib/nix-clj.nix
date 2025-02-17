@@ -54,6 +54,8 @@ inputs: _final: prev: {
 
       thread = initial: fnList: builtins.foldl' (result: fn: fn result) initial fnList;
 
+      dissoc = keys: attrs: builtins.removeAttrs attrs keys;
+
     };
   };
 
