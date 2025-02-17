@@ -2,6 +2,7 @@
   inputs,
   self,
   lib,
+  config,
   ...
 }:
 
@@ -81,8 +82,8 @@ let
         [
           #inputs.nixpkgs.nixosModules.readOnlyPkgs
           {
-            networking.hostName = lib.mkForce name;
             node.secretsDir = hostPath + "/secrets";
+            node.name = name;
             nixpkgs.pkgs = nixpkgs';
           }
           hostPath
@@ -95,6 +96,7 @@ let
 
       specialArgs = {
         inherit inputs self;
+        inherit (config) nodes;
         mine = nixpkgs-mine;
         actual-nixpkgs = actual-nixpkgs;
         unstable = nixpkgs-unstable;

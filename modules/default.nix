@@ -129,10 +129,11 @@
     ./users/default.nix
     ./vpn/mullvad.nix
     ./vpn/tailscale.nix
+    ./distributed-config.nix
+    ./meta.nix
     ./nix.nix
     ./secrets.nix
-    ./meta.nix
-    ./zfs-attrs.nix
     ./sops.nix
+    ./zfs-attrs.nix
   ];
 }

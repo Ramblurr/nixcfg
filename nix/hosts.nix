@@ -101,24 +101,8 @@
 
         };
       };
-      # True NixOS nodes can define additional guest nodes that are built
-      # together with it. We collect all defined guests from each node here
-      # to allow accessing any node via the unified attribute `nodes`.
-      #guestConfigs = flip concatMapAttrs config.nixosConfigurations (
-      #  _: node:
-      #  flip mapAttrs' (node.config.guests or { }) (
-      #    guestName: guestDef:
-      #    nameValuePair guestDef.nodeName (
-      #      if guestDef.backend == "microvm" then
-      #        node.config.microvm.vms.${guestName}.config
-      #      else
-      #        node.config.containers.${guestName}.nixosConfiguration
-      #    )
-      #  )
-      #);
       # All nixosSystem instanciations are collected here, so that we can refer
       # to any system via nodes.<name>
-
-      nodes = config.nixosConfigurations; # // config.guestConfigs;
+      nodes = config.nixosConfigurations;
     };
 }
