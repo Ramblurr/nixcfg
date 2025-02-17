@@ -7,8 +7,7 @@
 }:
 let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
-  hn = "quine";
-  defaultSopsFile = ./secrets.sops.yaml;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   imports = [
@@ -16,9 +15,8 @@ in
     inputs.nixos-hardware.nixosModules.common-cpu-amd
     inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
     inputs.nix-gaming.nixosModules.pipewireLowLatency
-    ../../config/secrets.nix
+    ../../config
     ../../config/workstation-impermanence.nix
-    ../../config/attic.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./wireplumber.nix
@@ -31,23 +29,23 @@ in
     #./tabby.nix
   ];
   system.stateVersion = "23.05";
-  sops.defaultSopsFile = defaultSopsFile;
+  sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-  environment.etc."machine-id".text = "76913090587c40c8a3207202dfe86fc2";
+  environment.etc."machine-id".text = config.repo.secrets.local.machineId;
 
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
 
   sops.secrets.HASS_TOKEN = {
-    owner = "ramblurr";
+    owner = username;
     mode = "0400";
   };
   sops.secrets.netrc = {
-    owner = "ramblurr";
+    owner = username;
     mode = "0400";
   };
   sops.templates.hacompanion-env = {
-    owner = "ramblurr";
+    owner = username;
     mode = "0400";
     content = ''
       HASS_TOKEN=${config.sops.placeholder."HASS_TOKEN"}
@@ -55,11 +53,11 @@ in
     '';
   };
   sops.secrets."github_token" = {
-    owner = "ramblurr";
+    owner = username;
     mode = "0400";
   };
 
-  sops.templates."nix.conf".owner = "ramblurr";
+  sops.templates."nix.conf".owner = username;
   sops.templates."nix.conf".content = ''
     access-tokens = github.com=${config.sops.placeholder."github_token"}
   '';
@@ -180,11 +178,6 @@ in
     services = {
       docker.enable = true;
       attic-watch-store.enable = true;
-      github-runner = {
-        enable = false;
-        runnerName = hn;
-        url = "https://github.com/Ramblurr/containers";
-      };
       docker.enableOnBoot = false;
       podman.enable = true;
       microsocks.enable = false;
@@ -239,25 +232,15 @@ in
     hardware.pipewire.enable = true;
     hardware.pipewire.denoise.enable = true;
     users.enable = true;
-    users.primaryUser = {
-      username = "ramblurr";
-      name = "Casey Link";
-      homeDirectory = "/home/ramblurr";
-      signingKey = "978C4D08058BA26EB97CB51820782DBCACFAACDA";
-      email = "unnamedrambler@gmail.com";
-      passwordSecretKey = "ramblurr-password";
-      defaultSopsFile = defaultSopsFile;
-      shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-        "kvm"
-        "audio"
-        "flatpak"
-        "input"
-        "plugdev"
-        "libvirtd"
-      ];
-    };
+    users.primaryUser.extraGroups = [
+      "wheel"
+      "kvm"
+      "audio"
+      "flatpak"
+      "input"
+      "plugdev"
+      "libvirtd"
+    ];
     #services.pcscd.readerConfig = '''';
     services.borgmatic = {
       enable = true;

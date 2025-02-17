@@ -7,26 +7,16 @@
 }:
 let
   inherit (config.networking) hostName;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../ramblurr.nix {
-    inherit
-      config
-      lib
-      pkgs
-      inputs
-      ;
-  };
 in
 {
   imports = [
     ./hardware.nix
     ./disk-config.nix
     ./guests.nix
-    ../../config/secrets.nix
+    ../../config
     ../../config/home-ops.nix
-
-    ../../config/site.nix
-    ../../modules/site
     ../../modules/site-net
   ];
   system.stateVersion = "23.11";
@@ -37,7 +27,6 @@ in
   modules.vpn.tailscale.enable = true;
   home-ops = {
     enable = true;
-    user = ramblurr;
     ingress.enable = true;
     postgresql = {
       enable = true;
@@ -72,7 +61,7 @@ in
   myhm =
     { pkgs, ... }@hm:
     {
-      home.persistence."/persist${ramblurr.homeDirectory}" = {
+      home.persistence."/persist${homeDirectory}" = {
         directories = [ { directory = "work"; } ];
       };
     };
