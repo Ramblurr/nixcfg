@@ -14,7 +14,6 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
-    ./guests.nix
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
