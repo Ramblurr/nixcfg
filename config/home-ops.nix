@@ -17,10 +17,6 @@ in
 {
   options.home-ops = {
     enable = lib.mkEnableOption "My modular multi-host Home Ops setup";
-    user = lib.mkOption {
-      type = lib.types.attrs;
-      description = "User config.";
-    };
     postgresql = {
       enable = lib.mkEnableOption "Postgresql";
       onsiteBackup = {
@@ -141,20 +137,11 @@ in
       firewall.enable = true;
       security.default.enable = true;
       users.enable = true;
-      users.primaryUser = {
-        username = cfg.user.username;
-        name = cfg.user.name;
-        homeDirectory = cfg.user.homeDirectory;
-        signingKey = cfg.user.signingKey;
-        email = cfg.user.email;
-        passwordSecretKey = cfg.user.passwordSecretKey;
-        shell = pkgs.zsh;
-        extraGroups = [
-          "libvirtd"
-          "wheel"
-          "media"
-        ];
-      };
+      users.primaryUser.extraGroups = [
+        "libvirtd"
+        "wheel"
+        "media"
+      ];
     };
 
     environment.interactiveShellInit = ''

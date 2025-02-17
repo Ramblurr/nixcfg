@@ -1,13 +1,17 @@
 {
   config,
-  globals,
+  lib,
   pkgs,
   ...
 }:
 {
+  sops.secrets.root-password = {
+    neededForUsers = true;
+  };
   users.users.root = {
-    #inherit (globals.root) hashedPassword;
-    openssh.authorizedKeys.keys = globals.pubKeys;
+    initialHashedPassword = lib.mkForce null;
+    hashedPasswordFile = config.sops.secrets.root-password.path;
+    openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
     shell = pkgs.zsh;
   };
 
@@ -15,17 +19,8 @@
   environment.persistence."/persist".users.root.home = "/root";
 
   home-manager.users.root = {
-    imports = [
-      ../config
-    ];
-
     home = {
       username = config.users.users.root.name;
-
-      packages = with pkgs; [
-        vim
-        wireguard-tools
-      ];
     };
   };
 }

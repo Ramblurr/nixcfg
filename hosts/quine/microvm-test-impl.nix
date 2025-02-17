@@ -17,7 +17,6 @@ let
 in
 {
   imports = [
-    ../../config/site.nix
     ../../modules/site
     ../../modules/site-net
   ];
@@ -26,6 +25,5 @@ in
     enable = true;
     baseZfsDataset = "rpool/encrypted/safe/microvms";
   };
-  users.users.root.openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
 
 }

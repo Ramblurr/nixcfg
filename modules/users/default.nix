@@ -19,77 +19,54 @@ in
   options = {
     modules.users = {
       enable = lib.mkEnableOption "";
-      rootPassword.enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-      };
-
-      mutableUsers = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-      };
       primaryUser = {
         username = lib.mkOption {
           type = lib.types.uniq lib.types.str;
-          default = "ramblurr";
         };
         name = lib.mkOption {
           type = lib.types.uniq lib.types.str;
-          default = "Ramblurr";
         };
         email = lib.mkOption {
           type = lib.types.uniq lib.types.str;
-          default = "";
         };
         signingKey = lib.mkOption {
           type = lib.types.uniq lib.types.str;
-          default = "";
         };
         homeDirectory = lib.mkOption {
           type = lib.types.uniq lib.types.str;
-          default = "/home/ramblurr";
         };
 
         uid = lib.mkOption {
           default = 1000;
           type = lib.types.uniq lib.types.int;
         };
-
-        passwordEnable = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
         passwordSecretKey = lib.mkOption {
           type = lib.types.uniq lib.types.str;
-          default = "ramblurr-password";
-        };
-        defaultSopsFile = lib.mkOption {
-          type = types.nullOr (types.path);
-          default = null;
         };
         shell = lib.mkOption {
           type = types.nullOr (types.either types.shellPackage (types.passwdEntry types.path));
-          default = pkgs.bash;
+          default = pkgs.zsh;
         };
         extraGroups = lib.mkOption {
           type = types.listOf types.str;
-          default = [ ];
           description = lib.mdDoc "The user's auxiliary groups.";
         };
         authorizedKeys = lib.mkOption {
           type = types.listOf types.str;
-          default = config.repo.secrets.global.pubKeys;
           description = lib.mdDoc "The user's authorized SSH keys.";
         };
       };
     };
   };
   imports = [
-    (mkAliasOptionModule [ "myhm" ] [
-      "home-manager"
-      "users"
-      cfg.primaryUser.username
-    ])
+    (mkAliasOptionModule
+      [ "myhm" ]
+      [
+        "home-manager"
+        "users"
+        cfg.primaryUser.username
+      ]
+    )
   ];
   config = lib.mkIf cfg.enable {
     sops = {
@@ -97,13 +74,10 @@ in
         "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"
       ];
       gnupg.sshKeyPaths = [ ];
-      secrets.root-password = lib.mkIf cfg.rootPassword.enable { neededForUsers = true; };
     };
 
     users = {
-      mutableUsers = cfg.mutableUsers;
-      users.root.initialHashedPassword = lib.mkForce null;
-      users.root.hashedPasswordFile = lib.mkIf cfg.rootPassword.enable config.sops.secrets.root-password.path;
+      mutableUsers = false;
 
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;
       users."${cfg.primaryUser.username}" = {
@@ -111,9 +85,7 @@ in
         home = cfg.primaryUser.homeDirectory;
         description = cfg.primaryUser.name;
         openssh.authorizedKeys.keys = cfg.primaryUser.authorizedKeys;
-        hashedPasswordFile =
-          mkIf cfg.primaryUser.passwordEnable
-            config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
+        hashedPasswordFile = config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
         extraGroups = cfg.primaryUser.extraGroups;
         uid = cfg.primaryUser.uid;
         group = cfg.primaryUser.username;
@@ -121,8 +93,7 @@ in
       };
     };
 
-    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.passwordEnable {
-      #sopsFile = cfg.primaryUser.defaultSopsFile;
+    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = {
       neededForUsers = true;
     };
 
@@ -147,17 +118,19 @@ in
         imports = [
           inputs.impermanence.nixosModules.home-manager.impermanence
           inputs.sops-nix.homeManagerModule
-          (mkAliasOptionModule [ "persistence" ] [
-            "home"
-            "persistence"
-            "/persist${cfg.primaryUser.homeDirectory}"
-          ])
+          (mkAliasOptionModule
+            [ "persistence" ]
+            [
+              "home"
+              "persistence"
+              "/persist${cfg.primaryUser.homeDirectory}"
+            ]
+          )
         ];
 
-        #        home.stateVersion = "21.11";
         home.homeDirectory = cfg.primaryUser.homeDirectory;
         sops = {
-          defaultSopsFile = lib.mkIf (cfg.primaryUser ? defaultSopsFile) cfg.primaryUser.defaultSopsFile;
+          defaultSopsFile = config.sops.defaultSopsFile;
           gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
         };
         manual.manpages.enable = true;
