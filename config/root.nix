@@ -15,12 +15,8 @@
     shell = pkgs.zsh;
   };
 
+  programs.zsh.enable = true;
+
   # This cannot currently be derived automatically due to a design flaw in nixpkgs.
   environment.persistence."/persist".users.root.home = "/root";
-
-  home-manager.users.root = {
-    home = {
-      username = config.users.users.root.name;
-    };
-  };
 }

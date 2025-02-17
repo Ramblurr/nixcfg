@@ -7,7 +7,6 @@
 }:
 let
   inherit (config.modules.users.primaryUser) username;
-  defaultSopsFile = ./secrets.sops.yaml;
 in
 {
   imports = [
