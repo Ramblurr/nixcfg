@@ -11,8 +11,6 @@ in
 {
 
   imports = [
-    ../../config/site.nix
-    ../../modules/site
     ../../modules/site-net
   ];
 

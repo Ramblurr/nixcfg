@@ -170,16 +170,13 @@ in
                 ++ map (hosts6: "${hosts6.${hostName}}/64") (
                   builtins.filter (hosts6: hosts6 ? ${hostName}) (builtins.attrValues netCfg.hosts6)
                 );
-              defaultGateways = {
-                "svc" = "svc-gw";
-              };
             in
             {
               matchConfig.MACAddress = generateMacAddress net;
               addresses = map (Address: { inherit Address; }) addresses;
-              gateway = lib.mkIf (defaultGateways ? ${net}) (
+              gateway = lib.mkIf (netCfg.dhcp.enable) (
                 let
-                  gw = defaultGateways.${net};
+                  gw = netCfg.hosts4.${netCfg.dhcp.router};
                 in
                 [ netCfg.hosts4.${gw} ]
                 ++ map (hosts6: hosts6.${gw}) (

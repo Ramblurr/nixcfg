@@ -7,6 +7,9 @@ let
   prefix6 = config.repo.secrets.site.sitePrefix6;
 in
 {
+  imports = [
+    ../modules/site
+  ];
   site.data = {
     contact = global.email.home;
     networkDomain = global.domain.home;
@@ -206,12 +209,18 @@ in
     subnet4 = "172.20.20.0/24";
     subnets6.main = "${prefix6}:5::/64";
     hosts4 = {
-      svc-gw = [ "172.20.20.1" ];
+      addams = [ "172.20.20.1" ];
       hello-world = [ "172.20.20.2" ];
       quine = [ "172.20.20.3" ];
     };
     hosts6.local = {
       addams = [ "${prefix6}:5::1" ];
+    };
+    dhcp = {
+      enable = true;
+      start = "172.20.20.10";
+      end = "172.20.20.254";
+      router = "addams";
     };
   };
 
@@ -252,6 +261,7 @@ in
         inot.type = "bridge";
         data.type = "bridge";
         guest.type = "bridge";
+        svc.type = "bridge";
         vpn = {
           type = "bridge";
           routingPolicyRules = [

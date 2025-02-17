@@ -508,6 +508,11 @@ let
           comment = "allow admin access";
         }
         {
+          destPort = "http_ports";
+          srcAddr = "admin";
+          comment = "allow admin web access";
+        }
+        {
           destPort = "admin_ports";
           srcAddr = "admin";
           comment = "allow admin access";
