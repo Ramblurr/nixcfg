@@ -175,7 +175,7 @@ in
     ];
     files = [ ];
 
-    users.${ramblurr.username} = {
+    users.${username} = {
       directories = [
         ".config/rclone"
         ".config/qobuz-dl"
