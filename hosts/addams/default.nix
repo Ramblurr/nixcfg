@@ -6,21 +6,13 @@
   ...
 }:
 let
-  hn = "addams";
+  inherit (config.modules.users.primaryUser) username;
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../ramblurr.nix {
-    inherit
-      config
-      lib
-      pkgs
-      inputs
-      ;
-  };
 in
 {
   imports = [
     ./hardware.nix
-    ../../config/secrets.nix
+    ../../config
     ./networking.nix
     ./modules/firewall
     ./modules/podman.nix
@@ -78,16 +70,11 @@ in
     # since this is my router, we handle networking and firealling in this host config
     firewall.enable = false;
     users.enable = true;
-
-    users.primaryUser = ramblurr // {
-      defaultSopsFile = defaultSopsFile;
-      shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-        "kvm"
-        "libvirtd"
-      ];
-    };
+    users.primaryUser.extraGroups = [
+      "wheel"
+      "kvm"
+      "libvirtd"
+    ];
   };
 
   ######################
@@ -103,11 +90,11 @@ in
   };
 
   systemd.tmpfiles.rules = [
-    "d /persist/home/${ramblurr.username} 700 ${ramblurr.username} ${ramblurr.username}"
-    "d /persist/home/${ramblurr.username}/.config 0775 ${ramblurr.username} ${ramblurr.username}  -"
-    "d /persist/home/${ramblurr.username}/.local 755 ${ramblurr.username} ${ramblurr.username}"
-    "d /persist/home/${ramblurr.username}/.local/state 755 ${ramblurr.username} ${ramblurr.username}"
-    "d /persist/home/${ramblurr.username}/.local/state/zsh 755 ${ramblurr.username} ${ramblurr.username}"
+    "d /persist/home/${username} 700 ${username} ${username}"
+    "d /persist/home/${username}/.config 0775 ${username} ${username}  -"
+    "d /persist/home/${username}/.local 755 ${username} ${username}"
+    "d /persist/home/${username}/.local/state 755 ${username} ${username}"
+    "d /persist/home/${username}/.local/state/zsh 755 ${username} ${username}"
   ];
 
   services.smartd.enable = true;

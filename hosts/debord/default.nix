@@ -7,23 +7,13 @@
 }:
 let
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../ramblurr.nix {
-    inherit
-      config
-      lib
-      pkgs
-      inputs
-      ;
-  };
 in
 {
   imports = [
     ./hardware.nix
     ./disk-config.nix
-    ../../config/secrets.nix
+    ../../config
     ../../config/home-ops.nix
-    ../../config/site.nix
-    ../../modules/site
     ../../modules/site-net
   ];
   system.stateVersion = "24.05";
@@ -36,7 +26,6 @@ in
   modules.vpn.tailscale.useRoutingFeatures = "both";
   home-ops = {
     enable = true;
-    user = ramblurr;
     containers.enable = false;
     hypervisor.enable = true;
   };

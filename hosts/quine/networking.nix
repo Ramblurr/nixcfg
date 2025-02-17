@@ -5,6 +5,7 @@
   ...
 }:
 {
+  site = config.repo.secrets.site.site;
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   systemd.network = {
     links = {

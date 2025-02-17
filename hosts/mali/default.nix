@@ -7,21 +7,12 @@
   ...
 }:
 let
-  hn = "mali";
+  inherit (config.modules.users.primaryUser) username;
   defaultSopsFile = ./secrets.sops.yaml;
-  ramblurr = import ../ramblurr.nix {
-    inherit
-      config
-      lib
-      pkgs
-      inputs
-      ;
-  };
   home-ops = config.repo.secrets.home-ops;
 in
 {
   imports = [
-    ../../config/secrets.nix
     ./hardware-configuration.nix
     ./networking.nix
     ./nfs.nix
@@ -38,19 +29,15 @@ in
     ./beets.nix
     ./atticd.nix
     ./rclone.nix
-
-    ../../config/site.nix
-    ../../modules/site
+    ../../config
     ../../modules/site-net
   ];
-  # TODO
-  # firewall check
   system.stateVersion = "23.05";
   sops.defaultSopsFile = defaultSopsFile;
   time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "en_US.utf8";
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-  environment.etc."machine-id".text = "3b3e54988be146febcce587e0f65669b";
+  environment.etc."machine-id".text = config.repo.secrets.local.machineId;
 
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
@@ -89,20 +76,10 @@ in
     firewall.enable = true;
     security.default.enable = true;
     users.enable = true;
-    users.primaryUser = {
-      username = ramblurr.username;
-      name = ramblurr.name;
-      homeDirectory = ramblurr.homeDirectory;
-      signingKey = ramblurr.signingKey;
-      email = ramblurr.email;
-      passwordSecretKey = ramblurr.passwordSecretKey;
-      defaultSopsFile = defaultSopsFile;
-      shell = pkgs.zsh;
-      extraGroups = [
-        "wheel"
-        "k8s-nfs"
-      ];
-    };
+    users.primaryUser.extraGroups = [
+      "wheel"
+      "k8s-nfs"
+    ];
   };
 
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
