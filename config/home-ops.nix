@@ -10,6 +10,7 @@
 # The idea is if I want to move service foo to host A, I can just enable it with one flag and it will be deployed
 # (of course I'd have to migrate the data, but that's easy enough with zfs send recv)
 let
+  inherit (config.modules.users.primaryUser) username;
   home-ops = config.repo.secrets.home-ops;
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
@@ -259,11 +260,11 @@ in
     };
 
     systemd.tmpfiles.rules = [
-      "d /persist/home/${cfg.user.username} 700 ${cfg.user.username} ${cfg.user.username}"
-      "d /persist/home/${cfg.user.username}/.config 0775 ${cfg.user.username} ${cfg.user.username}  -"
-      "d /persist/home/${cfg.user.username}/.local 755 ${cfg.user.username} ${cfg.user.username}"
-      "d /persist/home/${cfg.user.username}/.local/state 755 ${cfg.user.username} ${cfg.user.username}"
-      "d /persist/home/${cfg.user.username}/.local/state/zsh 755 ${cfg.user.username} ${cfg.user.username}"
+      "d /persist/home/${username} 700 ${username} ${username}"
+      "d /persist/home/${username}/.config 0775 ${username} ${username}  -"
+      "d /persist/home/${username}/.local 755 ${username} ${username}"
+      "d /persist/home/${username}/.local/state 755 ${username} ${username}"
+      "d /persist/home/${username}/.local/state/zsh 755 ${username} ${username}"
     ];
 
     ################
