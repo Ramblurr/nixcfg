@@ -27,6 +27,7 @@ in
       # attic nix cache endpoint
       "attic.mgmt.${domain.home}" = {
         useACMEHost = "attic.mgmt.${domain.home}";
+        serverAliases = [ "attic.int.${domain.home}" ];
         forceSSL = true;
         http3 = false;
         http2 = false;
