@@ -127,7 +127,7 @@ tasks:
     cmds:
       - nix why-depends .\#nixosConfigurations.{{.host}}.config.system.build.toplevel .\#nixosConfigurations.{{.host}}.pkgs.{{.pkg}} --derivation | cat
 
-  new-host:
-    desc: Scaffold out a new host
+  gen-host:
+    desc: Scaffold out a gen host
     cmds:
-      - python ./scripts/new-host.py
+      - python ./scripts/gen-host.py
