@@ -1,6 +1,7 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
 {
   imports = [
+    inputs.home-manager.nixosModules.home-manager
     inputs.microvm.nixosModules.microvm
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
@@ -14,4 +15,15 @@
     ../modules/sops.nix
     ../modules/impermanence/default.nix
   ];
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    sharedModules = [
+      {
+        home.stateVersion = config.system.stateVersion;
+      }
+      inputs.quadlet-nix.homeManagerModules.quadlet
+    ];
+  };
 }

@@ -14,7 +14,8 @@
 
     nixfmt.url = "github:serokell/nixfmt";
 
-    microvm.url = "github:astro/microvm.nix";
+    #microvm.url = "github:astro/microvm.nix";
+    microvm.url = "path:/home/ramblurr/src/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs";
 
     cadquery.url = "github:vinszent/cq-flake/main";

@@ -22,12 +22,6 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    modules.microvm-guest.mounts = [
-      "etc"
-      "home"
-      "var"
-    ];
-
     # make mounts like /etc /home /var available early so that they can be used in system.activationScripts
     fileSystems =
       {
@@ -41,14 +35,16 @@ in
     microvm = {
       hypervisor = lib.mkDefault "cloud-hypervisor";
       deflateOnOOM = false;
-      mem = lib.mkDefault 512;
+      mem = lib.mkDefault 1024;
       vcpu = lib.mkDefault 4;
 
       interfaces = lib.mkIf cfg.autoNetSetup (
         map (net: {
-          type = "tap";
+          type = "macvtap";
           id = builtins.substring 0 15 "${net}-${hostName}";
           mac = generateMacAddress net;
+          macvtap.link = "vlan-svc";
+          macvtap.mode = "bridge";
         }) nets
       );
 
@@ -98,6 +94,7 @@ in
     };
 
     systemd.network = lib.mkIf cfg.autoNetSetup {
+      enable = true;
       links = builtins.foldl' (
         links: net:
         links
@@ -181,11 +178,11 @@ in
     hardware.enableRedistributableFirmware = false;
 
     # nix store is mounted read only
-    nix = {
-      enable = lib.mkDefault false;
-      gc.automatic = false;
-      optimise.automatic = false;
-    };
+    #nix = {
+    #  enable = lib.mkDefault false;
+    #  gc.automatic = false;
+    #  optimise.automatic = false;
+    #};
 
     system.build.installBootLoader = "${pkgs.coreutils}/bin/true";
 
@@ -193,11 +190,15 @@ in
       "d /home/root 0700 root root -" # createHome does not create it
     ];
 
+    systemd.user.extraConfig = ''
+      DefaultEnvironment="PATH=/run/current-system/sw/bin:/run/wrappers/bin:${lib.makeBinPath [ pkgs.bash ]}"
+    '';
+
     users = {
       mutableUsers = false;
       users."root" = {
         createHome = true;
-        #home = lib.mkForce "/home/root";
+        home = lib.mkForce "/home/root";
       };
     };
   };

@@ -69,6 +69,12 @@ in
       }
     ];
 
+    nix = {
+      enable = true;
+      gc.automatic = false;
+      optimise.automatic = false;
+    };
+
     home-manager.users.${cfg.user.name} =
       { pkgs, config, ... }:
       let

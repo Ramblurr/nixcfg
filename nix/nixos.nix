@@ -127,6 +127,7 @@ let
         inherit (pkgs) lib;
         inherit (config) nodes;
         inherit inputs;
+        nixpkgs = inputs.nixpkgs;
       };
       modules = [
         ../config/guests.nix
