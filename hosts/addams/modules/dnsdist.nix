@@ -26,6 +26,7 @@ in
 
         -- udp/tcp dns listening
         setLocal("0.0.0.0:53", {})
+        addLocal("[::]:53", {})
 
         -- Local Authoritiative Zones (powerdns)
         newServer({
