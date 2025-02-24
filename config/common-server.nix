@@ -55,6 +55,7 @@
       bmon
       curl
       nvd
+      ncdu
       dig
       ethtool
       fd

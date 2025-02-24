@@ -45,6 +45,7 @@ in
     mounts = mkOption {
       description = "Persistent filesystems to create, without leading /.";
       type = types.listOf types.str;
+      default = [ ];
     };
 
     mountBase = mkOption {
@@ -63,6 +64,34 @@ in
         /nix/store via virtiofs from the host, or create
         an erofs block image for it.
       '';
+    };
+
+    homeManager = {
+      enable = mkEnableOption "Enable home-manager for the microvm";
+      username = mkOption {
+        type = types.str;
+        description = ''
+          Username for the home-manager configuration.
+        '';
+      };
+      uid = mkOption {
+        type = types.int;
+        default = null;
+        description = ''
+          UID for the home-manager configuration.
+        '';
+      };
+      gid = mkOption {
+        type = types.int;
+        default = null;
+        description = ''
+          GID for the home-manager configuration.
+        '';
+      };
+    };
+
+    quadlet = {
+      enable = mkEnableOption "Enable podman quadlet for the microvm";
     };
 
   };

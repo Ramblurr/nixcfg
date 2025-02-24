@@ -14,7 +14,7 @@ in
     enable = lib.mkEnableOption "Enable microvm host services (for imperative control!)";
     baseZfsDataset = lib.mkOption {
       type = lib.types.str;
-      description = "Base ZFS dataset whereunder to create shares for MicroVMs.";
+      description = "Base ZFS dataset under which microvm shares are created.";
     };
   };
   config = lib.mkIf cfg.enable {
@@ -23,11 +23,11 @@ in
       # TODO autostart = [ ];
     };
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/microvms"."mountpoint" = "/var/lib/microvms";
-      "rpool/encrypted/safe/svc/microvms"."com.sun:auto-snapshot" = "false";
-    };
-    systemd.tmpfiles.rules = [ "d /var/lib/microvms 0770 microvm kvm" ];
+    # create the state directory for our microvms
+    # this doesn't get its own zfs dataset, because the vm shares themselves will
+    # be mounted under here
+    environment.persistence."/persist".directories = [ "/var/lib/microvms" ];
+    systemd.tmpfiles.rules = [ "d /persist/var/lib/microvms 0770 microvm kvm" ];
 
     # allow microvm access to zvol
     users.users.microvm.extraGroups = [ "disk" ];
