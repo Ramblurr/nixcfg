@@ -24,6 +24,37 @@ in
   networking.firewall.logRefusedConnections = lib.mkForce true;
   modules.vpn.tailscale.enable = true;
   modules.vpn.tailscale.useRoutingFeatures = "both";
+  security.rtkit.enable = true;
+
+  networking.firewall.allowedUDPPorts = [
+    4214
+  ];
+  networking.firewall.allowedTCPPorts = [
+    4214
+  ];
+  environment.systemPackages = with pkgs; [
+    alsa-utils
+    pipewire
+    wireplumber
+    pulsemixer
+    jless
+    (pkgs.vlc.override {
+      chromecastSupport = false;
+      jackSupport = false;
+      onlyLibVLC = false;
+      skins2Support = false;
+      waylandSupport = false;
+      withQt5 = false;
+    })
+  ];
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    pulse.enable = true;
+    jack.enable = false;
+    wireplumber.enable = true;
+    audio.enable = true;
+  };
   home-ops = {
     enable = true;
     containers.enable = false;
