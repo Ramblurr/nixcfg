@@ -140,6 +140,7 @@ in
       users.enable = true;
       users.primaryUser.extraGroups = [
         "libvirtd"
+        "audio"
         "wheel"
         "media"
       ];
