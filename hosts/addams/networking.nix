@@ -122,11 +122,6 @@ in
                 GatewayOnLink = true; # prevents link from staying in "configuring" state
                 Table = "vpn";
               }
-              {
-                Destination = "0.0.0.0/0";
-                Type = "unreachable";
-                Table = "vpn";
-              }
             ]
             ++ (
               let

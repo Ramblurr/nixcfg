@@ -108,6 +108,16 @@ let
           Prefix = prefix;
         }) (vals nets.${net}.subnets6)
       );
+      ipv6SendRAConfig = lib.optionalAttrs (!(hasStatic6 net) && !hostConfig.isRouter) {
+        # no dhcpv6 server is in use
+        Managed = false;
+        OtherInformation = false;
+        RouterLifetimeSec = 1800;
+        EmitDNS = true;
+        DNS = "_link_local";
+        DNSLifetimeSec = 3600;
+
+      };
     };
     "20-vlan-${net}" = {
       matchConfig.Name = "vlan-${net}";
