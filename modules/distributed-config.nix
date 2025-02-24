@@ -87,7 +87,8 @@ in
       getConfig =
         path: otherNode:
         let
-          cfg = nodes.${otherNode}.config.nodes.${nodeName} or null;
+          otherNode2 = lib.traceVal otherNode;
+          cfg = nodes.${otherNode2}.config.nodes.${nodeName} or null;
         in
         optionals (cfg != null) (getAttrFromPath path cfg);
       mergeConfigFromOthers = path: mkMerge (concatMap (getConfig path) (attrNames nodes));

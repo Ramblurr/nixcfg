@@ -692,17 +692,14 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1738449543,
-        "narHash": "sha256-OX6MnQzR0t/3LDlLKTpSLE7/T3vVKrJOn00OKwXsj04=",
-        "owner": "astro",
-        "repo": "microvm.nix",
-        "rev": "f71f275bfad1a4e46d8171de00b0a834efa3d118",
-        "type": "github"
+        "lastModified": 1740231763,
+        "narHash": "sha256-rfYc4epXLj6j3aDZXF4B98q4V+TKdBWOH5NaGuI9HVc=",
+        "path": "/home/ramblurr/src/microvm.nix",
+        "type": "path"
       },
       "original": {
-        "owner": "astro",
-        "repo": "microvm.nix",
-        "type": "github"
+        "path": "/home/ramblurr/src/microvm.nix",
+        "type": "path"
       }
     },
     "mozilla": {

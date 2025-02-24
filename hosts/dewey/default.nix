@@ -24,6 +24,10 @@ in
   sops.defaultSopsFile = ./secrets.sops.yaml;
 
   modules.vpn.tailscale.enable = true;
+  modules.microvm-host = {
+    enable = true;
+    baseZfsDataset = "rpool/encrypted/safe/microvms";
+  };
   home-ops = {
     enable = true;
     ingress.enable = true;
@@ -46,7 +50,7 @@ in
       calibre.enable = true;
       calibre-web.enable = true;
       archivebox.enable = false;
-      linkding.enable = true;
+      #linkding.enable = true;
       matrix-synapse.enable = true;
       influxdb.enable = true;
       git-archive.enable = true;

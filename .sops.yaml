@@ -12,6 +12,7 @@ keys:
       - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
       - &addams age1t70vans0qsnru7j06fwtj7wq7hpfj59cxreu9a20rrxuahff9fmqsa2wjd
       - &hello-world age14vg23yfklu7ld6flwnycx4lmfhkkuncejsju7tus2hj5qrryvgxsvvqtng
+      - &linkding age1uh5u7zcz28dskcskpyznxkyg2y4xj0wkaf4usmrjhkmfhzr6gg8qynk3hq
 creation_rules:
   - path_regex: terraform/secrets.sops.ya?ml$
     key_groups:
@@ -85,5 +86,12 @@ creation_rules:
     key_groups:
       - age:
           - *hello-world
+          - *disaster-recovery
+          - *ramblurr-tmp
+
+  - path_regex: guests/linkding/.*.sops.*$
+    key_groups:
+      - age:
+          - *linkding
           - *disaster-recovery
           - *ramblurr-tmp

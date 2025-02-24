@@ -55,6 +55,7 @@ in
     domainName = "prim.${domain}";
     mtu = 1500;
     subnet4 = "10.9.4.0/22";
+    #subnets6 = { };
     subnets6.main = "${prefix6}:4::/64";
     hosts4 = {
       addams = [
@@ -65,6 +66,7 @@ in
       dewey = [ "10.9.4.17" ];
       mali = [ "10.9.4.10" ];
     };
+    hosts6 = { };
     hosts6.main = {
       addams = [ "${prefix6}:4::1" ];
     };
@@ -210,15 +212,17 @@ in
     subnets6.main = "${prefix6}:5::/64";
     hosts4 = {
       addams = [ "172.20.20.1" ];
-      hello-world = [ "172.20.20.2" ];
-      quine = [ "172.20.20.3" ];
+      quine = [ "172.20.20.2" ];
+      dewey = [ "172.20.20.3" ];
+      debord = [ "172.20.20.4" ];
+      linkding = [ "172.20.20.20" ];
     };
     hosts6.local = {
       addams = [ "${prefix6}:5::1" ];
     };
     dhcp = {
       enable = true;
-      start = "172.20.20.10";
+      start = "172.20.20.200";
       end = "172.20.20.254";
       router = "addams";
     };
@@ -313,6 +317,10 @@ in
           parent = "lan0";
           gw4 = true;
         };
+        svc = {
+          type = "bridge";
+          parent = "lan0";
+        };
       };
     };
     quine = {
@@ -321,6 +329,7 @@ in
         lan0.type = "phys";
         prim.type = "bridge";
         svc.type = "bridge";
+        vpn.type = "bridge";
       };
     };
     mali = {
