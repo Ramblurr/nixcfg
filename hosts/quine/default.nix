@@ -235,6 +235,7 @@ in
     users.primaryUser.extraGroups = [
       "wheel"
       "kvm"
+      "docker"
       "audio"
       "flatpak"
       "input"
