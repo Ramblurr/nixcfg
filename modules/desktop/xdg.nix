@@ -66,6 +66,7 @@ in
           #      "x-scheme-handler/https" = browser;
           #      "x-scheme-handler/about" = browser;
           #      "x-scheme-handler/unknown" = browser;
+          #      "x-scheme-handler/vscode" = browser;
           #      "x-scheme-handler/discord" = [ "discord.desktop" ];
           #      "audio/*" = browser;
           #      "video/*" = browser;
@@ -84,6 +85,7 @@ in
           #      "firefox-work.desktop;firefox.desktop"
           #    ];
           #    "image/png" = [ "org.kde.gwenview.desktop" ];
+          #    "x-scheme-handler/vscode" = [ "code-work-url-handler.desktop" ];
           #    "application/pdf" = [ "okularApplication_pdf.desktop" ];
           #    "text/html" = [
           #      "firefox-personal.desktop"
