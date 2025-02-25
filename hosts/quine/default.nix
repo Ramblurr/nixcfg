@@ -209,6 +209,7 @@ in
           gruvbox-community
         ];
       };
+      vscode.enable = true;
     };
     impermanence.enable = true;
     boot.zfs.enable = true;
