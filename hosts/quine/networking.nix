@@ -8,6 +8,10 @@
   site = config.repo.secrets.site.site;
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   systemd.network = {
+    config.networkConfig = {
+      IPv4Forwarding = true;
+      #IPv6Forwarding = false;
+    };
     links = {
       "10-lan0" = {
         matchConfig.MACAddress = config.repo.secrets.local.lan0.mac;
