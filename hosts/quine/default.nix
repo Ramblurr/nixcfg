@@ -86,6 +86,7 @@ in
   home.attic.enable = true;
 
   networking.firewall.allowedTCPPorts = [
+    3000
     8080
   ];
   networking.firewall.allowedUDPPorts = [ 67 ];

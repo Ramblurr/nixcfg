@@ -201,8 +201,8 @@ in
     services.resolved.enable = lib.mkDefault true;
     boot.kernelModules = lib.mkIf (hostGres != [ ]) [ "ip_gre" ];
     systemd.network.config.networkConfig = {
-      IPv4Forwarding = hostConfig.isRouter;
-      IPv6Forwarding = hostConfig.isRouter;
+      IPv4Forwarding = lib.mkDefault hostConfig.isRouter;
+      IPv6Forwarding = lib.mkDefault hostConfig.isRouter;
     };
 
     systemd.network.enable = true;
