@@ -144,6 +144,7 @@ in
             windowrule =
               let
                 f = regex: "float, ^(${regex})$";
+                t = regex: "tile, ^(${regex})$";
               in
               [
                 (f "org.gnome.Calculator")
@@ -156,6 +157,7 @@ in
                 (f "Color Picker")
                 (f "xdg-desktop-portal")
                 (f "xdg-desktop-portal-gnome")
+                (t "\[portal\] .+")
                 #(f "com.github.Aylur.ags")
                 "workspace 2 silent,class:^(firefox-personal)$"
                 "workspace 4 silent,class:^(firefox-work)$"
