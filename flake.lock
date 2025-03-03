@@ -692,8 +692,8 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1740244309,
-        "narHash": "sha256-rfYc4epXLj6j3aDZXF4B98q4V+TKdBWOH5NaGuI9HVc=",
+        "lastModified": 1740474677,
+        "narHash": "sha256-AGYndq5vyaHq1v6FqueuZReDd/JPAXIVq4izcoenewI=",
         "path": "/home/ramblurr/src/microvm.nix",
         "type": "path"
       },
