@@ -16,7 +16,7 @@ in
 {
   options.modules.editors.emacs = {
     enable = lib.mkEnableOption "";
-    package = lib.mkPackageOption pkgs "emacs29-pgtk" { };
+    package = lib.mkPackageOption pkgs "emacs30-pgtk" { };
   };
   config = mkIf cfg.enable {
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
@@ -28,10 +28,10 @@ in
           enable = true;
           package = cfg.package;
           extraPackages = epkgs: [
-            epkgs.vterm
-            epkgs.pdf-tools
+            #epkgs.vterm
+            #epkgs.pdf-tools
             epkgs.treesit-grammars.with-all-grammars
-            epkgs.mu4e
+            #epkgs.mu4e
           ];
         };
 
@@ -49,6 +49,7 @@ in
         home.packages = with pkgs; [
           ## Some emacs package dependencies
           ffmpegthumbnailer
+          copilot-language-server
           mediainfo
           git
           zoxide
@@ -87,8 +88,6 @@ in
           sqlite
           # :lang latex & :lang org (latex previews)
           texlive.combined.scheme-medium
-          # :lang beancount
-          beancount
           (python3.withPackages (
             ps: with ps; [
               virtualenv

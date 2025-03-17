@@ -2,6 +2,7 @@
   config,
   options,
   inputs,
+  mine,
   lib,
   pkgs,
   ...
@@ -59,6 +60,7 @@ in
         enable = true;
       };
       home.packages = with pkgs; [
+        mine.claude-code
         hclfmt
         virt-manager
         cue

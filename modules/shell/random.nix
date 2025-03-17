@@ -23,6 +23,7 @@ in
       { ... }@hm:
       {
         home.packages = with pkgs; [
+          glow
           graphviz
           #(openai-whisper-cpp.override { cudaSupport = true; })
           #openai-whisper
@@ -73,7 +74,7 @@ in
           iotop
           which
           unzip
-          xz
+          #xz
           zip
           # asciinema py12 nose
           findutils
