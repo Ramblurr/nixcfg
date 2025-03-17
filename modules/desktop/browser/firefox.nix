@@ -14,6 +14,8 @@ let
   withImpermanence = config.modules.impermanence.enable;
   firefox-nightly =
     inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
+  firefox-devedition-bin =
+    inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-devedition-bin;
 in
 {
   options.modules.desktop.browsers.firefox = {
@@ -35,6 +37,7 @@ in
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
+        home.packages = [ firefox-devedition-bin ];
         programs.firefox = {
           enable = true;
           package = firefox-nightly;
@@ -79,46 +82,46 @@ in
           target = ".mozilla/firefox/default/chrome/firefox-gnome-theme";
           source = inputs.firefox-gnome-theme;
         };
-        home.file.".local/share/applications/firefox-work.desktop" = {
-          text = ''
-            [Desktop Entry]
-            Actions=new-private-window
-            Categories=Network;WebBrowser
-            Exec=${firefox-nightly}/bin/firefox-nightly -P work --name firefox-work --class=firefox-work %U
-            GenericName=Work Web Browser
-            Icon=firefox-nightly
-            MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
-            Name=Work Firefox
-            StartupNotify=true
-            StartupWMClass=firefox-work
-            Terminal=false
-            Type=Application
-            Version=1.4
-            [Desktop Action new-private-window]
-            Exec=${firefox-nightly}/bin/firefox-nightly -P work --name firefox-work --class=firefox-work --private-window %U
-            Name=New Work Private Window
-          '';
-        };
-        home.file.".local/share/applications/firefox-personal.desktop" = {
-          text = ''
-            [Desktop Entry]
-            Actions=new-private-window
-            Categories=Network;WebBrowser
-            Exec=${firefox-nightly}/bin/firefox-nightly -P personal --name firefox-personal --class=firefox-personal %U
-            GenericName=Personal Web Browser
-            Icon=firefox-nightly
-            MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
-            Name=Personal Firefox
-            StartupNotify=true
-            StartupWMClass=firefox-personal
-            Terminal=false
-            Type=Application
-            Version=1.4
-            [Desktop Action new-private-window]
-            Exec=${firefox-nightly}/bin/firefox-nightly -P personal --name firefox-personal --class=firefox-personal --private-window %U
-            Name=New Personal Private Window
-          '';
-        };
+        # home.file.".local/share/applications/firefox-work.desktop" = {
+        #   text = ''
+        #     [Desktop Entry]
+        #     Actions=new-private-window
+        #     Categories=Network;WebBrowser
+        #     Exec=${firefox-nightly}/bin/firefox-nightly -P work --name firefox-work --class=firefox-work %U
+        #     GenericName=Work Web Browser
+        #     Icon=firefox-nightly
+        #     MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
+        #     Name=Work Firefox
+        #     StartupNotify=true
+        #     StartupWMClass=firefox-work
+        #     Terminal=false
+        #     Type=Application
+        #     Version=1.4
+        #     [Desktop Action new-private-window]
+        #     Exec=${firefox-nightly}/bin/firefox-nightly -P work --name firefox-work --class=firefox-work --private-window %U
+        #     Name=New Work Private Window
+        #   '';
+        # };
+        # home.file.".local/share/applications/firefox-personal.desktop" = {
+        #   text = ''
+        #     [Desktop Entry]
+        #     Actions=new-private-window
+        #     Categories=Network;WebBrowser
+        #     Exec=${firefox-nightly}/bin/firefox-nightly -P personal --name firefox-personal --class=firefox-personal %U
+        #     GenericName=Personal Web Browser
+        #     Icon=firefox-nightly
+        #     MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https
+        #     Name=Personal Firefox
+        #     StartupNotify=true
+        #     StartupWMClass=firefox-personal
+        #     Terminal=false
+        #     Type=Application
+        #     Version=1.4
+        #     [Desktop Action new-private-window]
+        #     Exec=${firefox-nightly}/bin/firefox-nightly -P personal --name firefox-personal --class=firefox-personal --private-window %U
+        #     Name=New Personal Private Window
+        #   '';
+        # };
       };
   };
 }
