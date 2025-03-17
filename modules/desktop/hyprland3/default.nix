@@ -125,10 +125,61 @@ in
         gnome-keyring.enable = true;
         gnome-online-accounts.enable = true;
       };
-      displayManager.sddm.wayland.enable = true;
-      displayManager.enable = true;
-      displayManager.sddm.enable = true;
+      #displayManager.enable = false;
+      #displayManager.sddm.wayland.enable = false;
+      #displayManager.sddm.enable = false;
+      #displayManager.ly.enable = false;
+      greetd = {
+        enable = true;
+        settings = rec {
+          terminal = {
+            vt = 7;
+          };
+          tuigreet_session =
+            let
+              session = "${pkgs.hyprland}/bin/Hyprland";
+              tuigreet = "${lib.getExe pkgs.greetd.tuigreet}";
+              opts = [
+                "--time"
+                "--remember"
+                "--theme"
+                "border=lightblue;prompt=green;time=orange;button=yellow;container=black"
+                "--power-shutdown"
+                "systemctl poweroff -i"
+                "--power-reboot"
+                "systemctl reboot -i"
+                "--cmd"
+                "${session}"
+              ];
+            in
+            {
+              command = "${tuigreet} ${lib.strings.escapeShellArgs opts}";
+              user = "greeter";
+            };
+          default_session = tuigreet_session;
+        };
+      };
     };
-
+    systemd.tmpfiles.rules = lib.mkIf withImpermanence [
+      "d /persist/var/cache/greeter - greeter greeter - -"
+    ];
+    environment.persistence."/persist".directories = lib.mkIf withImpermanence [ "/var/cache/greeter" ];
+    # allow greeter to poweroff and reboot
+    security.polkit.extraConfig = ''
+       polkit.addRule(function(action, subject) {
+      if (
+        subject.user == "greeter"
+          && (
+            action.id == "org.freedesktop.login1.reboot" ||
+            action.id == "org.freedesktop.login1.reboot-multiple-sessions" ||
+            action.id == "org.freedesktop.login1.power-off" ||
+            action.id == "org.freedesktop.login1.power-off-multiple-sessions"
+          )
+        )
+      {
+        return polkit.Result.YES;
+      }
+       })
+    '';
   };
 }
