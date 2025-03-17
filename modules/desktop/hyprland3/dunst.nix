@@ -43,7 +43,8 @@ in
           };
         };
 
-        xdg.dataFile."dbus-1/services/org.knopwob.dunst.service".source = "${pkgs.dunst}/share/dbus-1/services/org.knopwob.dunst.service";
+        xdg.dataFile."dbus-1/services/org.knopwob.dunst.service".source =
+          "${pkgs.dunst}/share/dbus-1/services/org.knopwob.dunst.service";
         xdg.configFile."dunst/dunstrc" = {
           text = toDunstIni (
             lib.my.mergeAttrs' [
