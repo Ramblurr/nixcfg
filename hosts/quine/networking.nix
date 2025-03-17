@@ -7,6 +7,12 @@
 {
   site = config.repo.secrets.site.site;
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
+  services.resolved.fallbackDns = [
+    "1.1.1.1#cloudflare-dns.com"
+    "8.8.8.8#dns.google"
+    "1.0.0.1#cloudflare-dns.com"
+    "8.8.4.4#dns.google"
+  ];
   systemd.network = {
     config.networkConfig = {
       IPv4Forwarding = true;
@@ -51,6 +57,7 @@
           ]
       ))
       // {
+        "30-prim".networkConfig.IPv6AcceptRA = lib.mkForce false;
         "30-brwork" = {
           matchConfig.Name = "brwork";
           linkConfig.RequiredForOnline = "no";
