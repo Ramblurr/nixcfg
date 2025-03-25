@@ -16,20 +16,21 @@ in
   };
 
   site.sshPubKeys = global.pubKeys;
-  site.net.wan6tun = {
-    vlan = null;
-    domainName = null;
-    subnet4 = "192.168.254.0/24";
-    subnets6.main = "${prefix6}:0::/64";
-    hosts4 = {
-      addams = [ "192.168.254.1" ];
-      wan6-gw = [ "192.168.254.2" ];
-    };
-    hosts6.main = {
-      addams = [ "${prefix6}:0::2" ];
-      wan6-gw = [ "${prefix6}:0::1" ];
-    };
-  };
+  #site.net.wan6tun = {
+  #  vlan = null;
+  #  domainName = null;
+  #  subnet4 = "192.168.254.0/24";
+  #  subnets6 = { };
+  #  #subnets6.main = "${prefix6}:0::/64";
+  #  hosts4 = {
+  #    addams = [ "192.168.254.1" ];
+  #    wan6-gw = [ "192.168.254.2" ];
+  #  };
+  #  #hosts6.main = {
+  #  #  addams = [ "${prefix6}:0::2" ];
+  #  #  wan6-gw = [ "${prefix6}:0::1" ];
+  #  #};
+  #};
   site.net.lan0 = {
     # the untagged net
     vlan = null;
@@ -55,8 +56,8 @@ in
     domainName = "prim.${domain}";
     mtu = 1500;
     subnet4 = "10.9.4.0/22";
-    #subnets6 = { };
-    subnets6.main = "${prefix6}:4::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:4::/64";
     hosts4 = {
       addams = [
         "10.9.4.1"
@@ -67,9 +68,9 @@ in
       mali = [ "10.9.4.10" ];
     };
     hosts6 = { };
-    hosts6.main = {
-      addams = [ "${prefix6}:4::1" ];
-    };
+    #hosts6.main = {
+    #  addams = [ "${prefix6}:4::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.9.6.10";
@@ -82,7 +83,8 @@ in
     domainName = "mgmt.${domain}";
     mtu = 1500;
     subnet4 = "10.9.8.0/23";
-    subnets6.main = "${prefix6}:9::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:9::/64";
     hosts4 = {
       addams = [ "10.9.8.1" ];
       quine = [ "10.9.8.33" ];
@@ -90,9 +92,9 @@ in
       debord = [ "10.9.8.21" ];
       mali = [ "10.9.8.3" ];
     };
-    hosts6.main = {
-      addams = [ "${prefix6}:9::1" ];
-    };
+    #hosts6.main = {
+    #  addams = [ "${prefix6}:9::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.9.9.200";
@@ -104,14 +106,15 @@ in
     vlan = 50;
     domainName = "iot.${domain}";
     subnet4 = "10.8.50.0/23";
-    subnets6.main = "${prefix6}:50::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:50::/64";
     mtu = 1500;
     hosts4 = {
       addams = [ "10.8.50.1" ];
     };
-    hosts6.main = {
-      addams = [ "${prefix6}:50::1" ];
-    };
+    #hosts6.main = {
+    #  addams = [ "${prefix6}:50::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.8.50.100";
@@ -123,14 +126,15 @@ in
     vlan = 60;
     domainName = "not.${domain}";
     subnet4 = "10.8.60.0/23";
-    subnets6.main = "${prefix6}:60::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:60::/64";
     mtu = 1500;
     hosts4 = {
       addams = [ "10.8.60.1" ];
     };
-    hosts6.main = {
-      addams = [ "${prefix6}:60::1" ];
-    };
+    #hosts6.main = {
+    #  addams = [ "${prefix6}:60::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.8.61.2";
@@ -142,7 +146,8 @@ in
     vlan = 11;
     domainName = "data.${domain}";
     subnet4 = "10.9.10.0/23";
-    subnets6.main = "${prefix6}:11::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:11::/64";
     mtu = 9000;
     hosts4 = {
       addams = [ "10.9.10.1" ];
@@ -150,9 +155,9 @@ in
       dewey = [ "10.9.10.14" ];
       mali = [ "10.9.10.10" ];
     };
-    hosts6.main = {
-      addams = [ "${prefix6}:11::1" ];
-    };
+    #hosts6.main = {
+    #  addams = [ "${prefix6}:11::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.9.11.200";
@@ -164,14 +169,15 @@ in
     vlan = 3;
     domainName = "guest.${domain}";
     subnet4 = "10.8.3.0/24";
-    subnets6.main = "${prefix6}:3::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:3::/64";
     mtu = 1500;
     hosts4 = {
       addams = [ "10.8.3.1" ];
     };
-    hosts6.main = {
-      addams = [ "${prefix6}:3::1" ];
-    };
+    #hosts6.main = {
+    #  addams = [ "${prefix6}:3::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.8.3.6";
@@ -184,13 +190,14 @@ in
     domainName = "vpn.${domain}";
     mtu = 1500;
     subnet4 = "10.8.70.0/24";
-    subnets6.main = "${prefix6}:70::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:70::/64";
     hosts4 = {
       addams = [ "10.8.70.1" ];
     };
-    hosts6.local = {
-      addams = [ "${prefix6}:70::1" ];
-    };
+    #hosts6.local = {
+    #  addams = [ "${prefix6}:70::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "10.8.70.10";
@@ -209,7 +216,8 @@ in
     domainName = "svc.${domain}";
     mtu = 1500;
     subnet4 = "172.20.20.0/24";
-    subnets6.main = "${prefix6}:5::/64";
+    subnets6 = { };
+    #subnets6.main = "${prefix6}:5::/64";
     hosts4 = {
       addams = [ "172.20.20.1" ];
       quine = [ "172.20.20.2" ];
@@ -217,9 +225,9 @@ in
       debord = [ "172.20.20.4" ];
       linkding = [ "172.20.20.20" ];
     };
-    hosts6.local = {
-      addams = [ "${prefix6}:5::1" ];
-    };
+    #hosts6.local = {
+    #  addams = [ "${prefix6}:5::1" ];
+    #};
     dhcp = {
       enable = true;
       start = "172.20.20.200";
@@ -234,16 +242,16 @@ in
       isRouter = true;
       interfaces = {
         lan0.type = "phys";
-        wan6tun = {
-          type = "gre";
-          routes = [
-            {
-              Destination = "::/0";
-              Gateway = "${prefix6}:0::1";
-              GatewayOnLink = true;
-            }
-          ];
-        };
+        #wan6tun = {
+        #  type = "gre";
+        #  routes = [
+        #    {
+        #      Destination = "::/0";
+        #      Gateway = "${prefix6}:0::1";
+        #      GatewayOnLink = true;
+        #    }
+        #  ];
+        #};
         prim = {
           type = "bridge";
           routes = [

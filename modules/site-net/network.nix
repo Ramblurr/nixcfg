@@ -95,7 +95,8 @@ let
           IPv6SendRA = hostConfig.isRouter;
           IPv4Forwarding = true;
           IPv6Forwarding = true;
-          LinkLocalAddressing = "ipv6";
+          #LinkLocalAddressing = "ipv6";
+          LinkLocalAddressing = "no";
         }
         // lib.optionalAttrs (hostConfig.interfaces.${net}.gw4) {
           Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
