@@ -21,6 +21,7 @@ in
 
   config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
+      python3Packages.python-lsp-server
       python3Packages.netaddr
       (python3.withPackages (
         ps: with ps; [
