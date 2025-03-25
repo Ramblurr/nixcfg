@@ -87,7 +87,9 @@ in
 
   networking.firewall.allowedTCPPorts = [
     3000
+    3001
     8080
+    8081
   ];
   networking.firewall.allowedUDPPorts = [ 67 ];
 
