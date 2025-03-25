@@ -205,7 +205,7 @@ let
     wan_ipv6_egress = {
       from = [ zones.prim ];
       to = [
-        zones.wan6tun
+        #zones.wan6tun
       ];
       verdict = "accept";
     };
