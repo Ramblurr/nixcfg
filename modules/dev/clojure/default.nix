@@ -1,4 +1,5 @@
 {
+  mine,
   config,
   options,
   lib,
@@ -57,7 +58,7 @@ in
           gradle
           clojure
           cljfmt
-          clojure-lsp
+          mine.clojure-lsp
           clj-kondo
           leiningen
           babashka
