@@ -23,6 +23,7 @@ in
       { ... }@hm:
       {
         home.packages = with pkgs; [
+          repomix
           glow
           graphviz
           #(openai-whisper-cpp.override { cudaSupport = true; })
