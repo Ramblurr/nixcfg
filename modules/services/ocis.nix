@@ -112,6 +112,7 @@ in
         PROXY_USER_OIDC_CLAIM = "preferred_username";
         PROXY_ROLE_ASSIGNMENT_DRIVER = "oidc";
         WEB_OIDC_SCOPE = "openid profile email groups";
+        OCIS_SHARING_PUBLIC_SHARE_MUST_HAVE_PASSWORD = "false";
       };
     };
 
