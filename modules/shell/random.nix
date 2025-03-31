@@ -23,6 +23,7 @@ in
       { ... }@hm:
       {
         home.packages = with pkgs; [
+          treefmt2
           repomix
           glow
           graphviz
