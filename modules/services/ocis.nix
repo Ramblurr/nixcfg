@@ -1,5 +1,6 @@
 {
   options,
+  mine,
   config,
   lib,
   utils,
@@ -12,8 +13,16 @@ let
   home-ops = config.repo.secrets.home-ops;
   localPath = "/mnt/mali/${cfg.nfsShare}";
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
+  cspFile = pkgs.writeText "csp.yaml" cfg.cspYaml;
 in
 {
+  disabledModules = [
+    "${inputs.nixpkgs}/nixos/modules/services/web-apps/ocis.nix"
+    "${inputs.nixpkgs-stable}/nixos/modules/services/web-apps/ocis.nix"
+  ];
+  imports = [
+    "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/ocis.nix"
+  ];
   options.modules.services.ocis = {
     enable = lib.mkEnableOption "ocis";
     domain = lib.mkOption {
@@ -22,17 +31,26 @@ in
       description = "The domain to use for the ocis";
     };
 
+    cspYaml = lib.mkOption {
+      type = lib.types.str;
+      description = ''
+        A CSP yaml file (see https://doc.owncloud.com/ocis/next/deployment/services/s-list/proxy.html#content-security-policy)
+      '';
+    };
+
     ingress = lib.mkOption {
       type = lib.types.submodule (
         lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
       );
     };
+
     ports = {
       http = lib.mkOption {
         type = lib.types.port;
         description = "The HTTP port to use for ocis";
       };
     };
+
     nfsShare = lib.mkOption { type = lib.types.str; };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
@@ -81,6 +99,7 @@ in
 
     services.ocis = {
       enable = true;
+      package = mine.ocis-bin71;
       url = "https://${cfg.domain}";
       stateDir = "${localPath}/data";
       configDir = "${localPath}/config";
@@ -91,11 +110,12 @@ in
       environment = {
         OCIS_INSECURE = "true";
         PROXY_TLS = "false";
+        PROXY_CSP_CONFIG_FILE_LOCATION = "${cspFile}";
         NOTIFICATIONS_SMTP_HOST = toString config.repo.secrets.home-ops.mail.host;
         NOTIFICATIONS_SMTP_PORT = toString config.repo.secrets.home-ops.mail.port;
         NOTIFICATIONS_SMTP_SENDER = config.repo.secrets.home-ops.mail.notificationsFromAddressWork;
         NOTIFICATIONS_SMTP_INSECURE = "true";
-        OCIS_LOG_LEVEL = "debug";
+        #OCIS_LOG_LEVEL = "debug";
         OCIS_LOG_COLOR = "true";
         OCIS_LOG_PRETTY = "true";
         # Authentik OIDC
