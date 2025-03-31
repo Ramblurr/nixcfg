@@ -565,6 +565,7 @@ in
           ports.http = home-ops.ports.ocis-http;
           user = home-ops.users.ocis-work;
           group = home-ops.groups.ocis-work;
+          cspYaml = home-ops.ocis-work-csp;
           nfsShare = "tank2/services/work-ocis2";
           subnet = home-ops.subnets.ocis-work;
           ingress = {
