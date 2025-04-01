@@ -93,5 +93,6 @@ creation_rules:
     key_groups:
       - age:
           - *linkding
+          - *dewey
           - *disaster-recovery
           - *ramblurr-tmp

@@ -29,7 +29,11 @@ lib.mkIf cfg.homeManager.enable {
     gid = cfg.homeManager.gid;
   };
 
-  systemd.services."home-manager-${username}".serviceConfig.TimeoutStartSec = lib.mkOverride 99 "15m";
+  systemd.services."home-manager-${username}" = {
+    serviceConfig.TimeoutStartSec = lib.mkOverride 99 "15m";
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+  };
   home-manager.users.${username} =
     { pkgs, config, ... }:
     {
