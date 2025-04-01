@@ -57,7 +57,6 @@ in
       calibre.enable = true;
       calibre-web.enable = true;
       archivebox.enable = false;
-      #linkding.enable = true;
       matrix-synapse.enable = true;
       influxdb.enable = true;
       git-archive.enable = true;
