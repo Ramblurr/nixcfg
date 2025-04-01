@@ -65,7 +65,6 @@ in
       roon-server.enable = lib.mkEnableOption "Roon Server";
       onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
       archivebox.enable = lib.mkEnableOption "Archivebox";
-      linkding.enable = lib.mkEnableOption "Linkding";
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
       influxdb.enable = lib.mkEnableOption "Influxdb";
       git-archive.enable = lib.mkEnableOption "Git-Archive";
@@ -507,17 +506,6 @@ in
       ports.http = home-ops.ports.archivebox;
       user = home-ops.users.archivebox;
       group = home-ops.groups.archivebox;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
-    };
-
-    modules.services.linkding = lib.mkIf cfg.apps.linkding.enable {
-      enable = true;
-      domain = "bookmarks.${home-ops.homeDomain}";
-      ports.http = home-ops.ports.linkding;
-      user = home-ops.users.linkding;
-      group = home-ops.groups.linkding;
       ingress = {
         domain = home-ops.homeDomain;
       };
