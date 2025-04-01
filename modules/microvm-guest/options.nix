@@ -33,7 +33,22 @@ in
       '';
     };
 
-    autoNetSetup = mkOption {
+    bootstrapSops = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Bootstrap sops-nix with a systemd credential.
+        '';
+      };
+      credentialHostPath = mkOption {
+        type = types.str;
+        default = "/run/secrets/microvm-${hostName}-sops-key";
+        description = '''';
+      };
+    };
+
+    autoNetSetup.enable = mkOption {
       type = types.bool;
       default = true;
       description = ''

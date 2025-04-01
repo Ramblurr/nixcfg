@@ -21,7 +21,7 @@ inputs: _final: prev: {
       merge = prev.lib.mergeAttrsList;
 
       reduce = builtins.foldl';
-      #reduce = fn: list: builtins.foldl' (result: item: result // (fn item)) { } list;
+      reduceAttrs = fn: list: builtins.foldl' (result: item: result // (fn item)) { } list;
 
       some = builtins.any;
 

@@ -27,6 +27,17 @@ lib.mkIf cfg.quadlet.enable {
         pkgs.dive
         pkgs.podman-tui
       ];
+      #xdg.configFile."containers/containers.conf" = {
+      #  text = '''';
+      #};
+      xdg.configFile."containers/storage.conf" = {
+        text = ''
+          [storage]
+          driver = "overlay"
+          rootless_storage_path="/var/lib/podman/${username}/containers/storage"
+        '';
+      };
+
       xdg.configFile."systemd/user/podman-user-wait-network-online.service.d/override2.conf" = {
         text = ''
           [Service]

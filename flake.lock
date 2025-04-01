@@ -936,11 +936,11 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1743444631,
-        "narHash": "sha256-/fSaBa/GfaXjwsb+g7noh6+bEzLDiqV2CtS7PmaFyN4=",
+        "lastModified": 1743489428,
+        "narHash": "sha256-lDov6JqjzhVh4KJZ81TYIWSlLnX6AHbnFfNbxsnEzps=",
         "owner": "ramblurr",
         "repo": "nixpkgs",
-        "rev": "2c8fd8e547582913d707b0005022869094bbd9f1",
+        "rev": "198cb979338732f512067efbda4ea9a7e929d112",
         "type": "github"
       },
       "original": {
@@ -1143,11 +1143,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1741877501,
-        "narHash": "sha256-jCNJS5zrG5fFNSmeAJi93g9AaDyirARmi0/NuO9YDs0=",
+        "lastModified": 1743361017,
+        "narHash": "sha256-RELV9YxfhwjuN4edtVmpupVvHUiWu/KuF4mqzU+neYE=",
         "owner": "SEIAROTg",
         "repo": "quadlet-nix",
-        "rev": "341bf1b0ce788fec84c2dd7fa8757127f8915179",
+        "rev": "971479231c7dd2433954dd26c240e1bdc5bd9849",
         "type": "github"
       },
       "original": {
