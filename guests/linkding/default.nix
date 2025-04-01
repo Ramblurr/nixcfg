@@ -9,10 +9,26 @@ let
   inherit (config.users.users.linkding) uid name;
   inherit (config.repo.secrets.global) domain;
   homeDir = "/home/linkding";
+  dbPassFile = config.sops.templates.db_pass_env.path;
 in
 {
   system.stateVersion = "24.11";
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
+  sops.defaultSopsFile = ./secrets.sops.yaml;
+
+  microvm = {
+    hypervisor = "qemu"; # required atm for sops bootstrapping
+    volumes = [
+      {
+        # provisioned manually on host with:
+        # sudo zfs create -V 2G tank/encrypted/svc/linkding-podman && sudo mkfs.ext4 /dev/zvol/tank/encrypted/svc/linkding-podman
+        mountPoint = "/var/lib/podman/linkding";
+        image = "/dev/zvol/tank/encrypted/svc/linkding-podman";
+        autoCreate = false;
+        fsType = "ext4";
+      }
+    ];
+  };
   modules.microvm-guest = {
     host = "dewey";
     hostFQDN = "bookmarks.${domain}";
@@ -27,37 +43,9 @@ in
 
   systemd.tmpfiles.rules = [
     "d /var/lib/linkding 0750 ${name} ${name}"
+    "Z /var/lib/podman/linkding 0750 ${name} ${name}"
   ];
 
-  microvm.hypervisor = "qemu";
-  microvm.credentialFiles = {
-    "SOPS_AGE_KEY" = "/run/secrets/linkding_sops_age_key";
-  };
-  systemd.services.sshd = {
-    serviceConfig = {
-      ImportCredential = "SOPS_AGE_KEY";
-    };
-    preStart = ''
-      # Make sure we don't write to stdout, since in case of
-      # socket activation, it goes to the remote side (#19589).
-      exec >&2
-      mkdir -p /etc/ssh
-      cat $CREDENTIALS_DIRECTORY/SOPS_AGE_KEY > /etc/ssh/ssh_host_ed25519_key
-      chmod 0600 /etc/ssh/ssh_host_ed25519_key
-    '';
-  };
-  ##microvm.qemu.machine = "q35";
-  #microvm.qemu.extraArgs = [
-  #  # only works with  microvm.qemu.machine = "q35";
-  #  #"-smbios" "type=11,value=io.systemd.credential:mycred=supersecret"
-
-  #  #WORKS
-  #  "-fw_cfg"
-  #  "name=opt/io.systemd.credentials/mycred,string=supersecret"
-  #];
-  #microvm.cloud-hypervisor.platformOEMStrings = [
-  #  "io.systemd.credential:APIKEY=supersecret"
-  #];
   microvm.shares =
     let
       dir = "/var/lib/linkding";
@@ -72,38 +60,49 @@ in
       }
     ];
 
+  sops.secrets.db_pass = { };
+  sops.templates.db_pass_env = {
+    owner = "linkding";
+    mode = "0400";
+    content = ''
+      LD_DB_PASSWORD=${config.sops.placeholder.db_pass}
+    '';
+  };
+  networking.firewall.allowedTCPPorts = [
+    8080
+  ];
   home-manager.users.linkding =
     { pkgs, config, ... }:
     {
-      #virtualisation.quadlet.containers.linkding = {
-      #  autoStart = false;
-      #  serviceConfig = {
-      #    RestartSec = "10";
-      #    Restart = "always";
-      #  };
-      #  containerConfig = {
-      #    # renovate: docker-image
-      #    image = "docker.io/sissbruecker/linkding:1.39.1";
-      #    autoUpdate = "registry";
-      #    userns = "keep-id";
-      #    publishPorts = [ "8080:9090" ];
-      #    environments = {
-      #      LD_AUTH_PROXY_USERNAME_HEADER = "HTTP_X_AUTHENTIK_USERNAME";
-      #      LD_ENABLE_AUTH_PROXY = "True";
-      #      LD_SUPERUSER_NAME = "casey";
-      #      LD_DB_ENGINE = "postgres";
-      #      LD_DB_HOST = "/run/postgresql";
-      #      LD_DB_PORT = "";
-      #      LD_DB_DATABASE = "linkding";
-      #      LD_DB_USER = "linkding";
-      #      LD_DB_PASSWORD = "";
-      #    };
-      #    podmanArgs = [ ];
-      #    volumes = [
-      #      "/var/lib/linkding:/etc/linkding/data:rw"
-      #      "/run/postgresql:/run/postgresql:ro"
-      #    ];
-      #  };
-      #};
+      virtualisation.quadlet.autoEscape = true;
+      virtualisation.quadlet.containers.linkding = {
+        autoStart = true;
+        serviceConfig = {
+          RestartSec = "10";
+          Restart = "always";
+        };
+        containerConfig = {
+          # renovate: docker-image
+          image = "docker.io/sissbruecker/linkding:1.39.1";
+          autoUpdate = "registry";
+          userns = "keep-id";
+          publishPorts = [ "8080:9090" ];
+          environmentFiles = [ dbPassFile ];
+          environments = {
+            LD_AUTH_PROXY_USERNAME_HEADER = "HTTP_X_AUTHENTIK_USERNAME";
+            LD_ENABLE_AUTH_PROXY = "True";
+            LD_SUPERUSER_NAME = "casey";
+            LD_DB_ENGINE = "postgres";
+            LD_DB_HOST = "172.20.20.3";
+            LD_DB_PORT = "5432";
+            LD_DB_DATABASE = "linkding";
+            LD_DB_USER = "linkding";
+          };
+          podmanArgs = [ ];
+          volumes = [
+            "/var/lib/linkding:/etc/linkding/data:rw"
+          ];
+        };
+      };
     };
 }

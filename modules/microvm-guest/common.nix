@@ -21,7 +21,6 @@ in
 {
 
   config = lib.mkIf cfg.enable {
-
     # make mounts like /etc /home /var available early so that they can be used in system.activationScripts
     fileSystems =
       {
@@ -38,7 +37,7 @@ in
       mem = lib.mkDefault 1024;
       vcpu = lib.mkDefault 4;
 
-      interfaces = lib.mkIf cfg.autoNetSetup (
+      interfaces = lib.mkIf cfg.autoNetSetup.enable (
         map (net: {
           type = "macvtap";
           id = builtins.substring 0 15 "${net}-${hostName}";
@@ -87,14 +86,16 @@ in
       };
     };
 
-    networking = lib.mkIf cfg.autoNetSetup {
+    networking = lib.mkIf cfg.autoNetSetup.enable {
       useDHCP = false;
       dhcpcd.enable = false;
-      useNetworkd = true;
+      useNetworkd = false;
     };
 
-    systemd.network = lib.mkIf cfg.autoNetSetup {
+    systemd.network = lib.mkIf cfg.autoNetSetup.enable {
       enable = true;
+      wait-online.enable = true;
+      wait-online.anyInterface = true;
       links = builtins.foldl' (
         links: net:
         links
@@ -141,6 +142,32 @@ in
       ) { } nets;
     };
 
+    services.userborn.enable = true;
+
+    sops.age.sshKeyPaths = lib.mkIf cfg.bootstrapSops.enable (
+      lib.mkDefault [ "/etc/ssh/ssh_host_ed25519_key" ]
+    );
+    microvm.credentialFiles = lib.mkIf cfg.bootstrapSops.enable {
+      "SOPS_AGE_KEY" = cfg.bootstrapSops.credentialHostPath;
+    };
+    systemd.services.bootstrap-secrets = lib.mkIf cfg.bootstrapSops.enable {
+      wantedBy = [ "sysinit.target" ];
+      after = [ "systemd-sysusers.service" ];
+      before = [
+        "sops-install-secrets.service"
+        "sshd.service"
+      ];
+      serviceConfig = {
+        ImportCredential = "SOPS_AGE_KEY";
+        Type = "oneshot";
+      };
+      script = ''
+        mkdir -p /etc/ssh
+        cat $CREDENTIALS_DIRECTORY/SOPS_AGE_KEY > /etc/ssh/ssh_host_ed25519_key
+        chmod 0600 /etc/ssh/ssh_host_ed25519_key
+      '';
+    };
+
     system.build = {
       copyToServer = pkgs.writeShellScript "copy-to-${cfg.host}" ''
         nix copy --no-check-sigs --to ssh-ng://root@${cfg.hostFQDN} $@
@@ -154,6 +181,7 @@ in
 
     boot = {
       loader.grub.enable = false;
+      initrd.systemd.enable = true;
       initrd.kernelModules = [
         # required for net.netfilter.nf_conntrack_max appearing in sysfs early at boot
         "nf_conntrack"
@@ -201,5 +229,27 @@ in
         home = lib.mkForce "/home/root";
       };
     };
+    # Add some basic utilities to path.
+    # These are basically free because they're on the host anyways.
+    environment.systemPackages = with pkgs; [
+      kitty.terminfo
+      bmon
+      curl
+      nvd
+      ncdu
+      dig
+      ethtool
+      fd
+      iproute2
+      jq
+      lsof
+      nmap
+      pv
+      ripgrep
+      rsync
+      strace
+      tree
+      wget
+    ];
   };
 }

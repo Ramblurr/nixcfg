@@ -14,6 +14,8 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
+    ./guests.nix
+    #./networking.nix
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
@@ -28,12 +30,17 @@ in
     enable = true;
     baseZfsDataset = "rpool/encrypted/safe/microvms";
   };
+
+  networking.firewall.allowedTCPPorts = [
+    5432
+  ];
   home-ops = {
     enable = true;
     ingress.enable = true;
     postgresql = {
       enable = true;
-      onsiteBackup.enable = true;
+      onsiteBackup.enable = false;
+      offsiteBackup.enable = false;
     };
     mariadb.enable = true;
     containers.enable = true;
