@@ -94,7 +94,6 @@
     ./services/influxdb.nix
     ./services/ingress.nix
     ./services/ingress-options.nix
-    ./services/invoiceninja.nix
     ./services/mariadb.nix
     ./services/matrix-discord.nix
     ./services/matrix-irc.nix
