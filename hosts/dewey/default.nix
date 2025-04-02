@@ -49,7 +49,7 @@ in
       onepassword-connect.enable = true;
       authentik.enable = true;
       davis.enable = true;
-      invoiceninja.enable = true;
+      #invoiceninja.enable = true;
       paperless.enable = true;
       ocis-work.enable = true;
       plex.enable = true;

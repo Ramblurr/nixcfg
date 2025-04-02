@@ -10,12 +10,9 @@ let
   inherit (config.repo.secrets.home-ops.users.invoiceninja2) uid name;
   homeDir = "/home/invoiceninja";
   rootDir = "/var/lib/invoiceninja2";
-  mariadbEnvFile = config.sops.templates.mariadb_env.path;
-
-  nginxConf = pkgs.writeText "nginx.conf" (builtins.readFile ./nginx-laravel.conf);
   inEnv = {
     APP_ENV = "production";
-    APP_DEBUG = "true";
+    APP_DEBUG = "false";
     REQUIRE_HTTPS = "false";
     PHANTOMJS_PDF_GENERATION = "false";
     PDF_GENERATOR = "snappdf";
@@ -30,10 +27,10 @@ let
 
     FILESYSTEM_DISK = "debian_docker";
 
-    DB_HOST = "invoiceninja-mariadb";
+    DB_HOST = lib.mori.first config.site.net.svc.hosts4.dewey;
     DB_PORT = "3306";
-    DB_DATABASE = "ninja";
-    DB_USERNAME = "ninja";
+    DB_DATABASE = "invoiceninja";
+    DB_USERNAME = "invoiceninja";
     DB_CONNECTION = "mysql";
 
     IS_DOCKER = "true";
@@ -44,13 +41,13 @@ let
     autoUpdate = "registry";
     userns = "keep-id:uid=999,gid=999";
     environmentFiles = [
-      config.sops.templates.app_db_env.path
       config.sops.secrets.app_env.path
     ];
     environments = inEnv;
     volumes = [
       "${rootDir}/cache:/var/www/html/bootstrap/cache:rw"
       "${rootDir}/storage:/app/storage:rw"
+      "${rootDir}/storage-public:/app/public/:rw"
     ];
   };
 
@@ -99,9 +96,7 @@ in
 
   systemd.tmpfiles.rules = [
     "d ${rootDir} 0750 ${name} ${name}"
-    "d ${rootDir}/public 0750 ${name} ${name}"
     "d ${rootDir}/cache 0750 ${name} ${name}"
-    "d ${rootDir}/mysql 0750 ${name} ${name}"
     "d ${rootDir}/redis 0750 ${name} ${name}"
     "d ${rootDir}/storage 0750 ${name} ${name}"
     "d ${rootDir}/storage/framework 0750 ${name} ${name}"
@@ -126,30 +121,10 @@ in
       }
     ];
 
-  sops.secrets = {
-    db_pass = { };
-    db_root_pass = { };
-    app_env = { };
-  };
-
-  sops.templates.mariadb_env = {
+  sops.secrets.app_env = {
     owner = name;
     mode = "0400";
-    content = ''
-      MARIADB_PASSWORD=${config.sops.placeholder.db_pass}
-      MARIADB_ROOT_PASSWORD=${config.sops.placeholder.db_root_pass}
-    '';
   };
-
-  sops.templates.app_db_env = {
-    owner = name;
-    mode = "0400";
-    content = ''
-      DB_PASSWORD=${config.sops.placeholder.db_pass}
-      DB_ROOT_PASSWORD=${config.sops.placeholder.db_root_pass}
-    '';
-  };
-
   networking.firewall.allowedTCPPorts = [
     8080
   ];
@@ -161,36 +136,6 @@ in
 
       virtualisation.quadlet.networks.app = { };
       virtualisation.quadlet.containers = {
-        invoiceninja-mariadb = {
-          autoStart = true;
-          unitConfig = {
-            After = [ "app-network.service" ];
-            Requires = [ "app-network.service" ];
-          };
-          serviceConfig = {
-            RestartSec = "10";
-            Restart = "always";
-          };
-          containerConfig = {
-            image = "docker.io/library/mariadb:11";
-            networks = [ "app.network" ];
-            autoUpdate = "registry";
-            userns = "keep-id";
-            environmentFiles = [ mariadbEnvFile ];
-            environments = {
-              MARIADB_DATABASE = "ninja";
-              MARIADB_USER = "ninja";
-            };
-            volumes = [
-              "${rootDir}/mysql:/var/lib/mysql:rw"
-            ];
-            healthCmd = "mariadb-admin -uroot -p$MARIADB_ROOT_PASSWORD ping";
-            healthInterval = "10s";
-            healthTimeout = "5s";
-            healthRetries = 5;
-          };
-        };
-
         invoiceninja-redis = {
           autoStart = true;
           unitConfig = {
@@ -224,12 +169,10 @@ in
           unitConfig = {
             After = [
               "app-network.service"
-              "invoiceninja-mariadb.service"
               "invoiceninja-redis.service"
             ];
             Requires = [
               "app-network.service"
-              "invoiceninja-mariadb.service"
               "invoiceninja-redis.service"
             ];
           };

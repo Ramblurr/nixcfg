@@ -28,6 +28,7 @@ let
       hostname,
       domain,
       forwardAuth ? false,
+      external ? false,
       acmeHost ? global.domain.home,
       pgEnable ? false,
       pgUsername ? hostname,
@@ -41,6 +42,11 @@ let
         acmeHost = acmeHost;
         upstream = "http://${ip}:8080";
         forwardAuth = forwardAuth;
+      };
+      modules.services.ingress.domains = lib.mkIf external {
+        "${acmeHost}" = {
+          externalDomains = [ domain ];
+        };
       };
       modules.services.postgresql.extraAuthentication = lib.mkIf pgEnable [
         "host    ${pgUsername}    ${pgDatabase}    ${ip}/32    scram-sha-256"
@@ -66,7 +72,8 @@ lib.mkMerge [
   })
   (mkGuest {
     hostname = "invoiceninja";
-    domain = "clients2.${global.domain.work}";
+    domain = "clients.${global.domain.work}";
+    external = true;
     acmeHost = global.domain.work;
     dataset = "invoiceninja2";
     datasetMountpoint = "/var/lib/invoiceninja2";
