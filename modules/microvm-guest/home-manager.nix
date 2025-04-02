@@ -8,7 +8,8 @@
 let
   cfg = config.modules.microvm-guest;
   username = cfg.homeManager.username;
-  inherit (config.users.users.linkding) uid home;
+  uid = cfg.homeManager.uid;
+  home = config.users.users.${username}.home;
 in
 lib.mkIf cfg.homeManager.enable {
   microvm.writableStoreOverlay = "/nix/.rw-store";
@@ -16,7 +17,7 @@ lib.mkIf cfg.homeManager.enable {
   users.users.${username} = {
     name = username;
     isNormalUser = true;
-    uid = cfg.homeManager.uid;
+    uid = uid;
     group = username;
     linger = true;
     home = "/home/${username}";

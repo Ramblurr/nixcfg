@@ -8,7 +8,6 @@
 let
   cfg = config.modules.microvm-guest;
   username = cfg.homeManager.username;
-  inherit (config.users.users.linkding) uid home;
 in
 lib.mkIf cfg.quadlet.enable {
   virtualisation.podman = {
@@ -17,6 +16,22 @@ lib.mkIf cfg.quadlet.enable {
     autoPrune.dates = "weekly";
     #defaultNetwork.settings.dns_enabled = true;
   };
+
+  # TODO: fix https://github.com/nikstur/userborn/issues/7
+  environment.etc =
+    let
+      autosubs = lib.pipe config.users.users [
+        lib.attrValues
+        (lib.filter (u: u.uid != null && u.isNormalUser))
+        (lib.concatMapStrings (u: "${toString u.uid}:${toString (100000 + u.uid * 65536)}:65536\n"))
+      ];
+    in
+    {
+      "subuid".text = autosubs;
+      "subuid".mode = "0444";
+      "subgid".text = autosubs;
+      "subgid".mode = "0444";
+    };
   home-manager.users.${username} =
     { pkgs, config, ... }:
     {
