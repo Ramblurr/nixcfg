@@ -132,3 +132,12 @@ tasks:
     desc: Scaffold out a gen host
     cmds:
       - python ./scripts/gen-host.py
+
+  microvm-update:
+    desc: Update a microvm
+    summary: |
+      guest: the guest to build (required)
+    requires:
+      vars: ["guest"]
+    cmds:
+      - nix run .#nixosConfigurations.{{.guest}}.config.microvm.deploy.rebuild root@dewey {{.guest}}.svc.socozy.casa
