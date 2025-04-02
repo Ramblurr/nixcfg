@@ -62,7 +62,7 @@ in
 
   sops.secrets.db_pass = { };
   sops.templates.db_pass_env = {
-    owner = "linkding";
+    owner = name;
     mode = "0400";
     content = ''
       LD_DB_PASSWORD=${config.sops.placeholder.db_pass}

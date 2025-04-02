@@ -17,7 +17,9 @@ in
 {
   options.modules.services.mariadb = {
     enable = lib.mkEnableOption "mariadb";
-    package = lib.mkPackageOption pkgs "mariadb_110" { };
+    package = lib.mkOption {
+      type = lib.types.package;
+    };
   };
 
   config = lib.mkIf cfg.enable {
