@@ -52,7 +52,6 @@ in
     apps = {
       echo-server.enable = lib.mkEnableOption "Echo Server";
       davis.enable = lib.mkEnableOption "Davis, carddav and caldav server";
-      invoiceninja.enable = lib.mkEnableOption "Invoice Ninja";
       authentik.enable = lib.mkEnableOption "Authentik";
       paperless.enable = lib.mkEnableOption "Paperless";
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
@@ -385,15 +384,6 @@ in
       ingress = {
         external = true;
         domain = home-ops.homeDomain;
-      };
-    };
-
-    modules.services.invoiceninja = lib.mkIf cfg.apps.invoiceninja.enable {
-      enable = true;
-      domain = "clients.${home-ops.workDomain}";
-      ingress = {
-        external = true;
-        domain = home-ops.workDomain;
       };
     };
 
