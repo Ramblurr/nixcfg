@@ -31,10 +31,10 @@ in
   };
   modules.microvm-guest = {
     host = "dewey";
-    hostFQDN = "bookmarks.${domain}";
+    hostFQDN = "dewey.prim.${domain.home}";
     homeManager = {
       enable = true;
-      username = "linkding";
+      username = config.repo.secrets.home-ops.users.linkding.name;
       uid = config.repo.secrets.home-ops.users.linkding.uid;
       gid = config.repo.secrets.home-ops.groups.linkding.gid;
     };
