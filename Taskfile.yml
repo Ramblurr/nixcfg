@@ -133,7 +133,7 @@ tasks:
     cmds:
       - python ./scripts/gen-host.py
 
-  microvm-update:
+  switch:vm:
     desc: Update a microvm
     summary: |
       guest: the guest to build (required)
@@ -141,3 +141,13 @@ tasks:
       vars: ["guest"]
     cmds:
       - nix run .#nixosConfigurations.{{.guest}}.config.microvm.deploy.rebuild root@dewey {{.guest}}.svc.socozy.casa
+
+  switch:vms:
+    desc: Update all microvms
+    vars:
+      GUESTS:
+        sh: find guests -maxdepth 1 -type d -printf "%P "
+    cmds:
+      - for:
+          var: GUESTS
+        cmd: nix run .#nixosConfigurations.{{.ITEM}}.config.microvm.deploy.rebuild root@dewey {{.ITEM}}.svc.socozy.casa

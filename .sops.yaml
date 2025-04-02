@@ -11,7 +11,6 @@ keys:
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
       - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
       - &addams age1t70vans0qsnru7j06fwtj7wq7hpfj59cxreu9a20rrxuahff9fmqsa2wjd
-      - &hello-world age14vg23yfklu7ld6flwnycx4lmfhkkuncejsju7tus2hj5qrryvgxsvvqtng
       - &linkding age1uh5u7zcz28dskcskpyznxkyg2y4xj0wkaf4usmrjhkmfhzr6gg8qynk3hq
       - &invoiceninja age195mq2pxj58ll7ad2xg3f3p6m7s4xxj7tl6z4lzukzyap2g89apms2gmj3v
 creation_rules:
@@ -82,13 +81,6 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
-
-  - path_regex: guests/hello-world/.*.sops.*$
-    key_groups:
-      - age:
-          - *hello-world
-          - *disaster-recovery
-          - *ramblurr-tmp
 
   - path_regex: guests/linkding/.*.sops.*$
     key_groups:
