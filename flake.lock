@@ -936,18 +936,19 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1743489428,
-        "narHash": "sha256-lDov6JqjzhVh4KJZ81TYIWSlLnX6AHbnFfNbxsnEzps=",
-        "owner": "ramblurr",
-        "repo": "nixpkgs",
-        "rev": "198cb979338732f512067efbda4ea9a7e929d112",
-        "type": "github"
+        "lastModified": 1743591911,
+        "narHash": "sha256-JDzkW+JgLtdW8RNghaC2WKf8cqNNum5sx6z6WifHZ9w=",
+        "ref": "consolidated",
+        "rev": "92fb2a448b5fb66e0c8ddb48ece9e4b31e9d72da",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/ramblurr/nixpkgs"
       },
       "original": {
-        "owner": "ramblurr",
         "ref": "consolidated",
-        "repo": "nixpkgs",
-        "type": "github"
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/ramblurr/nixpkgs"
       }
     },
     "nixpkgs-stable": {

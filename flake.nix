@@ -7,7 +7,8 @@
     home-manager-stable.url = "github:nix-community/home-manager/release-24.11";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    nixpkgs-mine.url = "github:ramblurr/nixpkgs/consolidated";
+    nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=consolidated";
+    # for development
     #nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
     nix-std.url = "github:chessai/nix-std";
@@ -34,7 +35,6 @@
     #radicle.inputs.nixpkgs.follows = "nixpkgs";
     #radicle.inputs.flake-utils.follows = "flake-utils";
 
-    #quadlet-nix.url = "github:Ramblurr/nixos-quadlet/feat-home-manager";
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix/main";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs";
 
