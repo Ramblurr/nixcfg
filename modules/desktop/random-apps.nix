@@ -30,6 +30,7 @@ in
             ]
           ))
           (with pkgs; [
+            libreoffice
             appimage-run
             audacity
             pavucontrol
