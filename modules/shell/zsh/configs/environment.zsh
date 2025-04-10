@@ -29,7 +29,7 @@ export LESSCHARSET=utf-8
 export GTK_USE_PORTAL=1
 
 #█▓▒░ emacs-lsp vroom
-export LSP_USE_PLISTS=true
+export LSP_USE_PLISTS=false
 
 #█▓▒░ stop barebacking my ~/ goddammit
 export XDG_CACHE_HOME=$HOME/.cache

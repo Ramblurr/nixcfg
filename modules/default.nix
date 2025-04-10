@@ -19,7 +19,8 @@
     ./desktop/hyprland3/theme.nix
     ./desktop/hyprland3/anyrun.nix
     ./desktop/hyprland3/hyprpaper.nix
-    ./desktop/hyprland3/dunst.nix
+    #./desktop/hyprland3/dunst.nix
+    ./desktop/hyprland3/mako.nix
     ./desktop/kde.nix
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
