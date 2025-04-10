@@ -48,17 +48,15 @@ in
 
     xdg.portal = {
       enable = true;
-      extraPortals = with pkgs; [
-        xdg-desktop-portal-gtk
-      ];
+      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
       xdgOpenUsePortal = true;
-      config = {
-        common = {
-          #    default = "gtk";
-          "org.freedesktop.impl.portal.Screencast" = "hyprland";
-          "org.freedesktop.impl.portal.Screenshot" = "hyprland";
-        };
-      };
+      #config = {
+      #  common = {
+      #    #    default = "gtk";
+      #    "org.freedesktop.impl.portal.Screencast" = "hyprland";
+      #    "org.freedesktop.impl.portal.Screenshot" = "hyprland";
+      #  };
+      #};
     };
 
     security = {

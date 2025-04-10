@@ -936,10 +936,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1743591911,
-        "narHash": "sha256-JDzkW+JgLtdW8RNghaC2WKf8cqNNum5sx6z6WifHZ9w=",
+        "lastModified": 1744295325,
+        "narHash": "sha256-MTsDMH3OfqQziNhPpacrRYEGJwDC36e4taEC4M/fltk=",
         "ref": "consolidated",
-        "rev": "92fb2a448b5fb66e0c8ddb48ece9e4b31e9d72da",
+        "rev": "a5991e7c7b033643529439aa8a857fd78bc7117e",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"

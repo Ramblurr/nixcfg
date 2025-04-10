@@ -62,8 +62,10 @@ in
 
         wayland.windowManager.hyprland = {
           enable = true;
-          package = hyprland;
+          package = null;
+          portalPackage = null;
           systemd.enable = true;
+          systemd.variables = [ "--all" ];
           xwayland.enable = true;
           #extraConfig = builtins.readFile ../hyprland/configs/hyprland.conf;
           # plugins = [ inputs.hy3.packages.x86_64-linux.hy3 ];
@@ -85,6 +87,10 @@ in
             general = {
               layout = "master";
               resize_on_border = true;
+
+              no_border_on_floating = false;
+              "col.active_border" = "rgb(d79921)";
+              "col.inactive_border" = "rgb(282828)";
             };
             cursor = {
               no_warps = true;
