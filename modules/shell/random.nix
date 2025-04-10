@@ -23,6 +23,7 @@ in
       { ... }@hm:
       {
         home.packages = with pkgs; [
+          (warp-terminal.override { waylandSupport = true; })
           treefmt2
           repomix
           glow

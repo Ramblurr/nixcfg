@@ -30,6 +30,7 @@ in
             ]
           ))
           (with pkgs; [
+            zeal
             libreoffice
             appimage-run
             audacity
