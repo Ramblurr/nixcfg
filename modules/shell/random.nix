@@ -24,7 +24,7 @@ in
       {
         home.packages = with pkgs; [
           (warp-terminal.override { waylandSupport = true; })
-          treefmt2
+          treefmt
           repomix
           glow
           graphviz
