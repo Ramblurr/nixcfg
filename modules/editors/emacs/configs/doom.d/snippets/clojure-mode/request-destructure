@@ -1,6 +1,0 @@
-# -*- mode: snippet -*-
-# name: request-destructure
-# key: reqd
-# expand-env: ((yas-triggers-in-field nil))
-# --
-{:tempura/keys [tr] :keys [] :as req}

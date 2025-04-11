@@ -16,7 +16,7 @@ in
 {
   options.modules.editors.emacs = {
     enable = lib.mkEnableOption "";
-    package = lib.mkPackageOption pkgs "emacs30-pgtk" { };
+    package = lib.mkOption { type = lib.types.package; }; # $lib.mkPackageOption pkgs "emacs30-pgtk" { };
   };
   config = mkIf cfg.enable {
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
@@ -102,17 +102,16 @@ in
         ];
         persistence = lib.mkIf withImpermanence {
           directories = [
-            ".emacs.doom"
-            ".emacs.corgi"
-            ".emacs.d"
+            ".config/doom"
+            ".config/emacs"
           ];
         };
-        home.file.".doom.d" = {
-          # Get Doom Emacs
-          source = ./configs/doom.d; # Sets up symlink name ".doom.d" for file "doom.d"
-          recursive = true; # symlink the whole dirj
-          # onChange = builtins.readFile ./configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
-        };
+        #home.file.".doom.d" = {
+        #  # Get Doom Emacs
+        #  source = ./configs/doom.d; # Sets up symlink name ".doom.d" for file "doom.d"
+        #  recursive = true; # symlink the whole dirj
+        #  # onChange = builtins.readFile ./configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
+        #};
       };
   };
 }
