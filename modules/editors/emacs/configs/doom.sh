@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 
-DOOM="$HOME/.emacs.d"
+DOOM="$XDG_CONFIG_HOME/emacs"
 
 if [ ! -d "$DOOM" ]; then
-  git clone https://github.com/hlissner/doom-emacs.git $DOOM
-  kitty $DOOM/bin/doom -y install & disown
+    echo "Doom emacs is not installed at $DOOM"
+    exit 1
 else
   kitty $DOOM/bin/doom sync
 fi

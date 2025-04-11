@@ -1,4 +1,5 @@
 {
+  mine,
   config,
   pkgs,
   lib,
@@ -202,6 +203,7 @@ in
 
     editors = {
       emacs.enable = true;
+      emacs.package = mine.emacs-pgtk;
       vim = {
         enable = true;
         extraPlugins = with pkgs.vimPlugins; [
@@ -306,7 +308,7 @@ in
         "'*/.Trash'"
         "'*/.terraform'"
         "'*/venv'"
-        "'*/emacs-doom.d'"
+        #"'*/emacs-doom.d'"
         "'*/.gradle'"
         "'*/.*sync*.db'"
         "'*/.ansible'"
