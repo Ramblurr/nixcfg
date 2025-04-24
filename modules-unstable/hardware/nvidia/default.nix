@@ -30,24 +30,31 @@ in
     services.xserver.videoDrivers = [ "nvidia" ];
 
     hardware.nvidia = {
-      package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
-        version = "570.124.04";
-        sha256_64bit = "sha256-G3hqS3Ei18QhbFiuQAdoik93jBlsFI2RkWOBXuENU8Q=";
-        sha256_aarch64 = lib.fakeHash;
-        openSha256 = "sha256-KCGUyu/XtmgcBqJ8NLw/iXlaqB9/exg51KFx0Ta5ip0=";
-        settingsSha256 = "sha256-LNL0J/sYHD8vagkV1w8tb52gMtzj/F0QmJTV1cMaso8=";
-        persistencedSha256 = lib.fakeHash;
-      };
+      package =
+        config.boot.kernelPackages.nvidiaPackages.mkDriver
+          #   {
+          #   version = "570.124.04";
+          #   sha256_64bit = "sha256-G3hqS3Ei18QhbFiuQAdoik93jBlsFI2RkWOBXuENU8Q=";
+          #   sha256_aarch64 = lib.fakeHash;
+          #   openSha256 = "sha256-KCGUyu/XtmgcBqJ8NLw/iXlaqB9/exg51KFx0Ta5ip0=";
+          #   settingsSha256 = "sha256-LNL0J/sYHD8vagkV1w8tb52gMtzj/F0QmJTV1cMaso8=";
+          #   persistencedSha256 = lib.fakeHash;
+          # };
+          {
+            version = "570.144";
+            sha256_64bit = "sha256-wLjX7PLiC4N2dnS6uP7k0TI9xVWAJ02Ok0Y16JVfO+Y=";
+            sha256_aarch64 = lib.fakeSha256;
+            openSha256 = "";
+            settingsSha256 = "sha256-VcCa3P/v3tDRzDgaY+hLrQSwswvNhsm93anmOhUymvM=";
+            persistencedSha256 = lib.fakeSha256;
+          };
 
-      # This will no longer be necessary when
-      # https://github.com/NixOS/nixpkgs/pull/326369 hits stable
-      modesetting.enable = lib.mkDefault true;
       # Power management is nearly always required to get nvidia GPUs to
       # behave on suspend, due to firmware bugs.
       powerManagement.enable = true;
       # The open driver is recommended by nvidia now, see
       # https://download.nvidia.com/XFree86/Linux-x86_64/565.57.01/README/kernel_open.html
-      open = true;
+      open = false;
 
       dynamicBoost.enable = cfg.enable && cfg.withIntegratedGPU;
     };
