@@ -1,7 +1,6 @@
 final: prev: {
   roon-server = prev.roon-server.overrideAttrs (
     old:
-
     let
       version = "2.50.1528";
       urlVersion = builtins.replaceStrings [ "." ] [ "0" ] version;
