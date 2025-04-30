@@ -22,6 +22,7 @@
     #./desktop/hyprland3/dunst.nix
     ./desktop/hyprland3/mako.nix
     ./desktop/kde.nix
+    ./desktop/fonts.nix
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
     ./desktop/programs/calibre.nix
@@ -34,6 +35,7 @@
     ./desktop/programs/kicad.nix
     ./desktop/programs/cad.nix
     ./desktop/programs/kitty/default.nix
+    ./desktop/programs/wezterm/default.nix
     ./desktop/programs/logseq.nix
     ./desktop/programs/musescore.nix
     ./desktop/programs/nextcloud.nix

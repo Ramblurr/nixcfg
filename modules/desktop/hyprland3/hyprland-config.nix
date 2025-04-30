@@ -269,7 +269,7 @@ in
               [
                 "SUPER, D, exec, anyrun"
                 ''SUPER SHIFT,Z, exec, grimblast --freeze save area - | swappy -f - -o ~/docs/img/screenshots/scrn-$(date +"%Y-%m-%d-%H-%M-%S").png''
-                "SUPER, Return, exec, kitty"
+                "SUPER, Return, exec, wezterm"
                 "SUPER, F, fullscreen"
                 "SUPER, M, fullscreenstate, -1 2"
                 "SUPER SHIFT, Q, killactive"
