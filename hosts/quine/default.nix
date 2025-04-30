@@ -99,6 +99,33 @@ in
       hyprland3.enable = true;
       xdg.enable = true;
       random-apps.enable = true;
+      fonts =
+        let
+          # Pragmata Pro Style
+          iosevka-ss08 = (pkgs.iosevka-bin.override { variant = "SS08"; });
+          # Source Code Pro Style
+          iosevka-ss09 = (pkgs.iosevka-bin.override { variant = "SS09"; });
+          # IBM Plex Mono Style
+          iosevka-ss15 = (pkgs.iosevka-bin.override { variant = "SS15"; });
+        in
+        {
+          enable = true;
+          mono.name = "Iosevka SS15";
+          mono.package = iosevka-ss15;
+          terminal.name = "Iosevka Term SS15";
+          terminal.package = iosevka-ss15;
+          symbols.fonts = [
+            "Iosevka Term SS15"
+          ];
+          packages = with pkgs; [
+            (iosevka-bin.override { variant = "Aile"; })
+            (iosevka-bin.override { variant = "Etoile"; })
+            iosevka-ss08
+            iosevka-ss09
+            iosevka-ss15
+            iosevka-bin
+          ];
+        };
       browsers = {
         firefox.enable = true;
         chromium.enable = true;
@@ -127,7 +154,7 @@ in
         swhkd = {
           enable = true;
           keybindings = lib.mapAttrs (_: v: lib.mkDefault v) {
-            "super + e" = "kitty";
+            "super + e" = "wezterm";
           };
         };
       };
@@ -145,6 +172,7 @@ in
         kdeconnect.enable = true;
         kicad.enable = false;
         kitty.enable = true;
+        wezterm.enable = true;
         logseq.enable = true;
         musescore.enable = true;
         #nextcloud.enable = true;

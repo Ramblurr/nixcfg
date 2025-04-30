@@ -12,6 +12,7 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+  termFont = config.modules.desktop.fonts.terminal;
 in
 {
   options.modules.desktop.programs.kitty = {
@@ -33,16 +34,18 @@ in
         home.packages = [ pkgs.kitty ];
         programs.kitty = {
           enable = true;
-          #theme = "Gruvbox Dark";
           themeFile = "gruvbox-dark";
-          font.name = "Iosevka Comfy Fixed";
+          font = {
+            name = termFont.name;
+            size = termFont.size;
+          };
           settings = {
             background_opacity = "0.90";
-            font_size = "12";
-            bold_font = "auto";
-            italic_font = "auto";
-            bold_italic_font = "auto";
-            disable_ligatures = "never";
+            #font_size = "16";
+            #bold_font = "auto";
+            #italic_font = "auto";
+            #bold_italic_font = "auto";
+            #disable_ligatures = "never";
             cursor_blink_interval = "1";
             cursor_stop_blinking_after = "0.0";
             select_by_word_characters = "@-./_~?&=%+#";
