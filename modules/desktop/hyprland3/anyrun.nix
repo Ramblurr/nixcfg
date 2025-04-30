@@ -16,9 +16,9 @@ in
       { ... }@hm:
       {
 
-        imports = [ inputs.anyrun.homeManagerModules.default ];
+        #imports = [ inputs.anyrun.homeManagerModules.default ];
         programs.anyrun = {
-          enable = true;
+          enable = lib.mkForce true;
           config = {
             plugins = [
               # An array of all the plugins you want, which either can be paths to the .so files, or their packages

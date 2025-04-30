@@ -12,22 +12,6 @@ let
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
 
-  nerdfonts = (
-    pkgs.nerdfonts.override {
-      fonts = [
-        "Iosevka"
-        "FiraCode"
-        "Mononoki"
-        "JetBrainsMono"
-        "NerdFontsSymbolsOnly"
-      ];
-    }
-  );
-
-  font = {
-    name = "Noto Nerd Font";
-    package = nerdfonts;
-  };
 in
 {
   options.modules.desktop.kde = {
@@ -68,8 +52,6 @@ in
 
     environment.systemPackages = [
       pkgs.kdePackages.krohnkite
-      pkgs.kwin6-bismuth-decoration
-      pkgs.klassy
     ];
 
     environment.plasma6.excludePackages = [ pkgs.kdePackages.khelpcenter ];
@@ -82,40 +64,6 @@ in
     # ref: https://github.com/NixOS/nixpkgs/issues/180175
     #systemd.services.NetworkManager-wait-online.enable = lib.mkForce false;
     #systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
-
-    fonts = {
-
-      packages = with pkgs; [
-        cantarell-fonts
-        cabin
-        font-awesome
-        font.package
-        iosevka-comfy.comfy-fixed
-        noto-fonts-emoji
-        noto-fonts
-        font-awesome
-        liberation_ttf # free corefonts-metric-compatible replacement
-        ttf_bitstream_vera
-        gelasio # metric-compatible with Georgia
-        powerline-symbols
-      ];
-
-      fontDir.enable = true;
-
-      fontconfig = {
-        hinting = {
-          style = "medium";
-        };
-        subpixel.rgba = "rgb";
-        antialias = true;
-        defaultFonts = {
-          serif = [ "Noto Serif" ];
-          sansSerif = [ "Cabin" ];
-          monospace = [ "Iosevka Comfy Fixed" ];
-          emoji = [ "Noto Color Emoji" ];
-        };
-      };
-    };
 
     myhm =
       { ... }@hm:
