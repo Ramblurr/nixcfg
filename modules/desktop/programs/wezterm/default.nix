@@ -28,6 +28,7 @@ in
           extraConfig = ''
             local wezterm = require 'wezterm'
             local config = wezterm.config_builder()
+            config.mux_enable_ssh_agent = false
 
             --config.color_scheme = 'Gruvbox dark, hard (base16)'
             --config.color_scheme = 'GruvboxDarkHard'
