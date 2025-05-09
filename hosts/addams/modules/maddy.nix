@@ -11,8 +11,8 @@
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
-    hostAddress = "10.4.0.1";
-    localAddress = "10.4.0.2";
+    hostAddress = "10.5.0.1";
+    localAddress = "10.5.0.3";
     bindMounts."/var/run/secrets/maddy-env".hostPath = config.sops.secrets."maddy-smtp-relay".path;
     config =
       { config, pkgs, ... }:

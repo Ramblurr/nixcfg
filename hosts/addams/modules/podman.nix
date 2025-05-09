@@ -11,12 +11,13 @@
         # even setting `dns_name_servers` here doesn't work with this set to true
         dns_enabled = false;
         subnets = [
+          # change these
           {
-            subnet = "10.5.0.0/24";
-            gateway = "10.5.0.1";
+            subnet = "10.12.0.0/24";
+            gateway = "10.12.0.1";
             lease_range = {
-              start_ip = "10.5.0.50";
-              end_ip = "10.5.0.200";
+              start_ip = "10.12.0.50";
+              end_ip = "10.12.0.200";
             };
           }
         ];

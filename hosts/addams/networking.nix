@@ -41,6 +41,7 @@ in
         "ctr0"
         "wg0"
         "ve-mullvad"
+        "ve-maddy"
       ];
     };
     config.routeTables.vpn = 200;
@@ -108,6 +109,14 @@ in
           };
         };
 
+        "30-ve-maddy" = {
+          matchConfig = {
+            Name = "ve-maddy";
+            Driver = "veth";
+          };
+          address = [ "10.5.0.1/24" ];
+          networkConfig.DHCPServer = false;
+        };
         "30-ve-mullvad" = {
           matchConfig = {
             Name = "ve-mullvad";
