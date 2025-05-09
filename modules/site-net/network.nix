@@ -211,11 +211,13 @@ in
       anyInterface = false;
       ignoredInterfaces = [
         "ve-+"
+        "tailscale0"
         "wan0"
         "lan1"
         "ctr0"
         "wg0"
         "ve-mullvad"
+        "ve-maddy"
       ];
     };
 
