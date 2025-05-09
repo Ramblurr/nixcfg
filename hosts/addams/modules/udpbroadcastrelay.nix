@@ -4,7 +4,7 @@
 }:
 {
   services.udpbroadcastrelay = {
-    enable = true;
+    enable = false;
     instances = {
       roon = {
         port = 9003;

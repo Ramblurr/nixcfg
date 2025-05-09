@@ -45,6 +45,7 @@ let
   zone_defs = {
     wan.interfaces = [ config.repo.secrets.local.wan0.iface ];
     mullvad.interfaces = [ "ve-mullvad" ];
+    maddy.interfaces = [ "ve-maddy" ];
   } // iface_zone_defs;
   port_forwards = {
     ntp = {
@@ -130,17 +131,17 @@ let
       };
       comment = "mali zrepl replication2";
     };
-    #maddy-smtp-relay = {
-    #  priority = 106;
-    #  interfaces = internal_interfaces;
-    #  comment = "maddy smtp relay";
-    #  protocols = [ "tcp" ];
-    #  destination.port = 25;
-    #  translation = {
-    #    address = "10.4.0.2";
-    #    port = 25;
-    #  };
-    #};
+    maddy-smtp-relay = {
+      priority = 106;
+      interfaces = internal_interfaces;
+      comment = "maddy smtp relay";
+      protocols = [ "tcp" ];
+      destination.port = 25;
+      translation = {
+        address = "10.5.0.3";
+        port = 25;
+      };
+    };
   };
   rules = {
     wan_to_lan_ingress = {
@@ -195,7 +196,10 @@ let
     };
 
     wan_egress = {
-      from = (lib.remove "vlan_vpn" internal_zones) ++ [ zones.mullvad ];
+      from = (lib.remove "vlan_vpn" internal_zones) ++ [
+        zones.mullvad
+        zones.maddy
+      ];
       to = [ zones.wan ];
       verdict = "accept";
       late = true;
@@ -208,6 +212,21 @@ let
         #zones.wan6tun
       ];
       verdict = "accept";
+    };
+
+    lan_to_maddy = {
+      from = [
+        zones.mgmt
+        zones.svc
+        zones.prim
+      ];
+      to = [ zones.maddy ];
+      allowedTCPPortRanges = [
+        {
+          from = 25;
+          to = 25;
+        }
+      ];
     };
 
     lan_to_mullvad = {

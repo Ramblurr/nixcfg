@@ -19,7 +19,7 @@ in
     ./modules/kea
     ./modules/powerdns.nix
     ./modules/dnsdist.nix
-    #./modules/maddy.nix
+    ./modules/maddy.nix
     ./modules/udpbroadcastrelay.nix
     ./modules/mullvad-gateway.nix
     ./modules/ntopng.nix
