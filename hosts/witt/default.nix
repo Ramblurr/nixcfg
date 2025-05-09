@@ -53,7 +53,7 @@ in
     powerOnBoot = false;
     settings.General.Experimental = true;
   };
-  home.attic.enable = true;
+  home.attic.enable = false;
   nix = {
     settings = {
       substituters = [
