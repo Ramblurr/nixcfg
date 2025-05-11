@@ -106,6 +106,10 @@ in
     };
     services.calibre-web = {
       enable = true;
+      package = pkgs.calibre-web.overrideAttrs (prev: {
+        propagatedBuildInputs = prev.propagatedBuildInputs ++ prev.passthru.optional-dependencies.kobo;
+      });
+
       listen.port = cfg.ports.http;
       listen.ip = "127.0.0.1";
       options = {
