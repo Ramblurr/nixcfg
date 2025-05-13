@@ -60,8 +60,8 @@ in
         enable = true;
       };
       home.packages = with pkgs; [
-        mine.tailwindcss_4
-        mine.claude-code
+        tailwindcss_4
+        claude-code
         hclfmt
         virt-manager
         cue
