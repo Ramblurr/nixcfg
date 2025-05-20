@@ -167,6 +167,25 @@ in
     vifm
     jless
   ];
+  systemd.services.fix-media-perms = {
+    description = "Fix media file permissions";
+    serviceConfig = {
+      Type = "oneshot";
+      User = "root";
+      ExecStart = "/mnt/tank2/media/fix-media.sh";
+    };
+  };
+
+  systemd.timers.fix-media-perms = {
+    description = "Run fix-media-perms service hourly";
+    wantedBy = [ "timers.target" ];
+    enable = true;
+    timerConfig = {
+      OnUnitActiveSec = "1h";
+      OnBootSec = "5min";
+      Persistent = true;
+    };
+  };
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
