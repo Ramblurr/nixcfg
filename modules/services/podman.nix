@@ -26,7 +26,10 @@ in
       defaultNetwork.settings.dns_enabled = true;
       extraPackages = [ pkgs.zfs ];
     };
-
+    environment.systemPackages = with pkgs; [
+      docker-compose
+      podman-tui
+    ];
     systemd.services.podman-auto-update = {
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];

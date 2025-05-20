@@ -114,6 +114,7 @@
     ./services/tautulli.nix
     ./services/udpbroadcastrelay.nix
     ./services/zfs-backup-check.nix
+    ./services/nomad.nix
     ./shell/aria2.nix
     ./shell/attic.nix
     ./shell/atuin.nix
