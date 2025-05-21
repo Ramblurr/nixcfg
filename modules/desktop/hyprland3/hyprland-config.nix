@@ -149,13 +149,13 @@ in
             ];
             windowrule =
               let
-                f = regex: "float, ^(${regex})$";
-                t = regex: "tile, ^(${regex})$";
+                f = regex: "float,class:^(${regex})$";
+                t = regex: "tile,title:^(${regex})$";
               in
               [
                 (f "org.gnome.Calculator")
                 (f "org.gnome.Nautilus")
-                (f "pavucontrol")
+                (f "org.pulseaudio.pavucontrol")
                 (f "nm-connection-editor")
                 (f "blueberry.py")
                 (f "org.gnome.Settings")
@@ -163,7 +163,7 @@ in
                 (f "Color Picker")
                 (f "xdg-desktop-portal")
                 (f "xdg-desktop-portal-gnome")
-                (t "\[portal\] .+")
+                (t "\\[portal\\].+")
                 #(f "com.github.Aylur.ags")
                 "workspace 2 silent,class:^(firefox-personal)$"
                 "workspace 4 silent,class:^(firefox-work)$"
