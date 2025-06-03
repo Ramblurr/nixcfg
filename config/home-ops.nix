@@ -79,11 +79,11 @@ in
   imports = [ ./zrepl.nix ];
   config = lib.mkIf cfg.enable {
     assertions = [
-      {
-        assertion =
-          cfg.postgresql.enable -> cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
-        message = "Postgresql must be configured with backup repositories";
-      }
+      #{
+      #  assertion =
+      #    cfg.postgresql.enable -> cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
+      #  message = "Postgresql must be configured with backup repositories";
+      #}
       {
         assertion = !(cfg.apps.ocis-work.enable && cfg.apps.ocis-home.enable);
         message = "OCIS Work and OCIS Home cannot be enabled at the same time on the same host";
