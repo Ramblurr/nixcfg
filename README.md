@@ -13,6 +13,7 @@
 | quine    | [Primary workstation][workstation]            | ![NixOS Unstable][unstable] | [hosts/quine/](./hosts/quine/)   |   |
 | witt     | Travel laptop (Framework 13)                  | ![NixOS Unstable][unstable] | [hosts/witt/](./hosts/witt/)     |   |
 | addams   | Router                                        | ![NixOS Unstable][unstable] | [hosts/addams/](./hosts/addams/) |   |
+| james    | Hetzner VPS                                   | ![NixOS Unstable][unstable] | [hosts/james/](./hosts/james/) |   |
 
 
 Example build commands:

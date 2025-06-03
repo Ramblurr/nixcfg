@@ -116,7 +116,7 @@ def generate_ssh_key(hostname):
 
 
 def hash_password(pw):
-    return sha512_crypt.hash(root_password)
+    return sha512_crypt.hash(pw)
 
 
 def prompt_host_data():
