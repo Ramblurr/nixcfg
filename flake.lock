@@ -892,8 +892,8 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1743498727,
-        "narHash": "sha256-vBGI1sMvYfuGu/O0Af0zdsiBzTQQtvxTPbqd98ZdFeM=",
+        "lastModified": 1747747121,
+        "narHash": "sha256-J6nASoH5d+kQfN2KypPz/gxUcWoNJ5mvaxi/SJHHWNI=",
         "path": "/home/ramblurr/src/microvm.nix",
         "type": "path"
       },
@@ -1250,10 +1250,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1746802134,
-        "narHash": "sha256-W9i4lU3/3QfNcILf13iDqw1p/Tz5yqLfMa+nQWYo3w8=",
+        "lastModified": 1748617248,
+        "narHash": "sha256-/m+DXoSQ/UPsx5RbNYYy1DMqp/bNyUMZrn+BYa+iX1Y=",
         "ref": "consolidated",
-        "rev": "d713983c7729514d1bc7b245040594e1ebff74b0",
+        "rev": "bd653925b6b2f97c444f08bba2adb956801a184f",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
@@ -1749,11 +1749,11 @@
     "spectrum": {
       "flake": false,
       "locked": {
-        "lastModified": 1733308308,
-        "narHash": "sha256-+RcbMAjSxV1wW5UpS9abIG1lFZC8bITPiFIKNnE7RLs=",
+        "lastModified": 1746869549,
+        "narHash": "sha256-BKZ/yZO/qeLKh9YqVkKB6wJiDQJAZNN5rk5NsMImsWs=",
         "ref": "refs/heads/main",
-        "rev": "80c9e9830d460c944c8f730065f18bb733bc7ee2",
-        "revCount": 792,
+        "rev": "d927e78530892ec8ed389e8fae5f38abee00ad87",
+        "revCount": 862,
         "type": "git",
         "url": "https://spectrum-os.org/git/spectrum"
       },
