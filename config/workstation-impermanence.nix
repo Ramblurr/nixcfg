@@ -31,6 +31,7 @@ in
         ".config/audacity"
         ".config/easyeffects"
         ".config/sops"
+        ".config/claude"
         ".config/GIMP"
         ".config/gnupg"
         ".config/inkscape"
