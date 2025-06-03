@@ -11,23 +11,27 @@ set -ex
 
 host="$1"
 
+BOOTSTRAP_USER=${2:-nixos}
+
 host_dir=$(find hosts/ -type d -name "$host")
 
 if [ ! -d "$host_dir" ]; then
-  echo "No host directory found for $host"
-  exit 1
+    echo "No host directory found for $host"
+    exit 1
 fi
 
-ssh-copy-id -f -i ~/.ssh/casey-all.pub "nixos@$host"
-ssh "nixos@$host" "sudo cp -r /home/nixos/.ssh /root/; sudo chown -R root:root /root/.ssh"
-
+# if BOOTSTRAP_USER is not root
+if [ "$BOOTSTRAP_USER" != "root" ]; then
+    ssh-copy-id -f -i ~/.ssh/casey-all.pub "$BOOTSTRAP_USER@$host"
+    ssh "$BOOTSTRAP_USER@$host" "sudo cp -r /home/$BOOTSTRAP_USER/.ssh /root/; sudo chown -R root:root /root/.ssh"
+fi
 
 # Create a temporary directory
 temp=$(mktemp -d)
 
 # Function to cleanup temporary directory on exit
 cleanup() {
-  rm -rf "$temp"
+    rm -rf "$tempx"
 }
 trap cleanup EXIT
 
@@ -37,18 +41,15 @@ install -d -m700 "$temp/persist/root/"
 install -d -m700 "$temp/persist/root/.ssh"
 install -d -m755 "$temp/persist/home"
 
-
-
 sops_secrets="$host_dir/secrets.sops.yaml"
 
-sops -d --extract "['ssh_host_ed25519_key']" "$sops_secrets"  > "$temp/persist/etc/ssh/ssh_host_ed25519_key"
-sops -d --extract "['ssh_host_ed25519_key_pub']" "$sops_secrets" > "$temp/persist/etc/ssh/ssh_host_ed25519_key.pub"
+sops -d --extract "['ssh_host_ed25519_key']" "$sops_secrets" >"$temp/persist/etc/ssh/ssh_host_ed25519_key"
+sops -d --extract "['ssh_host_ed25519_key_pub']" "$sops_secrets" >"$temp/persist/etc/ssh/ssh_host_ed25519_key.pub"
 
 # Set the correct permissions so sshd will accept the key
 chmod 600 "$temp/persist/etc/ssh/ssh_host_ed25519_key"
 
-
-nix run github:nix-community/nixos-anywhere/1.4.0 -- --flake ".#$host" --extra-files "$temp"  "root@$host"
+nix run github:nix-community/nixos-anywhere/1.10.0 -- --flake ".#$host" --extra-files "$temp" "root@$host"
 
 echo "done"
 exit 0

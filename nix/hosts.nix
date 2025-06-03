@@ -46,7 +46,15 @@
           # John Dewey - https://en.wikipedia.org/wiki/John_Dewey
           isStable = false;
           system = "x86_64-linux";
-          hostExtraModules = [ ];
+          hostExtraModules = [
+          ];
+        };
+        james = {
+          # William James https://en.wikipedia.org/wiki/William_James
+          isStable = false;
+          system = "x86_64-linux";
+          hostExtraModules = [
+          ];
         };
         witt = {
           # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
@@ -59,7 +67,6 @@
           system = "x86_64-linux";
           hostOverlays = [
             (import ../overlays/qemu.nix)
-            #inputs.nix-writers.overlays.default
           ];
         };
         mali = {
