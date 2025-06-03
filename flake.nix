@@ -38,9 +38,6 @@
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix/main";
     quadlet-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    #nix-writers.url = "git+https://cgit.krebsco.de/nix-writers";
-    #nix-writers.inputs.nixpkgs.follows = "nixpkgs";
-
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
     #clj-nix.url = "github:jlesquembre/clj-nix";
