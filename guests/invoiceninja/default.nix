@@ -178,7 +178,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "ghcr.io/ramblurr/invoiceninja-octane:5.11.78";
+            image = "ghcr.io/ramblurr/invoiceninja-octane:5.11.82";
             exec = "app --port=8080 --workers=2 --log-level=info";
             publishPorts = [ "8080:8080" ];
           } // inShared;
@@ -196,7 +196,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "ghcr.io/ramblurr/invoiceninja-octane:5.11.78";
+            image = "ghcr.io/ramblurr/invoiceninja-octane:5.11.82";
             exec = "scheduler --verbose";
           } // inShared;
         };
@@ -212,7 +212,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "ghcr.io/ramblurr/invoiceninja-octane:5.11.78";
+            image = "ghcr.io/ramblurr/invoiceninja-octane:5.11.82";
             exec = "worker --verbose --sleep=3 --tries=3 --max-time=3600";
           } // inShared;
         };
