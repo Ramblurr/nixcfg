@@ -51,6 +51,10 @@ let
     ];
   };
 
+  # ran on dewey
+  # CREATE USER 'invoiceninja'@'172.20.20.21' IDENTIFIED BY 'password';
+  # GRANT ALL ON invoiceninja.* TO 'invoiceninja'@'172.20.20.21';
+
 in
 {
   system.stateVersion = "24.11";
@@ -66,7 +70,7 @@ in
         # podman needs /var/tmp with lots of space for downloading images
         # provisioned manually on host with:
         # sudo zfs create tank/encrypted/svc/invoiceninja -o mountpoint=none
-        # sudo zfs create -V 10G tank/encrypted/svc/invoiceninja-podman && sudo mkfs.ext4 /dev/zvol/tank/encrypted/svc/invoiceninja-podman
+        # sudo zfs create -V 5G tank/encrypted/svc/invoiceninja/var-tmp && sudo mkfs.ext4 /dev/zvol/tank/encrypted/svc/invoiceninja/var-tmp
         mountPoint = "/var/tmp";
         image = "/dev/zvol/tank/encrypted/svc/invoiceninja/var-tmp";
         autoCreate = false;
@@ -132,8 +136,14 @@ in
   home-manager.users.${name} =
     { pkgs, config, ... }:
     {
-      virtualisation.quadlet.autoEscape = true;
 
+      xdg.configFile."containers/containers.conf" = {
+        text = ''
+          [engine]
+          env=["TMPDIR=${rootDir}/tmp"]
+        '';
+      };
+      virtualisation.quadlet.autoEscape = true;
       virtualisation.quadlet.networks.app = { };
       virtualisation.quadlet.containers = {
         invoiceninja-redis = {
