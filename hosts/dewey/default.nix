@@ -32,7 +32,9 @@ in
   };
 
   networking.firewall.allowedTCPPorts = [
+    # todo: after microvm migration restrict with nftables to svc zone
     5432
+    3306
   ];
   home-ops = {
     enable = true;

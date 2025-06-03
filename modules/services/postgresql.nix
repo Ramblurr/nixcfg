@@ -334,12 +334,12 @@ in
       enable = true;
       package = cfg.package;
       enableTCPIP = true;
-      settings = {
-        archive_mode = "on";
-        archive_command = "${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} archive-push %p";
-        max_wal_senders = 3;
-        wal_level = "replica";
-      };
+      #settings = {
+      #  archive_mode = "on";
+      #  archive_command = "${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} archive-push %p";
+      #  max_wal_senders = 3;
+      #  wal_level = "replica";
+      #};
       authentication = lib.concatStringsSep "\n" cfg.extraAuthentication;
       ensureDatabases = lib.flatten (map ({ databases, ... }: databases) cfg.ensures);
       ensureUsers = lib.flatten (
