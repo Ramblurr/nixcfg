@@ -57,7 +57,33 @@
           ]
       ))
       // {
-        "30-prim".networkConfig.IPv6AcceptRA = lib.mkForce false;
+        "30-prim" = {
+          dhcpV4Config = {
+            UseRoutes = lib.mkForce true;
+            UseDNS = lib.mkForce true;
+          };
+          dhcpV6Config = {
+            UseDNS = lib.mkForce false;
+          };
+          networkConfig = {
+            IPv6AcceptRA = lib.mkForce false;
+            LinkLocalAddressing = lib.mkForce false;
+          };
+        };
+        "30-vpn" = {
+          dhcpV4Config = {
+            UseRoutes = lib.mkForce false;
+            UseDNS = lib.mkForce false;
+          };
+          dhcpV6Config = {
+            UseDNS = lib.mkForce false;
+          };
+          networkConfig = {
+            IPv6AcceptRA = lib.mkForce false;
+            LinkLocalAddressing = lib.mkForce false;
+          };
+        };
+
         "30-brwork" = {
           matchConfig.Name = "brwork";
           linkConfig.RequiredForOnline = "no";
