@@ -10,6 +10,11 @@ in
   imports = [
     ../modules/site
   ];
+
+  repo.secretFiles = {
+    site = ../secrets/site.nix;
+  };
+
   site.data = {
     contact = global.email.home;
     networkDomain = global.domain.home;
