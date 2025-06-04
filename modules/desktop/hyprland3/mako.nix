@@ -16,24 +16,17 @@ in
       {
         services.mako = {
           enable = true;
-          anchor = "top-center";
-          markup = true;
-          padding = "5";
-          #backgroundColor = "#689d6a";
-          #progressColor = "#ebdbb2";
-          #textColor = "#1d2021";
-
-          #borderColor = "#ebdbb2";
-          #borderSize = 5;
-          #borderRadius = 2;
-
-          #
-          backgroundColor = "#282828";
-          textColor = "#ebdbb2";
-          progressColor = "#ebdbb2";
-          borderColor = "#928374";
-          borderSize = 3;
-          borderRadius = 6;
+          settings = {
+            anchor = "top-center";
+            markup = true;
+            padding = "5";
+            background-color = "#282828";
+            text-color = "#ebdbb2";
+            progress-color = "#ebdbb2";
+            border-color = "#928374";
+            border-size = 3;
+            border-radius = 6;
+          };
         };
       };
   };
