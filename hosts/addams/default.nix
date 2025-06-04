@@ -40,6 +40,8 @@ in
     pdns
   ];
 
+  services.tailscale.enable = true;
+
   ############################
   ## My Custom Base Modules ##
   ############################
