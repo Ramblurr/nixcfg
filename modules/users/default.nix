@@ -99,6 +99,7 @@ in
 
     home-manager = {
       useGlobalPkgs = true;
+      backupFileExtension = "backup";
       useUserPackages = true;
       verbose = true;
       extraSpecialArgs = {
@@ -127,7 +128,6 @@ in
             ]
           )
         ];
-
         home.homeDirectory = cfg.primaryUser.homeDirectory;
         sops = {
           defaultSopsFile = config.sops.defaultSopsFile;
