@@ -84,7 +84,7 @@ in
           services.postgresql = {
             enable = true;
             package = pkgs.postgresql_15;
-            extraPlugins = with config.services.postgresql.package.pkgs; [ pgaudit ];
+            extensions = with config.services.postgresql.package.pkgs; [ pgaudit ];
             dataDir = mounts.pg-matrix-synapse.mountPoint;
             enableTCPIP = false;
             initialScript = pkgs.writeText "synapse-init.sql" ''
