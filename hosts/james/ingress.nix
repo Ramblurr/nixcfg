@@ -98,7 +98,7 @@ let
   gostClientConfig = pkgs.writeText "gost.json" (
     builtins.toJSON {
       log = {
-        level = "debug";
+        #level = "debug";
         format = "text";
       };
       services = [
