@@ -84,9 +84,10 @@ creation_rules:
 
   - path_regex: configs/home-ops/.*.sops.*$
     key_groups:
-      - age: &all-nodes
+      - age:
           - *dewey
           - *debord
+          - *mali
           - *disaster-recovery
         pgp:
           - *ramblurr

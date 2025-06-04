@@ -12,18 +12,18 @@ in
     acceptTerms = true;
     defaults = {
       email = email.acme;
-      dnsProvider = "cloudflare";
+      dnsProvider = "bunny";
       credentialsFile = config.sops.templates.acme-credentials.path;
-      extraLegoFlags = [ "--dns.resolvers=1.1.1.1:53" ];
     };
   };
-  sops.secrets."acmeSecrets/cloudflareDnsToken" = {
-    sopsFile = ./secrets.sops.yaml;
+
+  sops.secrets.bunnyApiKey = {
+    sopsFile = ../../configs/home-ops/shared.sops.yml;
     restartUnits = [ ];
   };
 
   sops.templates.acme-credentials.content = ''
-    CF_DNS_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareDnsToken"}
+    BUNNY_API_KEY=${config.sops.placeholder.bunnyApiKey}
   '';
   security.acme.certs = {
     #"mali" = {
