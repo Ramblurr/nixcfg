@@ -24,6 +24,8 @@ in
   networking.firewall.logRefusedConnections = lib.mkForce true;
   modules.vpn.tailscale.enable = true;
   modules.vpn.tailscale.useRoutingFeatures = "both";
+  boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
+  boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
   security.rtkit.enable = true;
 
   networking.firewall.allowedUDPPorts = [
