@@ -1,5 +1,4 @@
 {
-  mine,
   config,
   pkgs,
   lib,
@@ -231,7 +230,7 @@ in
 
     editors = {
       emacs.enable = true;
-      emacs.package = mine.emacs-pgtk;
+      emacs.package = pkgs.emacs-pgtk;
       vim = {
         enable = true;
         extraPlugins = with pkgs.vimPlugins; [

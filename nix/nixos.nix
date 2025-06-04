@@ -26,6 +26,7 @@ let
     #inputs.emacs-overlay.overlays.default
     (import ../lib inputs)
     (import ../overlays/last-known-good.nix)
+    (import ../overlays/nixpkgs-mine-packages.nix inputs)
     (import ../overlays/roon-server.nix)
     (import ../overlays/logseq.nix)
   ] ++ (import ../pkgs/default.nix inputs);
@@ -66,11 +67,6 @@ let
         flake = actual-nixpkgs;
         overlays = allOverlays;
       };
-      nixpkgs-mine = mkPkgs {
-        inherit system;
-        overlays = allOverlays;
-        flake = inputs.nixpkgs-mine;
-      };
       nixpkgs-unstable = mkPkgs {
         inherit system;
         overlays = allOverlays;
@@ -98,7 +94,6 @@ let
       specialArgs = {
         inherit inputs self;
         inherit (config) nodes;
-        mine = nixpkgs-mine;
         actual-nixpkgs = actual-nixpkgs;
         unstable = nixpkgs-unstable;
         lib = nixpkgs'.lib;

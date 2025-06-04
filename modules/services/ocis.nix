@@ -1,6 +1,5 @@
 {
   options,
-  mine,
   config,
   lib,
   utils,
@@ -99,7 +98,7 @@ in
 
     services.ocis = {
       enable = true;
-      package = mine.ocis_71-bin;
+      package = pkgs.ocis_71-bin;
       url = "https://${cfg.domain}";
       stateDir = "${localPath}/data";
       configDir = "${localPath}/config";

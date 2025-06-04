@@ -2,7 +2,6 @@
   config,
   options,
   inputs,
-  mine,
   lib,
   pkgs,
   ...
@@ -61,7 +60,7 @@ in
       };
       home.packages = with pkgs; [
         tailwindcss_4
-        mine.claude-code
+        pkgs.claude-code
         hclfmt
         virt-manager
         cue

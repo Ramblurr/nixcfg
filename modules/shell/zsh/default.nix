@@ -103,7 +103,8 @@ in
             }
           ];
           shellAliases = {
-            "borgmatic" = "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env borgmatic";
+            "borgmatic" =
+              "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env borgmatic";
             "mvm" = ''mvn -gs "$XDG_CONFIG_HOME"/maven/settings.xml'';
             "open" = "re.sonny.Junction";
             "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";
@@ -131,7 +132,8 @@ in
             "gg" = "git graph";
             "gco" = "git checkout";
             "gcs" = "git commit -S -m";
-            "tree" = ''tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'';
+            "tree" =
+              ''tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'';
             "zz" = "quit";
             "tf" = "terraform";
             "mkdir" = "mkdir -p";
