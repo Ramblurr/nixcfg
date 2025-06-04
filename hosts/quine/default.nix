@@ -26,7 +26,6 @@ in
     ./gaming.nix
     ./microvm-test.nix
     ./microvm-test-impl.nix
-    #./tabby.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
