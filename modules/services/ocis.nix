@@ -99,7 +99,7 @@ in
 
     services.ocis = {
       enable = true;
-      package = mine.ocis-bin71;
+      package = mine.ocis_71-bin;
       url = "https://${cfg.domain}";
       stateDir = "${localPath}/data";
       configDir = "${localPath}/config";
