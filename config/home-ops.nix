@@ -50,7 +50,6 @@ in
     };
 
     apps = {
-      echo-server.enable = lib.mkEnableOption "Echo Server";
       davis.enable = lib.mkEnableOption "Davis, carddav and caldav server";
       authentik.enable = lib.mkEnableOption "Authentik";
       paperless.enable = lib.mkEnableOption "Paperless";
@@ -365,15 +364,6 @@ in
     };
     users.groups.${home-ops.groups.media.name} = {
       gid = home-ops.groups.media.gid;
-    };
-    modules.services.echo-server = lib.mkIf cfg.apps.echo-server.enable {
-      enable = true;
-      domain = "echo-test.${home-ops.homeDomain}";
-      ports.http = home-ops.ports.echo-server;
-      ingress = {
-        external = true;
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.git-archive = lib.mkIf cfg.apps.git-archive.enable { enable = true; };
