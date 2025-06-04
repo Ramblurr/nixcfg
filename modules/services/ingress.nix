@@ -8,10 +8,6 @@
 
 let
   cfg = config.modules.services.ingress;
-  domainsWithTunnel = lib.filterAttrs (name: domain: domain.tunnel.enable) cfg.domains;
-  forwardServicesWithTunnel = lib.attrNames (
-    lib.filterAttrs (name: service: service.external) cfg.forwardServices
-  );
 in
 {
   options.modules.services.ingress = {
@@ -58,13 +54,6 @@ in
               wildcard = {
                 enable = lib.mkEnableOption "Enable wildcard domain by adding *.<domain> to the SAN";
               };
-              tunnel = {
-                enable = lib.mkEnableOption "Enable cloudflared tunnel";
-                tunnelId = lib.mkOption {
-                  type = lib.types.str;
-                  description = "The tunnel ID for the cloudflared tunnel";
-                };
-              };
             };
           }
         )
@@ -102,12 +91,10 @@ in
     };
   };
   disabledModules = [
-    #"${inputs.nixpkgs-stable}/nixos/modules/services/networking/cloudflared.nix"
     #  "${inputs.nixpkgs-stable}/nixos/modules/services/web-servers/nginx/default.nix"
     #  "${inputs.nixpkgs-unstable}/nixos/modules/services/web-servers/nginx/default.nix"
   ];
   imports = [
-    #  "${inputs.nixpkgs-unstable}/nixos/modules/services/networking/cloudflared.nix"
     #  "${inputs.nixpkgs-mine}/nixos/modules/services/web-servers/nginx/default.nix"
   ];
 
@@ -277,7 +264,7 @@ in
       mode = "440";
       group = "acme";
       content = ''
-        CF_DNS_API_TOKEN=${config.sops.placeholder."acmeSecrets/cloudflareDnsToken"}
+        BUNNY_API_KEY=${config.sops.placeholder.bunnyApiKey}
       '';
     };
 
@@ -288,9 +275,8 @@ in
       defaults = {
         email = config.repo.secrets.global.email.acme;
         credentialsFile = config.sops.templates.acme-credentials.path;
-        dnsProvider = "cloudflare";
+        dnsProvider = "bunny";
         dnsPropagationCheck = true;
-        extraLegoFlags = [ "--dns.resolvers=1.1.1.1:53" ];
         reloadServices = [ "nginx.service" ];
       };
       certs = lib.mapAttrs' (
@@ -304,87 +290,11 @@ in
       ) cfg.domains;
     };
 
-    sops.secrets =
-      lib.mapAttrs' (
-        name: domain: lib.nameValuePair "cloudflareTunnels/${name}" { mode = "400"; }
-      ) domainsWithTunnel
-      // {
-        "acmeSecrets/cloudflareDnsToken" = {
-          sopsFile = ../../configs/home-ops/shared.sops.yml;
-        };
-      };
+    sops.secrets.bunnyApiKey = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
+    };
     # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
     boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
     boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 2500000;
-    systemd.services = lib.mapAttrs' (
-      name: domain:
-      lib.nameValuePair "cloudflared-tunnel-${domain.tunnel.tunnelId}" {
-        preStart = ''
-          rm -f $STATE_DIRECTORY/credentials.json
-          cat $CREDENTIALS_DIRECTORY/CREDENTIALS > $STATE_DIRECTORY/credentials.json
-        '';
-        serviceConfig = {
-          UMask = 77;
-          User = lib.mkForce null;
-          Group = lib.mkForce null;
-          DynamicUser = true;
-          LoadCredential = [ "CREDENTIALS:${config.sops.secrets."cloudflareTunnels/${name}".path}" ];
-          StateDirectory = "cloudflared-tunnel/${domain.tunnel.tunnelId}";
-          LockPersonality = true;
-          NoNewPrivileges = true;
-          PrivateDevices = true;
-          PrivateMounts = true;
-          PrivateTmp = true;
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          ProtectControlGroups = true;
-          RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6";
-          ProtectClock = true;
-          ProtectProc = "invisible";
-          ProtectHostname = true;
-          ProtectKernelLogs = true;
-          ProtectKernelModules = true;
-          ProtectKernelTunables = true;
-          RemoveIPC = true;
-          RestrictNamespaces = true;
-          RestrictRealtime = true;
-          RestrictSUIDSGID = true;
-          SystemCallFilter = [
-            "@system-service"
-            "~@privileged"
-            "@resources"
-          ];
-          SystemCallArchitectures = "native";
-          MemoryDenyWriteExecute = true;
-        };
-      }
-    ) domainsWithTunnel;
-    services.cloudflared =
-      let
-        mkIngresses =
-          name: domain:
-          let
-            externalDomains = domain.externalDomains;
-            ingressDomains = externalDomains ++ lib.filter (s: lib.hasSuffix name s) forwardServicesWithTunnel;
-          in
-          lib.foldl' (
-            acc: extDomain: acc // { "${extDomain}" = "https://localhost:443"; }
-          ) { } ingressDomains;
-      in
-      {
-        enable = true;
-        tunnels = lib.mapAttrs' (
-          name: domain:
-          lib.nameValuePair domain.tunnel.tunnelId {
-            #credentialsFile = config.sops.secrets."cloudflareTunnels/${name}".path;
-            credentialsFile = "/var/lib/cloudflared-tunnel/${domain.tunnel.tunnelId}/credentials.json";
-            originRequest.originServerName = "localhost";
-            originRequest.noTLSVerify = true;
-            ingress = mkIngresses name domain;
-            # Catch-all if no match
-            default = "http_status:404";
-          }
-        ) domainsWithTunnel;
-      };
   };
 }
