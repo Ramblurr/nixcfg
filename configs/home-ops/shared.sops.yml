@@ -3,6 +3,7 @@ acmeSecrets:
     email: ENC[AES256_GCM,data:GuRw/L7oEWUz/ygoQd+kNkRF+pMNKec=,iv:KvqUMor5pChGoBQCJaYRECAqy0/P35fZgbfYGKWXlOI=,tag:IWERANp8CdpwPWVHjltJ6w==,type:str]
     cloudflareDnsToken: ENC[AES256_GCM,data:imZ2Gl6KxxNyKrGMNzXmDsVGJvyxy9OTjAFmwUceqRBoZEZTpOGI2g==,iv:1flBLmav8ziwcQVCkDC+S7WLYyaL2MXfg73WL95zVBY=,tag:jNJ2zfJaOj1gqrj217RRzg==,type:str]
     tokenName: ENC[AES256_GCM,data:CEcnCDC+7de/oTsZLQfLloVNmsuV,iv:sbKZHujZjXduYcd0pwNt+VeebITV8vpA09vgGHD7VPM=,tag:mvhK2MlUNaA58VAizkru6A==,type:str]
+bunnyApiKey: ENC[AES256_GCM,data:vccE0sT5xabMba/lHzpacH+fHUSiealW7kPA4z21jKYjF/8wMU5th/uo8QgtPlVV8skWw2RWERg4UBVC8Fgo2g9d3IqNyA1K,iv:BHzdeZ2Emfx+GgYawOULOYxQ2YDQxBsrDX3hw8MbNls=,tag:SC+nZ0GE0WnJsJPx9a7Yjg==,type:str]
 davis:
     ADMIN_PASSWORD: ENC[AES256_GCM,data:olo1T7VLiF5HMm0rvnftXhau8FiucA35QVsAtYU21WA=,iv:nm+OfGI2biCSK8c64K4fYDd6haJN6kBr6pLDShdvHrI=,tag:el7A50JXjZmfzxqiEJwh1A==,type:str]
     APP_SECRET: ENC[AES256_GCM,data:DbMEiVqGVHHNah1tDDkdh8wZJHlPgRukd37TWU+nEQJLUDdI0P/VXz7hUtcYPtgf,iv:sQW8b6rv0+3i44vZgPt8fgP3eHSWpcw0BPdwK0VNtSA=,tag:K/Rc7dpblY2kstffnoc3lA==,type:str]
@@ -15,10 +16,6 @@ paperless:
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
 gickup.yaml: ENC[AES256_GCM,data:hiNpgfyYywRBc2MyVBxihzlq2qPGuOX2oZ7vXLuxMTdjO0HbMJXmXo4gq/2J4jBxMNUAXBLv1lcfSLTEJY2SYHKoQOeu+ShYA1/DzFxdvcfI18y+gQC8gZuii7LlPqdAL5ADlulkxc4cmvoXefsNV18WnSdn393Lt7qFXF+Uw1KsRqijhrNHSOp68k3BE8im7zLW5BkOLsuTPlS+l7FmqnGOGFHIhI8bTql5Mf7+uy2YkBL/faSBpBrfwDOAX5sYjLSCdHQPVQv2VveWWxSaIKZnTTmVgVi2nVapwpkUQvhNOKLpebieulgd4jxI+KkfbpHoC15S1KYPhBUFsuj9CxtTxtMlMCDytYoqWTW7lnj/QpHPiNBGz5ET/MvtYPbcFR3UAWJvGSSU3THgbX6Gc9lxsXRt9qbPVmna4FBeWUru5uWZnNzGiUjl06Bfl0zywyhZuN+p7pLHFhEQ0Is04CfmPZC9OwdLT7t/qkR2TkJ1b7XKxTpx1XFozajlArjE84OU4lv7rxzyfe+PrufuKcQ16PLr9Ya2WSbgwAQyNXwreJiO1lGuVMsW1Ypa+OGkF6QDSTqJevnEZSpXP8Gd8pjMcA1JWAhDx/4uxcuoi5nHfI10e6rJj5WK8rQ4FpPXuxkhE3Mq5Mi8,iv:IlgU97zqFlwP3barPmwojWO4XnxV+XarW50L39MhOBc=,tag:OnKYHfe1U85+gaNU1pWiNg==,type:str]
 sops:
-    kms: []
-    gcp_kms: []
-    azure_kv: []
-    hc_vault: []
     age:
         - recipient: age1gxvdmyxmx4rczdaqaah8ysrwwpcladf9llax5ppleutesrwnxp9qxd4l69
           enc: |
@@ -74,8 +71,8 @@ sops:
             VUR5MzJNZnFsc0w5Yyt6TUF4ZjFha2MKsamWU4y8kfBP0l+Zgr5PoWZcnVZ/0flX
             bj0iQ5DolwtL25UyG7K0ruFt5c4wvGS/KyJ06z4ohxjO8AfjOeOpUw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2025-02-11T11:15:04Z"
-    mac: ENC[AES256_GCM,data:8/Gh5H2HMl7V8n2qc+lXEDfgEhmsMDCWwsn5W2EUSg8qbTxhH0M/T83P/E+bLqLgLHXMOaA76QBAoPNCG4rD7x840ye0ojxvYuS7cvFixiWIy2/gIVRTsvRqOmMbAyI5I8nH2/5I+PxwjoYD5H5/sCL1KWzioSFA3hFh9Uu+eYE=,iv:rmlfA1CI7oCGfsRLLNaRJl9RrV7AB/q7ki4+3RQ3MVg=,tag:ET3AqXVpjOXgUdH9FmVxMw==,type:str]
+    lastmodified: "2025-06-04T12:03:47Z"
+    mac: ENC[AES256_GCM,data:Ct6/HXeyhdihROhpu2nrtSGUAknnpic7jdV9TiY44avUFa/FK+fLwbpwrExeJfPtdETi9SNYig6tR1GSPQEYCG7LxRxNTmSBF70VQxHZ2IJoTAezvwOxF1tHtR7EFKynhue4tgfP+du6ekMC7mg6W4q0TByP2acplts6BOLy8KQ=,iv:T/+KLvaZgWu0u0hXYrZSlnAWQmHaR5CZ4bkYb7NKulU=,tag:eqW6Hlf3qVQgiJ5c40pX+w==,type:str]
     pgp:
         - created_at: "2024-04-08T13:09:05Z"
           enc: |-
@@ -99,4 +96,4 @@ sops:
             -----END PGP MESSAGE-----
           fp: 978C4D08058BA26EB97CB51820782DBCACFAACDA
     unencrypted_suffix: _unencrypted
-    version: 3.9.4
+    version: 3.10.2
