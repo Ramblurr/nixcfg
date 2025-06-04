@@ -108,7 +108,6 @@ in
           pwgen-secure
           alejandra
           nixfmt-rfc-style
-          cloudflare-utils
         ];
 
         persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };
