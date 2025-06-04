@@ -19,6 +19,7 @@ in
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
+    ./ingress.nix
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
