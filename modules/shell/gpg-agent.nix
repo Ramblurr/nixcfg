@@ -22,17 +22,23 @@ in
     myhm =
       { ... }@hm:
       {
-        services.gpg-agent = {
-          enable = true;
-          enableSshSupport = true;
-          enableZshIntegration = true;
-          defaultCacheTtl = 60;
-          maxCacheTtl = 120;
-          enableExtraSocket = true;
-          enableBashIntegration = true;
-          pinentryPackage = pkgs.pinentry-qt;
-          sshKeys = [ "978C4D08058BA26EB97CB51820782DBCACFAACDA" ];
-        };
+        services.gpg-agent =
+          {
+            enable = true;
+            enableSshSupport = true;
+            enableZshIntegration = true;
+            defaultCacheTtl = 60;
+            maxCacheTtl = 120;
+            enableExtraSocket = true;
+            enableBashIntegration = true;
+            sshKeys = [ "978C4D08058BA26EB97CB51820782DBCACFAACDA" ];
+          }
+          // (
+            if builtins.hasAttr "pinentry" hm.options.services.gpg-agent then
+              { pinentry.package = pkgs.pinentry-qt; }
+            else
+              { pinentryPackage = pkgs.pinentry-qt; }
+          );
         programs.gpg = {
           enable = true;
           homedir = "${hm.config.xdg.configHome}/.gnupg";
