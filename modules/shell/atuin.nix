@@ -27,20 +27,23 @@ in
     myhm =
       { pkgs, config, ... }@hm:
       {
-        programs.atuin = {
-          enable = true;
-          enableBashIntegration = true;
-          daemon.enable = true;
-          settings =
-            {
-              style = "compact";
-              update_check = false;
-            }
-            // lib.optionalAttrs cfg.sync.enable {
-              sync_address = cfg.sync.address;
-              auto_sync = false;
-            };
-        };
+        programs.atuin =
+          {
+            enable = true;
+            enableBashIntegration = true;
+            settings =
+              {
+                style = "compact";
+                update_check = false;
+              }
+              // lib.optionalAttrs cfg.sync.enable {
+                sync_address = cfg.sync.address;
+                auto_sync = false;
+              };
+          }
+          // lib.optionalAttrs (builtins.hasAttr "daemon" hm.options.programs.atuin) {
+            daemon.enable = true;
+          };
         home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
           directories = [ ".config/atuin" ];
         };
