@@ -30,7 +30,10 @@ let
     personal2
     ;
   deweyServices = [
-    ".${home}"
+    "dav.${home}"
+    "home.${home}"
+    "books.${home}"
+    "auth.${home}"
     "clients.${work}"
     "auth.${work}"
     "matrix.${work}"
