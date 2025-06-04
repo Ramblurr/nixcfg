@@ -1,5 +1,4 @@
 {
-  mine,
   config,
   fetchurl,
   pkgs,
@@ -89,7 +88,7 @@ in
         ROON_ID_DIR = stateDirEffective;
       };
       serviceConfig = {
-        ExecStart = "${lib.getExe mine.roon-server}";
+        ExecStart = "${lib.getExe pkgs.roon-server}";
         ExecStartPost = rebootBluOS;
         StateDirectory = "roon-server";
         SupplementaryGroups = [

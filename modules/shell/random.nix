@@ -108,6 +108,7 @@ in
           pwgen-secure
           alejandra
           nixfmt-rfc-style
+          gost
         ];
 
         persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };

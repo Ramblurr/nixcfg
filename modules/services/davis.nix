@@ -1,6 +1,5 @@
 {
   options,
-  mine,
   config,
   lib,
   pkgs,
@@ -66,7 +65,7 @@ in
     services.davis = {
       enable = true;
       hostname = cfg.domain;
-      package = mine.davis;
+      package = pkgs.davis;
       database = {
         driver = "postgresql";
       };
