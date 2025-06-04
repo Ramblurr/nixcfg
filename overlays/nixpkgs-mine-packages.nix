@@ -17,7 +17,6 @@ in
   ocis = nixpkgs-mine.ocis;
   ocis_71-bin = nixpkgs-mine.ocis_71-bin or null;
   roon-server = nixpkgs-mine.roon-server;
-  tabby = nixpkgs-mine.tabby;
   chromium = nixpkgs-mine.chromium;
   chromedriver = nixpkgs-mine.chromedriver;
 }
