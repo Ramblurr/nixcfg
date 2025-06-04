@@ -3,7 +3,6 @@
   inputs,
   lib,
   pkgs,
-  mine,
   ...
 }:
 
@@ -19,7 +18,7 @@
     services.tabby = {
       enable = true;
       package = (
-        mine.tabby.override {
+        pkgs.tabby.override {
           cudaSupport = true;
           acceleration = "cuda";
         }

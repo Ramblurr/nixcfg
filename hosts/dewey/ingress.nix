@@ -1,6 +1,5 @@
 {
   config,
-  mine,
   lib,
   pkgs,
   ...
@@ -89,7 +88,7 @@ in
         -i ${gostConfig}
     '';
     script = ''
-      ${lib.getExe mine.gost} -C $STATE_DIRECTORY/config.json
+      ${lib.getExe pkgs.gost} -C $STATE_DIRECTORY/config.json
     '';
     serviceConfig = {
       LoadCredential = [ "GOST_PASSWORD:${config.sops.secrets.gost-ingress-password.path}" ];
