@@ -234,7 +234,7 @@ in
               "tank2<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
-              "tank2/replication<" = false;
+              "tank2/replication<" = true;
               "tank2/proxmox<" = false;
               "tank2/backups/gamsjaegers<" = false;
             };
