@@ -89,6 +89,7 @@ in
         };
       };
     virtualisation.quadlet = {
+      autoEscape = true;
       containers = {
         op-connect-api = {
           autoStart = true;
