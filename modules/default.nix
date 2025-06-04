@@ -87,7 +87,6 @@
     ./services/calibre-web.nix
     ./services/davis.nix
     ./services/docker.nix
-    ./services/echo-server.nix
     ./services/flatpak.nix
     ./services/forgejo.nix
     ./services/git-archive.nix
