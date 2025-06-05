@@ -107,10 +107,12 @@ in
       enable = true;
       package = pkgs.nginxQuic;
       enableReload = true;
+      enableQuicBPF = true;
       defaultSSLListenPort = 443;
       defaultHTTPListenPort = 8081;
       recommendedBrotliSettings = true;
       recommendedGzipSettings = true;
+      recommendedZstdSettings = true;
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;

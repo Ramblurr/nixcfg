@@ -190,6 +190,7 @@ in
       };
     };
     networking.firewall.allowedUDPPorts = [
+      443 # http3
       53 # dns
       67 # dhcp for microvms
     ];
