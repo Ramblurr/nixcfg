@@ -49,7 +49,7 @@ in
     containers.enable = true;
     apps = {
       roon-server.enable = true;
-      onepassword-connect.enable = true;
+      #onepassword-connect.enable = true;
       authentik.enable = true;
       davis.enable = true;
       paperless.enable = true;
