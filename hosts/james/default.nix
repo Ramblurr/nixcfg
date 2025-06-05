@@ -16,6 +16,11 @@ in
     ../../config/offsite.nix
     ../../config/hetzner-cloud-ccx.nix
     ./ingress.nix
+    ./web.nix
+    ./web/work.nix
+    ./web/personal.nix
+    ./web/personals.nix
+    ./web/personal3.nix
   ];
   system.stateVersion = "24.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
