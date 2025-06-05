@@ -9,9 +9,10 @@
 # and forwards traffic to the client (dewey) that connects over gost
 # see hosts/james/ingress.nix for the counterpart config
 let
-  inherit (config.repo.secrets.global) jamesIp;
-  inherit (config.repo.secrets.global)
-    deweyLocalTunnel
+  inherit (config.repo.secrets.global.ingressTunnel)
+    jamesIp
+    deweyLocal
+    clientPort
     ;
   gostConfig = pkgs.writeText "gost.json" (
     builtins.toJSON {
@@ -49,11 +50,11 @@ let
               nodes = [
                 {
                   name = "node-0";
-                  addr = "${jamesIp}:3434";
+                  addr = "${jamesIp}:${toString clientPort}";
                   connector = {
                     type = "tunnel";
                     metadata = {
-                      "tunnel.id" = deweyLocalTunnel;
+                      "tunnel.id" = deweyLocal;
                       "tunnel.weight" = 1;
                     };
                     auth = {

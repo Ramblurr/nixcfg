@@ -18,15 +18,22 @@
 # The home server (dewey) maintains a persistent connection to this VPS,
 # enabling two-way communication through the firewall.
 let
-  inherit (config.repo.secrets.global)
-    jamesLocalTunnel
-    deweyLocalTunnel
+  inherit (config.repo.secrets.global.ingressTunnel)
+    jamesLocal
+    deweyLocal
+    clientPort
     ;
   inherit (config.repo.secrets.global.domain)
     home
     work
+    work2
     personal1
     personal2
+    personal3
+    personal4
+    personal5
+    personal6
+    family
     ;
   deweyServices = [
     "dav.${home}"
@@ -41,10 +48,22 @@ let
   localServices = [
     "${work}"
     ".${work}"
+    "${work2}"
+    ".${work2}"
     "${personal1}"
     ".${personal1}"
     "${personal2}"
     ".${personal2}"
+    "${personal3}"
+    ".${personal3}"
+    "${personal4}"
+    ".${personal4}"
+    "${personal5}"
+    ".${personal5}"
+    "${personal6}"
+    ".${personal6}"
+    "${family}"
+    ".${family}"
   ];
 
   gostConfig = pkgs.writeText "gost.json" (
@@ -55,14 +74,29 @@ let
       };
       services = [
         {
-          name = "home-listen";
-          addr = ":3434";
+          name = "james-listen-new";
+          addr = ":3435";
+          handler = {
+            type = "tunnel";
+            auther = "auther-0";
+            metadata = {
+              "entrypoint.id" = "493004fa-5f6a-4363-9f12-4882392aebac";
+              ingress = "james-ingress";
+            };
+          };
+          listener = {
+            type = "tcp";
+          };
+        }
+        {
+          name = "james-listen";
+          addr = ":${toString clientPort}";
           handler = {
             type = "tunnel";
             auther = "auther-0";
             metadata = {
               entrypoint = ":443";
-              ingress = "home-ingress";
+              ingress = "james-ingress";
             };
           };
           listener = {
@@ -80,15 +114,15 @@ let
       ];
       ingresses = [
         {
-          name = "home-ingress";
+          name = "james-ingress";
           rules =
             (map (hostname: {
               hostname = hostname;
-              endpoint = deweyLocalTunnel;
+              endpoint = deweyLocal;
             }) deweyServices)
             ++ (map (hostname: {
               hostname = hostname;
-              endpoint = jamesLocalTunnel;
+              endpoint = jamesLocal;
             }) localServices);
         }
       ];
@@ -97,12 +131,12 @@ let
   gostClientConfig = pkgs.writeText "gost.json" (
     builtins.toJSON {
       log = {
-        #level = "debug";
+        level = "debug";
         format = "text";
       };
       services = [
         {
-          name = "james-local";
+          name = "james-local-tcp";
           addr = ":0";
           handler = {
             type = "rtcp";
@@ -130,11 +164,11 @@ let
               nodes = [
                 {
                   name = "node-0";
-                  addr = "127.0.0.1:3434";
+                  addr = "127.0.0.1:${toString clientPort}";
                   connector = {
                     type = "tunnel";
                     metadata = {
-                      "tunnel.id" = jamesLocalTunnel;
+                      "tunnel.id" = jamesLocal;
                       "tunnel.weight" = 1;
                     };
                     auth = {
@@ -186,6 +220,14 @@ let
   };
 in
 {
+
+  networking.firewall.allowedTCPPorts = [
+    443 # https
+    clientPort
+  ];
+  networking.firewall.allowedUDPPorts = [
+    443 # http3
+  ];
   # File containing credentials for all the gost clients
   sops.secrets.gost-ingress-auth = { };
 
@@ -193,7 +235,7 @@ in
   sops.secrets.gost-ingress-password = { };
 
   # This is our cloudflared-like ingress. It does TCP forwarding based on the SNI hostname
-  # It will forward traffic to deweyLocalTunnel (running at home) or jamesLocalTunnel (local to james services)
+  # It will forward traffic to deweyLocal (running at home) or jamesLocal (local to james services)
   systemd.services.gost-ingress = {
     preStart = ''
       export GOST_AUTH_FILE="$CREDENTIALS_DIRECTORY/GOST_AUTH_FILE"
@@ -213,7 +255,7 @@ in
   };
 
   # This is a local client on james that forward to our local nginx server for handling servies that run directly on james
-  # It corresponds to the jamesLocalTunnel
+  # It corresponds to the jamesLocal
   systemd.services.gost-ingress-client = {
     preStart = ''
       rm -f $STATE_DIRECTORY/config.json
