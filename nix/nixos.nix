@@ -28,7 +28,7 @@ let
     (import ../overlays/last-known-good.nix)
     (import ../overlays/nixpkgs-mine-packages.nix inputs)
     (import ../overlays/roon-server.nix)
-    (import ../overlays/logseq.nix)
+    (import ../overlays/nginx.nix)
   ] ++ (import ../pkgs/default.nix inputs);
 
   mkPkgs =
