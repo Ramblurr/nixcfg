@@ -24,7 +24,6 @@ tasks:
     vars:
       input: '{{ or .input (fail "Flake input name `input` is required") }}'
     cmds:
-      #- nix flake lock --update-input {{.input}}
       - nix flake update {{.input}}
 
   nixos-rebuild-remote:
