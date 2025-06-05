@@ -210,6 +210,7 @@ in
       attic-watch-store.enable = true;
       docker.enableOnBoot = false;
       podman.enable = true;
+      nomad.enable = false;
       microsocks.enable = false;
       printing.enable = true;
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
