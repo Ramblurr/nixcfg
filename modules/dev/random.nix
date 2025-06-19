@@ -101,6 +101,7 @@ in
         shellcheck
         shadowsocks-rust
         ssh-to-age
+        bfg-repo-cleaner
       ];
     };
   };
