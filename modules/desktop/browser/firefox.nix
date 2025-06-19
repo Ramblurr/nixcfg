@@ -16,6 +16,7 @@ let
     inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
   firefox-devedition-bin =
     inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-devedition-bin;
+  firefox = pkgs.firefox-bin;
 in
 {
   options.modules.desktop.browsers.firefox = {
@@ -37,10 +38,10 @@ in
     home-manager.users."${username}" =
       { pkgs, ... }@hm:
       {
-        home.packages = [ firefox-devedition-bin ];
+        #home.packages = [ firefox-devedition-bin ];
         programs.firefox = {
           enable = true;
-          package = firefox-nightly;
+          package = firefox;
           nativeMessagingHosts = [ pkgs.firefoxpwa ];
           profiles.personal = {
             id = 0;
