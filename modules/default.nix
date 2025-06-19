@@ -129,6 +129,7 @@
     ./shell/zoxide.nix
     ./shell/zsh/default.nix
     ./users/default.nix
+    ./users/deploy-user.nix
     ./vpn/mullvad.nix
     ./vpn/tailscale.nix
     ./distributed-config.nix
