@@ -33,7 +33,6 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
 
   time.timeZone = "Europe/Berlin";
-  i18n.defaultLocale = "en_US.utf8";
 
   sops.secrets.HASS_TOKEN = {
     owner = username;

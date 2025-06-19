@@ -93,7 +93,6 @@ in
     ## Basic ##
     ###########
     time.timeZone = "Europe/Berlin";
-    i18n.defaultLocale = "en_US.utf8";
     sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
     documentation.nixos.enable = false;
     documentation.doc.enable = false;
