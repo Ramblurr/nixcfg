@@ -26,7 +26,6 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   sops.defaultSopsFile = ./secrets.sops.yaml;
   time.timeZone = "Europe/Berlin";
-  i18n.defaultLocale = "en_US.utf8";
 
   networking.hostId = lib.my.generateHostId hostName;
   networking.firewall.enable = false;

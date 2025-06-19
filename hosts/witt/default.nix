@@ -26,7 +26,6 @@ in
   environment.etc."machine-id".text = machine-id;
 
   time.timeZone = "Europe/Berlin";
-  i18n.defaultLocale = "en_US.utf8";
 
   #### TEMPORARY
   # Workaround kernel bug in kernel >= 6.6.57
