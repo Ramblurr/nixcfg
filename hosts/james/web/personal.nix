@@ -6,7 +6,11 @@
 }:
 
 let
-  inherit (config.repo.secrets.global.domain) home work personal1;
+  inherit (config.repo.secrets.global.domain)
+    home
+    work
+    personal1
+    ;
   domain = personal1;
 in
 {
@@ -32,5 +36,4 @@ in
       return 301 https://dav.${home}/dav/;
     '';
   };
-
 }

@@ -11,7 +11,6 @@ let
   inherit (config.repo.secrets.local) atprotoDid;
   work = domain.work;
   domains = [
-    domain.personal2
     domain.personal4
     domain.personal5
     domain.personal6

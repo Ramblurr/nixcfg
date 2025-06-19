@@ -109,6 +109,7 @@ in
           alejandra
           nixfmt-rfc-style
           gost
+          deploy-rs
         ];
 
         persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };

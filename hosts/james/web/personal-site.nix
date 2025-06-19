@@ -7,47 +7,75 @@
 
 let
   inherit (config.repo.secrets.global.domain)
+    home
     personal2
     ;
-  username = personal2;
-  homeDir = "/var/lib/${username}";
-  uid = config.users.users.${personal2}.uid;
+  inherit (config.repo.secrets.local) atprotoDid;
+  domain = personal2;
+  uid = 993;
+  homeDirectory = "/var/lib/${personal2}";
+  #runtimeDirectory = "${config.modules.users.deploy-users.${personal2}.runtimeDirectory}";
+  socketPath = "${homeDirectory}/.run/site.sock";
+  hookScript = pkgs.writeScript "site-deploy.sh" ''
+    #!${pkgs.bash}/bin/bash
+    set -euo pipefail
+    TEMP_DIR=$(${pkgs.coreutils}/bin/mktemp -d)
+    trap 'rm -rf "$TEMP_DIR"' EXIT
+    ${pkgs.git}/bin/git clone https://github.com/Ramblurr/casey.link.git "$TEMP_DIR"
+    cd "$TEMP_DIR"
+    deploy .
+  '';
 in
 {
-
-  users.users.${username} = {
-    isSystemUser = true;
-    shell = pkgs.bash;
-    linger = true;
-    home = homeDir;
-    createHome = true;
-    group = username;
+  modules.users.deploy-users.${personal2} = {
+    username = personal2;
+    uid = 993;
+    gid = 991;
+    homeDirectory = homeDirectory;
+    homeDirectoryOnZfs.enable = true;
+    homeDirectoryOnZfs.datasetName = "rpool/encrypted/safe/svc/${personal2}";
   };
 
-  users.groups.${username} = {
-    name = username;
+  security.acme.certs.${domain} = {
+    domain = "${domain}";
+    extraDomainNames = [
+      "www.${domain}"
+    ];
   };
-
-  modules.zfs.datasets.properties = {
-    "rpool/encrypted/safe/svc/${personal2}"."mountpoint" = homeDir;
+  users.users.nginx.extraGroups = [ personal2 ];
+  systemd.services.nginx.serviceConfig = {
+    ProtectHome = "tmpfs";
+    BindReadOnlyPaths = [
+      "/var/lib/${personal2}/.run"
+    ];
   };
-
-  home-manager.users.${username} =
-    { pkgs, config, ... }:
-    {
-      home.homeDirectory = homeDir;
-      home.sessionVariables = {
-        EDITOR = "vim";
-        DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString uid}/bus";
-        XDG_RUNTIME_DIR = "/run/user/${toString uid}";
-      };
-
-      systemd.user.startServices = "sd-switch";
-      programs.bash = {
-        enable = true;
-        initExtra = ''
-          [[ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
-        '';
-      };
+  services.nginx.virtualHosts.${domain} = {
+    serverAliases = [ "www.${domain}" ];
+    useACMEHost = domain;
+    forceSSL = true;
+    kTLS = true;
+    http3 = true;
+    http2 = false;
+    quic = true;
+    locations."= /.well-known/carddav".extraConfig = ''
+      return 301 https://dav.${home}/dav/;
+    '';
+    locations."= /.well-known/caldav".extraConfig = ''
+      return 301 https://dav.${home}/dav/;
+    '';
+    locations."= /.well-known/atproto-did".extraConfig = ''
+      add_header Content-Type text/plain;
+      return 200 '${atprotoDid}';
+    '';
+    locations."/" = {
+      recommendedProxySettings = true;
+      proxyWebsockets = true;
+      proxyPass = "http://unix:${socketPath}";
+      extraConfig = ''
+        ${lib.optionalString true ''
+          add_header Alt-Svc 'h3=":443"; ma=86400';
+        ''}
+      '';
     };
+  };
 }

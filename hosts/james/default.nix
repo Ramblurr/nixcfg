@@ -8,6 +8,7 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
+  inherit (config.repo.secrets.global) ciSigningPublicKey;
 in
 {
   imports = [
@@ -19,6 +20,7 @@ in
     ./web.nix
     ./web/work.nix
     ./web/personal.nix
+    ./web/personal-site.nix
     ./web/personals.nix
     ./web/personal3.nix
   ];
@@ -75,4 +77,6 @@ in
     "d /persist/home/${username}/.local/state 755 ${username} ${username}"
     "d /persist/home/${username}/.local/state/zsh 755 ${username} ${username}"
   ];
+
+  nix.settings.trusted-public-keys = [ ciSigningPublicKey ];
 }
