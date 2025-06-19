@@ -6,6 +6,10 @@
   actual-nixpkgs,
   ...
 }:
+
+let
+  inherit (config.repo.secrets.global) ciSigningPublicKey;
+in
 with lib;
 {
   environment.variables.NIXPKGS_ALLOW_UNFREE = "1";
@@ -19,6 +23,7 @@ with lib;
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
         "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+        ciSigningPublicKey
       ];
       trusted-users = [
         "root"
@@ -41,7 +46,6 @@ with lib;
   systemd.tmpfiles.rules = [ "L+ /etc/nixpkgs/channels/nixpkgs - - - - ${actual-nixpkgs}" ];
 
   programs.command-not-found.enable = false;
-  #home-manager.users.huantian.programs.nix-index.enable = true;
 
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
 
