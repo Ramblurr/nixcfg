@@ -31,8 +31,8 @@ in
         home.file.".local/share/applications/signal-desktop.desktop" = {
           text = ''
             [Desktop Entry]
-            Name=Signal Desktop
-            Exec=/nix/store/pkdmssw4rvnbd55i1x2ha4bx6liv1fdz-signal-desktop-7.14.0/bin/signal-desktop --ozone-platform-hint=auto --no-sandbox %U
+            Name=Signal Desktop (nix)
+            Exec=${pkgs.signal-desktop}/bin/signal-desktop --ozone-platform-hint=auto --no-sandbox %U
             Terminal=false
             Type=Application
             Icon=signal-desktop

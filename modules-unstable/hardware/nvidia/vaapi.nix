@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.modules.hardware.easyNvidia.vaapi;
+  ffVersion = config.programs.firefox.package.version;
 in
 {
   options.modules.hardware.easyNvidia.vaapi = with lib.types; {
@@ -30,9 +31,7 @@ in
         and require more power, so this is disabled there by default -
         it may still make sense from time to time, so feel free to
         experiment.
-
       '';
-
     };
 
     maxInstances = lib.mkOption {
@@ -84,8 +83,9 @@ in
     };
 
     programs.firefox.preferences = lib.mkIf cfg.firefox.enable {
-      "media.ffmpeg.vaapi.enabled" = true;
-      "media.rdd-ffmpeg.enabled" = true;
+      "media.ffmpeg.vaapi.enabled" = lib.versionOlder ffVersion "137.0.0";
+      "media.hardware-video-decoding.force-enabled" = lib.versionAtLeast ffVersion "137.0.0";
+      "media.rdd-ffmpeg.enabled" = lib.versionOlder ffVersion "97.0.0";
       "media.av1.enabled" = cfg.firefox.av1Support;
       "gfx.x11-egl.force-enabled" = true;
       "widget.dmabuf.force-enabled" = true;
