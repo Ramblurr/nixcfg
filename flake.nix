@@ -3,8 +3,8 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
-    home-manager-stable.url = "github:nix-community/home-manager/release-24.11";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.05";
+    home-manager-stable.url = "github:nix-community/home-manager/release-25.05";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=consolidated";
