@@ -19,11 +19,13 @@ let
   ];
 
   toRebootCmdLine = map (
-    host: "${lib.getExe pkgs.curl} -X POST http://${host}/reboot --data-raw 'noheader=0&yes='"
+    host:
+    ''${lib.getExe pkgs.curl} -X POST http://${host}/reboot --data-raw 'noheader=0&yes=' || echo "Failed to restart ${host}"''
   ) bluOSHosts;
 
   rebootBluOS = pkgs.writeScript "reboot-bluos.sh" ''
-    #!${pkgs.runtimeShell} -e
+    #!${pkgs.runtimeShell}
+    set +e
     echo "Rebooting bluos devices"
     sleep 30
     ${lib.concatStringsSep "\n" toRebootCmdLine}
@@ -95,7 +97,7 @@ in
           "audio"
           "media"
         ];
-        RestartSec = "30";
+        RestartSec = "120";
         Restart = "always";
         LimitNOFILE = 8192;
         IOWeight = "200"; # default, when unspecified is 100
