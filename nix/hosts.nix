@@ -66,7 +66,6 @@
           isStable = false;
           system = "x86_64-linux";
           hostOverlays = [
-            (import ../overlays/qemu.nix)
           ];
         };
         mali = {

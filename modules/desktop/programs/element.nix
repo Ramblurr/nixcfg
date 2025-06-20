@@ -49,7 +49,6 @@ in
       {
         home.packages = [
           pkgs.element-desktop
-          #(pkgs.element-desktop.override { electron = pkgs.electron_30; })
           pkgs.iamb
         ];
 

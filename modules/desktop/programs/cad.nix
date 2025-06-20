@@ -43,8 +43,8 @@ in
           freecad
           # BLOCKED: https://github.com/NixOS/nixpkgs/issues/375763
           #(inputs.cadquery.packages.${pkgs.system}.cq-editor)
-          openscad-unstable
-          openscad-lsp
+          #openscad-unstable
+          #openscad-lsp
         ];
       };
   };

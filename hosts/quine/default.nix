@@ -161,9 +161,9 @@ in
         cad.enable = true;
         chrysalis.enable = true;
         discord.enable = false;
-        element.enable = true;
-        element.work.enable = true;
-        element.workProxy = "${lanVpnGateway}:1081";
+        #element.enable = true;
+        #element.work.enable = true;
+        #element.workProxy = "${lanVpnGateway}:1081";
         fritzing.enable = false;
         junction.enable = true;
         kdeconnect.enable = true;
@@ -253,6 +253,11 @@ in
     hardware.easyNvidia = {
       enable = true;
       withIntegratedGPU = false;
+      advanced = {
+        monitorControlSupport = true;
+        usePageAttributeTable = true;
+      };
+      desktopEnvironment = "wlroots";
       vaapi = {
         enable = true;
         firefox = {
