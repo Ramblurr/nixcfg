@@ -38,7 +38,7 @@ tasks:
         if [[ "{{ .TARGET_HOST }}" == "{{ .LOCAL_HOST }}" ]]; then
           sudo nixos-rebuild --flake .#quine {{.ACTION}} --show-trace  |& nom
         else
-          nixos-rebuild --fast --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace |& nom
+          nixos-rebuild --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace |& nom
         fi
 
   deploy-key:
