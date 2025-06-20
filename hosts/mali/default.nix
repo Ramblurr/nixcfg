@@ -70,7 +70,7 @@ in
         "fast"
       ];
     };
-    server.smtp-external-relay.enable = true;
+    #server.smtp-external-relay.enable = true;
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
