@@ -10,10 +10,15 @@ let
   cfg = config.modules.hardware.easyNvidia;
 in
 {
-  imports = [ ./vaapi.nix ];
+  imports = [
+    ./vaapi.nix
+    ./prime.nix
+    ./de-compat.nix
+  ];
 
   options.modules.hardware.easyNvidia = with lib.types; {
     enable = lib.mkEnableOption "easyNvidia";
+
     withIntegratedGPU = lib.mkOption {
       type = bool;
       description = ''
@@ -24,30 +29,79 @@ in
         if you separately disable offload rendering.
       '';
     };
+
+    # TODO(tlater): Think of a better way to integrate
+    # this. Realistically, this should be added to the startup script
+    # of each of these, but that requires upstream coordination.
+    desktopEnvironment = lib.mkOption {
+      type = lib.types.enum [
+        "x11"
+        "wlroots"
+        "plasma"
+        "gnome"
+        "none"
+      ];
+      default = "none";
+      description = ''
+        The desktop environment that will be used. Each has subtly
+        different semantics for setting GPU priority, so needs to be
+        handled separately.
+
+        If using a traditional X11-based DE or WM, always choose
+        `x11`, even when using GNOME or KDE.
+
+        Using multiple session types is not yet supported.
+      '';
+    };
+
+    advanced = {
+      usePageAttributeTable = lib.mkOption {
+        default = true;
+        type = bool;
+        description = ''
+          Whether to use the page attribute table. Nvidia is overly
+          conservative with enabling this; practically all modern CPUs
+          have support for this, and it can meaningfully impact
+          performance.
+        '';
+      };
+
+      monitorControlSupport = lib.mkOption {
+        default = true;
+        type = bool;
+        description = ''
+          Whether to add i2c support for communication with monitors.
+
+          This isn't universally necessary, or even useful, but it
+          enables configuring some monitor settings on some monitors
+          with some GPUs, and shouldn't otherwise be harmful.
+
+          See https://www.ddcutil.com/nvidia/ for details.
+        '';
+      };
+
+      forceKernel = lib.mkOption {
+        default = false;
+        type = bool;
+        description = ''
+          Override the kernel version assertion. You're on your own.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
     services.xserver.videoDrivers = [ "nvidia" ];
 
     hardware.nvidia = {
-      package =
-        config.boot.kernelPackages.nvidiaPackages.mkDriver
-          #   {
-          #   version = "570.124.04";
-          #   sha256_64bit = "sha256-G3hqS3Ei18QhbFiuQAdoik93jBlsFI2RkWOBXuENU8Q=";
-          #   sha256_aarch64 = lib.fakeHash;
-          #   openSha256 = "sha256-KCGUyu/XtmgcBqJ8NLw/iXlaqB9/exg51KFx0Ta5ip0=";
-          #   settingsSha256 = "sha256-LNL0J/sYHD8vagkV1w8tb52gMtzj/F0QmJTV1cMaso8=";
-          #   persistencedSha256 = lib.fakeHash;
-          # };
-          {
-            version = "570.144";
-            sha256_64bit = "sha256-wLjX7PLiC4N2dnS6uP7k0TI9xVWAJ02Ok0Y16JVfO+Y=";
-            sha256_aarch64 = lib.fakeSha256;
-            openSha256 = "";
-            settingsSha256 = "sha256-VcCa3P/v3tDRzDgaY+hLrQSwswvNhsm93anmOhUymvM=";
-            persistencedSha256 = lib.fakeSha256;
-          };
+      package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+        version = "575.57.08";
+        sha256_64bit = "sha256-KqcB2sGAp7IKbleMzNkB3tjUTlfWBYDwj50o3R//xvI=";
+        sha256_aarch64 = lib.fakeHash;
+        openSha256 = "sha256-DOJw73sjhQoy+5R0GHGnUddE6xaXb/z/Ihq3BKBf+lg=";
+        settingsSha256 = "sha256-AIeeDXFEo9VEKCgXnY3QvrW5iWZeIVg4LBCeRtMs5Io=";
+        persistencedSha256 = lib.fakeHash;
+      };
 
       # Power management is nearly always required to get nvidia GPUs to
       # behave on suspend, due to firmware bugs.
@@ -58,44 +112,23 @@ in
 
       dynamicBoost.enable = cfg.enable && cfg.withIntegratedGPU;
     };
+    boot.kernelParams = [
+      "quiet"
+      "splash"
+      "boot.shell_on_fail"
+      "nvidia"
+      "nvidia_modeset"
+      "nvidia-uvm"
+      "nvidia_drm"
+    ];
+    boot.extraModprobeConfig =
+      let
+        options =
+          lib.optional cfg.advanced.usePageAttributeTable "NVreg_UsePageAttributeTable=1"
+          ++ lib.optional cfg.advanced.monitorControlSupport "NVreg_RegistryDwords=RMUseSwI2c=0x01;RMI2cSpeed=100";
+      in
+      lib.mkIf (options != [ ]) "options nvidia ${lib.concatStringsSep " " options}";
 
-    boot = {
-      #kernelPackages = lib.mkForce pkgs.linuxKernel.packages.linux_xanmod;
-      kernelParams = [
-        #"video=3440x1440@100" # for virtual console resolution
-        "quiet"
-        "splash"
-        "boot.shell_on_fail"
-        "nvidia"
-        "nvidia_modeset"
-        "nvidia-uvm"
-        "nvidia_drm"
-      ];
-      extraModprobeConfig =
-        "options nvidia "
-        + lib.concatStringsSep " " [
-          # nvidia assume that by default your CPU does not support PAT,
-          # but this is effectively never the case in 2023
-          "NVreg_UsePageAttributeTable=1"
-          # This is sometimes needed for ddc/ci support, see
-          # https://www.ddcutil.com/nvidia/
-          #
-          # Current monitor does not support it, but this is useful for
-          # the future
-          #"NVreg_RegistryDwords=RMUseSwI2c=0x01;RMI2cSpeed=100"
-        ];
-    };
-
-    # No longer setting these here, and instead setting them on a per-app basis as needed
-    #environment.variables = {
-    #  # Required to run the correct GBM backend for nvidia GPUs on wayland
-    #  GBM_BACKEND = "nvidia-drm";
-    #  # Apparently, without this nouveau may attempt to be used instead
-    #  # (despite it being blacklisted)
-    #  __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-    #  # Hardware cursors are currently broken on wlroots
-    #  WLR_NO_HARDWARE_CURSORS = "1";
-    #};
     environment.systemPackages = [
       pkgs.nvitop
       pkgs.nvtopPackages.nvidia
