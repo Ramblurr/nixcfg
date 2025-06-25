@@ -13,6 +13,7 @@ let
   shouldImportSSL = cfg.ssl.cert != null && cfg.ssl.key != null && cfg.ssl.name != null;
   authentikBaseService = {
     after = [ "network.target" ] ++ lib.optional databaseActuallyCreateLocally "postgresql.service";
+    requires = lib.optional databaseActuallyCreateLocally "postgresql.service";
     wantedBy = [ "multi-user.target" ];
     path = [ cfg.package ];
     environment =
@@ -44,6 +45,8 @@ let
       WorkingDirectory = cfg.package;
       DynamicUser = true;
       RuntimeDirectory = "authentik";
+      RestartSec = "30";
+      Restart = "always";
       NoNewPrivileges = true;
       PrivateTmp = true;
       ProtectHome = true;
