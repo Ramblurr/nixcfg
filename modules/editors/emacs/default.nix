@@ -98,7 +98,6 @@ in
           ))
           # :lang nix
           nixfmt-rfc-style
-          #inputs.nixfmt.packages.${pkgs.hostPlatform.system}.nixfmt-rfc-style
         ];
         persistence = lib.mkIf withImpermanence {
           directories = [
