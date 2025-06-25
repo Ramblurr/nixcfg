@@ -7,8 +7,7 @@ let
     first
     ;
   dhcpLib = import ./helpers.nix { inherit lib; };
-  leaseOption = {
-  };
+  leaseOption = { };
   commonDhcpOptions = [
     {
       name = "domain-name-servers";

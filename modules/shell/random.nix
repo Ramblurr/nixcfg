@@ -106,7 +106,6 @@ in
           vifm
           smartmontools
           pwgen-secure
-          alejandra
           nixfmt-rfc-style
           gost
           deploy-rs
