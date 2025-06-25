@@ -148,6 +148,7 @@ in
             type = "snap";
             filesystems = {
               "rpool<" = false;
+              "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
               "tank2/iocage<" = false;
@@ -204,7 +205,9 @@ in
             };
             filesystems = {
               "rpool<" = false;
+              "rpool2<" = false;
               "rpool/encrypted/safe<" = true;
+              "rpool2/encrypted/safe<" = true;
               "tank/backup<" = false;
               "tank2<" = true;
               "tank2/media<" = false;
@@ -231,6 +234,7 @@ in
             };
             filesystems = {
               "rpool<" = false;
+              "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
               "tank2/media<" = false;

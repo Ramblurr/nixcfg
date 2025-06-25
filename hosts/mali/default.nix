@@ -68,8 +68,8 @@ in
       enable = true;
       zed.enable = true;
       encrypted = true;
-      rootPool = "rpool";
-      scrubPools = [ "rpool" ];
+      rootPool = "rpool2";
+      scrubPools = [ "rpool2" ];
       autoSnapshot.enable = false;
       extraPools = [
         "tank"
