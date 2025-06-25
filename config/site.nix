@@ -342,6 +342,7 @@ in
       interfaces = {
         lan0.type = "phys";
         prim.type = "bridge";
+        mgmt.type = "bridge";
         svc.type = "bridge";
         vpn.type = "bridge";
       };

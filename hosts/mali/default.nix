@@ -18,7 +18,6 @@ in
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
-    ./monitoring.nix
     ./acme.nix
     ./nginx.nix
     ./minio.nix
@@ -41,6 +40,14 @@ in
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
   modules = {
+    telemetry = {
+      smartd.enable = true;
+      prometheus-node-exporter.enable = true;
+      prometheus-zfs-exporter.enable = true;
+      prometheus-smartctl-exporter.enable = true;
+      prometheus-nut-exporter.enable = true;
+      prometheus-ipmi-exporter.enable = true;
+    };
     shell = {
       atuin.enable = true;
       direnv.enable = true;
@@ -70,7 +77,7 @@ in
         "fast"
       ];
     };
-    #server.smtp-external-relay.enable = true;
+    server.smtp-external-relay.enable = true;
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
@@ -151,8 +158,10 @@ in
       extraGroups = [ "k8s-nfs" ];
     };
   };
-  services.smartd.enable = true;
   environment.systemPackages = with pkgs; [
+
+    ipmitool
+    lm_sensors
     unstable.rsgain
     mktorrent
     tcpdump

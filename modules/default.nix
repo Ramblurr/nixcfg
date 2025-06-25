@@ -140,5 +140,14 @@
     ./zfs-attrs.nix
     # ./microvm-guest # explicitly not included in default modules
     ./microvm-host
+    ./telemetry/prometheus-node-exporter.nix
+    ./telemetry/prometheus-smartctl-exporter.nix
+    ./telemetry/prometheus-zfs-exporter.nix
+    ./telemetry/prometheus-nut-exporter.nix
+    ./telemetry/prometheus-ipmi-exporter.nix
+    ./telemetry/prometheus.nix
+    ./services/grafana.nix
+    ./telemetry/smartd.nix
+    ./telemetry/thanos.nix
   ];
 }
