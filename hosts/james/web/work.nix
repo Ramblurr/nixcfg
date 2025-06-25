@@ -59,7 +59,7 @@ in
     locations."= /.well-known/matrix/server".extraConfig =
       let
         server = {
-          "m.server" = "matrix.${domain}.org:443";
+          "m.server" = "matrix.${domain}:443";
         };
       in
       ''
@@ -70,7 +70,7 @@ in
       let
         client = {
           "m.homeserver" = {
-            "base_url" = "https://matrix.${domain}.org";
+            "base_url" = "https://matrix.${domain}";
           };
         };
       in
