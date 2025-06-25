@@ -13,7 +13,7 @@
 
     nix-std.url = "github:chessai/nix-std";
 
-    nixfmt.url = "github:serokell/nixfmt";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
 
     #microvm.url = "github:astro/microvm.nix";
     microvm.url = "path:/home/ramblurr/src/microvm.nix";
@@ -126,6 +126,7 @@
         ./nix/hosts.nix
         ./nix/pkgs.nix
         ./nix/iso-test.nix
+        ./nix/treefmt.nix
       ];
 
       systems = [
