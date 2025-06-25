@@ -35,4 +35,8 @@
       "data"
     ];
   };
+  systemd.services.ntopng.serviceConfig = {
+    Restart = "always";
+    RestartSec = "20s";
+  };
 }

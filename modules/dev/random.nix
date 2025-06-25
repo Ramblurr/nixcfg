@@ -79,6 +79,7 @@ in
         git-filter-repo
         stripe-cli
         terraform
+        opentofu
         httpie
         gettext
         tcpdump

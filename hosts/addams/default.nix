@@ -45,6 +45,12 @@ in
   ## My Custom Base Modules ##
   ############################
   modules = {
+    telemetry = {
+      smartd.enable = true;
+      prometheus-node-exporter.enable = true;
+      prometheus-zfs-exporter.enable = true;
+      prometheus-smartctl-exporter.enable = true;
+    };
     shell = {
       htop.enable = true;
       tmux.enable = true;
@@ -96,6 +102,4 @@ in
     "d /persist/home/${username}/.local/state 755 ${username} ${username}"
     "d /persist/home/${username}/.local/state/zsh 755 ${username} ${username}"
   ];
-
-  services.smartd.enable = true;
 }

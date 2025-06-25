@@ -24,6 +24,7 @@ in
     9811
     3478
     3479
+    config.repo.secrets.home-ops.ports.zrepl-metrics
   ];
   modules.services.zfs-backup-check = {
     enable = true;

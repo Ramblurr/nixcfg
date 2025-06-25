@@ -138,7 +138,7 @@ let
       protocols = [ "tcp" ];
       destination.port = 25;
       translation = {
-        address = "10.5.0.3";
+        address = config.repo.secrets.global.email.siteRelay;
         port = 25;
       };
     };

@@ -24,7 +24,7 @@ in
     };
     smtpHost = lib.mkOption {
       type = lib.types.uniq lib.types.str;
-      default = "10.5.0.3";
+      default = config.repo.secrets.global.email.siteRelay;
     };
   };
   config =

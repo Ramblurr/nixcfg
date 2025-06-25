@@ -149,8 +149,8 @@ in
         monthly = 1; # keep only one monthly snapshot (instead of twelve)
       };
     };
-    services.zfs.zed = mkIf cfg.zed.enable {
-      enableMail = false;
+    services.zfs.zed = mkIf (cfg.zed.enable && config.modules.server.smtp-external-relay.enable) {
+      enableMail = true;
       settings = {
         ZED_NOTIFY_VERBOSE = true;
         ZED_DEBUG_LOG = "/tmp/zed.debug.log";
