@@ -5,6 +5,11 @@
 This is a NixOS configuration repository (`nixcfg`) that manages multiple systems using Nix flakes.
 It uses a modular approach to configure various hosts including workstations, servers, and virtual machines.
 
+## Code Style Guidelines
+
+- Never use `with lib;` or `with pkgs;`
+  Older code uses the `with lib;` pattern alot, but we NEVER DO THIS anymore.
+
 ## Common Commands
 
 ### Building and Deploying Configurations
