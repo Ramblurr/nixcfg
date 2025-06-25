@@ -13,8 +13,7 @@ let
     types
     ;
 
-  dhcpOpts = {
-  };
+  dhcpOpts = { };
 
 in
 { name, ... }:
