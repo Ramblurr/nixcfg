@@ -8,7 +8,7 @@
 {
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
   fileSystems."/" = {
-    device = "rpool/encrypted/local/root";
+    device = "rpool2/encrypted/local/root";
     fsType = "zfs";
     neededForBoot = true;
   };
@@ -20,31 +20,31 @@
   };
 
   fileSystems."/nix" = {
-    device = "rpool/encrypted/local/nix";
+    device = "rpool2/encrypted/local/nix";
     fsType = "zfs";
     neededForBoot = true;
   };
 
   fileSystems."/home" = {
-    device = "rpool/encrypted/local/home";
+    device = "rpool2/encrypted/local/home";
     fsType = "zfs";
     neededForBoot = true;
   };
 
   fileSystems."/persist" = {
-    device = "rpool/encrypted/safe/persist";
+    device = "rpool2/encrypted/safe/persist";
     fsType = "zfs";
     neededForBoot = true;
   };
 
   fileSystems."/persist/extra" = {
-    device = "rpool/encrypted/safe/persist/extra";
+    device = "rpool2/encrypted/safe/persist/extra";
     fsType = "zfs";
     neededForBoot = true;
   };
 
   fileSystems."/persist/extra/atuin" = {
-    device = "rpool/encrypted/safe/persist/extra/atuin";
+    device = "rpool2/encrypted/safe/persist/extra/atuin";
     fsType = "zfs";
     neededForBoot = true;
   };
@@ -93,13 +93,13 @@
 
       postMountCommands = ''
         # Don't keep the cryptkey available all the time.
-        cryptsetup close /dev/mapper/cryptkey
+        #cryptsetup close /dev/mapper/cryptkey
       '';
 
       postDeviceCommands = lib.mkAfter ''
-        zfs rollback -r rpool/encrypted/local/root@blank && \
-        zfs rollback -r rpool/encrypted/local/home@blank && \
-        echo "rollback complete"
+        zfs rollback -r rpool2/encrypted/local/root@blank && \
+        zfs rollback -r rpool2/encrypted/local/home@blank && \
+        echo "rollback complete" || echo "rollback failed"
       '';
     };
   };
