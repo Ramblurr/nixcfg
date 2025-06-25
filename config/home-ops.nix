@@ -128,7 +128,7 @@ in
       };
       zfs.datasets.enable = true;
       server = {
-        smtp-external-relay.enable = false;
+        smtp-external-relay.enable = true;
       };
       # vpn.tailscale.enable = true;
       firewall.enable = true;
@@ -167,27 +167,16 @@ in
     #
     # Supporting services
     #
-    services.smartd.enable = true;
     services.rpcbind.enable = true;
     home-ops.zrepl.enable = true;
-    services.prometheus = {
-      exporters = {
-        node = {
-          enable = false;
-          enabledCollectors = [ "systemd" ];
-          disabledCollectors = [ "textfile" ];
-          port = home-ops.ports.node-exporter;
-        };
-        zfs = {
-          enable = true;
-          port = home-ops.ports.zfs-exporter;
-        };
-        smartctl = {
-          enable = false;
-          port = home-ops.ports.smartctl-exporter;
-        };
-      };
+
+    modules.telemetry = {
+      prometheus-zfs-exporter.enable = true;
+      prometheus-smartctl-exporter.enable = true;
+      smartd.enable = true;
+      prometheus-node-exporter.enable = true;
     };
+
     networking.firewall.allowedUDPPorts = [
       443 # http3
       53 # dns
@@ -195,9 +184,6 @@ in
     ];
     networking.firewall.allowedTCPPorts = [
       53
-      config.services.prometheus.exporters.node.port
-      config.services.prometheus.exporters.zfs.port
-      config.services.prometheus.exporters.smartctl.port
     ];
 
     modules.server.virtd-host = lib.mkIf cfg.hypervisor.enable {

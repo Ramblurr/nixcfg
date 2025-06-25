@@ -278,7 +278,7 @@ in
         email = config.repo.secrets.global.email.acme;
         credentialsFile = config.sops.templates.acme-credentials.path;
         dnsProvider = "bunny";
-        dnsPropagationCheck = true;
+        dnsPropagationCheck = false;
         reloadServices = [ "nginx.service" ];
       };
       certs = lib.mapAttrs' (

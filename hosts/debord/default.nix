@@ -12,6 +12,8 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
+    ./prometheus.nix
+    ./grafana
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
@@ -61,6 +63,7 @@ in
     enable = true;
     containers.enable = false;
     hypervisor.enable = true;
+    ingress.enable = true;
   };
   myhm =
     { pkgs, ... }@hm:

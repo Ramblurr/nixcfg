@@ -136,7 +136,7 @@ in
               "tree" =
                 ''tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'';
               "zz" = "quit";
-              "tf" = "terraform";
+              "tf" = "tofu";
               "mkdir" = "mkdir -p";
               "cp" = "cp -r";
               "scp" = "scp -r";
