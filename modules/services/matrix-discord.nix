@@ -194,11 +194,18 @@ in
         lottieconverter
       ];
       wantedBy = [ "multi-user.target" ];
-      wants = [ "mautrix-discord-genregistration.service" ];
-      after = [ "mautrix-discord-genregistration.service" ];
+      wants = [
+        "mautrix-discord-genregistration.service"
+        "postgresql.service"
+      ];
+      after = [
+        "mautrix-discord-genregistration.service"
+        "postgresql.service"
+      ];
       serviceConfig = {
         Type = "simple";
         Restart = "always";
+        RestartSec = "30";
         ReadWritePaths = [ rootCfg.dataDir ];
         NoNewPrivileges = true;
         MemoryDenyWriteExecute = true;
