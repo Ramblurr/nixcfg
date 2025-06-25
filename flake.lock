@@ -892,8 +892,8 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1747747121,
-        "narHash": "sha256-J6nASoH5d+kQfN2KypPz/gxUcWoNJ5mvaxi/SJHHWNI=",
+        "lastModified": 1750441454,
+        "narHash": "sha256-NZVyyZiuKA+AcbUXLR0A2WUBI+5Xnc/kUnQfR/DPElQ=",
         "path": "/home/ramblurr/src/microvm.nix",
         "type": "path"
       },
@@ -1250,10 +1250,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1750334756,
-        "narHash": "sha256-TllUeyPBW0waHt22HyYQfYTKiFvr4YEYCfbY1d3w2Sc=",
+        "lastModified": 1750761461,
+        "narHash": "sha256-4pTz6tgEBt8WybVlmv3eHDANxMVBiKqBF/L6nHLfDPg=",
         "ref": "consolidated",
-        "rev": "ba5f39b2407221f12b71a5dec7294898590d6897",
+        "rev": "d25004904d2134a71116988531198d8ca7dfcb2e",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
