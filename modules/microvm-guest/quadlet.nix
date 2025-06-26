@@ -42,14 +42,24 @@ lib.mkIf cfg.quadlet.enable {
         pkgs.dive
         pkgs.podman-tui
       ];
-      #xdg.configFile."containers/containers.conf" = {
-      #  text = '''';
-      #};
       xdg.configFile."containers/storage.conf" = {
         text = ''
           [storage]
           driver = "overlay"
-          rootless_storage_path="/var/lib/podman/${username}/containers/storage"
+          #rootless_storage_path="/var/lib/podman/${username}/containers/storage"
+          graphroot = "/var/lib/podman/${username}/containers/storage"
+          runroot = "/run/user/3015/containers"
+          [storage.options]
+          mount_program = ""
+          # Force overlay to use tmpfs for work directories
+          overlay.mountopt = "workdir=/run/user/3015/podman-overlay"
+        '';
+      };
+
+      xdg.configFile."containers/containers.conf" = {
+        text = ''
+          [engine]
+          env=["TMPDIR=/var/lib/podman/${username}/tmp"]
         '';
       };
 
