@@ -8,8 +8,8 @@
 let
   inherit (config.repo.secrets.global) domain;
   inherit (config.repo.secrets.home-ops.users.invoiceninja2) uid name;
-  homeDir = "/home/invoiceninja";
   rootDir = "/var/lib/invoiceninja2";
+  podmanDir = "/var/lib/podman/${name}";
   inEnv = {
     APP_ENV = "production";
     APP_DEBUG = "false";
@@ -51,6 +51,13 @@ let
     ];
   };
 
+  mkShare = source: dir: {
+    tag = builtins.replaceStrings [ "/" ] [ "_" ] dir;
+    inherit source;
+    mountPoint = dir;
+    proto = "virtiofs";
+  };
+
   # ran on dewey
   # CREATE USER 'invoiceninja'@'172.20.20.21' IDENTIFIED BY 'password';
   # GRANT ALL ON invoiceninja.* TO 'invoiceninja'@'172.20.20.21';
@@ -64,27 +71,6 @@ in
   microvm = {
     hypervisor = "qemu"; # required atm for sops bootstrapping
     mem = 4096;
-    volumes = [
-      {
-
-        # podman needs /var/tmp with lots of space for downloading images
-        # provisioned manually on host with:
-        # sudo zfs create tank/encrypted/svc/invoiceninja -o mountpoint=none
-        # sudo zfs create -V 5G tank/encrypted/svc/invoiceninja/var-tmp && sudo mkfs.ext4 /dev/zvol/tank/encrypted/svc/invoiceninja/var-tmp
-        mountPoint = "/var/tmp";
-        image = "/dev/zvol/tank/encrypted/svc/invoiceninja/var-tmp";
-        autoCreate = false;
-        fsType = "ext4";
-      }
-      {
-        # provisioned manually on host with:
-        # sudo zfs create -V 10G tank/encrypted/svc/invoiceninja/var-lib-podman && sudo mkfs.ext4 /dev/zvol/tank/encrypted/svc/invoiceninja/var-lib-podman
-        mountPoint = "/var/lib/podman/invoiceninja2";
-        image = "/dev/zvol/tank/encrypted/svc/invoiceninja/var-lib-podman";
-        autoCreate = false;
-        fsType = "ext4";
-      }
-    ];
   };
   modules.microvm-guest = {
     host = "dewey";
@@ -108,22 +94,15 @@ in
     "d ${rootDir}/storage/framework/views 0750 ${name} ${name}"
     "d ${rootDir}/storage/framework/cache 0750 ${name} ${name}"
     "d ${rootDir}/storage/framework/cache/data 0750 ${name} ${name}"
-    "Z /var/lib/podman/invoiceninja2 0750 ${name} ${name}"
+    "d ${podmanDir} 0750 ${name} ${name}"
+    "d ${podmanDir}/tmp 0750 ${name} ${name}"
+    "Z ${podmanDir} 0750 ${name} ${name}"
   ];
 
-  microvm.shares =
-    let
-      dir = rootDir;
-      tag = builtins.replaceStrings [ "/" ] [ "_" ] dir;
-    in
-    [
-      {
-        inherit tag;
-        source = rootDir;
-        mountPoint = dir;
-        proto = "virtiofs";
-      }
-    ];
+  microvm.shares = [
+    (mkShare rootDir rootDir)
+    (mkShare podmanDir podmanDir)
+  ];
 
   sops.secrets.app_env = {
     owner = name;
@@ -137,12 +116,6 @@ in
     { pkgs, config, ... }:
     {
 
-      xdg.configFile."containers/containers.conf" = {
-        text = ''
-          [engine]
-          env=["TMPDIR=${rootDir}/tmp"]
-        '';
-      };
       virtualisation.quadlet.autoEscape = true;
       virtualisation.quadlet.networks.app = { };
       virtualisation.quadlet.containers = {
