@@ -42,4 +42,8 @@
       '';
     };
   };
+  services.udev.extraRules = ''
+    # Authorize Sonnet 10GbE Thunderbolt devices
+    ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{vendor}=="0x8", ATTR{device}=="0x36", ATTR{authorized}="1"
+  '';
 }

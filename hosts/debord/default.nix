@@ -7,6 +7,7 @@
 }:
 let
   defaultSopsFile = ./secrets.sops.yaml;
+  inherit (config.networking) hostName;
 in
 {
   imports = [
@@ -23,7 +24,7 @@ in
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
 
-  networking.firewall.logRefusedConnections = lib.mkForce true;
+  networking.firewall.logRefusedConnections = lib.mkForce false;
   modules.vpn.tailscale.enable = true;
   modules.vpn.tailscale.useRoutingFeatures = "both";
   boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
@@ -81,11 +82,44 @@ in
         matchConfig.MACAddress = config.repo.secrets.site.site.hosts.debord.interfaces.lan0.hwaddr;
         linkConfig.Name = "lan0";
       };
-      #"10-lan1" = {
-      #  matchConfig.MACAddress = config.repo.secrets.site.site.hosts.debord.interfaces.lan1.hwaddr;
-      #  linkConfig.Name = "lan1";
-      #};
+      "10-lan1" = {
+        matchConfig.MACAddress = config.repo.secrets.local.lan1.hwaddr;
+        linkConfig.Name = "lan1";
+      };
+    };
+
+    networks = {
+      "10-lan1" =
+        let
+
+          hostConfig = config.site.hosts.${hostName};
+          hostBridges = lib.naturalSort (
+            lib.mori.keys (lib.mori.filter (_: iface: iface.type == "bridge") hostConfig.interfaces)
+          );
+          vlansForThisIface = (
+            lib.mori.filter (
+              bridgeName:
+              (hostConfig.interfaces.${bridgeName}.parent != null)
+              && (hostConfig.interfaces.${bridgeName}.parent == "lan1")
+            ) hostBridges
+          );
+        in
+        {
+          matchConfig.Name = "lan1";
+          networkConfig = {
+            DHCPServer = false;
+            VLAN = map (net: "vlan-${net}") vlansForThisIface;
+            LinkLocalAddressing = false;
+            LLDP = true;
+            EmitLLDP = true;
+            Description = "I am the 10gbe sfp+ link";
+          };
+          linkConfig = {
+            MTUBytes = 9000;
+            RequiredForOnline = "carrier";
+          };
+        };
     };
   };
-  modules.server.virtd-host.net.brprim4.iface = "prim";
+  modules.server.virtd-host.net.prim.iface = "prim";
 }
