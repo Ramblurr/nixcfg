@@ -10,8 +10,6 @@ let
   inherit (config.repo.secrets) home-ops;
 
   guests = [
-    "linkding"
-    "invoiceninja"
   ];
 
   genGuestSecret = hostname: {
@@ -64,18 +62,4 @@ lib.mkMerge [
   {
     sops.secrets = lib.mori.reduceAttrs genGuestSecret guests;
   }
-  (mkGuest {
-    hostname = "linkding";
-    domain = "bookmarks.${global.domain.home}";
-    forwardAuth = true;
-    pgEnable = true;
-  })
-  (mkGuest {
-    hostname = "invoiceninja";
-    domain = "clients.${global.domain.work}";
-    external = true;
-    acmeHost = global.domain.work;
-    dataset = "invoiceninja2";
-    datasetMountpoint = "/var/lib/invoiceninja2";
-  })
 ]
