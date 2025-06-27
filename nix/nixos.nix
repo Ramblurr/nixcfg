@@ -10,6 +10,7 @@ let
 
   defaultModules = [
     (import ../modules/default.nix)
+    inputs.quadlet-nix2.nixosModules.default
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
     inputs.microvm.nixosModules.host
