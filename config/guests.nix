@@ -6,6 +6,7 @@
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
     ./common-server.nix
+    ./root.nix
     ./site.nix
     ./secrets.nix
     ../modules/services/sshd.nix
