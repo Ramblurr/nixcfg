@@ -91,18 +91,3 @@ creation_rules:
           - *disaster-recovery
         pgp:
           - *ramblurr
-
-  - path_regex: guests/linkding/.*.sops.*$
-    key_groups:
-      - age:
-          - *linkding
-          - *dewey
-          - *disaster-recovery
-          - *ramblurr-tmp
-  - path_regex: guests/invoiceninja/.*.sops.*$
-    key_groups:
-      - age:
-          - *invoiceninja
-          - *dewey
-          - *disaster-recovery
-          - *ramblurr-tmp

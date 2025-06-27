@@ -228,8 +228,6 @@ in
       quine = [ "172.20.20.2" ];
       dewey = [ "172.20.20.3" ];
       debord = [ "172.20.20.4" ];
-      linkding = [ "172.20.20.20" ];
-      invoiceninja = [ "172.20.20.21" ];
     };
     #hosts6.local = {
     #  addams = [ "${prefix6}:5::1" ];

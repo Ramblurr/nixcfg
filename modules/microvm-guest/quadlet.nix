@@ -14,7 +14,7 @@ lib.mkIf cfg.quadlet.enable {
     enable = true;
     autoPrune.enable = true;
     autoPrune.dates = "weekly";
-    #defaultNetwork.settings.dns_enabled = true;
+    defaultNetwork.settings.dns_enabled = true;
   };
 
   # TODO: fix https://github.com/nikstur/userborn/issues/7
