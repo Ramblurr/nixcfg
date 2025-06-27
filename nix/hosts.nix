@@ -47,6 +47,7 @@
           isStable = false;
           system = "x86_64-linux";
           hostExtraModules = [
+            inputs.quadlet-nix2.nixosModules.default
           ];
         };
         james = {
@@ -66,6 +67,9 @@
           isStable = false;
           system = "x86_64-linux";
           hostOverlays = [
+          ];
+          hostExtraModules = [
+            inputs.quadlet-nix2.nixosModules.default
           ];
         };
         mali = {

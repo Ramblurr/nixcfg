@@ -10,7 +10,6 @@ let
 
   defaultModules = [
     (import ../modules/default.nix)
-    inputs.quadlet-nix.nixosModules.quadlet
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
     inputs.microvm.nixosModules.host
@@ -124,6 +123,7 @@ let
         nixpkgs = inputs.nixpkgs;
       };
       modules = [
+        inputs.quadlet-nix.nixosModules.quadlet
         ../config/guests.nix
         {
           node.secretsDir = hostPath + "/secrets";

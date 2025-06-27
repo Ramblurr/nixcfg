@@ -78,6 +78,7 @@
     ./services/audiobookshelf.nix
     ./services/soju.nix
     ./services/archivebox.nix
+    ./services/invoiceninja.nix
     ./services/attic-watch-store.nix
     ./services/atuin-sync.nix
     ./services/authentik-module.nix

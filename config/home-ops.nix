@@ -51,6 +51,7 @@ in
 
     apps = {
       davis.enable = lib.mkEnableOption "Davis, carddav and caldav server";
+      invoiceninja.enable = lib.mkEnableOption "Invoice Ninja";
       authentik.enable = lib.mkEnableOption "Authentik";
       paperless.enable = lib.mkEnableOption "Paperless";
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
@@ -373,17 +374,29 @@ in
       ports.https = home-ops.ports.authentik-https;
     };
 
-    modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
+    modules.services.invoiceninja = lib.mkIf cfg.apps.invoiceninja.enable {
       enable = true;
-      domain = "op.${home-ops.homeDomain}";
-      ports.api = home-ops.ports.onepassword-connect-api;
-      ports.sync = home-ops.ports.onepassword-connect-sync;
-      user = home-ops.users.onepassword-connect;
-      group = home-ops.groups.onepassword-connect;
+      domain = "clients.${home-ops.workDomain}";
+      user = home-ops.users.invoiceninja2;
+      group = home-ops.groups.invoiceninja2;
+      ports.http = home-ops.ports.invoiceninja;
       ingress = {
-        domain = home-ops.homeDomain;
+        external = true;
+        domain = home-ops.workDomain;
       };
     };
+
+    #modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
+    #  enable = true;
+    #  domain = "op.${home-ops.homeDomain}";
+    #  ports.api = home-ops.ports.onepassword-connect-api;
+    #  ports.sync = home-ops.ports.onepassword-connect-sync;
+    #  user = home-ops.users.onepassword-connect;
+    #  group = home-ops.groups.onepassword-connect;
+    #  ingress = {
+    #    domain = home-ops.homeDomain;
+    #  };
+    #};
 
     modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
       enable = true;
