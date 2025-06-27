@@ -76,9 +76,23 @@ in
       gnupg.sshKeyPaths = [ ];
     };
 
+    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = {
+      neededForUsers = true;
+    };
+    sops.secrets.root-password = {
+      neededForUsers = true;
+    };
+    environment.persistence = lib.mkIf withImpermanence {
+      "/persist".users.root.home = "/root";
+    };
     users = {
       mutableUsers = false;
-
+      users.root = {
+        initialHashedPassword = lib.mkForce null;
+        hashedPasswordFile = config.sops.secrets.root-password.path;
+        openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
+        shell = pkgs.zsh;
+      };
       groups."${cfg.primaryUser.username}".gid = cfg.primaryUser.uid;
       users."${cfg.primaryUser.username}" = {
         isNormalUser = true;
@@ -91,10 +105,6 @@ in
         group = cfg.primaryUser.username;
         shell = cfg.primaryUser.shell;
       };
-    };
-
-    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = {
-      neededForUsers = true;
     };
 
     home-manager = {
