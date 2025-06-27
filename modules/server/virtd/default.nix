@@ -30,7 +30,7 @@ let
       <name>prim</name>
       <uuid>6dea79f2-1512-40c6-a2a3-ed0b15a9c72d</uuid>
       <forward mode='bridge'/>
-      <bridge name='${cfg.net.brprim4.iface}'/>
+      <bridge name='${cfg.net.prim.iface}'/>
     </network>
   '';
 in
@@ -48,11 +48,11 @@ in
       };
     };
     net = {
-      brprim4 = {
-        enable = lib.mkEnableOption "Enable the brprim4 network";
+      prim = {
+        enable = lib.mkEnableOption "Enable the prim network";
         iface = lib.mkOption {
           type = lib.types.str;
-          default = "brprim4";
+          default = "prim";
         };
       };
     };
@@ -69,8 +69,8 @@ in
         "d /persist/var/lib/libvirt 0775 root root -"
         "d /persist/var/lib/libvirt/storage 0775 root root -"
       ]
-      ++ lib.optionals cfg.net.brprim4.enable [
-        "L+ /persist/var/lib/libvirt/qemu/networks/brprim4.xml - - - - ${primaryVlanNetXml}"
+      ++ lib.optionals cfg.net.prim.enable [
+        "L+ /persist/var/lib/libvirt/qemu/networks/prim.xml - - - - ${primaryVlanNetXml}"
       ]
       ++ lib.optionals cfg.storage.zfs.enable [
         "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
@@ -81,7 +81,6 @@ in
       enable = true;
       allowedBridges = [
         "virbr0"
-        "brprim4"
         "brvpn70"
         "prim"
       ];
@@ -97,5 +96,9 @@ in
       checkReversePath = lib.mkForce false;
     };
     boot.kernelModules = [ "vfio-pci" ];
+    systemd.services.libvirt-guests = {
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+    };
   };
 }

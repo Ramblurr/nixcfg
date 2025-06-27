@@ -190,7 +190,7 @@ in
     modules.server.virtd-host = lib.mkIf cfg.hypervisor.enable {
       enable = true;
       storage.zfs.enable = true;
-      net.brprim4.enable = true;
+      net.prim.enable = true;
     };
     sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable {
       sopsFile = ../configs/home-ops/shared.sops.yml;
