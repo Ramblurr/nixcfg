@@ -104,10 +104,5 @@ in
         '';
       };
     };
-
-    quadlet = {
-      enable = mkEnableOption "Enable podman quadlet for the microvm";
-    };
-
   };
 }
