@@ -77,8 +77,8 @@
     ./services/actual-budget.nix
     ./services/audiobookshelf.nix
     ./services/soju.nix
-    ./services/archivebox.nix
     ./services/invoiceninja.nix
+    #./services/archivebox.nix
     ./services/attic-watch-store.nix
     ./services/atuin-sync.nix
     ./services/authentik-module.nix
@@ -103,7 +103,7 @@
     ./services/matrix-synapse.nix
     ./services/matrix-synapse-postgres.nix
     ./services/ocis.nix
-    ./services/onepassword-connect.nix
+    #./services/onepassword-connect.nix
     ./services/paperless.nix
     ./services/plex.nix
     ./services/podman.nix

@@ -81,7 +81,7 @@ in
       !include ${config.sops.templates."nix.conf".path}
     '';
   };
-  home.attic.enable = true;
+  #home.attic.enable = true;
 
   networking.firewall.allowedTCPPorts = [
     3000
@@ -187,7 +187,7 @@ in
     };
     shell = {
       aria2.enable = true;
-      attic.enable = true;
+      #attic.enable = true;
       atuin.enable = true;
       atuin.sync.enable = true;
       direnv.enable = true;
@@ -206,7 +206,7 @@ in
     };
     services = {
       docker.enable = true;
-      attic-watch-store.enable = true;
+      #attic-watch-store.enable = true;
       docker.enableOnBoot = false;
       podman.enable = true;
       nomad.enable = false;
