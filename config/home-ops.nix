@@ -479,16 +479,16 @@ in
       };
     };
 
-    modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
-      enable = true;
-      domain = "archive.${home-ops.homeDomain}";
-      ports.http = home-ops.ports.archivebox;
-      user = home-ops.users.archivebox;
-      group = home-ops.groups.archivebox;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
-    };
+    #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
+    #  enable = true;
+    #  domain = "archive.${home-ops.homeDomain}";
+    #  ports.http = home-ops.ports.archivebox;
+    #  user = home-ops.users.archivebox;
+    #  group = home-ops.groups.archivebox;
+    #  ingress = {
+    #    domain = home-ops.homeDomain;
+    #  };
+    #};
 
     modules.services.influxdb = lib.mkIf cfg.apps.influxdb.enable {
       enable = true;
