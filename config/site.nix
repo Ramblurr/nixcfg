@@ -300,10 +300,10 @@ in
           type = "bridge";
           parent = "lan0";
         };
-        #data = {
-        #  type = "bridge";
-        #  parent = "lan1";
-        #};
+        data = {
+          type = "bridge";
+          parent = "lan1";
+        };
         mgmt = {
           type = "bridge";
           parent = "lan0";
