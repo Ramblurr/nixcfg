@@ -36,6 +36,10 @@
     #radicle.inputs.flake-utils.follows = "flake-utils";
 
     quadlet-nix.url = "github:SEIAROTg/quadlet-nix/main";
+    quadlet-nix2 = {
+      url = "github:mirkolenz/quadlet-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
