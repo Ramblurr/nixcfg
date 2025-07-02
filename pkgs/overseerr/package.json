@@ -57,7 +57,7 @@
     "express-openapi-validator": "4.13.8",
     "express-rate-limit": "6.7.0",
     "express-session": "1.17.3",
-    "formik": "2.2.9",
+    "formik": "2.4.6",
     "gravatar-url": "3.1.0",
     "intl": "1.2.5",
     "lodash": "4.17.21",
