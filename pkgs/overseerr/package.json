@@ -124,7 +124,7 @@
     "@types/nodemailer": "6.4.7",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
-    "@types/react-transition-group": "4.4.5",
+    "@types/react-transition-group": "4.4.12",
     "@types/secure-random-password": "0.2.1",
     "@types/semver": "7.3.13",
     "@types/swagger-ui-express": "4.1.3",
