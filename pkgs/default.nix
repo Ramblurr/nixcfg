@@ -1,10 +1,11 @@
 inputs: [
   (_final: prev: {
     netns-proxy = prev.callPackage ./netns-proxy.nix { };
+    mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
     udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
     deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
-    overseerr = prev.callPackage ./overseerr.nix { };
+    overseerr = prev.callPackage ./overseerr/package.nix { };
     cloudflare-utils = prev.callPackage ./cloudflare-utils.nix { };
     actual-server = prev.callPackage ./actual-server.nix { };
     qobuz-dl = prev.callPackage ./qobuz-dl.nix { };

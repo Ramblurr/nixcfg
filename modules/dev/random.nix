@@ -78,6 +78,7 @@ in
         go
         git-filter-repo
         stripe-cli
+        mcp-inspector
         terraform
         opentofu
         httpie
