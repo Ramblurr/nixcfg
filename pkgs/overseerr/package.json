@@ -84,7 +84,7 @@
     "react-toast-notifications": "2.5.1",
     "react-truncate-markup": "5.1.2",
     "react-use-clipboard": "1.0.9",
-    "reflect-metadata": "0.1.13",
+    "reflect-metadata": "0.2.2",
     "secure-random-password": "0.2.3",
     "semver": "7.3.8",
     "sqlite3": "5.1.4",
