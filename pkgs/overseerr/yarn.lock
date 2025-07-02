@@ -3900,10 +3900,10 @@
   dependencies:
     "@types/express" "*"
 
-"@types/node-schedule@2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@types/node-schedule/-/node-schedule-2.1.0.tgz#60375640c0509bab963573def9d1f417f438c290"
-  integrity sha512-NiTwl8YN3v/1YCKrDFSmCTkVxFDylueEqsOFdgF+vPsm+AlyJKGAo5yzX1FiOxPsZiN6/r8gJitYx2EaSuBmmg==
+"@types/node-schedule@2.1.7":
+  version "2.1.7"
+  resolved "https://registry.yarnpkg.com/@types/node-schedule/-/node-schedule-2.1.7.tgz#79a1e61adc7bbf8d8eaabcef307e07d76cb40d82"
+  integrity sha512-G7Z3R9H7r3TowoH6D2pkzUHPhcJrDF4Jz1JOQ80AX0K2DWTHoN9VC94XzFAPNMdbW9TBzMZ3LjpFi7RYdbxtXA==
   dependencies:
     "@types/node" "*"
 
