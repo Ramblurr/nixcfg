@@ -154,7 +154,7 @@
     "extract-react-intl-messages": "4.1.1",
     "husky": "8.0.3",
     "lint-staged": "13.1.2",
-    "nodemon": "2.0.20",
+    "nodemon": "3.1.10",
     "postcss": "8.4.21",
     "prettier": "2.8.4",
     "prettier-plugin-organize-imports": "3.2.2",
