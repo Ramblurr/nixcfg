@@ -95,7 +95,7 @@
     "web-push": "3.5.0",
     "winston": "3.8.2",
     "winston-daily-rotate-file": "4.7.1",
-    "xml2js": "0.4.23",
+    "xml2js": "0.6.2",
     "yamljs": "0.3.0",
     "yup": "0.32.11",
     "zod": "3.20.6"
@@ -129,7 +129,7 @@
     "@types/semver": "7.3.13",
     "@types/swagger-ui-express": "4.1.3",
     "@types/web-push": "3.3.2",
-    "@types/xml2js": "0.4.11",
+    "@types/xml2js": "0.4.14",
     "@types/yamljs": "0.2.31",
     "@types/yup": "0.29.14",
     "@typescript-eslint/eslint-plugin": "5.54.0",
