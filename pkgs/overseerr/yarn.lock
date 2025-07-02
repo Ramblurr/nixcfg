@@ -4004,10 +4004,10 @@
   dependencies:
     schema-utils "*"
 
-"@types/secure-random-password@0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@types/secure-random-password/-/secure-random-password-0.2.1.tgz#c01a96d5c2667c3fa896533207bceb157e3b87bc"
-  integrity sha512-tpG5oVF+NpIS9UJ9ttXAokafyhE/MCZBg65D345qu3gOM4YoJ/mFNVzUDUNBfb1hIi598bNOzvY04BbfS7VKwA==
+"@types/secure-random-password@0.2.3":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@types/secure-random-password/-/secure-random-password-0.2.3.tgz#8bdd0ec60dfc7b90b6e2dce399ea87fc20098271"
+  integrity sha512-xTNP0ia98PBlRC592TTAGS+gTqQxjY/DYMf/CdlM5OtSbBrqO1gHTMOY+Myahu9x+QsKPwFIOQbH9YbgZdVmwg==
 
 "@types/semver@7.3.13", "@types/semver@^7.3.12":
   version "7.3.13"
