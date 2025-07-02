@@ -128,6 +128,7 @@ in
         junction.enable = true;
         #kdeconnect.enable = true;
         kitty.enable = true;
+        wezterm.enable = true;
         logseq.enable = true;
         chrysalis.enable = true;
         element.enable = true;
@@ -137,13 +138,14 @@ in
         #owncloud.enable = true;
         signal.enable = true;
         thunderbird.enable = true;
+        thunderbird.work.enable = false;
         musescore.enable = true;
         yubico.enable = true;
       };
     };
     shell = {
       aria2.enable = true;
-      attic.enable = true;
+      #attic.enable = true;
       atuin.enable = true;
       atuin.sync.enable = true;
       direnv.enable = true;
@@ -176,7 +178,7 @@ in
     };
 
     services = {
-      attic-watch-store.enable = true;
+      #attic-watch-store.enable = true;
       docker.enable = true;
       docker.enableOnBoot = false;
       flatpak.enable = true;
