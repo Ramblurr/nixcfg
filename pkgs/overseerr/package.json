@@ -131,7 +131,7 @@
     "@types/web-push": "3.3.2",
     "@types/xml2js": "0.4.11",
     "@types/yamljs": "0.2.31",
-    "@types/yup": "0.29.14",
+    "@types/yup": "0.32.0",
     "@typescript-eslint/eslint-plugin": "5.54.0",
     "@typescript-eslint/parser": "5.54.0",
     "autoprefixer": "10.4.13",
