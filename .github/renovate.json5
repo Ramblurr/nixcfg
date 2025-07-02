@@ -16,7 +16,10 @@
   vulnerabilityAlerts: {
     assignees: ["Ramblurr"],
   },
-  ignorePaths: ["**/archive/**"],
+  ignorePaths: [
+    "**/archive/**",
+    "pkgs/overseerr/"
+  ],
   rebaseWhen: "behind-base-branch",
   dependencyDashboardTitle: "Renovate Dashboard",
   // do not notify on closed unmerged PRs
