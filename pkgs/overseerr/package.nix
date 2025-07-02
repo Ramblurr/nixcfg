@@ -11,6 +11,7 @@
 mkYarnPackage rec {
   pname = "overseerr";
   version = "1.33.2";
+  #version = "1.34.0";
 
   src = fetchFromGitHub {
     owner = "sct";
@@ -20,13 +21,16 @@ mkYarnPackage rec {
   };
 
   offlineCache = fetchYarnDeps {
-    yarnLock = "${src}/yarn.lock";
-    hash = "sha256-SZwhC6djgU5qshtDhQnkz/INeklp/c+BKjn7ao0r5IE=";
+    yarnLock = ./yarn.lock;
+    hash = "sha256-f30P+/DxDz9uBmdgvaYK4YOAUmVce8MUnNHBXr8/yKc=";
   };
 
   env = {
     CYPRESS_INSTALL_BINARY = 0; # cypress tries to download binaries otherwise
   };
+
+  packageJSON = ./package.json;
+  yarnLock = ./yarn.lock;
 
   nativeBuildInputs = [
     nodejs
