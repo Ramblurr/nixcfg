@@ -44,7 +44,13 @@ in
       vim.enable = true;
     };
     impermanence.enable = true;
-    vpn.tailscale.enable = true;
+    vpn.tailscale = {
+      enable = true;
+      exitNode = {
+        enable = true;
+        networkDev = "enp1s0";
+      };
+    };
     boot.zfs = {
       enable = false;
       encrypted = false;
