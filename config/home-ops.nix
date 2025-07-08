@@ -380,6 +380,7 @@ in
       user = home-ops.users.invoiceninja2;
       group = home-ops.groups.invoiceninja2;
       ports.http = home-ops.ports.invoiceninja;
+      subnet = home-ops.subnets.invoiceninja2;
       ingress = {
         external = true;
         domain = home-ops.workDomain;
