@@ -8,7 +8,11 @@
 let
   cfg = config.modules.services.invoiceninja;
   inherit (config.repo.secrets.home-ops.users.invoiceninja2) uid name;
+  # as invoiceninja2 user: podman unshare cat /proc/self/uid_map
+  subordinateUIDRangeStart = 362144;
+  containerUid = subordinateUIDRangeStart + (uid - 1);
   rootDir = "/var/lib/invoiceninja2";
+  containerPort = "8000";
   inEnv = [
     "APP_ENV=production"
     "APP_DEBUG=false"
@@ -22,26 +26,26 @@ let
     "REDIS_HOST=redis"
     "REDIS_PORT=6379"
     "FILESYSTEM_DISK=debian_docker"
-    "DB_SOCKET=/run/mysqld/mysqld.sock"
-    "DB_PORT=0"
+    "DB_PORT=3306"
+    "DB_HOST=host.containers.internal"
     "DB_DATABASE=invoiceninja"
     "DB_USERNAME=${cfg.user.name}"
     "DB_CONNECTION=mysql"
     "IS_DOCKER=true"
     "SCOUT_DRIVER=null"
+    "SERVER_NAME=:${containerPort}"
   ];
   inShared = {
     Network = "app.network";
-    UserNS = "keep-id:uid=999,gid=999";
     EnvironmentFile = [
       config.sops.secrets."invoiceninja/app_env".path
     ];
     Environment = inEnv;
     Volume = [
+      # ran as invoiceninja2 user: podman unshare chown -R 3015:3015 /var/lib/invoiceninja2/<VOL>
       "${rootDir}/cache:/var/www/html/bootstrap/cache:rw"
       "${rootDir}/storage:/app/storage:rw"
-      "${rootDir}/storage-public:/app/public/:rw"
-      "/run/mysqld/mysqld.sock:/run/mysqld/mysqld.sock"
+      "${rootDir}/caddy-config:/config:rw"
     ];
   };
 in
@@ -59,6 +63,7 @@ in
         description = "The HTTP port to use";
       };
     };
+    subnet = lib.mkOption { type = lib.types.unspecified; };
     ingress = lib.mkOption {
       type = lib.types.submodule (
         lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
@@ -120,6 +125,9 @@ in
       networks.app = {
         uid = cfg.user.uid;
         autoStart = true;
+        networkConfig = {
+          Subnet = cfg.subnet.hostAddr;
+        };
       };
       containers = {
         invoiceninja-redis = {
@@ -152,9 +160,9 @@ in
           autoStart = true;
           containerConfig = {
             # renovate: docker-image
-            Image = "ghcr.io/ramblurr/invoiceninja-octane:5.12.7";
-            Exec = "app --port=8080 --workers=2 --log-level=info";
-            PublishPort = [ "${toString cfg.ports.http}:8080" ];
+            Image = "ghcr.io/ramblurr/invoiceninja-octane:5.12.8";
+            Exec = "app --port=${containerPort} --workers=2 --log-level=info";
+            PublishPort = [ "${toString cfg.ports.http}:${containerPort}" ];
             ContainerName = "app";
           } // inShared;
           unitConfig = {
