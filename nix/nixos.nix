@@ -124,8 +124,13 @@ let
         nixpkgs = inputs.nixpkgs;
       };
       modules = [
-        inputs.quadlet-nix.nixosModules.quadlet
+        inputs.home-manager.nixosModules.home-manager
+        inputs.microvm.nixosModules.microvm
+        inputs.impermanence.nixosModules.impermanence
+        inputs.sops-nix.nixosModules.sops
         ../config/guests.nix
+        ../modules/shell/zsh
+        ../modules/shell/atuin.nix
         {
           node.secretsDir = hostPath + "/secrets";
           sops.defaultSopsFile = hostPath + "/secrets.sops.yaml";

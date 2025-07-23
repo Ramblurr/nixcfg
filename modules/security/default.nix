@@ -44,8 +44,6 @@ in
             commands = [ (nopasswd "/run/current-system/sw/bin/systemctl reboot") ];
           }
         ];
-      please.enable = true;
-      please.wheelNeedsPassword = false;
       #pam.loginLimits = [
       #  {
       #    domain = "*";

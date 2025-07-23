@@ -32,7 +32,6 @@ in
         ".config/easyeffects"
         ".config/sops"
         ".config/claude"
-        ".claude"
         ".config/GIMP"
         ".config/gnupg"
         ".config/inkscape"

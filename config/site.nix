@@ -228,6 +228,7 @@ in
       quine = [ "172.20.20.2" ];
       dewey = [ "172.20.20.3" ];
       debord = [ "172.20.20.4" ];
+      claude-test = [ "172.20.20.21" ];
     };
     #hosts6.local = {
     #  addams = [ "${prefix6}:5::1" ];
@@ -341,7 +342,10 @@ in
         lan0.type = "phys";
         prim.type = "bridge";
         mgmt.type = "bridge";
-        svc.type = "bridge";
+        svc = {
+          type = "bridge";
+          parent = "lan0";
+        };
         vpn.type = "bridge";
       };
     };

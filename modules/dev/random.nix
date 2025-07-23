@@ -60,7 +60,6 @@ in
       };
       home.packages = with pkgs; [
         tailwindcss_4
-        pkgs.claude-code
         hclfmt
         virt-manager
         cue
@@ -71,6 +70,8 @@ in
         gcc
         direnv
         android-tools
+        socat
+        flyctl
         sshpass
         postgresql_15
         mariadb
@@ -78,7 +79,6 @@ in
         go
         git-filter-repo
         stripe-cli
-        mcp-inspector
         terraform
         opentofu
         httpie

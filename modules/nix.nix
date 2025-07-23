@@ -14,7 +14,14 @@ with lib;
 {
   environment.variables.NIXPKGS_ALLOW_UNFREE = "1";
   nix = {
-    extraOptions = "experimental-features = nix-command flakes";
+    extraOptions = ''
+      # Quicker timeout for inaccessible binary caches
+      connect-timeout = 5
+      # Enable flakes
+      experimental-features = nix-command flakes
+      # Do not warn on dirty git repo
+      warn-dirty = false
+    '';
     settings = {
       substituters = [
         "https://cache.nixos.org"
@@ -39,6 +46,8 @@ with lib;
     };
 
     registry.nixpkgs.flake = actual-nixpkgs;
+    registry.stable.flake = inputs.nixpkgs-stable;
+    registry.unstable.flake = inputs.nixpkgs;
 
     nixPath = [ "nixpkgs=/etc/nixpkgs/channels/nixpkgs" ];
   };

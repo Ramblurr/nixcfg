@@ -24,6 +24,8 @@ in
       {
         home.packages = with pkgs; [
           (warp-terminal.override { waylandSupport = true; })
+          isd
+          gum
           treefmt
           repomix
           glow
@@ -96,8 +98,8 @@ in
           just
           go-task
           fzf
-          jdk
           powertop
+          ttyd
           linuxPackages.cpupower
           # linuxPackages.usbip
           yt-dlp
