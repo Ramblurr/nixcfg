@@ -36,7 +36,7 @@ in
     bootstrapSops = {
       enable = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = ''
           Bootstrap sops-nix with a systemd credential.
         '';
@@ -46,6 +46,13 @@ in
         default = "/run/secrets/microvm-${hostName}-sops-key";
         description = '''';
       };
+    };
+    writableStoreOverlay.enable = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Enable writable /nix/store overlay for the MicroVM.
+      '';
     };
 
     autoNetSetup.enable = mkOption {
@@ -80,7 +87,6 @@ in
         an erofs block image for it.
       '';
     };
-
     homeManager = {
       enable = mkEnableOption "Enable home-manager for the microvm";
       username = mkOption {
@@ -103,6 +109,30 @@ in
           GID for the home-manager configuration.
         '';
       };
+    };
+    devSandbox = {
+      enable = mkEnableOption "Enable dev sandbox for the microvm";
+      username = mkOption {
+        type = types.str;
+        default = "ramblurr";
+        description = ''
+          Username for the dev sandbox configuration.
+        '';
+      };
+      sharedDirs = mkOption {
+        type = types.oneOf [
+          types.str
+          types.anything
+        ];
+        default = [
+          "/home/ramblurr/.claude"
+        ];
+        description = ''
+          Directories to share with the dev sandbox.
+          They will be mounted under the same path inside the vm.
+        '';
+      };
+
     };
   };
 }

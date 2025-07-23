@@ -3,6 +3,7 @@
   lib,
   pkgs,
   inputs,
+
   ...
 }:
 
@@ -14,6 +15,18 @@ let
   hostBridges = builtins.attrNames (
     lib.filterAttrs (_: { type, ... }: type == "bridge") hostConfig.interfaces
   );
+
+  genGuestSecret = hostname: {
+    "microvm-${hostname}-sops-key" = {
+      sopsFile = ../../guests/${hostname}/secrets.sops.yaml;
+      key = "ssh_host_ed25519_key";
+      owner = "microvm";
+      mode = "400";
+    };
+  };
+  guests = [
+    "claude-test"
+  ];
 in
 {
   imports = [
@@ -26,4 +39,5 @@ in
     baseZfsDataset = "rpool/encrypted/safe/microvms";
   };
 
+  sops.secrets = lib.mori.reduceAttrs genGuestSecret guests;
 }

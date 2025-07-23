@@ -9,15 +9,23 @@
 with lib;
 let
   cfg = config.modules.shell.zsh;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+
+  functions = ''
+    function generate-password() { strings /dev/urandom | grep -o '[[:alnum:]]' | head -n ''${1:-32} | tr -d '\n'; echo }
+    function where-from() { readlink -f $(which $1) }
+  '';
 in
 {
   options.modules.shell.zsh = {
     enable = lib.mkEnableOption "";
     starship.enable = lib.mkEnableOption "";
     powerlevel10k.enable = lib.mkEnableOption "";
+    powerlevel10k.configFile = lib.mkOption {
+      type = lib.types.path;
+      default = ./configs/p10k-config;
+      description = "Path to the Powerlevel10k configuration file.";
+    };
     profileExtra = lib.mkOption {
       type = lib.types.uniq lib.types.str;
       default = "";
@@ -27,7 +35,6 @@ in
     environment.pathsToLink = [ "/share/zsh" ];
 
     programs.zsh.enable = true;
-    # users.users."${username}".ignoreShellProgramCheck = true;
     myhm =
       { ... }@hm:
       {
@@ -59,7 +66,7 @@ in
         # NOTE: I am keeping zsh's history in a directory, and persisting that directory
         # Before I tried just keeping the histfile in the normal location and persisting
         # the file, but often the symlink would be overriden causing home-manager activation errors.
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+        home.persistence."/persist${hm.config.home.homeDirectory}" = mkIf withImpermanence {
           allowOther = true;
           directories = [
             {
@@ -99,7 +106,7 @@ in
             plugins = mkIf cfg.powerlevel10k.enable [
               {
                 name = "powerlevel10k-config";
-                src = lib.cleanSource ./configs/p10k-config;
+                src = lib.cleanSource cfg.powerlevel10k.configFile;
                 file = "p10k.zsh";
               }
             ];
@@ -188,6 +195,7 @@ in
                 )
                 + ''
                   source ~/.config/zsh/init.zsh
+                  ${functions}
                 '';
             in
             if builtins.hasAttr "initContent" hm.options.programs.zsh then

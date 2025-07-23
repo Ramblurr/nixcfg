@@ -33,11 +33,25 @@ inputs: _final: prev: {
 
       nth = coll: index: builtins.elemAt coll index;
 
-      count = builtins.length;
-      first = builtins.head;
-      second = list: nth list 1;
-      rest = builtins.tail;
-      last = list: nth list (count list - 1);
+      count = l: if l == null then 0 else builtins.length l;
+      first = l: if l == [ ] then null else builtins.head l;
+      second =
+        list:
+        if list == null then
+          null
+        else if builtins.length list < 2 then
+          null
+        else
+          nth list 1;
+      rest = l: if l == [ ] then [ ] else builtins.tail;
+      last =
+        list:
+        if list == null then
+          null
+        else if list == [ ] then
+          null
+        else
+          builtins.elemAt list (builtins.length list - 1);
 
       # Behaves more like clojure's map
       # if coll is a list, does a normal map

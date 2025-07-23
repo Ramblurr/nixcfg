@@ -21,6 +21,13 @@ in
 {
 
   config = lib.mkIf cfg.enable {
+
+    assertions = [
+      {
+        assertion = cfg.autoNetSetup.enable -> nets != [ ];
+        message = "autoNetSetup is enabled, but no networks are configured. Please add at least one network to config.site.net.svc";
+      }
+    ];
     # make mounts like /etc /home /var available early so that they can be used in system.activationScripts
     fileSystems =
       {
@@ -32,6 +39,7 @@ in
         neededForBoot = true;
       });
     microvm = {
+      writableStoreOverlay = lib.mkIf cfg.writableStoreOverlay.enable "/nix/.rw-store";
       hypervisor = lib.mkDefault "cloud-hypervisor";
       deflateOnOOM = false;
       mem = lib.mkDefault 1024;
@@ -91,6 +99,17 @@ in
       dhcpcd.enable = false;
       useNetworkd = false;
     };
+    # TODO: this should be user provided, but just use the first network's gateway for now
+    services.resolved.fallbackDns = [
+      (
+        let
+          net = lib.mori.first nets;
+          netCfg = config.site.net.${net};
+          gw = netCfg.dhcp.router;
+        in
+        (lib.mori.first netCfg.hosts4.${gw})
+      )
+    ];
 
     systemd.network = lib.mkIf cfg.autoNetSetup.enable {
       enable = true;
