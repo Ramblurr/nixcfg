@@ -12,7 +12,6 @@ let
   home = config.users.users.${username}.home;
 in
 lib.mkIf cfg.homeManager.enable {
-  microvm.writableStoreOverlay = "/nix/.rw-store";
   nix.settings.allowed-users = [ username ];
   users.users.${username} = {
     name = username;
@@ -36,20 +35,31 @@ lib.mkIf cfg.homeManager.enable {
     wants = [ "network-online.target" ];
   };
   home-manager.users.${username} =
-    { pkgs, config, ... }:
+    { pkgs, config, ... }@hm:
     {
+      imports = [
+        inputs.impermanence.nixosModules.home-manager.impermanence
+        inputs.sops-nix.homeManagerModule
+        (lib.mkAliasOptionModule
+          [ "persistence" ]
+          [
+            "home"
+            "persistence"
+            "/persist${username}"
+          ]
+        )
+      ];
       home.homeDirectory = home;
       home.sessionVariables = {
         EDITOR = "vim";
         DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString uid}/bus";
         XDG_RUNTIME_DIR = "/run/user/${toString uid}";
       };
-
       systemd.user.startServices = "sd-switch";
       programs.bash = {
         enable = true;
         initExtra = ''
-          [[ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
+          [[ -f "${hm.config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${hm.config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
         '';
       };
     };

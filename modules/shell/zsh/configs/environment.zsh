@@ -24,7 +24,6 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LESSCHARSET=utf-8
 
-
 #█▓▒░ kde file picker > gnome file picker
 export GTK_USE_PORTAL=1
 
@@ -48,6 +47,7 @@ export CLJ_CACHE=$XDG_CACHE_HOME/clojure
 export DEPS_CLJ_TOOLS_DIR=$XDG_DATA_HOME/deps.clj
 export GITLIBS=$XDG_CACHE_HOME/clojure-gitlibs
 export DOCKER_CONFIG=$XDG_CONFIG_HOME/docker
+export CLAUDE_CONFIG_DIR=$XDG_CONFIG_HOME/claude
 
 #█▓▒░ This path our people walked
 
@@ -56,7 +56,6 @@ export PATH=$HOME/vendor/clojure/bin:$HOME/.local/share/go/bin:$HOME/.local/dotb
 if [[ -d "$NPM_PACKAGES" ]]; then
   export PATH=$NPM_PACKAGES/bin:$PATH
 fi
-
 
 #if [[ -d "$VOLTA_HOME/bin" ]]; then
 #  export PATH=$XDG_DATA_HOME/npm/bin:$VOLTA_HOME/bin:$PATH
@@ -68,9 +67,9 @@ fi
 
 #█▓▒░ all the evil things in the world have full sway
 if [ "$XDG_SESSION_DESKTOP" = "sway" ] || [ "$XDG_CURRENT_DESKTOP" = "sway" ] || [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-    # https://github.com/swaywm/sway/issues/595
-    export _JAVA_AWT_WM_NONREPARENTING=1
-    export KITTY_ENABLE_WAYLAND=1 kitty
+  # https://github.com/swaywm/sway/issues/595
+  export _JAVA_AWT_WM_NONREPARENTING=1
+  export KITTY_ENABLE_WAYLAND=1 kitty
 fi
 
 #█▓▒░ if you're using podman, you're probably not using docker

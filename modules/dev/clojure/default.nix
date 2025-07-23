@@ -39,35 +39,41 @@ in
       { ... }@hm:
       let
         devSDKs = with pkgs; {
-          openjfx = javaPackages.openjfx21;
-          gtk3 = gtk3;
-          libXxf86vm = xorg.libXxf86vm;
+          #openjfx = javaPackages.openjfx24;
+          #gtk3 = gtk3;
+          #libXxf86vm = xorg.libXxf86vm;
           #jogl_2_4_0 = javaPackages.jogl_2_4_0;
         };
       in
       {
-        #home.file."vendor/jdks/openjdk8".source = pkgs.jdk8;
         home.file."vendor/jdks/openjdk11".source = pkgs.jdk11;
         home.file."vendor/jdks/openjdk17".source = pkgs.jdk17;
         home.file."vendor/jdks/openjdk21".source = pkgs.jdk21;
-        home.file."vendor/jdks/openjdk23".source = pkgs.jdk23;
         home.packages = with pkgs; [
+          jdk24
           neil
           maven
           gradle
-          clojure
           cljfmt
-          pkgs.clojure-lsp
+          clojure
+          clojure-lsp
           clj-kondo
           leiningen
           babashka
           polylith
-          javaPackages.openjfx21
           #javaPackages.jogl_2_4_0
           gtk3
           xorg.libXxf86vm
           #pkgs.my.bootleg
           jdt-language-server
+          (pkgs.writeScriptBin "run-clojure-mcp" ''
+            #!/usr/bin/env bash
+            set -euo pipefail
+            PORT_FILE=''${1:-.nrepl-port}
+            PORT=$(cat ''${PORT_FILE})
+            source ~/${hm.config.sops.secrets.llm-keys.path}
+            ${clojure}/bin/clojure -X:mcp/clojure :port $PORT
+          '')
         ];
         home.file.".local/dev".source =
           let

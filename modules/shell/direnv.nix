@@ -21,6 +21,7 @@ in
     programs.direnv = {
       enable = true;
       package = pkgs.direnv;
+      nix-direnv.enable = true;
     };
     # Nix options for derivations to persist garbage collection
     nix.extraOptions = ''

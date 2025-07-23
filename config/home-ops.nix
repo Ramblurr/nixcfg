@@ -153,6 +153,7 @@ in
       fd
       jq
       htop
+      isd
       lshw
       ncdu
       python3

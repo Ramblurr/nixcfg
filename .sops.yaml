@@ -14,6 +14,7 @@ keys:
       - &james age1597uk5043pwvqj93g03thh6ca2yvnmkfqaqnfchujg5jkddrt5ks6k79tz
       - &linkding age1uh5u7zcz28dskcskpyznxkyg2y4xj0wkaf4usmrjhkmfhzr6gg8qynk3hq
       - &invoiceninja age195mq2pxj58ll7ad2xg3f3p6m7s4xxj7tl6z4lzukzyap2g89apms2gmj3v
+      - &claude-test age13fnjs7rgh0qaleaqqe2dqlp4hf48klpx5w3pqspnpdcgqput3sxs8jfspl
 creation_rules:
   - path_regex: terraform/secrets.sops.ya?ml$
     key_groups:
@@ -88,6 +89,14 @@ creation_rules:
           - *dewey
           - *debord
           - *mali
+          - *disaster-recovery
+        pgp:
+          - *ramblurr
+  - path_regex: guests/claude-test/.*.sops.*$
+    key_groups:
+      - age:
+          - *claude-test
+          - *quine
           - *disaster-recovery
         pgp:
           - *ramblurr
