@@ -1,85 +1,131 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    "github>cidverse/renovate-config:default",
-    "regexManagers:dockerfileVersions",
-    "regexManagers:tfvarsVersions",
-    "github>ramblurr/nixcfg//.github/renovate/groups.json5"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    'github>cidverse/renovate-config:default',
+    'customManagers:dockerfileVersions',
+    'customManagers:tfvarsVersions',
+    'github>ramblurr/nixcfg//.github/renovate/groups.json5',
   ],
-  "enabled": true,
-  "timezone": "Europe/Berlin",
-  "semanticCommits": "enabled",
-  "dependencyDashboard": true,
-  "assignees": [],
-  "reviewers": ["Ramblurr"],
-  "vulnerabilityAlerts": {
-    "assignees": ["Ramblurr"]
-  },
-  "ignorePaths": ["**/archive/**", "pkgs/overseerr/"],
-  "rebaseWhen": "behind-base-branch",
-  "dependencyDashboardTitle": "Renovate Dashboard",
-  // do not notify on closed unmerged PRs
-  "suppressNotifications": ["prIgnoreNotification"],
-  // only rebase PRs when there's a conflict
-  "rebaseWhen": "conflicted",
-  "regexManagers": [
-    {
-      "description": ["Clojure gitdeps"],
-      "fileMatch": ["deps.edn"],
-      "matchStrings": [
-        "(?<depName>[\w.-]+\/[\w.-]+)\s+\{[^}]*:git\/url\s+\"https:\/\/github\.com\/(?<packageName>[^\"]+)\.git\"[^}]*:git\/tag\s+\"(?<currentValue>[^\"]+)\"[^}]*:git\/sha\s+\"(?<currentDigest>[^\"]+)\"[^}]*\}"
-      ],
-      "datasourceTemplate": "github-tags",
-      "versioningTemplate": "loose"
-    },
-    {
-      "description": ["Generic Docker image Regex manager"],
-      "fileMatch": [".*\\.nix$", ".*\\.ya?ml$"],
-      "matchStrings": [
-        "# renovate: docker-image( versioning=(?<versioning>.*=?))?\n .*[:|=] \"?(?<depName>.*?):(?<currentValue>[^\"\n]*=?)\"?"
-      ],
-      "datasourceTemplate": "docker",
-      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
-    }
+  enabled: true,
+  timezone: 'Europe/Berlin',
+  semanticCommits: 'enabled',
+  dependencyDashboard: true,
+  assignees: [],
+  reviewers: [
+    'Ramblurr',
   ],
-  "nix": {
-    "enabled": true
+  vulnerabilityAlerts: {
+    assignees: [
+      'Ramblurr',
+    ],
   },
-  "lockFileMaintenance": {
-    "enabled": true,
-    "extends": ["schedule:weekly"]
+  ignorePaths: [
+    '**/archive/**',
+    'pkgs/overseerr/',
+  ],
+  rebaseWhen: 'conflicted',
+  dependencyDashboardTitle: 'Renovate Dashboard',
+  suppressNotifications: [
+    'prIgnoreNotification',
+  ],
+  customManagers: [
+    {
+      customType: 'regex',
+      description: [
+        'Clojure gitdeps',
+      ],
+      managerFilePatterns: [
+        '/deps.edn/',
+      ],
+      matchStrings: [
+        '(?<depName>[w.-]+/[w.-]+)s+{[^}]*:git/urls+"https://github.com/(?<packageName>[^"]+).git"[^}]*:git/tags+"(?<currentValue>[^"]+)"[^}]*:git/shas+"(?<currentDigest>[^"]+)"[^}]*}',
+      ],
+      datasourceTemplate: 'github-tags',
+      versioningTemplate: 'loose',
+    },
+    {
+      customType: 'regex',
+      description: [
+        'Generic Docker image Regex manager',
+      ],
+      managerFilePatterns: [
+        '/.*\\.nix$/',
+        '/.*\\.ya?ml$/',
+      ],
+      matchStrings: [
+        '# renovate: docker-image( versioning=(?<versioning>.*=?))?\n .*[:|=] "?(?<depName>.*?):(?<currentValue>[^"\n]*=?)"?',
+      ],
+      datasourceTemplate: 'docker',
+      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}',
+    },
+  ],
+  nix: {
+    enabled: true,
   },
-  "packageRules": [
+  lockFileMaintenance: {
+    enabled: true,
+    extends: [
+      'schedule:weekly',
+    ],
+  },
+  packageRules: [
     {
-      "matchDatasources": ["docker"],
-      "enabled": true,
-      "matchUpdateTypes": ["major", "minor", "patch"]
+      matchDatasources: [
+        'docker',
+      ],
+      enabled: true,
+      matchUpdateTypes: [
+        'major',
+        'minor',
+        'patch',
+      ],
     },
     {
-      "matchDatasources": ["docker"],
-      "semanticCommitScope": "images",
-      "separateMinorPatch": true
-    },
-
-    // add labels according to package and update types
-    {
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["major"],
-      "commitMessagePrefix": "feat(images)!: ",
-      "labels": ["renovate/image", "dep/major"]
+      matchDatasources: [
+        'docker',
+      ],
+      semanticCommitScope: 'images',
+      separateMinorPatch: true,
     },
     {
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["minor"],
-      "semanticCommitType": "feat",
-      "labels": ["renovate/image", "dep/minor"]
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      commitMessagePrefix: 'feat(images)!: ',
+      labels: [
+        'renovate/image',
+        'dep/major',
+      ],
     },
     {
-      "matchDatasources": ["docker"],
-      "matchUpdateTypes": ["patch"],
-      "semanticCommitType": "fix",
-      "labels": ["renovate/image", "dep/patch"]
-    }
-  ]
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'minor',
+      ],
+      semanticCommitType: 'feat',
+      labels: [
+        'renovate/image',
+        'dep/minor',
+      ],
+    },
+    {
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'patch',
+      ],
+      semanticCommitType: 'fix',
+      labels: [
+        'renovate/image',
+        'dep/patch',
+      ],
+    },
+  ],
 }
