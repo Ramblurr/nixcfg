@@ -113,6 +113,9 @@ in
           source = ./configs/clj-kondo;
           recursive = true;
         };
+        home.sessionVariables = {
+          SDPX_LICENSES_PATH = "${pkgs.spdx-license-list-data.json}/json";
+        };
       };
   };
 }
