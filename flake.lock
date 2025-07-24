@@ -702,6 +702,24 @@
         "type": "github"
       }
     },
+    "flakelight": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_4"
+      },
+      "locked": {
+        "lastModified": 1753102454,
+        "narHash": "sha256-BG8VtSW9F24bwfDjF8voxolecogiHKS9WC3EEOakGn0=",
+        "owner": "nix-community",
+        "repo": "flakelight",
+        "rev": "5438c55301ab0811214f918fd16a7f6aaa50b73f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "flakelight",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -895,8 +913,8 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1753262644,
-        "narHash": "sha256-ewhlgdMSVVbElgHNJkozddy4f+zvvrPDHTc1FZVTn5Q=",
+        "lastModified": 1753340434,
+        "narHash": "sha256-onEp9RI6brKhJatb+Uy2w3amSMf4VLbn80PVNmOi0Qw=",
         "path": "/home/ramblurr/src/microvm.nix",
         "type": "path"
       },
@@ -1323,6 +1341,22 @@
     },
     "nixpkgs_4": {
       "locked": {
+        "lastModified": 1752950548,
+        "narHash": "sha256-NS6BLD0lxOrnCiEOcvQCDVPXafX1/ek1dfJHX1nUIzc=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "c87b95e25065c028d31a94f06a62927d18763fdf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
         "lastModified": 1747958103,
         "narHash": "sha256-qmmFCrfBwSHoWw7cVK4Aj+fns+c54EBP8cGqp/yK410=",
         "owner": "nixos",
@@ -1674,6 +1708,7 @@
         "plasma-manager": "plasma-manager",
         "quadlet-nix2": "quadlet-nix2",
         "sops-nix": "sops-nix",
+        "spdx-util": "spdx-util",
         "treefmt-nix": "treefmt-nix"
       }
     },
@@ -1745,6 +1780,26 @@
         "owner": "Mic92",
         "repo": "sops-nix",
         "type": "github"
+      }
+    },
+    "spdx-util": {
+      "inputs": {
+        "flakelight": "flakelight",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1753355719,
+        "narHash": "sha256-+7WAZHQ+OT93oLStP5XL2bTe39nL+9UgNDkfPwQQjiE=",
+        "rev": "efffbf8edfef91339dbeea08a11bc1dbf28a6fa1",
+        "revCount": 5,
+        "type": "tarball",
+        "url": "https://api.flakehub.com/f/pinned/ramblurr/spdx-util/0.1.5%2Brev-efffbf8edfef91339dbeea08a11bc1dbf28a6fa1/01983c26-45b7-7d24-b088-d8b3298ee44b/source.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://flakehub.com/f/ramblurr/spdx-util/0.1.4"
       }
     },
     "spectrum": {
@@ -1963,7 +2018,7 @@
     },
     "treefmt-nix": {
       "inputs": {
-        "nixpkgs": "nixpkgs_4"
+        "nixpkgs": "nixpkgs_5"
       },
       "locked": {
         "lastModified": 1750931469,
