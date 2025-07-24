@@ -70,8 +70,15 @@ in
             #!/usr/bin/env bash
             set -euo pipefail
             PORT_FILE=''${1:-.nrepl-port}
-            PORT=$(cat ''${PORT_FILE})
+            PORT=4888
+            if [ -f "$PORT_FILE" ]; then
+              PORT=$(cat ''${PORT_FILE})
+            fi
+            set -a
             source ~/${hm.config.sops.secrets.llm-keys.path}
+            set +a
+            unset ANTHROPIC_API_KEY
+            unset OPENAI_API_KEY
             ${clojure}/bin/clojure -X:mcp/clojure :port $PORT
           '')
         ];
