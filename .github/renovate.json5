@@ -6,6 +6,7 @@
     'customManagers:dockerfileVersions',
     'customManagers:tfvarsVersions',
     'github>ramblurr/nixcfg//.github/renovate/groups.json5',
+    'github>ramblurr/renovate-preset-deps-edn-gitlibs'
   ],
   enabled: true,
   timezone: 'Europe/Berlin',
@@ -30,20 +31,20 @@
     'prIgnoreNotification',
   ],
   customManagers: [
-    {
-      customType: 'regex',
-      description: [
-        'Clojure gitdeps',
-      ],
-      managerFilePatterns: [
-        '/.*deps.edn$/',
-      ],
-      matchStrings: [
-        '(?<depName>[\\w.-]+\\/[\\w.-]+)\\s+\\{[\\s\\S]*?:git\\/url\\s+"https:\\/\\/github\\.com\\/(?<packageName>[^"]+)\\.git"[\\s\\S]*?:git\\/tag\\s+"(?<currentValue>[^"]+)"[\\s\\S]*?:git\\/sha\\s+"(?<currentDigest>[^"]+)"[\\s\\S]*?\\}'
-      ],
-      datasourceTemplate: 'github-tags',
-      versioningTemplate: "semver-coerced"
-    },
+    // {
+    //   customType: 'regex',
+    //   description: [
+    //     'Clojure gitdeps',
+    //   ],
+    //   managerFilePatterns: [
+    //     '/.*deps.edn$/',
+    //   ],
+    //   matchStrings: [
+    //     '(?<depName>[\\w.-]+\\/[\\w.-]+)\\s+\\{[\\s\\S]*?:git\\/url\\s+"https:\\/\\/github\\.com\\/(?<packageName>[^"]+)\\.git"[\\s\\S]*?:git\\/tag\\s+"(?<currentValue>[^"]+)"[\\s\\S]*?:git\\/sha\\s+"(?<currentDigest>[^"]+)"[\\s\\S]*?\\}'
+    //   ],
+    //   datasourceTemplate: 'github-tags',
+    //   versioningTemplate: "semver-coerced"
+    // },
     {
       customType: 'regex',
       description: [
