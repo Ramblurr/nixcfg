@@ -49,7 +49,7 @@
   {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.16"}
              com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
                                       :git/tag "v0.1.7-alpha"
-                                      :git/sha "94661e80dc14bc0b5fc460d7074e79e1cc663942"}}
+                                      :git/sha "992fe5dd1fb2c64c6f263fc3d2b60d1631de0402"}}
    :exec-fn clojure-mcp.main/start-mcp-server}
   :repl/clerk
   {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1150"}
@@ -59,4 +59,18 @@
    :main-opts  ["--eval" "(require '[nextjournal.clerk])(nextjournal.clerk/show! 'nextjournal.clerk.tap)(nextjournal.clerk/serve! {:browse? true})"
                 "-m" "nrepl.cmdline"
                 "--middleware" "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"
-                "--interactive"]}}}
+                "--interactive"]}
+
+  :fmt/ns-fix
+  {:replace-deps {com.github.clojure-lsp/clojure-lsp
+                  {:git/tag "2025.04.23-18.16.46"
+                   :git/sha "454c86a"
+                   :deps/root "cli"}}
+   :exec-fn clojure-lsp.api/clean-ns!
+   :exec-args {:dry? false}}
+  :fmt/ns-check
+  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:git/tag "2025.04.23-18.16.46"
+                                                      :git/sha "454c86a"
+                                                      :deps/root "cli"}}
+   :exec-fn clojure-lsp.api/clean-ns!
+   :exec-args {:dry? true}}}}
