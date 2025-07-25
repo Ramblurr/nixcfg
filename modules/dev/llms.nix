@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -25,6 +26,7 @@ in
         llm
         gemini-cli
         ccusage
+        inputs.boxai.packages.${pkgs.system}.boxai
       ];
     };
   };

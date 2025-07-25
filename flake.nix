@@ -14,6 +14,8 @@
     nix-std.url = "github:chessai/nix-std";
     spdx-util.url = "https://flakehub.com/f/ramblurr/spdx-util/0.1.4";
     spdx-util.inputs.nixpkgs.follows = "nixpkgs";
+    boxai.url = "path:/home/ramblurr/src/llm/vms";
+    boxai.inputs.nixpkgs.follows = "nixpkgs";
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
