@@ -35,6 +35,7 @@ in
     4214
   ];
   networking.firewall.allowedTCPPorts = [
+    10700 # wyoming-satellite
     4214
   ];
   environment.systemPackages = with pkgs; [
@@ -43,14 +44,6 @@ in
     wireplumber
     pulsemixer
     jless
-    (pkgs.vlc.override {
-      chromecastSupport = false;
-      jackSupport = false;
-      onlyLibVLC = false;
-      skins2Support = false;
-      waylandSupport = false;
-      withQt5 = false;
-    })
   ];
   services.pipewire = {
     enable = true;
@@ -122,4 +115,26 @@ in
     };
   };
   modules.server.virtd-host.net.prim.iface = "prim";
+  services.wyoming.satellite = {
+    enable = true;
+    user = "ramblurr";
+    group = "audio";
+    uri = "tcp://0.0.0.0:10700";
+    name = "kitchen-announce-satellite";
+    area = "kitchen";
+    microphone = {
+      command = "${pkgs.coreutils}/bin/sleep infinity";
+      #autoGain = 10;
+      #noiseSuppression = 1;
+    };
+    sound = {
+      command = "pw-cat --playback --raw --rate=22050 --channels=1 --format=s16 -";
+    };
+    vad = {
+      enable = false;
+    };
+  };
+  systemd.services."wyoming-satellite".path = [
+    pkgs.pipewire
+  ];
 }
