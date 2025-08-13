@@ -75,13 +75,6 @@
     crowdsec.url = "git+https://codeberg.org/kampka/nix-flake-crowdsec.git";
     crowdsec.inputs.nixpkgs.follows = "nixpkgs";
 
-    #hyprland = {
-    #  type = "git";
-    #  url = "https://github.com/hyprwm/Hyprland";
-    #  ref = "refs/tags/v0.47.1";
-    #  submodules = true;
-    #};
-
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     emacs-overlay.inputs.nixpkgs.follows = "nixpkgs";
     emacs-overlay.inputs.nixpkgs-stable.follows = "nixpkgs-stable";
