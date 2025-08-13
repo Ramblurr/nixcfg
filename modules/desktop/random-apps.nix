@@ -31,7 +31,6 @@ in
           ))
           (with pkgs; [
             xournalpp
-            zeal
             libreoffice
             appimage-run
             audacity
