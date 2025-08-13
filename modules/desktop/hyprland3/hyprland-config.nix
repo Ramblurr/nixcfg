@@ -84,6 +84,31 @@ in
               "DP-2,highres,2160x1250,1"
               ",addreserved,0,0,0,0"
             ];
+            group = {
+              insert_after_current = true;
+              # focus on the window that has just been moved out of the group
+              focus_removed_window = true;
+              "col.border_active" = "0xff88c0d0";
+              "col.border_inactive" = "0xff4c566a";
+              groupbar = {
+                gradients = false;
+                font_size = 12;
+                render_titles = false;
+
+                scrolling = true; # change focused window with scroll
+              };
+            };
+            #group = {
+            #  col.border_active = "0xff88c0d0";
+            #  col.border_inactive = "0xff4c566a";
+            #  groupbar = {
+            #    enabled = true;
+            #    font_size = 8;
+            #    "col.active" = "0xff88c0d0";
+            #    "col.inactive" = "0xff4c566a";
+            #  };
+            #};
+
             general = {
               layout = "master";
               resize_on_border = true;
@@ -267,8 +292,12 @@ in
                   ) arr;
               in
               [
+                "SUPER,G,togglegroup"
+                "SUPER SHIFT,G,lockactivegroup,toggle"
+                "SUPER,tab,changegroupactive,f"
+                "SUPER SHIFT,tab,changegroupactive,b"
                 "SUPER, D, exec, anyrun"
-                ''SUPER SHIFT,Z, exec, grimblast --freeze save area - | swappy -f - -o ~/docs/img/screenshots/scrn-$(date +"%Y-%m-%d-%H-%M-%S").png''
+                ''SUPER SHIFT, Z, exec, grimblast --freeze save area - | swappy -f - -o ~/docs/img/screenshots/scrn-$(date +"%Y-%m-%d-%H-%M-%S").png''
                 "SUPER, Return, exec, wezterm"
                 "SUPER, F, fullscreen"
                 "SUPER, M, fullscreenstate, -1 2"
