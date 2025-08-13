@@ -48,8 +48,8 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 0,
-        "narHash": "sha256-P+QDAW/oFgK5SCylCgy+IghUPLPyfXB9zrL2Ksbzg+g=",
+        "lastModified": 1753603263,
+        "narHash": "sha256-hcKhDAPOOEDkavwMyF85Np5Adg2as3NNa04GRJs6Pw0=",
         "path": "/home/ramblurr/src/llm/vms",
         "type": "path"
       },
@@ -1356,10 +1356,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1753436078,
-        "narHash": "sha256-5aqWquYedhMbbyFyeKpiQaXCLzuc+7aoEF37xKjgOOQ=",
+        "lastModified": 1755072641,
+        "narHash": "sha256-vbDCgsAWDMUzjlyC092D+lIvkO0QG0Q24p6E2Asyn+w=",
         "ref": "consolidated",
-        "rev": "874889cb27d45222471459d9ced3ba22e9445c20",
+        "rev": "ee24e64f31a37b22303e309001320c17f97f91bd",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
