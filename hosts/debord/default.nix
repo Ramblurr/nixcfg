@@ -122,11 +122,11 @@ in
     uri = "tcp://0.0.0.0:10700";
     name = "kitchen-announce-satellite";
     area = "kitchen";
-    microphone = {
-      command = "${pkgs.coreutils}/bin/sleep infinity";
-      #autoGain = 10;
-      #noiseSuppression = 1;
-    };
+    #microphone = {
+    #command = "${pkgs.coreutils}/bin/sleep infinity";
+    #autoGain = 10;
+    #noiseSuppression = 1;
+    #};
     sound = {
       command = "pw-cat --playback --raw --rate=22050 --channels=1 --format=s16 -";
     };
