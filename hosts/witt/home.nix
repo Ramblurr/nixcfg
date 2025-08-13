@@ -29,7 +29,6 @@ in
       # Apps, apps, apps
       home.packages = with pkgs; [
         appimage-run
-        zeal
         musescore
         audacity
         pavucontrol
