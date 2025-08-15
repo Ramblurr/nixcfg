@@ -124,28 +124,51 @@ in
           };
           address = [ "10.4.0.1/24" ];
           networkConfig.DHCPServer = false;
-          routes =
-            [
-              {
-                Gateway = "10.4.0.2";
-                GatewayOnLink = true; # prevents link from staying in "configuring" state
+          routes = [
+            {
+              Gateway = "10.4.0.2";
+              GatewayOnLink = true; # prevents link from staying in "configuring" state
+              Table = "vpn";
+            }
+          ]
+          ++ (
+            let
+              deny = cidr: {
+                Destination = cidr;
                 Table = "vpn";
-              }
-            ]
-            ++ (
-              let
-                deny = cidr: {
-                  Destination = cidr;
-                  Table = "vpn";
-                  Type = "unreachable";
-                };
-                hostNets = (keys config.site.hosts.${hostName}.interfaces);
-                cidr4s = (map (net: config.site.net.${net}.subnet4) hostNets);
-                cidr6s = mapcat (net: (vals config.site.net.${net}.subnets6)) hostNets;
-              in
-              (map deny cidr4s) ++ (map deny cidr6s)
-            );
+                Type = "unreachable";
+              };
+              hostNets = (keys config.site.hosts.${hostName}.interfaces);
+              cidr4s = (map (net: config.site.net.${net}.subnet4) hostNets);
+              cidr6s = mapcat (net: (vals config.site.net.${net}.subnets6)) hostNets;
+            in
+            (map deny cidr4s) ++ (map deny cidr6s)
+          );
         };
       };
+  };
+  services.networkd-dispatcher = {
+    enable = true;
+    rules = {
+      # Add route to tailscale's table 52
+      "50-tailscale-remote-lan-route" = {
+        onState = [ "routable" ];
+        script = ''
+          #!${pkgs.runtimeShell}
+          if [[ "$IFACE" == "prim" ]]; then
+            # Wait a bit for tailscale to create table 52
+            for i in {1..10}; do
+              if ${pkgs.iproute2}/bin/ip route show table 52 &>/dev/null; then
+                break
+              fi
+              sleep 0.5
+            done
+
+            # Add route for remote LAN via debord
+            ${pkgs.iproute2}/bin/ip route add 192.168.8.0/22 via 10.9.4.21 dev prim table 52 2>/dev/null || true
+          fi
+        '';
+      };
+    };
   };
 }
