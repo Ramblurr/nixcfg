@@ -13,6 +13,7 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
+    ./networking.nix
     ./prometheus.nix
     ./grafana
     ../../config
@@ -24,22 +25,8 @@ in
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
 
-  networking.firewall.logRefusedConnections = lib.mkForce false;
-  modules.vpn.tailscale.enable = true;
-  modules.vpn.tailscale.useRoutingFeatures = "both";
-  boot.kernel.sysctl = {
-    "net.ipv4.conf.all.forwarding" = true;
-    "net.ipv6.conf.all.forwarding" = false;
-  };
   security.rtkit.enable = true;
 
-  networking.firewall.allowedUDPPorts = [
-    4214
-  ];
-  networking.firewall.allowedTCPPorts = [
-    10700 # wyoming-satellite
-    4214
-  ];
   environment.systemPackages = with pkgs; [
     alsa-utils
     pipewire
