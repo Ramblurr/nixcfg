@@ -130,12 +130,12 @@ in
         enable = true;
         settings = rec {
           terminal = {
-            vt = 7;
+            vt = lib.mkForce 7;
           };
           tuigreet_session =
             let
               session = "${pkgs.hyprland}/bin/Hyprland";
-              tuigreet = "${lib.getExe pkgs.greetd.tuigreet}";
+              tuigreet = "${lib.getExe pkgs.tuigreet}";
               opts = [
                 "--time"
                 "--remember"
