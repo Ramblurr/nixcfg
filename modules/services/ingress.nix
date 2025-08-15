@@ -112,7 +112,6 @@ in
       defaultHTTPListenPort = 8081;
       recommendedBrotliSettings = true;
       recommendedGzipSettings = true;
-      recommendedZstdSettings = true;
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;

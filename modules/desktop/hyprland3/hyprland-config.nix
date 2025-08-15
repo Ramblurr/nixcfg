@@ -81,7 +81,8 @@ in
             ];
             monitor = [
               "HDMI-A-1,3840x2160,0x0,1,transform,1"
-              "DP-2,highres,2160x1250,1"
+              #"DP-2,highres,2160x1250,1"
+              "DP-2,5120x1440@59.98Hz,2160x1250,1"
               ",addreserved,0,0,0,0"
             ];
             group = {
