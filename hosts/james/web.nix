@@ -68,7 +68,6 @@ in
     defaultSSLListenPort = 8443;
     defaultHTTPListenPort = 8080;
     recommendedBrotliSettings = true;
-    recommendedZstdSettings = true;
     recommendedGzipSettings = true;
     recommendedOptimisation = true;
     recommendedProxySettings = true;
