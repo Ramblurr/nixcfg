@@ -82,7 +82,7 @@ in
             autosuggestion.enable = true;
             enableCompletion = true;
             syntaxHighlighting.enable = true;
-            dotDir = ".config/zsh";
+            dotDir = "${hm.config.xdg.configHome}/zsh";
             history = {
               size = 5000000;
               save = 5000000;
