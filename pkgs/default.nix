@@ -1,6 +1,7 @@
 inputs: [
   (_final: prev: {
     ccusage = prev.callPackage ./ccusage.nix { };
+    opencode-bin = prev.callPackage ./opencode-bin.nix { };
     netns-proxy = prev.callPackage ./netns-proxy.nix { };
     mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
     udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };

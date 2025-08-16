@@ -31,7 +31,6 @@ in
         ".config/audacity"
         ".config/easyeffects"
         ".config/sops"
-        ".config/claude"
         ".config/GIMP"
         ".config/gnupg"
         ".config/inkscape"
@@ -68,6 +67,12 @@ in
         ".kde"
         ".local/share/digikam"
         ".cache/digikam"
+        ".config/claude"
+        ".config/crush"
+        ".local/share/crush"
+        ".config/opencode"
+        ".local/share/opencode"
+        ".local/state/opencode"
       ];
       files = [
         #".config/akregatorrc"
