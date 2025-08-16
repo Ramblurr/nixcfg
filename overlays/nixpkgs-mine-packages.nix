@@ -20,4 +20,5 @@ in
   roon-server = nixpkgs-mine.roon-server;
   chromium = nixpkgs-mine.chromium;
   chromedriver = nixpkgs-mine.chromedriver;
+  crush = nixpkgs-mine.crush;
 }
