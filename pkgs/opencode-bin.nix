@@ -6,12 +6,12 @@
 }:
 let
   # Mapping from version to per-platform asset info (fill in hashes!)
-  version = "0.5.4";
+  version = "0.5.13";
   assets = {
     ${version} = {
       "x86_64-linux" = {
         name = "opencode-linux-x64.zip";
-        hash = "sha256-PBWaduD18DFebUPLkRz7AGbOiHGGcqrrG30y6J6b+9M=";
+        hash = "sha256-jA+xfi/3GmguyR9fHGf1s9vENHpXZKOGSGkSB3o+JyM=";
       };
       "aarch64-darwin" = {
         name = "opencode-darwin-arm64.zip";
