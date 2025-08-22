@@ -2,18 +2,17 @@
   pkgs,
   config,
   lib,
+  options,
   ...
 }:
 let
   cfg = config.modules.hardware.easyNvidia.vaapi;
-  ffVersion = config.programs.firefox.package.version;
 in
 {
   options.modules.hardware.easyNvidia.vaapi = with lib.types; {
     enable = lib.mkOption {
       type = bool;
-      default =
-        config.modules.hardware.easyNvidia.enable && !config.modules.hardware.easyNvidia.withIntegratedGPU;
+      default = config.easyNvidia.enable && !config.easyNvidia.withIntegratedGPU;
       description = ''
         Whether to enable the NVIDIA vaapi driver.
 
@@ -49,10 +48,14 @@ in
         type = bool;
         default = config.programs.firefox.enable;
         description = ''
-          Configure Firefox to used the vaapi driver for video decoding.
+          Configure Firefox-based browsers to use the vaapi driver for video
+          decoding.
 
           Note that this requires disabling the [RDD
           sandbox](https://firefox-source-docs.mozilla.org/dom/ipc/process_model.html#data-decoder-rdd-process).
+
+          Includes home-manager integration, if home-manager is used to manage
+          Firefox (or its forks, e.g. LibreWolf).
         '';
       };
 
@@ -70,25 +73,55 @@ in
   };
 
   # See https://github.com/elFarto/nvidia-vaapi-driver#configuration
-  config = lib.mkIf cfg.enable {
-    environment = {
-      systemPackages = [ pkgs.libva-utils ];
-      variables =
-        {
-          NVD_BACKEND = "direct";
-          LIBVA_DRIVER_NAME = "nvidia";
-        }
-        // lib.optionalAttrs (cfg.maxInstances != null) { NVD_MAX_INSTANCES = toString cfg.maxInstances; }
-        // lib.optionalAttrs cfg.firefox.enable { MOZ_DISABLE_RDD_SANDBOX = "1"; };
-    };
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        environment = {
+          systemPackages = [ pkgs.libva-utils ];
+          variables = {
+            NVD_BACKEND = "direct";
+            LIBVA_DRIVER_NAME = "nvidia";
+          }
+          // lib.optionalAttrs (cfg.maxInstances != null) { NVD_MAX_INSTANCES = toString cfg.maxInstances; }
+          // lib.optionalAttrs cfg.firefox.enable { MOZ_DISABLE_RDD_SANDBOX = "1"; };
+        };
+      }
 
-    programs.firefox.preferences = lib.mkIf cfg.firefox.enable {
-      "media.ffmpeg.vaapi.enabled" = lib.versionOlder ffVersion "137.0.0";
-      "media.hardware-video-decoding.force-enabled" = lib.versionAtLeast ffVersion "137.0.0";
-      "media.rdd-ffmpeg.enabled" = lib.versionOlder ffVersion "97.0.0";
-      "media.av1.enabled" = cfg.firefox.av1Support;
-      "gfx.x11-egl.force-enabled" = true;
-      "widget.dmabuf.force-enabled" = true;
-    };
-  };
+      # Options for various Firefox module implementations
+      (
+        let
+          firefoxSettings =
+            package:
+            let
+              ffVersion = package.version or config.programs.firefox.package.version;
+            in
+            {
+              "media.ffmpeg.vaapi.enabled" = lib.versionOlder ffVersion "137.0.0";
+              "media.hardware-video-decoding.force-enabled" = lib.versionAtLeast ffVersion "137.0.0";
+              "media.rdd-ffmpeg.enabled" = lib.versionOlder ffVersion "97.0.0";
+              "media.av1.enabled" = cfg.firefox.av1Support;
+              "gfx.x11-egl.force-enabled" = true;
+              "widget.dmabuf.force-enabled" = true;
+            };
+        in
+        lib.mkIf cfg.firefox.enable (
+          lib.mkMerge [
+            { programs.firefox.preferences = firefoxSettings config.programs.firefox.package; }
+            (lib.optionalAttrs (options ? home-manager) {
+              home-manager.sharedModules = [
+                (
+                  { config, ... }:
+                  {
+                    programs.librewolf.settings = firefoxSettings config.programs.librewolf.package;
+                    # TODO(tlater): Add settings for Firefox and floorp
+                    programs.firefox.profiles.personal.settings = firefoxSettings config.programs.firefox.package;
+                  }
+                )
+              ];
+            })
+          ]
+        )
+      )
+    ]
+  );
 }
