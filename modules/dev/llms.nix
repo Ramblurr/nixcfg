@@ -26,6 +26,7 @@ let
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
     wrapWithLLMKeys "${pkgs.opencode}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
   );
+  llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${pkgs.llm}/bin/llm" [ ]);
   gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini-cli" (
     wrapWithLLMKeys "${pkgs.gemini-cli}/bin/gemini-cli" [ ]
   );
@@ -40,12 +41,19 @@ in
       home.packages = with pkgs; [
         mcp-inspector
         claude-code
-        llm
+        llm-wrapper
         gemini-cli-wrapper
         ccusage
         inputs.boxai.packages.${pkgs.system}.boxai
         crush-wrapper
         opencode-wrapper
+        (pkgs.writeShellScriptBin "cat-url-markdown" ''
+          if [ -z "$1" ]; then
+            echo "usage: $(basename "$0") URL [FILENAME]"
+            exit 1
+          fi
+          curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
+        '')
       ];
     };
   };
