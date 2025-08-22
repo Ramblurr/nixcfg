@@ -110,6 +110,7 @@ in
             }
           ];
           shellAliases = {
+            "md" = "glow -p";
             "borgmatic" =
               "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env borgmatic";
             "mvm" = ''mvn -gs "$XDG_CONFIG_HOME"/maven/settings.xml'';
