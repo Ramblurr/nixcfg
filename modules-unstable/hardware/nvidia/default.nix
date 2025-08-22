@@ -91,15 +91,23 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = lib.mkIf (!cfg.advanced.forceKernel) (
+      lib.singleton {
+        assertion =
+          config.boot.kernelPackages.kernel.version == pkgs.linuxKernel.kernels.linux_default.version;
+        message = "The nvidia driver can only support the LTS kernel. You can ignore this with `easyNvidia.advanced.forceKernel`.";
+      }
+    );
+
     services.xserver.videoDrivers = [ "nvidia" ];
 
     hardware.nvidia = {
       package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
-        version = "570.172.08";
-        sha256_64bit = "sha256-AlaGfggsr5PXsl+nyOabMWBiqcbHLG4ij617I4xvoX0=";
+        version = "580.76.05";
+        sha256_64bit = "sha256-IZvmNrYJMbAhsujB4O/4hzY8cx+KlAyqh7zAVNBdl/0=";
         sha256_aarch64 = lib.fakeHash;
-        openSha256 = "sha256-aTV5J4zmEgRCOavo6wLwh5efOZUG+YtoeIT/tnrC1Hg=";
-        settingsSha256 = "sha256-N/1Ra8Teq93U3T898ImAT2DceHjDHZL1DuriJeTYEa4=";
+        openSha256 = "sha256-IZvmNrYJMbAhsujB4O/4hzY8cx+KlAyqh7zAVNBdl/0=";
+        settingsSha256 = "sha256-ll7HD7dVPHKUyp5+zvLeNqAb6hCpxfwuSyi+SAXapoQ=";
         persistencedSha256 = lib.fakeHash;
       };
 
