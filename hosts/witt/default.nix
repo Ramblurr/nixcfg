@@ -26,14 +26,6 @@ in
   environment.etc."machine-id".text = machine-id;
 
   time.timeZone = "Europe/Berlin";
-
-  #### TEMPORARY
-  # Workaround kernel bug in kernel >= 6.6.57
-  # ref: https://github.com/NixOS/nixpkgs/issues/353709
-  # see my last-known-good.nix overlay for corresponding overlay pkg
-  boot.kernelPackages = pkgs.linuxPackages_6_6;
-  ### END
-
   networking = {
     networkmanager.enable = true;
     hostId = pkgs.lib.concatStringsSep "" (
