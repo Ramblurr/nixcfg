@@ -88,6 +88,7 @@ in
     3001
     8080
     8081
+    8090
   ];
   networking.firewall.allowedUDPPorts = [ 67 ];
 
