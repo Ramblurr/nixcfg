@@ -122,7 +122,6 @@ in
         kitty.enable = true;
         wezterm.enable = true;
         logseq.enable = true;
-        chrysalis.enable = true;
         element.enable = true;
         #nextcloud.enable = true;
         #nheko.enable = true;

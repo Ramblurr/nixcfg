@@ -160,7 +160,6 @@ in
         #aseprite.enable = true;
         #calibre.enable = true;
         cad.enable = true;
-        chrysalis.enable = true;
         discord.enable = false;
         #element.enable = true;
         #element.work.enable = true;

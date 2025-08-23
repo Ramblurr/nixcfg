@@ -26,7 +26,6 @@
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
     ./desktop/programs/calibre.nix
-    ./desktop/programs/chrysalis.nix
     ./desktop/programs/discord.nix
     ./desktop/programs/element.nix
     ./desktop/programs/fritzing.nix
