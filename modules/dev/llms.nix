@@ -60,7 +60,7 @@ in
           fi
           curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
         '')
-        (if cudaSupport == true then (whisper-cpp.override { cudaSupport = true; }) else whisper-cpp)
+        (if cfg.cudaSupport == true then (whisper-cpp.override { cudaSupport = true; }) else whisper-cpp)
       ];
     };
   };

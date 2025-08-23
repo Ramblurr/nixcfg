@@ -224,6 +224,7 @@ in
       python.enable = true;
       random.enable = true;
       llms.enable = true;
+      llms.cudaSupport = true;
     };
 
     editors = {
