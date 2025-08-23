@@ -29,7 +29,7 @@ tasks:
   nixos-rebuild-remote:
     internal: true
     cmds:
-      - nixos-rebuild --fast --use-remote-sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} |& nom
+      - nixos-rebuild --fast --sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} |& nom
 
   nixos-rebuild-local:
     internal: true
@@ -38,7 +38,7 @@ tasks:
         if [[ "{{ .TARGET_HOST }}" == "{{ .LOCAL_HOST }}" ]]; then
           sudo nixos-rebuild --flake .#quine {{.ACTION}} --show-trace  |& nom
         else
-          nixos-rebuild --use-remote-sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace |& nom
+          nixos-rebuild --sudo  --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} --show-trace |& nom
         fi
 
   deploy-key:
