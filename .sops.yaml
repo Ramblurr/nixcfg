@@ -20,6 +20,7 @@ creation_rules:
     key_groups:
       - age:
           - *quine
+          - *witt
           - *disaster-recovery
         pgp:
           - *ramblurr
@@ -27,6 +28,7 @@ creation_rules:
     key_groups:
       - age:
           - *quine
+          - *witt
           - *disaster-recovery
         pgp:
           - *ramblurr
@@ -90,6 +92,7 @@ creation_rules:
           - *debord
           - *mali
           - *disaster-recovery
+          - *witt
         pgp:
           - *ramblurr
   - path_regex: guests/claude-test/.*.sops.*$
@@ -98,5 +101,6 @@ creation_rules:
           - *claude-test
           - *quine
           - *disaster-recovery
+          - *witt
         pgp:
           - *ramblurr
