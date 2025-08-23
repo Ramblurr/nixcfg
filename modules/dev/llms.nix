@@ -8,7 +8,7 @@
 
 let
   devCfg = config.modules.dev;
-  cfg = devCfg.random;
+  cfg = config.modules.dev.llms;
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
@@ -24,7 +24,7 @@ let
   '';
   crush-wrapper = pkgs.writeShellScriptBin "crush" (wrapWithLLMKeys "${pkgs.crush}/bin/crush" [ ]);
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
-    wrapWithLLMKeys "${pkgs.opencode}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
+    wrapWithLLMKeys "${pkgs.opencode-bin}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
   );
   llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${pkgs.llm}/bin/llm" [ ]);
   gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini-cli" (
@@ -32,6 +32,12 @@ let
   );
 in
 {
+  options.modules.dev.llms = {
+    enable = lib.mkEnableOption "";
+    cudaSupport = lib.mkEnableOption {
+      description = "Enable CUDA support";
+    };
+  };
   config = lib.mkIf cfg.enable {
     myhm = {
       sops.secrets.llm-keys = {
@@ -54,6 +60,7 @@ in
           fi
           curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
         '')
+        (if cudaSupport == true then (whisper-cpp.override { cudaSupport = true; }) else whisper-cpp)
       ];
     };
   };

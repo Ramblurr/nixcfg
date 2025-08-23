@@ -1,54 +1,86 @@
 {
-  pkgs,
   lib,
-  system ? builtins.currentSystem,
-  extraAssets ? { }, # allow adding versions and hashes
+  stdenv,
+  fetchzip,
+  autoPatchelfHook,
 }:
+
 let
-  # Mapping from version to per-platform asset info (fill in hashes!)
-  version = "0.5.13";
-  assets = {
-    ${version} = {
-      "x86_64-linux" = {
-        name = "opencode-linux-x64.zip";
-        hash = "sha256-jA+xfi/3GmguyR9fHGf1s9vENHpXZKOGSGkSB3o+JyM=";
-      };
-      "aarch64-darwin" = {
-        name = "opencode-darwin-arm64.zip";
-        hash = lib.fakeHash;
-      };
+  version = "0.5.15";
+
+  sources = {
+    x86_64-linux = {
+      url = "https://github.com/sst/opencode/releases/download/v${version}/opencode-linux-x64.zip";
+      hash = "sha256-8wKKxhgnSpkxkIuDU0gfFe5W6ZLrohIpQ5US/jpfZPg=";
     };
-  }
-  // extraAssets;
+    aarch64-linux = {
+      url = "https://github.com/sst/opencode/releases/download/v${version}/opencode-linux-arm64.zip";
+      hash = lib.fakeHash;
+    };
+    x86_64-darwin = {
+      url = "https://github.com/sst/opencode/releases/download/v${version}/opencode-darwin-x64.zip";
+      hash = lib.fakeHash;
+    };
+    aarch64-darwin = {
+      url = "https://github.com/sst/opencode/releases/download/v${version}/opencode-darwin-arm64.zip";
+      hash = lib.fakeHash;
+    };
+  };
 
-  platformAssets = assets.${version} or (throw "Unsupported version: ${version}");
-
-  asset = platformAssets.${system} or (throw "Unsupported system for version ${version}: ${system}");
-  url = "https://github.com/sst/opencode/releases/download/v${version}/${asset.name}";
+  source =
+    sources.${stdenv.hostPlatform.system}
+      or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
 in
-pkgs.stdenv.mkDerivation {
+stdenv.mkDerivation {
   pname = "opencode";
   inherit version;
 
-  src = pkgs.fetchurl {
-    inherit url;
-    hash = asset.hash;
+  src = fetchzip {
+    url = source.url;
+    hash = source.hash;
+    stripRoot = false;
   };
-  dontUnpack = true;
 
-  buildInputs = [ ];
-  nativeBuildInputs = [ pkgs.unzip ];
+  nativeBuildInputs = lib.optionals stdenv.isLinux [
+    autoPatchelfHook
+  ];
+
+  buildInputs = lib.optionals stdenv.isLinux [
+    stdenv.cc.cc.lib
+  ];
+
+  dontBuild = true;
+  dontStrip = true;
 
   installPhase = ''
+    runHook preInstall
+
     mkdir -p $out/bin
-    unzip -j $src
-    # Adjust if more files in archive
     cp opencode $out/bin/
+    chmod +x $out/bin/opencode
+
+    runHook postInstall
   '';
 
-  meta = {
-    mainProgram = "opencode";
-    description = "OpenCode: AI coding agent for the terminal";
+  postFixup = lib.optionalString stdenv.isLinux ''
+    patchelf --add-needed "$(patchelf --print-soname ${stdenv.cc.cc.lib}/lib/libstdc++.so)" $out/bin/opencode
+  '';
+
+  passthru = {
+    updateScript = ./update.sh;
+  };
+
+  meta = with lib; {
+    description = "AI coding agent, built for the terminal";
     homepage = "https://github.com/sst/opencode";
+    license = licenses.mit;
+    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
+    mainProgram = "opencode";
   };
 }

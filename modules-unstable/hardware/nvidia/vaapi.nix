@@ -12,7 +12,8 @@ in
   options.modules.hardware.easyNvidia.vaapi = with lib.types; {
     enable = lib.mkOption {
       type = bool;
-      default = config.easyNvidia.enable && !config.easyNvidia.withIntegratedGPU;
+      default =
+        config.modules.hardware.easyNvidia.enable && !config.modules.hardware.easyNvidia.withIntegratedGPU;
       description = ''
         Whether to enable the NVIDIA vaapi driver.
 

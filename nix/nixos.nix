@@ -28,7 +28,8 @@ let
     (import ../overlays/last-known-good.nix)
     (import ../overlays/nixpkgs-mine-packages.nix inputs)
     (import ../overlays/overrides.nix)
-  ] ++ (import ../pkgs/default.nix inputs);
+  ]
+  ++ (import ../pkgs/default.nix inputs);
 
   mkPkgs =
     {
@@ -74,21 +75,20 @@ let
     in
     actual-nixpkgs.lib.nixosSystem {
       inherit system;
-      modules =
-        [
-          #inputs.nixpkgs.nixosModules.readOnlyPkgs
-          {
-            node.secretsDir = hostPath + "/secrets";
-            node.name = name;
-            nixpkgs.pkgs = nixpkgs';
-          }
-          hostPath
-          actual-home-manager.nixosModules.home-manager
-        ]
-        ++ lib.optionals enableDefaultModules defaultModules
-        ++ lib.optionals isStable stableDefaultModules
-        ++ lib.optionals (!isStable) unstableDefaultModules
-        ++ hostExtraModules;
+      modules = [
+        #inputs.nixpkgs.nixosModules.readOnlyPkgs
+        {
+          node.secretsDir = hostPath + "/secrets";
+          node.name = name;
+          nixpkgs.pkgs = nixpkgs';
+        }
+        hostPath
+        actual-home-manager.nixosModules.home-manager
+      ]
+      ++ lib.optionals enableDefaultModules defaultModules
+      ++ lib.optionals isStable stableDefaultModules
+      ++ lib.optionals (!isStable) unstableDefaultModules
+      ++ hostExtraModules;
 
       specialArgs = {
         inherit inputs self;
@@ -139,7 +139,8 @@ let
           modules.microvm-guest.enable = true;
         }
         ../guests/${name}
-      ] ++ extraModules;
+      ]
+      ++ extraModules;
     };
 
   mkMkHosts =
