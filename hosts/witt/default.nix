@@ -116,13 +116,13 @@ in
           ];
         };
       programs = {
-        cad.enable = true;
+        #cad.enable = true;
         junction.enable = true;
         #kdeconnect.enable = true;
         kitty.enable = true;
         wezterm.enable = true;
         logseq.enable = true;
-        element.enable = true;
+        #element.enable = true;
         #nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
