@@ -139,7 +139,7 @@ in
       aria2.enable = true;
       #attic.enable = true;
       atuin.enable = true;
-      atuin.sync.enable = true;
+      atuin.syncing.enable = true;
       direnv.enable = true;
       git.enable = true;
       gpg-agent.enable = true;
@@ -186,13 +186,11 @@ in
     };
     dev = {
       clojure.enable = true;
-      fennel.enable = false;
       jetbrains.enable = true;
-      k8s.enable = false;
       node.enable = true;
       python.enable = true;
-      radicle.enable = false;
       random.enable = true;
+      llms.enable = true;
     };
   };
 

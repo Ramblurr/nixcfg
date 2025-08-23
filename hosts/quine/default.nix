@@ -221,11 +221,10 @@ in
       clojure.enable = true;
       #fennel.enable = true;
       jetbrains.enable = true;
-      k8s.enable = true;
       node.enable = true;
       python.enable = true;
       random.enable = true;
-      #radicle.enable = true;
+      llms.enable = true;
     };
 
     editors = {
