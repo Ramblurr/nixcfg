@@ -40,7 +40,7 @@ in
   services.timesyncd.enable = true;
   hardware.bluetooth = {
     enable = true;
-    powerOnBoot = false;
+    powerOnBoot = true;
     settings.General.Experimental = true;
   };
   home.attic.enable = false;
