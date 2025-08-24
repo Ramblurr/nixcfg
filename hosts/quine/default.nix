@@ -198,6 +198,7 @@ in
       mpv.enable = true;
       ssh.enable = true;
       tmux.enable = true;
+      zellij.enable = true;
       zoxide.enable = true;
       zsh.enable = true;
       zsh.starship.enable = false;

@@ -127,6 +127,7 @@
     ./shell/random.nix
     ./shell/ssh/default.nix
     ./shell/tmux.nix
+    ./shell/zellij
     ./shell/zoxide.nix
     ./shell/zsh/default.nix
     ./users/default.nix
