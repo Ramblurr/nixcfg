@@ -5,7 +5,7 @@
  ;; Project deps.edn file superceeds this setting
  :paths ["src"]
 
- :deps {org.clojure/clojure {:mvn/version "1.12.1"}}
+ :deps {org.clojure/clojure {:mvn/version "1.12.2"}}
 
  ;; do not use ~/.m2
  :mvn/local-repo "@cacheDirectory@/maven/repository"
