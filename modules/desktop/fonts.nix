@@ -143,7 +143,8 @@ in
         theme.package
         cursorTheme.package
         iconTheme.package
-      ] ++ cfg.packages;
+      ]
+      ++ cfg.packages;
 
       fontDir.enable = true;
 
@@ -194,7 +195,8 @@ in
         };
 
         qt = {
-          enable = true;
+          # TODO: renable after  https://github.com/nix-community/home-manager/issues/7728
+          enable = false;
           platformTheme.name = "kde";
         };
       };

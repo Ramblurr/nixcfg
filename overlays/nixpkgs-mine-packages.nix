@@ -13,6 +13,7 @@ in
   gemini-cli = nixpkgs-mine.gemini-cli;
   clojure-lsp = nixpkgs-mine.clojure-lsp;
   davis = nixpkgs-mine.davis;
+  plex = nixpkgs-mine.plex;
   emacs-pgtk = nixpkgs-mine.emacs-pgtk;
   gost = nixpkgs-mine.gost;
   ocis = nixpkgs-mine.ocis;
@@ -21,4 +22,5 @@ in
   chromium = nixpkgs-mine.chromium;
   chromedriver = nixpkgs-mine.chromedriver;
   crush = nixpkgs-mine.crush;
+  llm = nixpkgs-mine.llm;
 }
