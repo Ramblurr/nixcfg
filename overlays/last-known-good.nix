@@ -32,12 +32,12 @@ in
     mullvad
     ;
 
-  inherit
-    (nixpkgs {
-      rev = "65540e5447fd7837cb403dacf26f40ef7b57683f";
-      sha256 = "sha256-G9RR8VmxqOUBjAopmuNin8ojaXgsTdOnI3T49jK9Tu0=";
-      config = final.config;
-    })
-    electron_36
-    ;
+  #inherit
+  #  (nixpkgs {
+  #    rev = "65540e5447fd7837cb403dacf26f40ef7b57683f";
+  #    sha256 = "sha256-G9RR8VmxqOUBjAopmuNin8ojaXgsTdOnI3T49jK9Tu0=";
+  #    config = final.config;
+  #  })
+  #  electron_36
+  #  ;
 }
