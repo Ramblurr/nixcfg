@@ -20,7 +20,7 @@ let
   font.mono = "Iosevka";
   font.term = "Iosevka Nerd Font Mono";
   font.serif = "Noto Serif";
-  font.sans = "Noto Sans";
+  font.sans = "Nokia Sans Wide";
   font.emoji = "Noto Color Emoji";
 
   theme = {
