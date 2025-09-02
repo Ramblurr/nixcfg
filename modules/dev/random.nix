@@ -74,6 +74,7 @@ in
         socat
         flyctl
         sshpass
+        steam-run
         postgresql_15
         mariadb
         ansible

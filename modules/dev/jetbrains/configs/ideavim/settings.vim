@@ -8,7 +8,7 @@ set showmode
 
 " Use the clipboard register '*' for all yank, delete, change and put operations
 " which would normally go to the unnamed register.
-set clipboard+=unnamed
+set clipboard+=unnamedplus
 
 " Search as characters are entered
 set incsearch
