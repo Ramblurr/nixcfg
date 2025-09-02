@@ -43,6 +43,7 @@ let
         #allowAliases = false;
         allowUnfree = true;
         permittedInsecurePackages = [
+          "libsoup-2.74.3"
           "olm-3.2.16"
         ];
       };
