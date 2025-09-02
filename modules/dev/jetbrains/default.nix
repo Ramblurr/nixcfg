@@ -35,11 +35,11 @@ in
     };
     myhm = {
       home.packages = with pkgs; [
-        # BLOCKED: https://github.com/NixOS/nixpkgs/issues/380196
-        #jetbrains.idea-ultimate
+        jetbrains.idea-ultimate
         #jetbrains.datagrip
         #jetbrains.gateway
-        #jetbrains.clion
+        jetbrains.clion
+        java-mission-control
         #dotnet-sdk_7
         #dotnet-sdk
         #msbuild
