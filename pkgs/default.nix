@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    java-mission-control = prev.callPackage ./java-mission-control { };
     ccusage = prev.callPackage ./ccusage.nix { };
     opencode-bin = prev.callPackage ./opencode-bin.nix { };
     netns-proxy = prev.callPackage ./netns-proxy.nix { };
