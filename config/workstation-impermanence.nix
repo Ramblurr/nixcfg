@@ -73,6 +73,11 @@ in
         ".config/opencode"
         ".local/share/opencode"
         ".local/state/opencode"
+        ".local/share/gitbutler-tauri"
+        ".local/share/com.gitbutler.app"
+        ".config/gitbutler"
+        ".cache/gitbutler-tauri"
+        ".cache/com.gitbutler.app"
       ];
       files = [
         #".config/akregatorrc"
