@@ -30,6 +30,7 @@ in
           repomix
           glow
           graphviz
+          magic-wormhole-rs
           #(openai-whisper-cpp.override { cudaSupport = true; })
           #openai-whisper
           smem
