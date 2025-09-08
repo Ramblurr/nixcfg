@@ -160,14 +160,14 @@ in
             log = "sudo journalctl --output cat -u"; # log sshd -f
             logu = "journalctl --user --output cat -u"; # log sshd -f
             log-previous-boot = "sudo journalctl --boot=-1";
-            st = "sudo systemctl status";
-            ss = "sudo systemctl stop";
-            sr = "sudo systemctl reload";
-            sR = "sudo systemctl restart";
-            stu = "systemctl status --user";
-            ssu = "systemctl stop --user";
-            sru = "systemctl reload --user";
-            sRu = "systemctl restart --user";
+            #st = "sudo systemctl status";
+            #ss = "sudo systemctl stop";
+            #sr = "sudo systemctl reload";
+            #sR = "sudo systemctl restart";
+            #stu = "systemctl status --user";
+            #ssu = "systemctl stop --user";
+            #sru = "systemctl reload --user";
+            #sRu = "systemctl restart --user";
             list-units = "systemctl list-units --type=service | awk '/.service/ {print $1}'";
           };
 
