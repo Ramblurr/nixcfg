@@ -37,8 +37,9 @@ in
       home.packages = with pkgs; [
         jetbrains.idea-ultimate
         #jetbrains.datagrip
-        #jetbrains.gateway
+        jetbrains.gateway
         jetbrains.clion
+        jetbrains.gateway
         java-mission-control
         #dotnet-sdk_7
         #dotnet-sdk
