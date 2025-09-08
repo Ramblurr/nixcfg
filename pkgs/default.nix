@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    gitbutler-bin = prev.callPackage ./gitbutler-bin.nix { };
     java-mission-control = prev.callPackage ./java-mission-control { };
     ccusage = prev.callPackage ./ccusage.nix { };
     opencode-bin = prev.callPackage ./opencode-bin.nix { };
