@@ -106,8 +106,8 @@
   :mcp/clojure
   {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}
              com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
-                                      :git/tag "v0.1.7-alpha"
-                                      :git/sha "992fe5dd1fb2c64c6f263fc3d2b60d1631de0402"}}
+                                      :git/tag "v0.1.8-alpha"
+                                      :git/sha "776dff446620365faee3d1d5c7a22545a81652b7"}}
    :exec-fn clojure-mcp.main/start-mcp-server}
 
   ;; -------------------------------------
