@@ -6,12 +6,12 @@
 }:
 
 let
-  version = "0.5.29";
+  version = "0.6.4";
 
   sources = {
     x86_64-linux = {
       url = "https://github.com/sst/opencode/releases/download/v${version}/opencode-linux-x64.zip";
-      hash = "sha256-Q2sNAvmwQlNFL4a0imEp4Fx3oatgXAz3jyZaAHotBJ4=";
+      hash = "sha256-jZT2aEnPWazzavgFaovy2SK6Pm6Xxm9v2RvDj0+d+ZE=";
     };
     aarch64-linux = {
       url = "https://github.com/sst/opencode/releases/download/v${version}/opencode-linux-arm64.zip";
