@@ -186,7 +186,7 @@ in
     };
     dev = {
       clojure.enable = true;
-      jetbrains.enable = true;
+      jetbrains.enable = false;
       node.enable = true;
       python.enable = true;
       random.enable = true;
