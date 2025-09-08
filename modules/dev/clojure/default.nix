@@ -109,6 +109,10 @@ in
             cacheDirectory = "${hm.config.xdg.cacheHome}/.cache/clojure";
           };
         };
+
+        xdg.configFile."nrepl/nrepl.edn" = {
+          text = ''{:dynamic-vars {clojure.core/*warn-on-reflection* true}}'';
+        };
         xdg.configFile."clj-kondo" = {
           source = ./configs/clj-kondo;
           recursive = true;
