@@ -9,7 +9,7 @@ let
 in
 {
   # Packages that should come from nixpkgs-mine instead of regular nixpkgs
-  claude-code = nixpkgs-mine.claude-code;
+  claude-code = (nixpkgs-mine.claude-code.override { nodejs_20 = nixpkgs-mine.nodejs_24; });
   gemini-cli = nixpkgs-mine.gemini-cli;
   clojure-lsp = nixpkgs-mine.clojure-lsp;
   davis = nixpkgs-mine.davis;
