@@ -104,7 +104,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "docker.io/1password/connect-api:1.7.4";
+            image = "docker.io/1password/connect-api:1.8.0";
             environments = {
               XDG_DATA_HOME = "/config";
               OP_BUS_PORT = "11220";
