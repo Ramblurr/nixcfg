@@ -129,7 +129,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "docker.io/1password/connect-sync:1.8.0";
+            image = "docker.io/1password/connect-sync:1.8.1";
             environments = {
               XDG_DATA_HOME = "/config";
               OP_BUS_PORT = "11221";
