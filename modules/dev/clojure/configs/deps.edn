@@ -21,7 +21,7 @@
   :repl/dev
   {:extra-deps {djblue/portal                 {:mvn/version "0.61.0"}
                 clj-commons/clj-yaml          {:mvn/version "1.0.29"} ; portal yaml support (optional)
-                io.github.tonsky/clj-reload   {:mvn/version "0.9.8"}
+                io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
                 nrepl/nrepl                   {:mvn/version "1.4.0"}
                 cider/cider-nrepl             {:mvn/version "0.57.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}
