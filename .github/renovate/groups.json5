@@ -9,6 +9,16 @@
       },
     },
     {
+      description: "opconnect",
+      groupName: "onepasswordconnect",
+      matchPackagePatterns: ["1password"],
+      matchDatasources: ["docker"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+      separateMinorPatch: true,
+    },
+    {
       description: "Immich Group",
       groupName: "Immich",
       matchPackagePatterns: ["immich"],
