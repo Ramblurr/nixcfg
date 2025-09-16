@@ -106,7 +106,7 @@ in
 
         xdg.configFile."clojure/deps.edn" = {
           source = pkgs.replaceVars ./configs/deps.edn {
-            cacheDirectory = "${hm.config.xdg.cacheHome}/.cache/clojure";
+            cacheDirectory = hm.config.xdg.cacheHome;
           };
         };
 

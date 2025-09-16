@@ -157,6 +157,7 @@ in
           #!${pkgs.runtimeShell}
           if [[ "$IFACE" == "prim" ]]; then
             # Wait a bit for tailscale to create table 52
+            # shellcheck disable=SC2034
             for i in {1..10}; do
               if ${pkgs.iproute2}/bin/ip route show table 52 &>/dev/null; then
                 break
