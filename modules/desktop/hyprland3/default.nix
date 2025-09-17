@@ -78,7 +78,6 @@ in
         brightnessctl
         swww
         wlr-randr
-        inputs.anyrun.packages.${system}.anyrun
         swhkd
         wf-recorder # screen record cli
         wev # event viewer
