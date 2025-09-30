@@ -10,15 +10,15 @@
   makeWrapper,
 }:
 let
-  version = "0.16.1";
-  build = "2393";
+  version = "0.16.8";
+  build = "2446";
 in
 stdenv.mkDerivation (finalAttrs: {
   inherit version;
   pname = "gitbutler-bin";
   src = fetchurl {
     url = "https://releases.gitbutler.com/releases/release/${version}-${build}/linux/x86_64/GitButler_${version}_amd64.deb";
-    hash = "sha256-/dl06d8Qf7hsCjWGPlOEeSE2KhymGcvWiQwWPKskOsU=";
+    hash = "sha256-SI5WUZx9rH2zxh3GgoP8k3ivNLmbQO84xCa+Z6A4/No=";
   };
 
   unpackPhase = "dpkg-deb -x $src unpack";
