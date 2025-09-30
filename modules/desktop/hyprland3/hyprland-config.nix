@@ -185,6 +185,8 @@ in
               let
                 f = regex: "float,class:^(${regex})$";
                 t = regex: "tile,title:^(${regex})$";
+                r = regex: "keepaspectratio,class:^(${regex})$";
+                c = regex: "center,class:^(${regex})$";
               in
               [
                 (f "org.gnome.Calculator")
@@ -198,6 +200,9 @@ in
                 (f "xdg-desktop-portal")
                 (f "xdg-desktop-portal-gnome")
                 (t "\\[portal\\].+")
+                (f "Waydroid")
+                (r "Waydroid")
+                (c "Waydroid")
                 #(f "com.github.Aylur.ags")
                 "workspace 2 silent,class:^(firefox-personal)$"
                 "workspace 4 silent,class:^(firefox-work)$"

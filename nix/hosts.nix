@@ -68,6 +68,7 @@
           hostOverlays = [
           ];
           hostExtraModules = [
+            inputs.automatic-ripping-machine.nixosModules.default
           ];
         };
         mali = {

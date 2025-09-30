@@ -50,6 +50,7 @@ in
         llm-wrapper
         gemini-cli-wrapper
         ccusage
+        codex
         #inputs.boxai.packages.${pkgs.system}.boxai
         crush-wrapper
         opencode-wrapper

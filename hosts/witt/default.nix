@@ -123,7 +123,7 @@ in
         wezterm.enable = true;
         logseq.enable = true;
         #element.enable = true;
-        #nextcloud.enable = true;
+        nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
         #owncloud.enable = true;

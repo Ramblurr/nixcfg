@@ -32,7 +32,7 @@
                 com.datomic/dev.datafy        {:git/sha "02f8520"
                                                :git/tag "v0.1"
                                                :git/url "https://github.com/Datomic/dev.datafy.git"}
-                my/dev-repl                   {:git/sha "8f84a7e294b4353cde64a163976da050b39963b6"
+                my/dev-repl                   {:git/sha "42127999fd534b47f5e0fa5689fa68fe34c81752"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -106,8 +106,8 @@
   :mcp/clojure
   {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}
              com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
-                                      :git/tag "v0.1.8-alpha"
-                                      :git/sha "776dff446620365faee3d1d5c7a22545a81652b7"}}
+                                      :git/tag "v0.1.9-alpha"
+                                      :git/sha "0cccd65e43837937d4c7fa080c4781fabaed477b"}}
    :exec-fn clojure-mcp.main/start-mcp-server}
 
   ;; -------------------------------------

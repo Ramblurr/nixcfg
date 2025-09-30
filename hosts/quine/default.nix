@@ -26,6 +26,7 @@ in
     ./gaming.nix
     ./microvm-test.nix
     ./microvm-test-impl.nix
+    ./arm.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
@@ -89,6 +90,7 @@ in
     8080
     8081
     8090
+    1080
   ];
   networking.firewall.allowedUDPPorts = [ 67 ];
 
@@ -182,6 +184,7 @@ in
         thunderbird.enable = true;
         thunderbird.work.enable = true;
         thunderbird.workProxy = "${lanVpnGateway}:1081";
+        waydroid.enable = true;
         yubico.enable = true;
       };
     };
@@ -207,7 +210,7 @@ in
     };
     services = {
       docker.enable = true;
-      #attic-watch-store.enable = true;
+      attic-watch-store.enable = true;
       docker.enableOnBoot = false;
       podman.enable = true;
       nomad.enable = false;
@@ -279,6 +282,8 @@ in
       "input"
       "plugdev"
       "libvirtd"
+      "media"
+      "cdrom"
     ];
     #services.pcscd.readerConfig = '''';
     services.borgmatic = {

@@ -74,6 +74,9 @@
         "v-pc" = {
           id = "EP7AND7-PUEGDL4-RUDIOJT-RYXK4LI-OHKFQAM-2VJKZ65-OGTEACX-QDVNQQD";
         };
+        "pinenote" = {
+          id = "3325NK7-Y2FQDAO-CAZTGTF-KLM6R4Y-GO4Y3CF-L3JUQGP-HESNL5B-NXRBGA5";
+        };
       };
       folders = {
         "logseq" = {
