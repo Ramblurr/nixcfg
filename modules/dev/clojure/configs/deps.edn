@@ -47,7 +47,7 @@
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
-;; -------------------------------------
+  ;; -------------------------------------
 
   :repl/clerk
   {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1150"}
@@ -58,6 +58,16 @@
                 "-m" "nrepl.cmdline"
                 "--middleware" "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"
                 "--interactive"]}
+
+  ;; -------------------------------------
+  ;; use portal from the cli
+  ;; cat data | bb -cp `clojure -Spath -M:portal/cli` -m portal.main [edn|json|transit|yaml]
+
+  :portal/cli
+  {:main-opts  ["-m" "portal.main"]
+   :extra-deps {djblue/portal        {:mvn/version "LATEST"}
+                clj-commons/clj-yaml {:mvn/version "0.7.0"}}}
+
   ;; -------------------------------------
 
   ;; report project dependencies that have newer versions available:
@@ -67,7 +77,7 @@
    :replace-deps  {com.github.liquidz/antq {:mvn/version "2.11.1276"}
                    org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}}
    :exec-fn       antq.tool/outdated
-   :exec-args     {:directory        ["."] ; default
+   :exec-args     {:directory        ["."]         ; default
                    :exclude          ["org.clojure/tools.deps.alpha"
                                       "org.clojure/clojurescript"]
                    :skip             ["boot" "leiningen"]
@@ -85,7 +95,7 @@
    :replace-deps  {com.github.liquidz/antq {:mvn/version "2.11.1276"}
                    org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}}
    :exec-fn       antq.tool/outdated
-   :exec-args     {:directory        ["."] ; default
+   :exec-args     {:directory        ["."]         ; default
                    :exclude          ["org.clojure/tools.deps.alpha"
                                       "org.clojure/clojurescript"]
                    :skip             ["boot" "leiningen"]
