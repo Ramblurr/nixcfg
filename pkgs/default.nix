@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    nvidia = prev.callPackage ./nvidia/package.nix { inherit inputs; };
     gitbutler-bin = prev.callPackage ./gitbutler-bin.nix { };
     java-mission-control = prev.callPackage ./java-mission-control { };
     ccusage = prev.callPackage ./ccusage.nix { };
@@ -13,9 +14,9 @@ inputs: [
     cloudflare-utils = prev.callPackage ./cloudflare-utils.nix { };
     actual-server = prev.callPackage ./actual-server.nix { };
     qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
-    kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
-    klassy = prev.callPackage ./klassy.nix { };
-    invoiceninja-mine = prev.callPackage ./invoiceninja/package.nix { };
+    #kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
+    #klassy = prev.callPackage ./klassy.nix { };
+    #invoiceninja-mine = prev.callPackage ./invoiceninja/package.nix { };
     beets-dynamicrange = prev.callPackage ./beets-dynamicrange.nix {
       beets = prev.beetsPackages.beets-minimal;
     };
