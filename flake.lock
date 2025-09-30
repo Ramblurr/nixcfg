@@ -1,5 +1,29 @@
 {
   "nodes": {
+    "automatic-ripping-machine": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "pydvdid": "pydvdid"
+      },
+      "locked": {
+        "dir": "nixos",
+        "lastModified": 1753872594,
+        "narHash": "sha256-Q8EAWvYHZczqPGqbjC8IUv32eels5JJ+J9a5aUZlof4=",
+        "owner": "xieve",
+        "repo": "automatic-ripping-machine",
+        "rev": "34164e7848494b70b373d71c3e8fd8839df380b7",
+        "type": "github"
+      },
+      "original": {
+        "dir": "nixos",
+        "owner": "xieve",
+        "ref": "main",
+        "repo": "automatic-ripping-machine",
+        "type": "github"
+      }
+    },
     "blank": {
       "locked": {
         "lastModified": 1625557891,
@@ -1213,10 +1237,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1758011094,
-        "narHash": "sha256-gjTOqbqok6ODN2VV/WsQf/ecgzApFdh5vH7uOT5baN0=",
+        "lastModified": 1758783106,
+        "narHash": "sha256-HhVdnVtEVWeKLc+yhwdnQw/J8bAvbutHzIJfdY9JZng=",
         "ref": "consolidated",
-        "rev": "af37f904cef03b0fdeda50db58e278b221c0e9d1",
+        "rev": "e380b6f4f26d5a6eca494ab0a2b8d3497d1534bc",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
@@ -1269,11 +1293,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1757745802,
-        "narHash": "sha256-hLEO2TPj55KcUFUU1vgtHE9UEIOjRcH/4QbmfHNF820=",
+        "lastModified": 1758277210,
+        "narHash": "sha256-iCGWf/LTy+aY0zFu8q12lK8KuZp7yvdhStehhyX1v8w=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c23193b943c6c689d70ee98ce3128239ed9e32d1",
+        "rev": "8eaee110344796db060382e15d3af0a9fc396e0e",
         "type": "github"
       },
       "original": {
@@ -1598,6 +1622,23 @@
         "type": "github"
       }
     },
+    "pydvdid": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1516844103,
+        "narHash": "sha256-PuhkXu62bc/9n2swaKe/O759xCyJ3LrHCJISbWzSUtk=",
+        "owner": "sjwood",
+        "repo": "pydvdid",
+        "rev": "03914fb7e24283c445e5af724f9d919b23caaf95",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sjwood",
+        "ref": "v1.1",
+        "repo": "pydvdid",
+        "type": "github"
+      }
+    },
     "pywrap-src": {
       "flake": false,
       "locked": {
@@ -1638,6 +1679,7 @@
     },
     "root": {
       "inputs": {
+        "automatic-ripping-machine": "automatic-ripping-machine",
         "cadquery": "cadquery",
         "crowdsec": "crowdsec",
         "disko-stable": "disko-stable",

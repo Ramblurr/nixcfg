@@ -458,7 +458,8 @@ in
 
     modules.services.calibre = lib.mkIf cfg.apps.calibre.enable {
       enable = true;
-      domain = "calibre.${home-ops.homeDomain}";
+      domain.gui = "calibre.${home-ops.homeDomain}";
+      domain.server = "calibre-server.${home-ops.homeDomain}";
       ports.gui = home-ops.ports.calibre-gui;
       ports.server = home-ops.ports.calibre-server;
       mediaNfsShare = "tank2/media";
