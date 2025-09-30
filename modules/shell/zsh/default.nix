@@ -123,7 +123,6 @@ in
             ".." = "cd ..";
             "..." = "cd ../..";
             "...." = "cd ../../../";
-            "j" = "z";
             "v" = "vim";
             #"vi" = "emasclient -nw";
             #"vim" = "emacsclient -nw";
@@ -153,8 +152,12 @@ in
             "ll" = "ls -lahF --color=auto --group-directories-first";
             "lsl" = "ls -lhF --color=auto --group-directories-first";
             "utcnow" = ''date -u +"%Y-%m-%d %H:%M:%S"'';
-            "task" = "go-task";
-            "k" = "kubectl";
+            task = "go-task";
+            portal = "bb -cp `clojure -Spath -M:portal/cli` -m portal.main";
+            edn = "portal edn";
+            json = "portal json";
+            transit = "portal transit";
+            yaml = "portal yaml";
             rsync = "rsync --info=progress2";
             # systemd
             log = "sudo journalctl --output cat -u"; # log sshd -f
