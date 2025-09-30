@@ -2,6 +2,7 @@
 # source: https://github.com/TLATER/dotfiles/tree/32489827a2a85ac2d6584e84a11a0da37bdc19dc/nixos-modules/nvidia
 {
   pkgs,
+  self,
   config,
   lib,
   ...
@@ -101,25 +102,27 @@ in
 
     services.xserver.videoDrivers = [ "nvidia" ];
 
-    hardware.nvidia = {
-      package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
-        version = "580.82.07";
-        sha256_64bit = "sha256-Bh5I4R/lUiMglYEdCxzqm3GLolQNYFB0/yJ/zgYoeYw=";
-        sha256_aarch64 = lib.fakeHash;
-        openSha256 = "sha256-8/7ZrcwBMgrBtxebYtCcH5A51u3lAxXTCY00LElZz08=";
-        settingsSha256 = "sha256-lx1WZHsW7eKFXvi03dAML6BoC5glEn63Tuiz3T867nY=";
-        persistencedSha256 = lib.fakeHash;
+    hardware.nvidia =
+      let
+        inherit (self.packages.${pkgs.system}) nvidia;
+      in
+      {
+        package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+          inherit (nvidia) version;
+          sha256_64bit = nvidia.src.outputHash;
+          openSha256 = nvidia.open.src.outputHash;
+          useSettings = false;
+          usePersistenced = false;
+        };
+        # Power management is nearly always required to get nvidia GPUs to
+        # behave on suspend, due to firmware bugs.
+        powerManagement.enable = true;
+        # The open driver is recommended by nvidia now, see
+        # https://download.nvidia.com/XFree86/Linux-x86_64/565.57.01/README/kernel_open.html
+        open = true;
+        dynamicBoost.enable = cfg.enable && cfg.withIntegratedGPU;
+        nvidiaSettings = false;
       };
-
-      # Power management is nearly always required to get nvidia GPUs to
-      # behave on suspend, due to firmware bugs.
-      powerManagement.enable = true;
-      # The open driver is recommended by nvidia now, see
-      # https://download.nvidia.com/XFree86/Linux-x86_64/565.57.01/README/kernel_open.html
-      open = false;
-
-      dynamicBoost.enable = cfg.enable && cfg.withIntegratedGPU;
-    };
     boot.kernelParams = [
       "quiet"
       "splash"
