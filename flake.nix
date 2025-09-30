@@ -29,6 +29,9 @@
     firefox-gnome-theme.url = "github:rafaelmardojai/firefox-gnome-theme";
     firefox-gnome-theme.flake = false;
 
+    automatic-ripping-machine.url = "github:xieve/automatic-ripping-machine/main?dir=nixos";
+    automatic-ripping-machine.inputs.nixpkgs.follows = "nixpkgs";
+
     matugen.url = "github:InioX/matugen";
     matugen.inputs.nixpkgs.follows = "nixpkgs";
 
