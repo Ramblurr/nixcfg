@@ -31,6 +31,7 @@ in
           glow
           graphviz
           magic-wormhole-rs
+          nix-update
           #(openai-whisper-cpp.override { cudaSupport = true; })
           #openai-whisper
           smem
