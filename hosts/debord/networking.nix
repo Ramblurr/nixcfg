@@ -25,27 +25,21 @@
   systemd.network.networks."30-prim" = {
     routingPolicyRules = [
       {
-        routingPolicyRuleConfig = {
-          FirewallMark = 66; # 0x42 in decimal
-          Table = 142;
-          Priority = 100;
-        };
+        FirewallMark = 66; # 0x42 in decimal
+        Table = 142;
+        Priority = 100;
       }
     ];
     routes = [
       {
-        routeConfig = {
-          Table = 142;
-          Destination = "10.9.4.0/22";
-          Gateway = "10.9.4.1";
-        };
+        Table = 142;
+        Destination = "10.9.4.0/22";
+        Gateway = "10.9.4.1";
       }
       {
-        routeConfig = {
-          Table = 142;
-          Destination = "0.0.0.0/0";
-          Gateway = "10.9.4.1";
-        };
+        Table = 142;
+        Destination = "0.0.0.0/0";
+        Gateway = "10.9.4.1";
       }
     ];
   };

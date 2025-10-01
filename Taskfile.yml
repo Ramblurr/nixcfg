@@ -30,7 +30,7 @@ tasks:
   nixos-rebuild-remote:
     internal: true
     cmds:
-      - nixos-rebuild --fast --sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} |& nom
+      - nixos-rebuild --sudo --build-host {{.BUILD_HOST}} --target-host {{.TARGET_HOST}} --flake {{.FLAKE_URI}} {{.ACTION}} |& nom
 
   nixos-rebuild-local:
     internal: true
