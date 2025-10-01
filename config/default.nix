@@ -2,7 +2,7 @@
 {
   imports = [
     ./secrets.nix
-    ./attic.nix
+    ./nix-lan-cache.nix
     ./site.nix
     ./ramblurr.nix
     ./root.nix

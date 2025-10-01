@@ -91,11 +91,6 @@
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    nixpkgs-wayland = {
-      url = "github:nix-community/nixpkgs-wayland/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nur.url = "github:nix-community/NUR";
 
     plasma-manager = {

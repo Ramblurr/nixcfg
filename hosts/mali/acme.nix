@@ -13,7 +13,9 @@ in
     defaults = {
       email = email.acme;
       dnsProvider = "bunny";
+      dnsPropagationCheck = false;
       credentialsFile = config.sops.templates.acme-credentials.path;
+      reloadServices = [ "nginx.service" ];
     };
   };
 
@@ -41,12 +43,10 @@ in
         "minio.mgmt.${domain.home}"
         "s3.mgmt.${domain.home}"
       ];
-      postRun = "systemctl reload nginx.service";
       group = "nginx";
     };
     "attic.mgmt.${domain.home}" = {
       domain = "attic.mgmt.${domain.home}";
-      postRun = "systemctl reload nginx.service";
       group = "nginx";
       extraDomainNames = [
         "attic.int.${domain.home}"
