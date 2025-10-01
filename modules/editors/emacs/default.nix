@@ -28,7 +28,7 @@ in
           enable = true;
           package = cfg.package;
           extraPackages = epkgs: [
-            #epkgs.vterm
+            epkgs.vterm
             #epkgs.pdf-tools
             epkgs.treesit-grammars.with-all-grammars
             #epkgs.mu4e
@@ -55,10 +55,8 @@ in
           zoxide
           (ripgrep.override { withPCRE2 = true; })
           gnutls # for TLS connectivity
-          kitty
-
           ## Optional dependencies
-          openscad-lsp # openscad
+          openscad-lsp
           dockfmt # docker
           clang-tools # java format
           pandoc # markdown

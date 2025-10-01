@@ -40,7 +40,7 @@ in
         jetbrains.gateway
         jetbrains.clion
         jetbrains.gateway
-        java-mission-control
+        #java-mission-control
         #dotnet-sdk_7
         #dotnet-sdk
         #msbuild

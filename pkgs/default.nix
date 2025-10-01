@@ -11,7 +11,6 @@ inputs: [
     deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
     overseerr = prev.callPackage ./overseerr/package.nix { };
-    cloudflare-utils = prev.callPackage ./cloudflare-utils.nix { };
     actual-server = prev.callPackage ./actual-server.nix { };
     qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
     #kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
