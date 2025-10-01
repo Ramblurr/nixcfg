@@ -35,7 +35,8 @@ let
   internal_zones = keys config.site.hosts.${hostName}.interfaces;
   internal_interfaces = [
     "lan0"
-  ] ++ keys (filter (_: iface: iface.type == "bridge") config.site.hosts.${hostName}.interfaces);
+  ]
+  ++ keys (filter (_: iface: iface.type == "bridge") config.site.hosts.${hostName}.interfaces);
 
   lan0_ip = first config.site.net.lan0.hosts4.${hostName};
 
@@ -46,7 +47,8 @@ let
     wan.interfaces = [ config.repo.secrets.local.wan0.iface ];
     mullvad.interfaces = [ "ve-mullvad" ];
     maddy.interfaces = [ "ve-maddy" ];
-  } // iface_zone_defs;
+  }
+  // iface_zone_defs;
   port_forwards = {
     ntp = {
       comment = "force NTP for all interfaces";
@@ -219,6 +221,7 @@ let
         zones.mgmt
         zones.svc
         zones.prim
+        zones.data
       ];
       to = [ zones.maddy ];
       allowedTCPPortRanges = [
