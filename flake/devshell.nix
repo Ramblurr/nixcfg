@@ -70,6 +70,31 @@
             };
             help = "Build a host configuration";
           }
+          {
+            package = pkgs.writeShellApplication {
+              name = "why-depends";
+              text = ''
+                set -euo pipefail
+
+                [[ "$#" -ne 3 ]] \
+                  || { echo "usage: why-depends HOST PKG" >&2; exit 1; }
+                HOST=''${1:-}
+                PKG=''${2:-}
+                nix why-depends ".#nixosConfigurations.$HOST.config.system.build.toplevel" ".#nixosConfigurations.$HOST.pkgs.$PKG" --derivation | cat
+              '';
+            };
+            help = "Explain why a NixOS host's configuration depends on some package";
+          }
+          {
+            package = pkgs.writeShellApplication {
+              name = "generate-host";
+              text = ''
+                set -euo pipefail
+                python ./scripts/gen-host.py
+              '';
+            };
+            help = "Scaffold a new host config";
+          }
         ];
 
         devshell.startup.pre-commit.text = config.pre-commit.installationScript;
