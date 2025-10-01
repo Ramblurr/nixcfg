@@ -39,6 +39,13 @@ let
         || die "Could not determine location of your project's flake.nix. Please run this at or below your main directory containing the flake.nix."
       cd "$USER_FLAKE_DIR"
 
+      # Use nom build if available, otherwise fall back to nix build
+      if command -v nom &> /dev/null; then
+        BUILD_CMD="nom build"
+      else
+        BUILD_CMD="nix build"
+      fi
+
       [[ $# -gt 0 ]] || {
         show_help
         exit 1
@@ -85,7 +92,7 @@ let
       for host in "''${HOSTS[@]}"; do
         toplevel="''${TOPLEVEL_FLAKE_PATHS["$host"]}"
         echo "[1;36m    Building [m📦 [34m$host[m"
-        TOPLEVEL_STORE_PATHS["$host"]=$(nix build --no-link --print-out-paths "''${OPTIONS[@]}" "$toplevel") \
+        TOPLEVEL_STORE_PATHS["$host"]=$($BUILD_CMD --no-link --print-out-paths "''${OPTIONS[@]}" "$toplevel") \
           || die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
         time_next
         echo "[1;32m       Built [m✅ [34m$host[m [33m''${TOPLEVEL_STORE_PATHS["$host"]}[m [90min ''${T_LAST}s[m"
