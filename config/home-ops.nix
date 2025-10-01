@@ -93,6 +93,7 @@ in
     ###########
     ## Basic ##
     ###########
+    home.nix-lan-cache.enable = true;
     time.timeZone = "Europe/Berlin";
     sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
     documentation.nixos.enable = false;
