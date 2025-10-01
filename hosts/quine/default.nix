@@ -109,8 +109,6 @@ in
             "Iosevka Term SS15"
           ];
           packages = with pkgs; [
-            (iosevka-bin.override { variant = "Aile"; })
-            (iosevka-bin.override { variant = "Etoile"; })
             iosevka-ss08
             iosevka-ss09
             iosevka-ss15
