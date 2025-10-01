@@ -13,7 +13,7 @@
       ...
     }:
     {
-      pre-commit.settings.hooks.treefmt.enable = true;
+      #pre-commit.settings.hooks.treefmt.enable = true;
       treefmt = {
         projectRootFile = "flake.nix";
         programs = {
@@ -97,7 +97,7 @@
           }
         ];
 
-        devshell.startup.pre-commit.text = config.pre-commit.installationScript;
+        #devshell.startup.pre-commit.text = config.pre-commit.installationScript;
       };
     };
 }
