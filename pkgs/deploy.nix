@@ -102,7 +102,7 @@ let
         ssh_host="root@$host"
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
         echo "[1;36m     Copying [m➡️ [34m$host[m"
-        nix copy --to "ssh://$ssh_host" "$store_path"
+        nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
         time_next
         echo "[1;32m      Copied [m✅ [34m$host[m [90min ''${T_LAST}s[m"
       done
