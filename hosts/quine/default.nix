@@ -63,18 +63,8 @@ in
 
   nix = {
     settings = {
-      substituters = [
-        "https://hyprland.cachix.org"
-        "https://nixpkgs-wayland.cachix.org"
-        "https://nix-community.cachix.org"
-        "https://nix-gaming.cachix.org"
-      ];
-      trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-        "nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="
-        "nixpkgs-wayland.cachix.org-1:3lwxaILxMRkVhehr5StQprHdEo4IrE8sRho9R9HOLYA="
-      ];
+      max-jobs = 16;
+      cores = 16;
       netrc-file = config.sops.secrets.netrc.path;
     };
 
@@ -82,7 +72,7 @@ in
       !include ${config.sops.templates."nix.conf".path}
     '';
   };
-  #home.attic.enable = true;
+  home.nix-lan-cache.enable = true;
 
   networking.firewall.allowedTCPPorts = [
     3000
@@ -190,7 +180,7 @@ in
     };
     shell = {
       aria2.enable = true;
-      #attic.enable = true;
+      attic.enable = true;
       atuin.enable = true;
       atuin.syncing.enable = true;
       direnv.enable = true;
