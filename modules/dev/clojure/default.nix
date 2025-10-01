@@ -50,7 +50,8 @@ in
         home.file."vendor/jdks/openjdk17".source = pkgs.jdk17;
         home.file."vendor/jdks/openjdk21".source = pkgs.jdk21;
         home.packages = with pkgs; [
-          jdk24
+          jdk25
+          #graalvmPackages.graalvm-ce
           neil
           maven
           gradle

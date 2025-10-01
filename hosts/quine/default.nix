@@ -72,6 +72,7 @@ in
       !include ${config.sops.templates."nix.conf".path}
     '';
   };
+
   home.nix-lan-cache.enable = true;
 
   networking.firewall.allowedTCPPorts = [
