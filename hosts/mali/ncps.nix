@@ -61,6 +61,7 @@ in
     http2 = false;
     kTLS = true;
     extraConfig = ''
+      access_log /var/log/nginx/access-ncps.log;
       client_max_body_size 0;
     '';
     locations."/" = {
