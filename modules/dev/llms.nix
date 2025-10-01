@@ -39,6 +39,21 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
+    environment.persistence."/persist" = {
+      directories = [ ];
+      users.${username} = {
+        directories = [
+          ".config/claude"
+          ".config/codex"
+          ".config/crush"
+          ".config/eca"
+          ".config/opencode"
+          ".local/share/crush"
+          ".local/share/opencode"
+          ".local/state/opencode"
+        ];
+      };
+    };
     myhm = {
       sops.secrets.llm-keys = {
         mode = "0400";
