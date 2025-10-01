@@ -24,22 +24,6 @@ in
       proxy_headers_hash_bucket_size 256;
     '';
     virtualHosts = {
-      # attic nix cache endpoint
-      "attic.mgmt.${domain.home}" = {
-        useACMEHost = "attic.mgmt.${domain.home}";
-        serverAliases = [ "attic.int.${domain.home}" ];
-        forceSSL = true;
-        http3 = false;
-        http2 = false;
-        kTLS = true;
-        extraConfig = ''
-          client_max_body_size 0;
-        '';
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:57000";
-          recommendedProxySettings = true;
-        };
-      };
       # minio s3 endpoint
       "s3.data.${domain.home}" = {
         useACMEHost = "s3.data.${domain.home}";
@@ -60,6 +44,7 @@ in
           '';
         };
         extraConfig = ''
+          access_log /var/log/nginx/access-minio-s3.log;
           # To allow special characters in headers
           ignore_invalid_headers off;
           # Allow any size file to be uploaded.
@@ -78,6 +63,7 @@ in
         forceSSL = true;
         useACMEHost = "s3.data.${domain.home}";
         extraConfig = ''
+          access_log /var/log/nginx/access-minio-admin.log;
           # To allow special characters in headers
           ignore_invalid_headers off;
           # Allow any size file to be uploaded.

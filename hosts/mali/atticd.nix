@@ -5,6 +5,11 @@
   unstable,
   ...
 }:
+let
+  inherit (config.repo.secrets.global) domain;
+  atticDomain1 = "attic.mgmt.${domain.home}";
+  atticDomain2 = "attic.int.${domain.home}";
+in
 {
   #=====================================================
   #
@@ -82,6 +87,22 @@
         # The preferred maximum size of a chunk, in bytes
         max-size = 256 * 1024; # 256 KiB
       };
+    };
+  };
+  services.nginx.virtualHosts.${atticDomain1} = {
+    useACMEHost = atticDomain1;
+    serverAliases = [ atticDomain2 ];
+    forceSSL = true;
+    http3 = false;
+    http2 = false;
+    kTLS = true;
+    extraConfig = ''
+      client_max_body_size 0;
+      access_log /var/log/nginx/access-attic.log;
+    '';
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:57000";
+      recommendedProxySettings = true;
     };
   };
 }
