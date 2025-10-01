@@ -180,6 +180,7 @@ in
                   environment = {
                     MULLVAD_SETTINGS_DIR = "/var/lib/mullvad-vpn/etc";
                     MULLVAD_CACHE_DIR = "/var/lib/mullvad-vpn/cache";
+                    TALPID_FIREWALL_DONT_SET_ARP_IGNORE = "1"; # re MLLVD-CR-24-03
                   };
                   postStart = ''
                     while ! ${mullvad} status &>/dev/null; do sleep 1; done

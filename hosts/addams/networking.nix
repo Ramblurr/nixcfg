@@ -133,6 +133,7 @@ in
           ]
           ++ (
             let
+              # black hole traffic to the lan
               deny = cidr: {
                 Destination = cidr;
                 Table = "vpn";
