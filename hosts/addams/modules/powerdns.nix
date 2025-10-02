@@ -37,10 +37,10 @@ in
       webserver-allow-from=0.0.0.0/0
       api=yes
       api-key=$API_KEY_HASH
-      log-dns-queries=yes
-      log-dns-details=yes
+      log-dns-queries=no
+      log-dns-details=no
+      query-logging=no
       loglevel=7
-      query-logging=yes
       views=yes
       proxy-protocol-from=127.0.0.1
     '';
