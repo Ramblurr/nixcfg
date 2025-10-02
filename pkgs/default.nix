@@ -1,6 +1,7 @@
 inputs: [
   (_final: prev: {
     nvidia = prev.callPackage ./nvidia/package.nix { inherit inputs; };
+    pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
     gitbutler-bin = prev.callPackage ./gitbutler-bin.nix { };
     java-mission-control = prev.callPackage ./java-mission-control { };
     ccusage = prev.callPackage ./ccusage.nix { };

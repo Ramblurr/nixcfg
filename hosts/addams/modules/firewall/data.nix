@@ -47,6 +47,7 @@ let
     wan.interfaces = [ config.repo.secrets.local.wan0.iface ];
     mullvad.interfaces = [ "ve-mullvad" ];
     maddy.interfaces = [ "ve-maddy" ];
+    tailscale.interfaces = [ "tailscale0" ];
   }
   // iface_zone_defs;
   port_forwards = {
@@ -212,6 +213,14 @@ let
       from = [ zones.prim ];
       to = [
         #zones.wan6tun
+      ];
+      verdict = "accept";
+    };
+
+    tailscale_to_lan = {
+      from = [ zones.tailscale ];
+      to = (lib.remove "vlan_vpn" internal_zones) ++ [
+        local_zone
       ];
       verdict = "accept";
     };
