@@ -285,6 +285,7 @@ in
           -- udp/tcp dns listening
           setLocal("127.0.0.1:53", {})
           addLocal("${lib.my.cidrToIp nodeSettings.mgmtCIDR}:53", {})
+          addLocal("${lib.my.cidrToIp nodeSettings.primCIDR}:53", {})
 
           -- Local LAN
           newServer({
