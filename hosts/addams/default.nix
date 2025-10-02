@@ -32,11 +32,11 @@ in
   boot.loader.systemd-boot.enable = true;
 
   environment.systemPackages = with pkgs; [
+    dogdns
     tcpdump
     wireguard-tools
     inetutils
     iperf3
-    pdns
   ];
 
   services.tailscale.enable = true;

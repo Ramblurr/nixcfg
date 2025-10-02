@@ -31,7 +31,8 @@ in
         -- Local Authoritiative Zones (powerdns)
         newServer({
           address = "127.0.0.1:8853",
-          pool = "powerdns",
+          useProxyProtocol=true,
+          pool = "powerdns"
         })
 
         -- NextDNS over TLS
@@ -66,12 +67,10 @@ in
         })
         getPool(""):setCache(pc)
 
-
         -- Request logging, uncomment to log DNS requests/responses to stdout
-        -- addAction(AllRule(), LogAction("", false, false, true, false, false))
-        -- addResponseAction(AllRule(), LogResponseAction("", false, true, false, false))
+        addAction(AllRule(), LogAction("", false, false, true, false, false))
+        addResponseAction(AllRule(), LogResponseAction("", false, true, false, false))
 
-        -- Routing rules
         addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.home}'), PoolAction('powerdns'))
         addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.work}'), PoolAction('powerdns'))
         ${builtins.concatStringsSep "\n  " (

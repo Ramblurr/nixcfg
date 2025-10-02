@@ -104,6 +104,7 @@
     ./services/matrix-synapse.nix
     ./services/matrix-synapse-postgres.nix
     ./services/ocis.nix
+    ./services/powerdns.nix
     #./services/onepassword-connect.nix
     ./services/paperless.nix
     ./services/plex.nix
