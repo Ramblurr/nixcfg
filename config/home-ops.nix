@@ -257,7 +257,6 @@ in
     ################
     ## Networking ##
     ################
-    networking.domain = home-ops.homeDomain;
     networking.usePredictableInterfaceNames = true;
     networking.firewall.allowPing = true;
     networking.nameservers = [ "127.0.0.1" ];
@@ -291,10 +290,30 @@ in
           newServer({
             address = "${lib.elemAt config.repo.secrets.global.nameservers 0}",
             pool = "local",
+            healthCheckMode = "lazy",
+            checkInterval = 60,
+            maxCheckFailures = 3,
+            lazyHealthCheckFailedInterval = 30,
+            rise = 2,
+            lazyHealthCheckThreshold = 30,
+            lazyHealthCheckSampleSize = 100,
+            lazyHealthCheckMinSampleCount = 10,
+            lazyHealthCheckMode = 'TimeoutOnly',
+            useClientSubnet = true
           })
           newServer({
             address = "${lib.elemAt config.repo.secrets.global.nameservers 1}",
             pool = "local",
+            healthCheckMode = "lazy",
+            checkInterval = 60,
+            maxCheckFailures = 3,
+            lazyHealthCheckFailedInterval = 30,
+            rise = 2,
+            lazyHealthCheckThreshold = 30,
+            lazyHealthCheckSampleSize = 100,
+            lazyHealthCheckMinSampleCount = 10,
+            lazyHealthCheckMode = 'TimeoutOnly',
+            useClientSubnet = true
           })
 
           -- CloudFlare DNS over TLS
@@ -303,7 +322,7 @@ in
             tls = "openssl",
             subjectName = "cloudflare-dns.com",
             validateCertificates = true,
-            checkInterval = 10,
+            checkInterval = 60,
             checkTimeout = 2000,
             pool = "cloudflare"
           })
@@ -312,14 +331,14 @@ in
             tls = "openssl",
             subjectName = "cloudflare-dns.com",
             validateCertificates = true,
-            checkInterval = 10,
+            checkInterval = 60,
             checkTimeout = 2000,
             pool = "cloudflare"
           })
 
           -- Enable caching
-          pc = newPacketCache(10000, {
-            maxTTL = 86400,
+          pc = newPacketCache(500000, {
+            maxTTL = 3600,
             minTTL = 0,
             temporaryFailureTTL = 60,
             staleTTL = 60,
@@ -329,10 +348,11 @@ in
 
 
           -- Request logging, uncomment to log DNS requests/responses to stdout
-          -- addAction(AllRule(), LogAction("", false, false, true, false, false))
-          -- addResponseAction(AllRule(), LogResponseAction("", false, true, false, false))
+          --addAction(AllRule(), LogAction("", false, false, true, false, false))
+          --addResponseAction(AllRule(), LogResponseAction("", false, true, false, false))
 
           -- Routing rules
+
           addAction(RegexRule('${transformDomainToRegex home-ops.homeDomain}'), PoolAction('local'))
           addAction(RegexRule('${transformDomainToRegex home-ops.workDomain}'), PoolAction('local'))
           addAction('1.10.in-addr.arpa', PoolAction('local'))
