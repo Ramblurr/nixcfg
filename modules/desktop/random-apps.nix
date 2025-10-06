@@ -47,7 +47,6 @@ in
             #hunspell
             #hunspellDicts.en_US
             #hunspellDicts.de_AT
-            #morgen # disabled because of electron-30.5.1
             ffmpeg-full
             libnotify # `notify-send`
             gparted
