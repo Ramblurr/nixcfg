@@ -1,9 +1,10 @@
 ---
 keys:
   - users:
-      - &ramblurr 978C4D08058BA26EB97CB51820782DBCACFAACDA
-      - &ramblurr-tmp age1urrpmqc2erg2tg5ene0tyr6cfne925zggtlqn40xwp5wqlqrp5tst8f808
+      - &ramblurr-pgp 978C4D08058BA26EB97CB51820782DBCACFAACDA
       - &disaster-recovery age15j42dspmmwprjau6l48xp05d97s8ml5s3tjxrfwvm37tvuynssuqtsevkj
+      - &ramblurr-yk-office age1yubikey1qt0lmjdz8l27zy8gqlwu5hpplunz5dcsszuqjau7q7sdnksjqhm5cg2jkkl
+      - &ramblurr-yk-key age1yubikey1qvm060q3kense6l22nrjd5a9gqsm9k4eaanhuk5h3hpmvzes8xd6584fsvn
   - hosts:
       - &quine age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
       - &mali age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
@@ -15,92 +16,75 @@ keys:
       - &linkding age1uh5u7zcz28dskcskpyznxkyg2y4xj0wkaf4usmrjhkmfhzr6gg8qynk3hq
       - &invoiceninja age195mq2pxj58ll7ad2xg3f3p6m7s4xxj7tl6z4lzukzyap2g89apms2gmj3v
       - &claude-test age13fnjs7rgh0qaleaqqe2dqlp4hf48klpx5w3pqspnpdcgqput3sxs8jfspl
+  - admin-group: &admin-group
+      age:
+        - *ramblurr-yk-office
+        - *ramblurr-yk-key
+        - *disaster-recovery
+      pgp:
+        - *ramblurr-pgp
 creation_rules:
   - path_regex: terraform/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *quine
           - *witt
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
+        merge:
+          - *admin-group
   - path_regex: secrets/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *quine
           - *witt
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
+        merge:
+          - *admin-group
   - path_regex: hosts/quine/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *quine
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
+        merge:
+          - *admin-group
   - path_regex: hosts/witt/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *witt
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
+        merge:
+          - *admin-group
   - path_regex: hosts/mali/.*.sops.*$
     key_groups:
       - age:
           - *mali
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
+        merge:
+          - *admin-group
   - path_regex: hosts/debord/.*.sops.*$
     key_groups:
       - age:
           - *debord
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
+        merge:
+          - *admin-group
   - path_regex: hosts/dewey/.*.sops.*$
     key_groups:
       - age:
           - *dewey
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
+        merge:
+          - *admin-group
   - path_regex: hosts/addams/.*.sops.*$
     key_groups:
       - age:
           - *addams
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
+        merge:
+          - *admin-group
   - path_regex: hosts/james/secrets.sops.ya?ml$
     key_groups:
       - age:
           - *james
-          - *disaster-recovery
-        pgp:
-          - *ramblurr
-
+        merge:
+          - *admin-group
   - path_regex: configs/home-ops/.*.sops.*$
     key_groups:
       - age:
           - *dewey
           - *debord
           - *mali
-          - *disaster-recovery
-          - *witt
-        pgp:
-          - *ramblurr
-  - path_regex: guests/claude-test/.*.sops.*$
-    key_groups:
-      - age:
-          - *claude-test
-          - *quine
-          - *disaster-recovery
-          - *witt
-        pgp:
-          - *ramblurr
+        merge:
+          - *admin-group
