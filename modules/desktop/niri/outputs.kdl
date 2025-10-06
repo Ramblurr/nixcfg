@@ -3,8 +3,26 @@ output "HDMI-A-1" {
   //position x=-2160 y=-1250
   position x=-1080 y=-800
   scale 2
+  layout {
+      preset-column-widths {
+          proportion 0.33333
+          proportion 0.5
+          proportion 0.66667
+      }
+      default-column-width { proportion 1.0; }
+  }
 }
 
 output "DP-2" {
   position x=0 y=0
+
+  layout {
+      preset-column-widths {
+          proportion 0.16667
+          proportion 0.33333
+          proportion 0.5
+          proportion 0.66667
+      }
+      default-column-width { proportion 0.16667; }
+  }
 }
