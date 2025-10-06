@@ -53,6 +53,7 @@
     ./desktop/wayland.nix
     ./desktop/xdg.nix
     ./dev/clojure/default.nix
+    ./dev/janet/default.nix
     ./dev/fennel.nix
     ./dev/jetbrains/default.nix
     ./dev/k8s/default.nix
