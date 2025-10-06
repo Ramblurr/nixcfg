@@ -130,6 +130,7 @@ in
       git.enable = true;
       gpg-agent.enable = true;
       htop.enable = true;
+      isd.enable = true;
       random.enable = true;
       ssh.enable = true;
       tmux.enable = true;

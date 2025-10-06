@@ -130,6 +130,7 @@
     ./shell/git.nix
     ./shell/gpg-agent.nix
     ./shell/htop/default.nix
+    ./shell/isd.nix
     ./shell/mpv.nix
     ./shell/random.nix
     ./shell/ssh/default.nix

@@ -189,6 +189,7 @@ in
       git.enable = true;
       gpg-agent.enable = true;
       htop.enable = true;
+      isd.enable = true;
       mpv.enable = true;
       ssh.enable = true;
       tmux.enable = true;
