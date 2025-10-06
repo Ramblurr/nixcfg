@@ -151,9 +151,6 @@ in
               preserve_split = "yes";
               # no_gaps_when_only = "yes";
             };
-            gestures = {
-              workspace_swipe = false;
-            };
             workspace = [
               "m[HDMI-A-1], layoutopt:orientation:bottom"
               "m[HDMI-A-1], layoutopt:slave_count_for_center_master:5"
