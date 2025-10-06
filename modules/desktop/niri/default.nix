@@ -25,6 +25,7 @@ let
   extraIncludesText = lib.concatMapStringsSep "\n" (name: ''include "${name}"'') (
     lib.attrNames cfg.extraIncludes ++ lib.optional config.modules.editors.emacs.enable "emacs.kdl"
   );
+  niri = inputs.niri.packages.${pkgs.system}.niri;
 in
 {
   options.modules.desktop.niri = {
@@ -44,7 +45,7 @@ in
       }
     ];
     programs.niri.enable = true;
-    programs.niri.package = inputs.niri.packages.${pkgs.system}.niri;
+    programs.niri.package = niri;
     environment.persistence."/persist" = lib.mkIf withImpermanence {
       users.${username} = {
         directories = [
@@ -65,7 +66,7 @@ in
         fuzzel
       ];
       xdg.configFile = {
-        "niri/config-nix.kdl" = {
+        "niri/config.kdl" = {
           source = pkgs.replaceVars ./config.kdl {
             extraIncludes = extraIncludesText;
           };
@@ -83,6 +84,16 @@ in
             emacsWM = "${niri-emacs}/bin/niri-emacs";
           };
         };
+      };
+
+      services.swayidle = {
+        enable = true;
+        timeouts = [
+          {
+            timeout = 550;
+            command = "${niri}/bin/niri msg action power-off-monitors";
+          }
+        ];
       };
 
     };
