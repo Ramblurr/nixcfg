@@ -52,6 +52,7 @@
     ./desktop/services/ha-shutdown.nix
     ./desktop/services/swhkd.nix
     ./desktop/wayland.nix
+    ./desktop/greetd
     ./desktop/xdg.nix
     ./dev/clojure/default.nix
     ./dev/janet/default.nix
