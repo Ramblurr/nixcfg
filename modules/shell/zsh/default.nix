@@ -42,9 +42,18 @@ in
           eza
           ripgrep
         ];
-        programs.fzf = {
+        programs.fzf = rec {
           enable = true;
           enableZshIntegration = true;
+          defaultCommand = "${pkgs.fd}/bin/fd --type f --strip-cwd-prefix --follow --no-ignore-vcs --exclude .git";
+          defaultOptions = [ "--height=40%" ];
+          changeDirWidgetOptions = [
+            "--preview='${pkgs.tree}/bin/tree -L 1 {}'"
+            "--bind=space:toggle-preview"
+            "--preview-window=hidden"
+          ];
+          fileWidgetCommand = defaultCommand;
+          fileWidgetOptions = [ "--preview='head -$LINES {}'" ];
         };
         home.file = {
           ".config/zsh" = {
