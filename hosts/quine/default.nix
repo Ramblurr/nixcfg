@@ -88,6 +88,7 @@ in
   modules = {
     desktop = {
       hyprland3.enable = true;
+      niri.enable = true;
       greetd.enable = true;
       xdg.enable = true;
       random-apps.enable = true;

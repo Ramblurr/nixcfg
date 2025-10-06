@@ -21,6 +21,7 @@
     ./desktop/hyprland3/hyprpaper.nix
     #./desktop/hyprland3/dunst.nix
     ./desktop/hyprland3/mako.nix
+    ./desktop/niri
     ./desktop/kde.nix
     ./desktop/fonts.nix
     ./desktop/programs/1password.nix
