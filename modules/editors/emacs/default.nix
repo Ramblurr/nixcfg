@@ -17,12 +17,18 @@ in
   options.modules.editors.emacs = {
     enable = lib.mkEnableOption "";
     package = lib.mkOption { type = lib.types.package; }; # $lib.mkPackageOption pkgs "emacs30-pgtk" { };
+    localDoomConfigRepo = lib.mkOption {
+      type = lib.types.str;
+      default = "${homeDirectory}/nixcfg/configs/doom";
+      description = "The WiFi interface to use";
+    };
+
   };
   config = mkIf cfg.enable {
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
     environment.wordlist.enable = true;
     myhm =
-      { ... }@hm:
+      { config, ... }@hm:
       {
         programs.emacs = {
           enable = true;
@@ -45,6 +51,8 @@ in
           mode = "0400";
           path = ".authinfo";
         };
+
+        xdg.configFile.doom.source = config.lib.file.mkOutOfStoreSymlink cfg.localDoomConfigRepo;
 
         home.packages = with pkgs; [
           ## Some emacs package dependencies
@@ -99,16 +107,9 @@ in
         ];
         persistence = lib.mkIf withImpermanence {
           directories = [
-            ".config/doom"
             ".config/emacs"
           ];
         };
-        #home.file.".doom.d" = {
-        #  # Get Doom Emacs
-        #  source = ./configs/doom.d; # Sets up symlink name ".doom.d" for file "doom.d"
-        #  recursive = true; # symlink the whole dirj
-        #  # onChange = builtins.readFile ./configs/doom.sh; # If an edit is detected, it will run this script. Pretty much the same as what is now in default.nix but actually stating the terminal and adding the disown flag to it won't time out
-        #};
       };
   };
 }
