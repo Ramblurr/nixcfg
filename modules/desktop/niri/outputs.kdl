@@ -1,0 +1,10 @@
+output "HDMI-A-1" {
+  transform "90"
+  //position x=-2160 y=-1250
+  position x=-1080 y=-800
+  scale 2
+}
+
+output "DP-2" {
+  position x=0 y=0
+}

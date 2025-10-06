@@ -1,0 +1,19 @@
+binds {
+    Mod+Left  { spawn "@emacsWM@" "focus-column-left"; }
+    Mod+Down  { spawn "@emacsWM@" "focus-window-or-workspace-down"; }
+    Mod+Up    { spawn "@emacsWM@" "focus-window-or-workspace-up"; }
+    Mod+Right { spawn "@emacsWM@" "focus-column-right"; }
+    Mod+H     { spawn "@emacsWM@" "focus-column-left"; }
+    Mod+J     { spawn "@emacsWM@" "focus-window-or-workspace-down"; }
+    Mod+K     { spawn "@emacsWM@" "focus-window-or-workspace-up"; }
+    Mod+L     { spawn "@emacsWM@" "focus-column-right"; }
+
+    Mod+Shift+Left  { spawn "@emacsWM@" "move-column-left"; }
+    Mod+Shift+Down  { spawn "@emacsWM@" "move-window-down"; }
+    Mod+Shift+Up    { spawn "@emacsWM@" "move-window-up"; }
+    Mod+Shift+Right { spawn "@emacsWM@" "move-column-right"; }
+    Mod+Shift+H     { spawn "@emacsWM@" "move-column-left"; }
+    Mod+Shift+J     { spawn "@emacsWM@" "move-window-down-or-to-workspace-down"; }
+    Mod+Shift+K     { spawn "@emacsWM@" "move-window-up-or-to-workspace-up"; }
+    Mod+Shift+L     { spawn "@emacsWM@" "move-column-right"; }
+}
