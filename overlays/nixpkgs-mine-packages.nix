@@ -21,10 +21,11 @@ in
   ocis = nixpkgs-mine.ocis;
   ocis_71-bin = nixpkgs-mine.ocis_71-bin;
   roon-server = nixpkgs-mine.roon-server;
-  chromium = nixpkgs-mine.chromium;
-  chromedriver = nixpkgs-mine.chromedriver;
+  #chromium = nixpkgs-mine.chromium;
+  #chromedriver = nixpkgs-mine.chromedriver;
   crush = nixpkgs-mine.crush;
   llm = nixpkgs-mine.llm;
   jdk25 = nixpkgs-mine.jdk25;
   jdk25_headless = nixpkgs-mine.jdk25_headless;
+  yubioath-flutter = nixpkgs-mine.yubioath-flutter;
 }
