@@ -34,7 +34,6 @@ in
         ".config/GIMP"
         ".config/gnupg"
         ".config/inkscape"
-        ".config/Morgen"
         ".config/PrusaSlicer"
         ".config/PrusaSlicer-alpha"
         ".config/qobuz-dl"
