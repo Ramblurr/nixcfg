@@ -179,6 +179,7 @@ in
       random.enable = true;
       llms.enable = true;
     };
+    hardware.keyboardio.enable = true;
   };
 
 }

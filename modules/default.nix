@@ -66,6 +66,7 @@
     ./editors/vscode/default.nix
     ./firewall/default.nix
     ./hardware/misc.nix
+    ./hardware/keyboardio.nix
     ./hardware/pipewire.nix
     ./hardware/ryzen.nix
     ./impermanence/default.nix
