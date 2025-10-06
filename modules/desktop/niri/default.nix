@@ -22,10 +22,18 @@ let
         niri msg action "$@"
     fi
   '';
+  extraIncludesText = lib.concatMapStringsSep "\n" (name: ''include "${name}"'') (
+    lib.attrNames cfg.extraIncludes ++ lib.optional config.modules.editors.emacs.enable "emacs.kdl"
+  );
 in
 {
   options.modules.desktop.niri = {
     enable = lib.mkEnableOption "Enable Niri";
+    extraIncludes = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "Additional KDL files to include. Keys are filenames, values are file contents.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -36,6 +44,7 @@ in
       }
     ];
     programs.niri.enable = true;
+    programs.niri.package = inputs.niri.packages.${pkgs.system}.niri;
     environment.persistence."/persist" = lib.mkIf withImpermanence {
       users.${username} = {
         directories = [
@@ -43,20 +52,39 @@ in
         ];
       };
     };
+    environment.etc."nvidia/nvidia-application-profiles-rc.d/50-limit-free-buffer-pool-in-wayland-compositors.json".text =
+      # ref: https://github.com/YaLTeR/niri/wiki/Nvidia
+      ''
+        {"rules": [{"pattern": {"feature": "procname", "matches": "niri"}, "profile": "Limit Free Buffer Pool On Wayland Compositors"}],
+         "profiles": [{"name": "Limit Free Buffer Pool On Wayland Compositors", "settings": [{"key": "GLVidHeapReuseRatio", "value": 0}]}]}
+      '';
     myhm = {
       home.packages = with pkgs; [
         # Niri v25.08 will create X11 sockets on disk, export $DISPLAY, and spawn `xwayland-satellite` on-demand when an X11 client connects
         xwayland-satellite
         fuzzel
       ];
-
-      xdg.configFile."niri/config-nix.kdl" = {
-        source = pkgs.replaceVars ./config.kdl {
-          emacsWM = "${niri-emacs}/bin/niri-emacs";
-          DEFAULT_AUDIO_SOURCE = null;
-          DEFAULT_AUDIO_SINK = null;
+      xdg.configFile = {
+        "niri/config-nix.kdl" = {
+          source = pkgs.replaceVars ./config.kdl {
+            extraIncludes = extraIncludesText;
+          };
+        };
+      }
+      // lib.mapAttrs' (name: value: lib.nameValuePair "niri/${name}" value) (
+        lib.genAttrs [ "outputs.kdl" "rules.kdl" "binds.kdl" ] (f: {
+          source = ./${f};
+        })
+      )
+      // lib.mapAttrs' (name: text: lib.nameValuePair "niri/${name}" { inherit text; }) cfg.extraIncludes
+      // lib.optionalAttrs config.modules.editors.emacs.enable {
+        "niri/emacs.kdl" = {
+          source = pkgs.replaceVars ./emacs.kdl {
+            emacsWM = "${niri-emacs}/bin/niri-emacs";
+          };
         };
       };
+
     };
   };
 }
