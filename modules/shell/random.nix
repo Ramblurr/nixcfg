@@ -24,7 +24,6 @@ in
       {
         home.packages = with pkgs; [
           (warp-terminal.override { waylandSupport = true; })
-          isd
           gum
           treefmt
           repomix
