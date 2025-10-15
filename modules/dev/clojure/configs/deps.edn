@@ -23,7 +23,7 @@
                 clj-commons/clj-yaml          {:mvn/version "1.0.29"} ; portal yaml support (optional)
                 io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
                 nrepl/nrepl                   {:mvn/version "1.4.0"}
-                cider/cider-nrepl             {:mvn/version "0.57.0"}
+                cider/cider-nrepl             {:mvn/version "0.58.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}
                 criterium/criterium           {:mvn/version "0.4.6"}
                 com.github.gnl/playback       {:mvn/version "0.5.4"}
@@ -41,7 +41,7 @@
   ;; - A secondary REPL setup for development, with less dependencies
   :repl/lite
   {:extra-deps {nrepl/nrepl                   {:mvn/version "1.4.0"}
-                cider/cider-nrepl             {:mvn/version "0.57.0"}
+                cider/cider-nrepl             {:mvn/version "0.58.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}
                 my/dev-repl                   {:git/sha "8f84a7e294b4353cde64a163976da050b39963b6"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
@@ -52,7 +52,7 @@
   :repl/clerk
   {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1150"}
                 nrepl/nrepl                   {:mvn/version "1.4.0"}
-                cider/cider-nrepl             {:mvn/version "0.57.0"}
+                cider/cider-nrepl             {:mvn/version "0.58.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}}
    :main-opts  ["--eval" "(require '[nextjournal.clerk])(nextjournal.clerk/show! 'nextjournal.clerk.tap)(nextjournal.clerk/serve! {:browse? true})"
                 "-m" "nrepl.cmdline"
