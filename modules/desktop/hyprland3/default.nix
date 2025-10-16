@@ -110,10 +110,10 @@ in
       power-profiles-daemon.enable = true;
       accounts-daemon.enable = true;
       gnome = {
-        evolution-data-server.enable = true;
-        glib-networking.enable = true;
-        gnome-keyring.enable = true;
-        gnome-online-accounts.enable = true;
+        evolution-data-server.enable = false;
+        glib-networking.enable = false;
+        gnome-keyring.enable = false;
+        gnome-online-accounts.enable = false;
       };
     };
   };
