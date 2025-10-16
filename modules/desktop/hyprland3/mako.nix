@@ -17,6 +17,7 @@ in
         services.mako = {
           enable = true;
           settings = {
+            font = "monospace 18";
             anchor = "top-center";
             markup = true;
             padding = "5";
@@ -26,6 +27,7 @@ in
             border-color = "#928374";
             border-size = 3;
             border-radius = 6;
+            width = 600;
           };
         };
       };
