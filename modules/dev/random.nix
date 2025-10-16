@@ -95,6 +95,7 @@ in
         dig
         gitleaks
         dogdns
+        scc
         whois
         nmap
         pre-commit
