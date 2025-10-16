@@ -177,6 +177,7 @@ in
         thunderbird.workProxy = "${lanVpnGateway}:1081";
         waydroid.enable = true;
         yubico.enable = true;
+        yubico.sshFidoAgent.enable = true;
       };
     };
     shell = {
