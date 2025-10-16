@@ -30,7 +30,6 @@ in
         ".config/hacompanion"
         ".config/audacity"
         ".config/easyeffects"
-        ".config/sops"
         ".config/GIMP"
         ".config/gnupg"
         ".config/inkscape"

@@ -41,9 +41,10 @@ creation_rules:
   - path_regex: hosts/quine/secrets.sops.ya?ml$
     key_groups:
       - age:
-          - *quine
-        merge:
-          - *admin-group
+        - *quine
+        - *ramblurr-yk-office
+        - *ramblurr-yk-key
+        - *disaster-recovery
   - path_regex: hosts/witt/secrets.sops.ya?ml$
     key_groups:
       - age:

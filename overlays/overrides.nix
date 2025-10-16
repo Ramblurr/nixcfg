@@ -43,12 +43,5 @@ final: prev: {
   #                       'args+=(-nic bridge,br=''${network},helper=/run/wrappers/bin/qemu-bridge-helper,model=virtio-net-pci''${MAC})'
   #    '';
   #});
-  sops = (
-    prev.sops.withAgePlugins (p: [
-      p.age-plugin-fido2-hmac
-      p.age-plugin-yubikey
-      p.age-plugin-tpm
-    ])
-  );
 
 }

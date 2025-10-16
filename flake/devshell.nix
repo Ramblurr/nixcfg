@@ -28,12 +28,13 @@
         packages = [
           pkgs.nix # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
           pkgs.ssh-to-age
-          pkgs.age-plugin-fido2-hmac
           pkgs.age-plugin-yubikey
-          pkgs.age-plugin-tpm
-          pkgs.age-plugin-ledger
           pkgs.vim
-          pkgs.sops
+          # (pkgs.sops.withAgePlugins (p: [
+          #   p.age-plugin-fido2-hmac
+          #   p.age-plugin-yubikey
+          #   p.age-plugin-tpm
+          # ]))
         ];
 
         commands = [
