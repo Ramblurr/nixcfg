@@ -61,7 +61,7 @@
 (package! clojure-essential-ref-nov)
 (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
 (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "27dfc334afeeb89cf3844831bc9a23e3ddcd309d")
-(package! gptel :pin "81618f24e2190568ea745dca82ba50267eed321a") ;; v 0.9.9
+(package! gptel :pin "d4a057e561e9945d2fd2081ea7b119f79e353d6e")
 (package! whisper :recipe (:host github :repo "natrys/whisper.el"))
 (package! treemacs-all-the-icons)
 

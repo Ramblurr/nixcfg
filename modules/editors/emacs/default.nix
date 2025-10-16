@@ -12,6 +12,7 @@ let
   username = config.modules.users.primaryUser.username;
   homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
+  nixosConfig = config;
 in
 {
   options.modules.editors.emacs = {
@@ -39,6 +40,10 @@ in
             epkgs.treesit-grammars.with-all-grammars
             #epkgs.mu4e
           ];
+        };
+
+        systemd.user.services.emacs.Service = lib.mkIf nixosConfig.modules.dev.llms.enable {
+          EnvironmentFile = [ "%h/.llm-keys" ];
         };
 
         services.emacs = {
