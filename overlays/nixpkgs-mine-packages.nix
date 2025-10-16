@@ -28,4 +28,11 @@ in
   jdk25 = nixpkgs-mine.jdk25;
   jdk25_headless = nixpkgs-mine.jdk25_headless;
   yubioath-flutter = nixpkgs-mine.yubioath-flutter;
+  sops = (
+    nixpkgs-mine.sops.withAgePlugins (p: [
+      p.age-plugin-fido2-hmac
+      p.age-plugin-yubikey
+      p.age-plugin-tpm
+    ])
+  );
 }

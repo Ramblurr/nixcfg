@@ -94,7 +94,8 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
-    sops-nix.url = "github:Mic92/sops-nix";
+    #sops-nix.url = "github:Mic92/sops-nix";
+    sops-nix.url = "github:ramblurr/sops-nix/age-plugin";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
     nur.url = "github:nix-community/NUR";

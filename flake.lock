@@ -1083,10 +1083,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1759393609,
-        "narHash": "sha256-Uqfs+25YKRGY3ForpDo4vdpEMtbw1gcetJK/RCvNsxc=",
+        "lastModified": 1759758344,
+        "narHash": "sha256-kcyt56T6ow5bEzt3sLtT0ZW+WZpPZaeohEAGFPgMVBE=",
         "ref": "consolidated",
-        "rev": "f26bbc392016cafdb337cc53b472b83833900322",
+        "rev": "034f2c0b8c70c77adf93bef951e1baea1f040d08",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
@@ -1568,15 +1568,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1754988908,
-        "narHash": "sha256-t+voe2961vCgrzPFtZxha0/kmFSHFobzF00sT8p9h0U=",
-        "owner": "Mic92",
+        "lastModified": 1759757094,
+        "narHash": "sha256-O3wbCScJRu92+ruD4pRwgALc3TzV/z2g+Tnr3n5wH5k=",
+        "owner": "ramblurr",
         "repo": "sops-nix",
-        "rev": "3223c7a92724b5d804e9988c6b447a0d09017d48",
+        "rev": "3fc5f077e9c061bb953c6fccc874d932b2cc6f7a",
         "type": "github"
       },
       "original": {
-        "owner": "Mic92",
+        "owner": "ramblurr",
+        "ref": "age-plugin",
         "repo": "sops-nix",
         "type": "github"
       }

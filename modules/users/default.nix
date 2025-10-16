@@ -69,11 +69,21 @@ in
     )
   ];
   config = lib.mkIf cfg.enable {
+    services.userborn.enable = true;
+    services.pcscd.enable = true;
+    systemd.services.sops-install-secrets = {
+      after = [ "pcscd.service" ];
+      requires = [ "pcscd.service" ];
+    };
     sops = {
-      age.sshKeyPaths = [
-        "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"
-      ];
-      gnupg.sshKeyPaths = [ ];
+      age = {
+        sshKeyPaths = [
+          "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key"
+        ];
+        plugins = [
+          pkgs.age-plugin-yubikey
+        ];
+      };
     };
 
     sops.secrets."${cfg.primaryUser.passwordSecretKey}" = {
@@ -82,9 +92,21 @@ in
     sops.secrets.root-password = {
       neededForUsers = true;
     };
-    environment.persistence = lib.mkIf withImpermanence {
-      "/persist".users.root.home = "/root";
+    environment.persistence."/persist" = lib.mkIf withImpermanence {
+      users.root.home = "/root";
+      users.${cfg.primaryUser.username} = {
+        directories = [
+          ".config/sops"
+        ];
+      };
     };
+    systemd.tmpfiles.rules =
+      let
+        u = cfg.primaryUser.username;
+      in
+      [
+        "d ${lib.optionalString withImpermanence "/persist"}/home/${u}/.config/sops/age 0700 ${u} ${u}  -"
+      ];
     users = {
       mutableUsers = false;
       users.root = {
@@ -141,8 +163,19 @@ in
         home.homeDirectory = cfg.primaryUser.homeDirectory;
         sops = {
           defaultSopsFile = config.sops.defaultSopsFile;
-          gnupg.home = "${hm.config.xdg.configHome}/.gnupg";
+          #gnupg.home = hm.config.programs.gpg.homedir;
+          environment = {
+            PINENTRY_PROGRAM = "${pkgs.pinentry-gtk2}/bin/pinentry";
+            PATH = lib.mkForce (lib.makeBinPath (hm.config.sops.age.plugins ++ [ pkgs.pinentry-gtk2 ]));
+          };
+          age.keyFile = "${hm.config.home.homeDirectory}/.config/sops/age/keys.txt";
+          age.plugins = [
+            pkgs.age-plugin-fido2-hmac
+            pkgs.age-plugin-yubikey
+            pkgs.age-plugin-tpm
+          ];
         };
+        home.packages = [ pkgs.pinentry-gtk2 ];
         manual.manpages.enable = true;
         systemd.user.startServices = true;
         programs = {
