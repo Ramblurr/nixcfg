@@ -420,6 +420,7 @@ LANGUAGE defaults to auto-detect. Use the hydra to toggle refinement."
     (copy-region-as-kill start end)))
 
 (use-package! whisper
+  :commands (whisper-run my/whisper my/whisper-english-hydra/body eca)
   :hook
   (whisper-before-transcription-hook . my/system--mic-unmute)
   (whisper-after-transcription-hook .  my/system--mic-mute-revert)
