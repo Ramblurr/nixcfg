@@ -78,6 +78,7 @@
                  "[/\\\\]build\\'"
                  "[/\\\\]tmp\\'"
                  "[/\\\\]node_modules\\'"
+                 "[/\\\\]extra\\'"
                  ))
     (push dir lsp-file-watch-ignored-directories))
 

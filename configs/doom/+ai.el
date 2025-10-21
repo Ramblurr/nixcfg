@@ -123,9 +123,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ECA (Editor Code Assistant by the venerable Eric Dallo)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 (use-package! eca
   :config
   (setq eca-extra-args '("--verbose" "--log-level" "debug")))
+
+(defun my/eca-chat-toggle-or-start ()
+  "Toggle ECA chat window, starting a new session if needed.
+   If no ECA session is running, starts one and opens the chat window."
+  (interactive)
+  (condition-case err
+      (eca-chat-toggle-window)
+    (error
+     (when (string-match-p "no session found" (error-message-string err))
+       (message "No ECA session found, starting new session...")
+       (eca))
+     (unless (string-match-p "no session found" (error-message-string err))
+       (signal (car err) (cdr err))))))
 
 (defun my/eca-chat-flyspell-setup ()
   "Enable Flyspell during typing and disable on submit in `eca-chat-mode`."
@@ -358,61 +374,6 @@
         (apply orig-fun args))
     (apply orig-fun args)))
 
-
-(defun my/whisper (&optional language)
-  "Transcribe audio - smart handling for vterm vs normal buffers. LANGUAGE defaults to auto-detect."
-  (interactive)
-  (if (whisper-recording-p)
-      (interrupt-process whisper--recording-process)
-    (setq whisper-language (or language "auto"))
-    ;; Only create a new session if one doesn't already exist
-    (unless my/whisper-session
-      (setq my/whisper-session
-            (pcase major-mode
-              ('vterm-mode (list :mode 'terminal :buffer (current-buffer) :refine nil))
-              ('exwm-mode (list :mode 'exwm :buffer (current-buffer) :refine nil))
-              (_ (list :mode 'buffer :buffer (current-buffer) :refine nil :marker (point-marker))))))
-    (whisper-run)))
-
-(defmacro my/define-whisper-hydra (name language display-name)
-  `(defhydra ,name (:color pink :hint nil :body-pre (unless (whisper-recording-p) (my/whisper ,language)))
-     ,(format "
-  Whisper %s [Refine: %%(if (and my/whisper-session (plist-get my/whisper-session :refine)) \"ON\" \"OFF\")]
-
-  _r_: Toggle refine  _c_: Clean history  _q_: %%(if (whisper-recording-p) \"Stop & Transcribe\" \"Cancel\")
-  " display-name)
-     ("r" (when my/whisper-session
-            (plist-put my/whisper-session :refine
-                       (not (plist-get my/whisper-session :refine)))))
-     ("c" (my/whisper-cleanup-history-buffers))
-     ("q" (if (whisper-recording-p)
-              (interrupt-process whisper--recording-process)
-            (message "Cancelled"))
-      :exit t)))
-
-(my/define-whisper-hydra my/whisper-english-hydra "en" "English")
-
-(defun my/eca-chat-talk (&optional language)
-  "Talk to ECA assistant by recording audio and transcribing it.
-LANGUAGE defaults to auto-detect. Use the hydra to toggle refinement."
-  (interactive)
-  (unless (require 'whisper nil t)
-    (user-error "Whisper.el is not available, please install it first"))
-  (let* ((session (eca-session))
-         (chat-buffer-name (eca-chat-buffer-name session)))
-    (eca-assert-session-running session)
-    (eca-chat-open session)
-    (eca-chat--with-current-buffer
-        chat-buffer-name
-      (goto-char (point-max)))
-    (setq whisper-language (or language "auto"))
-    (setq my/whisper-session
-          (list :mode 'eca-chat
-                :buffer (get-buffer chat-buffer-name)
-                :buffer-name chat-buffer-name
-                :refine nil))
-    (my/whisper-english-hydra/body)))
-
 (defun my/whisper--copy-result ()
   "A hook used to copy transcription result to clipboard"
   (let ((start (point-min))
@@ -420,7 +381,7 @@ LANGUAGE defaults to auto-detect. Use the hydra to toggle refinement."
     (copy-region-as-kill start end)))
 
 (use-package! whisper
-  :commands (whisper-run my/whisper my/whisper-english-hydra/body eca)
+  :demand t
   :hook
   (whisper-before-transcription-hook . my/system--mic-unmute)
   (whisper-after-transcription-hook .  my/system--mic-mute-revert)
@@ -463,9 +424,67 @@ LANGUAGE defaults to auto-detect. Use the hydra to toggle refinement."
       (add-hook 'whisper-after-transcription-hook #'my/whisper--record-to-buffer-cleanup))
     (whisper-run))
 
+
+  (defmacro my/define-whisper-hydra (name language display-name)
+    `(defhydra ,name (:color pink :hint nil :body-pre (unless (whisper-recording-p) (my/whisper ,language)))
+       ,(format "
+  Whisper %s [Refine: %%(if (and my/whisper-session (plist-get my/whisper-session :refine)) \"ON\" \"OFF\")]
+
+  _r_: Toggle refine  _c_: Clean history  _q_: %%(if (whisper-recording-p) \"Stop & Transcribe\" \"Cancel\")
+  " display-name)
+       ("r" (when my/whisper-session
+              (plist-put my/whisper-session :refine
+                         (not (plist-get my/whisper-session :refine)))))
+       ("c" (my/whisper-cleanup-history-buffers))
+       ("q" (if (whisper-recording-p)
+                (interrupt-process whisper--recording-process)
+              (message "Cancelled"))
+        :exit t)))
+
+  (my/define-whisper-hydra my/whisper-english-hydra "en" "English")
+
+  (defun my/whisper (&optional language)
+    "Transcribe audio - smart handling for vterm vs normal buffers. LANGUAGE defaults to auto-detect."
+    (interactive)
+    (if (whisper-recording-p)
+        (interrupt-process whisper--recording-process)
+      (setq whisper-language (or language "auto"))
+      ;; Only create a new session if one doesn't already exist
+      (unless my/whisper-session
+        (setq my/whisper-session
+              (pcase major-mode
+                ('vterm-mode (list :mode 'terminal :buffer (current-buffer) :refine nil))
+                ('exwm-mode (list :mode 'exwm :buffer (current-buffer) :refine nil))
+                (_ (list :mode 'buffer :buffer (current-buffer) :refine nil :marker (point-marker))))))
+      (whisper-run)))
+
+  (defun my/eca-chat-talk (&optional language)
+    "Talk to ECA assistant by recording audio and transcribing it.
+LANGUAGE defaults to auto-detect. Use the hydra to toggle refinement."
+    (interactive)
+    (unless (require 'whisper nil t)
+      (user-error "Whisper.el is not available, please install it first"))
+    (let* ((session (eca-session))
+           (chat-buffer-name (eca-chat-buffer-name session)))
+      (eca-assert-session-running session)
+      (eca-chat-open session)
+      (eca-chat--with-current-buffer
+          chat-buffer-name
+        (goto-char (point-max)))
+      (setq whisper-language (or language "auto"))
+      (setq my/whisper-session
+            (list :mode 'eca-chat
+                  :buffer (get-buffer chat-buffer-name)
+                  :buffer-name chat-buffer-name
+                  :refine nil))
+      (my/whisper-english-hydra/body)))
+
+
   (advice-add 'whisper-command :override #'my/whisper--nix-command)
   (advice-add 'whisper--find-whispercpp-server :override #'my/whisper--find-whispercpp-server)
   (advice-add 'whisper--handle-transcription-output :around #'my/whisper-suppress-display) )
+
+
 
 
 ;; (setq whisper-after-transcription-hook (cdr whisper-after-transcription-hook))
