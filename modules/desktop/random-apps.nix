@@ -61,8 +61,6 @@ in
             pdfarranger
             #makemkv
             # BLOCKED: https://github.com/NixOS/nixpkgs/issues/380197
-            fava
-            beancount_2
             keepassxc
             dex
             qpwgraph # pipewire wiring gui tool
