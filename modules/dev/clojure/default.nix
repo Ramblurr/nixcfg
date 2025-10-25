@@ -46,12 +46,12 @@ in
         };
       in
       {
-        home.file."vendor/jdks/openjdk11".source = pkgs.jdk11;
-        home.file."vendor/jdks/openjdk17".source = pkgs.jdk17;
         home.file."vendor/jdks/openjdk21".source = pkgs.jdk21;
+        home.file."vendor/jdks/openjdk25".source = pkgs.jdk25;
+        home.file."vendor/jdks/graalvm-ce".source = pkgs.graalvmPackages.graalvm-ce;
+        home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
         home.packages = with pkgs; [
           jdk25
-          #graalvmPackages.graalvm-ce
           neil
           maven
           gradle
@@ -62,10 +62,8 @@ in
           leiningen
           babashka
           polylith
-          #javaPackages.jogl_2_4_0
           gtk3
           xorg.libXxf86vm
-          #pkgs.my.bootleg
           jdt-language-server
           (pkgs.writeScriptBin "run-clojure-mcp" ''
             #!/usr/bin/env bash
