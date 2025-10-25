@@ -59,13 +59,14 @@
        fold              ; (nigh) universal code folding
        (format +onsave)  ; automated prettiness
        ;;god               ; run Emacs commands without modifier keys
-       lispy             ; vim for lisp, for people who don't like vim
-       ;; ;;multiple-cursors  ; editing in many places at once
-       ;; ;;objed            ; text object editing for the innocent
-       ;; ;;parinfer         ; turn lisp into python, sort of
-       ;; ;;rotate-text      ; cycle region at point between text candidates
-       ;; snippets           ; my elves. They type so I don't have to
-       (whitespace +guess +trim)  ; a butler for your whitespace
+       ;; lispy             ; vim for lisp, for people who don't like vim
+       multiple-cursors  ; editing in many places at once
+       ;;objed            ; text object editing for the innocent
+       ;;parinfer         ; turn lisp into python, sort of
+       ;;rotate-text      ; cycle region at point between text candidates
+       snippets           ; my elves. They type so I don't have to
+       ;; (whitespace +guess +trim)
+                                        ; a butler for your whitespace
        ;;word-wrap           ; soft wrapping with language-aware indent
 
        :emacs
@@ -143,7 +144,7 @@
        ;;hy                ; readability of scheme w/ speed of python
        ;;idris             ; a language you can depend on
        json              ; At least it ain't XML
-       (janet +tree-sitter)             ; Fun fact: Janet is me!
+       ;;(janet +tree-sitter)             ; Fun fact: Janet is me!
        (java +lsp)       ; the poster child for carpal tunnel syndrome
        (javascript +lsp)        ; all(hope(abandon(ye(who(enter(here))))))
        ;;julia             ; a better, faster MATLAB
