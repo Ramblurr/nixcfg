@@ -383,10 +383,10 @@
 (use-package! whisper
   :demand t
   :hook
-  (whisper-before-transcription-hook . my/system--mic-unmute)
-  (whisper-after-transcription-hook .  my/system--mic-mute-revert)
-  (whisper-after-transcription-hook .  my/whisper--copy-result)
-  (whisper-after-transcription-hook .  my/whisper-process-text)
+  (whisper-before-transcription . my/system--mic-unmute)
+  (whisper-after-transcription .  my/system--mic-mute-revert)
+  (whisper-after-transcription .  my/whisper--copy-result)
+  (whisper-after-transcription .  my/whisper-process-text)
   :config
   (setq
    whisper-install-directory (concat doom-data-dir "whisper")

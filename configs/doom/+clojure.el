@@ -25,7 +25,9 @@
    (defui- :defn)
    (fn-traced :defn)
    (defn-traced :defn))
-  )
+  (add-hook! clojure-mode 'my/dim-parens)
+  (add-hook! clojure-mode 'my/fade-characters)
+  (add-hook! clojure-mode 'my/clojure-faces))
 
 (use-package! clj-ns-name
   :after clojure-mode
@@ -38,20 +40,20 @@
    cider-download-java-sources t
    cider-default-cljs-repl 'shadow
    cider-save-file-on-load t
-   cider-result-overlay-position 'at-point ; results shown right after expression
-   cider-show-error-buffer t               ;'only-in-repl
-   cider-font-lock-dynamically nil         ; use lsp semantic tokens
-   cider-eldoc-display-for-symbol-at-point nil ; use lsp
+   cider-result-overlay-position 'at-point        ; results shown right after expression
+   cider-show-error-buffer t                      ;'only-in-repl
+   ;; cider-font-lock-dynamically nil                  ; use lsp semantic tokens
+   cider-eldoc-display-for-symbol-at-point nil    ; use lsp
    cider-prompt-for-symbol nil
-   cider-reuse-dead-repls nil
-   cider-use-xref nil                   ; use lsp
+   cider-reuse-dead-repls 'any                     ; just choose a repl buffer already
+   cider-use-xref nil                             ; use lsp
+   cider-clojure-cli-parameters "-M:repl/dev:dev" ; my repl tooling
    ;; minimise the repl buffer activity
-   cider-repl-buffer-size-limit 100     ; limit lines shown in REPL buffer
-   cider-repl-display-help-banner nil   ; disable help banner
-   cider-repl-history-size 10           ; limit command history
-   cider-repl-pop-to-buffer-on-connect nil ; REPL buffer shown at starup (nil does not show buffer)
-   ;; my repl
-   cider-clojure-cli-global-options "-M:repl/dev:dev")
+   cider-repl-buffer-size-limit 100               ; limit lines shown in REPL buffer
+   cider-repl-display-help-banner nil             ; disable help banner
+   cider-repl-history-size 10                     ; limit command history
+   cider-repl-pop-to-buffer-on-connect nil        ; REPL buffer shown at starup (nil does not show buffer)
+   )
   (set-lookup-handlers! '(cider-mode cider-repl-mode) nil) ; use lsp
   (set-popup-rule! "*cider-test-report*" :side 'right :width 0.4)
   (set-popup-rule! "^\\*cider-repl" :side 'bottom :quit nil))
@@ -66,12 +68,13 @@
    cljr-magic-require-namespaces
    '(
      ("async" . "clojure.core.async")
+     ("cli" . "babashka.cli")
      ("csv" . "clojure.data.csv")
-     ("datomic" . "datomic.client.api")
+     ("dc" . "datomic.client.api")
+     ("datomic" . "datomic.api")
      ("ds" . "donut.system")
      ("edn". "clojure.edn")
-     ("enc" . "taoensso.encore")
-     ("fs" . "me.raynes.fs")
+     ("fs" . "babashka.fs")
      ("gen" . "clojure.spec.gen.alpha")
      ("gstring" . "goog.string")
      ("http" . "babashka.http-client.client")
@@ -79,9 +82,6 @@
      ("io" . "clojure.java.io")
      ("jdbc" . "clojure.java.jdbc")
      ("json" . "jsonista.core")
-     ("fs" "babashka.fs")
-     ("cli" "babashka.cli")
-     ("p" "babashka.process")
      ("log" . "taoensso.telemere")
      ("md" . "malli.destructure")
      ("medley" . "medley.core")
@@ -90,13 +90,18 @@
      ("mr" . "malli.registry")
      ("mt" . "malli.transform")
      ("mu" . "malli.util")
+     ("p" . "babashka.process")
+     ("portal" . "portal.api")
+     ("pr" . "promesa.core")
+     ("prof" . "clj-async-profiler.core")
      ("s" . "clojure.spec.alpha")
+     ("sp" . "promesa.exec.csp ")
      ("set" . "clojure.set")
      ("sh" . "clojure.java.shell")
-     ("sql" . "honeysql.core")
      ("str" . "clojure.string")
-     ("tg" . "net.modulolotus.truegrit")
-     ("t" . "tick.alpha.api")
+     ("trove". "taoensso.trove")
+     ("tempel" . "taoensso.tempel")
+     ("tick" . "tick.core")
      ("tufte" . "taoensso.tufte")
      ("walk" . "clojure.walk")
      ("zip" . "clojure.zip")
@@ -107,10 +112,11 @@
 
 
 
-(use-package! clojure-essential-ref)
-(use-package! clojure-essential-ref-nov
-  :init
-  (setq clojure-essential-ref-nov-epub-path
-        "~/docs/books/Clojure_The_Essential_Reference.epub")
-  (setq clojure-essential-ref-default-browse-fn
-        #'clojure-essential-ref-nov-browse))
+(comment
+ (use-package! clojure-essential-ref)
+ (use-package! clojure-essential-ref-nov
+   :init
+   (setq clojure-essential-ref-nov-epub-path
+         "~/docs/books/Clojure_The_Essential_Reference.epub")
+   (setq clojure-essential-ref-default-browse-fn
+         #'clojure-essential-ref-nov-browse)))

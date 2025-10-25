@@ -48,33 +48,52 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;; (unpin! t)
 
-;; (package! lsp-mode)
-;; (package! lsp-ui :recipe (:host github :repo "emacs-lsp/lsp-ui"))
 (package! transpose-frame)
 ;; (package! copilot :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")) :pin
 ;;           ;2025-09-16
 ;;           "6a2ad80489b8a0d021df95293eb7ac370aea140b"
 ;;           )
-(package! aggressive-indent)
-(package! symex)
-(package! clojure-essential-ref)
-(package! clojure-essential-ref-nov)
-(package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "27dfc334afeeb89cf3844831bc9a23e3ddcd309d")
-(package! gptel :pin "d4a057e561e9945d2fd2081ea7b119f79e353d6e")
-(package! whisper :recipe (:host github :repo "natrys/whisper.el"))
-(package! treemacs-all-the-icons)
-
-(package! ajrepl
-  :recipe (:type git
-           :host github
-           :repo "sogaiu/ajrepl"
-           :files (:defaults ("ajrepl/"
-                              "ajrepl/*"))))
-
-(package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
 
 (unpin! hover)
 (unpin! treemacs)
 (unpin! lsp-treemacs)
 (unpin! lsp-ui)
+
+(package! aggressive-indent)
+;; (package! clojure-essential-ref)
+;; (package! clojure-essential-ref-nov)
+(package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
+(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "7962cf33b1219ba98a2bd639222c712181b561b7")
+(package! gptel :pin "d14d8c12f33829ea1615ac5316d7534d4175fe23")
+(package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
+(package! treemacs-all-the-icons)
+
+;; (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
+;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
+
+(package! symex-core
+  :recipe (:host github
+           :repo "drym-org/symex.el"
+           :files ("symex-core/symex*.el" ))
+  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+
+(package! symex
+  :recipe (:host github
+           :repo "drym-org/symex.el"
+           :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
+  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+
+(package! symex-evil
+  :recipe (:host github
+           :repo "drym-org/symex.el"
+           :files ("symex-evil/symex*.el"))
+  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+
+(package! symex-ide
+  :recipe (:host github
+           :repo "drym-org/symex.el"
+           :files ("symex-ide/symex*.el"))
+  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+
+(package! modus-themes
+  :recipe (:host github :repo "protesilaos/modus-themes"))

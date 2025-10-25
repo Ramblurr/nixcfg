@@ -38,7 +38,7 @@
         lsp-signature-render-documentation nil
         lsp-signature-function 'lsp-signature-posframe
         lsp-signature-auto-activate nil
-        lsp-semantic-tokens-enable t
+        lsp-semantic-tokens-enable nil
         lsp-enable-indentation nil
         lsp-inlay-hint-enable t
         lsp-idle-delay  0.05
@@ -52,7 +52,6 @@
         ;; lsp-headerline-breadcrumb-enable t              ; Breadcrumb trail
         ;; lsp-headerline-breadcrumb-segments '(symbols)   ; namespace & symbols, no file path
         ;; lsp-ui-peek-enable nil                          ; popups for refs, errors, symbols, etc.
-        ;; lsp-semantic-tokens-enable t                    ; enhance syntax highlight
         ;; lsp-eldoc-enable-hover nil                      ; disable all hover actions
         ;; lsp-ui-doc-enable nil                           ; doc hover popups
         ;; lsp-ui-sideline-enable nil                      ; sidebar code actions visual indicator
@@ -70,6 +69,8 @@
                  "[/\\\\]\\.cache\\'"
                  "[/\\\\]\\.clwb\\'"
                  "[/\\\\]\\.env\\'"
+                 "[/\\\\]\\.zig-cache\\'"
+                 "[/\\\\]\\.zig-cache-global\\'"
                  "[/\\\\]__pycache__\\'"
                  "[/\\\\]extra\\'"
                  "[/\\\\]dist\\'"
@@ -78,6 +79,7 @@
                  "[/\\\\]build\\'"
                  "[/\\\\]tmp\\'"
                  "[/\\\\]node_modules\\'"
+                 "[/\\\\]zig-out\\'"
                  "[/\\\\]extra\\'"
                  ))
     (push dir lsp-file-watch-ignored-directories))

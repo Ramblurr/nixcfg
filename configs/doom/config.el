@@ -19,14 +19,87 @@
 
 (setq confirm-kill-emacs nil)
 
-(setq doom-theme 'doom-gruvbox)
+;;(setq doom-theme 'doom-gruvbox)
+(setq doom-theme 'modus-vivendi)
+(show-paren-mode t)
+(setq show-paren-style 'parenthesis)
+(setq doom-gruvbox-brighter-comments t)
+(setq doom-gruvbox-dark-variant 'hard)
+(setq display-line-numbers-type 'relative)
+
+(defface my-face-faded nil
+  "Faded face is for information that are less important.")
+
+(use-package! modus-themes
+  :init
+  (defun my/modus-themes-custom-faces (&rest _)
+    (modus-themes-with-colors
+      (custom-set-faces
+       ;; Make foreground the same as background for a uniform bar on
+       ;; Doom Emacs.
+       ;;
+       ;; Doom should not be implementing such hacks because themes
+       ;; cannot support them:
+       ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
+       `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
+       `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
+       `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
+  (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
+
+  (setq!
+   modus-themes-completions '((matches . (extrabold background intense))
+                              (selection . (semibold accented intense))
+                              (popup . (accented)))
+   modus-themes-common-palette-overrides
+   '((bg-paren-match bg-magenta-intense)
+     (underline-paren-match fg-main) )
+   ))
+
+(custom-theme-set-faces! '(modus-vivendi)
+  `(symex-highlight-face     :inherit ,nil :background ,(modus-themes-get-color-value 'bg-active) :weight ,'normal)
+  `(my-face-faded            :foreground ,(modus-themes-get-color-value 'fg-dim))
+  )
+
 
 (custom-theme-set-faces! '(doom-gruvbox)
-  `(cursor                   :background ,(doom-color 'orange))
+  `(symex-highlight-face     :background ,(doom-color 'base3) :weight ,'bold)
+  `(show-paren-match         :foreground ,(doom-color 'orange) :background ,(doom-color 'base3) :weight ,'extra-bold)
+  `(cursor                   :background ,(doom-color 'base8))
+  `(my-face-faded            :background ,(doom-color 'bg) :foreground ,(doom-color 'grey))
   `(shadow                   :background ,(doom-color 'bg) :foreground ,(doom-color 'base4))
-  `(line-number              :background ,(doom-color 'bg) :foreground ,(doom-color 'base5)))
+  `(line-number              :background ,(doom-color 'bg) :foreground ,(doom-color 'base5))
+  ;; `(font-lock-comment-face   :foreground ,(doom-color 'green))
+  ;; `(font-lock-constant-face  :foreground ,(doom-color 'violet))
+  ;; `(font-lock-builtin-face   :foreground ,(doom-color 'orange))
+  ;; `(font-lock-keyword-face   :inherit ,'default :foreground ,'unspecified :weight ,'unspecified)
+  )
 
-(setq display-line-numbers-type 'relative)
+
+(defun my/clojure-faces ()
+  (comment
+   (setq-local +my/face-remap-cookies
+               (list
+                (face-remap-add-relative 'font-lock-comment-face :foreground (doom-color 'yellow))
+                (face-remap-add-relative 'font-lock-doc-face :foreground (doom-color 'yellow))
+                ;; (face-remap-add-relative 'font-lock-constant-face :inherit 'default)
+                (face-remap-add-relative 'font-lock-function-name-face :foreground (doom-color 'teal))
+                (face-remap-add-relative 'font-lock-string-face :foreground (doom-color 'blue))
+                (face-remap-add-relative 'font-lock-number-face :foreground (doom-color 'blue))
+                ;; (face-remap-add-relative 'lsp-face-highlight-textual :foreground (doom-color 'yellow))
+                (face-remap-add-relative 'clojure-keyword-face :foreground (doom-color 'violet))
+                (face-remap-add-relative 'font-lock-keyword-face :inherit 'default :foreground 'unspecified)
+                ;; (face-remap-add-relative 'font-lock-keyword-face :foreground (doom-color 'teal))
+
+                )       )))
+
+(defun my/dim-parens ()
+  "Make parenthesis less prominent by matching comment face."
+  (font-lock-add-keywords nil `((,(rx (any "()")) . 'my-face-faded))))
+
+(defun my/fade-characters ()
+  "Make some characters less prominent."
+  (font-lock-add-keywords nil `((,(rx (any "[]{}_&#%~@.,")) . 'my-face-faded))))
+
 
 (setq org-directory "~/docs/org/")
 
@@ -71,6 +144,9 @@
         '(
           (fluent . ("https://github.com/tree-sitter/tree-sitter-fluent")))))
 
+
+(after! hl-line
+  (setq! hl-line-sticky-flag nil))
 
 (use-package ligature
   :config
