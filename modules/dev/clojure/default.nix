@@ -69,6 +69,12 @@ in
           jdt-language-server
           (pkgs.writeScriptBin "run-clojure-mcp" ''
             #!/usr/bin/env bash
+            if [ ! -f "deps.edn" ]; then
+              echo "Error: deps.edn not found in current directory" >&2
+              exit 1
+            fi
+            exec > >(tee -a clojure-mcp-stdout.log)
+            exec 2>> clojure-mcp-stdout.log
             set -euo pipefail
             PORT_FILE=''${1:-.nrepl-port}
             PORT=4888
@@ -79,7 +85,6 @@ in
             source ~/${hm.config.sops.secrets.llm-keys.path}
             set +a
             unset ANTHROPIC_API_KEY
-            unset OPENAI_API_KEY
             ${clojure}/bin/clojure -X:mcp/clojure :port $PORT
           '')
         ];

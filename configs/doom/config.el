@@ -57,6 +57,7 @@
 
 (custom-theme-set-faces! '(modus-vivendi)
   `(symex-highlight-face     :inherit ,nil :background ,(modus-themes-get-color-value 'bg-active) :weight ,'normal)
+  `(clojure-discard-face     :foreground ,(modus-themes-get-color-value 'bg-active))
   `(my-face-faded            :foreground ,(modus-themes-get-color-value 'fg-dim))
   )
 
