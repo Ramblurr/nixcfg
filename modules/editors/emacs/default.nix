@@ -35,6 +35,7 @@ in
           enable = true;
           package = cfg.package;
           extraPackages = epkgs: [
+            epkgs.eldev
             epkgs.vterm
             #epkgs.pdf-tools
             epkgs.treesit-grammars.with-all-grammars
