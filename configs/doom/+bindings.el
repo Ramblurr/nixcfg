@@ -6,6 +6,7 @@
  :n "<f2>" #'flycheck-next-error
  :n "<f5>" #'consult-lsp-diagnostics
  :n "<f12>" #'consult-lsp-file-symbols
+ :n "\\" #'symex-mode-interface
  )
 
 (map!
@@ -29,10 +30,6 @@
 (map!
  :leader
  (:prefix ("k" . "Structural Editing")
-          "dx" #'kill-sexp
-          "dX" #'backward-kill-sexp
-          "c" #'lispy-clone
-          "p" #'lispy-raise
           "D" #'cljr-destructure-keys
           "ks" #'my/destructure-clojure-param
           ))
@@ -61,13 +58,6 @@
   (:prefix ("n" . "namespace")
    :desc "Clean and Sort" :n "s"  #'my/clojure-clean-and-sort-ns
    )))
-
-(map!
- :after lispyville
- :map lispyville-mode-map
- :n "M-L" #'lispyville-beginning-of-next-defun
- :v "(" #'lispy-parens)
-
 
 (map!
  :after eca

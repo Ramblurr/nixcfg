@@ -1,13 +1,17 @@
 ;;; +my-commands.el -*- lexical-binding: t; -*-
 
-(evil-define-command my/lispyville-insert-at-end-of-list (count)
-  "Same as `lispyville-insert-at-end-of-list', but adds a newline."
-  (interactive "<c>")
-  ;; TODO if already at the end of the list, add a newline above
-  (when (lispyville--out-forward (or count 1))
-    (backward-char)
-    (newline-and-indent)
-    (evil-change-state lispyville-preferred-state)))
+(defmacro comment (&rest _)
+  "Comment out one or more s-expressions."
+  nil)
+
+(comment (evil-define-command my/lispyville-insert-at-end-of-list (count)
+           "Same as `lispyville-insert-at-end-of-list', but adds a newline."
+           (interactive "<c>")
+           ;; TODO if already at the end of the list, add a newline above
+           (when (lispyville--out-forward (or count 1))
+             (backward-char)
+             (newline-and-indent)
+             (evil-change-state lispyville-preferred-state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Clojure commands
@@ -145,28 +149,28 @@ When called with point over a parameter, it transforms it to
 
 
 ;; make w/e/b move by words inside strings and comments
-(defun fn--lispyville-e-handler ()
-  (interactive)
-  (if (or (in-string-p)
-          (evilnc-pure-comment-p (point))
-          )
-      (evil-forward-word-end)
-    (lispyville-forward-atom-end)))
+(comment (defun fn--lispyville-e-handler ()
+           (interactive)
+           (if (or (in-string-p)
+                   (evilnc-pure-comment-p (point))
+                   )
+               (evil-forward-word-end)
+             (lispyville-forward-atom-end)))
 
-(defun fn--lispyville-w-handler ()
-  (interactive)
-  (if (or (in-string-p)
-          (evilnc-pure-comment-p (point))
-          )
-      (evil-forward-word-begin)
-    (lispyville-forward-atom-begin)))
+         (defun fn--lispyville-w-handler ()
+           (interactive)
+           (if (or (in-string-p)
+                   (evilnc-pure-comment-p (point))
+                   )
+               (evil-forward-word-begin)
+             (lispyville-forward-atom-begin)))
 
-(defun fn--lispyville-b-handler ()
-  (interactive)
-  (if (or (in-string-p)
-          (evilnc-pure-comment-p (point)))
-      (evil-backward-word-begin)
-    (lispyville-backward-atom-begin)))
+         (defun fn--lispyville-b-handler ()
+           (interactive)
+           (if (or (in-string-p)
+                   (evilnc-pure-comment-p (point)))
+               (evil-backward-word-begin)
+             (lispyville-backward-atom-begin))))
 
 
 ;; from https://emacs.stackexchange.com/questions/13080/reloading-directory-local-variables
@@ -189,15 +193,6 @@ reload dir-locals."
 (defun my/cider-set-print-length ()
   (interactive)
   (cider-interactive-eval "(set! *print-length* 100)"))
-
-(defun my/toggle-structural-editing-mode ()
-  "Toggle structural editing mode based on major mode.
-Uses symex for Lisp modes, combobulate for others."
-  (interactive)
-  (when (derived-mode-p 'lisp-mode 'emacs-lisp-mode 'clojure-mode 'scheme-mode)
-    (call-interactively #'symex-mode-interface)
-    ;; (call-interactively #'combobulate-mode-interface)
-    ))
 
 (defun my/copy-latest-commit-hash ()
   "Copy the latest commit hash of the current project to the clipboard."
@@ -232,3 +227,9 @@ Uses symex for Lisp modes, combobulate for others."
   If mic was muted before unmute, mute them again."
   (when my/system--mic-was-muted
     (call-process "mic-mute")))
+
+(defun my/disable-all-active-themes ()
+  "Disable all currently active themes."
+  (interactive)
+  (dolist (theme custom-enabled-themes)
+    (disable-theme theme)))
