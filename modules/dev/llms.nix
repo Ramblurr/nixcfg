@@ -60,6 +60,7 @@ in
         path = ".llm-keys";
       };
       home.packages = with pkgs; [
+        jujutsu
         mcp-inspector
         claude-code
         llm-wrapper

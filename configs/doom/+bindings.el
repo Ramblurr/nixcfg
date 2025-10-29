@@ -17,14 +17,10 @@
   ;; :desc "Select model" :n "m" #'my/gptel-select-default-backend
   ;; :desc "Open gptel Buffer" :n "q" #'gptel
   ;; :desc "Submit prompt to AT" :n "a" #'gptel-send
-  ;; :desc "Send entire buffer to AI" :n "b" #'gptel-ext-send-whole-buffer
-  ;; :desc "Load buffer into session" :n "l" #'gptel-ext-ask-document
-  ;; :desc "Rewrite region" :n "R" #'gptel-ext-rewrite-and-replace
-  ;; :desc "Refactor" :n "r" #'gptel-ext-refactor
   :desc "ECA Toggle" :n "e" #'my/eca-chat-toggle-or-start
-  :desc "ECA Add Context" :n "a" #'eca-chat-add-context
+  :desc "ECA Add Context" :n "a" #'eca-chat-add-context-to-user-prompt
   :desc "ECA Talk" :n "t" #'eca-chat-talk
-  :desc "Whisper" :n "w" #'my/whisper-english-hydra/body
+  :desc "Whisper Dictate" :n "w" #'my/whisper-english-hydra/body
   ))
 
 (map!
