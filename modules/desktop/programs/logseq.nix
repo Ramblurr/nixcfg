@@ -34,7 +34,7 @@ in
         # I am using flatpak logseq, because it is more stable than the nix pkg (as of 2024-09)
         # ref: https://github.com/NixOS/nixpkgs/issues/264885
         #      https://github.com/logseq/logseq/issues/10851
-        #home.packages = [ pkgs.logseq ];
+        home.packages = [ pkgs.logseq ];
         #Exec=env -u NIXOS_OZONE_WL logseq %u
         #Icon=logseq
         home.file.".local/share/applications/logseq-wayland.desktop" = {

@@ -200,6 +200,7 @@
 
 (load! "+helpers.el")
 (load! "+my-commands.el")
+(load! "+org.el")
 (load! "+ai.el")
 (load! "+lisp-editing.el")
 (load! "+langs.el")

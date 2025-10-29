@@ -8,32 +8,81 @@
 ;; gptel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun my/gptel-save-buffer (&rest args)
+  (interactive)
+  (when-let ((buf (current-buffer)))
+    (with-current-buffer buf
+      ;; (gptel-context-remove-all nil)
+      (if buffer-file-name
+          (save-buffer)
+        (progn
+          (get-gptel-org-title
+           (buffer-string)
+           (lambda (title)
+             (let* ((new-title (string-replace "\n" "_" title))
+                    (new-title (string-replace "```" "" new-title)))
+               (with-current-buffer buf
+                 (let ((dir (format
+                             "~/docs/ai/%s/%s"
+                             (format-time-string "%Y")
+                             (format-time-string "%m"))))
+                   (unless (file-directory-p dir)
+                     (make-directory dir t))
+                   (my/set-org-top-header new-title)
+                   (insert "\n")
+                   (my/set-org-title new-title)
+                   (insert "\n")
+                   (write-file
+                    (expand-file-name
+                     (format
+                      "%s-%s-%s.org"
+                      (format-time-string "%d")
+                      (format-time-string "%H_%M")
+                      new-title)
+                     dir))))))
+           (lambda (e) (user-error "Error setting gptel org title: %s" e)))
+          t)))))
+
 (use-package! gptel
+  :init
+  (setq!
+    gptel-default-mode 'org-mode
+    gptel-expert-commands t
+    gptel-temperature 0.8
+    gptel-org-branching-context t
+    gptel-expert-commands t
+    gptel-track-media t)
   :config
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
+  (setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
   (setq my/gptel-backend--anthropic (gptel-make-anthropic "Claude" :stream t :key (auth-source-pick-first-password :host "api.anthropic.com")))
   (setq my/gptel-backend--gemini (gptel-make-gemini "Gemini" :stream t :key (auth-source-pick-first-password :host "generativelanguage.googleapis.com")))
   (setq my/gptel-backend--openai (gptel-make-openai "OpenAI" :stream t :key (auth-source-pick-first-password :host "api.openai.com")))
   (setq my/gptel-backend--kagi (gptel-make-kagi "Kagi" :key (auth-source-pick-first-password :host "kagi.com")))
   (defvar my/gptel-backends-list
     `(("Anthropic"           . ,my/gptel-backend--anthropic)
-      ("Gemini"              . ,my/gptel-backend--gemini)
-      ("OpenAI"              . ,my/gptel-backend--openai)
-      ("Kagi"                . ,my/gptel-backend--kagi)))
+       ("Gemini"              . ,my/gptel-backend--gemini)
+       ("OpenAI"              . ,my/gptel-backend--openai)
+       ("Kagi"                . ,my/gptel-backend--kagi)))
 
   (defun my/gptel-select-default-backend ()
     "Select a gptel backend from a predefined list and set it as the default."
     (interactive)
     (let* ((backend-name (completing-read "Select backend: " my/gptel-backends-list nil t))
-           (backend (cdr (assoc backend-name my/gptel-backends-list))))
+            (backend (cdr (assoc backend-name my/gptel-backends-list))))
       (when backend
         (setq gptel-backend backend)
         (message "gptel default backend set to: %s" backend-name))))
 
 
   (setq gptel-stream t
-        ;; gptel-display-buffer-action '(pop-to-buffer-same-window)
-        gptel-model 'claude-sonnet-4-20250514
-        gptel-backend my/gptel-backend--anthropic)
+    ;; gptel-display-buffer-action '(pop-to-buffer-same-window)
+    gptel-model 'claude-sonnet-4-5-20250929
+    gptel-backend my/gptel-backend--anthropic)
+
+  (add-hook! 'gptel-post-response-functions 'my/gptel-save-buffer)
+  (add-hook! 'gptel-post-response-functions #'my/gptel-remove-headings)
+
   (comment "To assist:  Be terse.  Do not offer unprompted advice or clarifications. Speak in specific,
  topic relevant terminology. Do NOT hedge or qualify. Do not waffle. Speak
  directly and be willing to make creative guesses. Explain your reasoning. if you
@@ -101,24 +150,70 @@
 
  )
 
+(defun get-gptel-org-title (&optional chat-content on-title on-error)
+  (my/simple-llm-req
+   (format "```\n%s```\n\nGenerate a file title for the above conversation with llm"
+           (or chat-content
+               (with-current-buffer (current-buffer) (buffer-string))))
+   ;; :backend my/gptel-backend--anthropic
+   ;; :model 'claude-3-haiku-20240307
+   :backend my/gptel-backend--gemini
+   :model 'gemini-2.5-flash-lite
+   :temperature 0.5
+   :max-token 20
+   :cb (or on-title 'print)
+   :error (or on-error 'print)
+   :system "You are an expert chat titling AI. Your sole purpose is to read the beginning of a chat conversation and generate a concise, descriptive title for it. This title will be used as a filename or an HTML page title.
+
+RULES:
+1.  Directly output the title text and NOTHING ELSE.
+2.  Do NOT use quotation marks or any other formatting.
+3.  Do NOT include prefixes like \"Title:\" or \"Chat about:\".
+4.  Do NOT add any explanation or commentary.
+5.  The title should be brief, typically 3-7 words.
+6.  Capture the core subject or the user's primary intent from the provided text.
+
+EXAMPLES:
+- User asks for a Python function to sort a list -> Title: Python List Sorting Function
+- User asks for ideas for a sci-fi story -> Title: Sci-Fi Story Ideas
+- User asks \"What were the main causes of World War 1?\" -> Title: Main Causes of WWI
+
+The user's chat will now follow. Generate the title."))
+
+(comment
+  (get-gptel-org-title))
+
+
+(defun my/gptel-remove-headings (beg end)
+  (when (derived-mode-p 'org-mode)
+    (save-excursion
+      (goto-char beg)
+      (while (re-search-forward org-heading-regexp end t)
+        (forward-line 0)
+        (delete-char (1+ (length (match-string 1))))
+        (insert-and-inherit "*")
+        (end-of-line)
+        (skip-chars-backward " \t\r")
+        (insert-and-inherit "*")))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Copilot
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Migrated to using lsp's builtin copilot suport
 
 (comment
- (use-package! copilot
-   :hook (prog-mode . copilot-mode)
-   :bind (:map copilot-completion-map
-               ("<right>" . 'copilot-accept-completion)
-               ("C-<right>" . 'copilot-accept-completion-by-word))
-   :custom (copilot-max-char-warning-disable t)
-   :config
-   (setq copilot-indent-offset-warning-disable t)
-   (setq copilot-log-max 10000)
-   (customize-set-variable 'copilot-enable-predicates '(evil-insert-state-p))
-   (custom-theme-set-faces! '(doom-gruvbox)
-     `(copilot-overlay-face  :foreground ,(doom-color 'violet) :underline t))))
+  (use-package! copilot
+    :hook (prog-mode . copilot-mode)
+    :bind (:map copilot-completion-map
+            ("<right>" . 'copilot-accept-completion)
+            ("C-<right>" . 'copilot-accept-completion-by-word))
+    :custom (copilot-max-char-warning-disable t)
+    :config
+    (setq copilot-indent-offset-warning-disable t)
+    (setq copilot-log-max 10000)
+    (customize-set-variable 'copilot-enable-predicates '(evil-insert-state-p))
+    (custom-theme-set-faces! '(doom-gruvbox)
+      `(copilot-overlay-face  :foreground ,(doom-color 'violet) :underline t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ECA (Editor Code Assistant by the venerable Eric Dallo)

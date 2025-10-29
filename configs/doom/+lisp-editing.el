@@ -136,7 +136,10 @@
   :after (symex evil)
   :config
   (add-to-list 'doom-leader-key-states 'symex)
-  (symex-evil-mode 1))
+  (symex-evil-mode 1)
+  (lithium-define-keys symex-editing-mode
+    ((">" symex-capture-forward)
+     ("<" symex-capture-backward))))
 
 (comment (use-package! symex
            :commands (symex-mode symex-mode-interface)
