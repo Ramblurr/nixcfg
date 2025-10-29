@@ -77,7 +77,9 @@ in
       adminPasswordFile = config.sops.secrets."davis/ADMIN_PASSWORD".path;
       appSecretFile = config.sops.secrets."davis/APP_SECRET".path;
       config = {
-        IMAP_AUTH_URL = home-ops.mail.imapAuthUrl;
+        IMAP_AUTH_URL = home-ops.mail.imapAuthUrlNew;
+        IMAP_ENCRYPTION_METHOD = "ssl";
+        IMAP_CERTIFICATE_VALIDATION = true;
         AUTH_METHOD = "IMAP";
         IMAP_AUTH_USER_AUTOCREATE = false;
       };
