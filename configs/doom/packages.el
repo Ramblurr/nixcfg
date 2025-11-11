@@ -63,7 +63,7 @@
 ;; (package! clojure-essential-ref)
 ;; (package! clojure-essential-ref-nov)
 (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "7962cf33b1219ba98a2bd639222c712181b561b7")
+(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "8cbf851a732f1a6fb42f5191eca416f7fd764c46")
 (package! gptel :pin "81d3d0fc800498430485d4ac84a3e803dcbb5d18")
 (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
 (package! treemacs-all-the-icons)
@@ -97,3 +97,7 @@
 
 (package! modus-themes
   :recipe (:host github :repo "protesilaos/modus-themes"))
+
+(package! mcp
+  :recipe (:host github :repo "lizqwerscott/mcp.el")
+  :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")

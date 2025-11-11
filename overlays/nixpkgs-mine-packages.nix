@@ -12,6 +12,7 @@ in
   # claude-code = (nixpkgs-mine.claude-code.override { nodejs_20 = nixpkgs-mine.nodejs_24; });
   claude-code = nixpkgs-mine.claude-code;
   codex = nixpkgs-mine.codex;
+  opencode = nixpkgs-mine.opencode;
   gemini-cli = nixpkgs-mine.gemini-cli;
   clojure-lsp = nixpkgs-mine.clojure-lsp;
   davis = nixpkgs-mine.davis;

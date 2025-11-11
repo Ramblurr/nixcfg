@@ -1,5 +1,6 @@
 inputs: [
   (_final: prev: {
+    spec-kit = prev.callPackage ./spec-kit.nix { };
     nvidia = prev.callPackage ./nvidia/package.nix { inherit inputs; };
     pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
     gitbutler-bin = prev.callPackage ./gitbutler-bin.nix { };

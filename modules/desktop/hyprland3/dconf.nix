@@ -17,6 +17,54 @@ in
       with lib.hm.gvariant;
       {
         dconf.settings = {
+          "org/virt-manager/virt-manager/connections" = {
+            autoconnect = [ "qemu:///system" ];
+            uris = [
+              "qemu:///system"
+              "qemu+ssh://ramblurr@debord/system"
+            ];
+          };
+          "org/virt-manager/virt-manager/confirm" = {
+            forcepoweroff = true;
+            removedev = false;
+            unapplied-dev = true;
+          };
+          "org/virt-manager/virt-manager/details" = {
+            show-toolbar = true;
+          };
+
+          "org/virt-manager/virt-manager/new-vm" = {
+            graphics-type = "system";
+          };
+
+          "org/virt-manager/virt-manager/vmlist-fields" = {
+            disk-usage = false;
+            network-traffic = false;
+          };
+
+          "org/virt-manager/virt-manager/vms/4648adfb536a41818944209d6cff0c31" = {
+            autoconnect = 1;
+            scaling = 1;
+            vm-window-size = mkTuple [
+              1688
+              703
+            ];
+          };
+          "org/virt-manager/virt-manager/vms/e5c7ddccfa054ae09b966cb8e5176436" = {
+            autoconnect = 1;
+            vm-window-size = mkTuple [
+              1688
+              1398
+            ];
+          };
+          "org/virt-manager/virt-manager/vms/f4f133d6079340459df7c38ff8b71cf8" = {
+            autoconnect = 1;
+            scaling = 1;
+            vm-window-size = mkTuple [
+              1688
+              1398
+            ];
+          };
           "org/gnome/desktop/input-sources" = {
             sources = [
               (mkTuple [
