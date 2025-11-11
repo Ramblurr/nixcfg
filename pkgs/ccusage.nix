@@ -8,12 +8,12 @@
 }:
 
 let
-  version = "16.2.5";
+  version = "17.1.3";
   src = fetchFromGitHub {
     owner = "ryoppippi";
     repo = "ccusage";
     tag = "v${version}";
-    hash = "sha256-6jwHJIp825cHLvgKr4JpTd9R8BGgYzaFiFm/wt56dxM=";
+    hash = "sha256-s/0tki1xD7dIawGmURlvJGf5C+jhL6HrZLUo5C1bV98=";
   };
   ccusage-deps = stdenv.mkDerivation (finalAttrs: {
     inherit version src;
@@ -36,7 +36,7 @@ let
     fixupPhase = ''
       find $out -name "*.sh" -delete
     '';
-    outputHash = "sha256-k6uKWtinB5H8UPB0fS0O1Lj+Xr9BUj21ks2pIrbVstg=";
+    outputHash = "";
     outputHashAlgo = "sha256";
     outputHashMode = "recursive";
   });

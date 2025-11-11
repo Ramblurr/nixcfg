@@ -46,6 +46,7 @@ in
         ".local/share/Zeal"
         ".local/state/audacity"
 
+        ".config/adept"
         ".config/warp-terminal"
         ".config/libreoffice"
         ".config/gtk-3.0" # fuse mounted from /nix/dotfiles/Plasma/.config/gtk-3.0

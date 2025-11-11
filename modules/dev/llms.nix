@@ -24,12 +24,16 @@ let
   '';
   crush-wrapper = pkgs.writeShellScriptBin "crush" (wrapWithLLMKeys "${pkgs.crush}/bin/crush" [ ]);
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
-    wrapWithLLMKeys "${pkgs.opencode-bin}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
+    wrapWithLLMKeys "${pkgs.opencode}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
   );
   llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${pkgs.llm}/bin/llm" [ ]);
   gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini-cli" (
     wrapWithLLMKeys "${pkgs.gemini-cli}/bin/gemini-cli" [ ]
   );
+  github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
+    wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
+  );
+
 in
 {
   options.modules.dev.llms = {
@@ -64,8 +68,9 @@ in
         mcp-inspector
         claude-code
         llm-wrapper
+        github-mcp-server-wrapper
         gemini-cli-wrapper
-        ccusage
+        #ccusage # broken build
         codex
         #inputs.boxai.packages.${pkgs.system}.boxai
         crush-wrapper

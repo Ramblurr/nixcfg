@@ -30,6 +30,8 @@ in
             ]
           ))
           (with pkgs; [
+            vlc
+            speedcrunch
             xournalpp
             libreoffice
             appimage-run
