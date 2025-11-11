@@ -77,10 +77,83 @@ When called with point over a parameter, it transforms it to
   (my/clojure-reload-browser))
 
 (defun my/clojure-clean-and-sort-ns ()
-  "Clean and sort the clojure active namespace"
+  "Clean and sort the clojure active namespace.
+After cleaning and sorting, collapses all import groups back to compact form,
+then wraps long lines at 90 columns with 4-space indentation."
   (interactive)
   (lsp-clojure-clean-ns)
-  (clojure-sort-ns))
+  (clojure-sort-ns)
+  ;; I don't like how sort-ns puts :import classes on their own line
+  ;; So this finds and collapses those import statements but with 90 col wrapping
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^[[:space:]]*(:import" nil t)
+      (goto-char (match-beginning 0))
+      (let ((import-start (point)))
+        ;; Move to the end of the import form to establish bounds
+        (forward-char)  ; Move past the opening paren
+        (forward-sexp)  ; Move to closing paren
+        (backward-char) ; Move back inside
+        (let ((import-end (point)))
+          ;; Now process each opening bracket within the import form
+          (goto-char import-start)
+          ;; Skip past "(:import" to start searching for brackets
+          (forward-char 8)
+          (while (and (< (point) import-end)
+                      (re-search-forward "\\[" import-end t))
+            (backward-char) ; Move back onto the bracket
+            (let ((bracket-start (point)))
+              (when (fboundp 'symex-collapse)
+                (symex-collapse))
+              ;; Wrap long lines at 90 columns
+              (save-excursion
+                (goto-char bracket-start)
+                (let* ((line-start (line-beginning-position))
+                       (base-indent (- bracket-start line-start)))
+                  (forward-char) ; Skip opening bracket
+                  (forward-sexp 1) ; Skip package name
+                  (while (not (looking-at "\\s-*\\]"))
+                    (skip-chars-forward " \t")
+                    (let ((before-class (point)))
+                      ;; Skip to end of current class name
+                      (skip-chars-forward "^] \t\n")
+                      ;; Check if line is too long
+                      (when (> (current-column) 90)
+                        ;; Go back to before this class name and insert newline
+                        (goto-char before-class)
+                        (insert "\n")
+                        (insert (make-string (+ base-indent 1) ?\s)))))))
+              ;; Skip past the entire form
+              (goto-char bracket-start)
+              (forward-sexp)
+              ;; Update import-end since modifications changed buffer positions
+              (save-excursion
+                (goto-char import-start)
+                (forward-char)
+                (forward-sexp)
+                (setq import-end (1- (point)))))))))))
+
+(comment
+ ;; Test with this sample namespace
+ "(ns ol.clave.scope
+  \"Lightweight cancellation/deadline scopes used to propagate structured context
+  through ACME plumbing layers.\"
+  (:require
+   [ol.clave.errors :as errors])
+  (:import
+   [java.lang.ref WeakReference]
+   [java.time Duration Instant]
+   [java.util UUID]
+   [java.util.concurrent
+    Callable
+    StructuredTaskScope
+    StructuredTaskScope$FailedException
+    StructuredTaskScope$Joiner
+    StructuredTaskScope$Subtask
+    StructuredTaskScope$Subtask$State
+    StructuredTaskScope$TimeoutException]
+   [java.util.function Predicate]))"
+ )
 
 ;; Integration with portal
 

@@ -8,6 +8,15 @@
 ;; gptel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun my/auto-enable-gptel-in-ai-docs ()
+  "Enable gptel-mode for .org and .md files under ~/docs/ai/."
+  (when-let ((file-name (buffer-file-name)))
+    (when (and (or (derived-mode-p 'org-mode)
+                   (derived-mode-p 'markdown-mode))
+               (string-prefix-p (expand-file-name "~/docs/ai/")
+                                (expand-file-name file-name)))
+      (gptel-mode 1))))
+
 (defun my/gptel-save-buffer (&rest args)
   (interactive)
   (when-let ((buf (current-buffer)))
@@ -46,12 +55,12 @@
 (use-package! gptel
   :init
   (setq!
-    gptel-default-mode 'org-mode
-    gptel-expert-commands t
-    gptel-temperature 0.8
-    gptel-org-branching-context t
-    gptel-expert-commands t
-    gptel-track-media t)
+   gptel-default-mode 'org-mode
+   gptel-expert-commands t
+   gptel-temperature 0.8
+   gptel-org-branching-context t
+   gptel-expert-commands t
+   gptel-track-media t)
   :config
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
@@ -61,27 +70,46 @@
   (setq my/gptel-backend--kagi (gptel-make-kagi "Kagi" :key (auth-source-pick-first-password :host "kagi.com")))
   (defvar my/gptel-backends-list
     `(("Anthropic"           . ,my/gptel-backend--anthropic)
-       ("Gemini"              . ,my/gptel-backend--gemini)
-       ("OpenAI"              . ,my/gptel-backend--openai)
-       ("Kagi"                . ,my/gptel-backend--kagi)))
+      ("Gemini"              . ,my/gptel-backend--gemini)
+      ("OpenAI"              . ,my/gptel-backend--openai)
+      ("Kagi"                . ,my/gptel-backend--kagi)))
 
   (defun my/gptel-select-default-backend ()
     "Select a gptel backend from a predefined list and set it as the default."
     (interactive)
     (let* ((backend-name (completing-read "Select backend: " my/gptel-backends-list nil t))
-            (backend (cdr (assoc backend-name my/gptel-backends-list))))
+           (backend (cdr (assoc backend-name my/gptel-backends-list))))
       (when backend
         (setq gptel-backend backend)
         (message "gptel default backend set to: %s" backend-name))))
 
 
   (setq gptel-stream t
-    ;; gptel-display-buffer-action '(pop-to-buffer-same-window)
-    gptel-model 'claude-sonnet-4-5-20250929
-    gptel-backend my/gptel-backend--anthropic)
+        ;; gptel-display-buffer-action '(pop-to-buffer-same-window)
+        gptel-model 'claude-sonnet-4-5-20250929
+        gptel-backend my/gptel-backend--anthropic)
 
   (add-hook! 'gptel-post-response-functions 'my/gptel-save-buffer)
   (add-hook! 'gptel-post-response-functions #'my/gptel-remove-headings)
+  (add-hook 'find-file-hook #'my/auto-enable-gptel-in-ai-docs)
+
+  (gptel-make-tool
+   :function (lambda (url)
+               (let* ((proxy-url (concat "https://r.jina.ai/" url))
+                      (buffer (url-retrieve-synchronously proxy-url)))
+                 (with-current-buffer buffer
+                   (goto-char (point-min)) (forward-paragraph)
+                   (let ((dom (libxml-parse-html-region (point) (point-max))))
+                     (run-at-time 0 nil #'kill-buffer (current-buffer))
+                     (with-temp-buffer
+                       (shr-insert-document dom)
+                       (buffer-substring-no-properties (point-min) (point-max)))))))
+   :name "read_url"
+   :description "Fetch and read the contents of a URL using Jina.ai reader"
+   :args (list '(:name "url"
+                 :type "string"
+                 :description "The URL to read"))
+   :category "web")
 
   (comment "To assist:  Be terse.  Do not offer unprompted advice or clarifications. Speak in specific,
  topic relevant terminology. Do NOT hedge or qualify. Do not waffle. Speak
@@ -181,7 +209,7 @@ EXAMPLES:
 The user's chat will now follow. Generate the title."))
 
 (comment
-  (get-gptel-org-title))
+ (get-gptel-org-title))
 
 
 (defun my/gptel-remove-headings (beg end)
@@ -197,23 +225,46 @@ The user's chat will now follow. Generate the title."))
         (insert-and-inherit "*")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MCP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package! mcp
+  :after (gptel)
+  :config (require 'mcp-hub)
+  :init (setq mcp-hub-servers
+              '(
+                ("github" , (:command "github-mcp-server" :args ("stdio")
+                             :env (:GITHUB_READ_ONLY "1"
+                                   :GITHUB_TOOLSETS "context,repos,pull_requests,issues")
+                             ))
+                ;; this tells that it can launch an MCP server
+                ;; for my-project by running the following
+                ;; command line:
+                ;;    clojure-mcp my-project
+                ;; ("my-project" :command "clojure-mcp" :args ("my-project"))
+                )
+              )
+  :hook (after-init . mcp-hub-start-all-server)
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Copilot
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Migrated to using lsp's builtin copilot suport
 
 (comment
-  (use-package! copilot
-    :hook (prog-mode . copilot-mode)
-    :bind (:map copilot-completion-map
-            ("<right>" . 'copilot-accept-completion)
-            ("C-<right>" . 'copilot-accept-completion-by-word))
-    :custom (copilot-max-char-warning-disable t)
-    :config
-    (setq copilot-indent-offset-warning-disable t)
-    (setq copilot-log-max 10000)
-    (customize-set-variable 'copilot-enable-predicates '(evil-insert-state-p))
-    (custom-theme-set-faces! '(doom-gruvbox)
-      `(copilot-overlay-face  :foreground ,(doom-color 'violet) :underline t))))
+ (use-package! copilot
+   :hook (prog-mode . copilot-mode)
+   :bind (:map copilot-completion-map
+               ("<right>" . 'copilot-accept-completion)
+               ("C-<right>" . 'copilot-accept-completion-by-word))
+   :custom (copilot-max-char-warning-disable t)
+   :config
+   (setq copilot-indent-offset-warning-disable t)
+   (setq copilot-log-max 10000)
+   (customize-set-variable 'copilot-enable-predicates '(evil-insert-state-p))
+   (custom-theme-set-faces! '(doom-gruvbox)
+     `(copilot-overlay-face  :foreground ,(doom-color 'violet) :underline t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ECA (Editor Code Assistant by the venerable Eric Dallo)
