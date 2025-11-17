@@ -80,6 +80,17 @@
         };
         "pinenote" = {
           id = "3325NK7-Y2FQDAO-CAZTGTF-KLM6R4Y-GO4Y3CF-L3JUQGP-HESNL5B-NXRBGA5";
+          addresses = [
+            "tcp://10.9.6.36:22000"
+            "tcp://100.114.233.33:22000"
+          ];
+        };
+        "kobo" = {
+          id = "D4JC2XS-YQ75YEK-FSG6IDR-SFZBP7Z-IE74F7I-QP3EJ4T-JNII27Y-WOA67A4";
+          addresses = [
+            "tcp://10.9.6.96:22000"
+            "tcp://100.87.226.94:22000"
+          ];
         };
       };
       folders = {
