@@ -92,7 +92,7 @@
             "tcp://100.87.226.94:22000"
           ];
         };
-        "mudita-kompact" = {
+        "mudita-kompakt" = {
           id = "76XIVGS-O7E2NW5-LDVRNHL-T2OIUG5-EO23U65-VNGQQUY-HZF6PCI-LMDSVAE";
           addresses = [
             "tcp://10.9.6.37:22000"
@@ -101,11 +101,44 @@
         };
       };
       folders = {
+        "koreader-pinenote" = {
+          id = "kpphm-29veh";
+          path = "/home/ramblurr/docs/backups/koreader/pinenote";
+          devices = [
+            "pinenote"
+            "mali"
+          ];
+        };
+        "koreader-mudita" = {
+          id = "fiqtt-jejf4";
+          path = "/home/ramblurr/docs/backups/koreader/mudita-kompakt";
+          devices = [
+            "mudita-kompakt"
+            "mali"
+          ];
+        };
+        "koreader-kobo" = {
+          id = "xmja2-xhtrr";
+          path = "/home/ramblurr/docs/backups/koreader/kobo";
+          devices = [
+            "kobo"
+            "mali"
+          ];
+        };
+        "koreader-pixel" = {
+          id = "gsvac-myqnf";
+          path = "/home/ramblurr/docs/backups/koreader/pixel-9";
+          devices = [
+            "phone2"
+            "mali"
+          ];
+        };
         "Pixel9Backup" = {
           id = "dfkjb-d9yfl";
           path = "/home/ramblurr/docs/backups/pixel-9";
           devices = [
             "phone2"
+            "mali"
           ];
         };
         "S21Backup" = {
@@ -124,6 +157,7 @@
             "phone"
             "phone2"
             "ipad"
+            "pinenote"
           ];
           versioning = {
             type = "staggered";
@@ -206,6 +240,7 @@
             "phone"
             "phone2"
             "ipad"
+            "pinenote"
           ];
           versioning = {
             type = "staggered";
