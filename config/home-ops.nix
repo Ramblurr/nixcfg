@@ -60,6 +60,7 @@ in
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
       calibre.enable = lib.mkEnableOption "Calibre";
+      koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
       roon-server.enable = lib.mkEnableOption "Roon Server";
       onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
@@ -490,6 +491,17 @@ in
       };
     };
 
+    modules.services.koreader-sync = lib.mkIf cfg.apps.koreader-sync.enable {
+      enable = true;
+      domain = "koreader.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.koreader-sync;
+      ingress = {
+        domain = home-ops.homeDomain;
+        external = true;
+      };
+      user = home-ops.users.koreader-sync;
+      group = home-ops.groups.koreader-sync;
+    };
     modules.services.calibre-web = lib.mkIf cfg.apps.calibre-web.enable {
       enable = true;
       domain = "books.${home-ops.homeDomain}";
