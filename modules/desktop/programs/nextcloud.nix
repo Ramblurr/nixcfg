@@ -23,7 +23,6 @@ in
       users.${username} = {
         directories = [
           ".config/Nextcloud"
-          ".local/share/Nextcloud"
         ];
       };
     };
