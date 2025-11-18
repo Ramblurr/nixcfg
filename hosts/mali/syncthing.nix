@@ -20,14 +20,13 @@
     configDir = "/home/ramblurr/.config/syncthing";
     dataDir = "/home/ramblurr/.config/syncthing";
     openDefaultPorts = true;
-    guiAddress = "127.0.0.1:8384";
+    guiAddress = "0.0.0.0:8394";
     overrideDevices = true;
     overrideFolders = true;
     key = config.sops.secrets.syncthing-key.path;
     cert = config.sops.secrets.syncthing-cert.path;
     settings = {
       gui = {
-        theme = "black";
         user = "ramblurr";
         password = config.repo.secrets.local.syncthingPassword;
       };
@@ -66,8 +65,50 @@
         "kobo" = {
           id = "D4JC2XS-YQ75YEK-FSG6IDR-SFZBP7Z-IE74F7I-QP3EJ4T-JNII27Y-WOA67A4";
         };
-        "mudita-kompact" = {
+        "mudita-kompakt" = {
           id = "76XIVGS-O7E2NW5-LDVRNHL-T2OIUG5-EO23U65-VNGQQUY-HZF6PCI-LMDSVAE";
+        };
+      };
+      folders = {
+        "koreader-pinenote" = {
+          id = "kpphm-29veh";
+          path = "/mnt/tank2/backups/koreader/pinenote";
+          devices = [
+            "pinenote"
+            "quine"
+          ];
+        };
+        "koreader-mudita" = {
+          id = "fiqtt-jejf4";
+          path = "/mnt/tank2/backups/koreader/mudita-kompakt";
+          devices = [
+            "mudita-kompakt"
+            "quine"
+          ];
+        };
+        "koreader-kobo" = {
+          id = "xmja2-xhtrr";
+          path = "/mnt/tank2/backups/koreader/kobo";
+          devices = [
+            "kobo"
+            "quine"
+          ];
+        };
+        "koreader-pixel" = {
+          id = "gsvac-myqnf";
+          path = "/mnt/tank2/backups/koreader/pixel";
+          devices = [
+            "phone2"
+            "quine"
+          ];
+        };
+        "Pixel9Backup" = {
+          id = "dfkjb-d9yfl";
+          path = "/mnt/tank2/backups/devices/pixel-9";
+          devices = [
+            "phone2"
+            "quine"
+          ];
         };
       };
     };
