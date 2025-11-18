@@ -66,6 +66,9 @@
         "kobo" = {
           id = "D4JC2XS-YQ75YEK-FSG6IDR-SFZBP7Z-IE74F7I-QP3EJ4T-JNII27Y-WOA67A4";
         };
+        "mudita-kompact" = {
+          id = "76XIVGS-O7E2NW5-LDVRNHL-T2OIUG5-EO23U65-VNGQQUY-HZF6PCI-LMDSVAE";
+        };
       };
     };
   };
