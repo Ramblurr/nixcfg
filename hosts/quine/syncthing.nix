@@ -92,6 +92,13 @@
             "tcp://100.87.226.94:22000"
           ];
         };
+        "mudita-kompact" = {
+          id = "76XIVGS-O7E2NW5-LDVRNHL-T2OIUG5-EO23U65-VNGQQUY-HZF6PCI-LMDSVAE";
+          addresses = [
+            "tcp://10.9.6.37:22000"
+            "tcp://100.91.180.98:22000"
+          ];
+        };
       };
       folders = {
         "Pixel9Backup" = {
