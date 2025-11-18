@@ -57,6 +57,7 @@ in
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
+      koreader-sync.enable = true;
       #archivebox.enable = true;
       matrix-synapse.enable = true;
       influxdb.enable = true;

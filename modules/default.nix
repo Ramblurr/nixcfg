@@ -26,6 +26,7 @@
     ./desktop/fonts.nix
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
+    ./desktop/programs/cad.nix
     ./desktop/programs/calibre.nix
     ./desktop/programs/discord.nix
     ./desktop/programs/element.nix
@@ -33,7 +34,6 @@
     ./desktop/programs/junction.nix
     ./desktop/programs/kdeconnect.nix
     ./desktop/programs/kicad.nix
-    ./desktop/programs/cad.nix
     ./desktop/programs/kitty/default.nix
     ./desktop/programs/wezterm/default.nix
     ./desktop/programs/logseq.nix
@@ -91,6 +91,7 @@
     ./services/authentik.nix
     ./services/borgmatic.nix
     ./services/calibre.nix
+    ./services/koreader-sync.nix
     ./services/calibre-web.nix
     ./services/davis.nix
     ./services/docker.nix

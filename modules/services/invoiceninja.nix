@@ -93,12 +93,13 @@ in
     users.users.${cfg.user.name} = {
       name = cfg.user.name;
       uid = cfg.user.uid;
-      isSystemUser = true;
+      isNormalUser = true;
       linger = true;
       home = rootDir;
       createHome = false;
-      autoSubUidGidRange = true;
       group = cfg.user.group;
+      # see https://github.com/nikstur/userborn/issues/7
+      # autoSubUidGidRange = true;
     };
     users.groups.${cfg.group.name} = {
       name = cfg.group.name;
@@ -164,7 +165,8 @@ in
             Exec = "app --port=${containerPort} --workers=2 --log-level=info";
             PublishPort = [ "${toString cfg.ports.http}:${containerPort}" ];
             ContainerName = "app";
-          } // inShared;
+          }
+          // inShared;
           unitConfig = {
             After = [ "invoiceninja-redis.service" ];
             Wants = [ "invoiceninja-redis.service" ];
@@ -187,7 +189,8 @@ in
             Image = config.virtualisation.quadlet.containers.invoiceninja-app.containerConfig.Image;
             Exec = "scheduler --verbose";
             ContainerName = "scheduler";
-          } // inShared;
+          }
+          // inShared;
         };
         invoiceninja-worker = {
           uid = cfg.user.uid;
@@ -205,7 +208,8 @@ in
             Image = config.virtualisation.quadlet.containers.invoiceninja-app.containerConfig.Image;
             Exec = "worker --verbose --sleep=3 --tries=3 --max-time=3600";
             ContainerName = "worker";
-          } // inShared;
+          }
+          // inShared;
         };
       };
     };

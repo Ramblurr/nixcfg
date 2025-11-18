@@ -128,7 +128,36 @@ in
         shell = cfg.primaryUser.shell;
       };
     };
+    # see https://github.com/nikstur/userborn/issues/7
+    environment.etc =
+      let
+        # fixed mappings to preserve
+        fixedSubs = {
+          invoiceninja2 = {
+            start = 362144;
+            count = 65536;
+          };
+        };
+        subsLine =
+          name: u:
+          if (u.isNormalUser or false) && (u.uid != null) then
+            let
+              # Use fixed start/count if present, otherwise derive from UID.
+              start = lib.attrByPath [ name "start" ] (100000 + u.uid * 65536) fixedSubs;
+              count = lib.attrByPath [ name "count" ] 65536 fixedSubs;
+            in
+            "${name}:${toString start}:${toString count}\n"
+          else
+            "";
 
+        autosubs = lib.concatStrings (lib.mapAttrsToList subsLine config.users.users);
+      in
+      {
+        "subuid".text = autosubs;
+        "subuid".mode = "0444";
+        "subgid".text = autosubs;
+        "subgid".mode = "0444";
+      };
     home-manager = {
       useGlobalPkgs = true;
       backupFileExtension = "backup";
