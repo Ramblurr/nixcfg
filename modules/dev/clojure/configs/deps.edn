@@ -50,7 +50,7 @@
   ;; -------------------------------------
 
   :repl/clerk
-  {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1150"}
+  {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1158"}
                 nrepl/nrepl                   {:mvn/version "1.5.1"}
                 cider/cider-nrepl             {:mvn/version "0.58.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}}
