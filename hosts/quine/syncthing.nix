@@ -101,6 +101,16 @@
         };
       };
       folders = {
+        "e-reader" = {
+          id = "tpkrz-4bnas";
+          path = "/home/ramblurr/docs/e-reader";
+          devices = [
+            "pinenote"
+            "mudita-kompakt"
+            "kobo"
+            "phone2"
+          ];
+        };
         "koreader-pinenote" = {
           id = "kpphm-29veh";
           path = "/home/ramblurr/docs/backups/koreader/pinenote";
