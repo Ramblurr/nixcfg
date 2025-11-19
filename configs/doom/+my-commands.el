@@ -306,3 +306,8 @@ reload dir-locals."
   (interactive)
   (dolist (theme custom-enabled-themes)
     (disable-theme theme)))
+
+(defun my/lsp-workspace-remove-missing-projects ()
+  (interactive)
+  (dolist (dead-project (seq-filter (lambda (x) (not (file-directory-p x))) (lsp-session-folders (lsp-session))))
+    (lsp-workspace-folders-remove dead-project)))
