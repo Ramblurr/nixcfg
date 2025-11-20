@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.modules.desktop.hyprland3;
+  cfg = config.modules.desktop.hyprland;
   nerdfonts = with pkgs; [
     nerd-fonts.iosevka
     nerd-fonts.fira-code

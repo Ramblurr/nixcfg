@@ -8,12 +8,12 @@
 }:
 with lib;
 let
-  cfg = config.modules.desktop.hyprland3;
+  cfg = config.modules.desktop.hyprland;
   username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
-  options.modules.desktop.hyprland3 = {
+  options.modules.desktop.hyprland = {
     enable = lib.mkEnableOption "Enable Hyprland";
   };
 
