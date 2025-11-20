@@ -14,10 +14,10 @@
     ./desktop/dynamic-wallpaper.nix
 
     ./desktop/dconf.nix
-    ./desktop/hyprland3/default.nix
-    ./desktop/hyprland3/hyprland-config.nix
-    ./desktop/hyprland3/theme.nix
-    ./desktop/hyprland3/anyrun.nix
+    ./desktop/hyprland/default.nix
+    ./desktop/hyprland/hyprland-config.nix
+    ./desktop/hyprland/theme.nix
+    ./desktop/hyprland/anyrun.nix
     ./desktop/hyprpaper.nix
     ./desktop/mako.nix
     ./desktop/niri

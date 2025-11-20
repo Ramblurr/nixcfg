@@ -6,7 +6,7 @@
   ...
 }:
 let
-  cfg = config.modules.desktop.hyprland3;
+  cfg = config.modules.desktop.hyprland;
   username = config.modules.users.primaryUser.username;
   hyprland = config.programs.hyprland.package;
   hyprland-emacs = pkgs.writeScriptBin "hyprland-emacs" ''

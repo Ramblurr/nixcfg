@@ -88,7 +88,7 @@ in
   modules = {
     desktop = {
       wayland.enable = true;
-      #hyprland3.enable = true;
+      #hyprland.enable = true;
       niri.enable = true;
       hyprpaper.enable = true;
       mako.enable = true;

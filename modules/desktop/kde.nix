@@ -28,7 +28,7 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.enable && config.modules.desktop.hyprland3 != true;
+        assertion = cfg.enable && config.modules.desktop.hyprland != true;
         message = "My KDE config is mutually exclusive with hyprland";
       }
     ];
