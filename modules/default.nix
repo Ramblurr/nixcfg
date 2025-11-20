@@ -13,14 +13,13 @@
     ./desktop/browser/firefox.nix
     ./desktop/dynamic-wallpaper.nix
 
-    ./desktop/hyprland3/dconf.nix
+    ./desktop/dconf.nix
     ./desktop/hyprland3/default.nix
     ./desktop/hyprland3/hyprland-config.nix
     ./desktop/hyprland3/theme.nix
     ./desktop/hyprland3/anyrun.nix
-    ./desktop/hyprland3/hyprpaper.nix
-    #./desktop/hyprland3/dunst.nix
-    ./desktop/hyprland3/mako.nix
+    ./desktop/hyprpaper.nix
+    ./desktop/mako.nix
     ./desktop/niri
     ./desktop/kde.nix
     ./desktop/fonts.nix

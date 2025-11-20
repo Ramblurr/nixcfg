@@ -2,17 +2,18 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
 let
-  cfg = config.modules.desktop.hyprland3;
-  username = config.modules.users.primaryUser.username;
+  cfg = config.modules.desktop.hyprpaper;
   hyprland = config.programs.hyprland.package;
 in
 {
 
+  options.modules.desktop.hyprpaper = {
+    enable = lib.mkEnableOption "Enable hyprpaper";
+  };
   config = lib.mkIf cfg.enable {
     myhm =
       { ... }@hm:

@@ -6,10 +6,13 @@
 }:
 
 let
-  cfg = config.modules.desktop.hyprland3;
+  cfg = config.modules.desktop.mako;
   username = config.modules.users.primaryUser.username;
 in
 {
+  options.modules.desktop.mako = {
+    enable = lib.mkEnableOption "Enable mako";
+  };
   config = lib.mkIf cfg.enable {
     myhm =
       { pkgs, ... }@hm:

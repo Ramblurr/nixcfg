@@ -6,12 +6,15 @@
 }:
 
 let
-  cfg = config.modules.desktop.hyprland3;
+  cfg = config.modules.desktop.dconf;
 in
 
 {
+  options.modules.desktop.dconf = {
+    enable = lib.mkEnableOption "Enable dconf";
+  };
   config = lib.mkIf cfg.enable {
-
+    programs.dconf.enable = true;
     myhm =
       { lib, ... }@hm:
       with lib.hm.gvariant;
