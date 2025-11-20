@@ -87,8 +87,12 @@ in
 
   modules = {
     desktop = {
-      hyprland3.enable = true;
+      wayland.enable = true;
+      #hyprland3.enable = true;
       niri.enable = true;
+      hyprpaper.enable = true;
+      mako.enable = true;
+      dconf.enable = true;
       greetd.enable = true;
       xdg.enable = true;
       random-apps.enable = true;

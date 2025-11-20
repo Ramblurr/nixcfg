@@ -26,7 +26,6 @@ in
     ];
     modules.desktop.wayland.enable = false;
     # dconf
-    programs.dconf.enable = true;
 
     services = {
       xserver = {
