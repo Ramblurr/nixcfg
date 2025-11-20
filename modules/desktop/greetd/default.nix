@@ -68,35 +68,35 @@ let
       '';
     };
 
-  runHyprland = runViaShell {
-    env = {
-      XDG_SESSION_TYPE = "wayland";
-      XDG_CURRENT_DESKTOP = "Hyprland";
-      XDG_SESSION_DESKTOP = "Hyprland";
-    };
-    name = "hyprland";
-    cmd = "${pkgs.hyprland}/bin/Hyprland";
-  };
+  #runHyprland = runViaShell {
+  #  env = {
+  #    XDG_SESSION_TYPE = "wayland";
+  #    XDG_CURRENT_DESKTOP = "Hyprland";
+  #    XDG_SESSION_DESKTOP = "Hyprland";
+  #  };
+  #  name = "hyprland";
+  #  cmd = "${pkgs.hyprland}/bin/Hyprland";
+  #};
 
-  runSway = runViaShell {
-    env = {
-      XDG_SESSION_TYPE = "wayland";
-      XDG_CURRENT_DESKTOP = "sway";
-      XDG_SESSION_DESKTOP = "sway";
-    };
-    name = "sway";
-    cmd = "${pkgs.swayfx}/bin/sway";
-  };
+  #runSway = runViaShell {
+  #  env = {
+  #    XDG_SESSION_TYPE = "wayland";
+  #    XDG_CURRENT_DESKTOP = "sway";
+  #    XDG_SESSION_DESKTOP = "sway";
+  #  };
+  #  name = "sway";
+  #  cmd = "${pkgs.swayfx}/bin/sway";
+  #};
 
-  runRiver = runViaShell {
-    env = {
-      XDG_SESSION_TYPE = "wayland";
-      XDG_CURRENT_DESKTOP = "river";
-      XDG_SESSION_DESKTOP = "river";
-    };
-    name = "river";
-    cmd = "${pkgs.river-classic}/bin/river";
-  };
+  #runRiver = runViaShell {
+  #  env = {
+  #    XDG_SESSION_TYPE = "wayland";
+  #    XDG_CURRENT_DESKTOP = "river";
+  #    XDG_SESSION_DESKTOP = "river";
+  #  };
+  #  name = "river";
+  #  cmd = "${pkgs.river-classic}/bin/river";
+  #};
 
   desktopSession =
     name: command:
@@ -116,10 +116,10 @@ let
     #   name = "river.desktop";
     #   path = desktopSession "river" "${runRiver}/bin/river";
     # }
-    {
-      name = "hyprland.desktop";
-      path = desktopSession "Hyprland" "${runHyprland}/bin/hyprland";
-    }
+    #{
+    #  name = "hyprland.desktop";
+    #  path = desktopSession "Hyprland" "${runHyprland}/bin/hyprland";
+    #}
     #{
     #  name = "nushell.desktop";
     #  path = desktopSession "nushell" "${pkgs.nushell}/bin/nu";
@@ -146,7 +146,7 @@ let
       runtimeInputs = [
         #runSway
         #runRiver
-        runHyprland
+        #runHyprland
         pkgs.bashInteractive
         #pkgs.nushell
         pkgs.systemd
