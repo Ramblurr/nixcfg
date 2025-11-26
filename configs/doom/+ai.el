@@ -233,10 +233,9 @@ The user's chat will now follow. Generate the title."))
   :config (require 'mcp-hub)
   :init (setq mcp-hub-servers
               '(
-                ("github" , (:command "github-mcp-server" :args ("stdio")
-                             :env (:GITHUB_READ_ONLY "1"
-                                   :GITHUB_TOOLSETS "context,repos,pull_requests,issues")
-                             ))
+                ;;("github" , (:command "github-mcp-server" :args ("stdio")
+                ;;             :env (:GITHUB_READ_ONLY "1"
+                ;;                   :GITHUB_TOOLSETS "context,repos,pull_requests,issues")))
                 ;; this tells that it can launch an MCP server
                 ;; for my-project by running the following
                 ;; command line:
