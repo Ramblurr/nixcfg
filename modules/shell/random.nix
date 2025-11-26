@@ -25,6 +25,7 @@ in
         home.packages = with pkgs; [
           (warp-terminal.override { waylandSupport = true; })
           gum
+          ghorg
           treefmt
           repomix
           glow
