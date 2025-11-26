@@ -208,6 +208,26 @@ in
                   ""
               )
               + ''
+                gh-token() {
+                  # Capture status output and exit code
+                  local auth_status
+                  auth_status=$(${pkgs.gh}/bin/gh auth status 2>&1)
+                  local status_code=$?
+
+                  if [ $status_code -eq 0 ]; then
+                    export GH_TOKEN=$(${pkgs.gh}/bin/gh auth token)
+                    export GITHUB_TOKEN=$(${pkgs.gh}/bin/gh auth token)
+                    export GHORG_GITHUB_TOKEN=$(${pkgs.gh}/bin/gh auth token)
+                  elif [[ "$auth_status" == *"SAML"* ]]; then
+                    echo " GitHub SAML session expired. Run 'gh auth refresh'"
+                    return 1
+                  else
+                    echo " GitHub not authenticated. Run 'gh auth login'"
+                    return 1
+                  fi
+                }
+              ''
+              + ''
                 source ~/.config/zsh/init.zsh
                 ${functions}
               '';
