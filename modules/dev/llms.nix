@@ -73,7 +73,7 @@ in
         #ccusage # broken build
         codex
         #inputs.boxai.packages.${pkgs.system}.boxai
-        crush-wrapper
+        #crush-wrapper # broken build 2025-11-20
         opencode-wrapper
         (pkgs.writeShellScriptBin "cat-url-markdown" ''
           if [ -z "$1" ]; then

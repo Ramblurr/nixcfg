@@ -64,6 +64,7 @@ in
         hclfmt
         virt-manager
         cue
+        semgrep
         #rpi-imager # 2025-10-23 broken build
         nfs-utils
         inotify-tools
