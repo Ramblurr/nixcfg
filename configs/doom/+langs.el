@@ -81,6 +81,11 @@
                  "[/\\\\]node_modules\\'"
                  "[/\\\\]zig-out\\'"
                  "[/\\\\]extra\\'"
+                 "[/\\\\]\\.portal\\'"
+                 "[/\\\\]\\.eca\\'"
+                 "[/\\\\]\\.claude\\'"
+                 "[/\\\\]\\.clojure-mcp\\'"
+                 "[/\\\\]archive\\'"
                  ))
     (push dir lsp-file-watch-ignored-directories))
 

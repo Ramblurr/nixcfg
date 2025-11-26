@@ -58,6 +58,7 @@
 (unpin! treemacs)
 (unpin! lsp-treemacs)
 (unpin! lsp-ui)
+(unpin! lsp-mode)
 
 (package! aggressive-indent)
 ;; (package! clojure-essential-ref)
