@@ -105,7 +105,7 @@ in
       };
       size = lib.mkOption {
         type = lib.types.float;
-        default = cfg.mono.size - 2.5;
+        default = 10.0;
       };
     };
 

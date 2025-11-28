@@ -54,7 +54,7 @@ hotkey-overlay {
 }
 
 // No client side decorations
-prefer-no-csd
+//prefer-no-csd
 
 // You can change the path where screenshots are saved.
 // A ~ at the front will be expanded to the home directory.
