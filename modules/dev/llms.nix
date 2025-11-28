@@ -27,8 +27,8 @@ let
     wrapWithLLMKeys "${pkgs.opencode}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
   );
   llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${pkgs.llm}/bin/llm" [ ]);
-  gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini-cli" (
-    wrapWithLLMKeys "${pkgs.gemini-cli}/bin/gemini-cli" [ ]
+  gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini" (
+    wrapWithLLMKeys "${pkgs.gemini-cli}/bin/gemini" [ ]
   );
   github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]

@@ -43,13 +43,16 @@ in
                "Noto Color Emoji"
              }
             config.font_size = ${toString termFont.size};
+            config.default_cursor_style = 'SteadyBlock'
+            config.cursor_blink_rate = 0
+            config.font_size = 10.0;
             config.freetype_load_flags = 'NO_HINTING'
             --config.freetype_load_target = 'Normal'
             config.freetype_load_target = 'Light'
             --config.freetype_load_target = 'HorizontalLcd'
             --config.freetype_load_target = 'VerticalLcd'
             --config.front_end = "OpenGL"
-            config.front_end = "WebGpu"
+            --config.front_end = "WebGpu"
             --config.line_height = 0.9
             config.hide_tab_bar_if_only_one_tab = true
 
