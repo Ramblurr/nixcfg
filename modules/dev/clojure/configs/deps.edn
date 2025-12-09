@@ -29,6 +29,7 @@
                 com.github.gnl/playback       {:mvn/version "0.5.4"}
                 jedi-time/jedi-time           {:mvn/version "0.2.1"}
                 lambdaisland/ansi             {:mvn/version "0.2.37"}
+                vvvvalvalval/scope-capture    {:mvn/version "0.3.3"}
                 com.datomic/dev.datafy        {:git/sha "02f8520"
                                                :git/tag "v0.1"
                                                :git/url "https://github.com/Datomic/dev.datafy.git"}
