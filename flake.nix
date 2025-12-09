@@ -119,6 +119,9 @@
     };
     niri.url = "github:YaLTeR/niri";
     niri.inputs.nixpkgs.follows = "nixpkgs";
+
+    beads.url = "github:steveyegge/beads";
+    beads.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
