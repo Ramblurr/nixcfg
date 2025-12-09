@@ -35,6 +35,7 @@
     ./desktop/programs/kicad.nix
     ./desktop/programs/kitty/default.nix
     ./desktop/programs/wezterm/default.nix
+    ./desktop/programs/ghostty/default.nix
     ./desktop/programs/logseq.nix
     ./desktop/programs/morgen.nix
     ./desktop/programs/musescore.nix
