@@ -42,6 +42,7 @@ in
                --"Symbols Nerd Font Mono",
                "Noto Color Emoji"
              }
+             config.enable_kitty_keyboard = true
             config.font_size = ${toString termFont.size};
             config.default_cursor_style = 'SteadyBlock'
             config.cursor_blink_rate = 0

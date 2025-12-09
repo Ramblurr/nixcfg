@@ -61,6 +61,7 @@ in
           clj-kondo
           leiningen
           babashka
+          bbin
           polylith
           gtk3
           xorg.libXxf86vm

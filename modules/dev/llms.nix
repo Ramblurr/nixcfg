@@ -75,6 +75,7 @@ in
         #inputs.boxai.packages.${pkgs.system}.boxai
         #crush-wrapper # broken build 2025-11-20
         opencode-wrapper
+        inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default
         (pkgs.writeShellScriptBin "cat-url-markdown" ''
           if [ -z "$1" ]; then
             echo "usage: $(basename "$0") URL [FILENAME]"
