@@ -167,6 +167,7 @@ in
         kicad.enable = false;
         kitty.enable = true;
         wezterm.enable = true;
+        ghostty.enable = true;
         logseq.enable = true;
         musescore.enable = true;
         nextcloud.enable = true;

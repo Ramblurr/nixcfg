@@ -53,8 +53,8 @@ hotkey-overlay {
   skip-at-startup
 }
 
-// No client side decorations
-//prefer-no-csd
+// No client side decorations (causes problems with wezterm)
+prefer-no-csd
 
 // You can change the path where screenshots are saved.
 // A ~ at the front will be expanded to the home directory.
