@@ -171,7 +171,7 @@ in
         bandwhich
         difftastic
         dogdns
-        du-dust
+        dust
         fd
         file
         findutils
