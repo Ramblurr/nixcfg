@@ -41,7 +41,7 @@ in
           bandwhich
           bat
           restic
-          du-dust
+          dust
           fd
           gitui
           gitu

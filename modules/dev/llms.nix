@@ -22,13 +22,18 @@ let
     fi
     exec ${cmd} "$@"
   '';
-  crush-wrapper = pkgs.writeShellScriptBin "crush" (wrapWithLLMKeys "${pkgs.crush}/bin/crush" [ ]);
+  opencode = inputs.llm-agents.packages.${pkgs.system}.opencode;
+  crush = inputs.llm-agents.packages.${pkgs.system}.crush;
+  gemini-cli = inputs.llm-agents.packages.${pkgs.system}.gemini-cli;
+  crush-wrapper = pkgs.writeShellScriptBin "crush" (wrapWithLLMKeys "${crush}/bin/crush" [ ]);
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
-    wrapWithLLMKeys "${pkgs.opencode}/bin/opencode" [ "ANTHROPIC_API_KEY" ]
+    wrapWithLLMKeys "${opencode}/bin/opencode" [
+      "ANTHROPIC_API_KEY"
+    ]
   );
   llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${pkgs.llm}/bin/llm" [ ]);
   gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini" (
-    wrapWithLLMKeys "${pkgs.gemini-cli}/bin/gemini" [ ]
+    wrapWithLLMKeys "${gemini-cli}/bin/gemini" [ ]
   );
   github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
@@ -63,28 +68,33 @@ in
         mode = "0400";
         path = ".llm-keys";
       };
-      home.packages = with pkgs; [
-        jujutsu
-        mcp-inspector
-        claude-code
-        llm-wrapper
-        github-mcp-server-wrapper
-        gemini-cli-wrapper
-        #ccusage # broken build
-        codex
-        #inputs.boxai.packages.${pkgs.system}.boxai
-        #crush-wrapper # broken build 2025-11-20
-        opencode-wrapper
-        inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default
-        (pkgs.writeShellScriptBin "cat-url-markdown" ''
-          if [ -z "$1" ]; then
-            echo "usage: $(basename "$0") URL [FILENAME]"
-            exit 1
-          fi
-          curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
-        '')
-        (if cfg.cudaSupport == true then (whisper-cpp.override { cudaSupport = true; }) else whisper-cpp)
-      ];
+      home.packages =
+        with pkgs;
+        [
+          jujutsu
+          mcp-inspector
+          llm-wrapper
+          github-mcp-server-wrapper
+          gemini-cli-wrapper
+          #codex
+          #inputs.boxai.packages.${pkgs.system}.boxai
+          opencode-wrapper
+          inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default
+          (pkgs.writeShellScriptBin "cat-url-markdown" ''
+            if [ -z "$1" ]; then
+              echo "usage: $(basename "$0") URL [FILENAME]"
+              exit 1
+            fi
+            curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
+          '')
+          (if cfg.cudaSupport == true then (whisper-cpp.override { cudaSupport = true; }) else whisper-cpp)
+        ]
+        ++ (with inputs.llm-agents.packages.${pkgs.system}; [
+          claude-code
+          ccusage
+          copilot-cli
+          handy
+        ]);
     };
   };
 }
