@@ -83,7 +83,7 @@ in
         };
         containerConfig = {
           # renovate: docker-image
-          image = "docker.io/sissbruecker/linkding:1.44.1";
+          image = "docker.io/sissbruecker/linkding:1.44.2";
           autoUpdate = "registry";
           userns = "keep-id";
           publishPorts = [ "8080:9090" ];
