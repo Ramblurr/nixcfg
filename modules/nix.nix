@@ -62,7 +62,7 @@ with lib;
     cached-nix-shell
     dig
     jq
-    curlHTTP3
+    curl
     vim
     wget
     unzip

@@ -200,6 +200,7 @@ in
       ssh.enable = true;
       tmux.enable = true;
       zellij.enable = true;
+      #zellij.web.enable = true;
       zoxide.enable = true;
       zsh.enable = true;
       zsh.starship.enable = false;

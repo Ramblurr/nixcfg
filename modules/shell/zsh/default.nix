@@ -46,14 +46,20 @@ in
           enable = true;
           enableZshIntegration = true;
           defaultCommand = "${pkgs.fd}/bin/fd --type f --strip-cwd-prefix --follow --no-ignore-vcs --exclude .git";
-          defaultOptions = [ "--height=40%" ];
+          defaultOptions = [
+            "--height=40%"
+          ];
           changeDirWidgetOptions = [
             "--preview='${pkgs.tree}/bin/tree -L 1 {}'"
-            "--bind=space:toggle-preview"
+            "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
+            "--bind='?:toggle-preview'"
             "--preview-window=hidden"
           ];
           fileWidgetCommand = defaultCommand;
-          fileWidgetOptions = [ "--preview='head -$LINES {}'" ];
+          fileWidgetOptions = [
+            "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
+            "--preview='head -$LINES {}'"
+          ];
         };
         home.file = {
           ".config/zsh" = {
