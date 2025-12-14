@@ -86,15 +86,26 @@ in
         };
       };
 
-      services.swayidle = {
-        enable = true;
-        timeouts = [
-          {
-            timeout = 550;
-            command = "${niri}/bin/niri msg action power-off-monitors";
-          }
-        ];
-      };
+      services.swayidle =
+        let
+          idleTimeout = 500;
+        in
+        {
+          enable = true;
+          timeouts = [
+            {
+              timeout = idleTimeout;
+              # mark desktop as idle
+              command = ''${pkgs.coreutils}/bin/touch "$XDG_RUNTIME_DIR/desktop-idle"'';
+              # clear idle flag on user activity
+              resumeCommand = ''${pkgs.coreutils}/bin/rm -f "$XDG_RUNTIME_DIR/desktop-idle"'';
+            }
+            {
+              timeout = idleTimeout;
+              command = "${niri}/bin/niri msg action power-off-monitors";
+            }
+          ];
+        };
 
     };
   };

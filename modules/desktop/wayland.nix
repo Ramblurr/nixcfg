@@ -34,6 +34,7 @@ in
       with pkgs;
       #with gnome;
       [
+        wtype # handy (speech to text) uses this for clipboard access
         gnome-disk-utility
         loupe # gui image viewer
         nautilus

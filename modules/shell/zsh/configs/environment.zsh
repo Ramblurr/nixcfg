@@ -80,7 +80,7 @@ if command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
 fi
 
 #█▓▒░ fzf should ignore things
-export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+#export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
 #█▓▒░ direnv is a thing
 if command -v direnv &>/dev/null; then
   eval "$(direnv hook zsh)"

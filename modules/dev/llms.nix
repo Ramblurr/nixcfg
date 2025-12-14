@@ -71,6 +71,8 @@ in
       home.packages =
         with pkgs;
         [
+          piper-tts
+          espeak
           jujutsu
           mcp-inspector
           llm-wrapper
