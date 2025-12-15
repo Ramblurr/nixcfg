@@ -143,6 +143,7 @@ in
         theme.package
         cursorTheme.package
         iconTheme.package
+        pkgs.unscii
       ]
       ++ cfg.packages;
 

@@ -93,6 +93,8 @@ in
         ]
         ++ (with inputs.llm-agents.packages.${pkgs.system}; [
           claude-code
+          codex
+          ccusage-codex
           ccusage
           copilot-cli
           handy
