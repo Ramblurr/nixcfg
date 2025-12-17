@@ -128,6 +128,7 @@
     beads.inputs.nixpkgs.follows = "nixpkgs";
 
     llm-agents.url = "github:numtide/llm-agents.nix";
+    #brother_ql_web.url = "github:makefu/brother_ql_web";
   };
 
   outputs =
