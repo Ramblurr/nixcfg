@@ -105,7 +105,7 @@ in
     ];
     services.nginx = {
       enable = true;
-      package = pkgs.nginxQuic;
+      package = pkgs.nginx;
       enableReload = true;
       enableQuicBPF = true;
       defaultSSLListenPort = 443;

@@ -24,6 +24,8 @@ in
   roon-server = nixpkgs-mine.roon-server;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
+  babashka = nixpkgs-mine.babashka;
+  bbin = nixpkgs-mine.bbin;
   crush = nixpkgs-mine.crush;
   llm = nixpkgs-mine.llm;
   jdk25 = nixpkgs-mine.jdk25;
