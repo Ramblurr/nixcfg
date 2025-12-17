@@ -26,7 +26,7 @@ in
     };
     exitNode = {
       enable = lib.mkEnableOption "";
-      networkDev = lib.mkOption { type = lib.types.string; };
+      networkDev = lib.mkOption { type = lib.types.str; };
     };
   };
   config = mkIf cfg.enable {
