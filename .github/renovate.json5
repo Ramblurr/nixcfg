@@ -1,36 +1,27 @@
 {
-  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-  extends: [
-    'config:recommended',
-    'github>cidverse/renovate-config:default',
-    'customManagers:dockerfileVersions',
-    'customManagers:tfvarsVersions',
-    'github>ramblurr/nixcfg//.github/renovate/groups.json5',
-    'github>ramblurr/renovate-preset-deps-edn-gitlibs'
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "github>cidverse/renovate-config:default",
+    "customManagers:dockerfileVersions",
+    "customManagers:tfvarsVersions",
+    "github>ramblurr/nixcfg//.github/renovate/groups.json5",
+    "github>ramblurr/renovate-preset-deps-edn-gitlibs"
   ],
-  enabled: true,
-  timezone: 'Europe/Berlin',
-  semanticCommits: 'enabled',
-  dependencyDashboard: true,
-  assignees: [],
-  reviewers: [
-    'Ramblurr',
-  ],
-  vulnerabilityAlerts: {
-    assignees: [
-      'Ramblurr',
-    ],
+  "enabled": true,
+  "timezone": "Europe/Berlin",
+  "semanticCommits": "enabled",
+  "dependencyDashboard": true,
+  "assignees": [],
+  "reviewers": ["Ramblurr"],
+  "vulnerabilityAlerts": {
+    "assignees": ["Ramblurr"]
   },
-  ignorePaths: [
-    '**/archive/**',
-    'pkgs/overseerr/',
-  ],
-  rebaseWhen: 'conflicted',
-  dependencyDashboardTitle: 'Renovate Dashboard',
-  suppressNotifications: [
-    'prIgnoreNotification',
-  ],
-  customManagers: [
+  "ignorePaths": ["**/archive/**", "pkgs/overseerr/"],
+  "rebaseWhen": "conflicted",
+  "dependencyDashboardTitle": "Renovate Dashboard",
+  "suppressNotifications": ["prIgnoreNotification"],
+  "customManagers": [
     // {
     //   customType: 'regex',
     //   description: [
@@ -46,87 +37,51 @@
     //   versioningTemplate: "semver-coerced"
     // },
     {
-      customType: 'regex',
-      description: [
-        'Generic Docker image Regex manager',
+      "customType": "regex",
+      "description": ["Generic Docker image Regex manager"],
+      "managerFilePatterns": ["/.*\\.nix$/", "/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: docker-image( versioning=(?<versioning>.*=?))?\n .*[:|=] \"?(?<depName>.*?):(?<currentValue>[^\"\n]*=?)\"?"
       ],
-      managerFilePatterns: [
-        '/.*\\.nix$/',
-        '/.*\\.ya?ml$/',
-      ],
-      matchStrings: [
-        '# renovate: docker-image( versioning=(?<versioning>.*=?))?\n .*[:|=] "?(?<depName>.*?):(?<currentValue>[^"\n]*=?)"?',
-      ],
-      datasourceTemplate: 'docker',
-      versioningTemplate: '{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}',
-    },
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+    }
   ],
-  nix: {
-    enabled: true,
+  "nix": {
+    "enabled": true
   },
-  lockFileMaintenance: {
-    enabled: true,
-    extends: [
-      'schedule:weekly',
-    ],
+  "lockFileMaintenance": {
+    "enabled": false,
+    "extends": ["schedule:weekly"]
   },
-  packageRules: [
+  "packageRules": [
     {
-      matchDatasources: [
-        'docker',
-      ],
-      enabled: true,
-      matchUpdateTypes: [
-        'major',
-        'minor',
-        'patch',
-      ],
+      "matchDatasources": ["docker"],
+      "enabled": true,
+      "matchUpdateTypes": ["major", "minor", "patch"]
     },
     {
-      matchDatasources: [
-        'docker',
-      ],
-      semanticCommitScope: 'images',
-      separateMinorPatch: true,
+      "matchDatasources": ["docker"],
+      "semanticCommitScope": "images",
+      "separateMinorPatch": true
     },
     {
-      matchDatasources: [
-        'docker',
-      ],
-      matchUpdateTypes: [
-        'major',
-      ],
-      commitMessagePrefix: 'feat(images)!: ',
-      labels: [
-        'renovate/image',
-        'dep/major',
-      ],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["major"],
+      "commitMessagePrefix": "feat(images)!: ",
+      "labels": ["renovate/image", "dep/major"]
     },
     {
-      matchDatasources: [
-        'docker',
-      ],
-      matchUpdateTypes: [
-        'minor',
-      ],
-      semanticCommitType: 'feat',
-      labels: [
-        'renovate/image',
-        'dep/minor',
-      ],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["minor"],
+      "semanticCommitType": "feat",
+      "labels": ["renovate/image", "dep/minor"]
     },
     {
-      matchDatasources: [
-        'docker',
-      ],
-      matchUpdateTypes: [
-        'patch',
-      ],
-      semanticCommitType: 'fix',
-      labels: [
-        'renovate/image',
-        'dep/patch',
-      ],
-    },
-  ],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["patch"],
+      "semanticCommitType": "fix",
+      "labels": ["renovate/image", "dep/patch"]
+    }
+  ]
 }
