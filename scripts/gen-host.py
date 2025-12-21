@@ -181,7 +181,7 @@ in
   imports = [
     ./hardware.nix
   ];
-  system.stateVersion = "24.11";
+  system.stateVersion = "25.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   sops.defaultSopsFile = ./secrets.sops.yaml;
   time.timeZone = "Europe/Berlin";
