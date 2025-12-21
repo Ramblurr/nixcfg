@@ -24,6 +24,7 @@ let
   '';
   opencode = inputs.llm-agents.packages.${pkgs.system}.opencode;
   crush = inputs.llm-agents.packages.${pkgs.system}.crush;
+  catnip = inputs.llm-agents.packages.${pkgs.system}.catnip;
   gemini-cli = inputs.llm-agents.packages.${pkgs.system}.gemini-cli;
   crush-wrapper = pkgs.writeShellScriptBin "crush" (wrapWithLLMKeys "${crush}/bin/crush" [ ]);
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
@@ -38,7 +39,22 @@ let
   github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
-
+  catnip-wrapper = pkgs.writeShellScriptBin "catnip" (wrapWithLLMKeys "${catnip}/bin/catnip" [ ]);
+  whisper-cpp = (
+    if cfg.cudaSupport == true then
+      (pkgs.whisper-cpp.override { cudaSupport = true; })
+    else
+      pkgs.whisper-cpp
+  );
+  cat-url-markdown = (
+    pkgs.writeShellScriptBin "cat-url-markdown" ''
+      if [ -z "$1" ]; then
+        echo "usage: $(basename "$0") URL [FILENAME]"
+        exit 1
+      fi
+      curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
+    ''
+  );
 in
 {
   options.modules.dev.llms = {
@@ -78,21 +94,17 @@ in
           llm-wrapper
           github-mcp-server-wrapper
           gemini-cli-wrapper
+          catnip-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.system}.boxai
           opencode-wrapper
           inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default
-          (pkgs.writeShellScriptBin "cat-url-markdown" ''
-            if [ -z "$1" ]; then
-              echo "usage: $(basename "$0") URL [FILENAME]"
-              exit 1
-            fi
-            curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
-          '')
-          (if cfg.cudaSupport == true then (whisper-cpp.override { cudaSupport = true; }) else whisper-cpp)
+          cat-url-markdown
+          whisper-cpp
         ]
         ++ (with inputs.llm-agents.packages.${pkgs.system}; [
           claude-code
+          happy-coder
           codex
           ccusage-codex
           ccusage

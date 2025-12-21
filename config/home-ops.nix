@@ -137,6 +137,7 @@ in
       firewall.enable = true;
       security.default.enable = true;
       users.enable = true;
+      users.headless.enable = true;
       users.primaryUser.extraGroups = [
         "libvirtd"
         "audio"
@@ -227,6 +228,10 @@ in
         "home.${home-ops.homeDomain}" = {
           upstream = "http://10.9.4.25:8123";
           external = true;
+          acmeHost = home-ops.homeDomain;
+        };
+        "octoprint.${home-ops.homeDomain}" = {
+          upstream = "http://10.8.50.52:5000";
           acmeHost = home-ops.homeDomain;
         };
       };

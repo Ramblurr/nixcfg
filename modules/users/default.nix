@@ -19,6 +19,11 @@ in
   options = {
     modules.users = {
       enable = lib.mkEnableOption "";
+      userborn.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+      };
+      headless.enable = lib.mkEnableOption "";
       primaryUser = {
         username = lib.mkOption {
           type = lib.types.uniq lib.types.str;
@@ -39,6 +44,10 @@ in
         uid = lib.mkOption {
           default = 1000;
           type = lib.types.uniq lib.types.int;
+        };
+        password.enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
         };
         passwordSecretKey = lib.mkOption {
           type = lib.types.uniq lib.types.str;
@@ -69,7 +78,7 @@ in
     )
   ];
   config = lib.mkIf cfg.enable {
-    services.userborn.enable = true;
+    services.userborn.enable = cfg.userborn.enable;
     services.pcscd.enable = true;
     systemd.services.sops-install-secrets = {
       after = [ "pcscd.service" ];
@@ -86,7 +95,7 @@ in
       };
     };
 
-    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = {
+    sops.secrets."${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.password.enable {
       neededForUsers = true;
     };
     sops.secrets.root-password = {
@@ -121,7 +130,11 @@ in
         home = cfg.primaryUser.homeDirectory;
         description = cfg.primaryUser.name;
         openssh.authorizedKeys.keys = cfg.primaryUser.authorizedKeys;
-        hashedPasswordFile = config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path;
+        hashedPasswordFile =
+          if cfg.primaryUser.password.enable then
+            config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path
+          else
+            null;
         extraGroups = cfg.primaryUser.extraGroups;
         uid = cfg.primaryUser.uid;
         group = cfg.primaryUser.username;
@@ -194,8 +207,16 @@ in
           defaultSopsFile = config.sops.defaultSopsFile;
           #gnupg.home = hm.config.programs.gpg.homedir;
           environment = {
-            PINENTRY_PROGRAM = "${pkgs.pinentry-gtk2}/bin/pinentry";
-            PATH = lib.mkForce (lib.makeBinPath (hm.config.sops.age.plugins ++ [ pkgs.pinentry-gtk2 ]));
+            PINENTRY_PROGRAM =
+              if cfg.headless.enable then
+                "${pkgs.pinentry-tty}/bin/pinentry"
+              else
+                "${pkgs.pinentry-gtk2}/bin/pinentry";
+            PATH = lib.mkForce (
+              lib.makeBinPath (
+                hm.config.sops.age.plugins ++ lib.optionals (!cfg.headless.enable) [ pkgs.pinentry-gtk2 ]
+              )
+            );
           };
           age.keyFile = "${hm.config.home.homeDirectory}/.config/sops/age/keys.txt";
           age.plugins = [
@@ -204,12 +225,10 @@ in
             pkgs.age-plugin-tpm
           ];
         };
-        home.packages = [ pkgs.pinentry-gtk2 ];
-        manual.manpages.enable = true;
+        home.packages = lib.optionals (!cfg.headless.enable) [ pkgs.pinentry-gtk2 ];
+        manual.manpages.enable = lib.mkDefault (!cfg.headless.enable);
         systemd.user.startServices = true;
-        programs = {
-          home-manager.enable = true;
-        };
+        programs.home-manager.enable = true;
         home.extraOutputsToInstall = [
           "info"
           "man"

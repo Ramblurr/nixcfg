@@ -10,10 +10,12 @@ in
 {
   # Packages that should come from nixpkgs-mine instead of regular nixpkgs
   # claude-code = (nixpkgs-mine.claude-code.override { nodejs_20 = nixpkgs-mine.nodejs_24; });
-  claude-code = nixpkgs-mine.claude-code;
-  codex = nixpkgs-mine.codex;
-  opencode = nixpkgs-mine.opencode;
-  gemini-cli = nixpkgs-mine.gemini-cli;
+  #claude-code = nixpkgs-mine.claude-code;
+  #codex = nixpkgs-mine.codex;
+  #opencode = nixpkgs-mine.opencode;
+  #gemini-cli = nixpkgs-mine.gemini-cli;
+  #crush = nixpkgs-mine.crush;
+  llm = nixpkgs-mine.llm;
   clojure-lsp = nixpkgs-mine.clojure-lsp;
   davis = nixpkgs-mine.davis;
   plex = nixpkgs-mine.plex;
@@ -26,8 +28,6 @@ in
   #chromedriver = nixpkgs-mine.chromedriver;
   babashka = nixpkgs-mine.babashka;
   bbin = nixpkgs-mine.bbin;
-  crush = nixpkgs-mine.crush;
-  llm = nixpkgs-mine.llm;
   jdk25 = nixpkgs-mine.jdk25;
   jdk25_headless = nixpkgs-mine.jdk25_headless;
   yubioath-flutter = nixpkgs-mine.yubioath-flutter;

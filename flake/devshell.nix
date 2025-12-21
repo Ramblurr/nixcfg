@@ -30,6 +30,12 @@
           pkgs.ssh-to-age
           pkgs.age-plugin-yubikey
           pkgs.vim
+          (pkgs.python312.withPackages (ps: [
+            ps.passlib
+            ps.ruamel-yaml
+            ps.simple-term-menu
+            ps.pyyaml
+          ]))
           # (pkgs.sops.withAgePlugins (p: [
           #   p.age-plugin-fido2-hmac
           #   p.age-plugin-yubikey

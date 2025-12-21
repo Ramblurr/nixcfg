@@ -73,4 +73,5 @@ final: prev: {
   #  propagatedBuildInputs = [ prev.libgpiod_1 ];
   #});
 
+  ffmpeg = final.rpi.ffmpeg-headless;
 }
