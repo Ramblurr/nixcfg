@@ -16,6 +16,7 @@ keys:
       - &linkding age1uh5u7zcz28dskcskpyznxkyg2y4xj0wkaf4usmrjhkmfhzr6gg8qynk3hq
       - &invoiceninja age195mq2pxj58ll7ad2xg3f3p6m7s4xxj7tl6z4lzukzyap2g89apms2gmj3v
       - &claude-test age13fnjs7rgh0qaleaqqe2dqlp4hf48klpx5w3pqspnpdcgqput3sxs8jfspl
+      - &octoprint age1umcdrw2zwqh436sgu73ff42klrwqu5vhdfc72uceetpm5cl0u4as0ea6ut
   - admin-group: &admin-group
       age:
         - *ramblurr-yk-office
@@ -41,10 +42,10 @@ creation_rules:
   - path_regex: hosts/quine/secrets.sops.ya?ml$
     key_groups:
       - age:
-        - *quine
-        - *ramblurr-yk-office
-        - *ramblurr-yk-key
-        - *disaster-recovery
+          - *quine
+          - *ramblurr-yk-office
+          - *ramblurr-yk-key
+          - *disaster-recovery
   - path_regex: hosts/witt/secrets.sops.ya?ml$
     key_groups:
       - age:
@@ -73,6 +74,12 @@ creation_rules:
     key_groups:
       - age:
           - *addams
+        merge:
+          - *admin-group
+  - path_regex: hosts/octoprint/.*.sops.*$
+    key_groups:
+      - age:
+          - *octoprint
         merge:
           - *admin-group
   - path_regex: hosts/james/secrets.sops.ya?ml$

@@ -75,6 +75,17 @@
           isStable = true;
           system = "x86_64-linux";
         };
+        #rpi4 = {
+        #  isStable = true;
+        #  system = "aarch64-linux";
+        #};
+        octoprint = {
+          isStable = true;
+          system = "aarch64-linux";
+          hostOverlays = [
+            (import ../overlays/rpi4.nix)
+          ];
+        };
         #_hello-world = {
         #  hostPath = ../guests/hello-world;
         #  enableDefaultModules = false;
@@ -102,12 +113,19 @@
         # set guest overrides
         # hello-world = { system ...};
       };
+      mkSdImage =
+        host:
+        (self.nixosConfigurations.${host}.extendModules {
+          modules = [ ../hosts/${host}/sd-image.nix ];
+        });
+      #.config.system.build.sdImage;
     in
     {
       nixosConfigurations =
         (mkHosts hosts)
         // (mkGuests guests)
         // {
+          octoprint-sd-image = mkSdImage "octoprint";
           addams-installer = inputs.nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             specialArgs = {

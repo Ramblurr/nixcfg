@@ -76,6 +76,7 @@ in
     # since this is my router, we handle networking and firealling in this host config
     firewall.enable = false;
     users.enable = true;
+    users.headless.enable = true;
     users.primaryUser.extraGroups = [
       "wheel"
       "kvm"

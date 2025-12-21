@@ -32,6 +32,7 @@ in
         ".config/easyeffects"
         ".config/GIMP"
         ".config/gnupg"
+        ".config/hcloud"
         ".config/inkscape"
         ".config/PrusaSlicer"
         ".config/PrusaSlicer-alpha"
