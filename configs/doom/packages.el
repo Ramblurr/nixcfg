@@ -76,25 +76,25 @@
   :recipe (:host github
            :repo "drym-org/symex.el"
            :files ("symex-core/symex*.el" ))
-  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
 (package! symex
   :recipe (:host github
            :repo "drym-org/symex.el"
            :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
-  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
 (package! symex-evil
   :recipe (:host github
            :repo "drym-org/symex.el"
            :files ("symex-evil/symex*.el"))
-  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
 (package! symex-ide
   :recipe (:host github
            :repo "drym-org/symex.el"
            :files ("symex-ide/symex*.el"))
-  :pin "f339f32bbf7e27d3aae450735305465386b061ba")
+  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
 (package! modus-themes
   :recipe (:host github :repo "protesilaos/modus-themes"))
