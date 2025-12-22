@@ -1,14 +1,11 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.actual-server;
-  home-ops = config.repo.secrets.home-ops;
   httpPort = toString cfg.ports.http;
   stateDirActual = "/var/lib/private/actual-budget";
   stateDirEffective = "/var/lib/actual-budget";

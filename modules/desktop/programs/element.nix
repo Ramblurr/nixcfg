@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.desktop.programs.element;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -24,15 +21,14 @@ in
   config = lib.mkIf cfg.enable {
 
     systemd.tmpfiles = lib.mkIf withImpermanence {
-      rules =
-        [
-          "d '/persist${homeDirectory}/.config/iamb' - ${username} ${username} - -"
-          "d '/persist${homeDirectory}/.config/Element' - ${username} ${username} - -"
-          "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
-        ]
-        ++ (lib.optionals cfg.work.enable [
-          "d '/persist${homeDirectory}/.config/Element-work' - ${username} ${username} - -"
-        ]);
+      rules = [
+        "d '/persist${homeDirectory}/.config/iamb' - ${username} ${username} - -"
+        "d '/persist${homeDirectory}/.config/Element' - ${username} ${username} - -"
+        "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
+      ]
+      ++ (lib.optionals cfg.work.enable [
+        "d '/persist${homeDirectory}/.config/Element-work' - ${username} ${username} - -"
+      ]);
     };
 
     environment.persistence."/persist" = lib.mkIf withImpermanence {
@@ -41,11 +37,12 @@ in
           ".config/Element"
           ".config/Element-personal"
           ".config/iamb"
-        ] ++ lib.optionals cfg.work.enable [ ".config/Element-work" ];
+        ]
+        ++ lib.optionals cfg.work.enable [ ".config/Element-work" ];
       };
     };
     home-manager.users."${username}" =
-      { pkgs, config, ... }@hm:
+      { pkgs, ... }:
       {
         home.packages = [
           pkgs.element-desktop

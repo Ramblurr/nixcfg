@@ -1,7 +1,4 @@
 {
-  hostName,
-  config,
-  lib,
   ...
 }:
 {

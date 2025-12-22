@@ -3,18 +3,18 @@ _inputs: _final: prev: {
     my = prev.lib.my // {
       uint =
         let
-          num = prev.lib.std.num;
-          optional = prev.lib.std.optional;
-          string = prev.lib.std.string;
-          set = prev.lib.std.set;
-          list = prev.lib.std.list;
+          inherit (prev.lib.std) num;
+          inherit (prev.lib.std) optional;
+          inherit (prev.lib.std) string;
+          inherit (prev.lib.std) set;
+          inherit (prev.lib.std) list;
 
           inherit (num)
             rem
             ;
 
           toHex = num.toHexString;
-          fromBaseDigits = num.fromBaseDigits;
+          inherit (num) fromBaseDigits;
         in
         rec {
           tryParse =

@@ -1,15 +1,11 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
-  mine,
   ...
 }:
 let
   cfg = config.modules.services.authentik;
-  home-ops = config.repo.secrets.home-ops;
 in
 {
   options.modules.services.authentik = {
@@ -52,7 +48,7 @@ in
     sops.secrets."authentik/env" = {
       sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.authentik.user;
-      group = config.services.authentik.group;
+      inherit (config.services.authentik) group;
       mode = "400";
     };
     services.authentik = {

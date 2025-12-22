@@ -3,25 +3,14 @@
   flake =
     { config, lib, ... }:
     let
-      inherit (lib)
-        concatMapAttrs
-        filterAttrs
-        flip
-        genAttrs
-        mapAttrs
-        mapAttrs'
-        nameValuePair
-        ;
-      hostHelpers = (
-        import ./nixos.nix {
-          inherit
-            self
-            inputs
-            lib
-            config
-            ;
-        }
-      );
+      hostHelpers = import ./nixos.nix {
+        inherit
+          self
+          inputs
+          lib
+          config
+          ;
+      };
       inherit (hostHelpers) mkHosts mkGuests;
 
       hosts = {
@@ -109,7 +98,7 @@
       guestNames = builtins.attrNames (
         lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../guests)
       );
-      guests = (lib.genAttrs guestNames (name: { })) // {
+      guests = (lib.genAttrs guestNames (_name: { })) // {
         # set guest overrides
         # hello-world = { system ...};
       };

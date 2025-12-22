@@ -13,7 +13,7 @@ let
   version = "0.18.2";
   build = "2660";
 in
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation (_finalAttrs: {
   inherit version;
   pname = "gitbutler-bin";
   src = fetchurl {

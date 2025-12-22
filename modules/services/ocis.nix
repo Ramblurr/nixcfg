@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   utils,
@@ -9,7 +8,6 @@
 }:
 let
   cfg = config.modules.services.ocis;
-  home-ops = config.repo.secrets.home-ops;
   localPath = "/mnt/mali/${cfg.nfsShare}";
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
   cspFile = pkgs.writeText "csp.yaml" cfg.cspYaml;
@@ -65,14 +63,14 @@ in
     };
 
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
+      inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
     };
 
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
 
@@ -84,8 +82,8 @@ in
     modules.networking.systemd-netns-private = {
       enable = true;
       namespaces.ocis = {
-        hostAddr = cfg.subnet.hostAddr;
-        nsAddr = cfg.subnet.nsAddr;
+        inherit (cfg.subnet) hostAddr;
+        inherit (cfg.subnet) nsAddr;
         services = [ "ocis.service" ];
       };
     };

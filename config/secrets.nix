@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   ...
 }:
@@ -12,5 +11,6 @@ in
   # Define local repo secrets
   repo.secretFiles = {
     global = ../secrets/global.nix;
-  } // lib.optionalAttrs (lib.pathExists local) { inherit local; };
+  }
+  // lib.optionalAttrs (lib.pathExists local) { inherit local; };
 }

@@ -1,6 +1,5 @@
 {
   config,
-  options,
   inputs,
   lib,
   pkgs,
@@ -10,8 +9,7 @@ with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.random;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 in
 {

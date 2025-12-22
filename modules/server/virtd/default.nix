@@ -1,9 +1,7 @@
 {
-  options,
   config,
   pkgs,
   lib,
-  inputs,
   ...
 }:
 with lib;
@@ -64,17 +62,16 @@ in
         message = "virtd-host requires impermanence";
       }
     ];
-    systemd.tmpfiles.rules =
-      [
-        "d /persist/var/lib/libvirt 0775 root root -"
-        "d /persist/var/lib/libvirt/storage 0775 root root -"
-      ]
-      ++ lib.optionals cfg.net.prim.enable [
-        "L+ /persist/var/lib/libvirt/qemu/networks/prim.xml - - - - ${primaryVlanNetXml}"
-      ]
-      ++ lib.optionals cfg.storage.zfs.enable [
-        "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
-      ];
+    systemd.tmpfiles.rules = [
+      "d /persist/var/lib/libvirt 0775 root root -"
+      "d /persist/var/lib/libvirt/storage 0775 root root -"
+    ]
+    ++ lib.optionals cfg.net.prim.enable [
+      "L+ /persist/var/lib/libvirt/qemu/networks/prim.xml - - - - ${primaryVlanNetXml}"
+    ]
+    ++ lib.optionals cfg.storage.zfs.enable [
+      "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
+    ];
     environment.persistence."/persist".directories = [ "/var/lib/libvirt" ];
 
     virtualisation.libvirtd = {

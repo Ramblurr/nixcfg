@@ -1,14 +1,11 @@
 {
   config,
-  pkgs,
   lib,
-  inputs,
   ...
 }:
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) homeDirectory;
-  defaultSopsFile = ./secrets.sops.yaml;
 in
 {
   imports = [
@@ -70,15 +67,13 @@ in
     };
   };
 
-  myhm =
-    { pkgs, ... }@hm:
-    {
-      home.persistence."/persist${homeDirectory}" = {
-        directories = [ { directory = "work"; } ];
-      };
+  myhm = _: {
+    home.persistence."/persist${homeDirectory}" = {
+      directories = [ { directory = "work"; } ];
     };
+  };
 
-  site = config.repo.secrets.site.site;
+  inherit (config.repo.secrets.site) site;
   systemd.network = {
     links = {
       "10-lan0" = {
@@ -98,13 +93,11 @@ in
           hostBridges = lib.naturalSort (
             lib.mori.keys (lib.mori.filter (_: iface: iface.type == "bridge") hostConfig.interfaces)
           );
-          vlansForThisIface = (
-            lib.mori.filter (
-              bridgeName:
-              (hostConfig.interfaces.${bridgeName}.parent != null)
-              && (hostConfig.interfaces.${bridgeName}.parent == "lan1")
-            ) hostBridges
-          );
+          vlansForThisIface = lib.mori.filter (
+            bridgeName:
+            (hostConfig.interfaces.${bridgeName}.parent != null)
+            && (hostConfig.interfaces.${bridgeName}.parent == "lan1")
+          ) hostBridges;
         in
         {
           matchConfig.Name = "lan1";

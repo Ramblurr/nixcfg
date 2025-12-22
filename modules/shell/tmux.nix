@@ -1,17 +1,13 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.shell.tmux;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   options.modules.shell.tmux = {

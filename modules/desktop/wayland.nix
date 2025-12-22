@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.wayland;
-  username = config.modules.users.primaryUser.username;
 in
 {
   options.modules.desktop.wayland = {

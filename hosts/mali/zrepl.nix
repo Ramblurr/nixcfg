@@ -1,8 +1,5 @@
 {
   config,
-  pkgs,
-  inputs,
-  unstable,
   lib,
   ...
 }:
@@ -57,7 +54,7 @@ in
       jobs =
         let
           nodesWithZReplSources = lib.filterAttrs (
-            name: node: node ? zreplSource && node.zreplSource == true
+            _name: node: node ? zreplSource && node.zreplSource
           ) config.repo.secrets.global.nodes;
           mkNodePullJob = name: node: {
             name = "${name}";
@@ -142,7 +139,7 @@ in
           nodeJobs = lib.mapAttrsToList mkNodePullJob nodesWithZReplSources;
         in
         nodeJobs
-        ++ ([
+        ++ [
           {
             name = "mali_snap";
             type = "snap";
@@ -248,7 +245,7 @@ in
               type = "manual";
             };
           }
-        ]);
+        ];
     };
   };
 }

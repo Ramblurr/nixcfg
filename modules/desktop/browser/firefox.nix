@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -9,13 +8,8 @@
 with lib;
 let
   cfg = config.modules.desktop.browsers.firefox;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
-  firefox-nightly =
-    inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-nightly-bin;
-  firefox-devedition-bin =
-    inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-devedition-bin;
   firefox = pkgs.firefox-bin;
 in
 {
@@ -36,7 +30,7 @@ in
       };
     };
     home-manager.users."${username}" =
-      { pkgs, ... }@hm:
+      { pkgs, ... }:
       {
         #home.packages = [ firefox-devedition-bin ];
         programs.firefox = {

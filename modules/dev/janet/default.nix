@@ -1,18 +1,13 @@
 {
   config,
-  options,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.janet;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.dev.janet = {
@@ -21,14 +16,12 @@ in
 
   config = mkIf cfg.enable {
 
-    myhm =
-      { ... }@hm:
-      {
+    myhm = _: {
 
-        home.packages = with pkgs; [
-          janet
-          jpm
-        ];
-      };
+      home.packages = with pkgs; [
+        janet
+        jpm
+      ];
+    };
   };
 }

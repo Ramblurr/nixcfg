@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -91,7 +90,7 @@ in
 
     ###############
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
+      inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isNormalUser = true;
       group = lib.mkForce cfg.group.name;
@@ -102,7 +101,7 @@ in
     };
 
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
 
@@ -127,7 +126,7 @@ in
     };
 
     home-manager.users.${cfg.user.name} =
-      { pkgs, config, ... }:
+      { pkgs, ... }:
       {
         imports = [ inputs.quadlet-nix.homeManagerModules.default ];
         home.stateVersion = "21.11";

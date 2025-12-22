@@ -1,8 +1,6 @@
 {
-  config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
@@ -64,7 +62,7 @@
     #})
     # Workaround: https://github.com/NixOS/nixpkgs/issues/154163
     # modprobe: FATAL: Module sun4i-drm not found in directory
-    (final: super: {
+    (_final: super: {
       makeModulesClosure = x: super.makeModulesClosure (x // { allowMissing = true; });
     })
   ];

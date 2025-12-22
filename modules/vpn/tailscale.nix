@@ -1,16 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.vpn.tailscale;
-  username = config.modules.users.primaryUser.username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.vpn.tailscale = {

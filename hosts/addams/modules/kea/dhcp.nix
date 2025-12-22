@@ -21,7 +21,7 @@ let
 
   hostConfig = config.site.hosts.${hostName};
   dhcpInterfaces = keys (
-    filter (net: iface: config.site.net.${net}.dhcp.enable) hostConfig.interfaces
+    filter (net: _iface: config.site.net.${net}.dhcp.enable) hostConfig.interfaces
   );
 
   # Helper function to generate a single VLAN subnet configuration
@@ -37,7 +37,7 @@ let
     in
     lib.mkIf net.dhcp.enable (
       {
-        id = net.dhcp.id;
+        inherit (net.dhcp) id;
         interface = netName;
         subnet = net.subnet4;
         pools = [
@@ -51,26 +51,25 @@ let
         ddns-replace-client-name = "when-present";
         ddns-generated-prefix = "";
         ddns-qualifying-suffix = lib.mkIf ddnsEnabled "${net.domainName}.";
-        option-data =
-          [
-            {
-              name = "routers";
-              data = first config.site.net.${netName}.hosts4.${net.dhcp.router};
-            }
-          ]
-          ++ (
-            if ddnsEnabled then
-              [
-                {
-                  name = "domain-name";
-                  data = net.domainName;
-                }
-              ]
-            else
-              [ ]
-          )
-          ++ (lib.my.mergeByKey "name" commonDhcpOptions net.dhcp.optionData);
-        reservations = net.dhcp.reservations;
+        option-data = [
+          {
+            name = "routers";
+            data = first config.site.net.${netName}.hosts4.${net.dhcp.router};
+          }
+        ]
+        ++ (
+          if ddnsEnabled then
+            [
+              {
+                name = "domain-name";
+                data = net.domainName;
+              }
+            ]
+          else
+            [ ]
+        )
+        ++ (lib.my.mergeByKey "name" commonDhcpOptions net.dhcp.optionData);
+        inherit (net.dhcp) reservations;
       }
       // leaseOption
     );
@@ -96,16 +95,14 @@ in
       sanity-checks = {
         lease-checks = "fix-del";
       };
-      subnet4 = (
-        map (
-          net:
-          mkSubnet {
-            netName = net;
-            net = config.site.net.${net};
-            inherit commonDhcpOptions leaseOption;
-          }
-        ) (lib.naturalSort dhcpInterfaces)
-      );
+      subnet4 = map (
+        net:
+        mkSubnet {
+          netName = net;
+          net = config.site.net.${net};
+          inherit commonDhcpOptions leaseOption;
+        }
+      ) (lib.naturalSort dhcpInterfaces);
 
     };
   };

@@ -99,11 +99,11 @@ in
       fonts =
         let
           # Pragmata Pro Style
-          iosevka-ss08 = (pkgs.iosevka-bin.override { variant = "SS08"; });
+          iosevka-ss08 = pkgs.iosevka-bin.override { variant = "SS08"; };
           # Source Code Pro Style
-          iosevka-ss09 = (pkgs.iosevka-bin.override { variant = "SS09"; });
+          iosevka-ss09 = pkgs.iosevka-bin.override { variant = "SS09"; };
           # IBM Plex Mono Style
-          iosevka-ss15 = (pkgs.iosevka-bin.override { variant = "SS15"; });
+          iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
         in
         {
           enable = true;

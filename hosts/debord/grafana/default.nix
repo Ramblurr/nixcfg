@@ -1,12 +1,9 @@
 {
   config,
-  hosts,
-  pkgs,
   ...
 }:
 let
   inherit (config.repo.secrets.global) domain email;
-  monitorHostname = "debord.mgmt.${domain.home}";
   grafanaDomain = "grafana.${domain.home}";
 
 in

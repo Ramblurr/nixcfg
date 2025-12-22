@@ -54,7 +54,7 @@ in
       restartTriggers = [ config.systemd.services.zfs-datasets.script ];
       path = [ pkgs.zfs ];
       script = ''
-        dsList=(${toString (lib.mapAttrsToList (ds: prop: "${ds}") cfg.properties)})
+        dsList=(${toString (lib.mapAttrsToList (ds: _prop: "${ds}") cfg.properties)})
 
         # Create datasets if neccesary
         for ds in "''${dsList[@]}"; do

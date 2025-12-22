@@ -20,7 +20,7 @@ assert lib.assertOneOf "qtMajorVersion" qtMajorVersion [
   "5"
   "6"
 ];
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation (_finalAttrs: {
   pname = "klassy";
   version = "6.1.breeze6.0.3";
 
@@ -76,24 +76,23 @@ stdenv.mkDerivation (finalAttrs: {
     "-DBUILD_QT${qtMajorVersion}=ON"
   ];
 
-  meta =
-    {
-      description = "Highly customizable binary Window Decoration, Application Style and Global Theme plugin for recent versions of the KDE Plasma desktop";
-      homepage = "https://github.com/paulmcauley/klassy";
-      platforms = lib.platforms.linux;
-      license = with lib.licenses; [
-        bsd3
-        cc0
-        gpl2Only
-        gpl2Plus
-        gpl3Only
-        gpl3Plus # KDE-Accepted-GPL
-        mit
-      ];
-      maintainers = with lib.maintainers; [ pluiedev ];
-    }
-    // (lib.optionalAttrs (qtMajorVersion == "6") {
-      # klassy-settings doesn't exist for the Qt 5 build.
-      mainProgram = "klassy-settings";
-    });
+  meta = {
+    description = "Highly customizable binary Window Decoration, Application Style and Global Theme plugin for recent versions of the KDE Plasma desktop";
+    homepage = "https://github.com/paulmcauley/klassy";
+    platforms = lib.platforms.linux;
+    license = with lib.licenses; [
+      bsd3
+      cc0
+      gpl2Only
+      gpl2Plus
+      gpl3Only
+      gpl3Plus # KDE-Accepted-GPL
+      mit
+    ];
+    maintainers = with lib.maintainers; [ pluiedev ];
+  }
+  // (lib.optionalAttrs (qtMajorVersion == "6") {
+    # klassy-settings doesn't exist for the Qt 5 build.
+    mainProgram = "klassy-settings";
+  });
 })

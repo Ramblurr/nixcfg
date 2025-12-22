@@ -1,16 +1,13 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.fritzing;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -19,7 +16,7 @@ in
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" =
-      { pkgs, config, ... }@hm:
+      { pkgs, ... }:
       {
         home.packages = [ pkgs.fritzing ];
         home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {

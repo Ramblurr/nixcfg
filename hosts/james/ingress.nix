@@ -117,11 +117,11 @@ let
           name = "james-ingress";
           rules =
             (map (hostname: {
-              hostname = hostname;
+              inherit hostname;
               endpoint = deweyLocal;
             }) deweyServices)
             ++ (map (hostname: {
-              hostname = hostname;
+              inherit hostname;
               endpoint = jamesLocal;
             }) localServices);
         }
@@ -250,7 +250,8 @@ in
       AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
       LoadCredential = [ "GOST_AUTH_FILE:${config.sops.secrets.gost-ingress-auth.path}" ];
       StateDirectory = "gost-ingress";
-    } // sharedConfig;
+    }
+    // sharedConfig;
     wantedBy = [ "multi-user.target" ];
   };
 
@@ -270,7 +271,8 @@ in
     serviceConfig = {
       LoadCredential = [ "GOST_PASSWORD:${config.sops.secrets.gost-ingress-password.path}" ];
       StateDirectory = "gost-ingress-client";
-    } // sharedConfig;
+    }
+    // sharedConfig;
     wantedBy = [ "multi-user.target" ];
   };
 

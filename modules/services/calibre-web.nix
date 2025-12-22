@@ -2,13 +2,11 @@
   config,
   lib,
   pkgs,
-  utils,
   ...
 }:
 
 let
   cfg = config.modules.services.calibre-web;
-  home-ops = config.repo.secrets.home-ops;
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   upstream = "http://127.0.0.1:${toString cfg.ports.http}";
 in
@@ -39,7 +37,7 @@ in
   };
   config = lib.mkIf cfg.enable {
     users.users.${cfg.user.name} = lib.mkForce {
-      name = cfg.user.name;
+      inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
@@ -47,7 +45,7 @@ in
     };
 
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
 
@@ -148,7 +146,7 @@ in
 
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
-      upstream = upstream;
+      inherit upstream;
       forwardAuth = true;
       extraConfig = ''
         client_max_body_size 0;

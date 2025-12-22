@@ -1,13 +1,10 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
   cfg = config.modules.services.matrix-synapse.bridges.irc;
-  rootCfg = config.modules.services.matrix-synapse;
-  dataDir = "${rootCfg.dataDir}/mautrix-irc";
 in
 {
   options.modules.services.matrix-synapse.bridges.irc = {

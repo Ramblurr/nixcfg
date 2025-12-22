@@ -73,30 +73,30 @@ in
   config = {
     users.users = lib.mapAttrs' (
       name: cfg:
-      lib.nameValuePair name ({
+      lib.nameValuePair name {
         name = cfg.username;
         isSystemUser = true;
-        uid = cfg.uid;
+        inherit (cfg) uid;
         shell = pkgs.bash;
         linger = true;
         home = cfg.homeDirectory;
         createHome = true;
         group = cfg.username;
         extraGroups = [ "systemd-journal" ] ++ cfg.extraGroups;
-      })
+      }
     ) cfg;
 
     users.groups = lib.mapAttrs' (
       name: cfg:
-      lib.nameValuePair name ({
+      lib.nameValuePair name {
         name = cfg.username;
-        gid = cfg.gid;
-      })
+        inherit (cfg) gid;
+      }
     ) cfg;
 
     modules.zfs.datasets.properties = lib.mkMerge (
       lib.mapAttrsToList (
-        name: cfg:
+        _name: cfg:
         lib.optionalAttrs cfg.homeDirectoryOnZfs.enable {
           ${cfg.homeDirectoryOnZfs.datasetName}."mountpoint" = cfg.homeDirectory;
         }
@@ -105,7 +105,7 @@ in
 
     systemd.tmpfiles.rules = lib.flatten (
       lib.mapAttrsToList (
-        name: cfg:
+        _name: cfg:
         let
           inherit (cfg) homeDirectory runtimeDirectory username;
         in

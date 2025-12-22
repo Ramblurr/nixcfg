@@ -1,20 +1,11 @@
 {
   config,
   lib,
-  pkgs,
-  inputs,
 
   ...
 }:
 
 let
-
-  inherit (config.networking) hostName;
-  nets = config.site.net;
-  hostConfig = config.site.hosts.${hostName};
-  hostBridges = builtins.attrNames (
-    lib.filterAttrs (_: { type, ... }: type == "bridge") hostConfig.interfaces
-  );
 
   genGuestSecret = hostname: {
     "microvm-${hostname}-sops-key" = {

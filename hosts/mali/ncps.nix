@@ -1,7 +1,5 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 
@@ -26,7 +24,7 @@ in
     cache = {
       allowDeleteVerb = false;
       allowPutVerb = false;
-      hostName = hostName;
+      inherit hostName;
       maxSize = "50G";
       secretKeyPath = config.sops.secrets.ncps_private_key.path;
       lru = {

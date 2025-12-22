@@ -1,16 +1,11 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.firewall;
-  username = config.modules.users.primaryUser.username;
-  withImpermanence = config.modules.impermanence.enable;
   useMullvad = config.modules.vpn.mullvad.enable;
   useTailscale = config.modules.vpn.tailscale.enable;
   localResolverAddrs = ''

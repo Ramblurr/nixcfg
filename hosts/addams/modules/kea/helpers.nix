@@ -51,7 +51,7 @@ let
 
       # Combine all VLANs' reverse domains into a single list
       allReverseDomains = builtins.concatLists (
-        builtins.attrValues (builtins.mapAttrs (name: vlan: vlanToReverseDomains vlan) vlans)
+        builtins.attrValues (builtins.mapAttrs (_name: vlanToReverseDomains) vlans)
       );
     in
     allReverseDomains;

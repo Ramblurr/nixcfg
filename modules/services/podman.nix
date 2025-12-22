@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.services.podman;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.podman = {

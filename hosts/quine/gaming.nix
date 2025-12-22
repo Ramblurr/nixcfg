@@ -1,16 +1,14 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 with lib.my;
 let
   cfg = config.modules.desktop.gaming;
-  username = config.modules.users.primaryUser.username;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 
   steam-with-pkgs = pkgs.steam.override {
@@ -22,7 +20,7 @@ let
           (pkgs.runCommand "share-fonts" { preferLocalBuild = true; } ''
             mkdir -p "$out/share/fonts"
             font_regexp='.*\.\(ttf\|ttc\|otf\|pcf\|pfa\|pfb\|bdf\)\(\.gz\)?'
-            find ${toString (config.fonts.packages)} -regex "$font_regexp" \
+            find ${toString config.fonts.packages} -regex "$font_regexp" \
               -exec ln -sf -t "$out/share/fonts" '{}' \;
           '');
       in
@@ -134,7 +132,7 @@ in
       };
     };
     home-manager.users."${username}" =
-      { pkgs, ... }@hm:
+      { pkgs, ... }:
       {
         #home.persistence."/persist/home/${username}" = mkIf withImpermanence {
         #  directories = [

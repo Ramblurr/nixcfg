@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  utils,
   ...
 }:
 
@@ -97,8 +96,8 @@ in
     assertions =
       let
         keepTooLong = list: lib.filter (s: lib.stringLength s > 15) list;
-        hostIfaces = keepTooLong (lib.mapAttrsToList (name: ns: ns.hostIface) cfg.namespaces);
-        nsIfaces = keepTooLong (lib.mapAttrsToList (name: ns: ns.nsIface) cfg.namespaces);
+        hostIfaces = keepTooLong (lib.mapAttrsToList (_name: ns: ns.hostIface) cfg.namespaces);
+        nsIfaces = keepTooLong (lib.mapAttrsToList (_name: ns: ns.nsIface) cfg.namespaces);
         ifaces = hostIfaces ++ nsIfaces;
       in
       [
@@ -109,7 +108,7 @@ in
       ];
     systemd.tmpfiles.rules =
       let
-        nsNames = lib.mapAttrsToList (name: ns: ns.name) cfg.namespaces;
+        nsNames = lib.mapAttrsToList (_name: ns: ns.name) cfg.namespaces;
       in
       lib.flatten (
         map (ns: [

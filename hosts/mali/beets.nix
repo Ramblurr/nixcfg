@@ -1,12 +1,6 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
-{
+_: {
   myhm =
-    { pkgs, ... }@hm:
+    { pkgs, ... }:
     {
       programs.zsh.shellAliases = {
         beet-mine = "beet --config ~/.config/beets/config.mine.yaml";

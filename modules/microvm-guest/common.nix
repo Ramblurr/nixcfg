@@ -29,15 +29,14 @@ in
       }
     ];
     # make mounts like /etc /home /var available early so that they can be used in system.activationScripts
-    fileSystems =
-      {
-        "/" = lib.mkDefault {
-          fsType = "tmpfs";
-        };
-      }
-      // lib.genAttrs (map (x: "/" + x) cfg.mounts) (_: {
-        neededForBoot = true;
-      });
+    fileSystems = {
+      "/" = lib.mkDefault {
+        fsType = "tmpfs";
+      };
+    }
+    // lib.genAttrs (map (x: "/" + x) cfg.mounts) (_: {
+      neededForBoot = true;
+    });
     microvm = {
       writableStoreOverlay = lib.mkIf cfg.writableStoreOverlay.enable "/nix/.rw-store";
       hypervisor = lib.mkDefault "cloud-hypervisor";
@@ -107,7 +106,7 @@ in
           netCfg = config.site.net.${net};
           gw = netCfg.dhcp.router;
         in
-        (lib.mori.first netCfg.hosts4.${gw})
+        lib.mori.first netCfg.hosts4.${gw}
       )
     ];
 
@@ -145,7 +144,7 @@ in
             {
               matchConfig.MACAddress = generateMacAddress net;
               address = ip4s ++ ip6s;
-              gateway = lib.mkIf (netCfg.dhcp.enable) (
+              gateway = lib.mkIf netCfg.dhcp.enable (
                 let
                   gw = netCfg.dhcp.router;
                 in
@@ -207,7 +206,7 @@ in
       ];
       kernel.sysctl =
         let
-          mem = config.microvm.mem;
+          inherit (config.microvm) mem;
         in
         lib.optionalAttrs (mem <= 2 * 1024) {
           # table overflow causing packets from nginx to the service to drop

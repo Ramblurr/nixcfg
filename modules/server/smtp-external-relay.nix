@@ -1,15 +1,13 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.server.smtp-external-relay;
-  hostName = config.networking.hostName;
+  inherit (config.networking) hostName;
 in
 {
   options.modules.server.smtp-external-relay = {

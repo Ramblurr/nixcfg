@@ -1,9 +1,7 @@
-{ lib, config, ... }:
+{ lib, ... }:
 let
 
   inherit (lib)
-    concatMap
-    elemAt
     mkOption
     types
     ;
@@ -45,8 +43,7 @@ let
     };
   };
 in
-{ ... }:
-{
+_: {
   options = {
     hwaddr = mkOption {
       type = types.nullOr types.str;

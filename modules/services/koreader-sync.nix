@@ -1,15 +1,10 @@
 {
-  options,
   config,
   lib,
-  utils,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.koreader-sync;
-  home-ops = config.repo.secrets.home-ops;
   stateDir = "/var/lib/koreader-sync";
 in
 {
@@ -43,8 +38,8 @@ in
       "Z '${stateDir}/kosync' 750 ${cfg.user.name} ${cfg.group.name} - -"
     ];
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
-      uid = cfg.user.uid;
+      inherit (cfg.user) name;
+      inherit (cfg.user) uid;
       isNormalUser = true;
       home = stateDir;
       createHome = false;
@@ -54,7 +49,7 @@ in
       # autoSubUidGidRange = true;
     };
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
     virtualisation.oci-containers.containers.koreader-sync = {

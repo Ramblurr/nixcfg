@@ -20,7 +20,8 @@ let
   backupServiceDepsDeps = [
     "postgresql.service"
     "pgbackrest-init.service"
-  ] ++ serviceDeps;
+  ]
+  ++ serviceDeps;
 
   fullBackupService = repo: {
     description = "pgBackRest Full Backup repo ${repo}";
@@ -282,57 +283,56 @@ in
       user = "postgres";
       group = "postgres";
       mode = "0600";
-      text =
-        ''
-          [global]
-          archive-async=y
-          archive-push-queue-max = 4GiB
-          archive-timeout = 60
-          compress-level = 9
-          compress-type = lz4
-          delta = y
-          log-path = /var/log/pgbackrest
-          spool-path = /var/spool/pgbackrest
-        ''
-        + optionalString cfg.repo1.enable ''
-          repo1-block = y
-          repo1-bundle = y
-          repo1-path = ${cfg.repo1.path}
-          repo1-retention-diff = ${toString cfg.repo1.retentionDiff}
-          repo1-retention-full = ${toString cfg.repo1.retentionFull}
-          repo1-retention-full-type = time
-          repo1-s3-bucket = ${cfg.repo1.bucket}
-          repo1-s3-endpoint = ${cfg.repo1.endpoint}
-          repo1-s3-region = ${cfg.repo1.region}
-          repo1-s3-uri-style = ${cfg.repo1.uriStyle}
-          repo1-type = s3
-        ''
-        + optionalString cfg.repo2.enable ''
+      text = ''
+        [global]
+        archive-async=y
+        archive-push-queue-max = 4GiB
+        archive-timeout = 60
+        compress-level = 9
+        compress-type = lz4
+        delta = y
+        log-path = /var/log/pgbackrest
+        spool-path = /var/spool/pgbackrest
+      ''
+      + optionalString cfg.repo1.enable ''
+        repo1-block = y
+        repo1-bundle = y
+        repo1-path = ${cfg.repo1.path}
+        repo1-retention-diff = ${toString cfg.repo1.retentionDiff}
+        repo1-retention-full = ${toString cfg.repo1.retentionFull}
+        repo1-retention-full-type = time
+        repo1-s3-bucket = ${cfg.repo1.bucket}
+        repo1-s3-endpoint = ${cfg.repo1.endpoint}
+        repo1-s3-region = ${cfg.repo1.region}
+        repo1-s3-uri-style = ${cfg.repo1.uriStyle}
+        repo1-type = s3
+      ''
+      + optionalString cfg.repo2.enable ''
 
-          repo2-block = y
-          repo2-bundle = y
-          repo2-path = ${cfg.repo2.path}
-          repo2-retention-diff = ${toString cfg.repo2.retentionDiff}
-          repo2-retention-full = ${toString cfg.repo2.retentionFull}
-          repo2-retention-full-type = time
-          repo2-s3-bucket = ${cfg.repo2.bucket}
-          repo2-s3-endpoint = ${cfg.repo2.endpoint}
-          repo2-s3-region = ${cfg.repo2.region}
-          repo2-s3-uri-style = ${cfg.repo2.uriStyle}
-          repo2-type = s3
-        ''
-        + ''
-          [${stanza}]
-          pg1-path = ${cfg.pgDataDir}
-          pg1-socket-path = /run/postgresql
-        '';
+        repo2-block = y
+        repo2-bundle = y
+        repo2-path = ${cfg.repo2.path}
+        repo2-retention-diff = ${toString cfg.repo2.retentionDiff}
+        repo2-retention-full = ${toString cfg.repo2.retentionFull}
+        repo2-retention-full-type = time
+        repo2-s3-bucket = ${cfg.repo2.bucket}
+        repo2-s3-endpoint = ${cfg.repo2.endpoint}
+        repo2-s3-region = ${cfg.repo2.region}
+        repo2-s3-uri-style = ${cfg.repo2.uriStyle}
+        repo2-type = s3
+      ''
+      + ''
+        [${stanza}]
+        pg1-path = ${cfg.pgDataDir}
+        pg1-socket-path = /run/postgresql
+      '';
     };
 
     environment.systemPackages = with pkgs; [ pgbackrest ];
 
     services.postgresql = {
       enable = true;
-      package = cfg.package;
+      inherit (cfg) package;
       enableTCPIP = true;
       #settings = {
       #  archive_mode = "on";
@@ -344,7 +344,7 @@ in
       ensureDatabases = lib.flatten (map ({ databases, ... }: databases) cfg.ensures);
       ensureUsers = lib.flatten (
         map (
-          { username, databases, ... }:
+          { username, ... }:
           {
             name = username;
             ensureDBOwnership = true;

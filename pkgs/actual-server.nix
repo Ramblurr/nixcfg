@@ -1,8 +1,5 @@
 {
-  lib,
-  mkYarnPackage,
   fetchFromGitHub,
-  fetchYarnDeps,
   nodejs,
   python3,
   makeWrapper,

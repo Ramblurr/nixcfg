@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
   utils,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.paperless;
-  home-ops = config.repo.secrets.home-ops;
   localPath = "/mnt/mali/${cfg.nfsShare}";
 
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
@@ -63,21 +60,21 @@ in
       ensureDatabases = [ "paperless" ];
       ensureUsers = [
         {
-          name = cfg.user.name;
+          inherit (cfg.user) name;
           ensureDBOwnership = true;
         }
       ];
     };
 
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
+      inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
     };
 
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
 
@@ -99,7 +96,7 @@ in
 
     systemd.tmpfiles.rules =
       let
-        paperless = config.services.paperless;
+        inherit (config.services) paperless;
       in
       [
         "d '${paperless.dataDir}' - ${paperless.user} ${config.users.users.${paperless.user}.group} - -"

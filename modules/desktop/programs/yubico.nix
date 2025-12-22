@@ -1,17 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.yubico;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
   perl = "${pkgs.perl}/bin/perl";
   sshAdd = "${pkgs.openssh}/bin/ssh-add";
   pKill = "${pkgs.procps}/bin/pkill";

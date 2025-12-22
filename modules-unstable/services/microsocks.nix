@@ -1,15 +1,11 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.microsocks;
-  username = config.modules.users.primaryUser.username;
-  withImpermanence = config.modules.impermanence.enable;
   useMullvad = config.modules.vpn.mullvad.enable;
 in
 {

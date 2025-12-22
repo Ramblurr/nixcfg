@@ -1,15 +1,11 @@
 {
-  options,
   config,
   lib,
-  utils,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.tautulli;
-  home-ops = config.repo.secrets.home-ops;
 in
 {
   options.modules.services.tautulli = {
@@ -43,7 +39,7 @@ in
       };
     };
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
+      inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group;
@@ -67,7 +63,7 @@ in
       package = pkgs.tautulli;
       port = cfg.ports.http;
       user = cfg.user.name;
-      group = cfg.group;
+      inherit (cfg) group;
     };
 
     systemd.services.tautulli.serviceConfig = {

@@ -1,17 +1,12 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.kitty;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) username;
   termFont = config.modules.desktop.fonts.terminal;
 in
 {
@@ -20,7 +15,7 @@ in
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" =
-      { pkgs, config, ... }@hm:
+      { pkgs, ... }:
       {
         home.file = {
           ".config/kitty/kitty.session" = {
@@ -36,8 +31,8 @@ in
           enable = true;
           themeFile = "gruvbox-dark";
           font = {
-            name = termFont.name;
-            size = termFont.size;
+            inherit (termFont) name;
+            inherit (termFont) size;
           };
           settings = {
             background_opacity = "0.90";
