@@ -55,6 +55,7 @@ in
           neil
           maven
           gradle
+          brepl
           cljfmt
           clojure
           clojure-lsp

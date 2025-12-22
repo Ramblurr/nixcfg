@@ -7,6 +7,7 @@ inputs: [
     netns-proxy = prev.callPackage ./netns-proxy.nix { };
     mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
     udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
+    brepl = ((import ./brepl.nix) prev);
     deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
     overseerr = prev.callPackage ./overseerr/package.nix { };
