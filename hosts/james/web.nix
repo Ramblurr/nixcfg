@@ -6,22 +6,7 @@
 }:
 
 let
-  inherit (config.repo.secrets.global) domain email;
-  commonVhostConfig = {
-    forceSSL = true;
-    kTLS = true;
-    http3 = true;
-    quic = true;
-  };
-  commonLocationConfig = {
-    recommendedProxySettings = true;
-    proxyWebsockets = true;
-    extraConfig = ''
-      ${lib.optionalString true ''
-        add_header Alt-Svc 'h3=":443"; ma=86400';
-      ''}
-    '';
-  };
+  inherit (config.repo.secrets.global) email;
 
 in
 {

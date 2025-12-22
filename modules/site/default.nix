@@ -1,13 +1,11 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
   inherit (lib)
     concatMap
-    elemAt
     mkOption
     types
     ;

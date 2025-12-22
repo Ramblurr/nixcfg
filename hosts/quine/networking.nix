@@ -1,11 +1,10 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 {
-  site = config.repo.secrets.site.site;
+  inherit (config.repo.secrets.site) site;
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   services.resolved.fallbackDns = [
     "1.1.1.1#cloudflare-dns.com"

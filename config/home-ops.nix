@@ -11,7 +11,7 @@
 # (of course I'd have to migrate the data, but that's easy enough with zfs send recv)
 let
   inherit (config.modules.users.primaryUser) username;
-  home-ops = config.repo.secrets.home-ops;
+  inherit (config.repo.secrets) home-ops;
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
 in
@@ -205,16 +205,16 @@ in
       package = pkgs.postgresql_15;
       secretsFile = config.sops.secrets.pgbackrestSecrets.path;
       repo1 = {
-        enable = cfg.postgresql.onsiteBackup.enable;
-        path = cfg.postgresql.onsiteBackup.path;
-        bucket = home-ops.pgBackup.onsite.bucket;
-        endpoint = home-ops.pgBackup.onsite.endpoint;
+        inherit (cfg.postgresql.onsiteBackup) enable;
+        inherit (cfg.postgresql.onsiteBackup) path;
+        inherit (home-ops.pgBackup.onsite) bucket;
+        inherit (home-ops.pgBackup.onsite) endpoint;
       };
       repo2 = {
-        enable = cfg.postgresql.offsiteBackup.enable;
-        path = cfg.postgresql.offsiteBackup.path;
-        bucket = home-ops.pgBackup.offsite.bucket;
-        endpoint = home-ops.pgBackup.offsite.endpoint;
+        inherit (cfg.postgresql.offsiteBackup) enable;
+        inherit (cfg.postgresql.offsiteBackup) path;
+        inherit (home-ops.pgBackup.offsite) bucket;
+        inherit (home-ops.pgBackup.offsite) endpoint;
       };
     };
     modules.services.mariadb = lib.mkIf cfg.mariadb.enable {
@@ -223,7 +223,7 @@ in
     };
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
-      domains = config.repo.secrets.local.domains;
+      inherit (config.repo.secrets.local) domains;
       forwardServices = {
         "home.${home-ops.homeDomain}" = {
           upstream = "http://10.9.4.25:8123";
@@ -373,13 +373,13 @@ in
 
     # shared media user/group
     users.users.${home-ops.users.media.name} = {
-      name = home-ops.users.media.name;
-      uid = home-ops.users.media.uid;
+      inherit (home-ops.users.media) name;
+      inherit (home-ops.users.media) uid;
       group = home-ops.groups.media.name;
       isSystemUser = true;
     };
     users.groups.${home-ops.groups.media.name} = {
-      gid = home-ops.groups.media.gid;
+      inherit (home-ops.groups.media) gid;
     };
 
     modules.services.git-archive = lib.mkIf cfg.apps.git-archive.enable { enable = true; };

@@ -1,14 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.attic-watch-store;
-  username = config.modules.users.primaryUser.username;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   options.modules.services.attic-watch-store = {

@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -15,7 +14,7 @@ in
   # Useful if you need to troubleshoot systemd-networkd
   # systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
 
-  site = config.repo.secrets.site.site;
+  inherit (config.repo.secrets.site) site;
   systemd.network =
     let
       hostConfig = config.site.hosts.${hostName};
@@ -95,19 +94,16 @@ in
             matchConfig.Name = "eno2";
             networkConfig.Bond = "bond0";
           };
-          "10-bond0" =
-            let
-            in
-            {
-              matchConfig.Name = "bond0";
-              linkConfig.RequiredForOnline = "carrier";
-              networkConfig = {
-                BindCarrier = "eno1 eno2";
-                DHCP = false;
-                LinkLocalAddressing = false;
-                VLAN = map (net: "vlan-${net}") (vlansForIface "bond0");
-              };
+          "10-bond0" = {
+            matchConfig.Name = "bond0";
+            linkConfig.RequiredForOnline = "carrier";
+            networkConfig = {
+              BindCarrier = "eno1 eno2";
+              DHCP = false;
+              LinkLocalAddressing = false;
+              VLAN = map (net: "vlan-${net}") (vlansForIface "bond0");
             };
+          };
           "10-lan1" = {
             matchConfig.Name = "lan1";
             networkConfig = {

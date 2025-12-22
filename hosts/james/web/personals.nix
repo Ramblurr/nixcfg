@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -9,7 +8,7 @@ let
 
   inherit (config.repo.secrets.global) domain;
   inherit (config.repo.secrets.local) atprotoDid;
-  work = domain.work;
+  inherit (domain) work;
   domains = [
     domain.personal4
     domain.personal5

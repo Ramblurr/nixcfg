@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -12,6 +11,6 @@ in
 {
   config = lib.mkIf cfg.enable {
 
-    myhm = { ... }@hm: { };
+    myhm = _: { };
   };
 }

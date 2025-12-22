@@ -1,14 +1,10 @@
 {
-  lib,
-  inputs,
   config,
-  pkgs,
   ...
 }:
 let
-  inherit (config.users.users.linkding) uid name;
+  inherit (config.users.users.linkding) name;
   inherit (config.repo.secrets.global) domain;
-  homeDir = "/home/linkding";
   dbPassFile = config.sops.templates.db_pass_env.path;
 in
 {
@@ -35,8 +31,8 @@ in
     homeManager = {
       enable = true;
       username = config.repo.secrets.home-ops.users.linkding.name;
-      uid = config.repo.secrets.home-ops.users.linkding.uid;
-      gid = config.repo.secrets.home-ops.groups.linkding.gid;
+      inherit (config.repo.secrets.home-ops.users.linkding) uid;
+      inherit (config.repo.secrets.home-ops.groups.linkding) gid;
     };
     quadlet.enable = true;
   };
@@ -71,38 +67,36 @@ in
   networking.firewall.allowedTCPPorts = [
     8080
   ];
-  home-manager.users.linkding =
-    { pkgs, config, ... }:
-    {
-      virtualisation.quadlet.autoEscape = true;
-      virtualisation.quadlet.containers.linkding = {
-        autoStart = true;
-        serviceConfig = {
-          RestartSec = "10";
-          Restart = "always";
+  home-manager.users.linkding = _: {
+    virtualisation.quadlet.autoEscape = true;
+    virtualisation.quadlet.containers.linkding = {
+      autoStart = true;
+      serviceConfig = {
+        RestartSec = "10";
+        Restart = "always";
+      };
+      containerConfig = {
+        # renovate: docker-image
+        image = "docker.io/sissbruecker/linkding:1.44.2";
+        autoUpdate = "registry";
+        userns = "keep-id";
+        publishPorts = [ "8080:9090" ];
+        environmentFiles = [ dbPassFile ];
+        environments = {
+          LD_AUTH_PROXY_USERNAME_HEADER = "HTTP_X_AUTHENTIK_USERNAME";
+          LD_ENABLE_AUTH_PROXY = "True";
+          LD_SUPERUSER_NAME = "casey";
+          LD_DB_ENGINE = "postgres";
+          LD_DB_HOST = "172.20.20.3";
+          LD_DB_PORT = "5432";
+          LD_DB_DATABASE = "linkding";
+          LD_DB_USER = "linkding";
         };
-        containerConfig = {
-          # renovate: docker-image
-          image = "docker.io/sissbruecker/linkding:1.44.2";
-          autoUpdate = "registry";
-          userns = "keep-id";
-          publishPorts = [ "8080:9090" ];
-          environmentFiles = [ dbPassFile ];
-          environments = {
-            LD_AUTH_PROXY_USERNAME_HEADER = "HTTP_X_AUTHENTIK_USERNAME";
-            LD_ENABLE_AUTH_PROXY = "True";
-            LD_SUPERUSER_NAME = "casey";
-            LD_DB_ENGINE = "postgres";
-            LD_DB_HOST = "172.20.20.3";
-            LD_DB_PORT = "5432";
-            LD_DB_DATABASE = "linkding";
-            LD_DB_USER = "linkding";
-          };
-          podmanArgs = [ ];
-          volumes = [
-            "/var/lib/linkding:/etc/linkding/data:rw"
-          ];
-        };
+        podmanArgs = [ ];
+        volumes = [
+          "/var/lib/linkding:/etc/linkding/data:rw"
+        ];
       };
     };
+  };
 }

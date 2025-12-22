@@ -7,11 +7,8 @@
 }:
 
 let
-  devCfg = config.modules.dev;
   cfg = config.modules.dev.llms;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) username;
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
     if [ -f "$HOME/.llm-keys" ]; then
@@ -22,11 +19,9 @@ let
     fi
     exec ${cmd} "$@"
   '';
-  opencode = inputs.llm-agents.packages.${pkgs.system}.opencode;
-  crush = inputs.llm-agents.packages.${pkgs.system}.crush;
-  catnip = inputs.llm-agents.packages.${pkgs.system}.catnip;
-  gemini-cli = inputs.llm-agents.packages.${pkgs.system}.gemini-cli;
-  crush-wrapper = pkgs.writeShellScriptBin "crush" (wrapWithLLMKeys "${crush}/bin/crush" [ ]);
+  inherit (inputs.llm-agents.packages.${pkgs.system}) opencode;
+  inherit (inputs.llm-agents.packages.${pkgs.system}) catnip;
+  inherit (inputs.llm-agents.packages.${pkgs.system}) gemini-cli;
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
     wrapWithLLMKeys "${opencode}/bin/opencode" [
       "ANTHROPIC_API_KEY"
@@ -40,21 +35,15 @@ let
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
   catnip-wrapper = pkgs.writeShellScriptBin "catnip" (wrapWithLLMKeys "${catnip}/bin/catnip" [ ]);
-  whisper-cpp = (
-    if cfg.cudaSupport == true then
-      (pkgs.whisper-cpp.override { cudaSupport = true; })
-    else
-      pkgs.whisper-cpp
-  );
-  cat-url-markdown = (
-    pkgs.writeShellScriptBin "cat-url-markdown" ''
-      if [ -z "$1" ]; then
-        echo "usage: $(basename "$0") URL [FILENAME]"
-        exit 1
-      fi
-      curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
-    ''
-  );
+  whisper-cpp =
+    if cfg.cudaSupport then (pkgs.whisper-cpp.override { cudaSupport = true; }) else pkgs.whisper-cpp;
+  cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
+    if [ -z "$1" ]; then
+      echo "usage: $(basename "$0") URL [FILENAME]"
+      exit 1
+    fi
+    curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
+  '';
 in
 {
   options.modules.dev.llms = {

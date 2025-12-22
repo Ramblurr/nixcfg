@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.hardware.pipewire;
-  username = config.modules.users.primaryUser.username;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) username;
 
   speaker-mute = pkgs.writeShellScriptBin "speaker-mute" ''
     #!${pkgs.runtimeShell}
@@ -73,7 +70,7 @@ in
       wireplumber.enable = true;
     };
     home-manager.users."${username}" =
-      { pkgs, ... }@hm:
+      { pkgs, ... }:
       {
         home.packages = [
           speaker-mute

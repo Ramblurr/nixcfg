@@ -1,16 +1,13 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.editors.emacs;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
   nixosConfig = config;
 in
@@ -29,11 +26,11 @@ in
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
     environment.wordlist.enable = true;
     myhm =
-      { config, ... }@hm:
+      { config, ... }:
       {
         programs.emacs = {
           enable = true;
-          package = cfg.package;
+          inherit (cfg) package;
           extraPackages = epkgs: [
             epkgs.eldev
             epkgs.vterm

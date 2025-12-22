@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -8,7 +7,7 @@
 }:
 let
   cfg = config.modules.services.davis;
-  home-ops = config.repo.secrets.home-ops;
+  inherit (config.repo.secrets) home-ops;
 in
 {
   options.modules.services.davis = {
@@ -52,13 +51,13 @@ in
     sops.secrets."davis/APP_SECRET" = {
       sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.davis.user;
-      group = config.services.davis.group;
+      inherit (config.services.davis) group;
       mode = "400";
     };
     sops.secrets."davis/ADMIN_PASSWORD" = {
       sopsFile = ../../configs/home-ops/shared.sops.yml;
       owner = config.services.davis.user;
-      group = config.services.davis.group;
+      inherit (config.services.davis) group;
       mode = "400";
     };
 
@@ -70,7 +69,7 @@ in
         driver = "postgresql";
       };
       mail = {
-        dsn = home-ops.mail.dsn;
+        inherit (home-ops.mail) dsn;
         inviteFromAddress = home-ops.mail.notificationsFromAddress;
       };
       adminLogin = "admin";

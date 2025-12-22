@@ -1,18 +1,16 @@
 {
   config,
   inputs,
-  options,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.fennel;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
   nur = import inputs.nur {
     nurpkgs = pkgs;

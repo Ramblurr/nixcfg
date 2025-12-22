@@ -1,6 +1,5 @@
 { lib, config, ... }:
 let
-  dhcpLib = import ./helpers.nix { inherit lib; };
   keaddnsUser = "kea";
 
   pdnsServer = [
@@ -8,16 +7,6 @@ let
       ip-address = "127.0.0.1";
       port = 8853;
     }
-  ];
-
-  vlans = [
-    "local"
-    "guest"
-    "prim"
-    "mgmt"
-    "data"
-    #"iot"
-    #"not"
   ];
 in
 {

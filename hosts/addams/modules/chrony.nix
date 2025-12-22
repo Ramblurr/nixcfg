@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   environment.persistence."/persist".directories = [ "/var/lib/chrony" ];
   services.chrony = {
     enable = true;

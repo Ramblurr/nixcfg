@@ -1,12 +1,7 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
-let
-  inherit (config.repo.secrets.global) domain;
-in
 {
   services.samba-wsdd.enable = true;
   services.samba-wsdd.workgroup = "WORKGROUP";

@@ -1,6 +1,5 @@
 # As of Aug 2023 Hetzner Cloud CCX* vms support UEFI by default
 {
-  config,
   modulesPath,
   lib,
   pkgs,

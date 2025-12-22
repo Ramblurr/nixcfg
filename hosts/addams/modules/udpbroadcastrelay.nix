@@ -1,8 +1,4 @@
-{
-  pkgs,
-  ...
-}:
-{
+_: {
   services.udpbroadcastrelay = {
     enable = false;
     instances = {

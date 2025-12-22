@@ -1,15 +1,11 @@
 {
-  options,
   config,
   lib,
   utils,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.calibre;
-  home-ops = config.repo.secrets.home-ops;
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   stateDir = "/var/lib/calibre";
   dlLocalPath = "/mnt/downloads";

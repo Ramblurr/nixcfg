@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -26,7 +25,7 @@ in
 
     services.mysql = {
       enable = true;
-      package = cfg.package;
+      inherit (cfg) package;
       dataDir = "/var/lib/mysql/data";
       settings = {
         mysqld = {

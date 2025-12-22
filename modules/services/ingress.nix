@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -15,78 +14,69 @@ in
     forwardServices = lib.mkOption {
       default = { };
       type = lib.types.attrsOf (
-        lib.types.submodule (
-          { name, ... }:
-          {
-            options = {
-              upstream = lib.mkOption { type = lib.types.str; };
-              acmeHost = lib.mkOption { type = lib.types.str; };
-              external = lib.mkOption {
-                type = lib.types.bool;
-                default = false;
-              };
-              extraConfig = lib.mkOption {
-                type = lib.types.lines;
-                default = "";
-              };
-              upstreamExtraConfig = lib.mkOption {
-                type = lib.types.lines;
-                default = "";
-              };
+        lib.types.submodule (_: {
+          options = {
+            upstream = lib.mkOption { type = lib.types.str; };
+            acmeHost = lib.mkOption { type = lib.types.str; };
+            external = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
             };
-          }
-        )
+            extraConfig = lib.mkOption {
+              type = lib.types.lines;
+              default = "";
+            };
+            upstreamExtraConfig = lib.mkOption {
+              type = lib.types.lines;
+              default = "";
+            };
+          };
+        })
       );
     };
     domains = lib.mkOption {
       description = "List of ingress domains to serve";
       default = { };
       type = lib.types.attrsOf (
-        lib.types.submodule (
-          { name, ... }:
-          {
-            options = {
-              externalDomains = lib.mkOption {
-                type = lib.types.listOf lib.types.str;
-                default = [ ];
-                description = "List of domains to expose externally via the tunnel";
-              };
-              wildcard = {
-                enable = lib.mkEnableOption "Enable wildcard domain by adding *.<domain> to the SAN";
-              };
+        lib.types.submodule (_: {
+          options = {
+            externalDomains = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ ];
+              description = "List of domains to expose externally via the tunnel";
             };
-          }
-        )
+            wildcard = {
+              enable = lib.mkEnableOption "Enable wildcard domain by adding *.<domain> to the SAN";
+            };
+          };
+        })
       );
     };
     virtualHosts = lib.mkOption {
       type = lib.types.attrsOf (
-        lib.types.submodule (
-          { name, ... }:
-          {
-            options = {
-              upstream = lib.mkOption { type = lib.types.str; };
-              acmeHost = lib.mkOption { type = lib.types.str; };
-              forwardAuth = lib.mkOption {
-                type = lib.types.bool;
-                default = false;
-              };
-              upstreamExtraConfig = lib.mkOption {
-                type = lib.types.lines;
-                default = "";
-              };
-              http3.enable = lib.mkOption {
-                type = lib.types.bool;
-                default = true;
-              };
-
-              extraConfig = lib.mkOption {
-                type = lib.types.lines;
-                default = "";
-              };
+        lib.types.submodule (_: {
+          options = {
+            upstream = lib.mkOption { type = lib.types.str; };
+            acmeHost = lib.mkOption { type = lib.types.str; };
+            forwardAuth = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
             };
-          }
-        )
+            upstreamExtraConfig = lib.mkOption {
+              type = lib.types.lines;
+              default = "";
+            };
+            http3.enable = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+            };
+
+            extraConfig = lib.mkOption {
+              type = lib.types.lines;
+              default = "";
+            };
+          };
+        })
       );
     };
   };
@@ -170,7 +160,7 @@ in
             useACMEHost = service.acmeHost;
             forceSSL = true;
             kTLS = true;
-            extraConfig = service.extraConfig;
+            inherit (service) extraConfig;
             http3 = true;
             http2 = false;
             quic = true;
@@ -193,7 +183,7 @@ in
             useACMEHost = service.acmeHost;
             forceSSL = true;
             kTLS = true;
-            extraConfig = service.extraConfig;
+            inherit (service) extraConfig;
             http3 = service.http3.enable;
             http2 = false;
             quic = service.http3.enable;

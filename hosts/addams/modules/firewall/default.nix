@@ -11,17 +11,11 @@ let
   data = import ./data.nix { inherit config lib; };
   inherit (fwLib)
     mkPortForwards
-    setRule
-    prefixStringLines
     indent
     dropRule
     ;
 
   inherit (data)
-    local_zone
-    zones
-    internal_zones
-    internal_interfaces
     port_forwards
     zone_defs
     rules
@@ -98,7 +92,7 @@ in
         nnf-nixos-firewall.enable = false; # I want to open all my ports on this host manually
       };
       zones = zone_defs;
-      rules = rules;
+      inherit rules;
     };
   };
 }

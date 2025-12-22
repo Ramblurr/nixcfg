@@ -15,7 +15,7 @@ in
   ];
 
   # Merge in the site secrets
-  site = config.repo.secrets.site.site;
+  inherit (config.repo.secrets.site) site;
 
   networking = {
     hostId = pkgs.lib.concatStringsSep "" (
@@ -139,8 +139,8 @@ in
                 Table = "vpn";
                 Type = "unreachable";
               };
-              hostNets = (keys config.site.hosts.${hostName}.interfaces);
-              cidr4s = (map (net: config.site.net.${net}.subnet4) hostNets);
+              hostNets = keys config.site.hosts.${hostName}.interfaces;
+              cidr4s = map (net: config.site.net.${net}.subnet4) hostNets;
               cidr6s = mapcat (net: (vals config.site.net.${net}.subnets6)) hostNets;
             in
             (map deny cidr4s) ++ (map deny cidr6s)

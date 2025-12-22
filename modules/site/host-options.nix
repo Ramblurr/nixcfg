@@ -6,8 +6,6 @@
 let
 
   inherit (lib)
-    concatMap
-    elemAt
     mkOption
     types
     ;

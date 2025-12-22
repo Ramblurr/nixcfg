@@ -1,5 +1,4 @@
 {
-  pkgs,
   callPackage,
   fetchFromGitHub,
   ...

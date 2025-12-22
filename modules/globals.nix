@@ -10,7 +10,7 @@ let
     ;
 
   nodesType = types.attrsOf (
-    types.submodule (hostSubmod: {
+    types.submodule (_hostSubmod: {
       options = {
         mgmtCIDR = mkOption {
           type = types.nullOr types.str;

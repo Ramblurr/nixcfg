@@ -12,26 +12,16 @@ let
     ;
   inherit (config.repo.secrets.local) atprotoDid;
   domain = personal2;
-  uid = 993;
   homeDirectory = "/var/lib/${personal2}";
   #runtimeDirectory = "${config.modules.users.deploy-users.${personal2}.runtimeDirectory}";
   socketPath = "${homeDirectory}/.run/site.sock";
-  hookScript = pkgs.writeScript "site-deploy.sh" ''
-    #!${pkgs.bash}/bin/bash
-    set -euo pipefail
-    TEMP_DIR=$(${pkgs.coreutils}/bin/mktemp -d)
-    trap 'rm -rf "$TEMP_DIR"' EXIT
-    ${pkgs.git}/bin/git clone https://github.com/Ramblurr/casey.link.git "$TEMP_DIR"
-    cd "$TEMP_DIR"
-    deploy .
-  '';
 in
 {
   modules.users.deploy-users.${personal2} = {
     username = personal2;
     uid = 993;
     gid = 991;
-    homeDirectory = homeDirectory;
+    inherit homeDirectory;
     homeDirectoryOnZfs.enable = true;
     homeDirectoryOnZfs.datasetName = "rpool/encrypted/safe/svc/${personal2}";
   };

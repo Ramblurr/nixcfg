@@ -1,17 +1,14 @@
 {
   config,
-  options,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.clojure;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -36,7 +33,7 @@ in
     };
 
     myhm =
-      { ... }@hm:
+      hm:
       let
         devSDKs = with pkgs; {
           #openjfx = javaPackages.openjfx24;

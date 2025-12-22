@@ -1,9 +1,7 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
@@ -63,7 +61,7 @@ in
         # I couldn't get initrd.systemd to work the rollback service failed with
         # "The ZFS Modules are not loaded"
         systemd.enable = false;
-        systemd.services.rollback = mkIf (config.boot.initrd.systemd.enable) {
+        systemd.services.rollback = mkIf config.boot.initrd.systemd.enable {
           description = "Rollback ZFS datasets to a pristine state";
           wantedBy = [ "initrd.target" ];
           after = [ "zfs-import.target" ];
@@ -144,7 +142,7 @@ in
         pools = cfg.scrubPools;
       };
       autoSnapshot = {
-        enable = cfg.autoSnapshot.enable;
+        inherit (cfg.autoSnapshot) enable;
         frequent = 8; # keep the latest eight 15-minute snapshots (instead of four)
         monthly = 1; # keep only one monthly snapshot (instead of twelve)
       };

@@ -1,12 +1,9 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 let
-  cfg = config.modules.impermanence;
-  username = config.modules.users.primaryUser.username;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   environment.persistence."/persist" = {

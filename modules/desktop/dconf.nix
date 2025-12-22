@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -16,7 +15,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.dconf.enable = true;
     myhm =
-      { lib, ... }@hm:
+      { lib, ... }:
       with lib.hm.gvariant;
       {
         dconf.settings = {

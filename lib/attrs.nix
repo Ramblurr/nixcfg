@@ -33,7 +33,7 @@ _inputs: _final: prev: {
         let
           f =
             attrPath:
-            prev.lib.zipAttrsWith (
+            builtins.zipAttrsWith (
               n: values:
               if (prev.lib.tail values) == [ ] then
                 prev.lib.head values

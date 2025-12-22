@@ -7,8 +7,6 @@
 
 let
   cfg = config.modules.desktop.fonts;
-  username = config.modules.users.primaryUser.username;
-  withImpermanence = config.modules.impermanence.enable;
   theme = {
     name = "adw-gtk3-dark";
     package = pkgs.adw-gtk3;
@@ -166,40 +164,38 @@ in
         '';
       };
     };
-    myhm =
-      { ... }@hm:
-      {
-        home = {
-          sessionVariables = {
-            XCURSOR_THEME = cursorTheme.name;
-            XCURSOR_SIZE = "${toString cursorTheme.size}";
-          };
-          pointerCursor = cursorTheme // {
-            gtk.enable = true;
-          };
-          file = {
-            ".local/share/themes/${theme.name}" = {
-              source = "${theme.package}/share/themes/${theme.name}";
-            };
-          };
+    myhm = _: {
+      home = {
+        sessionVariables = {
+          XCURSOR_THEME = cursorTheme.name;
+          XCURSOR_SIZE = "${toString cursorTheme.size}";
         };
-
-        gtk = {
-          enable = true;
-          theme.name = theme.name;
-          inherit cursorTheme iconTheme;
-          font = {
-            package = cfg.sans.package;
-            name = cfg.sans.name;
-            size = cfg.sans.size;
-          };
+        pointerCursor = cursorTheme // {
+          gtk.enable = true;
         };
-
-        qt = {
-          # TODO: renable after  https://github.com/nix-community/home-manager/issues/7728
-          enable = false;
-          platformTheme.name = "kde";
+        file = {
+          ".local/share/themes/${theme.name}" = {
+            source = "${theme.package}/share/themes/${theme.name}";
+          };
         };
       };
+
+      gtk = {
+        enable = true;
+        theme.name = theme.name;
+        inherit cursorTheme iconTheme;
+        font = {
+          inherit (cfg.sans) package;
+          inherit (cfg.sans) name;
+          inherit (cfg.sans) size;
+        };
+      };
+
+      qt = {
+        # TODO: renable after  https://github.com/nix-community/home-manager/issues/7728
+        enable = false;
+        platformTheme.name = "kde";
+      };
+    };
   };
 }

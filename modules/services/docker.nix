@@ -1,15 +1,11 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.services.docker;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.docker = {
@@ -25,7 +21,7 @@ in
     };
     virtualisation.docker = {
       enable = true;
-      enableOnBoot = cfg.enableOnBoot;
+      inherit (cfg) enableOnBoot;
     };
   };
 }

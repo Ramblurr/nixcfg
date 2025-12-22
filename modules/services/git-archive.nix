@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -7,7 +6,6 @@
 }:
 let
   cfg = config.modules.services.git-archive;
-  home-ops = config.repo.secrets.home-ops;
   stateDirActual = "/var/lib/private/git-archive";
   stateDirEffective = "/var/lib/git-archive";
 in

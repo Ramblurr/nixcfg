@@ -8,7 +8,7 @@ with lib;
 let
   cfg = config.modules.desktop.services.ha-shutdown;
   shutdownScript = pkgs.writeScript "ha-shutdown.py" (builtins.readFile ./shutdown.py);
-  username = config.modules.users.primaryUser.username;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   options.modules.desktop.services.ha-shutdown = {

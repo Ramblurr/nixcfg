@@ -1,5 +1,4 @@
 {
-  stdenv,
   fetchFromGitHub,
   lib,
   rustPlatform,
@@ -7,19 +6,6 @@
   udev,
   pkg-config,
 }:
-let
-
-  swhkd = writeShellScript "swhkd" ''
-    DIR="$(cd "$(dirname "$0")" && pwd)"
-    if [ "$1" = "stop" ]; then
-      pkill swhkd
-      #exit 0
-    else
-      "$DIR"/.swhkd-wrapped $@
-      #exit 0
-    fi
-  '';
-in
 rustPlatform.buildRustPackage {
   name = "swhkd";
   version = "unstable-2024-09-23";

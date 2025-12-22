@@ -1,5 +1,5 @@
 # A collection of pure functions that should be familiar to any Clojure programmer.
-inputs: _final: prev: {
+_inputs: _final: prev: {
   lib = prev.lib // {
     mori = rec {
       /*

@@ -1,15 +1,10 @@
 {
-  actual-nixpkgs,
   config,
   pkgs,
   lib,
   inputs,
-  unstable,
   ...
 }:
-let
-  inherit (config.modules.users.primaryUser) username;
-in
 {
   imports = [
     inputs.nixos-raspberrypi.nixosModules.nixpkgs-rpi

@@ -6,7 +6,6 @@
 }:
 let
   cfg = config.services.authentik;
-  home-ops = config.repo.secrets.home-ops;
   databaseActuallyCreateLocally =
     cfg.database.createLocally && cfg.database.host == "/run/postgresql";
   hostWithPort = h: p: "${h}:${toString p}";
@@ -275,15 +274,13 @@ in
   };
   config = lib.mkIf cfg.enable {
 
-    users.users = (
-      lib.mkIf (cfg.user == "authentik") {
-        authentik = {
-          isSystemUser = true;
-          home = cfg.package;
-          group = cfg.group;
-        };
-      }
-    );
+    users.users = lib.mkIf (cfg.user == "authentik") {
+      authentik = {
+        isSystemUser = true;
+        home = cfg.package;
+        inherit (cfg) group;
+      };
+    };
     users.groups = lib.mkIf (cfg.user == "authentik" && cfg.group == "authentik") {
       ${cfg.group} = { };
     };
@@ -291,7 +288,7 @@ in
       enable = true;
       ensureUsers = [
         {
-          name = cfg.database.name;
+          inherit (cfg.database) name;
           ensureDBOwnership = true;
         }
       ];
@@ -301,11 +298,11 @@ in
       lib.mkIf (cfg.redis.createLocally && cfg.redis.host == "127.0.0.1")
         {
           enable = true;
-          port = cfg.redis.port;
+          inherit (cfg.redis) port;
           bind = "127.0.0.1";
         };
     systemd.services.authentik-server = authentikBaseService // {
-      serviceConfig = authentikBaseService.serviceConfig;
+      inherit (authentikBaseService) serviceConfig;
       script = ''
         ${lib.optionalString (cfg.adminPasswordFile != null) ''
           export AUTHENTIK_BOOTSTRAP_PASSWORD "''${CREDENTIALS_DIRECTORY}/ADMIN_PASSWORD")

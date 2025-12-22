@@ -94,9 +94,9 @@ let
       specialArgs = {
         inherit inputs self;
         inherit (config) nodes;
-        actual-nixpkgs = actual-nixpkgs;
+        inherit actual-nixpkgs;
         unstable = nixpkgs-unstable;
-        lib = nixpkgs'.lib;
+        inherit (nixpkgs') lib;
         hostName = name;
       };
     };
@@ -122,7 +122,7 @@ let
         inherit (pkgs) lib;
         inherit (config) nodes;
         inherit inputs;
-        nixpkgs = inputs.nixpkgs;
+        inherit (inputs) nixpkgs;
       };
       modules = [
         inputs.home-manager.nixosModules.home-manager

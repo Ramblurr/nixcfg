@@ -2,11 +2,9 @@
   config,
   pkgs,
   lib,
-  inputs,
   ...
 }:
 let
-  defaultSopsFile = ./secrets.sops.yaml;
   inherit (config.networking) hostName;
 in
 {
@@ -48,16 +46,14 @@ in
     hypervisor.enable = true;
     ingress.enable = true;
   };
-  myhm =
-    { pkgs, ... }@hm:
-    {
-      #home.persistence."/persist${ramblurr.homeDirectory}" = {
-      #  directories = [ { directory = "work"; } ];
-      #};
-    };
+  myhm = _: {
+    #home.persistence."/persist${ramblurr.homeDirectory}" = {
+    #  directories = [ { directory = "work"; } ];
+    #};
+  };
 
   # Merge in the site secrets
-  site = config.repo.secrets.site.site;
+  inherit (config.repo.secrets.site) site;
   systemd.network = {
     links = {
       "10-lan0" = {
@@ -78,13 +74,11 @@ in
           hostBridges = lib.naturalSort (
             lib.mori.keys (lib.mori.filter (_: iface: iface.type == "bridge") hostConfig.interfaces)
           );
-          vlansForThisIface = (
-            lib.mori.filter (
-              bridgeName:
-              (hostConfig.interfaces.${bridgeName}.parent != null)
-              && (hostConfig.interfaces.${bridgeName}.parent == "lan1")
-            ) hostBridges
-          );
+          vlansForThisIface = lib.mori.filter (
+            bridgeName:
+            (hostConfig.interfaces.${bridgeName}.parent != null)
+            && (hostConfig.interfaces.${bridgeName}.parent == "lan1")
+          ) hostBridges;
         in
         {
           matchConfig.Name = "lan1";

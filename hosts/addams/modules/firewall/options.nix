@@ -1,7 +1,4 @@
 { config, lib, ... }:
-let
-  cfg = config.modules.router;
-in
 {
   options = {
     modules.router = {

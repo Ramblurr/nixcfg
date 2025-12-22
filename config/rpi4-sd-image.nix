@@ -30,7 +30,7 @@
   # disable the zfs kernel module
   # takes too long to build and we don't need zfs on the raspberry pi anyways
   nixpkgs.overlays = [
-    (final: super: {
+    (_final: super: {
       zfs = super.zfs.overrideAttrs (_: {
         meta.platforms = [ ];
       });

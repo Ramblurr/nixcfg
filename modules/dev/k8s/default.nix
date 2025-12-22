@@ -1,18 +1,13 @@
 {
   config,
-  options,
-  inputs,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.k8s;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
