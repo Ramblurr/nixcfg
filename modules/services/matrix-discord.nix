@@ -7,7 +7,6 @@
 let
   cfg = config.modules.services.matrix-synapse.bridges.discord;
   rootCfg = config.modules.services.matrix-synapse;
-  service = "matrix-synapse";
   dataDir = "${rootCfg.dataDir}/mautrix-discord";
   registrationFile = config.sops.secrets."mautrix-discord/registration.yaml".path;
   doublepuppetFile = config.sops.secrets."doublepuppet.yaml".path;
@@ -107,7 +106,7 @@ in
   };
   config = lib.mkIf cfg.enable {
     users.users.${cfg.user.name} = {
-      uid = cfg.user.uid;
+      inherit (cfg.user) uid;
       useDefaultShell = true;
       isSystemUser = true;
       group = cfg.group.name;

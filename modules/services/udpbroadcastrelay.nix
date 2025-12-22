@@ -7,50 +7,47 @@
 
 let
   # Define the submodule for each relay instance
-  relayOptions =
-    types:
-    { name, config, ... }:
-    {
-      options = {
-        port = lib.mkOption {
-          type = types.int;
-          example = 5353;
-          description = "The UDP port to listen to.";
-        };
-        id = lib.mkOption {
-          type = types.int;
-          description = "Unique ID for the relay instance.";
-        };
-        interfaces = lib.mkOption {
-          type = types.listOf types.str;
-          example = [
-            "eth0"
-            "eth1"
-          ];
-          description = "List of interfaces to listen on and forward packets to.";
-        };
-        multicast = lib.mkOption {
-          type = types.nullOr types.str;
-          default = null;
-          description = "Optional multicast group to relay.";
-        };
-        blockCidr = lib.mkOption {
-          type = types.listOf types.str;
-          default = [ ];
-          description = "List of CIDRs to block packets from.";
-        };
-        allowCidr = lib.mkOption {
-          type = types.listOf types.str;
-          default = [ ];
-          description = "List of CIDRs to allow packets from.";
-        };
-        msearch = lib.mkOption {
-          type = types.listOf types.str;
-          default = [ ];
-          description = "M-SEARCH options for SSDP or similar protocols.";
-        };
+  relayOptions = types: _: {
+    options = {
+      port = lib.mkOption {
+        type = types.int;
+        example = 5353;
+        description = "The UDP port to listen to.";
+      };
+      id = lib.mkOption {
+        type = types.int;
+        description = "Unique ID for the relay instance.";
+      };
+      interfaces = lib.mkOption {
+        type = types.listOf types.str;
+        example = [
+          "eth0"
+          "eth1"
+        ];
+        description = "List of interfaces to listen on and forward packets to.";
+      };
+      multicast = lib.mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Optional multicast group to relay.";
+      };
+      blockCidr = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "List of CIDRs to block packets from.";
+      };
+      allowCidr = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "List of CIDRs to allow packets from.";
+      };
+      msearch = lib.mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "M-SEARCH options for SSDP or similar protocols.";
       };
     };
+  };
 
   cfg = config.services.udpbroadcastrelay;
 in

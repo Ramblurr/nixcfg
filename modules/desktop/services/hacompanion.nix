@@ -1,17 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.services.hacompanion;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
   tomlFormat = pkgs.formats.toml { };
 in
 {
@@ -35,11 +30,11 @@ in
       );
     };
     settings = mkOption {
-      type = tomlFormat.type;
+      inherit (tomlFormat) type;
       default = { };
     };
     settingsDefault = mkOption {
-      type = tomlFormat.type;
+      inherit (tomlFormat) type;
       default = {
         companion = {
           update_interval = "15s";
@@ -112,7 +107,8 @@ in
         "network.target"
         "network-online.target"
         "graphical-session.target"
-      ] ++ cfg.unitAfter;
+      ]
+      ++ cfg.unitAfter;
       requires = [ "graphical-session.target" ];
       partOf = [ "graphical-session.target" ];
       wantedBy = [ "graphical-session.target" ];

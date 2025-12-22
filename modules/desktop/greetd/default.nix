@@ -1,72 +1,13 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.greetd;
-  username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
-  runViaSystemdCat =
-    {
-      name,
-      cmd,
-      systemdSession,
-    }:
-    pkgs.writeShellApplication {
-      inherit name;
-      text = ''
-        trap 'systemctl --user stop ${systemdSession} || true' EXIT
-        ${pkgs.systemd}/bin/systemd-cat --identifier=${name} ${cmd}
-      '';
-    };
-
-  runViaShell =
-    {
-      env ? { },
-      sourceHmVars ? true,
-      viaSystemdCat ? true,
-      name,
-      cmd,
-    }:
-    pkgs.writeShellApplication {
-      inherit name;
-      text = ''
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=\"${v}\"") env)}
-        ${
-          if sourceHmVars then
-            ''
-              if [ -e /etc/profiles/per-user/"$USER"/etc/profile.d/hm-session-vars.sh ]; then
-                set +u
-                # shellcheck disable=SC1090
-                source /etc/profiles/per-user/"$USER"/etc/profile.d/hm-session-vars.sh
-                set -u
-              fi
-            ''
-          else
-            ""
-        }
-        ${
-          if viaSystemdCat then
-            ''
-              exec ${
-                runViaSystemdCat {
-                  inherit name cmd;
-                  systemdSession = "${lib.toLower name}-session.target";
-                }
-              }/bin/${name}
-            ''
-          else
-            ''
-              exec ${cmd}
-            ''
-        }
-      '';
-    };
 
   #runHyprland = runViaShell {
   #  env = {

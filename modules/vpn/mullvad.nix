@@ -1,17 +1,14 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.vpn.mullvad;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) username;
+  inherit (config.modules.users.primaryUser) homeDirectory;
 in
 {
   options.modules.vpn.mullvad = {
@@ -58,7 +55,7 @@ in
     };
 
     home-manager.users."${username}" =
-      { pkgs, ... }@hm:
+      _:
       mkIf cfg.enable {
         home.persistence."/persist${homeDirectory}" = mkIf config.modules.impermanence.enable {
           directories = [

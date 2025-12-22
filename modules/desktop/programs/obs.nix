@@ -1,16 +1,14 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.obs;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -35,7 +33,7 @@ in
     ];
 
     home-manager.users."${username}" =
-      { pkgs, config, ... }@hm:
+      { pkgs, ... }:
       {
         programs.obs-studio = {
           enable = true;

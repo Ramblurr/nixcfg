@@ -80,12 +80,10 @@ in
     };
   };
   config = mkIf cfg.enable {
-    myhm =
-      { ... }@hm:
-      {
-        home.packages = [ cfg.package ];
-        xdg.configFile."swhkd/swhkdrc".source = configFile;
-      };
+    myhm = _: {
+      home.packages = [ cfg.package ];
+      xdg.configFile."swhkd/swhkdrc".source = configFile;
+    };
     security.polkit = {
       enable = true;
       extraConfig = ''

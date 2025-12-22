@@ -3,7 +3,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -66,7 +65,7 @@ in
     };
     secrets = lib.mkOption {
       readOnly = true;
-      default = lib.mapAttrs (_: x: importEncrypted x) cfg.secretFiles;
+      default = lib.mapAttrs (_: importEncrypted) cfg.secretFiles;
       #default = { global = (importEncrypted cfg.secretFiles.global) { }; };
       type = lib.types.unspecified;
       description = "Exposes the loaded repo secrets. This option is read-only.";

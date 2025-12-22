@@ -1,16 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.aseprite;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {

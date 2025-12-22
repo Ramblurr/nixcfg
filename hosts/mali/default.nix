@@ -2,14 +2,13 @@
   config,
   pkgs,
   lib,
-  inputs,
   unstable,
   ...
 }:
 let
   inherit (config.modules.users.primaryUser) username;
   defaultSopsFile = ./secrets.sops.yaml;
-  home-ops = config.repo.secrets.home-ops;
+  inherit (config.repo.secrets) home-ops;
 in
 {
   imports = [

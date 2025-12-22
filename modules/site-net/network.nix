@@ -1,8 +1,6 @@
 {
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 
@@ -77,34 +75,32 @@ let
   genNet = net: {
     "30-${net}" = {
       matchConfig.Name = net;
-      linkConfig =
-        {
-          RequiredForOnline = "routable";
-        }
-        // lib.optionalAttrs (hostConfig.interfaces.${net}.hwaddr != null) {
-          MACAddress = hostConfig.interfaces.${net}.hwaddr;
-        };
-      networkConfig =
-        {
-          LLDP = true;
-          EmitLLDP = true;
-          DHCP = if nets.${net}.dhcp.enable && !(hasStatic4 net) then "ipv4" else false;
-          DHCPServer = false;
-          MulticastDNS = true;
-          IPv6AcceptRA = !(hasStatic6 net) && !hostConfig.isRouter;
-          IPv6SendRA = hostConfig.isRouter;
-          IPv4Forwarding = true;
-          IPv6Forwarding = true;
-          #LinkLocalAddressing = "ipv6";
-          LinkLocalAddressing = "no";
-        }
-        // lib.optionalAttrs (hostConfig.interfaces.${net}.gw4) {
-          Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
-        };
+      linkConfig = {
+        RequiredForOnline = "routable";
+      }
+      // lib.optionalAttrs (hostConfig.interfaces.${net}.hwaddr != null) {
+        MACAddress = hostConfig.interfaces.${net}.hwaddr;
+      };
+      networkConfig = {
+        LLDP = true;
+        EmitLLDP = true;
+        DHCP = if nets.${net}.dhcp.enable && !(hasStatic4 net) then "ipv4" else false;
+        DHCPServer = false;
+        MulticastDNS = true;
+        IPv6AcceptRA = !(hasStatic6 net) && !hostConfig.isRouter;
+        IPv6SendRA = hostConfig.isRouter;
+        IPv4Forwarding = true;
+        IPv6Forwarding = true;
+        #LinkLocalAddressing = "ipv6";
+        LinkLocalAddressing = "no";
+      }
+      // lib.optionalAttrs hostConfig.interfaces.${net}.gw4 {
+        Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
+      };
       addresses = genAddresses net;
-      routes = hostConfig.interfaces.${net}.routes;
-      routingPolicyRules = hostConfig.interfaces.${net}.routingPolicyRules;
-      ipv6Prefixes = lib.optionals (hostConfig.isRouter) (
+      inherit (hostConfig.interfaces.${net}) routes;
+      inherit (hostConfig.interfaces.${net}) routingPolicyRules;
+      ipv6Prefixes = lib.optionals hostConfig.isRouter (
         map (prefix: {
           Prefix = prefix;
         }) (vals nets.${net}.subnets6)
@@ -161,15 +157,13 @@ let
   genPhys = net: {
     "10-${net}" =
       let
-        vlansForThisIface = (
-          filter (
-            bridgeName:
-            if hostConfig.interfaces.${bridgeName}.parent != null then
-              hostConfig.interfaces.${bridgeName}.parent == net
-            else
-              net == defaultBridgeParent
-          ) hostBridges
-        );
+        vlansForThisIface = filter (
+          bridgeName:
+          if hostConfig.interfaces.${bridgeName}.parent != null then
+            hostConfig.interfaces.${bridgeName}.parent == net
+          else
+            net == defaultBridgeParent
+        ) hostBridges;
       in
       {
         matchConfig.Name = net;

@@ -1,16 +1,13 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.kdeconnect;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -30,16 +27,14 @@ in
         to = 1764;
       }
     ];
-    home-manager.users."${username}" =
-      { pkgs, config, ... }@hm:
-      {
-        services.kdeconnect = {
-          enable = true;
-          indicator = true;
-        };
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-          directories = [ ".config/kdeconnect" ];
-        };
+    home-manager.users."${username}" = _: {
+      services.kdeconnect = {
+        enable = true;
+        indicator = true;
       };
+      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+        directories = [ ".config/kdeconnect" ];
+      };
+    };
   };
 }

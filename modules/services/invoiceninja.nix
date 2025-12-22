@@ -1,16 +1,12 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
 let
   cfg = config.modules.services.invoiceninja;
-  inherit (config.repo.secrets.home-ops.users.invoiceninja2) uid name;
   # as invoiceninja2 user: podman unshare cat /proc/self/uid_map
-  subordinateUIDRangeStart = 362144;
-  containerUid = subordinateUIDRangeStart + (uid - 1);
   rootDir = "/var/lib/invoiceninja2";
   containerPort = "8000";
   inEnv = [
@@ -91,18 +87,18 @@ in
       "rpool/encrypted/safe/svc/invoiceninja2"."mountpoint" = rootDir;
     };
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
-      uid = cfg.user.uid;
+      inherit (cfg.user) name;
+      inherit (cfg.user) uid;
       isNormalUser = true;
       linger = true;
       home = rootDir;
       createHome = false;
-      group = cfg.user.group;
+      inherit (cfg.user) group;
       # see https://github.com/nikstur/userborn/issues/7
       # autoSubUidGidRange = true;
     };
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
     sops.secrets."invoiceninja/app_env" = {
@@ -114,7 +110,7 @@ in
       ensureDatabases = [ "invoiceninja" ];
       ensureUsers = [
         {
-          name = cfg.user.name;
+          inherit (cfg.user) name;
           ensurePermissions = {
             "invoiceninja.*" = "ALL PRIVILEGES";
           };
@@ -124,7 +120,7 @@ in
     virtualisation.quadlet.enable = true;
     virtualisation.quadlet = {
       networks.app = {
-        uid = cfg.user.uid;
+        inherit (cfg.user) uid;
         autoStart = true;
         networkConfig = {
           Subnet = cfg.subnet.hostAddr;
@@ -132,7 +128,7 @@ in
       };
       containers = {
         invoiceninja-redis = {
-          uid = cfg.user.uid;
+          inherit (cfg.user) uid;
           autoStart = true;
           serviceConfig = {
             RestartSec = "30";
@@ -157,7 +153,7 @@ in
           };
         };
         invoiceninja-app = {
-          uid = cfg.user.uid;
+          inherit (cfg.user) uid;
           autoStart = true;
           containerConfig = {
             # renovate: docker-image
@@ -174,7 +170,7 @@ in
         };
 
         invoiceninja-scheduler = {
-          uid = cfg.user.uid;
+          inherit (cfg.user) uid;
           autoStart = true;
           serviceConfig = {
             RestartSec = "30";
@@ -186,14 +182,14 @@ in
             PartOf = [ "invoiceninja-app.service" ];
           };
           containerConfig = {
-            Image = config.virtualisation.quadlet.containers.invoiceninja-app.containerConfig.Image;
+            inherit (config.virtualisation.quadlet.containers.invoiceninja-app.containerConfig) Image;
             Exec = "scheduler --verbose";
             ContainerName = "scheduler";
           }
           // inShared;
         };
         invoiceninja-worker = {
-          uid = cfg.user.uid;
+          inherit (cfg.user) uid;
           autoStart = true;
           serviceConfig = {
             RestartSec = "30";
@@ -205,7 +201,7 @@ in
             PartOf = [ "invoiceninja-app.service" ];
           };
           containerConfig = {
-            Image = config.virtualisation.quadlet.containers.invoiceninja-app.containerConfig.Image;
+            inherit (config.virtualisation.quadlet.containers.invoiceninja-app.containerConfig) Image;
             Exec = "worker --verbose --sleep=3 --tries=3 --max-time=3600";
             ContainerName = "worker";
           }

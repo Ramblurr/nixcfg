@@ -1,17 +1,12 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.programs.junction;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   options.modules.desktop.programs.junction = {
@@ -19,7 +14,7 @@ in
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" =
-      { pkgs, config, ... }@hm:
+      { pkgs, ... }:
       {
         home.packages = [ pkgs.junction ];
       };

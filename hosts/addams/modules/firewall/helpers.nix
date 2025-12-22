@@ -38,9 +38,6 @@ let
 
       mkRule =
         name: cfg:
-        let
-          validatedCfg = validateRule name cfg;
-        in
         if (cfg.enable or true) then
           "iifname { ${concatCommas cfg.interfaces} } "
           + "meta l4proto { ${concatCommas cfg.protocols} } "

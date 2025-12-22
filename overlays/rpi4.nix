@@ -1,4 +1,4 @@
-final: prev: {
+final: _prev: {
   #raspberrypifw = prev.raspberrypifw.overrideAttrs (old: {
   #  version = "stable_20240124";
   #  src = prev.fetchFromGitHub {

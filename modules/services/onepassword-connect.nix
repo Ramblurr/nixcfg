@@ -1,15 +1,11 @@
 {
-  options,
   config,
   lib,
-  utils,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.onepassword-connect;
-  home-ops = config.repo.secrets.home-ops;
   dataDir = "/var/lib/onepassword-connect";
 in
 {
@@ -37,7 +33,7 @@ in
   config = lib.mkIf cfg.enable {
 
     users.users.${cfg.user.name} = {
-      name = cfg.user.name;
+      inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isSystemUser = true;
       group = lib.mkForce cfg.group.name;
@@ -48,7 +44,7 @@ in
     };
 
     users.groups.${cfg.group.name} = {
-      name = cfg.group.name;
+      inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
 

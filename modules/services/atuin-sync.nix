@@ -1,28 +1,11 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.atuin-sync;
-  home-ops = config.repo.secrets.home-ops;
-  httpPort = toString cfg.ports.http;
-  stateDirActual = "/var/lib/private/actual-budget";
-  stateDirEffective = "/var/lib/actual-budget";
-  cfgFile = pkgs.writeText "actual.json" (
-    builtins.toJSON {
-      dataDir = stateDirEffective;
-      hostname = "127.0.0.1";
-      port = cfg.ports.http;
-      serverFiles = "${stateDirEffective}/server";
-      userFiles = "${stateDirEffective}/user";
-      loginMethod = "password";
-      trustedProxies = [ "127.0.0.1/24" ];
-    }
-  );
 in
 {
   options.modules.services.atuin-sync = {

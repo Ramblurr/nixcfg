@@ -8,10 +8,8 @@
 # ──────────────────────────────────────────────────────────────────
 {
   config,
-  inputs,
   pkgs,
   lib,
-  utils,
   ...
 }:
 let
@@ -75,8 +73,8 @@ in
     extraFlags = [
       "--network-veth"
     ];
-    hostAddress = hostAddress;
-    localAddress = localAddress;
+    inherit hostAddress;
+    inherit localAddress;
     bindMounts = {
       "/secrets/mullvad/account" = {
         hostPath = config.sops.secrets."mullvad/account".path;

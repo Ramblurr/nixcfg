@@ -1,17 +1,13 @@
 {
   config,
-  options,
-  inputs,
   lib,
   pkgs,
-  my,
   ...
 }:
 with lib;
 let
   cfg = config.modules.editors.vscode;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 in
 {

@@ -10,8 +10,6 @@ repos:
         language: system
         files: \.nix$
         pass_filenames: true
-        args:
-          - --width=100
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:

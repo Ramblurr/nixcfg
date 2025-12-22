@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.services.github-runner;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.services.github-runner = {
@@ -40,9 +37,9 @@ in
         gawk
         nix
       ];
-      url = cfg.url;
+      inherit (cfg) url;
       tokenFile = "/run/secrets/github-runner.token";
-      extraLabels = cfg.extraLabels;
+      inherit (cfg) extraLabels;
       serviceOverrides = {
         Group = "docker";
       };

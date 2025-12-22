@@ -9,9 +9,7 @@ let
   inherit (config.networking) hostName;
   inherit (config.repo.secrets.global) domain;
   cfg = config.modules.microvm-guest;
-  username = cfg.devSandbox.username;
-  uid = cfg.homeManager.uid;
-  home = config.users.users.${username}.home;
+  inherit (cfg.devSandbox) username;
   SOCKLOCATION = "/var/lib/microvms/${hostName}/terminal.sock";
   mkShare = source: dir: {
     inherit source;
@@ -87,7 +85,6 @@ in
     sudo.extraRules =
       let
         # systemPath is the path where the system being activated is uploaded by `deploy`.
-        systemPath = "/nix/store/*-activatable-nixos-system-${config.networking.hostName}-*";
         nopasswd = command: {
           inherit command;
           options = [
@@ -144,7 +141,7 @@ in
     3001
   ];
   home-manager.users.${username} =
-    { pkgs, config, ... }@hm:
+    { pkgs, ... }:
     {
       manual.manpages.enable = true;
       systemd.user.startServices = lib.mkForce true;

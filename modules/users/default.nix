@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -10,9 +9,6 @@
 with lib;
 let
   cfg = config.modules.users;
-  isEd25519 = k: k.type == "ed25519";
-  getKeyPath = k: k.path;
-  keys = builtins.filter isEd25519 config.services.openssh.hostKeys;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -135,10 +131,10 @@ in
             config.sops.secrets."${cfg.primaryUser.passwordSecretKey}".path
           else
             null;
-        extraGroups = cfg.primaryUser.extraGroups;
-        uid = cfg.primaryUser.uid;
+        inherit (cfg.primaryUser) extraGroups;
+        inherit (cfg.primaryUser) uid;
         group = cfg.primaryUser.username;
-        shell = cfg.primaryUser.shell;
+        inherit (cfg.primaryUser) shell;
       };
     };
     # see https://github.com/nikstur/userborn/issues/7
@@ -204,7 +200,7 @@ in
         ];
         home.homeDirectory = cfg.primaryUser.homeDirectory;
         sops = {
-          defaultSopsFile = config.sops.defaultSopsFile;
+          inherit (config.sops) defaultSopsFile;
           #gnupg.home = hm.config.programs.gpg.homedir;
           environment = {
             PINENTRY_PROGRAM =

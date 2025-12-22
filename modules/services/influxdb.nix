@@ -1,14 +1,11 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.influxdb;
-  home-ops = config.repo.secrets.home-ops;
   stateDirActual = "/var/lib/private/influxdb";
   stateDirEffective = "/var/lib/influxdb";
 in

@@ -6,14 +6,11 @@
 let
 
   inherit (lib)
-    concatMap
     elemAt
     mkOption
     mkEnableOption
     types
     ;
-
-  dhcpOpts = { };
 
 in
 { name, ... }:
@@ -101,7 +98,7 @@ ref: https://kea.readthedocs.io/en/kea-2.4.0/arm/dhcp4-srv.html#ipv4-subnet-iden
       };
       reservations = mkOption {
         type = types.listOf (
-          (lib.types.submodule {
+          lib.types.submodule {
             options = {
               hostname = lib.mkOption {
                 type = lib.types.str;
@@ -116,7 +113,7 @@ ref: https://kea.readthedocs.io/en/kea-2.4.0/arm/dhcp4-srv.html#ipv4-subnet-iden
                 description = "The MAC address of the client.";
               };
             };
-          })
+          }
         );
         default = [ ];
         description = "A list of DHCP4 reservations";

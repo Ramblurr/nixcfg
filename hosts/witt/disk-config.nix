@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+_: {
   disko.devices = {
     # Mount `/tmp` on `tmpfs`.
     #

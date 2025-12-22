@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs,
@@ -9,7 +8,7 @@
 with lib;
 let
   cfg = config.modules.desktop.niri;
-  username = config.modules.users.primaryUser.username;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 
   niri-emacs = pkgs.writeScriptBin "niri-emacs" ''
@@ -25,7 +24,7 @@ let
   extraIncludesText = lib.concatMapStringsSep "\n" (name: ''include "${name}"'') (
     lib.attrNames cfg.extraIncludes ++ lib.optional config.modules.editors.emacs.enable "emacs.kdl"
   );
-  niri = inputs.niri.packages.${pkgs.system}.niri;
+  inherit (inputs.niri.packages.${pkgs.system}) niri;
 in
 {
   options.modules.desktop.niri = {
@@ -40,7 +39,7 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.enable && config.modules.desktop.kde != true;
+        assertion = cfg.enable && !config.modules.desktop.kde;
         message = "My niri config is mutually exclusive with KDE Plasma";
       }
     ];

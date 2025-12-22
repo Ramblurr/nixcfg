@@ -1,17 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.services.borgmatic;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
-  withImpermanence = config.modules.impermanence.enable;
   repository =
     with types;
     submodule {
@@ -77,7 +72,7 @@ in
       enable = true;
       enableConfigCheck = false; # We use environment variables in the config which aren't present during the config check
       settings = {
-        repositories = cfg.repositories;
+        inherit (cfg) repositories;
         source_directories = [ "/persist" ];
         exclude_caches = true;
         exclude_patterns = cfg.exclude-patterns;

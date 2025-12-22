@@ -1,15 +1,13 @@
 {
-  options,
   config,
   lib,
   utils,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.home-dl;
-  home-ops = config.repo.secrets.home-ops;
+  inherit (config.repo.secrets) home-ops;
   ingresses = {
     radarr = {
       domain = "radarr.${cfg.baseDomain}";
@@ -125,8 +123,8 @@ in
     modules.networking.systemd-netns-private = {
       enable = true;
       namespaces.home-dl = {
-        hostAddr = cfg.subnet.hostAddr;
-        nsAddr = cfg.subnet.nsAddr;
+        inherit (cfg.subnet) hostAddr;
+        inherit (cfg.subnet) nsAddr;
         hostIface = "home-dl-host";
         nsIface = "home-dl-ns";
         services = [
@@ -153,7 +151,8 @@ in
           mediaLocalPath
           dlLocalPath
         ];
-      } // sharedServiceConfig;
+      }
+      // sharedServiceConfig;
     };
     systemd.services.radarr = {
       description = "Radarr";
@@ -169,7 +168,8 @@ in
           mediaLocalPath
           dlLocalPath
         ];
-      } // sharedServiceConfig;
+      }
+      // sharedServiceConfig;
     };
     systemd.services.sabnzbd = {
       description = "sabnzbd server";
@@ -187,7 +187,8 @@ in
           mediaLocalPath
           dlLocalPath
         ];
-      } // sharedServiceConfig;
+      }
+      // sharedServiceConfig;
     };
     systemd.services.prowlarr = {
       description = "Prowlarr";
@@ -200,7 +201,8 @@ in
         StateDirectory = "home-dl/prowlarr";
         ExecStart = "${lib.getExe pkgs.prowlarr} -nobrowser -data=${stateDirEffective}/prowlarr";
         Restart = "on-failure";
-      } // sharedServiceConfig;
+      }
+      // sharedServiceConfig;
     };
     systemd.services.overseerr = {
       enable = false;
@@ -212,20 +214,19 @@ in
         LOG_LEVEL = "info";
         PORT = toString cfg.ports.overseerr;
       };
-      serviceConfig =
-        {
-          Type = "exec";
-          StateDirectory = "home-dl/overseerr";
-          WorkingDirectory = "${pkgs.overseerr}/libexec/overseerr/deps/overseerr";
-          ExecStart = "${pkgs.overseerr}/bin/overseerr";
-          BindPaths = [
-            "/var/lib/home-dl/overseerr/:${pkgs.overseerr}/libexec/overseerr/deps/overseerr/config/"
-          ];
-        }
-        // sharedServiceConfig
-        // {
-          PrivateMounts = true;
-        };
+      serviceConfig = {
+        Type = "exec";
+        StateDirectory = "home-dl/overseerr";
+        WorkingDirectory = "${pkgs.overseerr}/libexec/overseerr/deps/overseerr";
+        ExecStart = "${pkgs.overseerr}/bin/overseerr";
+        BindPaths = [
+          "/var/lib/home-dl/overseerr/:${pkgs.overseerr}/libexec/overseerr/deps/overseerr/config/"
+        ];
+      }
+      // sharedServiceConfig
+      // {
+        PrivateMounts = true;
+      };
     };
 
     #sops.secrets."home-dl/sonarr/apiKey" = { };
@@ -252,7 +253,8 @@ in
         ];
         StateDirectory = "home-dl/recyclarr";
         ReadOnlyPaths = [ recyclarrYaml ];
-      } // sharedServiceConfig;
+      }
+      // sharedServiceConfig;
     };
 
     systemd.timers.recyclarr = {
@@ -268,11 +270,11 @@ in
     };
 
     modules.services.ingress.virtualHosts = lib.mapAttrs' (
-      name: ingress:
+      _name: ingress:
       lib.nameValuePair ingress.domain {
         acmeHost = cfg.ingress.domain;
         upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
-        forwardAuth = ingress.forwardAuth;
+        inherit (ingress) forwardAuth;
       }
     ) ingresses;
   };

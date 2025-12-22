@@ -1,16 +1,12 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.browsers.chromium;
-  username = config.modules.users.primaryUser.username;
-  homeDirectory = config.modules.users.primaryUser.homeDirectory;
+  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -28,7 +24,7 @@ in
       };
     };
     home-manager.users."${username}" =
-      { pkgs, ... }@hm:
+      { pkgs, ... }:
       {
         programs.chromium = {
           enable = true;

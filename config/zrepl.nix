@@ -1,12 +1,11 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
 let
-  home-ops = config.repo.secrets.home-ops;
+  inherit (config.repo.secrets) home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in

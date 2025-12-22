@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -56,14 +55,14 @@ in
           networking.firewall.enable = false;
           documentation.nixos.enable = false;
           users.users.matrix-synapse = {
-            uid = cfg.user.uid;
+            inherit (cfg.user) uid;
             isSystemUser = true;
             group = cfg.group.name;
             createHome = false;
           };
 
           users.users.${cfg.bridges.discord.user.name} = lib.mkIf cfg.bridges.discord.enable {
-            uid = cfg.bridges.discord.user.uid;
+            inherit (cfg.bridges.discord.user) uid;
             isSystemUser = true;
             group = cfg.bridgesGroup.name;
           };

@@ -1,10 +1,9 @@
 { config, ... }:
 let
-  global = config.repo.secrets.global;
+  inherit (config.repo.secrets) global;
   domain = global.domain.home;
 
   # this is a /56 prefix with no trailing :
-  prefix6 = config.repo.secrets.site.sitePrefix6;
 in
 {
   imports = [

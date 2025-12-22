@@ -1,15 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.kde;
-  username = config.modules.users.primaryUser.username;
   withImpermanence = config.modules.impermanence.enable;
 
 in
@@ -28,7 +25,7 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.enable && config.modules.desktop.hyprland != true;
+        assertion = cfg.enable && !config.modules.desktop.hyprland;
         message = "My KDE config is mutually exclusive with hyprland";
       }
     ];
@@ -42,7 +39,7 @@ in
         Users.HideUsers = lib.optionalString (cfg.sddm.hideUsers != [ ]) (
           lib.concatStringsSep "," cfg.sddm.hideUsers
         );
-        Users.RememberLastUser = (cfg.sddm.hideUsers == [ ]);
+        Users.RememberLastUser = cfg.sddm.hideUsers == [ ];
         Theme.EnableAvatars = false;
         Users.MinimumUid = 99999;
         Users.MaximumUid = 99999;
@@ -65,17 +62,15 @@ in
     #systemd.services.NetworkManager-wait-online.enable = lib.mkForce false;
     #systemd.services.systemd-networkd-wait-online.enable = lib.mkForce false;
 
-    myhm =
-      { ... }@hm:
-      {
-        # Make certain user services happy
-        # https://github.com/nix-community/home-manager/issues/2064
-        systemd.user.targets.tray = {
-          Unit = {
-            Description = "Home Manager System Tray";
-            Requires = [ "graphical-session-pre.target" ];
-          };
+    myhm = _: {
+      # Make certain user services happy
+      # https://github.com/nix-community/home-manager/issues/2064
+      systemd.user.targets.tray = {
+        Unit = {
+          Description = "Home Manager System Tray";
+          Requires = [ "graphical-session-pre.target" ];
         };
-      }; # end home manager
+      };
+    }; # end home manager
   };
 }

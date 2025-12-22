@@ -1,17 +1,12 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.soju;
-  home-ops = config.repo.secrets.home-ops;
   ircPort = toString cfg.ports.irc;
   stateDirActual = "/var/lib/private/soju";
-  stateDirEffective = "/var/lib/soju";
 in
 {
   options.modules.services.soju = {

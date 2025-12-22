@@ -1,9 +1,7 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
@@ -90,23 +88,21 @@ in
     myhm =
       { pkgs, config, ... }@hm:
       {
-        programs.atuin =
-          {
-            enable = true;
-            enableBashIntegration = true;
-            settings =
-              {
-                style = "compact";
-                update_check = false;
-              }
-              // lib.optionalAttrs cfg.syncing.enable {
-                sync_address = cfg.syncing.address;
-                auto_sync = true;
-              };
+        programs.atuin = {
+          enable = true;
+          enableBashIntegration = true;
+          settings = {
+            style = "compact";
+            update_check = false;
           }
-          // lib.optionalAttrs (builtins.hasAttr "daemon" hm.options.programs.atuin) {
-            daemon.enable = true;
+          // lib.optionalAttrs cfg.syncing.enable {
+            sync_address = cfg.syncing.address;
+            auto_sync = true;
           };
+        }
+        // lib.optionalAttrs (builtins.hasAttr "daemon" hm.options.programs.atuin) {
+          daemon.enable = true;
+        };
         home.persistence."/persist${hm.config.home.homeDirectory}" = mkIf withImpermanence {
           directories = [ ".config/atuin" ];
         };

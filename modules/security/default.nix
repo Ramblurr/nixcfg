@@ -1,9 +1,6 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 with lib;
@@ -29,7 +26,6 @@ in
       sudo.extraRules =
         let
           # systemPath is the path where the system being activated is uploaded by `deploy`.
-          systemPath = "/nix/store/*-activatable-nixos-system-${config.networking.hostName}-*";
           nopasswd = command: {
             inherit command;
             options = [

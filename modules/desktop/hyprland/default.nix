@@ -1,16 +1,12 @@
 {
-  options,
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
 let
   cfg = config.modules.desktop.hyprland;
-  username = config.modules.users.primaryUser.username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.desktop.hyprland = {
@@ -20,7 +16,7 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.enable && config.modules.desktop.kde != true;
+        assertion = cfg.enable && !config.modules.desktop.kde;
         message = "My hyprland config is mutually exclusive with KDE Plasma";
       }
     ];

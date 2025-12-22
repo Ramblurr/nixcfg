@@ -1,9 +1,7 @@
 {
-  pkgs,
   lib,
   fetchFromGitHub,
   beets,
-  poetry-core,
   python3Packages,
 }:
 python3Packages.buildPythonApplication rec {

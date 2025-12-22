@@ -1,6 +1,5 @@
 {
   config,
-  fetchurl,
   pkgs,
   lib,
   utils,
@@ -8,9 +7,6 @@
 }:
 let
   cfg = config.modules.services.roon-server;
-  name = "roon-server";
-  user = "roon-server";
-  group = "roon-server";
   bluOSHosts = [
     "10.9.4.15"
     "10.9.4.12"
@@ -81,7 +77,8 @@ in
       after = [
         "network.target"
         "network-online.target"
-      ] ++ serviceDeps;
+      ]
+      ++ serviceDeps;
       bindsTo = serviceDeps;
       description = "Roon Server";
       wantedBy = [ "multi-user.target" ];

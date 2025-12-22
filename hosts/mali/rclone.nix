@@ -70,7 +70,7 @@ let
   #     extraOpts = [ "--drive-skip-dangling-shortcuts" ]; # specific to google drive
   #   }
   # ];
-  builtJobs = map (job: mkRcloneJob job) config.repo.secrets.local.rcloneJobs;
+  builtJobs = map mkRcloneJob config.repo.secrets.local.rcloneJobs;
 
   jobServices = mergeServices "service" builtJobs;
   jobTimers = mergeServices "timer" builtJobs;

@@ -1,6 +1,5 @@
 {
   config,
-  lib,
   pkgs,
   ...
 }:
@@ -9,7 +8,6 @@ let
   user = "pdns";
   group = "pdns";
   cfg = config.repo.secrets.local;
-  localAddress = lib.mori.first config.site.net.lan0.hosts4.addams;
   homeZone = config.repo.secrets.global.domain.home;
   workZone = config.repo.secrets.global.domain.work;
   pdns = pkgs.pdns-unstable;
@@ -55,30 +53,28 @@ in
 
   sops.secrets."powerdns/env" = {
     owner = user;
-    group = group;
+    inherit group;
   };
 
   systemd.services.pdns.serviceConfig = {
-    ExecStartPost = (
-      pkgs.writeScript "pdns-ddns-setup.sh" ''
-        #!${pkgs.bash}/bin/bash
+    ExecStartPost = pkgs.writeScript "pdns-ddns-setup.sh" ''
+      #!${pkgs.bash}/bin/bash
 
-        cmd=${pdns}/bin/pdnsutil
+      cmd=${pdns}/bin/pdnsutil
 
-        $cmd zone create home.arpa. || true
-        $cmd zone create ${homeZone}. || true
-        $cmd zone create ${workZone}. || true
+      $cmd zone create home.arpa. || true
+      $cmd zone create ${homeZone}. || true
+      $cmd zone create ${workZone}. || true
 
-        $cmd tsigkey import kea hmac-sha512 $KEA_TSIG_KEY
-        $cmd metadata set ${homeZone}. TSIG-ALLOW-DNSUPDATE kea
-        $cmd metadata set ${workZone}. TSIG-ALLOW-DNSUPDATE kea
-        ${builtins.concatStringsSep "\n" (
-          map (zone: ''
-            $cmd zone create "${zone}" || true
-            $cmd metadata set "${zone}" TSIG-ALLOW-DNSUPDATE kea
-          '') cfg.reverseZones
-        )}
-      ''
-    );
+      $cmd tsigkey import kea hmac-sha512 $KEA_TSIG_KEY
+      $cmd metadata set ${homeZone}. TSIG-ALLOW-DNSUPDATE kea
+      $cmd metadata set ${workZone}. TSIG-ALLOW-DNSUPDATE kea
+      ${builtins.concatStringsSep "\n" (
+        map (zone: ''
+          $cmd zone create "${zone}" || true
+          $cmd metadata set "${zone}" TSIG-ALLOW-DNSUPDATE kea
+        '') cfg.reverseZones
+      )}
+    '';
   };
 }

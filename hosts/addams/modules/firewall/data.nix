@@ -5,7 +5,6 @@ let
     keys
     filter
     merge
-    mapcat
     ;
   inherit (config.networking) hostName;
 

@@ -1,10 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
-{
+_: {
   services.avahi = {
     enable = false;
     nssmdns4 = true;

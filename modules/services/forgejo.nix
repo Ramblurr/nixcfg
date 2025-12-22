@@ -1,14 +1,10 @@
 {
-  options,
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.forgejo;
-  home-ops = config.repo.secrets.home-ops;
 in
 #httpPort = toString cfg.ports.http;
 {
