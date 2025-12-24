@@ -39,7 +39,7 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.enable && !config.modules.desktop.kde;
+        assertion = cfg.enable && !config.modules.desktop.kde.enable;
         message = "My niri config is mutually exclusive with KDE Plasma";
       }
     ];

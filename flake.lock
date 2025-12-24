@@ -872,11 +872,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1766372112,
-        "narHash": "sha256-C838MDCpDHu+AXd4TDt61K2wIRMOEMszsHqqQgL9CYM=",
+        "lastModified": 1766459388,
+        "narHash": "sha256-b3j6g6FBOWPVXdFb8L9KY/k/1lCVhFOBTAj0S9iwcYY=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "7002a34a7dfb4688a3c140d9480b23944e3f7c1b",
+        "rev": "bba8cf78f4dfe576b32478d3dff4524ea8c979c2",
         "type": "github"
       },
       "original": {
@@ -1205,11 +1205,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1766125104,
-        "narHash": "sha256-l/YGrEpLromL4viUo5GmFH3K5M1j0Mb9O+LiaeCPWEM=",
+        "lastModified": 1766314097,
+        "narHash": "sha256-laJftWbghBehazn/zxVJ8NdENVgjccsWAdAqKXhErrM=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "7d853e518814cca2a657b72eeba67ae20ebf7059",
+        "rev": "306ea70f9eb0fb4e040f8540e2deab32ed7e2055",
         "type": "github"
       },
       "original": {
@@ -1278,10 +1278,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1766328381,
-        "narHash": "sha256-k15oboI8pb2M+GXsVOb4hrTseRN3JQ4S7bH63jad4Uc=",
+        "lastModified": 1766472652,
+        "narHash": "sha256-nKUbeyd1nmx1cGrb1Q0Du7sVGGu1SF+NGagw0cgM/FY=",
         "ref": "consolidated",
-        "rev": "c4980afa764710e08a27cfc2b97a00a2e1540b68",
+        "rev": "331c621d2889024b97dc85085ff2d81bfebe0ce5",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
