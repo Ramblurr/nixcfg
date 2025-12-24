@@ -275,6 +275,7 @@ in
     users.enable = true;
     users.primaryUser.extraGroups = [
       "wheel"
+      "dialout"
       "kvm"
       "docker"
       "audio"
