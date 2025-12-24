@@ -22,7 +22,10 @@ let
 
 in
 {
-  disabledModules = [ "services/security/crowdsec.nix" ];
+  disabledModules = [
+    "services/security/crowdsec.nix"
+    "services/security/crowdsec-firewall-bouncer.nix"
+  ];
   modules.zfs.datasets.properties = {
     "rpool/svc/crowdsec"."mountpoint" = "/var/lib/crowdsec";
   };
