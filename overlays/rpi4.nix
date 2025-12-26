@@ -72,6 +72,5 @@ final: _prev: {
   #rpi-gpio2_1 = prev.python311Packages.rpi-gpio2.overrideAttrs (old: {
   #  propagatedBuildInputs = [ prev.libgpiod_1 ];
   #});
-
   ffmpeg = final.rpi.ffmpeg-headless;
 }
