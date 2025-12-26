@@ -53,6 +53,8 @@ let
     name:
     {
       isStable ? false,
+      # isRpi not useable until https://github.com/nvmd/nixos-raspberrypi/issues/90
+      isRpi ? false,
       system ? "x86_64-linux",
       hostPath ? ../hosts/${name},
       hostExtraModules ? [ ],
@@ -73,6 +75,8 @@ let
         overlays = allOverlays;
         flake = inputs.nixpkgs;
       };
+      nixosSystem =
+        if isRpi then inputs.nixos-raspberrypi.lib.nixosSystem else actual-nixpkgs.lib.nixosSystem;
     in
     actual-nixpkgs.lib.nixosSystem {
       inherit system;
