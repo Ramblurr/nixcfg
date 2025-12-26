@@ -75,6 +75,13 @@
             (import ../overlays/rpi4.nix)
           ];
         };
+        wyoming-satellite-bedroom = {
+          isStable = true;
+          system = "aarch64-linux";
+          hostOverlays = [
+            (import ../overlays/rpi4.nix)
+          ];
+        };
         #_hello-world = {
         #  hostPath = ../guests/hello-world;
         #  enableDefaultModules = false;
@@ -115,6 +122,7 @@
         // (mkGuests guests)
         // {
           octoprint-sd-image = mkSdImage "octoprint";
+          wyoming-satellite-bedroom-sd-image = mkSdImage "wyoming-satellite-bedroom";
           addams-installer = inputs.nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             specialArgs = {
