@@ -137,6 +137,8 @@
     nixos-generators.url = "github:nix-community/nixos-generators";
     nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
+    nad-api.url = "https://flakehub.com/f/ramblurr/nad-api/*";
+    nad-api.inputs.nixpkgs.follows = "nixpkgs";
     #brother_ql_web.url = "github:makefu/brother_ql_web";
   };
 
