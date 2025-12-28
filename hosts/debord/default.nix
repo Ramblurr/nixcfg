@@ -106,14 +106,23 @@ in
     group = "audio";
     name = "kitchen-announce-satellite";
   };
-  #systemd.services."linux-voice-assistant" = {
-  #  serviceConfig = {
-  #    RestartSec = "1";
-  #    Restart = "always";
-  #    RuntimeMaxSec = "7200";
-  #  };
-  #  path = [
-  #    pkgs.pipewire
-  #  ];
-  #};
+  services.nad-api = {
+    enable = true;
+    openFirewall = true;
+    user = "ramblurr";
+    group = "ramblurr";
+    devices = [
+      {
+        name = "nadt778";
+        host = "nad-t778-living-room.prim.${config.repo.secrets.global.domain.home}";
+        port = 23;
+      }
+    ];
+    http.ip = "127.0.0.1";
+    http.port = 8002;
+  };
+  modules.services.ingress.virtualHosts."nad.${config.repo.secrets.global.domain.home}" = {
+    acmeHost = config.repo.secrets.global.domain.home;
+    upstream = "http://127.0.0.1:${toString 8002}";
+  };
 }
