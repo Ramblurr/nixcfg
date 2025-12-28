@@ -33,14 +33,9 @@
     users.enable = true;
     users.userborn.enable = false;
     users.headless.enable = true;
-    users.primaryUser.extraGroups = [
-      "wheel"
-    ];
-    #users.primaryUser.password.enable = false;
-    hardware = {
-      fwupd.enable = false;
-      udisks2.enable = false;
-    };
+    users.primaryUser.extraGroups = [ "wheel" ];
+    hardware.fwupd.enable = false;
+    hardware.udisks2.enable = false;
   };
   home.wifi.iot.enable = true;
   services.tailscale.enable = true;
