@@ -31,6 +31,7 @@ in
     wireplumber
     pulsemixer
     jless
+    linux-voice-assistant-unstable
   ];
   services.pipewire = {
     enable = true;
@@ -98,33 +99,21 @@ in
     };
   };
   modules.server.virtd-host.net.prim.iface = "prim";
-  services.wyoming.satellite = {
+  services.linux-voice-assistant = {
     enable = true;
+    openFirewall = true;
     user = "ramblurr";
     group = "audio";
-    uri = "tcp://0.0.0.0:10700";
     name = "kitchen-announce-satellite";
-    area = "kitchen";
-    #microphone = {
-    #command = "${pkgs.coreutils}/bin/sleep infinity";
-    #autoGain = 10;
-    #noiseSuppression = 1;
-    #};
-    sound = {
-      command = "pw-cat --playback --raw --rate=22050 --channels=1 --format=s16 -";
-    };
-    vad = {
-      enable = false;
-    };
   };
-  systemd.services."wyoming-satellite" = {
-    serviceConfig = {
-      RestartSec = "1";
-      Restart = "always";
-      RuntimeMaxSec = "7200";
-    };
-    path = [
-      pkgs.pipewire
-    ];
-  };
+  #systemd.services."linux-voice-assistant" = {
+  #  serviceConfig = {
+  #    RestartSec = "1";
+  #    Restart = "always";
+  #    RuntimeMaxSec = "7200";
+  #  };
+  #  path = [
+  #    pkgs.pipewire
+  #  ];
+  #};
 }

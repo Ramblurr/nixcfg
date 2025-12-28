@@ -8,6 +8,8 @@ inputs: [
     mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
     udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
     brepl = (import ./brepl.nix) prev;
+    #linux-voice-assistant = (import ./linux-voice-assistant.nix) prev;
+    linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
     deploy = prev.callPackage ./deploy.nix { };
     swhkd = prev.callPackage ./swhkd { };
     overseerr = prev.callPackage ./overseerr/package.nix { };
