@@ -18,7 +18,9 @@
           # Guy Debord - https://en.wikipedia.org/wiki/Guy_Debord
           isStable = false;
           system = "x86_64-linux";
-          #hostExtraModules = [ inputs.nixos-nftables-firewall.nixosModules.default ];
+          hostExtraModules = [ inputs.nad-api.nixosModules.default ];
+          # inputs.nixos-nftables-firewall.nixosModules.default
+          hostOverlays = [ inputs.nad-api.overlays.default ];
         };
         addams = {
           # Jane Addams - https://en.wikipedia.org/wiki/Jane_Addams
@@ -35,15 +37,11 @@
           # John Dewey - https://en.wikipedia.org/wiki/John_Dewey
           isStable = false;
           system = "x86_64-linux";
-          hostExtraModules = [
-          ];
         };
         james = {
           # William James https://en.wikipedia.org/wiki/William_James
           isStable = false;
           system = "x86_64-linux";
-          hostExtraModules = [
-          ];
         };
         witt = {
           # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
