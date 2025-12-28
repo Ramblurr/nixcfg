@@ -44,7 +44,9 @@
   };
   environment.systemPackages = [
     pkgs.pipewire
+    pkgs.pulsemixer
     pkgs.alsa-utils
+    pkgs.linux-voice-assistant-unstable
   ];
   # this is a system wide pipewire config, users have to be in the pipewire group
   users.users.ramblurr.extraGroups = [ "pipewire" ];
@@ -52,35 +54,16 @@
     enable = true;
     alsa.enable = true;
     audio.enable = true;
+    pulse.enable = true;
     systemWide = true;
     wireplumber.enable = true;
   };
-  networking.firewall.allowedTCPPorts = [
-    10700 # wyoming-satellite
-  ];
-  services.wyoming.satellite = {
+  services.linux-voice-assistant = {
     enable = true;
+    openFirewall = true;
     user = "ramblurr";
     group = "pipewire";
-    uri = "tcp://0.0.0.0:10700";
     name = "bedroom-announce-satellite";
-    area = "bedroom";
-    sound = {
-      command = "pw-cat --playback --raw --rate=22050 --channels=1 --format=s16 -";
-    };
-    vad.enable = false;
-  };
-
-  systemd.services."wyoming-satellite" = {
-    serviceConfig = {
-      RestartSec = "1";
-      Restart = "always";
-      RuntimeMaxSec = "7200";
-    };
-    path = [
-      pkgs.pipewire
-      pkgs.pipewire
-      pkgs.alsa-utils
-    ];
+    audioOutputDevice = "pipewire";
   };
 }

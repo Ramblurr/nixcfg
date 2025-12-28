@@ -100,6 +100,7 @@
     ./services/influxdb.nix
     ./services/ingress.nix
     ./services/ingress-options.nix
+    ./services/linux-voice-assistant.nix
     ./services/mariadb.nix
     ./services/matrix-discord.nix
     ./services/matrix-irc.nix
