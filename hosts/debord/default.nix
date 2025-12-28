@@ -117,7 +117,14 @@ in
       enable = false;
     };
   };
-  systemd.services."wyoming-satellite".path = [
-    pkgs.pipewire
-  ];
+  systemd.services."wyoming-satellite" = {
+    serviceConfig = {
+      RestartSec = "1";
+      Restart = "always";
+      RuntimeMaxSec = "7200";
+    };
+    path = [
+      pkgs.pipewire
+    ];
+  };
 }
