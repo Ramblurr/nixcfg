@@ -13,10 +13,10 @@ _: {
         #package = pkgs.beets-unstable;
         package = pkgs.beets-unstable.override {
           pluginOverrides = {
-            filetote = {
-              enable = true;
-              propagatedBuildInputs = [ pkgs.beets-filetote ];
-            };
+            #filetote = {
+            #  enable = true;
+            #  propagatedBuildInputs = [ pkgs.beets-filetote ];
+            #};
             #dynamicrange = {
             #  enable = true;
             #  propagatedBuildInputs = [ pkgs.beets-dynamicrange ];
@@ -43,7 +43,7 @@ _: {
             "fromfilename"
             "ftintitle"
             "fuzzy"
-            "filetote"
+            #"filetote"
             #"dynamicrange"
             "info"
             "inline"
