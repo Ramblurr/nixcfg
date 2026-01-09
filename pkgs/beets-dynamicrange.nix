@@ -8,6 +8,8 @@
 python3Packages.buildPythonApplication rec {
   pname = "beets-dynamicrange";
   version = "unstable-2023-12-05";
+  pyproject = true;
+  build-system = [ python3Packages.setuptools ];
 
   src = fetchFromGitHub {
     owner = "auchter";

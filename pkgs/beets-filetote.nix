@@ -3,21 +3,24 @@
   fetchFromGitHub,
   beets,
   python3Packages,
+  poetry-core,
+  ...
 }:
 python3Packages.buildPythonApplication rec {
   pname = "beets-filetote";
-  version = "0.4.9";
+  version = "1.1.1";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "gtronset";
     repo = "beets-filetote";
     rev = "v${version}";
-    hash = "sha256-pZ6c2XQMSiiPHyZMLSiSE+LXeCfi3HEWtsTK5DP9YZE=";
+    hash = "sha256-NsYBsP60SiCfQ63C4WMkshyreFqOSmx3LP5Gwq6ECF0=";
   };
 
   build-system = [
-    python3Packages.poetry-core
+    #python3Packages.poetry-core
+    poetry-core
   ];
 
   postPatch = ''
