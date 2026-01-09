@@ -40,27 +40,6 @@
         "type": "github"
       }
     },
-    "beads": {
-      "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1765879256,
-        "narHash": "sha256-KPx3+zTPqEP3cUMa7bK8wJ/j0kpmJueAq8srg11JqU4=",
-        "owner": "steveyegge",
-        "repo": "beads",
-        "rev": "8c07a4df44da8aaaad2480060e81ab1044c4b9f0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "steveyegge",
-        "repo": "beads",
-        "type": "github"
-      }
-    },
     "blank": {
       "locked": {
         "lastModified": 1625557891,
@@ -2509,7 +2488,6 @@
     "root": {
       "inputs": {
         "automatic-ripping-machine": "automatic-ripping-machine",
-        "beads": "beads",
         "crowdsec": "crowdsec",
         "devshell": "devshell",
         "disko-stable": "disko-stable",

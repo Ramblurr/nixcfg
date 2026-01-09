@@ -87,7 +87,6 @@ in
           #codex
           #inputs.boxai.packages.${pkgs.system}.boxai
           opencode-wrapper
-          inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default
           cat-url-markdown
           whisper-cpp
         ]
