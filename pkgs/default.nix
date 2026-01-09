@@ -15,6 +15,7 @@ inputs: [
     overseerr = prev.callPackage ./overseerr/package.nix { };
     actual-server = prev.callPackage ./actual-server.nix { };
     qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
+    waytray = prev.callPackage ./waytray.nix { };
     #kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
     #klassy = prev.callPackage ./klassy.nix { };
     #invoiceninja-mine = prev.callPackage ./invoiceninja/package.nix { };
