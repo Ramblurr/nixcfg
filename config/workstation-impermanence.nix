@@ -35,6 +35,7 @@ in
         ".config/PrusaSlicer-alpha"
         ".config/qobuz-dl"
         ".config/rclone"
+        ".config/waytray"
         ".config/Zeal"
         ".local/bin"
         ".local/share/keyrings"

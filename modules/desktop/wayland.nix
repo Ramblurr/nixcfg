@@ -48,6 +48,7 @@ in
         swappy # screenshot annotate
         grimblast # select screen area + screenshot in one
         ksnip
+        waytray
         # flameshot it great but has very poor wayland support
         # ref: https://github.com/flameshot-org/flameshot/issues/3757
         # (flameshot.override {
