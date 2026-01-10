@@ -89,6 +89,7 @@ in
           opencode-wrapper
           cat-url-markdown
           whisper-cpp
+          inputs.tmux-buddy.packages.${pkgs.system}.default
         ]
         ++ (with inputs.llm-agents.packages.${pkgs.system}; [
           claude-code
