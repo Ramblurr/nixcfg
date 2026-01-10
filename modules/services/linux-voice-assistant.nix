@@ -295,6 +295,7 @@ in
         ProtectProc = "invisible";
         ProcSubset = "all"; # TensorFlow needs /proc/cpuinfo
         Restart = "always";
+        RestartSec = "5";
         RestrictAddressFamilies = [
           "AF_INET"
           "AF_INET6"
