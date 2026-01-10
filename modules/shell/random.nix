@@ -27,6 +27,7 @@ in
         graphviz
         magic-wormhole-rs
         nix-update
+        psmisc
         #(openai-whisper-cpp.override { cudaSupport = true; })
         #openai-whisper
         smem

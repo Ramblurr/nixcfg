@@ -20,6 +20,12 @@ keybinds {
 
         // iOS-friendly Shift+Tab for reverse tab completion
         bind "Ctrl Shift j" { WriteChars "\u{1b}[Z"; }
+
+        bind "Ctrl o" { SwitchToMode "tmux"; }
+        tmux {
+          bind "Ctrl o" { SwitchToMode "Normal"; }
+          bind "Esc" { SwitchToMode "Normal"; }
+       }
     }
 
     locked {

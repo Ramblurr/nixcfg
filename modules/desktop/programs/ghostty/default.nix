@@ -24,7 +24,7 @@ in
             font-family = termFont.name;
             font-size = termFont.size;
             theme = "Gruvbox Dark Hard";
-            background-opacity = 0.8;
+            background-opacity = 1.0;
           };
         };
       };
