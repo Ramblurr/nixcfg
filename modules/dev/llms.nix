@@ -11,6 +11,8 @@ let
   inherit (config.modules.users.primaryUser) username;
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
+    export PI_CONFIG_DIR="$HOME/.config/pi"
+    export VIBE_HOME="$HOME/.config/vibe"
     if [ -f "$HOME/.llm-keys" ]; then
       set -a  # automatically export all variables
       source "$HOME/.llm-keys"
@@ -19,9 +21,13 @@ let
     fi
     exec ${cmd} "$@"
   '';
-  inherit (inputs.llm-agents.packages.${pkgs.system}) opencode;
-  inherit (inputs.llm-agents.packages.${pkgs.system}) catnip;
-  inherit (inputs.llm-agents.packages.${pkgs.system}) gemini-cli;
+  inherit (inputs.llm-agents.packages.${pkgs.system})
+    opencode
+    pi
+    mistral-vibe
+    gemini-cli
+    catnip
+    ;
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
     wrapWithLLMKeys "${opencode}/bin/opencode" [
       "ANTHROPIC_API_KEY"
@@ -35,6 +41,10 @@ let
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
   catnip-wrapper = pkgs.writeShellScriptBin "catnip" (wrapWithLLMKeys "${catnip}/bin/catnip" [ ]);
+  pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
+  mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
+    wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
+  );
   whisper-cpp =
     if cfg.cudaSupport then (pkgs.whisper-cpp.override { cudaSupport = true; }) else pkgs.whisper-cpp;
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
@@ -58,6 +68,8 @@ in
       users.${username} = {
         directories = [
           ".config/claude"
+          ".config/pi"
+          ".config/vibe"
           ".config/codex"
           ".config/crush"
           ".config/eca"
@@ -84,6 +96,8 @@ in
           github-mcp-server-wrapper
           gemini-cli-wrapper
           catnip-wrapper
+          pi-wrapper
+          mistral-vibe-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.system}.boxai
           opencode-wrapper
