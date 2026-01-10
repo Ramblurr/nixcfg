@@ -136,6 +136,8 @@
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nad-api.url = "https://flakehub.com/f/ramblurr/nad-api/*";
     nad-api.inputs.nixpkgs.follows = "nixpkgs";
+    tmux-buddy.url = "https://flakehub.com/f/ramblurr/tmux-buddy/*";
+    tmux-buddy.inputs.nixpkgs.follows = "nixpkgs";
     #brother_ql_web.url = "github:makefu/brother_ql_web";
   };
 
