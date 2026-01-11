@@ -11,7 +11,8 @@ _: {
         enable = true;
 
         #package = pkgs.beets-unstable;
-        package = pkgs.beets-unstable.override {
+        #package = pkgs.beets-unstable.override {
+        package = pkgs.python3Packages.beets.override {
           pluginOverrides = {
             #filetote = {
             #  enable = true;
