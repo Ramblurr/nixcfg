@@ -7,7 +7,7 @@
 with lib;
 let
   cfg = config.modules.editors.emacs;
-  inherit (config.modules.users.primaryUser) homeDirectory;
+  inherit (config.modules.users.primaryUser) homeDirectory username;
   withImpermanence = config.modules.impermanence.enable;
   nixosConfig = config;
 in
@@ -25,6 +25,9 @@ in
   config = mkIf cfg.enable {
     fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
     environment.wordlist.enable = true;
+    environment.persistence."/persist".users.${username}.directories = lib.mkIf withImpermanence [
+      ".config/emacs"
+    ];
     myhm =
       { config, ... }:
       {
@@ -108,11 +111,6 @@ in
           # :lang nix
           nixfmt
         ];
-        persistence = lib.mkIf withImpermanence {
-          directories = [
-            ".config/emacs"
-          ];
-        };
       };
   };
 }
