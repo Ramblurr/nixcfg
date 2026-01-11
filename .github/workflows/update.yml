@@ -57,6 +57,7 @@ jobs:
           claude_args: |
             --max-turns 10
             --allowedTools Bash,Read,Write,Glob,Grep
+            --append-system-prompt "Never use emoji in any output."
       - name: Create Pull Request
         if: steps.check_changes.outputs.has_changes == 'true'
         env:
