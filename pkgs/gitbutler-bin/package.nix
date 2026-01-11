@@ -8,17 +8,21 @@
   libsoup_3,
   lib,
   makeWrapper,
+  pkgs-lib,
+  ast-grep,
+  nix,
+  curl,
 }:
 let
-  version = "0.18.2";
-  build = "2660";
+  version = "0.18.3";
+  build = "2698";
 in
 stdenv.mkDerivation (_finalAttrs: {
   inherit version;
   pname = "gitbutler-bin";
   src = fetchurl {
     url = "https://releases.gitbutler.com/releases/release/${version}-${build}/linux/x86_64/GitButler_${version}_amd64.deb";
-    hash = "sha256-wCt0i+w//tpInpdaggnAWjrmP3e8LkXq4RPtpLWH2xs=";
+    hash = "sha256-asGHOUhZ6XDo8mpN/DOrD3BikC1Jn36q2IDapFQlsSk=";
   };
 
   unpackPhase = "dpkg-deb -x $src unpack";
@@ -35,7 +39,6 @@ stdenv.mkDerivation (_finalAttrs: {
     libsoup_3
   ];
 
-  # TODO: check that the desktop file points to the right binary! Otherwise, use `substituteInPlace`
   installPhase = ''
     install -Dm755 unpack/usr/bin/gitbutler-tauri $out/bin/gitbutler-tauri
     install -Dm755 unpack/usr/bin/gitbutler-git-setsid $out/bin/gitbutler-git-setsid
@@ -43,6 +46,16 @@ stdenv.mkDerivation (_finalAttrs: {
 
     cp -r unpack/usr/share $out/share
   '';
+
+  passthru.updateScript = pkgs-lib.writeUpdateScript {
+    packageToUpdate = "gitbutler-bin";
+    utils = [
+      ast-grep
+      nix
+      curl
+    ];
+    script = ./update.bb;
+  };
 
   meta = {
     description = "Git client for simultaneous branches on top of your existing workflow";
