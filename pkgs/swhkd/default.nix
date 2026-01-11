@@ -2,7 +2,6 @@
   fetchFromGitHub,
   lib,
   rustPlatform,
-  writeShellScript,
   udev,
   pkg-config,
 }:
