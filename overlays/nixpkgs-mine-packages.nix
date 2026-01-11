@@ -23,6 +23,8 @@ in
   inherit (nixpkgs-mine) gost;
   inherit (nixpkgs-mine) ocis;
   inherit (nixpkgs-mine) ocis_71-bin;
+  inherit (nixpkgs-mine) ocis_72-bin;
+  inherit (nixpkgs-mine) ocis_73-bin;
   inherit (nixpkgs-mine) roon-server;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
