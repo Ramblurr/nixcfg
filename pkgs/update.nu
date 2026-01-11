@@ -10,12 +10,8 @@ let all_packages = (
 let packages_with_updatescript = (
   $all_packages
   | each {|p|
-    let has_update = (
-      nix eval --raw $'.#($p).passthru.updateScript.type' 2>/dev/null
-      | complete
-      | $in.exit_code == 0
-    )
-    if $has_update { $p } else { null }
+    let result = (^nix eval --raw $'.#($p).passthru.updateScript.type' | complete)
+    if $result.exit_code == 0 { $p } else { null }
   }
   | compact
 )
@@ -25,7 +21,7 @@ log info $'Found ($packages_with_updatescript | length) packages with update scr
 for $package in $packages_with_updatescript {
   log info $'Updating ($package)'
   try {
-    nix run $'.#($package).passthru.updateScript'
+    ^nix run $'.#($package).passthru.updateScript'
   } catch {|e|
     log warning $'Failed to run update script for ($package): ($e.msg)'
   }
