@@ -25,8 +25,7 @@ pkg.overrideAttrs (old: {
         ast-grep
         gh
       ];
-      nushellPlugins = [ ];
-      script = ./update.nu;
+      script = ./update.bb;
     };
   };
 })
