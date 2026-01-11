@@ -57,6 +57,7 @@ in
         enable = true;
       };
       home.packages = with pkgs; [
+        sprite-bin
         inputs.spdx-util.packages.${pkgs.system}.default
         tailwindcss_4
         hclfmt
