@@ -4,6 +4,7 @@
   ast-grep,
   nushellPlugins,
   nix-prefetch-github,
+  pkgs-lib,
 }:
 let
   inherit (inputs.self.nixosConfigurations.quine.config.boot) kernelPackages;
@@ -18,7 +19,7 @@ in
 }).overrideAttrs
   (pkg: {
     passthru = pkg.passthru // {
-      updateScript = lib.writeUpdateScript {
+      updateScript = pkgs-lib.writeUpdateScript {
         packageToUpdate = "nvidia";
 
         utils = [
