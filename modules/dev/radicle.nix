@@ -10,7 +10,7 @@ let
   inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
-#radicle = inputs.radicle.packages.${pkgs.system}.default;
+#radicle = inputs.radicle.packages.${pkgs.stdenv.hostPlatform.system}.default;
 {
   options.modules.dev.radicle = {
     enable = lib.mkEnableOption "";

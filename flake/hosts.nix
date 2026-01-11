@@ -122,14 +122,13 @@
           octoprint-sd-image = mkSdImage "octoprint";
           wyoming-satellite-bedroom-sd-image = mkSdImage "wyoming-satellite-bedroom";
           addams-installer = inputs.nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
             specialArgs = {
               targetSystem = inputs.self.nixosConfigurations.addams;
             };
             modules = [
+              { nixpkgs.hostPlatform = "x86_64-linux"; }
               ../hosts/addams/installer.nix
             ];
-
           };
         };
       # All nixosSystem instanciations are collected here, so that we can refer

@@ -58,7 +58,7 @@ in
       };
       home.packages = with pkgs; [
         sprite-bin
-        inputs.spdx-util.packages.${pkgs.system}.default
+        inputs.spdx-util.packages.${pkgs.stdenv.hostPlatform.system}.default
         tailwindcss_4
         hclfmt
         virt-manager

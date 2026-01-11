@@ -104,7 +104,7 @@ in
 
     hardware.nvidia =
       let
-        inherit (self.packages.${pkgs.system}) nvidia;
+        inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) nvidia;
       in
       {
         package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
