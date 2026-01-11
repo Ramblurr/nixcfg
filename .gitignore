@@ -9,5 +9,5 @@ modules/editors/emacs/configs/doom.d/flycheck_*
 .direnv
 dumps
 tmp
-
+extra
 dns-migrate
