@@ -4,11 +4,10 @@ def main [
   --no-commit          # Stage changes but don't commit
   ...packages: string  # Optional: specific packages to update
 ] {
+  # Use targeted eval to get only package names without evaluating the full flake
   let all_packages = (
-    nix flake show --json
+    ^nix eval .#packages.x86_64-linux --apply builtins.attrNames --json
     | from json
-    | get packages.x86_64-linux
-    | columns
   )
 
   let packages_with_updatescript = (
