@@ -3,7 +3,7 @@ inputs: final: _prev:
 let
   # Import nixpkgs-mine with the same system and config as the main nixpkgs
   nixpkgs-mine = import inputs.nixpkgs-mine {
-    inherit (final) system;
+    system = final.stdenv.hostPlatform.system;
     inherit (final) config;
   };
 in
