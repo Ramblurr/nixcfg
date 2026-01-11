@@ -4,7 +4,6 @@
   nix-prefetch-github,
   ast-grep,
   gh,
-  nushellPlugins,
   pkgs-lib,
   ...
 }:
