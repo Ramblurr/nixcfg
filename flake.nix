@@ -110,11 +110,11 @@
 
     nur.url = "github:nix-community/NUR";
 
-    plasma-manager = {
-      url = "github:nix-community/plasma-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
-    };
+    #plasma-manager = {
+    #  url = "github:nix-community/plasma-manager";
+    #  inputs.nixpkgs.follows = "nixpkgs";
+    #  inputs.home-manager.follows = "home-manager";
+    #};
 
     nixos-extra-modules = {
       url = "github:oddlama/nixos-extra-modules";
