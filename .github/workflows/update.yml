@@ -63,9 +63,34 @@ jobs:
         run: |
           BRANCH="auto-update/$(date +%Y-%m-%d)"
           git checkout -b "$BRANCH"
-          git push -u origin "$BRANCH"
-          gh pr create \
-            --title "chore: Weekly flake and package updates" \
-            --body-file ./pr-body \
-            --base main \
-            --head "$BRANCH"
+
+          # Check if branch exists on remote
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+            echo "Branch $BRANCH already exists on remote"
+
+            # Check if there's an open PR for this branch
+            PR_STATE=$(gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null || echo "NONE")
+
+            if [ "$PR_STATE" = "OPEN" ]; then
+              echo "Open PR exists, force pushing updates to existing branch"
+              git push --force-with-lease origin "$BRANCH"
+              gh pr comment "$BRANCH" --body-file ./pr-body
+              echo "PR updated with new changes and comment added"
+            else
+              echo "No open PR (state: $PR_STATE), force pushing and creating new PR"
+              git push --force origin "$BRANCH"
+              gh pr create \
+                --title "chore: Weekly flake and package updates" \
+                --body-file ./pr-body \
+                --base main \
+                --head "$BRANCH"
+            fi
+          else
+            echo "Branch does not exist, creating new branch and PR"
+            git push -u origin "$BRANCH"
+            gh pr create \
+              --title "chore: Weekly flake and package updates" \
+              --body-file ./pr-body \
+              --base main \
+              --head "$BRANCH"
+          fi
