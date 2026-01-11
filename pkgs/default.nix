@@ -11,7 +11,8 @@ inputs: [
       };
       pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
       gitbutler-bin = prev.callPackage ./gitbutler-bin.nix { };
-      java-mission-control = prev.callPackage ./java-mission-control { };
+      # webkitgtk_4_0' has been removed, port to `libsoup_3` and switch to `webkitgtk_4_1
+      #java-mission-control = prev.callPackage ./java-mission-control { };
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
