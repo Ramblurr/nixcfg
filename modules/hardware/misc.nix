@@ -32,7 +32,7 @@ in
     services.udisks2.enable = cfg.udisks2.enable;
     hardware.enableRedistributableFirmware = cfg.enableRedistributableFirmware;
     hardware.usb-modeswitch.enable = cfg.usbModeSwitch.enable;
-    hardware.cpu.amd.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
-    hardware.cpu.intel.updateMicrocode = pkgs.hostPlatform.system == "x86_64-linux";
+    hardware.cpu.amd.updateMicrocode = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
+    hardware.cpu.intel.updateMicrocode = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
   };
 }

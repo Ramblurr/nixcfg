@@ -38,7 +38,7 @@ in
         home.packages = with pkgs; [
           freecad
           # BLOCKED: https://github.com/NixOS/nixpkgs/issues/375763
-          #(inputs.cadquery.packages.${pkgs.system}.cq-editor)
+          #(inputs.cadquery.packages.${pkgs.stdenv.hostPlatform.system}.cq-editor)
           openscad
           #openscad-lsp
         ];
