@@ -30,7 +30,7 @@ in
       enable = true;
       authorizedKeysFiles = lib.mkForce [ "/etc/ssh/authorized_keys.d/%u" ];
       settings = {
-        AcceptEnv = "SYSTEMD_PAGER";
+        AcceptEnv = [ "SYSTEMD_PAGER" ];
         LoginGraceTime = 30;
         PermitRootLogin = lib.mkOverride 900 "prohibit-password";
         PasswordAuthentication = false;
