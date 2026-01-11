@@ -38,17 +38,20 @@ def main [
     }
   }
 
-  commit_changes
+  commit_changes $no_commit
 }
 
-def commit_changes [] {
-
-  log info 'Committing changes'
-
+def commit_changes [no_commit: bool] {
   try {
-    git add pkgs/
-    git commit -m 'update(pkgs): Update sources of all downstream packages'
+    ^git add -u pkgs/
+
+    if $no_commit {
+      log info 'Changes staged (not committed)'
+    } else {
+      log info 'Committing changes'
+      ^git commit -m 'update(pkgs): Update sources of all downstream packages'
+    }
   } catch {
-    log warning 'No changes to commit'
+    log warning 'No changes to stage'
   }
 }
