@@ -24,14 +24,15 @@ in
     ./roon-bridge.nix
     ./libvirt.nix
     ./gaming.nix
-    ./microvm-test.nix
-    ./microvm-test-impl.nix
+    #./microvm-test.nix
+    #./microvm-test-impl.nix
     ./arm.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
+  networking.hostId = lib.my.generateHostId config.networking.hostName;
 
   time.timeZone = "Europe/Berlin";
 
