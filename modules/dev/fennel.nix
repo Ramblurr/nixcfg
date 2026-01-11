@@ -10,7 +10,6 @@ let
   devCfg = config.modules.dev;
   cfg = devCfg.fennel;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
   nur = import inputs.nur {
     nurpkgs = pkgs;
@@ -35,7 +34,7 @@ in
     home-manager.users."${username}" = {
       #home.packages = with pkgs; [
       #];
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [ ".config/fennel" ];
       };
     };

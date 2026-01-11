@@ -19,7 +19,7 @@ in {
     home-manager.users."${username}" = {
       home.packages = with pkgs; [
       ];
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [
         ];
       };

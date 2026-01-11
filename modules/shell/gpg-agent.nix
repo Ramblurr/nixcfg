@@ -45,7 +45,7 @@ in
         };
       };
 
-      persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };
+      persistence = mkIf withImpermanence { directories = [ ".config/.gnupg" ]; };
     };
   };
 }

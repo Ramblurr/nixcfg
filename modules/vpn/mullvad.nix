@@ -8,7 +8,6 @@ with lib;
 let
   cfg = config.modules.vpn.mullvad;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
 in
 {
   options.modules.vpn.mullvad = {
@@ -57,12 +56,9 @@ in
     home-manager.users."${username}" =
       _:
       mkIf cfg.enable {
-        home.persistence."/persist${homeDirectory}" = mkIf config.modules.impermanence.enable {
+        home.persistence."/persist" = mkIf config.modules.impermanence.enable {
           directories = [
-            {
-              method = "symlink";
-              directory = ".config/Mullvad VPN";
-            }
+            ".config/Mullvad VPN"
           ];
         };
       };

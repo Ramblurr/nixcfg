@@ -9,7 +9,6 @@ let
   devCfg = config.modules.dev;
   cfg = devCfg.python;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -38,7 +37,7 @@ in
     ];
     home-manager.users."${username}" = {
       home.packages = with pkgs; [ pyright ];
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [ ".cache/pypoetry/virtualenvs/" ];
       };
     };

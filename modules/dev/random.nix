@@ -94,7 +94,7 @@ in
         hashcat-utils
         dig
         gitleaks
-        dogdns
+        doggo
         scc
         whois
         nmap

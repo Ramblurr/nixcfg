@@ -7,7 +7,6 @@ with lib;
 let
   cfg = config.modules.shell.zoxide;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -19,7 +18,7 @@ in
       programs.zoxide = {
         enable = true;
       };
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [ ".local/share/zoxide" ];
       };
     };
