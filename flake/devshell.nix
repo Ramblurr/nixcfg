@@ -17,8 +17,8 @@
       treefmt = {
         projectRootFile = "flake.nix";
         programs = {
-          nixfmt.enable = pkgs.lib.meta.availableOn pkgs.stdenv.buildPlatform pkgs.nixfmt-rfc-style.compiler;
-          nixfmt.package = pkgs.nixfmt-rfc-style;
+          nixfmt.enable = pkgs.lib.meta.availableOn pkgs.stdenv.buildPlatform pkgs.nixfmt.compiler;
+          nixfmt.package = pkgs.nixfmt;
           deadnix.enable = true;
           statix.enable = true;
         };
