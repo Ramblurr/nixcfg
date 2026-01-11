@@ -96,7 +96,8 @@ in
 
     services.ocis = {
       enable = true;
-      package = pkgs.ocis_71-bin;
+      #package = pkgs.ocis_71-bin;
+      package = pkgs.ocis_72-bin;
       url = "https://${cfg.domain}";
       stateDir = "${localPath}/data";
       configDir = "${localPath}/config";
