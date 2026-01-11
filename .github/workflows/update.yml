@@ -41,7 +41,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Bash,Read,Write,Glob,Grep"
           prompt: |
             You are running in CI. Look at .github/workflows/update.yml to see what was done before you were invoked.
             There may or may not be some commits that were just comitted. Use the git cli tool to look at those commits.
@@ -57,6 +56,7 @@ jobs:
             If there are no commits (maybe there were no updates to do, then simply stop, do not create the file)
           claude_args: |
             --max-turns 10
+            --allowedTools Bash,Read,Write,Glob,Grep
       - name: Create Pull Request
         if: steps.check_changes.outputs.has_changes == 'true'
         env:
