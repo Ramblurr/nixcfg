@@ -103,7 +103,7 @@ in
         // lib.optionalAttrs (builtins.hasAttr "daemon" hm.options.programs.atuin) {
           daemon.enable = true;
         };
-        home.persistence."/persist${hm.config.home.homeDirectory}" = mkIf withImpermanence {
+        home.persistence."/persist" = mkIf withImpermanence {
           directories = [ ".config/atuin" ];
         };
         home.file = mkIf withImpermanence {

@@ -8,7 +8,6 @@ with lib;
 let
   cfg = config.modules.desktop.programs.obs;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -43,7 +42,7 @@ in
             # obs-studio-plugins.wlrobs
           ];
         };
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence { directories = [ ]; };
+        home.persistence."/persist" = mkIf withImpermanence { directories = [ ]; };
       };
   };
 }

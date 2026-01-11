@@ -98,7 +98,6 @@ in
       neededForUsers = true;
     };
     environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.root.home = "/root";
       users.${cfg.primaryUser.username} = {
         directories = [
           ".config/sops"
@@ -187,14 +186,13 @@ in
       { pkgs, ... }@hm:
       {
         imports = [
-          inputs.impermanence.nixosModules.home-manager.impermanence
           inputs.sops-nix.homeManagerModule
           (mkAliasOptionModule
             [ "persistence" ]
             [
               "home"
               "persistence"
-              "/persist${cfg.primaryUser.homeDirectory}"
+              "/persist"
             ]
           )
         ];
@@ -239,8 +237,8 @@ in
         };
         nix.registry.nixpkgs.flake = actual-nixpkgs;
         # This is an alias for
-        #home.persistence."/persist/home/${cfg.primaryUser.username}" = ..
-        persistence = lib.mkIf config.modules.impermanence.enable { allowOther = true; };
+        #home.persistence."/persist" = ..
+        persistence = lib.mkIf config.modules.impermanence.enable { };
       };
   };
 }

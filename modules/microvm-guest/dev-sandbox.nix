@@ -167,7 +167,7 @@ in
         babashka
         bandwhich
         difftastic
-        dogdns
+        doggo
         dust
         fd
         file

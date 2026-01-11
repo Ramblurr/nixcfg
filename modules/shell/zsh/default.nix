@@ -77,13 +77,9 @@ in
       # NOTE: I am keeping zsh's history in a directory, and persisting that directory
       # Before I tried just keeping the histfile in the normal location and persisting
       # the file, but often the symlink would be overriden causing home-manager activation errors.
-      home.persistence."/persist${hm.config.home.homeDirectory}" = mkIf withImpermanence {
-        allowOther = true;
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [
-          {
-            method = "symlink";
-            directory = ".local/state/zsh";
-          }
+          ".local/state/zsh"
         ];
       };
       programs.zsh = {

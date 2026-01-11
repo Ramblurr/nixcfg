@@ -30,7 +30,12 @@ in
       enable = true;
       authorizedKeysFiles = lib.mkForce [ "/etc/ssh/authorized_keys.d/%u" ];
       settings = {
-        AcceptEnv = [ "SYSTEMD_PAGER" ];
+        # AcceptEnv type changed: string in 25.11 (stable), list in 26.05+ (unstable)
+        AcceptEnv =
+          if lib.versionAtLeast config.system.nixos.release "26.05" then
+            [ "SYSTEMD_PAGER" ]
+          else
+            "SYSTEMD_PAGER";
         LoginGraceTime = 30;
         PermitRootLogin = lib.mkOverride 900 "prohibit-password";
         PasswordAuthentication = false;
