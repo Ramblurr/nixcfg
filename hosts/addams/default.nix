@@ -30,7 +30,7 @@ in
   boot.loader.systemd-boot.enable = true;
 
   environment.systemPackages = with pkgs; [
-    dogdns
+    doggo
     tcpdump
     wireguard-tools
     inetutils

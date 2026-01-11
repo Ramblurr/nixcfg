@@ -5,7 +5,6 @@
 }:
 let
   inherit (config.networking) hostName;
-  inherit (config.modules.users.primaryUser) homeDirectory;
 in
 {
   imports = [
@@ -68,7 +67,7 @@ in
   };
 
   myhm = _: {
-    home.persistence."/persist${homeDirectory}" = {
+    home.persistence."/persist" = {
       directories = [ { directory = "work"; } ];
     };
   };

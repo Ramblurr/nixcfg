@@ -7,7 +7,6 @@ with lib;
 let
   cfg = config.modules.desktop.programs.kdeconnect;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -32,7 +31,7 @@ in
         enable = true;
         indicator = true;
       };
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [ ".config/kdeconnect" ];
       };
     };

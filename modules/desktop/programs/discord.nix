@@ -7,7 +7,6 @@ with lib;
 let
   cfg = config.modules.desktop.programs.discord;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.modules.users.primaryUser) homeDirectory;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
@@ -22,7 +21,7 @@ in
           discord
           betterdiscordctl
         ];
-        home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+        home.persistence."/persist" = mkIf withImpermanence {
           directories = [
             ".config/BetterDiscord"
             ".config/discord"

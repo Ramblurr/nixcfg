@@ -27,7 +27,7 @@ in
         RAD_HOME = "${hm.config.xdg.configHome}/radicle";
       };
 
-      home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
+      home.persistence."/persist" = mkIf withImpermanence {
         directories = [ ".config/radicle" ];
       };
 

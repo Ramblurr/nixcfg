@@ -7,7 +7,6 @@
 with lib;
 let
   cfg = config.modules.shell.random;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.shell.random = {
@@ -15,7 +14,7 @@ in
   };
   config = mkIf cfg.enable {
     services.pcscd.enable = true;
-    myhm = hm: {
+    myhm = _hm: {
       home.packages = with pkgs; [
         (warp-terminal.override { waylandSupport = true; })
         gum
@@ -43,7 +42,7 @@ in
         gitu
         gex
         httpie
-        dogdns
+        doggo
         jless
         sd
         procs
@@ -111,7 +110,6 @@ in
         deploy-rs
       ];
 
-      persistence = mkIf withImpermanence { directories = [ "${hm.config.xdg.configHome}/.gnupg" ]; };
     };
   };
 }
