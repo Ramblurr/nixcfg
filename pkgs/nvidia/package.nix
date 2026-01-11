@@ -1,7 +1,6 @@
 {
   inputs,
   ast-grep,
-  nushellPlugins,
   nix-prefetch-github,
   pkgs-lib,
 }:
@@ -20,14 +19,11 @@ in
     passthru = pkg.passthru // {
       updateScript = pkgs-lib.writeUpdateScript {
         packageToUpdate = "nvidia";
-
         utils = [
           ast-grep
           nix-prefetch-github
         ];
-        nushellPlugins = [ nushellPlugins.query ];
-
-        script = ./update.nu;
+        script = ./update.bb;
       };
     };
   })
