@@ -75,8 +75,6 @@ let
         overlays = allOverlays;
         flake = inputs.nixpkgs;
       };
-      nixosSystem =
-        if isRpi then inputs.nixos-raspberrypi.lib.nixosSystem else actual-nixpkgs.lib.nixosSystem;
     in
     actual-nixpkgs.lib.nixosSystem {
       inherit system;

@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ lib, ... }:
 
 {
 
@@ -32,7 +32,7 @@
         #     modprobe: FATAL: Module ahci not found in directory
         #
         # https://github.com/NixOS/nixpkgs/issues/154163
-        (final: super: {
+        (_final: super: {
           makeModulesClosure = x: super.makeModulesClosure (x // { allowMissing = true; });
         })
 

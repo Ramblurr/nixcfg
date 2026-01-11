@@ -1,6 +1,5 @@
 {
   inputs,
-  lib,
   ast-grep,
   nushellPlugins,
   nix-prefetch-github,
