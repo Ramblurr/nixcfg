@@ -82,6 +82,11 @@
       "matchUpdateTypes": ["patch"],
       "semanticCommitType": "fix",
       "labels": ["renovate/image", "dep/patch"]
+    },
+    {
+      "matchDatasources": ["clojure"],
+      "matchPackageNames": ["vvvvalvalval/scope-capture"],
+      "allowedVersions": "!/^0\\.3\\.3-s1$/"
     }
   ]
 }
