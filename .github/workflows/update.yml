@@ -17,13 +17,13 @@ jobs:
       - uses: DeterminateSystems/determinate-nix-action@v3
       - uses: DeterminateSystems/flakehub-cache-action@v3
       - uses: DeterminateSystems/flake-checker-action@v12
+      - name: Update git config author
+        run: |
+          git config --global user.name "Casey Link"
+          git config --global user.email "14830+Ramblurr@users.noreply.github.com"
       #- run: nix flake check
       - name: Update flake inputs
         run: nix flake update --commit-lock-file
-      - name: Update git config author
-        run: |
-          git config user.name "Casey Link"
-          git config user.email "14830+Ramblurr@users.noreply.github.com"
       - name: Update packages
         run: nix run --inputs-from . nixpkgs#nushell -L -- pkgs/update.nu
       - name: Create Pull Request
