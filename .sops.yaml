@@ -7,6 +7,7 @@ keys:
       - &ramblurr-yk-key age1yubikey1qvm060q3kense6l22nrjd5a9gqsm9k4eaanhuk5h3hpmvzes8xd6584fsvn
   - hosts:
       - &quine age1catrh86sctuqvec04nhxwsmm7cpem4mx62smt3upt0480d6fve5q4gtx42
+      - &quine-user age15vp0ca8ymyav9qamjk5yw9jav3xadsyq3587wshztpcn0flwyezssts0xj
       - &mali age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
       - &debord age1ns0hnk5n6sw9uqdn7v4rynumjk0zd8zfsjhegka74xw55nnluy4qtju5um
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
@@ -44,6 +45,7 @@ creation_rules:
     key_groups:
       - age:
           - *quine
+          - *quine-user
           - *ramblurr-yk-office
           - *ramblurr-yk-key
           - *disaster-recovery
