@@ -37,18 +37,31 @@ for platform in ($platforms | transpose nix_platform binary_name) {
   # Store the hash with the platform as key
   # Format: "aarch64-darwin.hash"
   $updates = ($updates | insert $"($platform.nix_platform).hash" $hash)
-  # Format: "aarch64-darwin.url" (also update the URL with new version)
-  $updates = ($updates | insert $"($platform.nix_platform).url" $url)
 }
 
 # Update the nix file
-print "\nUpdating sprites-bin.nix..."
-for update in ($updates | transpose key value) {
+print "\nUpdating package.nix..."
+
+# Update version
+print $"  Updating version to ($updates.version)"
+(
+  ^ast-grep run
+  --pattern '{version = $VALUE;}'
+  --selector binding
+  --rewrite $'version = "($updates.version)";'
+  --update-all
+  $self
+)
+
+# Update hashes only
+for platform in ["aarch64-darwin", "x86_64-darwin", "aarch64-linux", "x86_64-linux"] {
+  let hash = ($updates | get $"($platform).hash")
+  print $"  Updating ($platform).hash"
   (
-    ast-grep run
-    --pattern $'{($update.key) = $VALUE;}'
+    ^ast-grep run
+    --pattern $'{($platform).hash = $VALUE;}'
     --selector binding
-    --rewrite $'($update.key) = "($update.value)";'
+    --rewrite $'($platform).hash = "($hash)";'
     --update-all
     $self
   )
