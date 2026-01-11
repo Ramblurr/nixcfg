@@ -15,7 +15,7 @@ inputs: [
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
-      brepl = (import ./brepl.nix) prev;
+      brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
       #linux-voice-assistant = (import ./linux-voice-assistant.nix) prev;
       linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
       deploy = prev.callPackage ./deploy.nix { };
