@@ -5,7 +5,7 @@ let base_url = "https://sprites-binaries.t3.storage.dev"
 
 # Fetch the latest RC version
 print "Fetching latest RC version..."
-let version = (http get $"($base_url)/client/rc.txt" | str trim)
+let version = (http get $"($base_url)/client/rc.txt" | str trim | str replace --regex '^v' '')
 print $"Latest version: ($version)"
 
 mut updates = {}
