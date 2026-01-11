@@ -106,7 +106,7 @@ in
             ]
           ))
           # :lang nix
-          nixfmt-rfc-style
+          nixfmt
         ];
         persistence = lib.mkIf withImpermanence {
           directories = [

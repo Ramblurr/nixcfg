@@ -106,7 +106,7 @@ in
         vifm
         smartmontools
         pwgen-secure
-        nixfmt-rfc-style
+        nixfmt
         gost
         deploy-rs
       ];
