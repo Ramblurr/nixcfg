@@ -1,6 +1,7 @@
 use std/log
 
 def main [
+  --no-commit          # Stage changes but don't commit
   ...packages: string  # Optional: specific packages to update
 ] {
   let all_packages = (
