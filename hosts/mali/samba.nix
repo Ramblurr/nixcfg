@@ -1,8 +1,4 @@
-{
-  config,
-  ...
-}:
-{
+_: {
   services.samba-wsdd.enable = true;
   services.samba-wsdd.workgroup = "WORKGROUP";
   networking.firewall.allowedTCPPorts = [

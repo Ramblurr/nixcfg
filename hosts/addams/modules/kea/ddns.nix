@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ config, ... }:
 let
   keaddnsUser = "kea";
 

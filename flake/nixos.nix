@@ -54,7 +54,6 @@ let
     {
       isStable ? false,
       # isRpi not useable until https://github.com/nvmd/nixos-raspberrypi/issues/90
-      isRpi ? false,
       system ? "x86_64-linux",
       hostPath ? ../hosts/${name},
       hostExtraModules ? [ ],
