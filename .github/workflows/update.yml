@@ -25,7 +25,7 @@ jobs:
       - name: Update flake inputs
         run: nix flake update --commit-lock-file
       - name: Update packages
-        run: nix run --inputs-from . nixpkgs#nushell -L -- pkgs/update.nu
+        run: nix run --inputs-from . nixpkgs#babashka -L -- pkgs/update.bb
       - name: Check for changes
         id: check_changes
         run: |

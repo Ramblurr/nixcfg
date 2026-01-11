@@ -3,7 +3,6 @@
   stdenvNoCC,
   fetchurl,
   ast-grep,
-  nushellPlugins,
   pkgs-lib,
 }:
 
@@ -44,13 +43,10 @@ stdenvNoCC.mkDerivation {
   passthru = {
     updateScript = pkgs-lib.writeUpdateScript {
       packageToUpdate = "sprite-bin";
-
       utils = [
         ast-grep
       ];
-      nushellPlugins = [ nushellPlugins.query ];
-
-      script = ./update.nu;
+      script = ./update.bb;
     };
   };
 
