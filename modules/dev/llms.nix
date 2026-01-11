@@ -21,7 +21,7 @@ let
     fi
     exec ${cmd} "$@"
   '';
-  inherit (inputs.llm-agents.packages.${pkgs.system})
+  inherit (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system})
     opencode
     pi
     mistral-vibe
@@ -99,13 +99,13 @@ in
           pi-wrapper
           mistral-vibe-wrapper
           #codex
-          #inputs.boxai.packages.${pkgs.system}.boxai
+          #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           opencode-wrapper
           cat-url-markdown
           whisper-cpp
-          inputs.tmux-buddy.packages.${pkgs.system}.default
+          inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
         ]
-        ++ (with inputs.llm-agents.packages.${pkgs.system}; [
+        ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
           claude-code
           happy-coder
           codex

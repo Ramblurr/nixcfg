@@ -76,10 +76,10 @@ let
       };
     in
     actual-nixpkgs.lib.nixosSystem {
-      inherit system;
       modules = [
         #inputs.nixpkgs.nixosModules.readOnlyPkgs
         {
+          nixpkgs.hostPlatform = system;
           node.secretsDir = hostPath + "/secrets";
           node.name = name;
           nixpkgs.pkgs = nixpkgs';
@@ -117,7 +117,6 @@ let
       };
     in
     inputs.nixpkgs.lib.nixosSystem {
-      inherit system;
       specialArgs = {
         # Use the correct instance lib that has our overlays
         inherit (pkgs) lib;
@@ -134,6 +133,7 @@ let
         ../modules/shell/zsh
         ../modules/shell/atuin.nix
         {
+          nixpkgs.hostPlatform = system;
           node.secretsDir = hostPath + "/secrets";
           sops.defaultSopsFile = hostPath + "/secrets.sops.yaml";
           node.name = name;

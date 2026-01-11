@@ -63,7 +63,7 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = pkgs.system == "x86_64-linux";
+        assertion = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
         message = "gaming module requires x86_64 system";
       }
     ];
@@ -93,7 +93,7 @@ in
     };
     programs = {
       steam =
-        if pkgs.system == "x86_64-linux" then
+        if pkgs.stdenv.hostPlatform.system == "x86_64-linux" then
           {
             enable = true;
             package = steam-with-pkgs;

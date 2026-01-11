@@ -7,7 +7,7 @@
 }:
 let
   cfg = config.modules.hardware.brother-ql;
-  pkg = inputs.brother_ql_web.packages.${pkgs.system}.default;
+  pkg = inputs.brother_ql_web.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
 

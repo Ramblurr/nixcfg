@@ -24,7 +24,7 @@ let
   extraIncludesText = lib.concatMapStringsSep "\n" (name: ''include "${name}"'') (
     lib.attrNames cfg.extraIncludes ++ lib.optional config.modules.editors.emacs.enable "emacs.kdl"
   );
-  inherit (inputs.niri.packages.${pkgs.system}) niri;
+  inherit (inputs.niri.packages.${pkgs.stdenv.hostPlatform.system}) niri;
 in
 {
   options.modules.desktop.niri = {
