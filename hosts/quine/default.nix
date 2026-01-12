@@ -24,8 +24,9 @@ in
     ./roon-bridge.nix
     ./libvirt.nix
     ./gaming.nix
-    #./microvm-test.nix
-    #./microvm-test-impl.nix
+    ../../modules/site-net
+    #./microvm-host-opts.nix
+    #./microvm-host.nix
     ./arm.nix
   ];
   system.stateVersion = "23.05";
@@ -110,11 +111,9 @@ in
       };
       gaming.enable = false;
       services = {
-        ha-shutdown = {
-          enable = true;
-        };
+        ha-shutdown.enable = false;
         hacompanion = {
-          enable = true;
+          enable = false;
           environmentFile = config.sops.templates.hacompanion-env.path;
           unitAfter = [ "sops-nix.service" ];
           listenPort = 6669;
