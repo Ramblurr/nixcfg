@@ -35,14 +35,6 @@ in
           if [[ "$current_account" != "$account" ]]; then
             ${pkgs.mullvad}/bin/mullvad account login "$account"
           fi
-
-          #${mullvad}/bin/mullvad lan set allow
-          #${mullvad}/bin/mullvad relay set tunnel-protocol wireguard
-          #${mullvad}/bin/mullvad auto-connect set on
-          #${mullvad}/bin/mullvad tunnel wireguard quantum-resistant-tunnel set auto
-          ## previously known as always-require-vpn
-          #${mullvad}/bin/mullvad lockdown-mode set on
-          #${mullvad}/bin/mullvad dns set default --block-ads --block-malware --block-trackers
         '';
     };
 
