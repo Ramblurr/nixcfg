@@ -29,6 +29,9 @@ let
 
   aliases = builtins.map mkAlias cfg.symbols.fonts;
   aliases' = lib.strings.concatLines aliases;
+
+  # IBM Plex Mono Style
+  iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
 in
 {
 
@@ -83,9 +86,11 @@ in
     mono = {
       name = lib.mkOption {
         type = lib.types.str;
+        default = "Iosevka SS15";
       };
       package = lib.mkOption {
         type = lib.types.nullOr lib.types.package;
+        default = iosevka-ss15;
       };
       size = lib.mkOption {
         type = lib.types.float;
@@ -95,15 +100,15 @@ in
     terminal = {
       name = lib.mkOption {
         type = lib.types.str;
-        default = cfg.mono.name;
+        default = "Iosevka Term SS15";
       };
       package = lib.mkOption {
         type = lib.types.nullOr lib.types.package;
-        default = cfg.mono.package;
+        default = iosevka-ss15;
       };
       size = lib.mkOption {
         type = lib.types.float;
-        default = 10.0;
+        default = 12.0;
       };
     };
 

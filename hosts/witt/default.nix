@@ -74,31 +74,10 @@ in
         chromium.enable = true;
       };
 
-      fonts =
-        let
-          # Pragmata Pro Style
-          iosevka-ss08 = pkgs.iosevka-bin.override { variant = "SS08"; };
-          # Source Code Pro Style
-          iosevka-ss09 = pkgs.iosevka-bin.override { variant = "SS09"; };
-          # IBM Plex Mono Style
-          iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
-        in
-        {
-          enable = true;
-          mono.name = "Iosevka SS15";
-          mono.package = iosevka-ss15;
-          terminal.name = "Iosevka Term SS15";
-          terminal.package = iosevka-ss15;
-          symbols.fonts = [
-            "Iosevka Term SS15"
-          ];
-          packages = with pkgs; [
-            iosevka-ss08
-            iosevka-ss09
-            iosevka-ss15
-            iosevka-bin
-          ];
-        };
+      fonts = {
+        enable = true;
+        packages = [ pkgs.iosevka-bin ];
+      };
       programs = {
         #cad.enable = true;
         junction.enable = true;
