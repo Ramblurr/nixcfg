@@ -19,6 +19,7 @@
     ./desktop/niri
     ./desktop/kde.nix
     ./desktop/fonts.nix
+    ./desktop/programs/handy.nix
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
     ./desktop/programs/cad.nix
