@@ -27,7 +27,7 @@ in
     ../../modules/site-net
     #./microvm-host-opts.nix
     #./microvm-host.nix
-    ./arm.nix
+    #./arm.nix
   ];
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
@@ -98,13 +98,10 @@ in
       greetd.enable = true;
       xdg.enable = true;
       random-apps.enable = true;
-      fonts =
-        let
-        in
-        {
-          enable = true;
-          packages = [ pkgs.iosevka-bin ];
-        };
+      fonts = {
+        enable = true;
+        packages = [ pkgs.iosevka-bin ];
+      };
       browsers = {
         firefox.enable = true;
         chromium.enable = true;
@@ -156,12 +153,16 @@ in
         #nheko.enable = true;
         obs.enable = false;
         onepassword.enable = true;
+        onepassword.autostart.enable = true;
         owncloud.enable = true;
         signal.enable = true;
         slack.enable = false;
         thunderbird.enable = true;
+        thunderbird.autostart.enable = true;
         thunderbird.work.enable = true;
         thunderbird.workProxy = "${lanVpnGateway}:1081";
+        handy.enable = true;
+        handy.autostart.enable = true;
         waydroid.enable = true;
         yubico.enable = true;
         yubico.sshFidoAgent.enable = true;

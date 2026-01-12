@@ -14,6 +14,7 @@ in
 {
   options.modules.desktop.browsers.firefox = {
     enable = lib.mkEnableOption "";
+    autostart.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
 
@@ -32,6 +33,10 @@ in
       { pkgs, ... }:
       {
         #home.packages = [ firefox-devedition-bin ];
+
+        home.file.".config/autostart/firefox.desktop" = lib.mkIf cfg.autostart.enable (
+          lib.my.autostart "firefox"
+        );
         programs.firefox = {
           enable = true;
           package = firefox;

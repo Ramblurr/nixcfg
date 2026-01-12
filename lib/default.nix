@@ -9,5 +9,6 @@ prev.lib.composeManyExtensions (
     ./attrs.nix
     ./uint.nix
     ./network.nix
+    ./gui.nix
   ]
 ) final prev
