@@ -190,8 +190,7 @@ in
                       ${mullvad} account login "$account"
                     fi
 
-                    ${mullvad} relay set tunnel-protocol wireguard
-                    ${mullvad} tunnel set wireguard --quantum-resistant off
+                    ${mullvad} tunnel set quantum-resistant on
                     ${mullvad} auto-connect set on
                     ${mullvad} lockdown-mode set off
                     ${mullvad} obfuscation set mode off
