@@ -32,6 +32,7 @@ in
         ".config/hcloud"
         ".config/inkscape"
         ".config/PrusaSlicer"
+        ".config/fly"
         ".config/PrusaSlicer-alpha"
         ".config/qobuz-dl"
         ".config/rclone"
