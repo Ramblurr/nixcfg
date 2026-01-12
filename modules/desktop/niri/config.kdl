@@ -27,25 +27,32 @@ input {
 
     // Focus windows and outputs automatically when moving the mouse into them.
     // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
-    focus-follows-mouse max-scroll-amount="95%"
+    focus-follows-mouse max-scroll-amount="0%"
 }
 
 // https://yalter.github.io/niri/Configuration:-Layout
 layout {
-    gaps 8
+    gaps 10
     center-focused-column "on-overflow"
     always-center-single-column
+    background-color "rgb(29, 32, 33)"
+    default-column-width { proportion 0.16667; }
     preset-column-widths {
         proportion 0.16667
         proportion 0.33333
         proportion 0.5
         proportion 0.66667
     }
-    default-column-width { proportion 0.16667; }
     focus-ring {
         width 2
-        active-color "#d79921" //"#7fc8ff"
-        inactive-color "#505050"
+        active-gradient from="rgb(250, 189, 47)" to="rgb(214, 93, 14)" angle=180
+    }
+    tab-indicator {
+        active-gradient from="rgb(250, 189, 47)" to="rgb(214, 93, 14)" angle=180
+        inactive-gradient from="rgb(131, 165, 152)" to="rgb(69, 133, 136)" angle=180
+        urgent-color   "#cc241d"
+        place-within-column
+        gaps-between-tabs 10
     }
 }
 

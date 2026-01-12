@@ -21,10 +21,19 @@ in
         programs.ghostty = {
           enable = true;
           settings = {
-            font-family = termFont.name;
+            font-family = ''"${termFont.name}"'';
             font-size = termFont.size;
             theme = "Gruvbox Dark Hard";
             background-opacity = 1.0;
+            adjust-cell-height = "10%";
+            font-style = "auto";
+            font-thicken = true;
+            window-decoration = false;
+            font-feature = [
+              "calt"
+              "dlig"
+              "zero"
+            ];
           };
         };
       };
