@@ -15,6 +15,7 @@ in
 {
   options.modules.desktop.programs.thunderbird = {
     enable = lib.mkEnableOption "";
+    autostart.enable = lib.mkEnableOption "";
     work.enable = lib.mkEnableOption "";
     workProxy = lib.mkOption {
       type = lib.types.str;
@@ -47,6 +48,9 @@ in
         };
       };
 
+      home.file.".config/autostart/thunderbird-personal.desktop" = lib.mkIf cfg.autostart.enable (
+        lib.my.autostart "thunderbird --name thunderbird-personal --profile ${hm.config.home.homeDirectory}/.thunderbird/personal"
+      );
       home.file.".local/share/applications/thunderbird-personal.desktop" = {
         text = ''
           [Desktop Entry]
