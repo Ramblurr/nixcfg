@@ -31,7 +31,7 @@ in
     };
     myhm = {
       home.packages = with pkgs; [
-        jetbrains.idea-ultimate
+        jetbrains.idea
         #jetbrains.datagrip
         #jetbrains.gateway
         #jetbrains.clion
