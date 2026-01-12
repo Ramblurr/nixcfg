@@ -15,15 +15,10 @@ let
     };
   };
   guests = [
-    "claude-test"
+    #"claude-test"
   ];
 in
 {
-  imports = [
-    ../../modules/site
-    ../../modules/site-net
-  ];
-
   home-ops.microvm-host = {
     enable = true;
     baseZfsDataset = "rpool/encrypted/safe/microvms";
