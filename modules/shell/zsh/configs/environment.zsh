@@ -49,6 +49,8 @@ export DEPS_CLJ_TOOLS_DIR=$XDG_DATA_HOME/deps.clj
 export DOCKER_CONFIG=$XDG_CONFIG_HOME/docker
 export CLAUDE_CONFIG_DIR=$XDG_CONFIG_HOME/claude
 export CODEX_HOME=$XDG_CONFIG_HOME/codex
+export FLY_CONFIG_DIR=$XDG_CONFIG_HOME/fly
+export RUSTUP_HOME=$XDG_DATA_HOME/rusthome
 
 #█▓▒░ This path our people walked
 
