@@ -236,6 +236,7 @@ in
     firewall.enable = true;
     security.default.enable = true;
     hardware.keyboardio.enable = true;
+    hardware.om-footswitch.enable = true;
     hardware.ryzen.enable = true;
     hardware.easyNvidia = {
       enable = true;
