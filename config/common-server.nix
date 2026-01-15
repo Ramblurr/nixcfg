@@ -51,26 +51,36 @@
         # raise some awareness towards failed services
         systemctl --no-pager --failed || true
       '';
-    systemPackages = with pkgs; [
-      kitty.terminfo
-      bmon
-      curl
-      nvd
-      ncdu
-      dig
-      ethtool
-      fd
-      iproute2
-      jq
-      lsof
-      nmap
-      pv
-      ripgrep
-      rsync
-      strace
-      tree
-      wget
-    ];
+    systemPackages =
+      with pkgs;
+      [
+        bmon
+        curl
+        nvd
+        ncdu
+        dig
+        ethtool
+        fd
+        iproute2
+        jq
+        lsof
+        nmap
+        pv
+        ripgrep
+        rsync
+        strace
+        tree
+        wget
+      ]
+      ++ (map (x: x.terminfo) (
+        with pkgs.pkgsBuildBuild;
+        [
+          ghostty
+          kitty
+          tmux
+          wezterm
+        ]
+      ));
   };
 
   time.timeZone = lib.mkDefault "Europe/Berlin";
