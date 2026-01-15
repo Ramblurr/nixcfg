@@ -80,6 +80,11 @@ in
         ];
       };
     };
+    services.ollama = {
+      enable = true;
+      package = pkgs.ollama-cuda;
+    };
+    services.open-webui.enable = true;
     myhm = {
       sops.secrets.llm-keys = {
         mode = "0400";
@@ -104,6 +109,7 @@ in
           cat-url-markdown
           whisper-cpp
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
+          ollama-cuda
         ]
         ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
           claude-code
