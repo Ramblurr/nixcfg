@@ -75,10 +75,20 @@ in
             gid = lib.mkForce cfg.bridgesGroup.gid;
           };
 
-          environment.systemPackages = with pkgs; [
-            pgbackrest
-            kitty.terminfo
-          ];
+          environment.systemPackages =
+            with pkgs;
+            [
+              pgbackrest
+            ]
+            ++ (map (x: x.terminfo) (
+              with pkgs.pkgsBuildBuild;
+              [
+                ghostty
+                kitty
+                tmux
+                wezterm
+              ]
+            ));
 
           services.postgresql = {
             enable = true;

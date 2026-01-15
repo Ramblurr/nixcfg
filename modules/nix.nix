@@ -57,25 +57,34 @@ with lib;
   system.configurationRevision = with inputs; mkIf (self ? rev) self.rev;
 
   # Just the bare necessities...
-  environment.systemPackages = with pkgs; [
-    kitty.terminfo
-    cached-nix-shell
-    dig
-    jq
-    curl
-    vim
-    wget
-    unzip
-    killall
-    nvd
-    lsof
-
-    # These are used by the flake tooling
-    git
-    git-crypt
-    sops
-    gnupg
-  ];
+  environment.systemPackages =
+    with pkgs;
+    [
+      cached-nix-shell
+      dig
+      jq
+      curl
+      vim
+      wget
+      unzip
+      killall
+      nvd
+      lsof
+      # These are used by the flake tooling
+      git
+      git-crypt
+      sops
+      gnupg
+    ]
+    ++ (map (x: x.terminfo) (
+      with pkgs.pkgsBuildBuild;
+      [
+        ghostty
+        kitty
+        tmux
+        wezterm
+      ]
+    ));
   system = {
     # Enable printing changes on nix build etc with nvd
     activationScripts.report-changes = ''

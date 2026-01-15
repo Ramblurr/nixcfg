@@ -249,25 +249,35 @@ in
     };
     # Add some basic utilities to path.
     # These are basically free because they're on the host anyways.
-    environment.systemPackages = with pkgs; [
-      kitty.terminfo
-      bmon
-      curl
-      nvd
-      ncdu
-      dig
-      ethtool
-      fd
-      iproute2
-      jq
-      lsof
-      nmap
-      pv
-      ripgrep
-      rsync
-      strace
-      tree
-      wget
-    ];
+    environment.systemPackages =
+      with pkgs;
+      [
+        bmon
+        curl
+        nvd
+        ncdu
+        dig
+        ethtool
+        fd
+        iproute2
+        jq
+        lsof
+        nmap
+        pv
+        ripgrep
+        rsync
+        strace
+        tree
+        wget
+      ]
+      ++ (map (x: x.terminfo) (
+        with pkgs.pkgsBuildBuild;
+        [
+          ghostty
+          kitty
+          tmux
+          wezterm
+        ]
+      ));
   };
 }
