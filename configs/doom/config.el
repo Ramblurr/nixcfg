@@ -13,8 +13,8 @@
 
 (setq confirm-kill-emacs nil)
 
-;;(setq doom-theme 'doom-gruvbox)
-(setq doom-theme 'modus-vivendi)
+(setq doom-theme 'doom-gruvbox)
+;;(setq doom-theme 'modus-vivendi)
 (show-paren-mode t)
 (setq show-paren-style 'parenthesis)
 (setq doom-gruvbox-brighter-comments t)
@@ -108,12 +108,16 @@
 (add-hook 'before-save-hook  'force-backup-of-buffer)
 
 
-;; Projects all over
-(setq projectile-project-search-path '(("~/src" . 2)
-                                       ("~/work" . 3)))
+(after! projectile
+  ;; Projects all over
+  (setq projectile-project-search-path '(("~/src" . 2)
+                                         ("~/work" . 3)))
 
-;; Show me projects in LIFO order
-(setq projectile-sort-order 'recently-active)
+  ;; Show me projects in LIFO order
+  (setq projectile-sort-order 'recently-active)
+  ;;(add-to-list 'projectile-globally-ignored-directories ".ccls-cache")
+  )
+
 
 ;; ensure identically named files are shown in the buffer switcher with a directory disambiguation
 (use-package! uniquify
