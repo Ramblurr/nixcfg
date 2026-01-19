@@ -13,6 +13,8 @@
   (let [release (-> (sh "gh" "api" "repos/licht1stein/brepl/releases/latest" "--jq" ".tag_name")
                     :out
                     str/trim)]
+    (when (or (nil? release) (str/blank? release))
+      (throw (ex-info "Failed to fetch latest release tag" {})))
     (println (str "Latest release: " release))
 
     ;; Prefetch the GitHub repo
@@ -21,6 +23,8 @@
                        :out
                        (json/parse-string true))
           hash (:hash prefetch)]
+      (when (or (nil? hash) (str/blank? hash))
+        (throw (ex-info "Failed to fetch hash from nix-prefetch-github" {:prefetch prefetch})))
       (println (str "  Hash: " hash))
 
       ;; Update the nix file
