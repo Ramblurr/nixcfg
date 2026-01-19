@@ -12,6 +12,7 @@
 (map!
  :leader
  "gx" #'my/copy-latest-commit-hash
+ "fn" #'my/yank-ns-name
 
  (:prefix-map ("l" . "LLMs/AI")
   ;; :desc "Select model" :n "m" #'my/gptel-select-default-backend
@@ -53,6 +54,7 @@
    )
   (:prefix ("n" . "namespace")
    :desc "Clean and Sort" :n "s"  #'my/clojure-clean-and-sort-ns
+   :desc "Align all docstring tables" :n "a"  #'my/markdown-align-all-docstring-tables-in-buffer
    )))
 
 (map!
