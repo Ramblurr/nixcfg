@@ -133,6 +133,96 @@ then wraps long lines at 90 columns with 4-space indentation."
                 (forward-sexp)
                 (setq import-end (1- (point)))))))))))
 
+(defun my/markdown-table-align-in-docstring ()
+  "Align the markdown table in the docstring at point.
+
+Assumes point is inside a string (typically inside the table).
+Temporarily inserts a newline *before the docstring’s closing quote* so the
+quote can’t be treated as part of the last table row, runs
+`markdown-table-align`, then removes that newline again."
+  (interactive)
+  (let* ((ppss (syntax-ppss))
+         (string-start (nth 8 ppss)))
+    (unless string-start
+      (user-error "Point is not inside a string"))
+    (let* ((orig (point))
+           (string-end (scan-sexps string-start 1)) ; position AFTER closing quote
+           (close-quote-pos (1- string-end))
+           ;; IMPORTANT: insertion-type = t so the marker stays attached to the quote
+           ;; even when we insert text at its position.
+           (quote-marker (copy-marker close-quote-pos t))
+           (close-was-inline
+            (save-excursion
+              (goto-char (marker-position quote-marker))
+              (not (eq (char-before) ?\n)))))
+      (unwind-protect
+          (save-excursion
+            ;; Put closing quote on its own line if it wasn't already.
+            (when close-was-inline
+              (goto-char (marker-position quote-marker))
+              (unless (eq (char-after) ?\")
+                (user-error "Expected closing double-quote at end of string"))
+              (insert "\n"))
+
+            ;; Ensure point is on a table line before aligning.
+            (goto-char orig)
+            (unless (looking-at-p "^[ \t]*|")
+              (or (re-search-backward "^[ \t]*|" string-start t)
+                  (re-search-forward "^[ \t]*|" (marker-position quote-marker) t)
+                  (user-error "No markdown table line ('|') found in this docstring")))
+            (beginning-of-line)
+            (markdown-table-align))
+        ;; Restore: remove the newline we inserted immediately before the closing quote.
+        (when close-was-inline
+          (save-excursion
+            (goto-char (marker-position quote-marker))
+            (when (and (eq (char-after) ?\")
+                       (eq (char-before) ?\n))
+              (delete-char -1)))))
+      (goto-char orig))))
+
+(defun my/markdown-align-all-docstring-tables-in-buffer ()
+  "Align all markdown tables inside docstrings in the current buffer.
+
+Implemented in terms of `my/markdown-table-align-in-docstring`.
+Preserves point and window start."
+  (interactive)
+  (let ((orig (point))
+        (orig-win-start (window-start)))
+    (unwind-protect
+        (save-excursion
+          (goto-char (point-min))
+          ;; Find each string, then within it find each table block and align once per block.
+          (while (re-search-forward "\"" nil t)
+            (let* ((ppss (syntax-ppss))
+                   (string-start (nth 8 ppss)))
+              (when (and (nth 3 ppss) string-start
+                         (= (point) (1+ string-start))) ; at opening quote
+                (let* ((string-end (scan-sexps string-start 1))
+                       (string-limit (1- string-end))) ; closing quote position
+                  (save-excursion
+                    (goto-char (1+ string-start))
+                    (while (re-search-forward "^[ \t]*|" string-limit t)
+                      ;; Align this table (point must be on a table line)
+                      (beginning-of-line)
+                      (my/markdown-table-align-in-docstring)
+                      ;; Skip past this table block so we don't realign each row.
+                      (while (and (< (point) string-limit)
+                                  (save-excursion
+                                    (beginning-of-line)
+                                    (looking-at-p "^[ \t]*|")))
+                        (forward-line 1))))))))))
+    (goto-char orig)
+    (set-window-start (selected-window) orig-win-start)))
+
+(defun my/yank-ns-name ()
+  "Yank clojure namespace name"
+  (interactive)
+  (let ((ns (walkclj-current-ns)))
+    (kill-new ns)
+    (message "Copied: %s" ns)))
+
+
 (comment
  ;; Test with this sample namespace
  "(ns ol.clave.scope
