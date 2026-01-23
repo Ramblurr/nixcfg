@@ -1678,11 +1678,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1768810047,
-        "narHash": "sha256-FXVAPQNJcmF1ML6Gtf/bONpOU0x6G6U+dQ9wbu/aVvA=",
+        "lastModified": 1768878019,
+        "narHash": "sha256-zVXF8M+QU4KPX4OdhL4DP1ryW14lmZ+COR2wA6Ly+9s=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "729f8ba46e7407cf78224dd004a3afad68a8e65e",
+        "rev": "05f88852abf63e97ccbc1203351b62e7883f45fe",
         "type": "github"
       },
       "original": {
@@ -1791,12 +1791,12 @@
         ]
       },
       "locked": {
-        "lastModified": 1766952920,
-        "narHash": "sha256-4GIR5+xVSfhsI62JtM9E7uM/LxYEcy7C59P5e/o1jgE=",
-        "rev": "e8e12f6b5efbb32d4f038851fa000fb42e35a311",
-        "revCount": 23,
+        "lastModified": 1766995906,
+        "narHash": "sha256-5HhK8tbkObryanJV3lhlSasXynkxf+RtImGnJ05JSPo=",
+        "rev": "2bdb37f017fa62b3c8b8e4bd55d61c39f2c1c501",
+        "revCount": 24,
         "type": "tarball",
-        "url": "https://api.flakehub.com/f/pinned/ramblurr/nad-api/0.1.23%2Brev-e8e12f6b5efbb32d4f038851fa000fb42e35a311/019b66a0-2a75-7414-a834-1dc235660fd1/source.tar.gz"
+        "url": "https://api.flakehub.com/f/pinned/ramblurr/nad-api/0.1.24%2Brev-2bdb37f017fa62b3c8b8e4bd55d61c39f2c1c501/019be072-3af4-79b1-ad1a-b3aac73dad1c/source.tar.gz"
       },
       "original": {
         "type": "tarball",
