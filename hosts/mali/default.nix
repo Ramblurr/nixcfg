@@ -89,11 +89,6 @@ in
     ];
   };
 
-  ## stable overrides
-  ## these are because mali is on stable and everything else is on unstable
-  myhm.programs.zsh.dotDir = lib.mkForce ".config/zsh"; # TODO(25.11) remove
-  ## end stable overrdies
-
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.secrets."tank2Key" = {
     mode = "400";

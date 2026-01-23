@@ -97,5 +97,9 @@ in
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
     };
+    systemd.services.libvirtd = {
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+    };
   };
 }

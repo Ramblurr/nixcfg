@@ -31,10 +31,9 @@ _: {
           };
         };
       };
-      micron7400 = {
-        # NVME 894 GiB Micron 7450
+      samsung970evo = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Micron_7450_MTFDKBA960TFR_2319422526D1";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_2TB_S6P1NX0TA10922A";
         content = {
           type = "gpt";
           partitions = {
