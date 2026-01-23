@@ -128,6 +128,7 @@ in
         scrubPools = [ "rpool" ];
         extraPools = [ "tank" ];
         autoSnapshot.enable = false;
+        usePlymouth = false;
       };
       zfs.datasets.enable = true;
       server = {

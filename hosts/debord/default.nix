@@ -12,8 +12,8 @@ in
     ./hardware.nix
     ./disk-config.nix
     ./networking.nix
-    ./prometheus.nix
-    ./grafana
+    #./prometheus.nix
+    #./grafana
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
@@ -32,6 +32,8 @@ in
     pulsemixer
     jless
     linux-voice-assistant-unstable
+    gptfdisk
+    parted
   ];
   services.pipewire = {
     enable = true;
