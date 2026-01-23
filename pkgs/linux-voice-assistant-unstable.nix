@@ -87,7 +87,7 @@ let
 in
 python3Packages.buildPythonPackage rec {
   pname = "linux-voice-assistant";
-  version = "unstable-2025-12-28";
+  version = "unstable-2026-01-21";
   pyproject = true;
 
   disabled = python3Packages.pythonOlder "3.9";
@@ -95,8 +95,8 @@ python3Packages.buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "OHF-Voice";
     repo = "linux-voice-assistant";
-    rev = "main";
-    hash = "sha256-/CKkbx0eYugj20GaRpOx8Xkugi96gSV8w5NvV1Zq9c4=";
+    rev = "8743861738a5738fbc35f05aa876970d31658472";
+    hash = "sha256-EugkKK0mDDYokKW5DbZ0nSnj5CJpattq9CUyMc1qA4A=";
   };
 
   build-system = [ python3Packages.setuptools ];
