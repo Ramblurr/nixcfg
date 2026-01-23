@@ -151,7 +151,7 @@ in
         musescore.enable = true;
         nextcloud.enable = true;
         #nheko.enable = true;
-        obs.enable = false;
+        obs.enable = true;
         onepassword.enable = true;
         onepassword.autostart.enable = true;
         owncloud.enable = true;

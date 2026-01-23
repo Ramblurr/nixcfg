@@ -36,7 +36,7 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [
-          freecad
+          #freecad
           # BLOCKED: https://github.com/NixOS/nixpkgs/issues/375763
           #(inputs.cadquery.packages.${pkgs.stdenv.hostPlatform.system}.cq-editor)
           openscad
