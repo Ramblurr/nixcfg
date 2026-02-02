@@ -119,6 +119,7 @@
     ./services/roon-server.nix
     ./services/sshd.nix
     ./services/tautulli.nix
+    ./services/tubearchivist.nix
     ./services/udpbroadcastrelay.nix
     ./services/zfs-backup-check.nix
     ./services/nomad.nix
