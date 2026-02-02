@@ -38,9 +38,9 @@ in
         restic
         dust
         fd
-        gitui
-        gitu
-        gex
+        #gitui
+        #gitu
+        #gex
         httpie
         doggo
         jless
