@@ -56,7 +56,10 @@ in
       type = lib.types.attrsOf (
         lib.types.submodule (_: {
           options = {
-            upstream = lib.mkOption { type = lib.types.str; };
+            upstream = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+            };
             acmeHost = lib.mkOption { type = lib.types.str; };
             forwardAuth = lib.mkOption {
               type = lib.types.bool;
@@ -65,6 +68,10 @@ in
             upstreamExtraConfig = lib.mkOption {
               type = lib.types.lines;
               default = "";
+            };
+            root = lib.mkOption {
+              type = lib.types.nullOr lib.types.path;
+              default = null;
             };
             http3.enable = lib.mkOption {
               type = lib.types.bool;
@@ -187,37 +194,42 @@ in
             http3 = service.http3.enable;
             http2 = false;
             quic = service.http3.enable;
+            root = service.root;
             locations = {
-              "/" = {
-                proxyPass = service.upstream;
-                recommendedProxySettings = true;
-                proxyWebsockets = true;
-                extraConfig = ''
-                  ${service.upstreamExtraConfig}
-                  ${lib.optionalString service.http3.enable ''
-                    add_header Alt-Svc 'h3=":443"; ma=86400';
-                  ''}
-                  ${lib.optionalString service.forwardAuth ''
-                    auth_request        /outpost.goauthentik.io/auth/nginx;
-                    error_page          401 = @goauthentik_proxy_signin;
-                    auth_request_set $auth_cookie $upstream_http_set_cookie;
-                    add_header Set-Cookie $auth_cookie;
+              "/" =
+                let
+                  hasUpstream = service.upstream != null;
+                in
+                {
+                  proxyPass = if hasUpstream then service.upstream else null;
+                  recommendedProxySettings = hasUpstream;
+                  proxyWebsockets = hasUpstream;
+                  extraConfig = ''
+                    ${service.upstreamExtraConfig}
+                    ${lib.optionalString service.http3.enable ''
+                      add_header Alt-Svc 'h3=":443"; ma=86400';
+                    ''}
+                    ${lib.optionalString service.forwardAuth ''
+                      auth_request        /outpost.goauthentik.io/auth/nginx;
+                      error_page          401 = @goauthentik_proxy_signin;
+                      auth_request_set $auth_cookie $upstream_http_set_cookie;
+                      add_header Set-Cookie $auth_cookie;
 
-                    # translate headers from the outposts back to the actual upstream
-                    auth_request_set $authentik_username $upstream_http_x_authentik_username;
-                    auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
-                    auth_request_set $authentik_email $upstream_http_x_authentik_email;
-                    auth_request_set $authentik_name $upstream_http_x_authentik_name;
-                    auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
+                      # translate headers from the outposts back to the actual upstream
+                      auth_request_set $authentik_username $upstream_http_x_authentik_username;
+                      auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
+                      auth_request_set $authentik_email $upstream_http_x_authentik_email;
+                      auth_request_set $authentik_name $upstream_http_x_authentik_name;
+                      auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
 
-                    proxy_set_header X-authentik-username $authentik_username;
-                    proxy_set_header X-authentik-groups $authentik_groups;
-                    proxy_set_header X-authentik-email $authentik_email;
-                    proxy_set_header X-authentik-name $authentik_name;
-                    proxy_set_header X-authentik-uid $authentik_uid;
-                  ''}
-                '';
-              };
+                      proxy_set_header X-authentik-username $authentik_username;
+                      proxy_set_header X-authentik-groups $authentik_groups;
+                      proxy_set_header X-authentik-email $authentik_email;
+                      proxy_set_header X-authentik-name $authentik_name;
+                      proxy_set_header X-authentik-uid $authentik_uid;
+                    ''}
+                  '';
+                };
               "/outpost.goauthentik.io" = lib.mkIf service.forwardAuth {
                 extraConfig = ''
                   proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;

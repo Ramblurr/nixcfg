@@ -122,6 +122,8 @@
     ./services/udpbroadcastrelay.nix
     ./services/zfs-backup-check.nix
     ./services/nomad.nix
+    ./services/my-y2r.nix
+    ./services/youtube-to-rss.nix
     ./shell/aria2.nix
     ./shell/attic.nix
     ./shell/atuin.nix

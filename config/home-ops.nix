@@ -73,6 +73,7 @@ in
       atuin-sync.enable = lib.mkEnableOption "Atuin Sync Server";
       soju.enable = lib.mkEnableOption "Soju IRC bouncer";
       snowflake-proxy.enable = lib.mkEnableOption "snowflake proxy";
+      my-y2r.enable = lib.mkEnableOption "my-y2r";
       audiobookshelf.enable = lib.mkEnableOption "audiobookshelf";
     };
   };
@@ -633,6 +634,14 @@ in
     services.snowflake-proxy = lib.mkIf cfg.apps.snowflake-proxy.enable {
       enable = true;
       capacity = 50;
+    };
+    modules.services.my-y2r = lib.mkIf cfg.apps.my-y2r.enable {
+      enable = true;
+      domain = "y2pod.${home-ops.homeDomain}";
+      ingress = {
+        domain = home-ops.homeDomain;
+        external = true;
+      };
     };
   };
 }
