@@ -1,4 +1,12 @@
-_: {
+{ config, unstable, ... }:
+let
+
+  inherit (config.modules.users.primaryUser) username;
+in
+{
+  environment.persistence."/persist".users.${username}.directories = [
+    ".config/beets"
+  ];
   myhm =
     { pkgs, ... }:
     {
@@ -7,17 +15,20 @@ _: {
       };
 
       home.packages = [ pkgs.qobuz-dl ];
+
       programs.beets = {
         enable = true;
 
         #package = pkgs.beets-unstable;
         #package = pkgs.beets-unstable.override {
-        package = pkgs.python3Packages.beets.override {
+        package = unstable.python3Packages.beets.override {
           pluginOverrides = {
-            #filetote = {
-            #  enable = true;
-            #  propagatedBuildInputs = [ pkgs.beets-filetote ];
-            #};
+            #  https://github.com/gtronset/beets-filetote/issues/211
+            #  https://github.com/NixOS/nixpkgs/pull/481370
+            # filetote = {
+            #   enable = true;
+            #   propagatedBuildInputs = [ unstable.python3Packages.beets-filetote ];
+            # };
             #dynamicrange = {
             #  enable = true;
             #  propagatedBuildInputs = [ pkgs.beets-dynamicrange ];
@@ -27,6 +38,12 @@ _: {
             substitute.builtin = true;
             advancedrewrite.builtin = true;
             autobpm.builtin = true;
+            # TODO: check back in with https://github.com/9999years/dotfiles/blob/main/config/npingler/pkgs/beets-with-beetcamp.nix
+            # to see how they have solved the beetcamp problem
+            beetcamp = {
+              enable = true;
+              propagatedBuildInputs = [ unstable.python3Packages.beetcamp ];
+            };
           };
         };
         settings = {
@@ -38,6 +55,7 @@ _: {
           plugins = [
             "badfiles"
             "duplicates"
+            "bandcamp"
             "edit"
             "embedart"
             "fetchart"
@@ -49,7 +67,7 @@ _: {
             "info"
             "inline"
             "limit"
-            #"lyrics"
+            "lyrics"
             "mbsync"
             "missing"
             #"permissions"
@@ -59,12 +77,12 @@ _: {
             "types"
           ];
           replaygain = {
-            # Use ffmpeg as the backend, but specify its path in command
             backend = "ffmpeg";
-            command = "${pkgs.ffmpeg-headless}/bin/ffmpeg";
             auto = true;
             threads = 4;
             parallel_on_import = true; # don't forget to run `beet write` after import
+            peak = true;
+            per_disc = true;
           };
           import = {
             duplicate_action = "ask";
@@ -102,7 +120,7 @@ _: {
                 myartist
               except NameError:
                 import re
-                return re.split(',|\s+(feat(.?|uring)|&|(Vs|Ft).)', albumartist, 1, flags=re.IGNORECASE)[0]
+                return re.split(',|\\s+(feat(.?|uring)|&|(Vs|Ft).)', albumartist, 1, flags=re.IGNORECASE)[0]
               else:
                 return myartist
             '';
@@ -112,7 +130,7 @@ _: {
                 myartist
               except NameError:
                 import re
-                return re.split(',|\s+(feat(.?|uring)|&|(Vs|Ft).)', artist, 1, flags=re.IGNORECASE)[0]
+                return re.split(',|\\s+(feat(.?|uring)|&|(Vs|Ft).)', artist, 1, flags=re.IGNORECASE)[0]
               else:
                 return myartist
             '';
@@ -145,12 +163,9 @@ _: {
               "VHS"
             ];
           };
-          fetchart = {
-            auto = true;
-          };
-          ftintitle = {
-            auto = true;
-          };
+          lyrics.auto = true;
+          fetchart.auto = true;
+          ftintitle.auto = true;
           edit.itemfields = [
             "track"
             "title"
