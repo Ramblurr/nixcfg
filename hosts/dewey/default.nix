@@ -63,6 +63,7 @@ in
       atuin-sync.enable = true;
       snowflake-proxy.enable = true;
       my-y2r.enable = true;
+      tubearchivist.enable = true;
       invoiceninja.enable = true;
     };
   };

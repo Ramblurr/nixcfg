@@ -75,6 +75,7 @@ in
       snowflake-proxy.enable = lib.mkEnableOption "snowflake proxy";
       my-y2r.enable = lib.mkEnableOption "my-y2r";
       audiobookshelf.enable = lib.mkEnableOption "audiobookshelf";
+      tubearchivist.enable = lib.mkEnableOption "tubearchivist";
     };
   };
 
@@ -641,6 +642,18 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         external = true;
+      };
+    };
+
+    modules.services.tubearchivist = lib.mkIf cfg.apps.tubearchivist.enable {
+      enable = true;
+      domain = "tube.${home-ops.homeDomain}";
+      port = home-ops.ports.tubearchivist;
+      mediaNfsShare = "tank2/media/youtube";
+      user = home-ops.users.tubearchivist;
+      group = home-ops.groups.tubearchivist;
+      ingress = {
+        domain = home-ops.homeDomain;
       };
     };
   };
