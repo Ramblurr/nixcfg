@@ -27,3 +27,11 @@ window-rule {
     default-column-display "tabbed"
     draw-border-with-background false
 }
+
+
+window-rule {
+    match app-id="steam_proton" title="Roon"
+    // open-floating true
+    open-fullscreen true
+    open-on-output "HDMI-A-1"
+}
