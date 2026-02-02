@@ -223,6 +223,7 @@ in
                       auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
 
                       proxy_set_header X-authentik-username $authentik_username;
+                      proxy_set_header X_authentik_username $authentik_username;
                       proxy_set_header X-authentik-groups $authentik_groups;
                       proxy_set_header X-authentik-email $authentik_email;
                       proxy_set_header X-authentik-name $authentik_name;
