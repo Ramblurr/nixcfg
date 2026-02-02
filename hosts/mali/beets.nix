@@ -1,6 +1,5 @@
 { config, unstable, ... }:
 let
-
   inherit (config.modules.users.primaryUser) username;
 in
 {
@@ -67,7 +66,7 @@ in
             "info"
             "inline"
             "limit"
-            "lyrics"
+            #"lyrics"
             "mbsync"
             "missing"
             #"permissions"
@@ -163,7 +162,7 @@ in
               "VHS"
             ];
           };
-          lyrics.auto = true;
+          lyrics.auto = false;
           fetchart.auto = true;
           ftintitle.auto = true;
           edit.itemfields = [
