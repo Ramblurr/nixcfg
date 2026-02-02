@@ -1,58 +1,82 @@
-_: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+
+  inherit (config.modules.users.primaryUser) username;
+in
+{
   boot.extraModprobeConfig = ''
     options snd-aloop id=RoonLoopback
   '';
   services.avahi.enable = true;
-  services.roon-bridge = {
-    enable = false;
-    user = "ramblurr";
-    group = "ramblurr";
-    openFirewall = true;
-  };
-  # These ports are required for roon-bridge to work
+  environment.persistence."/persist".users.${username}.directories = [
+    ".local/state/squeezelite"
+  ];
+
   networking.firewall = {
-    allowedTCPPortRanges = [
-      {
-        from = 9100;
-        to = 9200;
-      }
-      {
-        from = 32768;
-        to = 60999;
-      }
+    allowedTCPPorts = [
+      3483 # Squeezebox/squeezelite discovery
     ];
-    allowedUDPPorts = [ 9003 ];
-    allowedUDPPortRanges = [
-      {
-        from = 32768;
-        to = 60999;
-      }
+    allowedUDPPorts = [
+      3483 # Squeezebox/squeezelite discovery
     ];
   };
   myhm = _: {
-    #persistence = {
-    #  directories = [
-    #  ];
-    #};
+    # roon-bridge requires exclusive access to the ALSA device, this makes it
+    # not suitable for use on a desktop linux system where pipewire i used to share
+    # audio device access among many programs
+    # roon supports the old squeezebox api still, so instead of roon-bridge i run
+    # squeezelite. however i do not use `services.squeezelite` because it doesn't run as my desktop user.
+    systemd.user.services.squeezelite =
+      let
+        squeezelite = pkgs.squeezelite-pulse;
+        squeezelite-bin = "${squeezelite}/bin/${squeezelite.pname}";
+        extraArgs = "-s dewey.prim.socozy.casa";
+      in
+      {
+        Unit = {
+          After = [
+            "network.target"
+            "sound.target"
+            "pipewire-pulse.socket"
+          ];
+          Description = "squeezelite headless player";
+          Documentation = "man:squeezelite(5)";
+          Wants = [ "sound.target" ];
+        };
+        Service = {
+          ExecStart = "${squeezelite-bin} -N %S/squeezelite/player-name ${extraArgs}";
+          Restart = "on-failure";
+          RestartMaxDelaySec = 30;
+          RestartSteps = 20;
+          StateDirectory = "squeezelite";
+          Type = "exec";
+        };
+        Install = {
+          WantedBy = [ "default.target" ];
+        };
+      };
+
     home.file.".local/share/applications/roon.desktop" = {
       text = ''
         [Desktop Entry]
         Name=Roon
-        Exec=bottles-cli run -p Roon -b 'Roon' -- %u
+        Exec=flatpak run --command=bottles-cli com.usebottles.bottles run -p Roon -b 'Roon' -- %u
         Type=Application
         Terminal=false
         Categories=Application;
-        Icon=/srv/data/roon-client/Roon/icons/Roon.png
+        Icon=/home/ramblurr/.var/app/com.usebottles.bottles/data/bottles/bottles/Roon/icons/Roon.png
         Comment=Launch Roon using Bottles.
         StartupWMClass=Roon
         Actions=Configure;
         [Desktop Action Configure]
         Name=Configure in Bottles
-        Exec=bottles -b 'Roon'
+        Exec=flatpak run --command=bottles-cli com.usebottles.bottles -b 'Roon'
       '';
     };
-  };
-  environment.persistence."/persist" = {
-    directories = [ "/var/lib/roon-bridge" ];
   };
 }
