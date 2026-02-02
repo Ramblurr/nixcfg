@@ -152,6 +152,7 @@ in
         nextcloud.enable = true;
         #nheko.enable = true;
         obs.enable = true;
+        obs.cudaSupport = true;
         onepassword.enable = true;
         onepassword.autostart.enable = true;
         owncloud.enable = true;
