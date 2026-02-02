@@ -44,9 +44,13 @@ in
     networking.firewall = {
       allowedTCPPorts = [
         33399 # Roon ARC
+        9000 # Squeezebox/squeezelite
+        9090 # Squeezebox/squeezelite
+        3483 # Squeezebox/squeezelite discovery
       ];
       allowedUDPPorts = [
         9003
+        3483 # Squeezebox/squeezelite discovery
       ];
       allowedTCPPortRanges = [
         {
