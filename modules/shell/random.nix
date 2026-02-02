@@ -16,6 +16,7 @@ in
     services.pcscd.enable = true;
     myhm = _hm: {
       home.packages = with pkgs; [
+        internetarchive
         (warp-terminal.override { waylandSupport = true; })
         gum
         xcp
