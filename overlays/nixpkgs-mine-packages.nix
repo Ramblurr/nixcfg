@@ -26,6 +26,7 @@ in
   inherit (nixpkgs-mine) ocis_72-bin;
   inherit (nixpkgs-mine) ocis_73-bin;
   inherit (nixpkgs-mine) roon-server;
+  inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
   inherit (nixpkgs-mine) babashka;

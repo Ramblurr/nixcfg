@@ -36,6 +36,7 @@ let
     family
     ;
   deweyServices = [
+    "y2pod.${home}"
     "dav.${home}"
     "home.${home}"
     "books.${home}"

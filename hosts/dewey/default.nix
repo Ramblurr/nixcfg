@@ -62,6 +62,7 @@ in
       #actual-server.enable = true;
       atuin-sync.enable = true;
       snowflake-proxy.enable = true;
+      my-y2r.enable = true;
       invoiceninja.enable = true;
     };
   };
