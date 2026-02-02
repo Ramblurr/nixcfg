@@ -99,7 +99,7 @@ in
       useNetworkd = false;
     };
     # TODO: this should be user provided, but just use the first network's gateway for now
-    services.resolved.fallbackDns = [
+    services.resolved.settings.Resolve.FallbackDNS = [
       (
         let
           net = lib.mori.first nets;
