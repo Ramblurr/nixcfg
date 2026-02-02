@@ -13,6 +13,7 @@ in
 {
   options.modules.desktop.programs.obs = {
     enable = lib.mkEnableOption "";
+    cudaSupport = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
     boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
@@ -36,6 +37,13 @@ in
       {
         programs.obs-studio = {
           enable = true;
+          package =
+            if cfg.cudaSupport then
+              (pkgs.obs-studio.override {
+                cudaSupport = true;
+              })
+            else
+              pkgs.obs-studio;
 
           # TODO: is this even needed? isn't it built in?
           plugins = with pkgs; [
