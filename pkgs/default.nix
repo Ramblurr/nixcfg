@@ -21,6 +21,7 @@ inputs: [
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
       #linux-voice-assistant = (import ./linux-voice-assistant.nix) prev;
       linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
+      youtube-to-rss = prev.callPackage ./youtube-to-rss/package.nix { };
       deploy = prev.callPackage ./deploy.nix { };
       swhkd = prev.callPackage ./swhkd { };
       overseerr = prev.callPackage ./overseerr/package.nix { };
