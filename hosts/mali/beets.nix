@@ -81,7 +81,7 @@ in
             auto = true;
             threads = 4;
             parallel_on_import = true; # don't forget to run `beet write` after import
-            peak = true;
+            peak = "true"; # wtf, why ?
             per_disc = true;
           };
           import = {
