@@ -126,7 +126,7 @@ in
           };
         };
         swhkd = {
-          enable = true;
+          enable = false;
           keybindings = lib.mapAttrs (_: v: lib.mkDefault v) {
             "super + e" = "wezterm";
           };
