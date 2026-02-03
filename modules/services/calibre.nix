@@ -69,7 +69,7 @@ in
     virtualisation.oci-containers.containers.calibre = {
       autoStart = true;
       # renovate: docker-image
-      image = "lscr.io/linuxserver/calibre:8.16.2";
+      image = "lscr.io/linuxserver/calibre:9.1.0";
       ports = [
         "127.0.0.1:${toString cfg.ports.gui}:8080"
         "127.0.0.1:${toString cfg.ports.server}:8081"
