@@ -17,6 +17,7 @@ useDefault = true
 description = "ignore sops encrypted secrets"
 paths = [
 '.*\.sops\.yaml',
+'terraform/authentik/ocis.tf'
 ]
 regexTarget = "line"
 regexes= [

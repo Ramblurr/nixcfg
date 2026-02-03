@@ -16,37 +16,7 @@ IMPORTANT: There are a lot of untracked git files. They must never be added. And
 
 ## Common Commands
 
-### Building and Deploying Configurations
-
-```bash
-# Build a host configuration without activating
-task build host=<hostname>
-
-# Test a configuration (activate temporarily)
-task test host=<hostname>
-```
-
-Claude should NEVER EVER run a nixos-rebuild switch, a `task switch`, nor any other command that causes a NixOS host to be switched.
-
-### Managing Flake Inputs
-
-```bash
-# Update all flake inputs
-task update
-
-# Update a specific flake input
-task update:input input=<input-name>
-```
-
-### Development
-
-```bash
-# Check all flake outputs
-task check
-
-# Explain why a package is included
-task why-depends host=<hostname> pkg=<package-name>
-```
+TODO
 
 ## Architecture and Structure
 
@@ -102,10 +72,3 @@ The configuration is highly modular with reusable NixOS modules in `/modules/`:
 - `nix/nixos.nix` - NixOS system builder helper functions
 - `modules/default.nix` - Module imports and organization
 - `config/site.nix` - Site-specific network configuration
-
-### Testing and Deployment Notes
-
-- Use `task test` to temporarily activate a configuration before committing
-- MicroVMs are deployed to host systems and accessed via `.svc.socozy.casa` domains
-- The repository supports multi-architecture builds (x86_64, aarch64)
-- Build artifacts are cached using Attic when available
