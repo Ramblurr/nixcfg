@@ -66,6 +66,8 @@ jobs:
           fi
 
       - name: Update packages (no commit)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: nix run --inputs-from . nixpkgs#babashka -L -- pkgs/update.bb --no-commit
 
       - name: Check for package changes
