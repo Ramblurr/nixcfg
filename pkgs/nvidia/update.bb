@@ -1,26 +1,28 @@
 #!/usr/bin/env bb
-
 (ns update
   (:require [babashka.http-client :as http]
             [babashka.process :refer [shell sh]]
             [cheshire.core :as json]
-            [clojure.string :as str])
-  (:import [org.jsoup Jsoup]))
+            [clojure.string :as str]))
 
 (def self "pkgs/nvidia/package.nix")
 
+(def versions-url "https://raw.githubusercontent.com/aaronp24/nvidia-versions/main/nvidia-versions.txt")
+
 (defn fetch-nvidia-version []
-  (let [html (-> (http/get "https://www.nvidia.com/en-us/drivers/unix/")
-                 :body)
-        doc (Jsoup/parse html)
-        ;; There is no better selector, sadly; the Linux x86
-        ;; production driver *should* be the first link in the first
-        ;; paragraph, though
-        element (-> doc
-                    (.select "#rightContent p:first-child a:first-of-type")
-                    (.first))]
-    (when element
-      (str/trim (.text element)))))
+  (let [body (-> (http/get versions-url) :body)
+        lines (str/split-lines body)
+        target-row (->> lines
+                        (filter #(str/includes? % "long-lived-branch-release"))
+                        first)]
+    (if target-row
+      (let [cols (str/split target-row #"\s+")]
+        (if (>= (count cols) 3)
+          (nth cols 2)
+          (throw (ex-info "Unexpected row format in nvidia-versions.txt"
+                          {:row target-row}))))
+      (throw (ex-info "Could not find long-lived-branch-release in nvidia-versions.txt"
+                      {:url versions-url})))))
 
 (defn prefetch-driver-hash [version]
   (let [url (format "https://us.download.nvidia.com/XFree86/Linux-x86_64/%s/NVIDIA-Linux-x86_64-%s.run"

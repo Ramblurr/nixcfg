@@ -28,8 +28,10 @@
   (log :info (str "Updating " pkg))
   (try
     (shell "nix" "run" (str ".#" pkg ".passthru.updateScript"))
+    true
     (catch Exception e
-      (log :warning (str "Failed to run update script for " pkg ": " (.getMessage e))))))
+      (log :error (str "Failed to run update script for " pkg ": " (.getMessage e)))
+      false)))
 
 (defn commit-changes [no-commit]
   (try
@@ -53,9 +55,15 @@
                              packages-with-updatescript
                              (filterv #(some #{%} packages-arg) packages-with-updatescript))]
     (log :info (format "Found %d packages to update" (count packages-to-update)))
-    (doseq [pkg packages-to-update]
-      (run-update-script pkg))
-    (commit-changes no-commit)))
+    (let [results (mapv (fn [pkg] {:pkg pkg :success (run-update-script pkg)}) packages-to-update)
+          failures (filterv #(not (:success %)) results)]
+      (if (seq failures)
+        (do
+          (log :error (format "Aborting: %d package(s) failed to update: %s"
+                              (count failures)
+                              (str/join ", " (map :pkg failures))))
+          (System/exit 1))
+        (commit-changes no-commit)))))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))
