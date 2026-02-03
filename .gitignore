@@ -11,3 +11,5 @@ dumps
 tmp
 extra
 dns-migrate
+vars.auto.tfvars
+.terraform
