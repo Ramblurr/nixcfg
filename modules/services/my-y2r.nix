@@ -97,14 +97,7 @@ in
         defaultNumDownloads = 5;
         dateAfter = "2020-12-01";
       };
-      feeds = {
-        dresden-summaries = {
-          title = "Dresden Files Summaries";
-          channelurl = "https://www.youtube.com/playlist?list=PL1VzyF1d1BbcSErLYEAnchgdecUaRY05Z";
-          schedule = "daily";
-          maxDownloads = 20;
-        };
-      };
+      feeds = home-ops.y2r-feeds;
     };
   };
 }
