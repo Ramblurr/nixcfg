@@ -73,7 +73,7 @@ jobs:
       - name: Check for package changes
         id: check_pkg_changes
         run: |
-          if git diff --quiet pkgs/; then
+          if git diff --cached --quiet pkgs/; then
             echo "No package changes"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
@@ -93,7 +93,7 @@ jobs:
             Changes to packages are staged but NOT committed. The flake.lock PR was already handled separately.
 
             Your job:
-            1. Use `git diff pkgs/` to see what changed
+            1. Use `git diff --cached pkgs/` to see what changed (changes are staged)
             2. Identify each distinct package that was updated (look at directory structure in pkgs/)
             3. For EACH package that changed, do the following:
                a. Create a new branch: auto-update/pkg-<package-name>-<new-version>
