@@ -42,7 +42,7 @@ jobs:
             if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
               PR_STATE=$(gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null || echo "NONE")
               if [ "$PR_STATE" = "OPEN" ]; then
-                git push --force-with-lease origin "$BRANCH"
+                git push --force origin "$BRANCH"
                 echo "Updated existing PR for flake.lock"
               else
                 git push --force origin "$BRANCH"
