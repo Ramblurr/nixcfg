@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   update:
-    name: Update flake
+    name: Update flake and packages
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,78 +21,105 @@ jobs:
         run: |
           git config --global user.name "Casey Link"
           git config --global user.email "14830+Ramblurr@users.noreply.github.com"
-      #- run: nix flake check
+
       - name: Update flake inputs
-        run: nix flake update --commit-lock-file
-      - name: Update packages
-        run: nix run --inputs-from . nixpkgs#babashka -L -- pkgs/update.bb
-      - name: Check for changes
-        id: check_changes
+        run: nix flake update
+
+      - name: Create flake.lock PR if changed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet origin/main HEAD; then
-            echo "No commits were made, nothing to update"
+          if git diff --quiet flake.lock; then
+            echo "No changes to flake.lock"
+          else
+            echo "flake.lock changed, creating PR"
+            BRANCH="auto-update/flake-lock-$(date +%Y-%m-%d)"
+            git checkout -b "$BRANCH"
+            git add flake.lock
+            git commit -m "chore(flake): Update flake.lock"
+
+            # Check if branch exists on remote
+            if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+              PR_STATE=$(gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null || echo "NONE")
+              if [ "$PR_STATE" = "OPEN" ]; then
+                git push --force-with-lease origin "$BRANCH"
+                echo "Updated existing PR for flake.lock"
+              else
+                git push --force origin "$BRANCH"
+                gh pr create \
+                  --title "chore: Update flake.lock" \
+                  --body "Weekly update of flake.lock inputs." \
+                  --base main \
+                  --head "$BRANCH"
+              fi
+            else
+              git push -u origin "$BRANCH"
+              gh pr create \
+                --title "chore: Update flake.lock" \
+                --body "Weekly update of flake.lock inputs." \
+                --base main \
+                --head "$BRANCH"
+            fi
+
+            # Return to main for package updates
+            git checkout main
+          fi
+
+      - name: Update packages (no commit)
+        run: nix run --inputs-from . nixpkgs#babashka -L -- pkgs/update.bb --no-commit
+
+      - name: Check for package changes
+        id: check_pkg_changes
+        run: |
+          if git diff --quiet pkgs/; then
+            echo "No package changes"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            echo "Changes detected"
+            echo "Package changes detected"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Generate PR Body
-        if: steps.check_changes.outputs.has_changes == 'true'
+
+      - name: Create package PRs via AI
+        if: steps.check_pkg_changes.outputs.has_changes == 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            You are running in CI. Look at .github/workflows/update.yml to see what was done before you were invoked.
-            There may or may not be some commits that were just comitted. Use the git cli tool to look at those commits.
-            What was changed? What packages were updated, if any? From what version to what version? Was the nix lock file updated?
-            Create the file ./pr-body, the contents of this file will become the body of the PR for these commits.
+            You are running in CI. Your task is to create SEPARATE pull requests for each package that was updated.
+
+            The workflow has already run `nix flake update` and `pkgs/update.bb --no-commit`.
+            Changes to packages are staged but NOT committed. The flake.lock PR was already handled separately.
+
+            Your job:
+            1. Use `git diff pkgs/` to see what changed
+            2. Identify each distinct package that was updated (look at directory structure in pkgs/)
+            3. For EACH package that changed, do the following:
+               a. Create a new branch: auto-update/pkg-<package-name>-<new-version>
+               b. Use `git add` to stage ONLY the files for that specific package
+               c. Analyze the diff carefully to determine the OLD and NEW versions
+                  - Be careful: version strings may appear multiple times (for subpackages, dependencies)
+                  - Look for the MAIN package version, usually at the top level or in default.nix
+               d. Try to find release notes or changelog:
+                  - Look for homepage or src.url in the package definition
+                  - Use gh cli tool to check GitHub releases, or WebFetch tool to check CHANGELOG.md, or release pages
+                  - Include a summary of notable changes if found
+               e. Create a commit with message: update(pkgs/<name>): <old-version> -> <new-version>
+               f. Push the branch
+               g. Create a PR with:
+                  - Title: chore(pkgs): Update <package-name> to <new-version>
+                  - Body: Include version change and release notes summary
+               h. Return to main branch and reset for the next package
+
+            If a branch already exists with an open PR, force push and update it.
+            If a branch exists but PR is closed/merged, force push and create a new PR.
+
             IMPORTANT:
-              - DO NOT add introductions or explanations.
-              - DO NOT say "Analyzing commits..." or similar phrases.
-              - DO NOT edit the commits or any other files
-              - Start directly with the tag name.
-              - Then write a list of bullet points about the changes.
-              - Write in simple English.
-            If there are no commits (maybe there were no updates to do, then simply stop, do not create the file)
+              - Create ONE PR per package, not one PR for all packages
+              - Do NOT create empty commits or PRs if a package has no actual changes
+              - Do NOT modify any files except through git operations
+              - Use `gh pr create` for creating PRs
+              - Never use emoji in commit messages or PR bodies
           claude_args: |
-            --max-turns 10
-            --allowedTools Bash,Read,Write,Glob,Grep
+            --max-turns 50
+            --allowedTools Bash,Read,Write,Glob,Grep,WebFetch,TaskCreate,TaskGet,TaskUpdate,TaskList,WebSearch
             --append-system-prompt "Never use emoji in any output."
-      - name: Create Pull Request
-        if: steps.check_changes.outputs.has_changes == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          BRANCH="auto-update/$(date +%Y-%m-%d)"
-          git checkout -b "$BRANCH"
-
-          # Check if branch exists on remote
-          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
-            echo "Branch $BRANCH already exists on remote"
-
-            # Check if there's an open PR for this branch
-            PR_STATE=$(gh pr view "$BRANCH" --json state --jq '.state' 2>/dev/null || echo "NONE")
-
-            if [ "$PR_STATE" = "OPEN" ]; then
-              echo "Open PR exists, force pushing updates to existing branch"
-              git push --force-with-lease origin "$BRANCH"
-              gh pr comment "$BRANCH" --body-file ./pr-body
-              echo "PR updated with new changes and comment added"
-            else
-              echo "No open PR (state: $PR_STATE), force pushing and creating new PR"
-              git push --force origin "$BRANCH"
-              gh pr create \
-                --title "chore: Weekly flake and package updates" \
-                --body-file ./pr-body \
-                --base main \
-                --head "$BRANCH"
-            fi
-          else
-            echo "Branch does not exist, creating new branch and PR"
-            git push -u origin "$BRANCH"
-            gh pr create \
-              --title "chore: Weekly flake and package updates" \
-              --body-file ./pr-body \
-              --base main \
-              --head "$BRANCH"
-          fi
