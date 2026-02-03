@@ -52,6 +52,7 @@ in
           per_disc_numbering = true;
           ui.color = true;
           plugins = [
+            "musicbrainz"
             "badfiles"
             "duplicates"
             "bandcamp"
