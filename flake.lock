@@ -1678,11 +1678,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1770101979,
-        "narHash": "sha256-WAeBcdpWs/G2QESmE530xQf6xu8JFQOWQVj+/MBJC6w=",
+        "lastModified": 1770105504,
+        "narHash": "sha256-wMMcnaNndAQNKy4rzunfhL3FaNgRm3ZB8O0SFH8INAU=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "9470f17e8550299d3edcb44bafa22c5f466899e2",
+        "rev": "e46d537773eb69d7e47886d3a62e55ac358d0c36",
         "type": "github"
       },
       "original": {
@@ -2374,10 +2374,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1770018241,
-        "narHash": "sha256-ia/SrX2Ft3HvtkQA7+MWxUoP4Mc8NodcFaUv3hgN5Jo=",
+        "lastModified": 1770107238,
+        "narHash": "sha256-Z56aHzX+CkTS/XNGw47bPQ6MKu00L/nE8jpffQbSDB4=",
         "ref": "consolidated",
-        "rev": "2cf362a75309d66e1854476bbe3c45f24e758e16",
+        "rev": "da72d8a65c23167900c97f9afb5b9ab4c4799274",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"

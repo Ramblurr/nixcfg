@@ -113,11 +113,8 @@ in
         ]
         ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
           claude-code
-          happy-coder
           codex
-          ccusage-codex
           ccusage
-          copilot-cli
           handy
         ]);
     };
