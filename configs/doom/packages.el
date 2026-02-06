@@ -64,8 +64,8 @@
 ;; (package! clojure-essential-ref)
 ;; (package! clojure-essential-ref-nov)
 (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "8cbf851a732f1a6fb42f5191eca416f7fd764c46")
-(package! gptel :pin "81d3d0fc800498430485d4ac84a3e803dcbb5d18")
+(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "f5ea2d098b90ac4fcb0e6ebfe71dd5524bf42d81")
+(package! gptel :pin "fd876e6c82f4b76563aafb36234180c8a75dd22f")
 (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
 (package! treemacs-all-the-icons)
 
@@ -102,3 +102,11 @@
 (package! mcp
   :recipe (:host github :repo "lizqwerscott/mcp.el")
   :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
+
+(package! org-modern-indent :recipe
+  (:host github
+   :repo "jdtsmith/org-modern-indent"))
+
+(package! org-roam-ui)
+(package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
+(package! consult-flyspell)

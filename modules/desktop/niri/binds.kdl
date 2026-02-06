@@ -264,4 +264,5 @@ binds {
     // Powers off the monitors. To turn them back on, do any input like
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
+    Mod+A { spawn-sh "nscratch -t GPTEL -s ~/.config/doom/emacs-gptel.sh"; }
 }
