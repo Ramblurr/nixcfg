@@ -57,6 +57,7 @@ in
         enable = true;
       };
       home.packages = with pkgs; [
+        ghq
         sprite-bin
         inputs.spdx-util.packages.${pkgs.stdenv.hostPlatform.system}.default
         tailwindcss_4

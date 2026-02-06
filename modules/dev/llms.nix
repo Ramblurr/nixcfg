@@ -8,7 +8,15 @@
 
 let
   cfg = config.modules.dev.llms;
+  llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   inherit (config.modules.users.primaryUser) username;
+  inherit (llm-agents)
+    opencode
+    pi
+    mistral-vibe
+    gemini-cli
+    catnip
+    ;
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
     export PI_CONFIG_DIR="$HOME/.config/pi"
@@ -21,13 +29,6 @@ let
     fi
     exec ${cmd} "$@"
   '';
-  inherit (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system})
-    opencode
-    pi
-    mistral-vibe
-    gemini-cli
-    catnip
-    ;
   opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
     wrapWithLLMKeys "${opencode}/bin/opencode" [
       "ANTHROPIC_API_KEY"
@@ -90,33 +91,31 @@ in
         mode = "0400";
         path = ".llm-keys";
       };
-      home.packages =
-        with pkgs;
-        [
-          piper-tts
-          espeak
-          jujutsu
-          mcp-inspector
-          llm-wrapper
-          github-mcp-server-wrapper
-          gemini-cli-wrapper
-          catnip-wrapper
-          pi-wrapper
-          mistral-vibe-wrapper
-          #codex
-          #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
-          opencode-wrapper
-          cat-url-markdown
-          whisper-cpp
-          inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
-          ollama-cuda
-        ]
-        ++ (with inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}; [
-          claude-code
-          codex
-          ccusage
-          handy
-        ]);
+      home.packages = with pkgs; [
+        piper-tts
+        espeak
+        jujutsu
+        mcp-inspector
+        llm-wrapper
+        github-mcp-server-wrapper
+        gemini-cli-wrapper
+        catnip-wrapper
+        pi-wrapper
+        mistral-vibe-wrapper
+        #codex
+        #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
+        opencode-wrapper
+        cat-url-markdown
+        whisper-cpp
+        inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
+        ollama-cuda
+        dotool # handy (speech to text) uses this for clipboard access
+        wtype # handy (speech to text) uses this for clipboard access
+        llm-agents.claude-code
+        llm-agents.codex
+        llm-agents.ccusage
+        llm-agents.handy
+      ];
     };
   };
 }
