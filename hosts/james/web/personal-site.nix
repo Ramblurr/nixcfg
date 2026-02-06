@@ -10,6 +10,7 @@ let
     personal2
     ;
   inherit (config.repo.secrets.local) atprotoDid;
+  codeLink = config.repo.secrets.global.code;
   domain = personal2;
   homeDirectory = "/var/lib/${personal2}";
   #runtimeDirectory = "${config.modules.users.deploy-users.${personal2}.runtimeDirectory}";
@@ -29,6 +30,7 @@ in
     domain = "${domain}";
     extraDomainNames = [
       "www.${domain}"
+      "code.${domain}"
     ];
   };
   users.users.nginx.extraGroups = [ personal2 ];
@@ -65,6 +67,18 @@ in
           add_header Alt-Svc 'h3=":443"; ma=86400';
         ''}
       '';
+    };
+  };
+
+  services.nginx.virtualHosts."code.${domain}" = {
+    useACMEHost = domain;
+    forceSSL = true;
+    kTLS = true;
+    http3 = true;
+    http2 = false;
+    quic = true;
+    locations."/" = {
+      return = "302 ${codeLink}";
     };
   };
 }
