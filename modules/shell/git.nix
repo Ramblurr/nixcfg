@@ -27,6 +27,7 @@ in
           user.name = config.modules.users.primaryUser.name;
           init.defaultBranch = "main";
           pull.rebase = true;
+          ghq.root = "~/src";
           safe = {
             directory = "${homeDirectory}/src/nixcfg";
           };
@@ -54,8 +55,8 @@ in
             rao = "remote add origin";
             ls = ''log --pretty=format:"%C(yellow)%h%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate'';
             ll = ''log --pretty=format:"%C(yellow)%h%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --numstat'';
-            lol = ''log --graph --decorate --pretty=oneline --abbrev-commit'';
-            lola = ''log --graph --decorate --pretty=oneline --abbrev-commit --all'';
+            lol = "log --graph --decorate --pretty=oneline --abbrev-commit";
+            lola = "log --graph --decorate --pretty=oneline --abbrev-commit --all";
             # no colors, for piping
             lnc = ''log --pretty=format:"%h\ %s\ [%cn]"'';
             lds = ''log --pretty=format:"%C(yellow)%h\ %ad%Cred%d\ %Creset%s%Cblue\ [%cn]" --decorate --date=short'';
