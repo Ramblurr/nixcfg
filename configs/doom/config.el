@@ -107,7 +107,7 @@
 
 (after! projectile
   ;; Projects all over
-  (setq projectile-project-search-path '(("~/src" . 2)
+  (setq projectile-project-search-path '(("~/src" . 3)
                                          ("~/work" . 3)))
 
   ;; Show me projects in LIFO order
@@ -195,6 +195,13 @@
 
 (use-package! consult-flyspell
   :after (flyspell consult))
+
+(after! dired
+  (setq dired-create-destination-dirs 'always))
+
+(use-package! treemacs
+  :config
+  (setq treemacs-missing-project-action 'remove))
 
 (load! "+helpers.el")
 (load! "+my-commands.el")
