@@ -32,6 +32,8 @@
 #   repo -F             # frecent sort (zoxide)
 #   repo -t             # toggle sort for this invocation (alpha <-> frecent)
 #   repo <query...>     # prefill fzf query
+#   repo-link [query...]        # pick repo, symlink it into $PWD
+#   repo-link -d DIR [query...]  # pick repo, symlink it into DIR
 #
 # Env:
 #   REPO_BASE=~/src     # change search base
@@ -46,7 +48,7 @@ repo() {
 
   local base="${REPO_BASE:-$HOME/src}"
   local mode="cd"
-  local TAB="   "
+  local TAB=$'\t'
   local sort_mode="${REPO_SORT:-auto}"   # auto|frecent|alpha
   local -a q
   local OPTIND opt
@@ -199,4 +201,34 @@ repo() {
       cd -- "$repo_path" || return 1
       ;;
   esac
+}
+
+repo-link() {
+  setopt local_options pipefail
+
+  local dest=""
+  local OPTIND=1 opt
+  while getopts ":d:" opt; do
+    case "$opt" in
+      d) dest="$OPTARG" ;;
+    esac
+  done
+  shift $((OPTIND-1))
+
+  local target
+  target="$(repo -p "$@")" || return 1
+  [[ -n "$target" ]] || return 1
+
+  if [[ -n "$dest" ]]; then
+    [[ -d "$dest" ]] || { print -u2 "repo-link: destination not a directory: $dest"; return 1; }
+  fi
+
+  local link_path="${dest:+${dest%/}/}${target:t}"
+  if [[ -e "$link_path" || -L "$link_path" ]]; then
+    print -u2 "repo-link: '$link_path' already exists"
+    return 1
+  fi
+
+  ln -s "$target" "$link_path" || return 1
+  print -r -- "$link_path -> $target"
 }
