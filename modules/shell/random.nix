@@ -40,6 +40,7 @@ in
         restic
         dust
         fd
+        bfs
         #gitui
         #gitu
         #gex

@@ -78,9 +78,19 @@ repo() {
   # 1) Find repo roots (parents of .git)
   local all_repos
   all_repos="$(
-    if command -v fd >/dev/null 2>&1; then
+    if command -v bfs >/dev/null 2>&1; then
+      bfs -L "$base" -maxdepth 4 -name .git -type d \
+        -exclude -name node_modules \
+        -exclude -name vendor \
+        -exclude -name dist \
+        -exclude -name build \
+        -exclude -name target \
+        -exclude -name .cache \
+        -exclude -name .direnv \
+        | sed -E 's|/\.git/?$||'
+    elif command -v fd >/dev/null 2>&1; then
       fd -H -t d '^\.git$' "$base" \
-        --max-depth 6 \
+        --max-depth 4 \
         --exclude node_modules \
         --exclude vendor \
         --exclude dist \
@@ -90,7 +100,7 @@ repo() {
         --exclude .direnv \
         | sed -E 's|/\.git/?$||'
     else
-      find -L "$base" -type d -name .git -maxdepth 6 -print \
+      find -L "$base" -type d -name .git -maxdepth 4 -print \
         | sed -E 's|/\.git/?$||'
     fi
   )" || return 1
