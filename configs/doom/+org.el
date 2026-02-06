@@ -134,14 +134,46 @@
 
 (use-package! org-roam
   :defer t
+  :custom
+  (org-roam-directory (file-truename "~/docs/org"))
+  (org-roam-dailies-directory "daily")
+  (org-roam-db-location (file-truename "~/docs/org/org-roam.db"))
+  (org-attach-id-dir "assets/")
+  (org-roam-dailies-capture-templates
+   `(("d" "default" entry
+      "* %?"
+      :if-new (file+head ,my/daily-note-filename
+                         ,my/daily-note-header)
+      :unnarrowed t)
+     ("t" "task" entry
+      "* TODO %?\n  %U\n  %a\n  %i"
+      :if-new (file+head+olp ,my/daily-note-filename
+                             ,my/daily-note-header
+                             ("Tasks"))
+      :empty-lines 1
+      :unnarrowed t)
+     ("l" "log entry" entry
+      "* %<%I:%M %p> - %?"
+      :if-new (file+head+olp ,my/daily-note-filename
+                             ,my/daily-note-header
+                             ("Log"))
+      :unnarrowed t)
+     ("j" "journal" entry
+      "* %<%I:%M %p> - Journal  :journal:\n\n%?\n\n"
+      :if-new (file+head+olp ,my/daily-note-filename
+                             ,my/daily-note-header
+                             ("Log"))
+      :unnarrowed t)
+     ("m" "meeting" entry
+      "* %<%I:%M %p> - %^{Meeting Title}  :meetings:\n\n%?\n\n"
+      :if-new (file+head+olp ,my/daily-note-filename
+                             ,my/daily-note-header
+                             ("Log"))
+      :unnarrowed t)))
   :config
-  ;; variables
-  (setq org-roam-directory (file-truename "~/docs/org")
-        org-roam-db-location (file-truename "~/docs/org/org-roam.db")
-        org-attach-id-dir "assets/")
-
+  (setq  my/daily-note-filename "%<%Y-%m-%d>.org"
+         my/daily-note-header "#+title: %<%Y-%m-%d %a>\n\n[[roam:%<%Y-%B>]]\n\n")
   (org-roam-db-autosync-enable)
-
   ;; custom `org-roam' functions
   (defun my/org-roam--after-point ()
     "If in Evil normal state and not at EOL, move one char forward."
