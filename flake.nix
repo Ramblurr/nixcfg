@@ -127,7 +127,9 @@
       url = "github:thelegy/nixos-nftables-firewall";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    niri.url = "github:YaLTeR/niri";
+    # Pin niri on commit where wtype  isn't broken
+    # ref: https://github.com/YaLTeR/niri/issues/3394
+    niri.url = "github:YaLTeR/niri?rev=3ccb06f5644c4bcdf74ad2e4d388a13ac65207af";
     niri.inputs.nixpkgs.follows = "nixpkgs";
 
     llm-agents.url = "github:numtide/llm-agents.nix";
@@ -141,6 +143,8 @@
     #zmx.url = "github:neurosnap/zmx";
     #zmx.inputs.nixpkgs.follows = "nixpkgs";
     #brother_ql_web.url = "github:makefu/brother_ql_web";
+    niri-scratchpad.url = "github:gvolpe/niri-scratchpad";
+    niri-scratchpad.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
