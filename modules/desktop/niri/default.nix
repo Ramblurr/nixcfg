@@ -63,6 +63,7 @@ in
         # Niri v25.08 will create X11 sockets on disk, export $DISPLAY, and spawn `xwayland-satellite` on-demand when an X11 client connects
         xwayland-satellite
         fuzzel
+        inputs.niri-scratchpad.packages.${system}.niri-scratchpad
       ];
       xdg.configFile = {
         "niri/config.kdl" = {
