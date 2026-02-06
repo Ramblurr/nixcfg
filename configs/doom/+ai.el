@@ -8,12 +8,15 @@
 ;; gptel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar my/gptel-chat-dir "~/docs/ai/"
+  "Base directory for saved gptel chat files.")
+
 (defun my/auto-enable-gptel-in-ai-docs ()
   "Enable gptel-mode for .org and .md files under ~/docs/ai/."
   (when-let ((file-name (buffer-file-name)))
     (when (and (or (derived-mode-p 'org-mode)
                    (derived-mode-p 'markdown-mode))
-               (string-prefix-p (expand-file-name "~/docs/ai/")
+               (string-prefix-p (expand-file-name my/gptel-chat-dir)
                                 (expand-file-name file-name)))
       (gptel-mode 1))))
 
@@ -32,7 +35,8 @@
                     (new-title (string-replace "```" "" new-title)))
                (with-current-buffer buf
                  (let ((dir (format
-                             "~/docs/ai/%s/%s"
+                             "%s%s/%s"
+                             my/gptel-chat-dir
                              (format-time-string "%Y")
                              (format-time-string "%m"))))
                    (unless (file-directory-p dir)
@@ -86,7 +90,7 @@
 
   (setq gptel-stream t
         ;; gptel-display-buffer-action '(pop-to-buffer-same-window)
-        gptel-model 'claude-sonnet-4-5-20250929
+        gptel-model 'claude-opus-4-5-20251101
         gptel-backend my/gptel-backend--anthropic)
 
   (add-hook! 'gptel-post-response-functions 'my/gptel-save-buffer)
@@ -633,3 +637,21 @@ LANGUAGE defaults to auto-detect. Use the hydra to toggle refinement."
 
 
 ;; (setq whisper-after-transcription-hook (cdr whisper-after-transcription-hook))
+
+(defun ad/ai-from-anywhere (frame)
+  "Set up FRAME as an AI chat frame when it is named GPTEL.
+Add to `after-make-frame-functions' and invoke with:
+  emacsclient -cn -F \\='((name . \"GPTEL\"))"
+  (when (string= (frame-parameter frame 'name) "GPTEL")
+    (run-at-time 0 nil
+                 (lambda ()
+                   (select-frame-set-input-focus frame)
+                   (let ((chat-dir (expand-file-name my/gptel-chat-dir)))
+                     (+workspace-switch "GPTEL" t)
+                     (setq default-directory chat-dir)
+                     (let ((bn (generate-new-buffer-name "*GPTEL Chat*")))
+                       (gptel bn (gptel--get-api-key))
+                       (switch-to-buffer bn)
+                       (display-line-numbers-mode -1)))))))
+
+(add-hook 'after-make-frame-functions #'ad/ai-from-anywhere)

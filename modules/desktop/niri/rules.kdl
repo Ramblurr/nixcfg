@@ -2,6 +2,8 @@
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Window-Rules
 
+workspace "scratch"
+
 window-rule {
     match app-id="wezterm"
     default-column-width {}
@@ -28,10 +30,29 @@ window-rule {
     draw-border-with-background false
 }
 
-
 window-rule {
     match app-id="steam_proton" title="Roon"
-    // open-floating true
     open-fullscreen true
     open-on-output "HDMI-A-1"
+}
+
+window-rule {
+    match app-id="signal"
+    open-maximized-to-edges true
+    open-on-output "HDMI-A-1"
+}
+
+window-rule {
+    match app-id="1password"
+    match app-id="handy"
+    open-on-output "DP-2"
+    default-column-width { fixed 841; }
+}
+
+window-rule {
+    match app-id=r#"emacs$"# title="GPTEL"
+    open-floating true
+    open-on-workspace "scratch"
+    default-column-width { fixed 704; }
+    default-window-height { fixed 1424; }
 }

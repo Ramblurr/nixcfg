@@ -96,9 +96,6 @@
   (font-lock-add-keywords nil `((,(rx (any "[]{}_&#%~@.,")) . 'my-face-faded))))
 
 
-(setq org-directory "~/docs/org/")
-
-
 ;; Aggressive auto backup feature
 ;; I've been bit y undo corruption too many times to fully trust emacs with my
 ;; code. Since we don't have an intellij style Local History feature, we just
@@ -196,10 +193,14 @@
   ;; mode with `ligature-mode'.
   (global-ligature-mode t))
 
+(use-package! consult-flyspell
+  :after (flyspell consult))
+
 (load! "+helpers.el")
 (load! "+my-commands.el")
 (load! "+org.el")
 (load! "+ai.el")
+(load! "+assistant.el")
 (load! "+lisp-editing.el")
 (load! "+langs.el")
 (load! "+clojure.el")
