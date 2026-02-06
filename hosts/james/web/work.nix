@@ -5,7 +5,10 @@
 }:
 
 let
-  inherit (config.repo.secrets.global) git;
+  inherit (config.repo.secrets.global)
+    codeWork
+    git
+    ;
   inherit (config.repo.secrets.global.domain) home work work2;
   domain = work;
   sitePath = "/var/lib/static-web/${domain}";
@@ -19,6 +22,7 @@ in
       "www.${domain}"
       "${work2}"
       "www.${work2}"
+      "code.${domain}"
     ];
   };
 
@@ -33,6 +37,18 @@ in
     quic = true;
     globalRedirect = domain;
   };
+
+  services.nginx.virtualHosts."code.${domain}" = {
+    useACMEHost = domain;
+    forceSSL = true;
+    kTLS = true;
+    http3 = true;
+    quic = true;
+    locations."/" = {
+      return = "302 ${codeWork}";
+    };
+  };
+
   services.nginx.virtualHosts.${domain} = {
     serverAliases = [
       "www.${domain}"
