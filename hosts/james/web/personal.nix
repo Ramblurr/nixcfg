@@ -9,6 +9,7 @@ let
     work
     personal1
     ;
+  codeLink = config.repo.secrets.global.code;
   domain = personal1;
 in
 {
@@ -16,6 +17,7 @@ in
     domain = "${domain}";
     extraDomainNames = [
       "www.${domain}"
+      "code.${domain}"
     ];
   };
 
@@ -33,5 +35,16 @@ in
     locations."= /.well-known/caldav".extraConfig = ''
       return 301 https://dav.${home}/dav/;
     '';
+  };
+
+  services.nginx.virtualHosts."code.${domain}" = {
+    useACMEHost = domain;
+    forceSSL = true;
+    kTLS = true;
+    http3 = true;
+    quic = true;
+    locations."/" = {
+      return = "302 ${codeLink}";
+    };
   };
 }
