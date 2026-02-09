@@ -155,6 +155,14 @@
             "phone"
           ];
         };
+        "doom-emacs" = {
+          id = "jkuvr-ugrxv";
+          path = "/home/ramblurr/nixcfg/configs/doom";
+          devices = [ "phone2" ];
+          versioning = {
+            type = "simple";
+          };
+        };
         "logseq" = {
           id = "lzv9p-tt1gf";
           path = "/home/ramblurr/docs/brain";

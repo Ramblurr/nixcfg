@@ -6,7 +6,9 @@
 
 ;; Fonts ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(setq doom-font (font-spec :family "Iosevka SS15" :size 16))
+;;(setq doom-font (font-spec :family "Iosevka SS15" :size 16))
+;;(setq doom-font (font-spec :family "Berkeley Mono UltraCondensed" :size 16))
+(setq doom-font (font-spec :family "Berkeley Mono ExtraCondensed" :size 17))
 (setq nerd-icons-font-names '("Iosevka Nerd Font Mono" "Symbols Nerd Font"))
 
 ;; get the family string from the doom-font variable containing the font-spec
@@ -14,7 +16,6 @@
 (setq confirm-kill-emacs nil)
 
 (setq doom-theme 'doom-gruvbox)
-;;(setq doom-theme 'modus-vivendi)
 (show-paren-mode t)
 (setq show-paren-style 'parenthesis)
 (setq doom-gruvbox-brighter-comments t)
@@ -24,36 +25,37 @@
 (defface my-face-faded nil
   "Faded face is for information that are less important.")
 
-(use-package! modus-themes
-  :init
-  (defun my/modus-themes-custom-faces (&rest _)
-    (modus-themes-with-colors
-      (custom-set-faces
-       ;; Make foreground the same as background for a uniform bar on
-       ;; Doom Emacs.
-       ;;
-       ;; Doom should not be implementing such hacks because themes
-       ;; cannot support them:
-       ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
-       `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
-       `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
-       `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
-  (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
+(comment
+ (use-package! modus-themes
+   :init
+   (defun my/modus-themes-custom-faces (&rest _)
+     (modus-themes-with-colors
+       (custom-set-faces
+        ;; Make foreground the same as background for a uniform bar on
+        ;; Doom Emacs.
+        ;;
+        ;; Doom should not be implementing such hacks because themes
+        ;; cannot support them:
+        ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
+        `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
+        `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
+        `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
+   (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
 
-  (setq!
-   modus-themes-completions '((matches . (extrabold background intense))
-                              (selection . (semibold accented intense))
-                              (popup . (accented)))
-   modus-themes-common-palette-overrides
-   '((bg-paren-match bg-magenta-intense)
-     (underline-paren-match fg-main) )
-   )
+   (setq!
+    modus-themes-completions '((matches . (extrabold background intense))
+                               (selection . (semibold accented intense))
+                               (popup . (accented)))
+    modus-themes-common-palette-overrides
+    '((bg-paren-match bg-magenta-intense)
+      (underline-paren-match fg-main) )
+    )
 
-  (comment
-   (custom-theme-set-faces! '(modus-vivendi)
-     `(symex-highlight-face     :inherit ,nil :background ,(modus-themes-get-color-value 'bg-active) :weight ,'normal)
-     `(clojure-discard-face     :foreground ,(modus-themes-get-color-value 'bg-active))
-     `(my-face-faded            :foreground ,(modus-themes-get-color-value 'fg-dim)))))
+   (comment
+    (custom-theme-set-faces! '(modus-vivendi)
+      `(symex-highlight-face     :inherit ,nil :background ,(modus-themes-get-color-value 'bg-active) :weight ,'normal)
+      `(clojure-discard-face     :foreground ,(modus-themes-get-color-value 'bg-active))
+      `(my-face-faded            :foreground ,(modus-themes-get-color-value 'fg-dim))))))
 
 
 (custom-theme-set-faces! '(doom-gruvbox)
@@ -144,72 +146,79 @@
 (after! hl-line
   (setq! hl-line-sticky-flag nil))
 
-(use-package ligature
-  :config
-  ;; Enable all Iosevka ligatures in programming modes
-  ;; https://github.com/mickeynp/ligature.el/wiki
-  (defvar iosevka-ligation-set '("<---" "<--"  "<<-" "<-" "->" "-->" "--->" "<->" "<-->" "<--->" "<---->" "<!--"
-                                 "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
-                                 "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
-                                 ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
-  (defvar berkeley-mono-ligation-set '(; Group A
-                                       ".." ".=" "..." "..<" "::" ":::" ":=" "::=" ";;" ";;;" "??" "???"
-                                       ".?" "?." ":?" "?:" "?=" "**" "***" "/*" "*/" "/**"
+(if not-android
+    (use-package ligature
+      :config
+      ;; Enable all Iosevka ligatures in programming modes
+      ;; https://github.com/mickeynp/ligature.el/wiki
+      (defvar iosevka-ligation-set '("<---" "<--"  "<<-" "<-" "->" "-->" "--->" "<->" "<-->" "<--->" "<---->" "<!--"
+                                     "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
+                                     "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
+                                     ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
+      (defvar berkeley-mono-ligation-set '(; Group A
+                                           ".." ".=" "..." "..<" "::" ":::" ":=" "::=" ";;" ";;;" "??" "???"
+                                           ".?" "?." ":?" "?:" "?=" "**" "***" "/*" "*/" "/**"
                                         ; Group B
-                                       "<-" "->" "-<" ">-" "<--" "-->" "<<-" "->>" "-<<" ">>-" "<-<" ">->"
-                                       "<-|" "|->" "-|" "|-" "||-" "<!--" "<#--" "<=" "=>" ">=" "<==" "==>"
-                                       "<<=" "=>>" "=<<" ">>=" "<=<" ">=>" "<=|" "|=>" "<=>" "<==>" "||="
-                                       "|=" "//=" "/="
+                                           "<-" "->" "-<" ">-" "<--" "-->" "<<-" "->>" "-<<" ">>-" "<-<" ">->"
+                                           "<-|" "|->" "-|" "|-" "||-" "<!--" "<#--" "<=" "=>" ">=" "<==" "==>"
+                                           "<<=" "=>>" "=<<" ">>=" "<=<" ">=>" "<=|" "|=>" "<=>" "<==>" "||="
+                                           "|=" "//=" "/="
                                         ; Group C
-                                       "<<" ">>" "<<<" ">>>" "<>" "<$" "$>" "<$>" "<+" "+>" "<+>" "<:" ":<"
-                                       "<:<" ">:" ":>" "<~" "~>" "<~>" "<<~" "<~~" "~~>" "~~" "<|" "|>"
-                                       "<|>" "<||" "||>" "<|||" "|||>" "</" "/>" "</>" "<*" "*>" "<*>" ":?>"
+                                           "<<" ">>" "<<<" ">>>" "<>" "<$" "$>" "<$>" "<+" "+>" "<+>" "<:" ":<"
+                                           "<:<" ">:" ":>" "<~" "~>" "<~>" "<<~" "<~~" "~~>" "~~" "<|" "|>"
+                                           "<|>" "<||" "||>" "<|||" "|||>" "</" "/>" "</>" "<*" "*>" "<*>" ":?>"
                                         ; Group D
-                                       "#(" "#{" "#[" "]#" "#!" "#?" "#=" "#_" "#_(" "##" "###" "####"
+                                           "#(" "#{" "#[" "]#" "#!" "#?" "#=" "#_" "#_(" "##" "###" "####"
                                         ; Group E
-                                       "[|" "|]" "[<" ">]" "{!!" "!!}" "{|" "|}" "{{" "}}" "{{--" "--}}"
-                                       "{!--" "//" "///" "!!"
+                                           "[|" "|]" "[<" ">]" "{!!" "!!}" "{|" "|}" "{{" "}}" "{{--" "--}}"
+                                           "{!--" "//" "///" "!!"
                                         ; Group F
-                                       "www" "@_" "&&" "&&&" "&=" "~@" "++" "+++" "/\\" "\\/" "_|_" "||"
+                                           "www" "@_" "&&" "&&&" "&=" "~@" "++" "+++" "/\\" "\\/" "_|_" "||"
                                         ; Group G
-                                       "=:" "=:=" "=!=" "==" "===" "=/=" "=~" "~-" "^=" "__" "!=" "!==" "-~"
-                                       "--" "---"))
-  (defun setup-ligatures-for-font ()
-    (let ((font-family (symbol-name (font-get doom-font :family))))
-      (cond
-       ((and font-family (string-match-p "Iosevka" font-family))
-        (message "Setting up ligatures for Iosevka")
-        (ligature-set-ligatures 'prog-mode iosevka-ligation-set))
+                                           "=:" "=:=" "=!=" "==" "===" "=/=" "=~" "~-" "^=" "__" "!=" "!==" "-~"
+                                           "--" "---"))
+      (defun setup-ligatures-for-font ()
+        (let ((font-family (symbol-name (font-get doom-font :family))))
+          (cond
+           ((and font-family (string-match-p "Iosevka" font-family))
+            (message "Setting up ligatures for Iosevka")
+            (ligature-set-ligatures 'prog-mode iosevka-ligation-set))
 
-       ((and font-family (string-match-p "Berkeley Mono" font-family))
-        (message "Setting up ligatures for Berkeley Mono")
-        (ligature-set-ligatures 'prog-mode berkeley-mono-ligation-set))
+           ((and font-family (string-match-p "Berkeley Mono" font-family))
+            (message "Setting up ligatures for Berkeley Mono")
+            (ligature-set-ligatures 'prog-mode berkeley-mono-ligation-set))
 
-       (t (message "No specific ligature set for %s" font-family)))))
+           (t (message "No specific ligature set for %s" font-family)))))
 
-  (setup-ligatures-for-font)
+      (setup-ligatures-for-font)
 
-  ;; Enables ligature checks globally in all buffers. You can also do it per
-  ;; mode with `ligature-mode'.
-  (global-ligature-mode t))
+      ;; Enables ligature checks globally in all buffers. You can also do it per
+      ;; mode with `ligature-mode'.
+      (global-ligature-mode t)))
 
-(use-package! consult-flyspell
-  :after (flyspell consult))
+(if not-android
+    (use-package! consult-flyspell
+      :after (flyspell consult)))
 
 (after! dired
   (setq dired-create-destination-dirs 'always))
 
-(use-package! treemacs
-  :config
-  (setq treemacs-missing-project-action 'remove))
+(if not-android
+    (use-package! treemacs
+      :config
+      (setq treemacs-missing-project-action 'remove)))
 
-(load! "+helpers.el")
-(load! "+my-commands.el")
-(load! "+org.el")
-(load! "+ai.el")
-(load! "+assistant.el")
-(load! "+lisp-editing.el")
-(load! "+langs.el")
-(load! "+clojure.el")
-(load! "+emacs-wm.el")
-(load! "+bindings.el")
+(if not-android
+    (progn
+      (load! "+helpers.el")
+      (load! "+my-commands.el")
+      (load! "+org.el")
+      (load! "+ai.el")
+      (load! "+assistant.el")
+      (load! "+lisp-editing.el")
+      (load! "+langs.el")
+      (load! "+clojure.el")
+      (load! "+emacs-wm.el")
+      (load! "+bindings.el")))
+(if is-android
+    (load! "+android.el"))
