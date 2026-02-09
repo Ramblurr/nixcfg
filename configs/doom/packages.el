@@ -48,65 +48,68 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;; (unpin! t)
 
-(package! transpose-frame)
-;; (package! copilot :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")) :pin
-;;           ;2025-09-16
-;;           "6a2ad80489b8a0d021df95293eb7ac370aea140b"
-;;           )
+(defconst is-android (string-equal system-type "android"))
+(defconst not-android (not is-android))
+(if not-android
+    (package! transpose-frame)
+  ;; (package! copilot :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")) :pin
+  ;;           ;2025-09-16
+  ;;           "6a2ad80489b8a0d021df95293eb7ac370aea140b"
+  ;;           )
 
-(unpin! hover)
-(unpin! treemacs)
-(unpin! lsp-treemacs)
-(unpin! lsp-ui)
-(unpin! lsp-mode)
+  (unpin! hover)
+  (unpin! treemacs)
+  (unpin! lsp-treemacs)
+  (unpin! lsp-ui)
+  (unpin! lsp-mode)
 
-(package! aggressive-indent)
-;; (package! clojure-essential-ref)
-;; (package! clojure-essential-ref-nov)
-(package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-(package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "f5ea2d098b90ac4fcb0e6ebfe71dd5524bf42d81")
-(package! gptel :pin "fd876e6c82f4b76563aafb36234180c8a75dd22f")
-(package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
-(package! treemacs-all-the-icons)
+  (package! aggressive-indent)
+  ;; (package! clojure-essential-ref)
+  ;; (package! clojure-essential-ref-nov)
+  (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
+  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "f5ea2d098b90ac4fcb0e6ebfe71dd5524bf42d81")
+  (package! gptel :pin "fd876e6c82f4b76563aafb36234180c8a75dd22f")
+  (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
+  (package! treemacs-all-the-icons)
 
-;; (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
-;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
+  ;; (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
+  ;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
 
-(package! symex-core
-  :recipe (:host github
-           :repo "drym-org/symex.el"
-           :files ("symex-core/symex*.el" ))
-  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+  (package! symex-core
+    :recipe (:host github
+             :repo "drym-org/symex.el"
+             :files ("symex-core/symex*.el" ))
+    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
-(package! symex
-  :recipe (:host github
-           :repo "drym-org/symex.el"
-           :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
-  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+  (package! symex
+    :recipe (:host github
+             :repo "drym-org/symex.el"
+             :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
+    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
-(package! symex-evil
-  :recipe (:host github
-           :repo "drym-org/symex.el"
-           :files ("symex-evil/symex*.el"))
-  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+  (package! symex-evil
+    :recipe (:host github
+             :repo "drym-org/symex.el"
+             :files ("symex-evil/symex*.el"))
+    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
-(package! symex-ide
-  :recipe (:host github
-           :repo "drym-org/symex.el"
-           :files ("symex-ide/symex*.el"))
-  :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+  (package! symex-ide
+    :recipe (:host github
+             :repo "drym-org/symex.el"
+             :files ("symex-ide/symex*.el"))
+    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
 
-(package! modus-themes
-  :recipe (:host github :repo "protesilaos/modus-themes"))
+  (package! modus-themes
+    :recipe (:host github :repo "protesilaos/modus-themes"))
 
-(package! mcp
-  :recipe (:host github :repo "lizqwerscott/mcp.el")
-  :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
+  (package! mcp
+    :recipe (:host github :repo "lizqwerscott/mcp.el")
+    :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
+
+  (package! org-roam-ui)
+  (package! consult-flyspell))
 
 (package! org-modern-indent :recipe
   (:host github
    :repo "jdtsmith/org-modern-indent"))
-
-(package! org-roam-ui)
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
-(package! consult-flyspell)
