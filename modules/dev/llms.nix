@@ -34,7 +34,21 @@ let
       "ANTHROPIC_API_KEY"
     ]
   );
-  llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${pkgs.llm}/bin/llm" [ ]);
+  llmWithPlugins = pkgs.llm.withPlugins {
+    llm-cmd = true;
+    llm-anthropic = true;
+    llm-docs = true;
+    llm-fragments-reader = true;
+    llm-gemini = true;
+    llm-git = true;
+    llm-jq = true;
+    llm-hacker-news = true;
+    llm-mistral = true;
+    llm-ollama = true;
+    llm-openai-plugin = true;
+    llm-pdf-to-images = true;
+  };
+  llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${llmWithPlugins}/bin/llm" [ ]);
   gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini" (
     wrapWithLLMKeys "${gemini-cli}/bin/gemini" [ ]
   );
@@ -91,7 +105,14 @@ in
         mode = "0400";
         path = ".llm-keys";
       };
+
+      home.sessionVariables = {
+        PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
+      };
       home.packages = with pkgs; [
+        playwright
+        playwright-test
+        playwright-mcp
         piper-tts
         espeak
         jujutsu
