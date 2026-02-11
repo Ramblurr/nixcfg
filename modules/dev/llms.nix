@@ -110,9 +110,9 @@ in
         PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
       };
       home.packages = with pkgs; [
-        playwright
-        playwright-test
-        playwright-mcp
+        #playwright
+        #playwright-test
+        #playwright-mcp
         piper-tts
         espeak
         jujutsu
