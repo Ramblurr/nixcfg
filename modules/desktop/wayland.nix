@@ -27,10 +27,14 @@ in
       #  };
       #};
     };
+    #services.gnome.at-spi2-core.enable = true;
     environment.systemPackages =
       with pkgs;
       #with gnome;
       [
+        #at-spi2-atk
+        wl-kbptr
+        wlrctl
         wtype # handy (speech to text) uses this for clipboard access
         gnome-disk-utility
         loupe # gui image viewer

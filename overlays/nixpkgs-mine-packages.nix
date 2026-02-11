@@ -36,6 +36,7 @@ in
   inherit (nixpkgs-mine) yubioath-flutter;
   inherit (nixpkgs-mine) _1password-gui;
   inherit (nixpkgs-mine) _1password-cli;
+  inherit (nixpkgs-mine) obs-cmd;
   sops = nixpkgs-mine.sops.withAgePlugins (p: [
     p.age-plugin-fido2-hmac
     p.age-plugin-yubikey
