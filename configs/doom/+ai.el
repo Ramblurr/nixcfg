@@ -232,7 +232,7 @@ The user's chat will now follow. Generate the title."))
 ;; MCP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(use-package! mcp
+(comment (use-package! mcp
   :after (gptel)
   :config (require 'mcp-hub)
   :init (setq mcp-hub-servers
@@ -248,7 +248,7 @@ The user's chat will now follow. Generate the title."))
                 )
               )
   :hook (after-init . mcp-hub-start-all-server)
-  )
+  ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Copilot
@@ -312,6 +312,86 @@ The user's chat will now follow. Generate the title."))
               nil t)))
 
 (add-hook 'eca-chat-mode-hook #'my/eca-chat-flyspell-setup)
+
+(defvar my/eca-chat-dir "~/docs/ai/"
+  "Base directory for saved ECA chat files.")
+
+(defvar-local my/eca-chat-saved-file nil
+  "The file path where this ECA chat has been saved.")
+
+(defvar-local my/eca-chat-autosave-timer nil
+  "Timer for auto-saving the ECA chat buffer.")
+
+(defvar my/eca-chat-autosave-idle-time 30
+  "Number of seconds of idle time before auto-saving ECA chat.")
+
+(defun my/eca-save-buffer ()
+  "Save the current ECA chat buffer to ~/docs/ai/ with a timestamped filename.
+If the buffer has been saved before, saves to the same file.
+Otherwise, creates a new file with format: YYYY/MM/DD-HH_MM-title.md
+Uses the built-in eca-chat-save-to-file to ensure the entire chat history is saved."
+  (interactive)
+  (eca-assert-session-running (eca-session))
+  (with-current-buffer (eca-chat--get-last-buffer (eca-session))
+    (let ((filepath (or my/eca-chat-saved-file
+                        buffer-file-name)))
+      (if filepath
+          ;; Buffer already has a saved file, just save it again
+          (progn
+            (eca-chat-save-to-file filepath)
+            (message "Saved ECA chat to %s" filepath))
+        ;; Create new file with timestamp
+        (let* ((title (or eca-chat--custom-title
+                          eca-chat--title
+                          "eca-chat"))
+               (clean-title (thread-last title
+                              (replace-regexp-in-string "\n" "_")
+                              (replace-regexp-in-string "[^a-zA-Z0-9_-]" "")))
+               (dir (expand-file-name
+                     (format-time-string "%Y/%m" (current-time))
+                     my/eca-chat-dir))
+               (filename (format "%s-%s-%s.md"
+                                 (format-time-string "%d")
+                                 (format-time-string "%H_%M")
+                                 clean-title))
+               (new-filepath (expand-file-name filename dir)))
+          ;; Ensure directory exists
+          (unless (file-directory-p dir)
+            (make-directory dir t))
+          ;; Save to file using built-in function
+          (eca-chat-save-to-file new-filepath)
+          ;; Remember this file for future saves
+          (setq my/eca-chat-saved-file new-filepath)
+          (message "Created and saved ECA chat to %s" new-filepath))))))
+
+(defun my/eca-chat-autosave ()
+  "Auto-save the current ECA chat buffer if it's an ECA chat buffer."
+  (when (and (derived-mode-p 'eca-chat-mode)
+             (eca-session))
+    (condition-case err
+        (my/eca-save-buffer)
+      (error
+       (message "ECA auto-save failed: %S" err)))))
+
+(defun my/eca-chat-setup-autosave ()
+  "Set up auto-saving for the ECA chat buffer."
+  (when (derived-mode-p 'eca-chat-mode)
+    ;; Cancel any existing timer
+    (when my/eca-chat-autosave-timer
+      (cancel-timer my/eca-chat-autosave-timer))
+    ;; Set up idle timer for auto-saving
+    (setq my/eca-chat-autosave-timer
+          (run-with-idle-timer my/eca-chat-autosave-idle-time t
+                               #'my/eca-chat-autosave))
+    ;; Clean up timer when buffer is killed
+    (add-hook 'kill-buffer-hook
+              (lambda ()
+                (when my/eca-chat-autosave-timer
+                  (cancel-timer my/eca-chat-autosave-timer)
+                  (setq my/eca-chat-autosave-timer nil)))
+              nil t)))
+
+(add-hook 'eca-chat-mode-hook #'my/eca-chat-setup-autosave)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Whisper.el on NixOS

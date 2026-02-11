@@ -30,16 +30,16 @@
    :init
    (defun my/modus-themes-custom-faces (&rest _)
      (modus-themes-with-colors
-       (custom-set-faces
-        ;; Make foreground the same as background for a uniform bar on
-        ;; Doom Emacs.
-        ;;
-        ;; Doom should not be implementing such hacks because themes
-        ;; cannot support them:
-        ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
-        `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
-        `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
-        `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
+      (custom-set-faces
+       ;; Make foreground the same as background for a uniform bar on
+       ;; Doom Emacs.
+       ;;
+       ;; Doom should not be implementing such hacks because themes
+       ;; cannot support them:
+       ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
+       `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
+       `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
+       `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
    (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
 
    (setq!
@@ -110,6 +110,7 @@
 (after! projectile
   ;; Projects all over
   (setq projectile-project-search-path '(("~/src" . 3)
+                                         ("~/src/scratch" . 3)
                                          ("~/work" . 3)))
 
   ;; Show me projects in LIFO order
@@ -214,7 +215,7 @@
       (load! "+my-commands.el")
       (load! "+org.el")
       (load! "+ai.el")
-      (load! "+assistant.el")
+      ;;(load! "+assistant.el")
       (load! "+lisp-editing.el")
       (load! "+langs.el")
       (load! "+clojure.el")
