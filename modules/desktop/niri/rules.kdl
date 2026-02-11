@@ -56,3 +56,8 @@ window-rule {
     default-column-width { fixed 704; }
     default-window-height { fixed 1424; }
 }
+
+window-rule {
+    match app-id=r#"^jwm-.*$"#
+    open-on-workspace "scratch"
+}

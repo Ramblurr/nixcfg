@@ -43,11 +43,11 @@ in
         };
       in
       {
-        home.file."vendor/jdks/openjdk21".source = pkgs.jdk21;
         home.file."vendor/jdks/openjdk25".source = pkgs.jdk25;
         home.file."vendor/jdks/graalvm-ce".source = pkgs.graalvmPackages.graalvm-ce;
         home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
         home.packages = with pkgs; [
+          flutter
           jdk25
           neil
           maven
@@ -114,7 +114,7 @@ in
         };
 
         xdg.configFile."nrepl/nrepl.edn" = {
-          text = ''{:dynamic-vars {clojure.core/*warn-on-reflection* true}}'';
+          text = "{:dynamic-vars {clojure.core/*warn-on-reflection* true}}";
         };
         xdg.configFile."clj-kondo" = {
           source = ./configs/clj-kondo;
