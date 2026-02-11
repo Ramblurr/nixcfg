@@ -50,8 +50,8 @@
 
 (defconst is-android (string-equal system-type "android"))
 (defconst not-android (not is-android))
-(if not-android
-    (package! transpose-frame)
+(when not-android
+  (package! transpose-frame)
   ;; (package! copilot :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")) :pin
   ;;           ;2025-09-16
   ;;           "6a2ad80489b8a0d021df95293eb7ac370aea140b"
@@ -102,9 +102,9 @@
   (package! modus-themes
     :recipe (:host github :repo "protesilaos/modus-themes"))
 
-  (package! mcp
-    :recipe (:host github :repo "lizqwerscott/mcp.el")
-    :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
+ ;; (package! mcp
+ ;;   :recipe (:host github :repo "lizqwerscott/mcp.el")
+ ;;   :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
 
   (package! org-roam-ui)
   (package! consult-flyspell))
