@@ -42,6 +42,24 @@ let
       echo "0"
     fi
   '';
+
+  speaker-toggle = pkgs.writeShellScriptBin "speaker-toggle" ''
+    #!${pkgs.runtimeShell}
+    if ${pkgs.alsa-utils}/bin/amixer -D pipewire get Master | grep -q '\[off\]'; then
+      ${pkgs.alsa-utils}/bin/amixer -D pipewire set Master unmute
+    else
+      ${pkgs.alsa-utils}/bin/amixer -D pipewire set Master mute
+    fi
+  '';
+
+  mic-toggle = pkgs.writeShellScriptBin "mic-toggle" ''
+    #!${pkgs.runtimeShell}
+    if ${pkgs.alsa-utils}/bin/amixer -D pipewire get Capture | grep -q '\[off\]'; then
+      ${pkgs.alsa-utils}/bin/amixer -D pipewire set Capture cap
+    else
+      ${pkgs.alsa-utils}/bin/amixer -D pipewire set Capture nocap
+    fi
+  '';
 in
 {
   options.modules.hardware.pipewire = {
@@ -76,9 +94,11 @@ in
           speaker-mute
           speaker-unmute
           speaker-get-mute
+          speaker-toggle
           mic-mute
           mic-unmute
           mic-get-mute
+          mic-toggle
         ];
 
         xdg.configFile."pipewire/pipewire.conf.d/99-deepfilternet.conf" = lib.mkIf cfg.denoise.enable {
