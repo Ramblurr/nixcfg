@@ -61,3 +61,7 @@ window-rule {
     match app-id=r#"^jwm-.*$"#
     open-on-workspace "scratch"
 }
+window-rule {
+    match title="niri"
+    open-on-workspace "scratch"
+}
