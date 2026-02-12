@@ -37,6 +37,7 @@ in
   inherit (nixpkgs-mine) _1password-gui;
   inherit (nixpkgs-mine) _1password-cli;
   inherit (nixpkgs-mine) obs-cmd;
+  inherit (nixpkgs-mine) graphene-django;
   sops = nixpkgs-mine.sops.withAgePlugins (p: [
     p.age-plugin-fido2-hmac
     p.age-plugin-yubikey
