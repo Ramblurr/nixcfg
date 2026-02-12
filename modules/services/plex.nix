@@ -51,6 +51,11 @@ in
       "tank/encrypted/svc/plex"."com.sun:auto-snapshot" = "false";
     };
 
+    systemd.tmpfiles.rules = [
+      "d /mnt/plex-tmp 750 ${cfg.user.name} ${cfg.group.name}"
+    ];
+
+    systemd.services.plex.environment.PLEX_MEDIA_SERVER_TMPDIR = lib.mkForce "/mnt/plex-tmp";
     systemd.services.plex.serviceConfig = {
       LockPersonality = true;
       NoNewPrivileges = true;
@@ -58,19 +63,6 @@ in
         "char-drm rw"
         "/dev/dri rwm"
       ];
-      #PrivateUsers = true;
-      #PrivateTmp = true;
-      #ProtectClock = true;
-      #ProtectControlGroups = true;
-      #ProtectHostname = true;
-      #ProtectKernelLogs = true;
-      #ProtectKernelModules = true;
-      #ProtectKernelTunables = true;
-      #ProtectProc = "invisible";
-      #ProtectSystem = "full";
-      #RestrictRealtime = true;
-      #RestrictSUIDSGID = true;
-      #SystemCallArchitectures = "native";
     };
     systemd.services.plex.after = serviceDeps;
     systemd.services.plex.bindsTo = serviceDeps;
