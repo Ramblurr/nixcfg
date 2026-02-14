@@ -11,8 +11,8 @@ let
   src = fetchFromGitHub {
     owner = "licht1stein";
     repo = "brepl";
-    rev = "v2.6.3";
-    hash = "sha256-1r+7DQcfOSD9gaBE3Hu961Se5lUqxIHPzF4E2NaNl/E=";
+    rev = "v2.7.0";
+    hash = "sha256-eTQS5LvAOLvx46YS6V/2+bYkWSELTTwZ1ir77eLk99M=";
   };
   pkg = callPackage (src + "/package.nix") { };
 in
