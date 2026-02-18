@@ -194,7 +194,7 @@ in
             http3 = service.http3.enable;
             http2 = false;
             quic = service.http3.enable;
-            root = service.root;
+            inherit (service) root;
             locations = {
               "/" =
                 let

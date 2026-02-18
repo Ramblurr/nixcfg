@@ -1,17 +1,18 @@
 # Living life on unstable can sometimes be... unstable
 # This overlay is a way to pin down a known-good version of nixpkgs for certain packages
-final: prev:
+_final: prev:
 
 let
   nixpkgs =
-    args@{ rev, sha256 }:
+    #args@{ rev, sha256 }:
+    args:
     import (prev.fetchFromGitHub (
       args
       // {
         owner = "NixOS";
         repo = "nixpkgs";
       }
-    )) { system = prev.stdenv.hostPlatform.system; };
+    )) { inherit (prev.stdenv.hostPlatform) system; };
 in
 {
   inherit
