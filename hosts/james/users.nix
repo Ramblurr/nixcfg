@@ -27,8 +27,8 @@ let
 
   mkDeployUser = username: attrs: {
     inherit username;
-    uid = attrs.uid;
-    gid = attrs.gid;
+    inherit (attrs) uid;
+    inherit (attrs) gid;
     homeDirectory = "/var/lib/${username}";
     extraGroups = attrs.extraGroups or [ ];
     authorizedKeys = attrs.authorizedKeys or [ ];

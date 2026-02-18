@@ -14,7 +14,7 @@ let
   deployUser = personal2;
   deployUserCfg = config.modules.users.deploy-users.${deployUser};
   domain = deployUser;
-  homeDirectory = deployUserCfg.homeDirectory;
+  inherit (deployUserCfg) homeDirectory;
   #runtimeDirectory = "${deployUserCfg.runtimeDirectory}";
   socketPath = "${homeDirectory}/.run/site.sock";
 in

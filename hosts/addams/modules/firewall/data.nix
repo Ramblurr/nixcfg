@@ -255,7 +255,7 @@ let
       from = [ zones.vpn ];
       to = [ zones.mullvad ];
       extraLines = [
-        ''counter accept''
+        "counter accept"
       ];
     };
 

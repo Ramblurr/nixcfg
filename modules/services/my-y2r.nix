@@ -1,16 +1,14 @@
 {
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.services.my-y2r;
   inherit (config.repo.secrets) home-ops;
   dataDir = "/var/lib/y2r";
-  user = config.modules.services.y2r.user;
-  group = config.modules.services.y2r.group;
+  inherit (config.modules.services.y2r) user;
+  inherit (config.modules.services.y2r) group;
 in
 {
   options.modules.services.my-y2r = {
