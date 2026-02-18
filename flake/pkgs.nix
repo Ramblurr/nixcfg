@@ -1,23 +1,5 @@
 { inputs, ... }:
 {
-  imports = [
-    (
-      { lib, flake-parts-lib, ... }:
-      flake-parts-lib.mkTransposedPerSystemModule {
-        name = "pkgs";
-        file = ./pkgs.nix;
-        option = lib.mkOption { type = lib.types.unspecified; };
-      }
-    )
-    (
-      { lib, flake-parts-lib, ... }:
-      flake-parts-lib.mkTransposedPerSystemModule {
-        name = "pkgs-lib";
-        file = ./pkgs.nix;
-        option = lib.mkOption { type = lib.types.unspecified; };
-      }
-    )
-  ];
   perSystem =
     { pkgs, system, ... }:
     let
@@ -46,8 +28,6 @@
         overlays = ourOverlays ++ [ inputs.nixos-extra-modules.overlays.default ];
       };
 
-      inherit pkgs;
-
       # Export packages for flake consumers
       packages =
         # Export each package that exists in pkgs
@@ -71,7 +51,5 @@
       # to all packages with your overlays applied)
       legacyPackages = pkgs;
 
-      # Export pkgs-lib utilities
-      pkgs-lib = pkgs.callPackage ../lib/pkgs.nix { flake-inputs = inputs; };
     };
 }
