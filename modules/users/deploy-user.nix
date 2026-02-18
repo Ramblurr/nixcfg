@@ -48,6 +48,11 @@ in
                 default = [ ];
                 description = "Extra groups for the deploy user.";
               };
+              authorizedKeys = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = "Authorized SSH public keys for this deploy user.";
+              };
               uid = lib.mkOption {
                 type = lib.types.nullOr lib.types.int;
                 description = "The UID for the deploy user.";
@@ -88,6 +93,7 @@ in
         createHome = true;
         group = cfg.username;
         extraGroups = [ "systemd-journal" ] ++ cfg.extraGroups;
+        openssh.authorizedKeys.keys = cfg.authorizedKeys;
       }
     ) cfg;
 

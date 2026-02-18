@@ -63,8 +63,8 @@ in
     };
     locations."/" = {
       extraConfig = ''
-        rewrite ^(.+)/$ /$1 break;
-        try_files $uri $uri/ $uri.html =404;
+        rewrite ^(.+)/$ $1 break;
+        try_files $uri $uri.html $uri/index.html $uri/ =404;
         expires 30m;
         add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
       '';
