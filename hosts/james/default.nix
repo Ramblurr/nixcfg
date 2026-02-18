@@ -6,7 +6,6 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
-  inherit (config.repo.secrets.global) ciSigningPublicKey;
 in
 {
   imports = [
@@ -17,6 +16,7 @@ in
     ../../config/hetzner-cloud-ccx.nix
     ./ingress.nix
     ./web.nix
+    ./web/hook.nix
     ./web/work.nix
     ./web/work-docs.nix
     ./web/personal.nix
