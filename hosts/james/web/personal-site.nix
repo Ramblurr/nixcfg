@@ -11,21 +11,14 @@ let
     ;
   inherit (config.repo.secrets.local) atprotoDid;
   codeLink = config.repo.secrets.global.code;
-  domain = personal2;
-  homeDirectory = "/var/lib/${personal2}";
-  #runtimeDirectory = "${config.modules.users.deploy-users.${personal2}.runtimeDirectory}";
+  deployUser = personal2;
+  deployUserCfg = config.modules.users.deploy-users.${deployUser};
+  domain = deployUser;
+  homeDirectory = deployUserCfg.homeDirectory;
+  #runtimeDirectory = "${deployUserCfg.runtimeDirectory}";
   socketPath = "${homeDirectory}/.run/site.sock";
 in
 {
-  modules.users.deploy-users.${personal2} = {
-    username = personal2;
-    uid = 993;
-    gid = 991;
-    inherit homeDirectory;
-    homeDirectoryOnZfs.enable = true;
-    homeDirectoryOnZfs.datasetName = "rpool/encrypted/safe/svc/${personal2}";
-  };
-
   security.acme.certs.${domain} = {
     domain = "${domain}";
     extraDomainNames = [
@@ -33,11 +26,11 @@ in
       "code.${domain}"
     ];
   };
-  users.users.nginx.extraGroups = [ personal2 ];
+  users.users.nginx.extraGroups = [ deployUser ];
   systemd.services.nginx.serviceConfig = {
     ProtectHome = "tmpfs";
     BindReadOnlyPaths = [
-      "/var/lib/${personal2}/.run"
+      "${homeDirectory}/.run"
     ];
   };
   services.nginx.virtualHosts.${domain} = {
