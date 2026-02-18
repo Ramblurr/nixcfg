@@ -2,7 +2,6 @@
   inputs,
   self,
   lib,
-  config,
   ...
 }:
 
@@ -94,7 +93,7 @@ let
 
       specialArgs = {
         inherit inputs self;
-        inherit (config) nodes;
+        nodes = { };
         inherit actual-nixpkgs;
         unstable = nixpkgs-unstable;
         inherit (nixpkgs') lib;
@@ -120,7 +119,7 @@ let
       specialArgs = {
         # Use the correct instance lib that has our overlays
         inherit (pkgs) lib;
-        inherit (config) nodes;
+        nodes = { };
         inherit inputs;
         inherit (inputs) nixpkgs;
       };
