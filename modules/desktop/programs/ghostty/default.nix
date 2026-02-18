@@ -20,21 +20,38 @@ in
         home.packages = [ pkgs.ghostty ];
         programs.ghostty = {
           enable = true;
-          settings = {
-            font-family = ''"${termFont.name}"'';
-            font-size = termFont.size;
-            theme = "Gruvbox Dark Hard";
-            background-opacity = 1.0;
-            adjust-cell-height = "10%";
-            font-style = "auto";
-            font-thicken = true;
-            window-decoration = false;
-            font-feature = [
-              "calt"
-              "dlig"
-              "zero"
-            ];
-          };
+          settings =
+            (
+              if termFont.name == "Berkeley Mono" then
+                {
+                  font-family = "Berkeley Mono";
+                  font-style = "ExtraCondensed";
+                  font-size = 12.0;
+                  font-feature = [
+                    "+calt"
+                    "+ss02"
+                  ];
+                }
+              else
+                {
+                  font-family = ''"${termFont.name}"'';
+                  font-size = termFont.size;
+                  font-feature = [
+                    "calt"
+                    "dlig"
+                    "zero"
+                  ];
+                  font-style = "auto";
+                  font-thicken = true;
+                  adjust-cell-height = "10%";
+                }
+            )
+            // {
+              theme = "Gruvbox Dark Hard";
+              background-opacity = 1.0;
+              window-decoration = false;
+
+            };
         };
       };
   };

@@ -57,6 +57,7 @@ in
         enable = true;
       };
       home.packages = with pkgs; [
+        mani
         ghq
         sprite-bin
         inputs.spdx-util.packages.${pkgs.stdenv.hostPlatform.system}.default
