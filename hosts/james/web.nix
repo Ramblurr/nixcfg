@@ -42,7 +42,7 @@ in
   systemd.tmpfiles.rules = [
     "z '/var/lib/static-web' 751 nginx nginx - -"
     "d '/var/lib/static-web' 750 nginx nginx - -"
-    "Z '/var/lib/static-web' 750 nginx nginx - -"
+    # Do not recurse ownership here; site trees can be owned by per-site deploy users.
   ];
 
   services.nginx = {

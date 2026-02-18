@@ -6,7 +6,6 @@
 }:
 let
   cfg = config.hosts.james.webhooks;
-  serviceName = "webhook-${cfg.serviceName}";
   hookType = lib.types.submodule (
     { name, ... }:
     {
@@ -26,64 +25,135 @@ let
             If unset, hosts.james.webhooks.secretsFile is used.
           '';
         };
+
+        user = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Optional per-hook systemd user.
+            If unset, hosts.james.webhooks.user is used.
+          '';
+        };
+
+        group = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Optional per-hook systemd group.
+            If unset, hosts.james.webhooks.group is used.
+          '';
+        };
+
+        socketPath = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = ''
+            Optional per-hook Unix socket path.
+            If unset, a deterministic path is generated in hosts.james.webhooks.socketDirectory.
+          '';
+        };
+
+        extraPath = lib.mkOption {
+          type = lib.types.listOf lib.types.package;
+          default = [ ];
+          description = "Extra packages added to this hook service PATH.";
+        };
       };
     }
   );
-  hooks = builtins.attrValues cfg.hooks;
-  hookSecrets = map (
-    hook:
+
+  sanitizeHookId = hookId: lib.strings.sanitizeDerivationName hookId;
+
+  mkHookEntry =
+    name: hook:
     let
       resolvedSecretsFile = if hook.secretsFile == null then cfg.secretsFile else hook.secretsFile;
+      hookId = hook.id;
+      safeId = sanitizeHookId hookId;
+      serviceBaseName = "webhook-${cfg.serviceName}-${safeId}";
     in
     {
-      inherit hook;
-      missing = resolvedSecretsFile == null;
+      inherit
+        name
+        hook
+        hookId
+        safeId
+        ;
+      missingSecretsFile = resolvedSecretsFile == null;
       secretsFile = if resolvedSecretsFile == null then "__missing__" else resolvedSecretsFile;
-    }
-  ) hooks;
-  missingHookIds = map (x: x.hook.id) (lib.filter (x: x.missing) hookSecrets);
+      serviceName = serviceBaseName;
+      serviceUnit = "${serviceBaseName}.service";
+      socketPath =
+        if hook.socketPath != null then
+          hook.socketPath
+        else
+          "${cfg.socketDirectory}/github-${cfg.serviceName}-${safeId}.sock";
+      user = if hook.user == null then cfg.user else hook.user;
+      group = if hook.group == null then cfg.group else hook.group;
+      extraPath = cfg.extraPath ++ hook.extraPath ++ [ pkgs.coreutils ];
+    };
+
+  hookEntriesByName = lib.mapAttrs mkHookEntry cfg.hooks;
+  hookEntries = builtins.attrValues hookEntriesByName;
+
+  countBy = xs: lib.foldl' (acc: x: acc // { ${x} = (acc.${x} or 0) + 1; }) { } xs;
+  hookIds = map (hookEntry: hookEntry.hookId) hookEntries;
+  duplicateHookIds = lib.attrNames (lib.filterAttrs (_: count: count > 1) (countBy hookIds));
+  missingHookIds = map (hookEntry: hookEntry.hookId) (
+    lib.filter (hookEntry: hookEntry.missingSecretsFile) hookEntries
+  );
+
   secretToken = secretsFile: builtins.substring 0 12 (builtins.hashString "sha256" secretsFile);
   secretEnvVar = secretsFile: "WEBHOOK_SECRET_" + secretToken secretsFile;
   secretCredential = secretsFile: "WEBHOOK_SECRET_FILE_" + secretToken secretsFile;
   secretPlaceholder = secretsFile: "WEBHOOK_SECRET_PLACEHOLDER_" + secretToken secretsFile;
-  secretFiles = lib.unique (map (x: x.secretsFile) (lib.filter (x: !x.missing) hookSecrets));
-  renderedHooks = map (
-    hookSecret:
+
+  mkHookConfig =
+    hookEntry:
     let
-      inherit (hookSecret) secretsFile;
-      hookAttrs = builtins.removeAttrs hookSecret.hook [ "secretsFile" ];
+      hookAttrs = builtins.removeAttrs hookEntry.hook [
+        "secretsFile"
+        "user"
+        "group"
+        "socketPath"
+        "extraPath"
+      ];
       signatureRule = {
         match = {
           type = cfg.signatureType;
-          secret = secretPlaceholder secretsFile;
+          secret = secretPlaceholder hookEntry.secretsFile;
           parameter = {
             source = "header";
             name = cfg.signatureHeader;
           };
         };
       };
+      renderedHook = hookAttrs // {
+        trigger-rule =
+          if hookAttrs ? trigger-rule then
+            {
+              and = [
+                signatureRule
+                hookAttrs.trigger-rule
+              ];
+            }
+          else
+            signatureRule;
+      };
+      hookConfig = builtins.toJSON [ renderedHook ];
     in
-    hookAttrs
-    // {
-      trigger-rule =
-        if hookAttrs ? trigger-rule then
-          {
-            and = [
-              signatureRule
-              hookAttrs.trigger-rule
-            ];
-          }
-        else
-          signatureRule;
-    }
-  ) hookSecrets;
-  secretExports = lib.concatMapStringsSep "\n" (secretsFile: ''
-    export ${secretEnvVar secretsFile}="$(cat "$CREDENTIALS_DIRECTORY/${secretCredential secretsFile}")"
-  '') secretFiles;
-  hookConfig = pkgs.writeText "hook-config.json" (
-    builtins.replaceStrings (map secretPlaceholder secretFiles) (map (
-      secretsFile: ''{{ getenv "${secretEnvVar secretsFile}" | js }}''
-    ) secretFiles) (builtins.toJSON renderedHooks)
+    pkgs.writeText "hook-config-${hookEntry.safeId}.json" (
+      builtins.replaceStrings
+        [ (secretPlaceholder hookEntry.secretsFile) ]
+        [ ''{{ getenv "${secretEnvVar hookEntry.secretsFile}" | js }}'' ]
+        hookConfig
+    );
+
+  hookSocketPaths = lib.listToAttrs (
+    map (hookEntry: lib.nameValuePair hookEntry.hookId hookEntry.socketPath) hookEntries
+  );
+  hookServiceNames = lib.listToAttrs (
+    map (hookEntry: lib.nameValuePair hookEntry.hookId hookEntry.serviceUnit) hookEntries
   );
 in
 {
@@ -96,10 +166,10 @@ in
       description = "Suffix for the systemd unit name.";
     };
 
-    socketPath = lib.mkOption {
+    socketDirectory = lib.mkOption {
       type = lib.types.str;
-      default = "/var/run/nginx/github-hook.sock";
-      description = "Unix socket path for the webhook server.";
+      default = "/var/run/nginx";
+      description = "Directory used for generated per-hook Unix sockets.";
     };
 
     urlPrefix = lib.mkOption {
@@ -148,6 +218,18 @@ in
       '';
     };
 
+    hookSocketPaths = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      readOnly = true;
+      description = "Computed map of hook id -> Unix socket path.";
+    };
+
+    hookServiceNames = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      readOnly = true;
+      description = "Computed map of hook id -> systemd service unit name.";
+    };
+
     extraPath = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
@@ -168,29 +250,43 @@ in
           Missing secretsFile for hooks: ${builtins.concatStringsSep ", " missingHookIds}
         '';
       }
+      {
+        assertion = duplicateHookIds == [ ];
+        message = ''
+          Hook ids must be unique across hosts.james.webhooks.hooks.
+          Duplicate ids: ${builtins.concatStringsSep ", " duplicateHookIds}
+        '';
+      }
     ];
 
-    systemd.services.${serviceName} = {
-      description = "Webhook listener (${cfg.serviceName})";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
-      script = ''
-        ${secretExports}
-        exec ${pkgs.webhook}/bin/webhook \
-          -urlprefix ${cfg.urlPrefix} \
-          -template \
-          -hooks ${hookConfig} \
-          -verbose \
-          -socket ${cfg.socketPath}
-      '';
-      restartIfChanged = true;
-      serviceConfig = {
-        LoadCredential = map (secretsFile: "${secretCredential secretsFile}:${secretsFile}") secretFiles;
-        Restart = "always";
-        User = cfg.user;
-        Group = cfg.group;
-      };
-      path = cfg.extraPath ++ [ pkgs.coreutils ];
-    };
+    hosts.james.webhooks.hookSocketPaths = hookSocketPaths;
+    hosts.james.webhooks.hookServiceNames = hookServiceNames;
+
+    systemd.services = lib.mapAttrs' (
+      _name: hookEntry:
+      lib.nameValuePair hookEntry.serviceName {
+        description = "Webhook listener (${cfg.serviceName}/${hookEntry.hookId})";
+        after = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        script = ''
+          export ${secretEnvVar hookEntry.secretsFile}="$(cat "$CREDENTIALS_DIRECTORY/${secretCredential hookEntry.secretsFile}")"
+          exec ${pkgs.webhook}/bin/webhook \
+            -urlprefix ${cfg.urlPrefix} \
+            -template \
+            -hooks ${mkHookConfig hookEntry} \
+            -verbose \
+            -socket ${hookEntry.socketPath}
+        '';
+        restartIfChanged = true;
+        serviceConfig = {
+          LoadCredential = [ "${secretCredential hookEntry.secretsFile}:${hookEntry.secretsFile}" ];
+          Restart = "always";
+          User = hookEntry.user;
+          Group = hookEntry.group;
+          UMask = "0007";
+        };
+        path = hookEntry.extraPath;
+      }
+    ) hookEntriesByName;
   };
 }

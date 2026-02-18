@@ -11,10 +11,11 @@ let
     ;
   inherit (config.repo.secrets.global.domain) home work work2;
   domain = work;
+  hookId = "deploy-${domain}";
+  hookSocketPath = config.hosts.james.webhooks.hookSocketPaths.${hookId};
   sitePath = "/var/lib/static-web/${domain}";
   rootPath = "${sitePath}/www";
-  socketPath = "/var/run/nginx/github-work-hook.sock";
-  webhookService = "webhook-work-site.service";
+  webhookService = config.hosts.james.webhooks.hookServiceNames.${hookId};
 in
 {
   security.acme.certs.${domain} = {
@@ -64,7 +65,7 @@ in
       add_header Alt-Svc 'h3=":443"; ma=86400';
     '';
     locations."/_deploy" = {
-      proxyPass = "http://unix:${socketPath}";
+      proxyPass = "http://unix:${hookSocketPath}";
     };
     locations."= /.well-known/carddav".extraConfig = ''
       return 301 https://dav.${home}/dav/;
@@ -104,11 +105,10 @@ in
   hosts.james.webhooks = {
     enable = true;
     serviceName = "work-site";
-    inherit socketPath;
     urlPrefix = "_deploy";
     secretsFile = config.sops.secrets.webhook-github-work-secret.path;
     hooks = {
-      "deploy-${domain}" = {
+      ${hookId} = {
         execute-command = pkgs.writeScript "work-deploy.sh" ''
           #!${pkgs.bash}/bin/bash
           set -euo pipefail
