@@ -14,6 +14,7 @@ let
   sitePath = "/var/lib/static-web/${domain}";
   rootPath = "${sitePath}/www";
   socketPath = "/var/run/nginx/github-work-hook.sock";
+  webhookService = "webhook-work-site.service";
 in
 {
   security.acme.certs.${domain} = {
@@ -96,81 +97,45 @@ in
       '';
   };
 
-  # Why am I not using services.webhook? Because it only lets you set one instance, and i need multiple with different users.
   sops.secrets.webhook-github-work-secret = {
-    restartUnits = [ "webhook-work-site.service" ];
+    restartUnits = [ webhookService ];
   };
-  systemd.services.webhook-work-site =
-    let
-      deployScript = pkgs.writeScript "work-deploy.sh" ''
-        #!${pkgs.bash}/bin/bash
-        set -euo pipefail
-        TEMP_DIR=$(${pkgs.coreutils}/bin/mktemp -d)
-        trap 'rm -rf "$TEMP_DIR"' EXIT
-        ${pkgs.git}/bin/git clone ${git.work} "$TEMP_DIR"
-        OLD_PATH="${rootPath}.$(date +%Y%m%d%H%M%S)"
-        mv ${rootPath} "$OLD_PATH"
-        mv "$TEMP_DIR/site/" ${rootPath}
 
-        # clean up old backups (keep last 5)
-        ${pkgs.findutils}/bin/find . -name "$(basename ${rootPath}).*" -type d | sort | head -n -5 | ${pkgs.findutils}/bin/xargs -r rm -rf
-      '';
-      hookConfig = pkgs.writeText "hook-work2.json" (
-        builtins.replaceStrings [ "WEBHOOK_SECRET_PLACEHOLDER" ] [ ''{{ getenv "WEBHOOK_SECRET" | js }}'' ]
-          (
-            builtins.toJSON [
-              {
-                id = "deploy-${domain}";
-                execute-command = deployScript;
-                command-working-directory = sitePath;
-                response-message = "Deploying...";
-                trigger-rule = {
-                  and = [
-                    {
-                      match = {
-                        type = "payload-hmac-sha1";
-                        secret = "WEBHOOK_SECRET_PLACEHOLDER";
-                        parameter = {
-                          source = "header";
-                          name = "X-Hub-Signature";
-                        };
-                      };
-                    }
-                    {
-                      match = {
-                        type = "value";
-                        value = "refs/heads/main";
-                        parameter = {
-                          source = "payload";
-                          name = "ref";
-                        };
-                      };
-                    }
-                  ];
-                };
-              }
-            ]
-          )
-      );
-    in
-    {
-      description = "Webhook for Deploying ${domain}";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
-      script = ''
-        export WEBHOOK_SECRET=$(cat "$CREDENTIALS_DIRECTORY/WEBHOOK_SECRET_FILE")
-        exec  ${pkgs.webhook}/bin/webhook -urlprefix _deploy -template -hooks ${hookConfig} -verbose -socket ${socketPath}
-      '';
-      restartIfChanged = true;
-      serviceConfig = {
-        LoadCredential = [ "WEBHOOK_SECRET_FILE:${config.sops.secrets.webhook-github-work-secret.path}" ];
-        Restart = "always";
-        User = "nginx";
-        Group = "nginx";
+  hosts.james.webhooks = {
+    enable = true;
+    serviceName = "work-site";
+    inherit socketPath;
+    urlPrefix = "_deploy";
+    secretsFile = config.sops.secrets.webhook-github-work-secret.path;
+    hooks = {
+      "deploy-${domain}" = {
+        execute-command = pkgs.writeScript "work-deploy.sh" ''
+          #!${pkgs.bash}/bin/bash
+          set -euo pipefail
+          TEMP_DIR=$(${pkgs.coreutils}/bin/mktemp -d)
+          trap 'rm -rf "$TEMP_DIR"' EXIT
+          ${pkgs.git}/bin/git clone ${git.work} "$TEMP_DIR"
+          OLD_PATH="${rootPath}.$(date +%Y%m%d%H%M%S)"
+          mv ${rootPath} "$OLD_PATH"
+          mv "$TEMP_DIR/site/" ${rootPath}
+
+          # clean up old backups (keep last 5)
+          ${pkgs.findutils}/bin/find . -name "$(basename ${rootPath}).*" -type d | sort | head -n -5 | ${pkgs.findutils}/bin/xargs -r rm -rf
+        '';
+        command-working-directory = sitePath;
+        response-message = "Deploying...";
+        trigger-rule = {
+          match = {
+            type = "value";
+            value = "refs/heads/main";
+            parameter = {
+              source = "payload";
+              name = "ref";
+            };
+          };
+        };
       };
-      path = [
-        pkgs.coreutils
-      ];
     };
+  };
 
 }

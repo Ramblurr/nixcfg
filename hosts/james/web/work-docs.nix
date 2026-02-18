@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   ...
 }:
 
@@ -12,8 +13,22 @@ let
   sitePath = "/var/lib/static-web/${domain}/docs";
   bootstrapPath = "${sitePath}/bootstrap";
   rootPath = "${sitePath}/current";
+  hookSocketPath = config.hosts.james.webhooks.socketPath;
+  docsWebhookSecretFile = config.sops.secrets.webhook-github-docs-secret.path;
+  webhookService = "webhook-work-site.service";
+  docsHookScript = pkgs.writeScript "work-docs-hook.sh" ''
+    #!${pkgs.bash}/bin/bash
+    set -euo pipefail
+    repo="''${1:-unknown}"
+    ref="''${2:-unknown}"
+    echo "work-docs webhook matched for $repo at $ref"
+  '';
 in
 {
+  sops.secrets.webhook-github-docs-secret = {
+    restartUnits = [ webhookService ];
+  };
+
   security.acme.certs.${docsDomain} = {
     domain = docsDomain;
   };
@@ -69,6 +84,9 @@ in
         add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
       '';
     };
+    locations."/_deploy" = {
+      proxyPass = "http://unix:${hookSocketPath}";
+    };
     locations."~* \\.(?:html|css|js|json|xml|txt|md)$" = {
       extraConfig = ''
         expires 30m;
@@ -80,6 +98,59 @@ in
         expires 30d;
         add_header Cache-Control "public, no-transform, max-age=2592000, must-revalidate" always;
       '';
+    };
+  };
+
+  hosts.james.webhooks.hooks = {
+    update-docs = {
+      secretsFile = docsWebhookSecretFile;
+      execute-command = docsHookScript;
+      command-working-directory = sitePath;
+      response-message = "docs webhook accepted";
+      trigger-rule = {
+        and = [
+          {
+            match = {
+              type = "value";
+              value = "push";
+              parameter = {
+                source = "header";
+                name = "X-GitHub-Event";
+              };
+            };
+          }
+          {
+            match = {
+              type = "regex";
+              regex = "^refs/(heads/main|heads/v[0-9].*|tags/v.*)$";
+              parameter = {
+                source = "payload";
+                name = "ref";
+              };
+            };
+          }
+          {
+            match = {
+              type = "regex";
+              regex = "^outskirtslabs/.+";
+              parameter = {
+                source = "payload";
+                name = "repository.full_name";
+              };
+            };
+          }
+        ];
+      };
+      pass-arguments-to-command = [
+        {
+          source = "payload";
+          name = "repository.full_name";
+        }
+        {
+          source = "payload";
+          name = "ref";
+        }
+      ];
     };
   };
 }
