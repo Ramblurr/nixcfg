@@ -61,6 +61,11 @@ in
                 readOnly = true;
                 description = "The runtime directory for the deploy user.";
               };
+              homeManager.enable = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Whether to manage this deploy user's home with Home Manager.";
+              };
             };
             config = {
               runtimeDirectory = "/run/user/${toString config.uid}";
@@ -124,7 +129,7 @@ in
     );
 
     home-manager.users = lib.mapAttrs' (
-      name: cfg:
+      name: userCfg:
       lib.nameValuePair name (
         {
           pkgs,
@@ -142,7 +147,7 @@ in
               assertion = uid != null && uid != "";
             }
           ];
-          home.homeDirectory = cfg.homeDirectory;
+          home.homeDirectory = userCfg.homeDirectory;
           home.sessionVariables = {
             EDITOR = "vim";
             DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${uid}/bus";
@@ -160,6 +165,6 @@ in
           ];
         }
       )
-    ) cfg;
+    ) (lib.filterAttrs (_name: userCfg: userCfg.homeManager.enable) cfg);
   };
 }

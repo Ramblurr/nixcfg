@@ -14,10 +14,11 @@ let
       gid = 991;
     };
     ${docsDomain} = {
-      uid = 994;
-      gid = 992;
+      uid = 1994;
+      gid = 1992;
       extraGroups = [ "nginx" ];
       authorizedKeys = true;
+      homeManager.enable = false;
     };
   };
 
