@@ -10,6 +10,7 @@ let
   deployUser = docsDomain;
   deployUserCfg = config.modules.users.deploy-users.${deployUser};
   sitePath = "/var/lib/static-web/${domain}/docs";
+  bootstrapPath = "${sitePath}/bootstrap";
   rootPath = "${sitePath}/current";
 in
 {
@@ -19,7 +20,26 @@ in
 
   systemd.tmpfiles.rules = [
     "d '${sitePath}' 0750 ${deployUserCfg.username} nginx - -"
+    "d '${bootstrapPath}' 0750 ${deployUserCfg.username} nginx - -"
+    "d '${bootstrapPath}/.etc' 0750 ${deployUserCfg.username} nginx - -"
+    "d '${bootstrapPath}/.etc/nginx' 0750 ${deployUserCfg.username} nginx - -"
+    "f '${bootstrapPath}/.etc/nginx/rewrite.conf' 0640 ${deployUserCfg.username} nginx - -"
+    "L '${rootPath}' - - - - ${bootstrapPath}"
   ];
+  system.activationScripts.docsSiteNginxBootstrap.text = ''
+    install -d -m 0750 -o ${deployUserCfg.username} -g nginx '${sitePath}'
+    install -d -m 0750 -o ${deployUserCfg.username} -g nginx '${bootstrapPath}'
+    install -d -m 0750 -o ${deployUserCfg.username} -g nginx '${bootstrapPath}/.etc'
+    install -d -m 0750 -o ${deployUserCfg.username} -g nginx '${bootstrapPath}/.etc/nginx'
+
+    if [ ! -e '${bootstrapPath}/.etc/nginx/rewrite.conf' ]; then
+      install -m 0640 -o ${deployUserCfg.username} -g nginx /dev/null '${bootstrapPath}/.etc/nginx/rewrite.conf'
+    fi
+
+    if [ ! -e '${rootPath}' ]; then
+      ln -s '${bootstrapPath}' '${rootPath}'
+    fi
+  '';
 
   services.nginx.virtualHosts.${docsDomain} = {
     useACMEHost = docsDomain;
@@ -49,7 +69,7 @@ in
         add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
       '';
     };
-    locations."~* \\.(?:html|css|js|json|xml|txt)$" = {
+    locations."~* \\.(?:html|css|js|json|xml|txt|md)$" = {
       extraConfig = ''
         expires 30m;
         add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
