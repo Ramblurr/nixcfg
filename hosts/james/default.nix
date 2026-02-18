@@ -12,11 +12,13 @@ in
   imports = [
     ./disk-config.nix
     ./hardware.nix
+    ./users.nix
     ../../config/offsite.nix
     ../../config/hetzner-cloud-ccx.nix
     ./ingress.nix
     ./web.nix
     ./web/work.nix
+    ./web/work-docs.nix
     ./web/personal.nix
     ./web/personal-site.nix
     ./web/personals.nix
