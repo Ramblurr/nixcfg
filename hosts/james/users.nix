@@ -7,17 +7,20 @@
 let
   inherit (config.repo.secrets.global.domain) personal2 work;
   docsDomain = "docs.${work}";
+  authorizedKeys = config.repo.secrets.global.pubKeys;
 
   deployUsers = {
     ${personal2} = {
+      inherit authorizedKeys;
       uid = 993;
       gid = 991;
+      homeManager.enable = true;
     };
     ${docsDomain} = {
+      inherit authorizedKeys;
       uid = 1994;
       gid = 1992;
       extraGroups = [ "nginx" ];
-      authorizedKeys = true;
       homeManager.enable = false;
     };
   };
@@ -28,21 +31,12 @@ let
     gid = attrs.gid;
     homeDirectory = "/var/lib/${username}";
     extraGroups = attrs.extraGroups or [ ];
+    authorizedKeys = attrs.authorizedKeys or [ ];
     homeDirectoryOnZfs.enable = true;
     homeDirectoryOnZfs.datasetName = "rpool/encrypted/safe/svc/${username}";
+    homeManager.enable = attrs.homeManager.enable;
   };
-
-  authorizedKeysText = builtins.concatStringsSep "\n" config.repo.secrets.global.pubKeys + "\n";
 in
 {
   modules.users.deploy-users = lib.mapAttrs mkDeployUser deployUsers;
-
-  environment.etc = lib.mkMerge (
-    lib.mapAttrsToList (
-      username: attrs:
-      lib.optionalAttrs (attrs.authorizedKeys or false) {
-        "ssh/authorized_keys.d/${username}".text = authorizedKeysText;
-      }
-    ) deployUsers
-  );
 }
