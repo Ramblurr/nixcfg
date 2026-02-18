@@ -131,7 +131,7 @@ let
         commentComponent
       ];
     in
-    ''${lib.concatStringsSep " " ruleComponents}'';
+    "${lib.concatStringsSep " " ruleComponents}";
 
   # Converts a list of set rules using setRule, but if a member of rules is a string, passes it through unharmed
   mkRules = rules: map (rule: if builtins.isString rule then rule else setRule rule) rules;

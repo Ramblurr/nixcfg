@@ -35,7 +35,7 @@ in
         };
         Service = {
           Type = "simple";
-          ExecStart = ''${pkgs.zellij}/bin/zellij web --start --ip ${cfg.web.ip} --port ${toString cfg.web.port}'';
+          ExecStart = "${pkgs.zellij}/bin/zellij web --start --ip ${cfg.web.ip} --port ${toString cfg.web.port}";
           Restart = "on-failure";
           RestartSec = 2;
         };

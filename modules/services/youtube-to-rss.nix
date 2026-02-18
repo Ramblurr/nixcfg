@@ -12,7 +12,7 @@ let
   appYaml = pkgs.writeText "app.yaml" (
     builtins.toJSON {
       site = {
-        host = cfg.settings.host;
+        inherit (cfg.settings) host;
         document_root = cfg.settings.documentRoot;
       };
       defaults = {
@@ -183,7 +183,7 @@ in
     users.users = lib.mkIf (cfg.user == "y2r") {
       y2r = {
         isSystemUser = true;
-        group = cfg.group;
+        inherit (cfg) group;
         home = cfg.settings.documentRoot;
       };
     };

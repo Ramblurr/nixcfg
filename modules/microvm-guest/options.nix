@@ -43,7 +43,7 @@ in
       credentialHostPath = mkOption {
         type = types.str;
         default = "/run/secrets/microvm-${hostName}-sops-key";
-        description = '''';
+        description = "";
       };
     };
     writableStoreOverlay.enable = mkOption {

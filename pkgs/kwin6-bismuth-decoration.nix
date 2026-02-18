@@ -4,13 +4,13 @@
   fetchFromGitHub,
   stdenv,
   pkgs,
-#, kdePackages
-#, kcoreaddons
-#, kwindowsystem
-#, plasma-framework
-#, systemsettings
-#, cmake
-#, extra-cmake-modules
+  #, kdePackages
+  #, kcoreaddons
+  #, kwindowsystem
+  #, plasma-framework
+  #, systemsettings
+  #, cmake
+  #, extra-cmake-modules
 }:
 
 stdenv.mkDerivation rec {
