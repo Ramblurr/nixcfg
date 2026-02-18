@@ -119,6 +119,7 @@ in
         shellAliases = {
           "claude-vibe" = "claude --dangerously-skip-permissions";
           "claude-edit" = "claude --dangerously-skip-permissions --print";
+          "codex-vibe" = "codex --dangerously-bypass-approvals-and-sandbox";
           "md" = "glow -p";
           "borgmatic" =
             "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env borgmatic";
