@@ -3,10 +3,12 @@
     extra-substituters = [
       "https://numtide.cachix.org"
       "https://nixos-raspberrypi.cachix.org"
+      "https://cache.flox.dev"
     ];
     extra-trusted-public-keys = [
       "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
       "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+      "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
     ];
   };
   inputs = {
