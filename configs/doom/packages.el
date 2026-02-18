@@ -102,13 +102,15 @@
   (package! modus-themes
     :recipe (:host github :repo "protesilaos/modus-themes"))
 
- ;; (package! mcp
- ;;   :recipe (:host github :repo "lizqwerscott/mcp.el")
- ;;   :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
+  ;; (package! mcp
+  ;;   :recipe (:host github :repo "lizqwerscott/mcp.el")
+  ;;   :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
 
   (package! org-roam-ui)
   (package! consult-flyspell))
 
+
+(package! adoc-mode)
 (package! org-modern-indent :recipe
   (:host github
    :repo "jdtsmith/org-modern-indent"))
