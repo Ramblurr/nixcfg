@@ -84,5 +84,22 @@ in
     "d /persist/home/${username}/.local/state/zsh 755 ${username} ${username}"
   ];
 
-  nix.settings.trusted-public-keys = [ ciSigningPublicKey ];
+  sops.secrets.garnix_access_token = {
+    owner = username;
+    mode = "0400";
+  };
+  sops.templates."nix/netrc" = {
+    content = ''
+      machine cache.garnix.io
+      login Ramblurr
+      password ${config.sops.placeholder.garnix_access_token}
+    '';
+  };
+  nix.settings.narinfo-cache-positive-ttl = 3600;
+  nix.settings.netrc-file = config.sops.templates."nix/netrc".path;
+  nix.settings.substituters = [ "https://cache.garnix.io" ];
+  nix.settings.trusted-substituters = [ "https://cache.garnix.io" ];
+  nix.settings.trusted-public-keys = [
+    "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+  ];
 }
