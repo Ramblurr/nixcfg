@@ -24,6 +24,7 @@ in
     ./web/personals.nix
     ./web/personal3.nix
     ./goaccess.nix
+    ./goatcounter.nix
   ];
   system.stateVersion = "24.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
