@@ -91,9 +91,6 @@
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    crowdsec.url = "git+https://codeberg.org/kampka/nix-flake-crowdsec.git";
-    crowdsec.inputs.nixpkgs.follows = "nixpkgs";
-
     emacs-overlay.url = "github:nix-community/emacs-overlay";
     emacs-overlay.inputs.nixpkgs.follows = "nixpkgs";
     emacs-overlay.inputs.nixpkgs-stable.follows = "nixpkgs-stable";

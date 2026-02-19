@@ -28,10 +28,7 @@
           system = "x86_64-linux";
           hostExtraModules = [
             inputs.nixos-nftables-firewall.nixosModules.default
-            inputs.crowdsec.nixosModules.crowdsec
-            inputs.crowdsec.nixosModules.crowdsec-firewall-bouncer
           ];
-          hostOverlays = [ inputs.crowdsec.overlays.default ];
         };
         dewey = {
           # John Dewey - https://en.wikipedia.org/wiki/John_Dewey
