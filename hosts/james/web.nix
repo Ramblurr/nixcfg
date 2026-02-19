@@ -52,6 +52,19 @@ in
     enableQuicBPF = true;
     defaultSSLListenPort = 8443;
     defaultHTTPListenPort = 8080;
+    defaultListen = [
+      {
+        addr = "0.0.0.0";
+        port = 8443;
+        ssl = true;
+        proxyProtocol = true;
+      }
+      {
+        addr = "0.0.0.0";
+        port = 8080;
+        ssl = false;
+      }
+    ];
     recommendedBrotliSettings = true;
     recommendedGzipSettings = true;
     recommendedOptimisation = true;
@@ -64,6 +77,8 @@ in
       proxy_headers_hash_bucket_size 256;
     '';
     appendHttpConfig = ''
+      set_real_ip_from 127.0.0.1;
+      real_ip_header proxy_protocol;
       map $request_uri $loggable {
         default 1;
       }
