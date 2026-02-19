@@ -6,6 +6,10 @@
 let
   addamsLapiPort = 6001;
   addamsLapiUrl = "http://addams.${config.repo.secrets.global.domain.tailnet}:${toString addamsLapiPort}";
+  crowdsecSecret = config.repo.secrets.local.crowdsec;
+  siteNets = lib.attrByPath [ "site" "net" ] { } config;
+  siteSubnet4s = map (netName: siteNets.${netName}.subnet4) (builtins.attrNames siteNets);
+  trustedSourceCidrs = siteSubnet4s ++ crowdsecSecret.trustedSourceCidrs;
 in
 {
   users.users.crowdsec.extraGroups = lib.optionals config.services.nginx.enable [
@@ -46,6 +50,16 @@ in
           labels.type = "nginx";
         }
       ];
+    localConfig.parsers.s02Enrich = [
+      {
+        name = "local/whitelist-trusted-networks";
+        description = "Whitelist site LAN and Tailscale source ranges.";
+        whitelist = {
+          reason = "trusted internal networks";
+          cidr = trustedSourceCidrs;
+        };
+      }
+    ];
     settings.general = {
       api.server.enable = false;
       cscli.output = "human";
