@@ -19,12 +19,12 @@ let
   # Keep SQLite tuning defaults explicit so DB behavior is stable over upgrades.
   goatcounterDb = "sqlite+${goatcounterStateDir}/db.sqlite3?_journal_mode=wal&_busy_timeout=200&_cache_size=-20000";
 
-  goatcounterImportApiKeyFile = "${goatcounterStateDir}/import-api-key";
+  goatcounterImportApiKeysDir = "${goatcounterStateDir}/import-api-keys";
   goatcounterImportBackfillMarker = "${goatcounterStateDir}/import-backfill.done";
   nginxAccessLog = "/var/log/nginx/access.log";
 
   # Parse the JSON nginx log format defined in hosts/james/web.nix.
-  goatcounterImportFormat = ''log:{"time": "$datetime","remote_addr": "$ignore","x_forwarded_for": "$xff","remote_user": "$ignore","bytes_sent": $ignore,"request_time": $ignore,"status": $status,"vhost": "$ignore","request_proto": "$http","path": "$path","request_query": "$query","request_length": $ignore,"duration": $ignore,"method": "$method","http_referrer": "$referrer","http_user_agent": "$user_agent","upstream_addr": "$ignore"}'';
+  goatcounterImportFormat = ''log:{"time": "$datetime","remote_addr": "$ignore","x_forwarded_for": "$xff","remote_user": "$ignore","bytes_sent": $ignore,"request_time": $ignore,"status": $status,"vhost": "$host","request_proto": "$http","path": "$path","request_query": "$ignore","request_length": $ignore,"duration": $ignore,"method": "$method","http_referrer": "$referrer","http_user_agent": "$user_agent","upstream_addr": "$ignore"}'';
   goatcounterImportFormatShell =
     lib.replaceStrings [ "$" "\"" ] [ "\\$" "\\\"" ]
       goatcounterImportFormat;
@@ -42,46 +42,93 @@ let
     text = ''
       set -euo pipefail
 
-      while [ ! -s '${goatcounterImportApiKeyFile}' ]; do
-        echo "goatcounter-import: waiting for API key at ${goatcounterImportApiKeyFile}" >&2
-        sleep 60
-      done
+      list_key_files() {
+        find '${goatcounterImportApiKeysDir}' -maxdepth 1 -type f -size +0c \
+          | LC_ALL=C sort
+      }
 
-      GOATCOUNTER_API_KEY="$(tr -d '\r\n' < '${goatcounterImportApiKeyFile}')"
-      export GOATCOUNTER_API_KEY
+      # Escape regex metacharacters so hostnames are matched literally.
+      escape_regex() {
+        printf '%s' "$1" | sed -E 's/[][(){}.^$*+?|\\]/\\&/g'
+      }
 
-      if [ ! -f '${goatcounterImportBackfillMarker}' ]; then
-        echo "goatcounter-import: running one-time backfill from rotated nginx logs" >&2
+      run_import() {
+        local site_host="$1"
+        local key_file="$2"
+        local source="$3"
+        local extra_flag="''${4:-}"
+        local site_host_re
+        local api_key
+        site_host_re="$(escape_regex "$site_host")"
+        api_key="$(tr -d '\r\n' < "$key_file")"
 
-        {
-          find /var/log/nginx -maxdepth 1 -type f \
-            \( -name 'access.log.[0-9]*' -o -name 'access.log.[0-9]*.gz' \) \
-            | sort -V -r \
-            | while IFS= read -r file; do
-                case "$file" in
-                  *.gz) gzip -dc -- "$file" ;;
-                  *) cat -- "$file" ;;
-                esac
-              done
-
-          if [ -f '${nginxAccessLog}' ]; then
-            cat -- '${nginxAccessLog}'
-          fi
-        } | goatcounter import \
+        GOATCOUNTER_API_KEY="$api_key" goatcounter import \
           -site 'https://${goatDomain}' \
           -format "${goatcounterImportFormatShell}" \
           -datetime '${goatcounterImportDatetime}' \
-          -
+          -exclude static \
+          -exclude redirect \
+          -exclude 'path:re:^$' \
+          -exclude 'host:${goatDomain}' \
+          -exclude 'host:goaccess-internal' \
+          -exclude "!host:re:^''${site_host_re}$" \
+          ${"$"}{extra_flag:+${"$"}extra_flag} \
+          "$source"
+      }
 
-        touch '${goatcounterImportBackfillMarker}'
-      fi
+      while true; do
+        mapfile -t key_files < <(list_key_files)
+        if [ ''${#key_files[@]} -eq 0 ]; then
+          echo "goatcounter-import: waiting for non-empty key files in ${goatcounterImportApiKeysDir}" >&2
+          sleep 60
+          continue
+        fi
 
-      exec goatcounter import \
-        -site 'https://${goatDomain}' \
-        -follow \
-        -format "${goatcounterImportFormatShell}" \
-        -datetime '${goatcounterImportDatetime}' \
-        '${nginxAccessLog}'
+        if [ ! -f '${goatcounterImportBackfillMarker}' ]; then
+          echo "goatcounter-import: running one-time backfill from rotated nginx logs for ''${#key_files[@]} vhost(s)" >&2
+
+          for key_file in "''${key_files[@]}"; do
+            site_host="$(basename "$key_file")"
+            echo "goatcounter-import: backfilling $site_host" >&2
+
+            {
+              find /var/log/nginx -maxdepth 1 -type f \
+                \( -name 'access.log.[0-9]*' -o -name 'access.log.[0-9]*.gz' \) \
+                | sort -V -r \
+                | while IFS= read -r file; do
+                    case "$file" in
+                      *.gz) gzip -dc -- "$file" ;;
+                      *) cat -- "$file" ;;
+                    esac
+                  done
+
+              if [ -f '${nginxAccessLog}' ]; then
+                cat -- '${nginxAccessLog}'
+              fi
+            } | run_import "$site_host" "$key_file" -
+          done
+
+          touch '${goatcounterImportBackfillMarker}'
+        fi
+
+        pids=()
+        for key_file in "''${key_files[@]}"; do
+          site_host="$(basename "$key_file")"
+          echo "goatcounter-import: following ${nginxAccessLog} for $site_host" >&2
+          (
+            run_import "$site_host" "$key_file" '${nginxAccessLog}' "-follow"
+          ) &
+          pids+=("$!")
+        done
+
+        # If any follower exits, restart the full group to keep all importers aligned.
+        wait -n "''${pids[@]}" || true
+        for pid in "''${pids[@]}"; do
+          kill "$pid" 2>/dev/null || true
+        done
+        wait || true
+        sleep 2
+      done
     '';
   };
 in
@@ -105,8 +152,8 @@ in
   systemd.tmpfiles.rules = [
     "d ${goatcounterStateDir} 0750 ${goatcounterUser} ${goatcounterGroup} - -"
     "Z ${goatcounterStateDir} 0750 ${goatcounterUser} ${goatcounterGroup} - -"
-    "f ${goatcounterImportApiKeyFile} 0640 ${goatcounterUser} ${goatcounterGroup} - -"
-    "z ${goatcounterImportApiKeyFile} 0640 ${goatcounterUser} ${goatcounterGroup} - -"
+    "d ${goatcounterImportApiKeysDir} 0750 ${goatcounterUser} ${goatcounterGroup} - -"
+    "z ${goatcounterImportApiKeysDir} 0750 ${goatcounterUser} ${goatcounterGroup} - -"
   ];
 
   # Ensure local imports can resolve goat.${domain} to this host without hairpin routing.
@@ -168,6 +215,8 @@ in
     http3 = true;
     quic = true;
     extraConfig = ''
+      allow 127.0.0.1;
+      allow ::1;
       allow 100.64.0.0/10;
       deny all;
     '';
