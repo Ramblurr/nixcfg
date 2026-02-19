@@ -58,6 +58,7 @@ in
     # apparently nftables merges them together? Not sure why this
     # works, but github.com/thelegy/nixos-nftables-firewall/issues/21
     # should land eventually
+    # (TODO: #21 was closed with a comment, circle back and see whats up)
     # ────────────────────────────────────────────────────────────
     ruleset = lib.mkBefore ''
       table inet firewall {
