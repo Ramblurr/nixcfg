@@ -25,6 +25,7 @@ in
     ./web/personal3.nix
     ./goaccess.nix
     ./goatcounter.nix
+    ./crowdsec.nix
   ];
   system.stateVersion = "24.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
@@ -33,6 +34,7 @@ in
 
   networking.hostId = lib.my.generateHostId hostName;
   networking.firewall.enable = false;
+
   modules = {
     shell = {
       htop.enable = true;
