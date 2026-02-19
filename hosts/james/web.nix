@@ -29,7 +29,7 @@ in
     defaults = {
       email = email.acme;
       dnsProvider = "bunny";
-      dnsPropagationCheck = true;
+      dnsPropagationCheck = false;
       credentialsFile = config.sops.templates.acme-credentials.path;
       reloadServices = lib.optional config.services.nginx.enable "nginx";
     };
