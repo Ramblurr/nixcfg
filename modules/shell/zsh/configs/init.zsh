@@ -5,7 +5,7 @@ source $ZDOTDIR/environment.zsh
 source $ZDOTDIR/keybindings.zsh
 source $ZDOTDIR/privacy.zsh
 source $ZDOTDIR/repo.zsh
-source $ZDOTDIR/johnnydecimal.zsh
+#source $ZDOTDIR/johnnydecimal.zsh
 #source $ZDOTDIR/gpg-ssh.zsh
 
 if command -v starship &>/dev/null; then
