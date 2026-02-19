@@ -12,6 +12,10 @@ let
   lapiCredentialsPath = "/var/lib/crowdsec/local_api_credentials.yaml";
   capiCredentialsPath = "/var/lib/crowdsec/online_api_credentials.yaml";
   consoleConfigPath = "/var/lib/crowdsec/console.yaml";
+  crowdsecSecret = config.repo.secrets.local.crowdsec;
+  siteNets = lib.attrByPath [ "site" "net" ] { } config;
+  siteSubnet4s = map (netName: siteNets.${netName}.subnet4) (builtins.attrNames siteNets);
+  trustedSourceCidrs = siteSubnet4s ++ crowdsecSecret.trustedSourceCidrs;
 
 in
 {
@@ -66,12 +70,21 @@ in
           labels.type = "kernel";
         }
       ];
+    localConfig.parsers.s02Enrich = [
+      {
+        name = "local/whitelist-trusted-networks";
+        description = "Whitelist site LAN and Tailscale source ranges.";
+        whitelist = {
+          reason = "trusted internal networks";
+          cidr = trustedSourceCidrs;
+        };
+      }
+    ];
     settings.general = {
       api.server = {
         enable = true;
-        # Expose LAPI beyond localhost so remote tailnet nodes can authenticate.
-        # Firewall policy still controls who can actually reach this port.
-        listen_uri = "0.0.0.0:${crowdsecPort}";
+        # Bind LAPI to addams' Tailscale address only.
+        listen_uri = "${crowdsecSecret.lapiListenIp}:${crowdsecPort}";
         console_path = consoleConfigPath;
       };
       cscli.output = "human";
