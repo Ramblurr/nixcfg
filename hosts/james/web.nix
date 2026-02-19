@@ -119,6 +119,7 @@ in
         '"http_user_agent": "$http_user_agent",'
         '"upstream_addr": "$upstream_addr"'
       '}';
+      access_log /var/log/nginx/crowdsec.log combined if=$loggable;
       access_log /var/log/nginx/access.log json_combined2  if=$loggable;
     '';
     virtualHosts = {
