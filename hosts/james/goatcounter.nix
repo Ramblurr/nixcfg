@@ -6,10 +6,27 @@
 }:
 
 let
-  inherit (config.repo.secrets.global.domain) work;
+  inherit (config.repo.secrets.global.domain)
+    personal2
+    work
+    ;
 
   domain = work;
+  docsDomain = "docs.${domain}";
   goatDomain = "goat.${domain}";
+  countHostFor = sourceHost: "count.${sourceHost}";
+  importVhosts = [
+    domain
+    docsDomain
+    personal2
+  ];
+  countSites = map (sourceHost: {
+    inherit sourceHost;
+    countHost = countHostFor sourceHost;
+    acmeHost = sourceHost;
+  }) importVhosts;
+  countVhosts = map (site: site.countHost) countSites;
+  primaryCountVhost = countHostFor domain;
 
   goatcounterUser = "goatcounter";
   goatcounterGroup = "goatcounter";
@@ -30,6 +47,33 @@ let
       goatcounterImportFormat;
   goatcounterImportDatetime = "2006-01-02T15:04:05-07:00";
 
+  goatcounterAllowlistConfig = ''
+    allow 127.0.0.1;
+    allow ::1;
+    allow 100.64.0.0/10;
+    deny all;
+  '';
+
+  goatcounterProxyHeadersConfig = ''
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+  '';
+
+  goatcounterProxyLocationPublic = {
+    proxyPass = "http://127.0.0.1:${toString goatcounterPort}";
+    proxyWebsockets = true;
+    extraConfig = goatcounterProxyHeadersConfig;
+  };
+
+  goatcounterProxyLocationPrivate = {
+    proxyPass = "http://127.0.0.1:${toString goatcounterPort}";
+    proxyWebsockets = true;
+    extraConfig = ''
+      ${goatcounterAllowlistConfig}
+      ${goatcounterProxyHeadersConfig}
+    '';
+  };
+
   goatcounterImportScript = pkgs.writeShellApplication {
     name = "goatcounter-import-nginx";
     runtimeInputs = [
@@ -42,9 +86,20 @@ let
     text = ''
       set -euo pipefail
 
+      tracked_hosts=(
+        ${lib.concatMapStringsSep "\n        " lib.escapeShellArg importVhosts}
+      )
+
       list_key_files() {
-        find '${goatcounterImportApiKeysDir}' -maxdepth 1 -type f -size +0c \
-          | LC_ALL=C sort
+        local host
+        local key_file
+
+        for host in "''${tracked_hosts[@]}"; do
+          key_file='${goatcounterImportApiKeysDir}'"/$host"
+          if [ -s "$key_file" ]; then
+            printf '%s\n' "$key_file"
+          fi
+        done
       }
 
       # Escape regex metacharacters so hostnames are matched literally.
@@ -53,17 +108,19 @@ let
       }
 
       run_import() {
-        local site_host="$1"
+        local source_host="$1"
         local key_file="$2"
         local source="$3"
         local extra_flag="''${4:-}"
-        local site_host_re
+        local source_host_re
+        local site_host
         local api_key
-        site_host_re="$(escape_regex "$site_host")"
+        source_host_re="$(escape_regex "$source_host")"
+        site_host="count.$source_host"
         api_key="$(tr -d '\r\n' < "$key_file")"
 
         GOATCOUNTER_API_KEY="$api_key" goatcounter import \
-          -site 'https://${goatDomain}' \
+          -site "http://$site_host:${toString goatcounterPort}" \
           -format "${goatcounterImportFormatShell}" \
           -datetime '${goatcounterImportDatetime}' \
           -exclude static \
@@ -71,7 +128,7 @@ let
           -exclude 'path:re:^$' \
           -exclude 'host:${goatDomain}' \
           -exclude 'host:goaccess-internal' \
-          -exclude "!host:re:^''${site_host_re}$" \
+          -exclude "!host:re:^''${source_host_re}$" \
           ${"$"}{extra_flag:+${"$"}extra_flag} \
           "$source"
       }
@@ -88,8 +145,8 @@ let
           echo "goatcounter-import: running one-time backfill from rotated nginx logs for ''${#key_files[@]} vhost(s)" >&2
 
           for key_file in "''${key_files[@]}"; do
-            site_host="$(basename "$key_file")"
-            echo "goatcounter-import: backfilling $site_host" >&2
+            source_host="$(basename "$key_file")"
+            echo "goatcounter-import: backfilling $source_host" >&2
 
             {
               find /var/log/nginx -maxdepth 1 -type f \
@@ -105,7 +162,7 @@ let
               if [ -f '${nginxAccessLog}' ]; then
                 cat -- '${nginxAccessLog}'
               fi
-            } | run_import "$site_host" "$key_file" -
+            } | run_import "$source_host" "$key_file" -
           done
 
           touch '${goatcounterImportBackfillMarker}'
@@ -113,10 +170,10 @@ let
 
         pids=()
         for key_file in "''${key_files[@]}"; do
-          site_host="$(basename "$key_file")"
-          echo "goatcounter-import: following ${nginxAccessLog} for $site_host" >&2
+          source_host="$(basename "$key_file")"
+          echo "goatcounter-import: following ${nginxAccessLog} for $source_host" >&2
           (
-            run_import "$site_host" "$key_file" '${nginxAccessLog}' "-follow"
+            run_import "$source_host" "$key_file" '${nginxAccessLog}' "-follow"
           ) &
           pids+=("$!")
         done
@@ -156,8 +213,8 @@ in
     "z ${goatcounterImportApiKeysDir} 0750 ${goatcounterUser} ${goatcounterGroup} - -"
   ];
 
-  # Ensure local imports can resolve goat.${domain} to this host without hairpin routing.
-  networking.hosts."127.0.0.1" = [ goatDomain ];
+  # Ensure local imports can resolve GoatCounter hostnames to this host.
+  networking.hosts."127.0.0.1" = [ goatDomain ] ++ importVhosts ++ countVhosts;
 
   systemd.services.goatcounter = {
     description = "GoatCounter analytics server";
@@ -207,26 +264,43 @@ in
     };
   };
 
-  security.acme.certs.${goatDomain}.domain = goatDomain;
-  services.nginx.virtualHosts."${goatDomain}" = {
-    useACMEHost = goatDomain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = true;
-    quic = true;
-    extraConfig = ''
-      allow 127.0.0.1;
-      allow ::1;
-      allow 100.64.0.0/10;
-      deny all;
-    '';
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:${toString goatcounterPort}";
-      proxyWebsockets = true;
-      extraConfig = ''
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-      '';
-    };
+  security.acme.certs = {
+    ${domain}.extraDomainNames = [
+      goatDomain
+      (countHostFor domain)
+    ];
+    ${docsDomain}.extraDomainNames = [ (countHostFor docsDomain) ];
+    ${personal2}.extraDomainNames = [ (countHostFor personal2) ];
   };
+
+  services.nginx.virtualHosts = lib.mkMerge [
+    (builtins.listToAttrs (
+      map (site: {
+        name = site.countHost;
+        value = {
+          useACMEHost = site.acmeHost;
+          forceSSL = true;
+          kTLS = true;
+          http3 = true;
+          quic = true;
+          locations."= /count" = goatcounterProxyLocationPublic;
+          locations."= /count.js" = goatcounterProxyLocationPublic;
+          locations."/" = goatcounterProxyLocationPrivate;
+        };
+      }) countSites
+    ))
+    {
+      "${goatDomain}" = {
+        useACMEHost = domain;
+        forceSSL = true;
+        kTLS = true;
+        http3 = true;
+        quic = true;
+        extraConfig = goatcounterAllowlistConfig;
+        locations."/" = {
+          return = "302 https://${primaryCountVhost}$request_uri";
+        };
+      };
+    }
+  ];
 }
