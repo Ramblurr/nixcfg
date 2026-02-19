@@ -141,6 +141,9 @@ let
           addr = ":0";
           handler = {
             type = "rtcp";
+            metadata = {
+              proxyProtocol = "1";
+            };
           };
           listener = {
             type = "rtcp";
