@@ -10,6 +10,7 @@ let
   domain = work;
   logsDomain = "logs.${domain}";
   reportDir = "/var/lib/goaccess";
+  dbDir = "${reportDir}/db";
   logFile = "/var/log/nginx/access.log";
 
   # GoAccess configuration matching the json_combined2 nginx log format defined in web.nix.
@@ -45,6 +46,7 @@ in
 
   systemd.tmpfiles.rules = [
     "d '/var/log/nginx' 0750 nginx nginx - -"
+    "d '${dbDir}' 0750 nginx nginx - -"
   ];
 
   systemd.services.goaccess-report = {
@@ -55,7 +57,7 @@ in
       Type = "oneshot";
       User = "nginx";
       Group = "nginx";
-      ExecStart = "${pkgs.goaccess}/bin/goaccess --config-file=${goaccessConf} --output=${reportDir}/index.html --no-progress ${logFile}";
+      ExecStart = "${pkgs.goaccess}/bin/goaccess --config-file=${goaccessConf} --restore --persist --db-path=${dbDir} --agent-list --output=${reportDir}/index.html --no-progress ${logFile}";
     };
   };
 
