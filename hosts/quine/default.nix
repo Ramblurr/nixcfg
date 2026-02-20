@@ -65,7 +65,7 @@ in
 
   nix = {
     settings = {
-      max-jobs = 16;
+      max-jobs = 2;
       cores = 16;
       netrc-file = config.sops.secrets.netrc.path;
     };
