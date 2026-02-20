@@ -27,6 +27,7 @@
 # Usage:
 #   repo                # pick repo, cd into it
 #   repo -p             # print selected full path
+#   repo -c             # copy selected full path to clipboard (wl-copy)
 #   repo -o             # open selected repo in $EDITOR
 #   repo -A             # alphabetical sort
 #   repo -F             # frecent sort (zoxide)
@@ -53,9 +54,10 @@ repo() {
   local -a q
   local OPTIND opt
 
-  while getopts ":poAFt" opt; do
+  while getopts ":pcoAFt" opt; do
     case "$opt" in
       p) mode="print" ;;
+      c) mode="clipboard" ;;
       o) mode="open" ;;
       A) sort_mode="alpha" ;;
       F) sort_mode="frecent" ;;
@@ -192,6 +194,9 @@ repo() {
   case "$mode" in
     print)
       print -r -- "$repo_path"
+      ;;
+    clipboard)
+      print -rn -- "$repo_path" | wl-copy
       ;;
     open)
       local ed="${EDITOR:-}"
