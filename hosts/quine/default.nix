@@ -66,7 +66,7 @@ in
   nix = {
     settings = {
       max-jobs = 2;
-      cores = 16;
+      cores = 14;
       netrc-file = config.sops.secrets.netrc.path;
     };
 
@@ -79,9 +79,15 @@ in
 
   nix.settings = {
     substituters = [
+      "https://cache.garnix.io"
+      "https://numtide.cachix.org"
+      "https://cache.flox.dev"
       "https://cache.flakehub.com/"
     ];
     trusted-public-keys = [
+      "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
+      "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
+      "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "cache.flakehub.com-4:Asi8qIv291s0aYLyH6IOnr5Kf6+OF14WVjkE6t3xMio="
       "cache.flakehub.com-5:zB96CRlL7tiPtzA9/WKyPkp3A2vqxqgdgyTVNGShPDU="

@@ -50,7 +50,7 @@ in
               theme = "Gruvbox Dark Hard";
               background-opacity = 1.0;
               window-decoration = false;
-
+              app-notifications = "no-clipboard-copy";
             };
         };
       };
