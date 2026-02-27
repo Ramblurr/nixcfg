@@ -62,7 +62,7 @@ in
           bbin
           polylith
           gtk3
-          xorg.libXxf86vm
+          libxxf86vm
           jdt-language-server
           (pkgs.writeScriptBin "run-clojure-mcp" ''
             #!/usr/bin/env bash

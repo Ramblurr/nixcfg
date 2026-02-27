@@ -129,6 +129,51 @@
   (setq uniquify-ignore-buffers-re "^\\*") ; don't muck with special buffers
   )
 
+(setq my/persp-disambiguated-buffer-basenames
+      '("default.nix" "package.nix"))
+
+(defun my/persp-disambiguated-buffer-name (file-name)
+  "Return a readable unique buffer name for FILE-NAME.
+
+Uses `parent/filename` as the first choice. If that name already
+exists, prepends additional parent directories until unique."
+  (let* ((base-name (file-name-nondirectory file-name))
+         (dir-parts
+          (nreverse
+           (split-string
+            (directory-file-name (file-name-directory file-name))
+            "/"
+            t)))
+         (name base-name))
+    (when dir-parts
+      (setq name (format "%s/%s" (pop dir-parts) base-name)))
+    (while (and dir-parts
+                (let ((buffer (get-buffer name)))
+                  (and buffer (not (eq buffer (current-buffer))))))
+      (setq name (format "%s/%s" (pop dir-parts) name)))
+    (if (let ((buffer (get-buffer name)))
+          (and buffer (not (eq buffer (current-buffer)))))
+        (abbreviate-file-name file-name)
+      name)))
+
+(defun my/rename-disambiguated-buffer ()
+  "Rename configured buffers to include parent directory names."
+  (when-let* ((file-name (buffer-file-name))
+              (base-name (file-name-nondirectory file-name))
+              ((member base-name my/persp-disambiguated-buffer-basenames))
+              (target-name (my/persp-disambiguated-buffer-name file-name)))
+    (unless (string= (buffer-name) target-name)
+      (rename-buffer target-name t))))
+
+(defun my/rename-disambiguated-buffers-now ()
+  (interactive)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (my/rename-disambiguated-buffer))))
+
+(add-hook 'find-file-hook #'my/rename-disambiguated-buffer)
+(add-hook 'after-revert-hook #'my/rename-disambiguated-buffer)
+
 (after! flycheck
   ;; flycheck-next-error will navigate to errors before warnings
   (setq flycheck-navigation-minimum-level 'error))
