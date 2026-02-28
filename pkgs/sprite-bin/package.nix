@@ -7,17 +7,17 @@
 }:
 
 let
-  version = "0.0.1-rc37";
+  version = "0.0.1-rc39";
 
   sources = {
     aarch64-darwin.url = "https://sprites-binaries.t3.storage.dev/client/v${version}/sprite-darwin-arm64.tar.gz";
-    aarch64-darwin.hash = "sha256-/74bTKWlRWz0rZ3ouO6zl3BLliK1Oa8tP1ZdJa37jHk=";
+    aarch64-darwin.hash = "sha256-maYdqZP4PLheuMVwZoyf/S7+8j47+LSsZrSf8KWoCsc=";
     x86_64-darwin.url = "https://sprites-binaries.t3.storage.dev/client/v${version}/sprite-darwin-amd64.tar.gz";
-    x86_64-darwin.hash = "sha256-+8fE//88+39D5h3JwTccgzZj3Gyve4MtEiAuGOc7BEU=";
+    x86_64-darwin.hash = "sha256-VTKOBfWqJVyV182KI63Viaw7W9yVjGz9P4uJT7STKgM=";
     aarch64-linux.url = "https://sprites-binaries.t3.storage.dev/client/v${version}/sprite-linux-arm64.tar.gz";
-    aarch64-linux.hash = "sha256-yRym1ktlPge4OE6kRb7sKiYfF/V93m1F3bZcfm+4Hk0=";
+    aarch64-linux.hash = "sha256-3eAE8oh/wn/2sBB7CgnbPyugM3TS6wetpEoi+LmtBwk=";
     x86_64-linux.url = "https://sprites-binaries.t3.storage.dev/client/v${version}/sprite-linux-amd64.tar.gz";
-    x86_64-linux.hash = "sha256-yhb5V+FalvKNjhcInJjBLNLJ32yYDzNosULyVdLhWcY=";
+    x86_64-linux.hash = "sha256-jc/NC62zu6/cPjXOtWRbt/xgduE3mKr6W/trfMrBa5Y=";
   };
 
   platform = stdenvNoCC.hostPlatform.system;
