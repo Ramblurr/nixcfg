@@ -128,6 +128,12 @@ in
       group = cfg.group.name;
       mode = "400";
     };
+    sops.secrets.registrationSharedSecret = {
+      sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+      owner = cfg.user.name;
+      group = cfg.group.name;
+      mode = "400";
+    };
 
     systemd.services.matrix-synapse.environment = {
       SYNAPSE_CACHE_FACTOR = "1.0";
@@ -142,6 +148,7 @@ in
         public_baseurl = "https://${cfg.domain}";
         report_stats = true;
         enable_metrics = true;
+        registration_shared_secret_path = config.sops.secrets.registrationSharedSecret.path;
         enable_registration = false;
         dynamic_thumbnails = true;
         url_preview_enabled = false;

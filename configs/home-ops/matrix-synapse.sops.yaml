@@ -1,3 +1,4 @@
+registrationSharedSecret: ENC[AES256_GCM,data:tsMzCecqnZBhXGtIEEDXvTXIFvAdSQsIvw63AKrYtyfhAo/VXSW2dPWzBaggbs8ckaN3gpIkqJDvSjCZp5ZOkQ==,iv:gNQRsw3PV+nBW6R5V1Qlu9ktd7myNv+qjbPAVKxMc9k=,tag:c9El7Wk/1PRgj+e+RfyUtQ==,type:str]
 signingKey: ENC[AES256_GCM,data:KzEz4nLf++8XqmNAjriIQLVkj2J6QXDPdSh987jEDWOCqjp4t+X6l7xSqoCXDrbmmdlELAVACeoHmR4=,iv:IHeWS8HUKgoHEkNLuRkkjRZ/A7ZjGQ3UWpvfSauoJfI=,tag:9Y8djQgrI9vFi5iEMs8vng==,type:str]
 doublepuppet.yaml: ENC[AES256_GCM,data:+muTc0/IRwGSirzH23gWIrlg42wkHiEwA97i/Sb+5LpFYB51xZT2QAsk+L6Yoqy93K7I91+fTdeZfpI0CQk0foJzcQ3Zz3ek+9gThT5VTsEBidLSstnMlAGRFUNwBlGTflAYrFofoyCGsb38K+OnhFpRoY9NMMuLVvIcHwb8Jqm4+bj0wdiAVapxIEhghzguRUbUZgQPDVuqBXj1+ITRYyxw5rt6tYD1rcMfyCIaa0czoINk6P9S5Ho7bLfgGrXn18xm5PJBEn2lsbcF9XuROniNaN8xcTHfmJeE22JF6Q+R5ICLKYp9NsKMN1NWRv3Cvfthu6fAT61BM+/Zl3VxJxpe4NxFzUrY4/AorBWMaacV1nkh0pMbyGx8D90SANlfLXevTAXoPNkAbXm5NeIXO6VoG0j2UfMmYKCrY835sEjRpcJrR2hQmbelRw6DfUjAkAxMadJES2dZ/ZsRp+GDA28SOIdJC6irlIyyF6KwZQIc0t0XwV2Qn1u+9/NTKsunymG3oiugI3RWPMlDVGCm5d/9mrme+bjJrM8IWhdcD38uOzF43OnOhrsF5NaHlIJhziXzoYffhzcqO3+6eFK12XYUcQPRAfN0eShfIkrXkpvOJvrW6mJV4DWqh1bC9Y6jzkIUudXfpf1b6JqDB+F0hB0M5dzm0FVvdKqDWIwroV1hI5ZizM6QK+deoqywDqXblYeOCsmJ2sTtxlfgsKZCeZtnR5lAzcfaUN26uYHUsSO47Yk0V2sOXuOk+5+tCL5ot3mJtYXhM9NVDsEa/li3AtK7NmQzcLMILIgX89Xt3jEVqRZ+7+yCCTDJNEiAMeP43P4NnWtCDKY7YxOZl8IrDSQQjLMq5AzlWuk0wlMDkH64dzRzYhtB1lhW6TQ69u4KZ9FjEF84QBpn0oygT6satfk+UNOi8fUDP6bGVLEojHBd4aZJLPGFIqMa5t1eBmM1RgrUr9/Igw1Mv73pWcQA1tZJgfxOqQM04A/zezgMXBYhChAjEQpxvo7383G4pD1bwkTKd22b7LbQU5iwxKx2oPCQPwxWgsDSBW/ZILHZ+/lhA5/YtG+Ifj6aSXUtGG/Jg6ZQB8JmbNtblDz7oAP0DYE5EmF1zy/Eh6NA418/t3Ssldw+IX3fcWa/NcaNk7IdC+NeP5O4PrB7BAfTBPbn9sL04NCK4brEkxIDDnvib/QymZUrnkkhKBz2YoOnzSkr/E+Tmbvg8P7B3L0h+jb/kXFvULyTlyelcMNVGBrj8w/tZMO9w4seMHdFnUV3Iek5e/RwHRtvffcVKKVoZ1DevYf48hm3Pv0xtDtcdJ6RhsFDAaefSNYSq7zOZ4BBAYe0kDlRD15KX27D02zW9MLkLLpufzeYjza+S3Cya+EHnKpuGzY1huq4LADxjg6CbUaULLohKed4QLjbbq+y0+MY/6FQPN7AULPK,iv:RM2A/jV2fDy7KjbLvK5GP+RjgLloNo4Z1T1DMlY6sgE=,tag:mpnlsDDu29MzY7ETdoTPVA==,type:str]
 mautrix-discord:
@@ -60,8 +61,8 @@ sops:
             bTZ3ckU0aGExQ2hhVG8weUd5NzNEVkkKEeL6MvcgeFfhlWOyRsybZTkJAze6q7+W
             +F76nrBsqnpn4VWa3iGl+sLVfg2yzJLMU1y6Xtu4H8IKfDYxjCPwQA==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2024-10-24T19:57:40Z"
-    mac: ENC[AES256_GCM,data:MNhTSPgG7GhDH6S4QRsTAebtrJSd27nlkpRAGciTCbHgut0ytoar3p2YxA9Bx5un+YOq1W2zvbYCAdVC1pk3ltIFnPwRD7YtE3tEgZnP1LPZiCL86pDodN+TulY5uhgfIovQo/aWv2JrXGkrJxJ5/mJJjcPdDehPsqlDrD6KO9U=,iv:v2TkfAUQ/2DFE3/UEAFeXKgaIdEDLPpoGQMQsKfi0kM=,tag:38aeYfSBfXxzvCLxbtxPYQ==,type:str]
+    lastmodified: "2026-03-09T16:49:38Z"
+    mac: ENC[AES256_GCM,data:Qwi2ExBhav9t729iQensjcYbFlmflC71uKFlf7JJhGq7tOeKhDiP4hslELkK7Q+xmDRWKX1eJ/4wqXVF6U6D0LGkUSH29hka1F1htZv9p206MuDVu/AsdUCuT7MbQjnjXMayKNiZ4yjotqOmZN1bWckRMWSefcFWAWx1QNFP5mI=,iv:DDp78EZs9hsRZJhx809U8vQ4Z0wKNwIdUrtvLpIPja8=,tag:ZYmhrN2if1r4caAAeoTlpA==,type:str]
     pgp:
         - created_at: "2025-10-06T14:19:08Z"
           enc: |-
@@ -84,4 +85,4 @@ sops:
             -----END PGP MESSAGE-----
           fp: 978C4D08058BA26EB97CB51820782DBCACFAACDA
     unencrypted_suffix: _unencrypted
-    version: 3.9.1
+    version: 3.11.0
