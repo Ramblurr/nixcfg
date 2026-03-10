@@ -31,7 +31,7 @@
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
 
-    microvm.url = "github:astro/microvm.nix";
+    microvm.url = "github:microvm-nix/microvm.nix";
     #microvm.url = "path:/home/ramblurr/src/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs";
 

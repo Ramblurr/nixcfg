@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -26,9 +27,16 @@ in
       };
       programs.htop = {
         enable = true;
+        package = pkgs.htop-vim;
         settings = {
-          hide_kernel_threads = 1;
-          hide_userland_threads = 1;
+          hide_kernel_threads = true;
+          hide_userland_threads = true;
+          highlight_base_name = true;
+          highlight_changes = true;
+          show_cpu_frequency = true;
+          show_cpu_temperature = true;
+          show_program_path = false;
+          tree_view = true;
         };
       };
     };

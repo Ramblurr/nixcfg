@@ -162,7 +162,7 @@ in
       };
       home.packages = with pkgs; [
         strace
-        claude-code
+        #claude-code
         age
         babashka
         bandwhich

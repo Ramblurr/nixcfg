@@ -19,6 +19,7 @@ keys:
       - &claude-test age13fnjs7rgh0qaleaqqe2dqlp4hf48klpx5w3pqspnpdcgqput3sxs8jfspl
       - &octoprint age1umcdrw2zwqh436sgu73ff42klrwqu5vhdfc72uceetpm5cl0u4as0ea6ut
       - &wyoming-satellite-bedroom age1zjqpckes5ykxcv2ghkay2ae40a9jjwlp06kqkllcx32jdm6sw9msy5h7r6
+      - &dev1 age10tg4cn5y2f7trvkmux3c4vsjw6pwc8ke5w0a2c4h004lnwyzfelq64ycrr
   - admin-group: &admin-group
       age:
         - *ramblurr-yk-office
@@ -103,5 +104,12 @@ creation_rules:
           - *dewey
           - *debord
           - *mali
+        merge:
+          - *admin-group
+  - path_regex: guests/dev1/secrets.sops.ya?ml$
+    key_groups:
+      - age:
+          - *dev1
+          - *quine
         merge:
           - *admin-group
