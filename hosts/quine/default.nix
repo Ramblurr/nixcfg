@@ -26,7 +26,7 @@ in
     ./gaming.nix
     ../../modules/site-net
     #./microvm-host-opts.nix
-    #./microvm-host.nix
+    ./microvm-host.nix
     #./arm.nix
   ];
   system.stateVersion = "23.05";
@@ -186,7 +186,7 @@ in
         thunderbird.workProxy = "${lanVpnGateway}:1081";
         handy.enable = true;
         handy.autostart.enable = true;
-        waydroid.enable = true;
+        #waydroid.enable = true;
         yubico.enable = true;
         yubico.sshFidoAgent.enable = true;
       };
@@ -234,6 +234,7 @@ in
       python.enable = true;
       random.enable = true;
       llms.enable = true;
+      llms.ollama.enable = true;
       llms.cudaSupport = true;
     };
 
