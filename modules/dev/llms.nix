@@ -44,7 +44,7 @@ let
     llm-jq = true;
     llm-hacker-news = true;
     llm-mistral = true;
-    llm-ollama = true;
+    llm-ollama = cfg.ollama.enable;
     llm-openai-plugin = true;
     llm-pdf-to-images = true;
   };
@@ -76,6 +76,7 @@ in
     cudaSupport = lib.mkEnableOption {
       description = "Enable CUDA support";
     };
+    ollama.enable = lib.mkEnableOption "";
   };
   config = lib.mkIf cfg.enable {
     environment.persistence."/persist" = {
@@ -95,11 +96,11 @@ in
         ];
       };
     };
-    services.ollama = {
+    services.ollama = lib.mkIf cfg.ollama.enable {
       enable = true;
       package = pkgs.ollama-cuda;
     };
-    services.open-webui.enable = true;
+    services.open-webui.enable = cfg.ollama.enable;
     myhm = {
       sops.secrets.llm-keys = {
         mode = "0400";
@@ -109,34 +110,38 @@ in
       home.sessionVariables = {
         PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
       };
-      home.packages = with pkgs; [
-        #playwright
-        #playwright-test
-        #playwright-mcp
-        piper-tts
-        espeak
-        jujutsu
-        mcp-inspector
-        llm-wrapper
-        github-mcp-server-wrapper
-        gemini-cli-wrapper
-        catnip-wrapper
-        pi-wrapper
-        mistral-vibe-wrapper
-        #codex
-        #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
-        opencode-wrapper
-        cat-url-markdown
-        whisper-cpp
-        inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
-        ollama-cuda
-        dotool # handy (speech to text) uses this for clipboard access
-        wtype # handy (speech to text) uses this for clipboard access
-        llm-agents.claude-code
-        llm-agents.codex
-        llm-agents.ccusage
-        llm-agents.handy
-      ];
+      home.packages =
+        with pkgs;
+        [
+          #playwright
+          #playwright-test
+          #playwright-mcp
+          piper-tts
+          espeak
+          jujutsu
+          mcp-inspector
+          llm-wrapper
+          github-mcp-server-wrapper
+          gemini-cli-wrapper
+          catnip-wrapper
+          pi-wrapper
+          mistral-vibe-wrapper
+          #codex
+          #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
+          opencode-wrapper
+          cat-url-markdown
+          inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
+          dotool # handy (speech to text) uses this for clipboard access
+          wtype # handy (speech to text) uses this for clipboard access
+          llm-agents.claude-code
+          llm-agents.codex
+          llm-agents.ccusage
+          llm-agents.handy
+        ]
+        ++ lib.optionals cfg.ollama.enable [
+          ollama-cuda
+          whisper-cpp
+        ];
     };
   };
 }
