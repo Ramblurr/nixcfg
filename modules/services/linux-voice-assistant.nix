@@ -233,6 +233,8 @@ in
       ];
       path = with pkgs; [
         alsa-utils
+        iproute2
+        which
       ];
       script =
         let
