@@ -39,7 +39,8 @@ locals {
   ])
 
   household_apps = {
-    "home-ocis" = module.home-ocis-web.application_id
+    "home-ocis"      = module.home-ocis-web.application_id
+    "audiobookshelf" = module.audiobookshelf.application_id
     #"actual-budget" = module.actual-budget.application_id
   }
 }
@@ -171,6 +172,26 @@ module "paperless" {
 #   invalidation_flow_uuid  = local.default_provider_invalidation_flow
 #   meta_icon               = "${local.icon_base}/actual-budget.png"
 # }
+
+module "audiobookshelf" {
+  source                 = "./modules/oidc-application"
+  name                   = "audiobookshelf"
+  client_id              = "audiobookshelf"
+  client_secret_special  = false
+  domain                 = "audiobookshelf.${var.external_domain}"
+  group                  = "Books"
+  authorization_flow_id  = local.explicit_authorization_flow
+  authentication_flow_id = local.default_authentication_flow
+  invalidation_flow_id   = local.default_provider_invalidation_flow
+  redirect_uris = [
+    "https://audiobookshelf.${var.external_domain}/auth/openid/callback",
+    "https://audiobookshelf.${var.external_domain}/auth/openid/mobile-redirect"
+  ]
+  property_mappings     = data.authentik_property_mapping_provider_scope.oauth2.ids
+  access_token_validity = "hours=72"
+  authentik_domain      = var.authentik_domain
+  meta_icon             = "${local.icon_base}/audiobookshelf.png"
+}
 
 module "grafana" {
   source                 = "./modules/oidc-application"

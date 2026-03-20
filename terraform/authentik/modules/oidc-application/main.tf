@@ -82,6 +82,11 @@ variable "property_mappings" {
   default = null
 }
 
+variable "client_secret_special" {
+  type    = bool
+  default = true
+}
+
 locals {
   # only need a client secret when its a confidential client type
   client_secret = (
@@ -93,7 +98,8 @@ locals {
 }
 
 resource "random_password" "client_secret" {
-  length = 52
+  length  = 32
+  special = var.client_secret_special
 }
 
 resource "authentik_provider_oauth2" "main" {

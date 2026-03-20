@@ -44,6 +44,7 @@ in
     mariadb.enable = true;
     containers.enable = true;
     apps = {
+      audiobookshelf.enable = true;
       roon-server.enable = true;
       authentik.enable = true;
       davis.enable = true;
