@@ -460,6 +460,7 @@ in
       user = home-ops.users.audiobookshelf;
       group = home-ops.groups.audiobookshelf;
       nfsShare = "tank2/media";
+      ports.http = home-ops.ports.audiobookshelf;
       ingress = {
         domain = home-ops.homeDomain;
       };
