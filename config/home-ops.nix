@@ -76,6 +76,7 @@ in
       my-y2r.enable = lib.mkEnableOption "my-y2r";
       audiobookshelf.enable = lib.mkEnableOption "audiobookshelf";
       tubearchivist.enable = lib.mkEnableOption "tubearchivist";
+      stirling-pdf.enable = lib.mkEnableOption "Stirling PDF";
     };
   };
 
@@ -643,6 +644,15 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         external = true;
+      };
+    };
+
+    modules.services.stirling-pdf = lib.mkIf cfg.apps.stirling-pdf.enable {
+      enable = true;
+      domain = "pdf.${home-ops.homeDomain}";
+      ports.http = home-ops.ports.stirling-pdf;
+      ingress = {
+        domain = home-ops.homeDomain;
       };
     };
 
