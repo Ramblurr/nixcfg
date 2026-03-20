@@ -132,11 +132,11 @@ let
         ../modules/shell/zsh
         ../modules/shell/atuin.nix
         {
+          nixpkgs.pkgs = pkgs;
           nixpkgs.hostPlatform = system;
           node.secretsDir = hostPath + "/secrets";
           sops.defaultSopsFile = hostPath + "/secrets.sops.yaml";
           node.name = name;
-          nixpkgs.config.allowUnfree = true;
           modules.microvm-guest.enable = true;
         }
         ../guests/${name}

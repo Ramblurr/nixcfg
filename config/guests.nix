@@ -11,6 +11,10 @@
     ../modules/secrets.nix
     ../modules/sops.nix
     ../modules/impermanence/default.nix
+    ./ramblurr.nix
+    ../modules/impermanence/default.nix
+    ../modules/users
+    ../modules/dev/llms.nix
   ];
 
   home-manager = {
