@@ -19,7 +19,7 @@
 
   ;; - My primary REPL setup for development
   :repl/dev
-  {:extra-deps {djblue/portal                 {:mvn/version "0.62.0"}
+  {:extra-deps {djblue/portal                 {:mvn/version "0.63.0"}
                 clj-commons/clj-yaml          {:mvn/version "1.0.29"} ; portal yaml support (optional)
                 io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
                 nrepl/nrepl                   {:mvn/version "1.6.0"}
@@ -33,6 +33,7 @@
                 com.datomic/dev.datafy        {:git/sha "02f8520"
                                                :git/tag "v0.1"
                                                :git/url "https://github.com/Datomic/dev.datafy.git"}
+                etaoin/etaoin                 {:mvn/version "1.1.43"}
                 my/dev-repl                   {:git/sha "42127999fd534b47f5e0fa5689fa68fe34c81752"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
@@ -44,7 +45,7 @@
   {:extra-deps {nrepl/nrepl                   {:mvn/version "1.6.0"}
                 cider/cider-nrepl             {:mvn/version "0.58.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}
-                my/dev-repl                   {:git/sha "8f84a7e294b4353cde64a163976da050b39963b6"
+                my/dev-repl                   {:git/sha "42127999fd534b47f5e0fa5689fa68fe34c81752"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -66,7 +67,7 @@
 
   :portal/cli
   {:main-opts  ["-m" "portal.main"]
-   :extra-deps {djblue/portal        {:mvn/version "LATEST"}
+   :extra-deps {djblue/portal        {:mvn/version "0.63.0"}
                 clj-commons/clj-yaml {:mvn/version "1.0.29"}}}
 
   ;; -------------------------------------
@@ -117,8 +118,8 @@
   :mcp/clojure
   {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}
              com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
-                                      :git/tag "0.2.6"
-                                      :git/sha "79b9d5a00bad66920ca2f602e018e40adf7546cc"}}
+                                      :git/tag "v0.3.1"
+                                      :git/sha "81005cec94ab539fe92f45f42ab738a7e5f23f21"}}
    :exec-fn clojure-mcp.main/start-mcp-server}
 
   ;; -------------------------------------
@@ -127,8 +128,8 @@
   ;; cd project-directory && clojure -T:fmt/ns-fix
   :fmt/ns-fix
   {:replace-deps {com.github.clojure-lsp/clojure-lsp
-                  {:git/tag   "2025.04.23-18.16.46"
-                   :git/sha   "454c86a"
+                  {:git/tag   "2026.02.20-16.08.58"
+                   :git/sha   "d18dd1ee754d081b2afa347de45e52910fcc86f7"
                    :deps/root "cli"}}
    :exec-fn      clojure-lsp.api/clean-ns!
    :exec-args    {:dry? false}}
@@ -138,8 +139,8 @@
   ;; - report namespaces whos requires+imports are unused and not well sorted
   ;; cd project-directory && clojure -T:fmt/ns-check
   :fmt/ns-check
-  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:git/tag   "2025.04.23-18.16.46"
-                                                      :git/sha   "454c86a"
+  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:git/tag   "2026.02.20-16.08.58"
+                                                      :git/sha   "d18dd1ee754d081b2afa347de45e52910fcc86f7"
                                                       :deps/root "cli"}}
    :exec-fn      clojure-lsp.api/clean-ns!
    :exec-args    {:dry? true}}
