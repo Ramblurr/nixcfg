@@ -34,18 +34,9 @@ lib.mkIf cfg.homeManager.enable {
     wants = [ "network-online.target" ];
   };
   home-manager.users.${username} = hm: {
-    imports = [
-      inputs.impermanence.nixosModules.home-manager.impermanence
-      inputs.sops-nix.homeManagerModule
-      (lib.mkAliasOptionModule
-        [ "persistence" ]
-        [
-          "home"
-          "persistence"
-          "/persist${username}"
-        ]
-      )
-    ];
+    #imports = [
+    #  inputs.sops-nix.homeManagerModule
+    #];
     home.homeDirectory = home;
     home.sessionVariables = {
       EDITOR = "vim";

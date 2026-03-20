@@ -8,8 +8,8 @@
 let
   inherit (config.networking) hostName;
   inherit (config.repo.secrets.global) domain;
+  inherit (config.modules.users.primaryUser) username uid;
   cfg = config.modules.microvm-guest;
-  inherit (cfg.devSandbox) username;
   SOCKLOCATION = "/var/lib/microvms/${hostName}/terminal.sock";
   mkShare = source: dir: {
     inherit source;
@@ -25,20 +25,7 @@ let
     else
       dir;
 in
-
-{
-  imports = [
-    (lib.mkAliasOptionModule
-      [ "myhm" ]
-      [
-        "home-manager"
-        "users"
-        "${username}"
-      ]
-    )
-  ];
-}
-// lib.mkIf cfg.devSandbox.enable {
+lib.mkIf cfg.devSandbox.enable {
   microvm = {
     hypervisor = "qemu";
     qemu = {
@@ -50,15 +37,19 @@ in
     };
     shares = map shareDir cfg.devSandbox.sharedDirs;
   };
+
+  modules.users.enable = true;
+  modules.users.root.enable = false;
+  modules.users.primaryUser.password.enable = false;
   modules.microvm-guest = {
     bootstrapSops.enable = true;
     writableStoreOverlay.enable = true;
-    homeManager = {
-      enable = true;
-      username = "${username}";
-      uid = 1000;
-      gid = 1000;
-    };
+    #homeManager = {
+    #  enable = true;
+    #  username = "${username}";
+    #  uid = 1000;
+    #  gid = 1000;
+    #};
   };
   # sudo socat STDIO,cfmakeraw,escape=0x1D unix:/var/lib/microvms/claude-test/terminal.sock
   #  microvm.qemu = {
@@ -101,9 +92,9 @@ in
         }
       ];
   };
+
   users.users.${username} = {
     openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
-    shell = pkgs.zsh;
     extraGroups = [
       "wheel"
       "docker"
@@ -111,6 +102,9 @@ in
       "audio"
       "networkmanager"
     ];
+    createHome = true;
+    autoSubUidGidRange = true;
+    linger = true;
   };
   services.getty.autologinUser = "${username}";
 
@@ -125,8 +119,8 @@ in
 
   modules.shell.atuin = {
     enable = true;
-    autoLogin.enable = true;
-    syncing.enable = true;
+    autoLogin.enable = false;
+    syncing.enable = false;
   };
   modules.shell = {
     zsh.enable = true;
@@ -143,23 +137,27 @@ in
   home-manager.users.${username} =
     { pkgs, ... }:
     {
-      manual.manpages.enable = true;
+      #systemd.user.startServices = "sd-switch";
       systemd.user.startServices = lib.mkForce true;
+      manual.manpages.enable = true;
       programs = {
         home-manager.enable = true;
       };
       home.sessionVariables = {
         TERM = "xterm-256color";
+        EDITOR = "vim";
+        DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString uid}/bus";
+        XDG_RUNTIME_DIR = "/run/user/${toString uid}";
       };
-      programs.zsh = {
-        shellAliases = {
-          "claude" = "claude --dangerously-skip-permissions";
-          "start-local" = "tmux new-session -d -s claude-session 'claude --dangerously-skip-permissions'";
-          "start" =
-            "ttyd -p 8080 --writable -t titleFixed=$(hostname) -t fontSize=32 -t theme=dark -t enableSixel=true tmux attach-session -t claude-session";
-          "attach" = "tmux attach-session -t claude-session";
-        };
-      };
+      #programs.zsh = {
+      #  shellAliases = {
+      #    "claude" = "claude --dangerously-skip-permissions";
+      #    "start-local" = "tmux new-session -d -s claude-session 'claude --dangerously-skip-permissions'";
+      #    "start" =
+      #      "ttyd -p 8080 --writable -t titleFixed=$(hostname) -t fontSize=32 -t theme=dark -t enableSixel=true tmux attach-session -t claude-session";
+      #    "attach" = "tmux attach-session -t claude-session";
+      #  };
+      #};
       home.packages = with pkgs; [
         strace
         #claude-code

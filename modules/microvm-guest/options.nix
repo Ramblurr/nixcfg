@@ -111,20 +111,13 @@ in
     };
     devSandbox = {
       enable = mkEnableOption "Enable dev sandbox for the microvm";
-      username = mkOption {
-        type = types.str;
-        default = "ramblurr";
-        description = ''
-          Username for the dev sandbox configuration.
-        '';
-      };
       sharedDirs = mkOption {
         type = types.oneOf [
           types.str
           types.anything
         ];
         default = [
-          "/home/ramblurr/.claude"
+          #"/home/ramblurr/.claude"
         ];
         description = ''
           Directories to share with the dev sandbox.

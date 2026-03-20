@@ -3,7 +3,6 @@
   lib,
   pkgs,
   inputs,
-  actual-nixpkgs,
   ...
 }:
 with lib;
@@ -20,6 +19,7 @@ in
         default = true;
       };
       headless.enable = lib.mkEnableOption "";
+      root.enable = lib.mkEnableOption "";
       primaryUser = {
         username = lib.mkOption {
           type = lib.types.uniq lib.types.str;
@@ -55,6 +55,7 @@ in
         extraGroups = lib.mkOption {
           type = types.listOf types.str;
           description = lib.mdDoc "The user's auxiliary groups.";
+          default = [ ];
         };
         authorizedKeys = lib.mkOption {
           type = types.listOf types.str;
@@ -74,6 +75,7 @@ in
     )
   ];
   config = lib.mkIf cfg.enable {
+    modules.users.root.enable = lib.mkDefault true;
     services.userborn.enable = cfg.userborn.enable;
     services.pcscd.enable = true;
     systemd.services.sops-install-secrets = {
@@ -94,7 +96,7 @@ in
     sops.secrets."${cfg.primaryUser.passwordSecretKey}" = lib.mkIf cfg.primaryUser.password.enable {
       neededForUsers = true;
     };
-    sops.secrets.root-password = {
+    sops.secrets.root-password = lib.mkIf cfg.root.enable {
       neededForUsers = true;
     };
     environment.persistence."/persist" = lib.mkIf withImpermanence {
@@ -113,7 +115,7 @@ in
       ];
     users = {
       mutableUsers = false;
-      users.root = {
+      users.root = lib.mkIf cfg.root.enable {
         initialHashedPassword = lib.mkForce null;
         hashedPasswordFile = config.sops.secrets.root-password.path;
         openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
@@ -235,10 +237,9 @@ in
           CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
           NIX_PATH = "nixpkgs=flake:nixpkgs\${NIX_PATH:+:$NIX_PATH}";
         };
-        nix.registry.nixpkgs.flake = actual-nixpkgs;
         # This is an alias for
         #home.persistence."/persist" = ..
-        persistence = lib.mkIf config.modules.impermanence.enable { };
+        #persistence = lib.mkIf config.modules.impermanence.enable { };
       };
   };
 }
