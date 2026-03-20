@@ -32,17 +32,10 @@
     wantedBy = lib.mkForce [ ];
     socketConfig.ListenStream = lib.mkForce [ ];
   };
-
+  sops.defaultSopsFile = ./secrets.sops.yaml;
   modules.microvm-guest = {
-    devSandbox.enable = true;
-    #bootstrapSops.enable = true;
+    #devSandbox.enable = true;
     #writableStoreOverlay.enable = true;
-    #homeManager = {
-    #  enable = true;
-    #  username = "${username}";
-    #  uid = 1000;
-    #  gid = 1000;
-    #};
   };
-  modules.dev.llms.enable = true;
+  #modules.dev.llms.enable = true;
 }
