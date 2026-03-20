@@ -87,7 +87,7 @@ let
 in
 python3Packages.buildPythonPackage rec {
   pname = "linux-voice-assistant";
-  version = "unstable-2026-01-21";
+  version = "1.1.9";
   pyproject = true;
 
   disabled = python3Packages.pythonOlder "3.9";
@@ -95,8 +95,8 @@ python3Packages.buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "OHF-Voice";
     repo = "linux-voice-assistant";
-    rev = "8743861738a5738fbc35f05aa876970d31658472";
-    hash = "sha256-EugkKK0mDDYokKW5DbZ0nSnj5CJpattq9CUyMc1qA4A=";
+    rev = "v1.1.9";
+    hash = "sha256-HKhvM92atSM1nOHrRcES3Un2zHIkC0np6UtT6NM3YuY=";
   };
 
   build-system = [ python3Packages.setuptools ];
@@ -111,6 +111,10 @@ python3Packages.buildPythonPackage rec {
         sed -i 's/python-mpv>=1,<2/mpv/g' pyproject.toml
         sed -i 's/soundcard<1/soundcard/g' pyproject.toml
         sed -i 's/zeroconf<1/zeroconf/g' pyproject.toml
+        sed -i 's/netifaces2==0.0.22/netifaces2/g' pyproject.toml
+        sed -i 's/getmac<1/getmac/g' pyproject.toml
+        # Include subpackages (e.g. linux_voice_assistant.player)
+        sed -i 's/include = \["linux_voice_assistant"\]/include = ["linux_voice_assistant", "linux_voice_assistant.*"]/' pyproject.toml
 
         # Fix data directory path to use installed location for read-only data
         # (wakewords, sounds). Writable data paths should be passed via CLI args.
@@ -152,6 +156,9 @@ python3Packages.buildPythonPackage rec {
     pyopen-wakeword
     python3Packages.mpv
     pymicro-wakeword
+    python3Packages.netifaces2
+    python3Packages.getmac
+    python3Packages.types-protobuf
   ];
 
   # Tests require network access
@@ -160,7 +167,7 @@ python3Packages.buildPythonPackage rec {
   pythonImportsCheck = [ "linux_voice_assistant" ];
 
   meta = {
-    changelog = "https://github.com/OHF-Voice/linux-voice-assistant/commits/main";
+    changelog = "https://github.com/OHF-Voice/linux-voice-assistant/releases/tag/v1.1.9";
     description = "Linux voice assistant for Home Assistant using the ESPHome protocol";
     homepage = "https://github.com/OHF-Voice/linux-voice-assistant";
     license = lib.licenses.asl20;
