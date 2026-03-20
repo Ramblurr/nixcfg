@@ -3,6 +3,7 @@
   pkgs,
   lib,
   inputs,
+  actual-nixpkgs,
   ...
 }:
 let
@@ -29,6 +30,7 @@ in
     ./microvm-host.nix
     #./arm.nix
   ];
+
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
@@ -36,6 +38,10 @@ in
   networking.hostId = lib.my.generateHostId config.networking.hostName;
 
   time.timeZone = "Europe/Berlin";
+
+  myhm = _: {
+    nix.registry.nixpkgs.flake = actual-nixpkgs;
+  };
 
   sops.secrets.HASS_TOKEN = {
     owner = username;
