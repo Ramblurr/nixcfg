@@ -132,6 +132,8 @@
     niri.inputs.nixpkgs.follows = "nixpkgs";
 
     llm-agents.url = "github:numtide/llm-agents.nix";
+    # use their nixpkgs to use their cache
+    #llm-agents.inputs.nixpkgs.follows = "nixpkgs";
     nixos-generators.url = "github:nix-community/nixos-generators";
     nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
