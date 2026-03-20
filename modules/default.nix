@@ -118,6 +118,7 @@
     ./services/printing.nix
     ./services/roon-server.nix
     ./services/sshd.nix
+    ./services/stirling-pdf.nix
     ./services/tautulli.nix
     ./services/tubearchivist.nix
     ./services/udpbroadcastrelay.nix
