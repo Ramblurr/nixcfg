@@ -66,6 +66,7 @@ in
       my-y2r.enable = true;
       tubearchivist.enable = true;
       invoiceninja.enable = true;
+      stirling-pdf.enable = true;
     };
   };
 
