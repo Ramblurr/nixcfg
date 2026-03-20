@@ -27,11 +27,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "pdns-unstable";
-  version = "5.1.0-alpha0.463.master.g603af1d9a";
+  version = "5.1.0-alpha1.41.master.g6d73b81d9";
 
   src = fetchurl {
     url = "https://downloads.powerdns.com/autobuilt/auth/${finalAttrs.version}/pdns-${finalAttrs.version}.tar.bz2";
-    hash = "sha256-BlxnYav0P/Hp26iRGWaUm6ymwm5QwWomSkZq3cf0whE=";
+    hash = "sha256-HV2dtlwfzEocbOaAV94xwp8WlLkUF7S1uXnUmcZcEMU=";
   };
   # redact configure flags from version output to reduce closure size
   #patches = [ ./version.patch ];
