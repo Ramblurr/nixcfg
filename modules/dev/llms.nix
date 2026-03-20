@@ -11,6 +11,7 @@ let
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   inherit (config.modules.users.primaryUser) username;
   inherit (llm-agents)
+    ccusage-codex
     opencode
     pi
     mistral-vibe
@@ -116,6 +117,8 @@ in
           #playwright
           #playwright-test
           #playwright-mcp
+          geckodriver
+          chromedriver
           piper-tts
           espeak
           jujutsu
@@ -126,6 +129,7 @@ in
           catnip-wrapper
           pi-wrapper
           mistral-vibe-wrapper
+          ccusage-codex
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           opencode-wrapper
