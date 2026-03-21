@@ -14,15 +14,15 @@
   curl,
 }:
 let
-  version = "0.19.5";
-  build = "2897";
+  version = "0.19.6";
+  build = "2922";
 in
 stdenv.mkDerivation (_finalAttrs: {
   inherit version;
   pname = "gitbutler-bin";
   src = fetchurl {
     url = "https://releases.gitbutler.com/releases/release/${version}-${build}/linux/x86_64/GitButler_${version}_amd64.deb";
-    hash = "sha256-5d+wdo0VohA1TUANI3TpfMJzGDZiR1WUajFLGQBsAxk=";
+    hash = "sha256-Tjhzn3T2RURzSJ8J6noiCNMwjHEWqQXmW9pkRPx14Ug=";
   };
 
   unpackPhase = "dpkg-deb -x $src unpack";
