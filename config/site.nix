@@ -169,6 +169,22 @@ in
       router = "addams";
     };
   };
+  site.net.moot = {
+    vlan = 12;
+    domainName = "moot.${domain}";
+    subnet4 = "10.9.12.0/23";
+    subnets6 = { };
+    mtu = 1500;
+    hosts4 = {
+      addams = [ "10.9.12.1" ];
+    };
+    dhcp = {
+      enable = true;
+      start = "10.9.13.10";
+      end = "10.9.13.254";
+      router = "addams";
+    };
+  };
   site.net.guest = {
     vlan = 3;
     domainName = "guest.${domain}";
@@ -277,6 +293,7 @@ in
         iot.type = "bridge";
         inot.type = "bridge";
         data.type = "bridge";
+        moot.type = "bridge";
         guest.type = "bridge";
         svc.type = "bridge";
         vpn = {
