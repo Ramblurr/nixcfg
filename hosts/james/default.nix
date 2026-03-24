@@ -15,6 +15,7 @@ in
     ../../config/offsite.nix
     ../../config/hetzner-cloud-ccx.nix
     ./ingress.nix
+    ./ingress-haproxy.nix
     ./web.nix
     ./web/hook.nix
     ./web/work.nix
@@ -70,6 +71,8 @@ in
       "wheel"
     ];
   };
+
+  hosts.james.ingress.implementation = "haproxy";
 
   environment.persistence."/persist" = {
     hideMounts = true;
