@@ -6,6 +6,8 @@
 }:
 let
   inherit (config.networking) hostName;
+  bunnyApiProxyPort = config.repo.secrets.home-ops.ports.bunny-api-proxy;
+  nadApiPort = config.repo.secrets.home-ops.ports.nad-api;
 in
 {
   imports = [
@@ -121,10 +123,20 @@ in
       }
     ];
     http.ip = "127.0.0.1";
-    http.port = 8002;
+    http.port = nadApiPort;
   };
   modules.services.ingress.virtualHosts."nad.${config.repo.secrets.global.domain.home}" = {
     acmeHost = config.repo.secrets.global.domain.home;
-    upstream = "http://127.0.0.1:${toString 8002}";
+    upstream = "http://127.0.0.1:${toString nadApiPort}";
+  };
+
+  services.bunny-api-proxy = {
+    enable = true;
+    bunnyApiKeyFile = config.sops.secrets.bunnyApiKey.path;
+    listenAddress = "127.0.0.1:${toString bunnyApiProxyPort}";
+  };
+  modules.services.ingress.virtualHosts."bunny.${config.repo.secrets.global.domain.home}" = {
+    acmeHost = config.repo.secrets.global.domain.home;
+    upstream = "http://127.0.0.1:${toString bunnyApiProxyPort}";
   };
 }
