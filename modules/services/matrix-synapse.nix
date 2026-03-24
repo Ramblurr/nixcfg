@@ -158,6 +158,8 @@ in
         suppress_key_server_warning = true;
         enable_search = true;
         allow_public_rooms_over_federation = true;
+        # federate with moot locally
+        ip_range_whitelist = [ "10.9.12.0/23" ];
         redaction_retention_period = 1;
         max_upload_size = "200M";
         extra_well_known_client_content = {
