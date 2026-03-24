@@ -16,6 +16,7 @@ inputs: [
       # webkitgtk_4_0' has been removed, port to `libsoup_3` and switch to `webkitgtk_4_1
       #java-mission-control = prev.callPackage ./java-mission-control { };
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
+      bunny-api-proxy = prev.callPackage ./bunny-api-proxy/package.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
