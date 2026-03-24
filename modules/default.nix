@@ -88,6 +88,7 @@
     ./services/authentik-module.nix
     ./services/authentik.nix
     ./services/borgmatic.nix
+    ./services/bunny-api-proxy.nix
     ./services/calibre.nix
     ./services/koreader-sync.nix
     ./services/calibre-web.nix
