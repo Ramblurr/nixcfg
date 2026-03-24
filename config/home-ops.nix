@@ -607,7 +607,8 @@ in
     modules.services.forgejo = lib.mkIf cfg.apps.forgejo.enable {
       enable = true;
       domain = "git.${home-ops.homeDomain}";
-      #ports.http = home-ops.ports.forgejo;
+      user = home-ops.users.forgejo;
+      group = home-ops.groups.forgejo;
       ingress = {
         domain = home-ops.homeDomain;
       };

@@ -59,7 +59,7 @@ in
       matrix-synapse.enable = true;
       influxdb.enable = true;
       git-archive.enable = true;
-      #forgejo.enable = true;
+      forgejo.enable = true;
       #actual-server.enable = true;
       atuin-sync.enable = true;
       snowflake-proxy.enable = true;

@@ -15,20 +15,19 @@ in
       example = "code.example.com";
       description = "The domain to use for the forgejo";
     };
-    #ports = {
-    #  http = lib.mkOption {
-    #    type = lib.types.port;
-    #    description = "The HTTP port to use for the forgejo";
-    #  };
-    #};
     ingress = lib.mkOption {
       type = lib.types.submodule (
         lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
       );
     };
+    user = lib.mkOption { type = lib.types.unspecified; };
+    group = lib.mkOption { type = lib.types.unspecified; };
   };
 
   config = lib.mkIf cfg.enable {
+    users.users.forgejo.uid = lib.mkForce cfg.user.uid;
+    users.groups.forgejo.gid = lib.mkForce cfg.group.gid;
+
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/forgejo"."mountpoint" = config.services.forgejo.stateDir;
       "rpool/encrypted/safe/svc/forgejo"."com.sun:auto-snapshot" = "false";
@@ -49,7 +48,7 @@ in
         service = {
           DISABLE_REGISTRATION = true;
           ENABLE_NOTIFY_MAIL = false;
-          "explore.DISABLE_USERS_PAGE" = true;
+          "explore.DISABLE_USERS_PAGE" = false;
         };
         openid = {
           ENABLE_OPENID_SIGNIN = false;
