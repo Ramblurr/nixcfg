@@ -21,6 +21,7 @@ let
   inherit (config.repo.secrets.global.ingressTunnel)
     jamesLocal
     deweyLocal
+    thingsteadLocal
     clientPort
     ;
   inherit (config.repo.secrets.global.domain)
@@ -45,6 +46,10 @@ let
     "auth.${work}"
     "matrix.${work}"
     "data.${work}"
+  ];
+  thingsteadServices = [
+    "moot.land"
+    ".moot.land"
   ];
   localServices = [
     "${work}"
@@ -123,6 +128,10 @@ let
             }) deweyServices)
             ++ (map (hostname: {
               inherit hostname;
+              endpoint = thingsteadLocal;
+            }) thingsteadServices)
+            ++ (map (hostname: {
+              inherit hostname;
               endpoint = jamesLocal;
             }) localServices);
         }
@@ -158,6 +167,25 @@ let
             ];
           };
         }
+        {
+          name = "thingstead-local-tcp";
+          addr = ":0";
+          handler = {
+            type = "rtcp";
+          };
+          listener = {
+            type = "rtcp";
+            chain = "chain-thingstead";
+          };
+          forwarder = {
+            nodes = [
+              {
+                name = "thingstead";
+                addr = "thingstead.moot.${home}:443";
+              }
+            ];
+          };
+        }
       ];
       chains = [
         {
@@ -173,6 +201,34 @@ let
                     type = "tunnel";
                     metadata = {
                       "tunnel.id" = jamesLocal;
+                      "tunnel.weight" = 1;
+                    };
+                    auth = {
+                      username = "james";
+                      password = "$GOST_PASSWORD";
+                    };
+                  };
+                  dialer = {
+                    type = "tcp";
+                  };
+                }
+              ];
+            }
+          ];
+        }
+        {
+          name = "chain-thingstead";
+          hops = [
+            {
+              name = "hop-thingstead";
+              nodes = [
+                {
+                  name = "node-thingstead";
+                  addr = "127.0.0.1:${toString clientPort}";
+                  connector = {
+                    type = "tunnel";
+                    metadata = {
+                      "tunnel.id" = thingsteadLocal;
                       "tunnel.weight" = 1;
                     };
                     auth = {
