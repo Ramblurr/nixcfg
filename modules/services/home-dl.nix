@@ -8,6 +8,11 @@
 let
   cfg = config.modules.services.home-dl;
   inherit (config.repo.secrets) home-ops;
+  mediaUser = home-ops.users.media.name;
+  mediaUid = home-ops.users.media.uid;
+  mediaGroup = home-ops.groups.media.name;
+  mediaGid = home-ops.groups.media.gid;
+  qbittorrentDomain = "qbittorrent.${cfg.baseDomain}";
   ingresses = {
     radarr = {
       domain = "radarr.${cfg.baseDomain}";
@@ -39,6 +44,8 @@ let
   stateDirEffective = "/var/lib/home-dl";
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
+  gluetunStateDir = "${stateDirActual}/gluetun";
+  qbittorrentStateDir = "${stateDirActual}/qbittorrent";
   serviceDeps = [
     "${utils.escapeSystemdPath mediaLocalPath}.mount"
     "${utils.escapeSystemdPath dlLocalPath}.mount"
@@ -92,6 +99,7 @@ in
     };
     ports = {
       overseerr = lib.mkOption { type = lib.types.port; };
+      qbittorrent = lib.mkOption { type = lib.types.port; };
     };
     mediaNfsShare = lib.mkOption { type = lib.types.str; };
     subnet = lib.mkOption { type = lib.types.unspecified; };
@@ -116,9 +124,18 @@ in
     };
 
     systemd.tmpfiles.rules = [
-      "d ${dlLocalPath} 0770 ${home-ops.users.media.name} ${home-ops.groups.media.name}"
-      "A ${dlLocalPath} - - - - d:group:${home-ops.groups.media.name}:rwx"
+      "d ${dlLocalPath} 0770 ${mediaUser} ${mediaGroup}"
+      "A ${dlLocalPath} - - - - d:group:${mediaGroup}:rwx"
+      "d ${gluetunStateDir} 0700 root root"
+      "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
     ];
+
+    sops.secrets."home-dl/gluetun-protonvpn.env" = {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
+      owner = "root";
+      mode = "0400";
+      restartUnits = [ "home-dl-gluetun.service" ];
+    };
 
     modules.networking.systemd-netns-private = {
       enable = true;
@@ -145,7 +162,7 @@ in
       serviceConfig = {
         Type = "simple";
         StateDirectory = "home-dl/sonarr";
-        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
+        SupplementaryGroups = [ mediaUser ];
         ExecStart = "${pkgs.sonarr}/bin/NzbDrone -nobrowser -data='${stateDirEffective}/sonarr'";
         ReadWritePaths = [
           mediaLocalPath
@@ -162,7 +179,7 @@ in
       serviceConfig = {
         Type = "simple";
         StateDirectory = "home-dl/radarr";
-        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
+        SupplementaryGroups = [ mediaUser ];
         ExecStart = "${pkgs.radarr}/bin/Radarr -nobrowser -data='${stateDirEffective}/radarr'";
         ReadWritePaths = [
           mediaLocalPath
@@ -180,7 +197,7 @@ in
         Type = "forking";
         GuessMainPID = "no";
         StateDirectory = "home-dl/sabnzbd";
-        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
+        SupplementaryGroups = [ mediaUser ];
         ExecStart = "${lib.getExe pkgs.sabnzbd} -d -f ${stateDirEffective}/sabnzbd/sabnzbd.ini";
         WorkingDirectory = "${stateDirEffective}/sabnzbd";
         ReadWritePaths = [
@@ -197,7 +214,7 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
-        SupplementaryGroups = [ "${home-ops.users.media.name}" ];
+        SupplementaryGroups = [ mediaUser ];
         StateDirectory = "home-dl/prowlarr";
         ExecStart = "${lib.getExe pkgs.prowlarr} -nobrowser -data=${stateDirEffective}/prowlarr";
         Restart = "on-failure";
@@ -269,13 +286,101 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts = lib.mapAttrs' (
-      _name: ingress:
-      lib.nameValuePair ingress.domain {
-        acmeHost = cfg.ingress.domain;
-        upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
-        inherit (ingress) forwardAuth;
-      }
-    ) ingresses;
+    virtualisation.quadlet.enable = true;
+    virtualisation.quadlet = {
+      networks.home-dl-torrent = {
+        autoStart = true;
+        networkConfig = {
+          NetworkName = "home-dl-torrent";
+        };
+      };
+      containers = {
+        home-dl-gluetun = {
+          autoStart = true;
+          serviceConfig = {
+            RestartSec = "30";
+            Restart = "always";
+          };
+          unitConfig = {
+            RequiresMountsFor = [ stateDirActual ];
+          };
+          containerConfig = {
+            # renovate: docker-image
+            Image = "ghcr.io/qdm12/gluetun:v3.41.0";
+            ContainerName = "home-dl-gluetun";
+            Network = "home-dl-torrent.network";
+            AddCapability = [ "NET_ADMIN" ];
+            AddDevice = [ "/dev/net/tun:/dev/net/tun" ];
+            PublishPort = [ "127.0.0.1:${toString cfg.ports.qbittorrent}:${toString cfg.ports.qbittorrent}" ];
+            EnvironmentFile = [ config.sops.secrets."home-dl/gluetun-protonvpn.env".path ];
+            Environment = [
+              "VPN_SERVICE_PROVIDER=protonvpn"
+              "VPN_TYPE=wireguard"
+              "FIREWALL_INPUT_PORTS=${toString cfg.ports.qbittorrent}"
+              "TZ=Europe/Berlin"
+            ];
+            Volume = [ "${gluetunStateDir}:/gluetun:rw" ];
+            HealthCmd = "/gluetun-entrypoint healthcheck";
+            HealthInterval = "30s";
+            HealthTimeout = "10s";
+            HealthRetries = 3;
+            HealthStartPeriod = "30s";
+            HealthOnFailure = "kill";
+            Notify = "healthy";
+          };
+        };
+
+        home-dl-qbittorrent = {
+          autoStart = true;
+          serviceConfig = {
+            RestartSec = "30";
+            Restart = "always";
+          };
+          unitConfig = {
+            RequiresMountsFor = [
+              stateDirActual
+              dlLocalPath
+            ];
+          };
+          containerConfig = {
+            # renovate: docker-image
+            Image = "lscr.io/linuxserver/qbittorrent:libtorrentv1";
+            ContainerName = "home-dl-qbittorrent";
+            Network = "home-dl-gluetun.container";
+            User = toString mediaUid;
+            Group = toString mediaGid;
+            Environment = [
+              "PUID=${toString mediaUid}"
+              "PGID=${toString mediaGid}"
+              "TZ=Europe/Berlin"
+              "UMASK=007"
+              "WEBUI_PORT=${toString cfg.ports.qbittorrent}"
+              "TORRENTING_PORT=6881"
+            ];
+            Volume = [
+              "${qbittorrentStateDir}:/config:rw"
+              "${dlLocalPath}:/downloads:rw"
+            ];
+          };
+        };
+      };
+    };
+
+    modules.services.ingress.virtualHosts =
+      (lib.mapAttrs' (
+        _name: ingress:
+        lib.nameValuePair ingress.domain {
+          acmeHost = cfg.ingress.domain;
+          upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
+          inherit (ingress) forwardAuth;
+        }
+      ) ingresses)
+      // {
+        "${qbittorrentDomain}" = {
+          acmeHost = cfg.ingress.domain;
+          upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";
+          forwardAuth = true;
+        };
+      };
   };
 }
