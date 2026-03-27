@@ -357,7 +357,15 @@ in
       role = "server";
       interfaces = {
         lan0.type = "phys";
-        prim.type = "bridge";
+        prim = {
+          type = "bridge";
+          routes = [
+            {
+              Destination = "192.168.8.0/22";
+              Gateway = "10.9.4.21";
+            }
+          ];
+        };
         mgmt.type = "bridge";
         svc = {
           type = "bridge";
