@@ -50,6 +50,7 @@ in
           ENABLE_NOTIFY_MAIL = false;
           "explore.DISABLE_USERS_PAGE" = false;
         };
+        api.ENABLE_SWAGGER = true;
         openid = {
           ENABLE_OPENID_SIGNIN = false;
           ENABLE_OPENID_SIGNUP = false;
