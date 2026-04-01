@@ -46,6 +46,11 @@ let
   dlLocalPath = "/mnt/downloads";
   gluetunStateDir = "${stateDirActual}/gluetun";
   qbittorrentStateDir = "${stateDirActual}/qbittorrent";
+  qbittorrentConfigDir = "${qbittorrentStateDir}/qBittorrent";
+  qbittorrentConfigFile = "${qbittorrentConfigDir}/qBittorrent.conf";
+  qbittorrentPort = toString cfg.ports.qbittorrent;
+  qbittorrentPortForwardUpCommand = "/bin/sh -c 'wget -O- -nv --retry-connrefused --post-data \"json={\\\"listen_port\\\":{{PORT}},\\\"current_network_interface\\\":\\\"{{VPN_INTERFACE}}\\\",\\\"random_port\\\":false,\\\"upnp\\\":false}\" http://127.0.0.1:${qbittorrentPort}/api/v2/app/setPreferences'";
+  qbittorrentPortForwardDownCommand = "/bin/sh -c 'wget -O- -nv --retry-connrefused --post-data \"json={\\\"listen_port\\\":0,\\\"current_network_interface\\\":\\\"lo\\\"}\" http://127.0.0.1:${qbittorrentPort}/api/v2/app/setPreferences'";
   serviceDeps = [
     "${utils.escapeSystemdPath mediaLocalPath}.mount"
     "${utils.escapeSystemdPath dlLocalPath}.mount"
@@ -135,6 +140,29 @@ in
       owner = "root";
       mode = "0400";
       restartUnits = [ "home-dl-gluetun.service" ];
+    };
+
+    systemd.services.home-dl-qbittorrent-config = {
+      description = "Prepare qBittorrent config for Gluetun port forwarding";
+      before = [ "home-dl-qbittorrent.service" ];
+      requiredBy = [ "home-dl-qbittorrent.service" ];
+      unitConfig.RequiresMountsFor = [ stateDirActual ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "root";
+      };
+      script = ''
+        install -d -m0770 -o ${mediaUser} -g ${mediaGroup} ${qbittorrentConfigDir}
+        touch ${qbittorrentConfigFile}
+        chown ${mediaUser}:${mediaGroup} ${qbittorrentConfigFile}
+        chmod 0660 ${qbittorrentConfigFile}
+
+        if grep -q '^WebUI\\LocalHostAuth=' ${qbittorrentConfigFile}; then
+          sed -i 's/^WebUI\\LocalHostAuth=.*/WebUI\\LocalHostAuth=false/' ${qbittorrentConfigFile}
+        else
+          printf '\nWebUI\\LocalHostAuth=false\n' >> ${qbittorrentConfigFile}
+        fi
+      '';
     };
 
     modules.networking.systemd-netns-private = {
@@ -316,6 +344,10 @@ in
             Environment = [
               "VPN_SERVICE_PROVIDER=protonvpn"
               "VPN_TYPE=wireguard"
+              "PORT_FORWARD_ONLY=on"
+              "VPN_PORT_FORWARDING=on"
+              "VPN_PORT_FORWARDING_UP_COMMAND=${qbittorrentPortForwardUpCommand}"
+              "VPN_PORT_FORWARDING_DOWN_COMMAND=${qbittorrentPortForwardDownCommand}"
               "FIREWALL_INPUT_PORTS=${toString cfg.ports.qbittorrent}"
               "TZ=Europe/Berlin"
             ];
@@ -379,7 +411,7 @@ in
         "${qbittorrentDomain}" = {
           acmeHost = cfg.ingress.domain;
           upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";
-          forwardAuth = true;
+          forwardAuth = false;
         };
       };
   };
