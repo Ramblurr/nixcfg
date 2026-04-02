@@ -53,9 +53,15 @@ in
       };
     };
     myhm = {
-      programs.gh = {
-        enable = true;
+      home.sessionVariables = {
+        KUBECONFIG = "$XDG_CONFIG_HOME/kube/config";
+        KREW_ROOT = "$XDG_CONFIG_HOME/krew";
+        KUBE_CONFIG_PATH = "$KUBECONFIG";
+        PSQL_HISTORY = "$XDG_CACHE_HOME/psql_history";
+        DOCKER_CONFIG = "$XDG_CONFIG_HOME/docker";
+        FLY_CONFIG_DIR = "$XDG_CONFIG_HOME/fly";
       };
+      programs.gh.enable = true;
       home.packages = with pkgs; [
         mani
         ghq

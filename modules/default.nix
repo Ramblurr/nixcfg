@@ -61,6 +61,7 @@
     ./dev/python.nix
     ./dev/radicle.nix
     ./dev/random.nix
+    ./dev/rust.nix
     ./dev/llms.nix
     ./editors/emacs/default.nix
     ./editors/vim.nix
