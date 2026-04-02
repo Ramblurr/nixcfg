@@ -43,6 +43,14 @@ in
         };
       in
       {
+        home.sessionVariables = {
+          SDPX_LICENSES_PATH = "${pkgs.spdx-license-list-data.json}/json";
+          LEIN_HOME = "$XDG_DATA_HOME/lein";
+          CLJ_CONFIG = "$XDG_CONFIG_HOME/clojure";
+          CLJ_CACHE = "$XDG_CACHE_HOME/clojure";
+          DEPS_CLJ_TOOLS_DIR = "$XDG_DATA_HOME/deps.clj";
+          GITLIBS = "$XDG_CACHE_HOME/clojure-gitlibs";
+        };
         home.file."vendor/jdks/openjdk25".source = pkgs.jdk25;
         home.file."vendor/jdks/graalvm-ce".source = pkgs.graalvmPackages.graalvm-ce;
         home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
@@ -94,19 +102,6 @@ in
             entries = lib.mapAttrsToList mkEntry devSDKs;
           in
           pkgs.linkFarm "local-dev" entries;
-        #home.persistence."/persist${homeDirectory}" = mkIf withImpermanence {
-        #  directories = [
-        #    ".config/maven"
-        #    ".cache/maven"
-        #    ".config/clojure"
-        #    ".config/clj-kondo"
-        #    ".config/clojure-lsp"
-        #    ".cache/clojure"
-        #    ".cache/clojure-gitlibs"
-        #    ".local/share/deps.clj"
-        #  ];
-        #};
-
         xdg.configFile."clojure/deps.edn" = {
           source = pkgs.replaceVars ./configs/deps.edn {
             cacheDirectory = hm.config.xdg.cacheHome;
@@ -119,13 +114,6 @@ in
         xdg.configFile."clj-kondo" = {
           source = ./configs/clj-kondo;
           recursive = true;
-        };
-        home.sessionVariables = {
-          SDPX_LICENSES_PATH = "${pkgs.spdx-license-list-data.json}/json";
-          LEIN_HOME = "$XDG_DATA_HOME/lein";
-          CLJ_CONFIG = "$XDG_CONFIG_HOME/clojure";
-          CLJ_CACHE = "$XDG_CACHE_HOME/clojure";
-          DEPS_CLJ_TOOLS_DIR = "$XDG_DATA_HOME/deps.clj";
         };
       };
   };
