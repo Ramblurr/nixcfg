@@ -110,6 +110,8 @@ in
 
       home.sessionVariables = {
         PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
+        CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
+        CODEX_HOME = "$XDG_CONFIG_HOME/codex";
       };
       home.packages =
         with pkgs;

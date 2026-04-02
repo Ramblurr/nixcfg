@@ -122,6 +122,10 @@ in
         };
         home.sessionVariables = {
           SDPX_LICENSES_PATH = "${pkgs.spdx-license-list-data.json}/json";
+          LEIN_HOME = "$XDG_DATA_HOME/lein";
+          CLJ_CONFIG = "$XDG_CONFIG_HOME/clojure";
+          CLJ_CACHE = "$XDG_CACHE_HOME/clojure";
+          DEPS_CLJ_TOOLS_DIR = "$XDG_DATA_HOME/deps.clj";
         };
       };
   };

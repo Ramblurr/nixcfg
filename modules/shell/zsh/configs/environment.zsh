@@ -34,46 +34,11 @@ export LSP_USE_PLISTS=true
 export XDG_CACHE_HOME=$HOME/.cache
 export XDG_DATA_HOME=$HOME/.local/share
 export XDG_CONFIG_HOME=$HOME/.config
-export KUBECONFIG=$XDG_CONFIG_HOME/kube/config
-export KREW_ROOT=$XDG_CONFIG_HOME/krew
-export KUBE_CONFIG_PATH=$KUBECONFIG
-export LEIN_HOME=$XDG_DATA_HOME/lein
-export PSQL_HISTORY=$XDG_CACHE_HOME/psql_history
-export VOLTA_HOME=$XDG_DATA_HOME/volta
-export NPM_PACKAGES=$XDG_CACHE_HOME/npm-packages
-export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
-export CLJ_CONFIG=$XDG_CONFIG_HOME/clojure
-export CLJ_CACHE=$XDG_CACHE_HOME/clojure
-export DEPS_CLJ_TOOLS_DIR=$XDG_DATA_HOME/deps.clj
-#export GITLIBS=$XDG_CACHE_HOME/clojure-gitlibs
-export DOCKER_CONFIG=$XDG_CONFIG_HOME/docker
-export CLAUDE_CONFIG_DIR=$XDG_CONFIG_HOME/claude
-export CODEX_HOME=$XDG_CONFIG_HOME/codex
-export FLY_CONFIG_DIR=$XDG_CONFIG_HOME/fly
-export RUSTUP_HOME=$XDG_DATA_HOME/rusthome
-
-#█▓▒░ This path our people walked
-
-export PATH=$HOME/vendor/clojure/bin:$HOME/.local/share/go/bin:$HOME/.local/dotbin:$HOME/.local/bin:/usr/local/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH
-
-if [[ -d "$NPM_PACKAGES" ]]; then
-  export PATH=$NPM_PACKAGES/bin:$PATH
-fi
+export XDG_STATE_HOME=$HOME/.local/state
 
 #if [[ -d "$VOLTA_HOME/bin" ]]; then
 #  export PATH=$XDG_DATA_HOME/npm/bin:$VOLTA_HOME/bin:$PATH
 #fi
-
-if [[ -d "$KRE_ROOT/bin" ]]; then
-  export PATH=$KREW_ROOT/bin:$PATH
-fi
-
-#█▓▒░ all the evil things in the world have full sway
-if [ "$XDG_SESSION_DESKTOP" = "sway" ] || [ "$XDG_CURRENT_DESKTOP" = "sway" ] || [ "$XDG_SESSION_TYPE" = "wayland" ]; then
-  # https://github.com/swaywm/sway/issues/595
-  export _JAVA_AWT_WM_NONREPARENTING=1
-  export KITTY_ENABLE_WAYLAND=1 kitty
-fi
 
 #█▓▒░ if you're using podman, you're probably not using docker
 if command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
