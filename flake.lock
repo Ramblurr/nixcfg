@@ -184,6 +184,21 @@
     },
     "crane": {
       "locked": {
+        "lastModified": 1762538466,
+        "narHash": "sha256-8zrIPl6J+wLm9MH5ksHcW7BUHo7jSNOu0/hA0ohOOaM=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "0cea393fffb39575c46b7a0318386467272182fe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "crane_2": {
+      "locked": {
         "lastModified": 1758758545,
         "narHash": "sha256-NU5WaEdfwF6i8faJ2Yh+jcK9vVFrofLcwlD/mP65JrI=",
         "rev": "95d528a5f54eaba0d12102249ce42f4d01f4e364",
@@ -196,7 +211,7 @@
         "url": "https://flakehub.com/f/ipetkov/crane/0"
       }
     },
-    "crane_2": {
+    "crane_3": {
       "inputs": {
         "flake-compat": "flake-compat_5",
         "flake-utils": "flake-utils_5",
@@ -207,7 +222,7 @@
           "paisano-mdbook-preprocessor",
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay_2"
+        "rust-overlay": "rust-overlay_3"
       },
       "locked": {
         "lastModified": 1676162383,
@@ -223,7 +238,7 @@
         "type": "github"
       }
     },
-    "crane_3": {
+    "crane_4": {
       "locked": {
         "lastModified": 1758758545,
         "narHash": "sha256-NU5WaEdfwF6i8faJ2Yh+jcK9vVFrofLcwlD/mP65JrI=",
@@ -716,7 +731,7 @@
     },
     "fh": {
       "inputs": {
-        "crane": "crane",
+        "crane": "crane_2",
         "fenix": "fenix",
         "nixpkgs": "nixpkgs_6"
       },
@@ -735,7 +750,7 @@
     },
     "fh_2": {
       "inputs": {
-        "crane": "crane_3",
+        "crane": "crane_4",
         "fenix": "fenix_3",
         "nixpkgs": "nixpkgs_21"
       },
@@ -1478,6 +1493,36 @@
         "url": "https://flakehub.com/f/cachix/git-hooks.nix/0.1.941"
       }
     },
+    "git-lines": {
+      "inputs": {
+        "advisory-db": [],
+        "crane": "crane",
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "git-hooks-nix": [],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay",
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1764164562,
+        "narHash": "sha256-0qgDL9QsmkNVhzr6ynEmi4dzDBv96PXtb0WVh91mnzA=",
+        "owner": "omegaice",
+        "repo": "git-lines",
+        "rev": "0651613b6d5237357c6d535cb9d5aa3fd4156b33",
+        "type": "github"
+      },
+      "original": {
+        "owner": "omegaice",
+        "repo": "git-lines",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -1899,7 +1944,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay"
+        "rust-overlay": "rust-overlay_2"
       },
       "locked": {
         "lastModified": 1768653140,
@@ -3095,7 +3140,7 @@
     },
     "paisano-mdbook-preprocessor": {
       "inputs": {
-        "crane": "crane_2",
+        "crane": "crane_3",
         "fenix": "fenix_2",
         "nixpkgs": [
           "nixos-extra-modules",
@@ -3247,6 +3292,7 @@
         "firefox-nightly": "firefox-nightly",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils_2",
+        "git-lines": "git-lines",
         "home-manager": "home-manager",
         "home-manager-stable": "home-manager-stable",
         "impermanence": "impermanence",
@@ -3328,6 +3374,27 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
+          "git-lines",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1763174172,
+        "narHash": "sha256-u6dcvXk2K6eYVYhmfiN3xmhIf3yUo5KPwm79UOD37Jo=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "89af6762b01409edbb595888a69311e8e5954110",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_2": {
+      "inputs": {
+        "nixpkgs": [
           "niri",
           "nixpkgs"
         ]
@@ -3346,7 +3413,7 @@
         "type": "github"
       }
     },
-    "rust-overlay_2": {
+    "rust-overlay_3": {
       "inputs": {
         "flake-utils": [
           "nixos-extra-modules",

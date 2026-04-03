@@ -146,6 +146,12 @@
     #brother_ql_web.url = "github:makefu/brother_ql_web";
     niri-scratchpad.url = "github:gvolpe/niri-scratchpad";
     niri-scratchpad.inputs.nixpkgs.follows = "nixpkgs";
+    git-lines.url = "github:omegaice/git-lines";
+    git-lines.inputs.nixpkgs.follows = "nixpkgs";
+    git-lines.inputs.flake-parts.follows = "flake-parts";
+    git-lines.inputs.treefmt-nix.follows = "treefmt-nix";
+    git-lines.inputs.git-hooks-nix.follows = "";
+    git-lines.inputs.advisory-db.follows = "";
   };
 
   outputs =
