@@ -143,6 +143,7 @@ in
           llm-agents.codex
           llm-agents.ccusage
           llm-agents.handy
+          inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
