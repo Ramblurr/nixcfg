@@ -103,6 +103,7 @@ in
     root = rootPath;
     extraConfig = ''
       add_header Alt-Svc 'h3=":443"; ma=86400';
+      absolute_redirect off;
       etag on;
       if_modified_since exact;
       error_page 404 /404.html;
@@ -116,7 +117,9 @@ in
     };
     locations."/" = {
       extraConfig = ''
-        rewrite ^(.+)/$ $1 break;
+        if ($uri ~ "^(.+)/$") {
+          return 301 $1$is_args$args;
+        }
         try_files $uri $uri.html $uri/index.html $uri/ =404;
         expires 30m;
         add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
