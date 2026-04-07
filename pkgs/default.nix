@@ -29,6 +29,7 @@ inputs: [
       qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
       waytray = prev.callPackage ./waytray.nix { };
       sprite-bin = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./sprite-bin/package.nix { };
+      t3code = prev.callPackage ./t3code/package.nix { };
       #parakeet-writer = prev.callPackage ./parakeet-writer/package.nix { };
       #kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
       #klassy = prev.callPackage ./klassy.nix { };
