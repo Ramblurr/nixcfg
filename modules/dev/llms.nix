@@ -112,6 +112,7 @@ in
         PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
         CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
+        T3CODE_HOME = "$XDG_CONFIG_HOME/t3code";
       };
       home.packages =
         with pkgs;
@@ -144,6 +145,7 @@ in
           llm-agents.ccusage
           llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
+          pkgs.t3code
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
