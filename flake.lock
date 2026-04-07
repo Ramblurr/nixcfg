@@ -1500,7 +1500,9 @@
         "flake-parts": [
           "flake-parts"
         ],
-        "git-hooks-nix": [],
+        "git-hooks-nix": [
+          "pre-commit-hooks"
+        ],
         "nixpkgs": [
           "nixpkgs"
         ],

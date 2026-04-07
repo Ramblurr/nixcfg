@@ -150,7 +150,7 @@
     git-lines.inputs.nixpkgs.follows = "nixpkgs";
     git-lines.inputs.flake-parts.follows = "flake-parts";
     git-lines.inputs.treefmt-nix.follows = "treefmt-nix";
-    git-lines.inputs.git-hooks-nix.follows = "";
+    git-lines.inputs.git-hooks-nix.follows = "pre-commit-hooks";
     git-lines.inputs.advisory-db.follows = "";
   };
 
