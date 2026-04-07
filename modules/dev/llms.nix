@@ -102,6 +102,7 @@ in
       package = pkgs.ollama-cuda;
     };
     services.open-webui.enable = cfg.ollama.enable;
+    services.open-webui.port = 11180;
     myhm = {
       sops.secrets.llm-keys = {
         mode = "0400";
