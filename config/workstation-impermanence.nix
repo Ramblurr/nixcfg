@@ -67,11 +67,6 @@ in
         ".kde"
         ".local/share/digikam"
         ".cache/digikam"
-        ".local/share/gitbutler-tauri"
-        ".local/share/com.gitbutler.app"
-        ".config/gitbutler"
-        ".cache/gitbutler-tauri"
-        ".cache/com.gitbutler.app"
       ];
       files = [
         #".config/akregatorrc"

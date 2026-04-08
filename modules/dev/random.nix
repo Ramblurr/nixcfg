@@ -82,7 +82,6 @@ in
         socat
         flyctl
         sshpass
-        #gitbutler-bin
         steam-run
         postgresql_15
         mariadb
