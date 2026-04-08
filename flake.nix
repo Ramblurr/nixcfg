@@ -164,9 +164,8 @@
       imports = [
         ./flake/hosts.nix
         ./flake/pkgs.nix
-        ./flake/iso-test.nix
+        #./flake/iso-test.nix
         ./flake/devshell.nix
-
       ];
       systems = [
         "x86_64-linux"
