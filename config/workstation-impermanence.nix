@@ -14,6 +14,7 @@ in
     users.${username} = {
       directories = [
         "nixcfg"
+        "nixcfg-private"
         "docs"
         "downloads"
         "src"
