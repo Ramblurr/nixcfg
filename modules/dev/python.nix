@@ -8,7 +8,6 @@ with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.python;
-  inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
 in
 {
