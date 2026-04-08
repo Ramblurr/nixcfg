@@ -22,18 +22,21 @@
     # for development
     #nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
 
+    # do not follow nixpkgs: use determinate's pinned nixpkgs for nixd integration
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     nix-std.url = "github:chessai/nix-std";
     spdx-util.url = "https://flakehub.com/f/ramblurr/spdx-util/0.1.4";
     spdx-util.inputs.nixpkgs.follows = "nixpkgs";
 
+    # do not follow nixpkgs: use ramsevka's own cached font build
     ramsevka.url = "github:ramblurr/iosevka-custom";
 
     #boxai.url = "path:/home/ramblurr/src/llm/vms";
     #boxai.inputs.nixpkgs.follows = "nixpkgs";
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
+    treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
 
     microvm.url = "github:microvm-nix/microvm.nix";
     #microvm.url = "path:/home/ramblurr/src/microvm.nix";
@@ -60,6 +63,7 @@
     quadlet-nix2.inputs.nixpkgs.follows = "nixpkgs";
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
+    nixos-hardware.inputs.nixpkgs.follows = "nixpkgs";
 
     #clj-nix.url = "github:jlesquembre/clj-nix";
     #clj-nix.inputs.nixpkgs.follows = "nixpkgs";
@@ -106,12 +110,17 @@
     nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
 
     impermanence.url = "github:nix-community/impermanence";
+    # do not follow nixpkgs: impermanence does not need it when consumed as a module
+    impermanence.inputs.nixpkgs.follows = "";
+    # do not follow home-manager: impermanence does not need it when consumed as a module
+    impermanence.inputs.home-manager.follows = "";
 
     #sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.url = "github:ramblurr/sops-nix/age-plugin";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
     nur.url = "github:nix-community/NUR";
+    nur.inputs.nixpkgs.follows = "nixpkgs";
 
     #plasma-manager = {
     #  url = "github:nix-community/plasma-manager";
@@ -136,10 +145,12 @@
     niri.inputs.nixpkgs.follows = "nixpkgs";
 
     llm-agents.url = "github:numtide/llm-agents.nix";
-    # use their nixpkgs to use their cache
+    # do not follow nixpkgs: use llm-agents' nixpkgs for their cache
     #llm-agents.inputs.nixpkgs.follows = "nixpkgs";
+    # do not follow nixpkgs: keep nixos-generators on nixpkgs-stable for image builds
     nixos-generators.url = "github:nix-community/nixos-generators";
     nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
+    # do not follow nixpkgs: use nixos-raspberrypi's nixpkgs for their cache
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nad-api.url = "https://flakehub.com/f/ramblurr/nad-api/*";
     nad-api.inputs.nixpkgs.follows = "nixpkgs";
