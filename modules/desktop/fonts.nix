@@ -32,6 +32,14 @@ let
 
   # IBM Plex Mono Style
   iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
+
+  #default-mono.pkg = iosevka-ss15;
+  #default-mono.name = "Monaspace Neon";
+  #default-mono.name = "Iosevka SS15";
+  #default-mono.term = "Iosevka Term SS15";
+  default-mono.pkg = pkgs.monaspace;
+  default-mono.name = "Monaspace Neon";
+  default-mono.term = "Monaspace Neon";
 in
 {
 
@@ -86,11 +94,11 @@ in
     mono = {
       name = lib.mkOption {
         type = lib.types.str;
-        default = "Iosevka SS15";
+        default = default-mono.name;
       };
       package = lib.mkOption {
         type = lib.types.nullOr lib.types.package;
-        default = iosevka-ss15;
+        default = default-mono.pkg;
       };
       size = lib.mkOption {
         type = lib.types.float;
@@ -100,11 +108,11 @@ in
     terminal = {
       name = lib.mkOption {
         type = lib.types.str;
-        default = "Iosevka Term SS15";
+        default = default-mono.term;
       };
       package = lib.mkOption {
         type = lib.types.nullOr lib.types.package;
-        default = iosevka-ss15;
+        default = default-mono.pkg;
       };
       size = lib.mkOption {
         type = lib.types.float;

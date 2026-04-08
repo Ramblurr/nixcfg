@@ -3,7 +3,6 @@
   lib,
   ...
 }:
-with lib;
 let
   cfg = config.modules.desktop.programs.ghostty;
   inherit (config.modules.users.primaryUser) username;
@@ -13,7 +12,7 @@ in
   options.modules.desktop.programs.ghostty = {
     enable = lib.mkEnableOption "";
   };
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     home-manager.users."${username}" =
       { pkgs, ... }:
       {
@@ -32,7 +31,7 @@ in
                     "+ss02"
                   ];
                 }
-              else
+              else if lib.strings.hasPrefix "Iosevka" termFont.name then
                 {
                   font-family = ''"${termFont.name}"'';
                   font-size = termFont.size;
@@ -43,7 +42,12 @@ in
                   ];
                   font-style = "auto";
                   font-thicken = true;
-                  adjust-cell-height = "10%";
+                  #adjust-cell-height = "10%";
+                }
+              else
+                {
+                  font-family = ''"${termFont.name}"'';
+                  font-size = termFont.size;
                 }
             )
             // {
