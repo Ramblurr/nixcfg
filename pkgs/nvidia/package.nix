@@ -3,10 +3,8 @@
   ast-grep,
   nix-prefetch-github,
   pkgs-lib,
+  kernelPackages,
 }:
-let
-  inherit (inputs.self.nixosConfigurations.quine.config.boot) kernelPackages;
-in
 (kernelPackages.nvidiaPackages.mkDriver {
   version = "595.58.03";
   sha256_64bit = "sha256-jA1Plnt5MsSrVxQnKu6BAzkrCnAskq+lVRdtNiBYKfk=";
