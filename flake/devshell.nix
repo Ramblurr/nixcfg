@@ -26,7 +26,7 @@
 
       devshells.default = {
         packages = [
-          pkgs.nix # Always use the nix version from this flake's nixpkgs version, so that nix-plugins (below) doesn't fail because of different nix versions.
+          inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system}.nix
           pkgs.ssh-to-age
           pkgs.age-plugin-yubikey
           pkgs.vim

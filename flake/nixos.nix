@@ -13,6 +13,7 @@ let
     inputs.impermanence.nixosModules.impermanence
     inputs.sops-nix.nixosModules.sops
     inputs.microvm.nixosModules.host
+    inputs.determinate.nixosModules.default
   ];
   unstableDefaultModules = [
     inputs.disko-unstable.nixosModules.disko
