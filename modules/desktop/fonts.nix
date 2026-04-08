@@ -30,16 +30,17 @@ let
   aliases = builtins.map mkAlias cfg.symbols.fonts;
   aliases' = lib.strings.concatLines aliases;
 
-  # IBM Plex Mono Style
+  # ss15 = IBM Plex Mono Style
   iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
-
-  #default-mono.pkg = iosevka-ss15;
+  default-mono.pkg = iosevka-ss15;
+  default-mono.name = "Iosevka SS15";
+  default-mono.term = "Iosevka Term SS15";
+  # note(2026-04): i evaluated monaspace as a mono font, in gernaly i like the glyphs and ligatures
+  #                however, it is much much to wide, needlessly increasing col width. there's an open issue about this maybe someday it will be fixed0
+  #                ref: https://github.com/githubnext/monaspace/issues/22
+  #default-mono.pkg = pkgs.monaspace;
   #default-mono.name = "Monaspace Neon";
-  #default-mono.name = "Iosevka SS15";
-  #default-mono.term = "Iosevka Term SS15";
-  default-mono.pkg = pkgs.monaspace;
-  default-mono.name = "Monaspace Neon";
-  default-mono.term = "Monaspace Neon";
+  #default-mono.term = "Monaspace Neon";
 in
 {
 
