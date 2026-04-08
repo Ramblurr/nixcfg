@@ -226,7 +226,8 @@ in
     };
     services = {
       docker.enable = true;
-      attic-watch-store.enable = true;
+      # ref: https://github.com/zhaofengli/attic/issues/226
+      attic-watch-store.enable = false;
       docker.enableOnBoot = false;
       podman.enable = true;
       nomad.enable = false;
