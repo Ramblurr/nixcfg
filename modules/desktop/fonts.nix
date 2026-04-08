@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -29,18 +30,28 @@ let
 
   aliases = builtins.map mkAlias cfg.symbols.fonts;
   aliases' = lib.strings.concatLines aliases;
+  iosevka-etoile = pkgs.iosevka-bin.override { variant = "Etoile"; };
+  iosevka-aile = pkgs.iosevka-bin.override { variant = "Aile"; };
 
-  # ss15 = IBM Plex Mono Style
-  iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
-  default-mono.pkg = iosevka-ss15;
-  default-mono.name = "Iosevka SS15";
-  default-mono.term = "Iosevka Term SS15";
+  # iosevka (ss15 = IBM Plex Mono Style)
+  #iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
+  #default-mono.pkg = iosevka-ss15;
+  #default-mono.name = "Iosevka SS15";
+  #default-mono.term = "Iosevka Term SS15";
+
+  # monaspace
   # note(2026-04): i evaluated monaspace as a mono font, in gernaly i like the glyphs and ligatures
   #                however, it is much much to wide, needlessly increasing col width. there's an open issue about this maybe someday it will be fixed0
   #                ref: https://github.com/githubnext/monaspace/issues/22
   #default-mono.pkg = pkgs.monaspace;
   #default-mono.name = "Monaspace Neon";
   #default-mono.term = "Monaspace Neon";
+
+  # ramsevka, my custom iosevka build
+  ramsevka = inputs.ramsevka.packages.${pkgs.stdenv.hostPlatform.system};
+  default-mono.pkg = ramsevka.ramsevka-full;
+  default-mono.name = "Ramsevka Mono";
+  default-mono.term = "Ramsevka Term";
 in
 {
 
@@ -48,12 +59,13 @@ in
     enable = lib.mkEnableOption "Enable fonts";
     packages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = [ ];
+      default = [ iosevka-etoile ];
     };
     serif = {
       name = lib.mkOption {
         type = lib.types.str;
-        default = "Noto Serif";
+        #default = "Noto Serif";
+        default = "Iosevka Etoile";
       };
       package = lib.mkOption {
         type = lib.types.nullOr lib.types.package;
@@ -67,7 +79,8 @@ in
     sans = {
       name = lib.mkOption {
         type = lib.types.str;
-        default = "Noto Sans";
+        #default = "Noto Sans";
+        default = "Iosevka Aile";
       };
       package = lib.mkOption {
         type = lib.types.nullOr lib.types.package;
@@ -144,6 +157,7 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
+
     fonts = {
       packages = [
         cfg.sans.package
@@ -156,6 +170,9 @@ in
         cursorTheme.package
         iconTheme.package
         pkgs.unscii
+        iosevka-etoile
+        iosevka-aile
+        pkgs.iosevka-bin
       ]
       ++ cfg.packages;
 

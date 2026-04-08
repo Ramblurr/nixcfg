@@ -31,7 +31,11 @@ in
                     "+ss02"
                   ];
                 }
-              else if lib.strings.hasPrefix "Iosevka" termFont.name then
+              else if
+                (
+                  (lib.strings.hasPrefix "Iosevka" termFont.name) || (lib.strings.hasPrefix "Ramsevka" termFont.name)
+                )
+              then
                 {
                   font-family = ''"${termFont.name}"'';
                   font-size = termFont.size;
