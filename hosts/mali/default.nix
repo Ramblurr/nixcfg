@@ -177,6 +177,10 @@ in
   ];
   systemd.services.fix-media-perms = {
     description = "Fix media file permissions";
+    path = [
+      pkgs.coreutils
+      pkgs.findutils
+    ];
     serviceConfig = {
       Type = "oneshot";
       User = "root";
