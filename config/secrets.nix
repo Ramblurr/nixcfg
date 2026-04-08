@@ -10,7 +10,7 @@ in
 {
   # Define local repo secrets
   repo.secretFiles = {
-    global = ../secrets/global.nix;
+    global = lib.mkDefault ../secrets/global.nix;
   }
-  // lib.optionalAttrs (lib.pathExists local) { inherit local; };
+  // lib.optionalAttrs (lib.pathExists local) { local = lib.mkDefault local; };
 }

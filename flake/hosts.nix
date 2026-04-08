@@ -11,7 +11,12 @@
           config
           ;
       };
-      inherit (hostHelpers) mkHosts mkGuests;
+      inherit (hostHelpers)
+        mkHost
+        mkGuest
+        mkHosts
+        mkGuests
+        ;
 
       hosts = {
         debord = {
@@ -112,6 +117,17 @@
       #.config.system.build.sdImage;
     in
     {
+      lib.nixcfg = {
+        inherit
+          hosts
+          guests
+          mkHost
+          mkGuest
+          mkHosts
+          mkGuests
+          ;
+      };
+
       nixosConfigurations =
         (mkHosts hosts)
         // (mkGuests guests)
