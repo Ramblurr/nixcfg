@@ -9,7 +9,6 @@ let
     personal4
     personal5
     personal6
-    tailnet
     work
     work2
     ;
