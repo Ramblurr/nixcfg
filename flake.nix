@@ -80,8 +80,8 @@
     quadlet-nix2.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use ramsevka's own cached font build
     ramsevka.url = "github:ramblurr/iosevka-custom";
-    #sops-nix.url = "github:Mic92/sops-nix";
-    sops-nix.url = "github:ramblurr/sops-nix/age-plugin";
+    sops-nix.url = "github:Mic92/sops-nix";
+    #sops-nix.url = "github:ramblurr/sops-nix/age-plugin";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     spdx-util.url = "https://flakehub.com/f/ramblurr/spdx-util/0.1.4";
     spdx-util.inputs.nixpkgs.follows = "nixpkgs";
