@@ -18,10 +18,11 @@
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.11";
     home-manager-stable.url = "github:nix-community/home-manager/release-25.11";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
-
     nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=consolidated";
     # for development
     #nixpkgs-mine.url = "path:/home/ramblurr/src/nixpkgs";
+
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     nix-std.url = "github:chessai/nix-std";
     spdx-util.url = "https://flakehub.com/f/ramblurr/spdx-util/0.1.4";
