@@ -103,10 +103,14 @@ in
     '';
   };
   nix.settings.narinfo-cache-positive-ttl = 3600;
-  nix.settings.netrc-file = config.sops.templates."nix/netrc".path;
-  nix.settings.substituters = [ "https://cache.garnix.io" ];
+  nix.settings.extra-substituters = [ "https://cache.garnix.io" ];
   nix.settings.trusted-substituters = [ "https://cache.garnix.io" ];
-  nix.settings.trusted-public-keys = [
+  nix.settings.extra-trusted-public-keys = [
     "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
   ];
+  environment.etc."determinate/config.json".text = builtins.toJSON {
+    authentication = {
+      additionalNetrcSources = [ config.sops.templates."nix/netrc".path ];
+    };
+  };
 }

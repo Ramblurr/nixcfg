@@ -73,7 +73,6 @@ in
     settings = {
       max-jobs = 2;
       cores = 14;
-      netrc-file = config.sops.secrets.netrc.path;
     };
 
     extraOptions = ''
@@ -81,16 +80,22 @@ in
     '';
   };
 
+  environment.etc."determinate/config.json".text = builtins.toJSON {
+    authentication = {
+      additionalNetrcSources = [ config.sops.secrets.netrc.path ];
+    };
+  };
+
   home.nix-lan-cache.enable = true;
 
   nix.settings = {
-    substituters = [
+    extra-substituters = [
       "https://cache.garnix.io"
       "https://numtide.cachix.org"
       "https://cache.flox.dev"
       "https://cache.flakehub.com"
     ];
-    trusted-public-keys = [
+    extra-trusted-public-keys = [
       "cache.garnix.io:CTFPyKSLcx5RMJKfLo5EEPUObbA78b0YQ2DTCJXqr9g="
       "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
       "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="

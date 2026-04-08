@@ -13,10 +13,10 @@ in
   config = lib.mkIf cfg.enable {
     nix = {
       settings = {
-        substituters = [
+        extra-substituters = [
           config.repo.secrets.global.nixCacheSubstituter
         ];
-        trusted-public-keys = [
+        extra-trusted-public-keys = [
           config.repo.secrets.global.nixCachePublicKey
         ];
       };
