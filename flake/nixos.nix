@@ -150,6 +150,7 @@ let
     lib.genAttrs (builtins.attrNames hosts) (hostName: fn hostName (builtins.getAttr hostName hosts));
 in
 {
+  inherit mkHost mkGuest;
   mkHosts = mkMkHosts mkHost;
   mkGuests = mkMkHosts mkGuest;
 }

@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   inherit (config.repo.secrets) global;
   domain = global.domain.home;
@@ -11,7 +11,7 @@ in
   ];
 
   repo.secretFiles = {
-    site = ../secrets/site.nix;
+    site = lib.mkDefault ../secrets/site.nix;
   };
 
   site.data = {
