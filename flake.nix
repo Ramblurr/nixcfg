@@ -1,16 +1,16 @@
 {
-  nixConfig = {
-    extra-substituters = [
-      "https://numtide.cachix.org"
-      "https://nixos-raspberrypi.cachix.org"
-      "https://cache.flox.dev"
-    ];
-    extra-trusted-public-keys = [
-      "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
-      "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
-      "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
-    ];
-  };
+  #nixConfig = {
+  #  extra-substituters = [
+  #    "https://numtide.cachix.org"
+  #    "https://nixos-raspberrypi.cachix.org"
+  #    "https://cache.flox.dev"
+  #  ];
+  #  extra-trusted-public-keys = [
+  #    "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
+  #    "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+  #    "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
+  #  ];
+  #};
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
@@ -27,6 +27,9 @@
     nix-std.url = "github:chessai/nix-std";
     spdx-util.url = "https://flakehub.com/f/ramblurr/spdx-util/0.1.4";
     spdx-util.inputs.nixpkgs.follows = "nixpkgs";
+
+    ramsevka.url = "github:ramblurr/iosevka-custom";
+
     #boxai.url = "path:/home/ramblurr/src/llm/vms";
     #boxai.inputs.nixpkgs.follows = "nixpkgs";
 

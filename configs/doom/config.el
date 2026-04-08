@@ -6,10 +6,11 @@
 
 ;; Fonts ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(setq doom-font (font-spec :family "Iosevka SS15" :size 16))
+(setq doom-font (font-spec :family "Iosevka" :size 16))
+(setq doom-font (font-spec :family "RamsevkaTerm Nerd Font" :size 16))
 ;;(setq doom-font (font-spec :family "Berkeley Mono UltraCondensed" :size 16))
 ;;(setq doom-font (font-spec :family "Berkeley Mono ExtraCondensed" :size 17))
-(setq nerd-icons-font-names '("Iosevka Nerd Font Mono" "Symbols Nerd Font"))
+(setq nerd-icons-font-names '( "RamsevkaTerm Nerd Font" "Iosevka Nerd Font Mono" "Symbols Nerd Font"))
 
 ;; get the family string from the doom-font variable containing the font-spec
 

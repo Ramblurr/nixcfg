@@ -133,7 +133,6 @@ in
       random-apps.enable = true;
       fonts = {
         enable = true;
-        packages = [ pkgs.iosevka-bin ];
       };
       browsers = {
         firefox.enable = true;
