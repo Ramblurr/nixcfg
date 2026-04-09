@@ -1,10 +1,15 @@
+# this module provides a yubikey fido2  based ssh solution
+# this modules _does not work_ with:
+# - gpg agent ssh keys in a pgp smartcard applet
+# - ssh keys in a piv applet (ala yubikey-agent)
+#
+# you must have fido2 ssh keys to use this one
 {
   config,
   lib,
   pkgs,
   ...
 }:
-with lib;
 let
   cfg = config.modules.desktop.programs.yubico;
   perl = "${pkgs.perl}/bin/perl";
@@ -58,22 +63,32 @@ in
       enable = lib.mkEnableOption "Add FIDO keys to ssh-agent when attached.";
     };
   };
-  config =
-    mkIf cfg.enable {
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      environment.systemPackages = with pkgs; [
+        yubikey-manager
+        yubioath-flutter
+        age-plugin-yubikey
+        age
+        rage
+        pinentry-gtk2
+        libfido2
+      ];
       programs.yubikey-touch-detector.enable = true;
-      myhm = {
-        services.ssh-agent.enable = true;
-        home.packages = with pkgs; [
-          yubikey-manager
-          yubioath-flutter
-          age-plugin-yubikey
-          age
-          rage
-        ];
-      };
+      # FIDO2 OpenSSH keys use the regular ssh-agent socket, not yubikey-agent.
+      programs.ssh.startAgent = true;
+      programs.ssh.enableAskPassword = true;
+      programs.ssh.askPassword = "${pkgs.wayprompt}/bin/wayprompt-ssh-askpass";
+      environment.shellInit = ''
+        export SSH_ASKPASS=${pkgs.wayprompt}/bin/wayprompt-ssh-askpass
+      '';
+      services.udev.packages = with pkgs; [ yubikey-personalization ];
+      services.pcscd.enable = true;
+      services.gnome.gcr-ssh-agent.enable = false;
+      services.yubikey-agent.enable = false;
+    })
 
-    }
-    // mkIf cfg.sshFidoAgent.enable {
+    (lib.mkIf cfg.sshFidoAgent.enable {
       environment.systemPackages = [ fidoAddDevice ];
       systemd.user.services.ssh-fido-agent = {
         script = ''
@@ -81,7 +96,11 @@ in
         '';
         wantedBy = [ "graphical-session.target" ];
         partOf = [ "graphical-session.target" ];
-        after = [ "graphical-session.target" ];
+        wants = [ "ssh-agent.service" ];
+        after = [
+          "graphical-session.target"
+          "ssh-agent.service"
+        ];
         environment.DISPLAY = "fake";
         environment.SSH_ASKPASS = askPassWrapper;
         serviceConfig = {
@@ -89,7 +108,8 @@ in
         };
       };
       services.udev.extraRules = ''
-        SUBSYSTEM=="hidraw", ACTION=="add", ATTRS{idVendor}=="1050", ATTRS{idProduct}=="0407|0402", RUN+="${fidoSendSig}/bin/fido-send-sig"
+        SUBSYSTEM=="hidraw", ACTION=="add", ENV{ID_VENDOR_ID}=="1050", ENV{ID_FIDO_TOKEN}=="1", RUN+="${fidoSendSig}/bin/fido-send-sig"
       '';
-    };
+    })
+  ];
 }
