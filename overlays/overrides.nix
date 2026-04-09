@@ -1,14 +1,4 @@
 _final: prev: {
-  nginxQuic = prev.nginxQuic.override {
-    modules = prev.lib.unique (
-      prev.nginxQuic.modules
-      ++ [
-        prev.nginxModules.brotli
-        prev.nginxModules.zstd
-      ]
-    );
-  };
-
   #roon-server = prev.roon-server.overrideAttrs (
   #  old:
   #  let
@@ -24,15 +14,15 @@ _final: prev: {
   #  }
   #);
 
-  logseq = prev.logseq.overrideAttrs (oldAttrs: {
-    postFixup = ''
-      makeWrapper ${prev.electron}/bin/electron $out/bin/${oldAttrs.pname} \
-        --set "LOCAL_GIT_DIRECTORY" ${prev.git} \
-        --add-flags $out/share/${oldAttrs.pname}/resources/app \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
-        --prefix LD_LIBRARY_PATH : "${prev.lib.makeLibraryPath [ prev.stdenv.cc.cc.lib ]}"
-    '';
-  });
+  #logseq = prev.logseq.overrideAttrs (oldAttrs: {
+  #  postFixup = ''
+  #    makeWrapper ${prev.electron}/bin/electron $out/bin/${oldAttrs.pname} \
+  #      --set "LOCAL_GIT_DIRECTORY" ${prev.git} \
+  #      --add-flags $out/share/${oldAttrs.pname}/resources/app \
+  #      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+  #      --prefix LD_LIBRARY_PATH : "${prev.lib.makeLibraryPath [ prev.stdenv.cc.cc.lib ]}"
+  #  '';
+  #});
 
   #quickemu = prev.quickemu.overrideAttrs (oldAttrs: {
   #  postPatch =
