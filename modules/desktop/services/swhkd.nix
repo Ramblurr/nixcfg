@@ -84,6 +84,8 @@ in
       home.packages = [ cfg.package ];
       xdg.configFile."swhkd/swhkdrc".source = configFile;
     };
+
+    environment.systemPackages = [ pkgs.swhkd ];
     security.polkit = {
       enable = true;
       extraConfig = ''
