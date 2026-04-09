@@ -30,8 +30,6 @@ let
 
   aliases = builtins.map mkAlias cfg.symbols.fonts;
   aliases' = lib.strings.concatLines aliases;
-  iosevka-etoile = pkgs.iosevka-bin.override { variant = "Etoile"; };
-  iosevka-aile = pkgs.iosevka-bin.override { variant = "Aile"; };
 
   # iosevka (ss15 = IBM Plex Mono Style)
   #iosevka-ss15 = pkgs.iosevka-bin.override { variant = "SS15"; };
@@ -52,6 +50,8 @@ let
   default-mono.pkg = ramsevka.ramsevka-full;
   default-mono.name = "Ramsevka Mono";
   default-mono.term = "Ramsevka Term";
+  iosevka-etoile = ramsevka.iosevka-etoile;
+  iosevka-aile = ramsevka.iosevka-aile;
 in
 {
 

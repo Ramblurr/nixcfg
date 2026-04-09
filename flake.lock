@@ -3455,11 +3455,11 @@
         "nixpkgs": "nixpkgs_18"
       },
       "locked": {
-        "lastModified": 1775653319,
-        "narHash": "sha256-AJHhluVJdizHBHMDoFuRCTSxjDVum4omS6S5myXzVHw=",
+        "lastModified": 1775727304,
+        "narHash": "sha256-Z073572lhpFhl6LpT2UTYblrBtLPymH3EarVQJf9cSM=",
         "owner": "ramblurr",
         "repo": "iosevka-custom",
-        "rev": "246d59fdffe0d01ec84cf802e57e7d00a180e1d6",
+        "rev": "b0caf5f695f6c0bd5177af6467f367c9eba4b500",
         "type": "github"
       },
       "original": {
