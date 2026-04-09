@@ -76,10 +76,10 @@ in
     };
   };
 
-  config = {
+  config = mkIf cfg.enable {
     environment.systemPackages = with pkgs; [ awww ];
     # Service for starting the www daemon
-    systemd.user.services."awww-daemon" = mkIf cfg.enable {
+    systemd.user.services."awww-daemon" = {
       unitConfig = {
         "Description" = "Solution to Wayland Wallpaper Woes";
         "Requires" = "graphical-session.target";
@@ -97,7 +97,7 @@ in
     # Service which sets the current wallpaper to the wallpaper corresponding to the current hour
     #   systemctl --user start dynamic-wallpaper@default.service # Use settings specified by this module
     #   systemctl --user start dynamic-wallpaper@skip.service # Skip transition and immediately set the image as background
-    systemd.user.services."dynamic-wallpaper@" = mkIf cfg.enable {
+    systemd.user.services."dynamic-wallpaper@" = {
       unitConfig = {
         "Description" = "Change the wallpaper periodically";
         "Requires" = "awww-daemon.service";
