@@ -39,7 +39,6 @@ in
         brightnessctl
         awww
         wlr-randr
-        swhkd
         wf-recorder # screen record cli
         wev # event viewer
         swappy # screenshot annotate
