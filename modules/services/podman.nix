@@ -21,7 +21,6 @@ in
       autoPrune.enable = true;
       autoPrune.dates = "weekly";
       defaultNetwork.settings.dns_enabled = true;
-      extraPackages = [ pkgs.zfs ];
     };
     environment.systemPackages = with pkgs; [
       docker-compose
