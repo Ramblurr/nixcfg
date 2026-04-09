@@ -69,6 +69,13 @@ in
             # find a file path in codebase:
             f = "!git ls-files | grep -i";
             logtree = "log --graph --oneline --decorate --all";
+            # ref https://piechowski.io/post/git-commands-before-reading-code/
+            who = "shortlog -sn --no-merges HEAD";
+            dmg = "log --oneline -i -E --grep='(incident|outage|downtime|rollback|revert|mitigate|mitigation|hotfix|broke|prod)' --since='1 year ago'";
+            bugs = "log --oneline -i -E --grep='(bug|bugfix|fix|fixed|fixes|defect|regression|hotfix|broke)' --since='1 year ago'";
+            bugfiles = "!git log --name-only --format='' -i -E --grep='(bug|bugfix|fix|fixed|fixes|defect|regression|hotfix|broke)' --since='1 year ago' | sort | uniq -c | sort -nr";
+            monthly = "!git log --since='1 year ago' --format='%ad' --date=format:'%Y-%m' | sort | uniq -c";
+            churn = "!git log --format='' --name-only --diff-filter=AM --since='1 year ago' | sort | uniq -c | sort -nr | head -20";
           };
         };
       };
