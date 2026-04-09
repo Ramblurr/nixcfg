@@ -79,9 +79,9 @@ in
   };
 
   config = {
-    environment.systemPackages = with pkgs; [ swww ];
-    # Service for starting the swww daemon
-    systemd.user.services."swww-daemon" = mkIf cfg.enable {
+    environment.systemPackages = with pkgs; [ awww ];
+    # Service for starting the www daemon
+    systemd.user.services."awww-daemon" = mkIf cfg.enable {
       unitConfig = {
         "Description" = "Solution to Wayland Wallpaper Woes";
         "Requires" = "graphical-session.target";
@@ -90,11 +90,11 @@ in
       };
       serviceConfig = {
         Type = "notify";
-        ExecStart = "${pkgs.swww}/bin/swww init --no-daemon";
+        ExecStart = "${pkgs.awww}/bin/awww init --no-daemon";
         NotifyAccess = "all";
       };
       wantedBy = [ "graphical-session.target" ];
-      path = [ pkgs.swww ];
+      path = [ pkgs.awww ];
     };
     # Service which sets the current wallpaper to the wallpaper corresponding to the current hour
     #   systemctl --user start dynamic-wallpaper@default.service # Use settings specified by this module
@@ -102,9 +102,9 @@ in
     systemd.user.services."dynamic-wallpaper@" = mkIf cfg.enable {
       unitConfig = {
         "Description" = "Change the wallpaper periodically";
-        "Requires" = "swww-daemon.service";
-        "PartOf" = "swww-daemon.service";
-        "After" = "swww-daemon.service";
+        "Requires" = "awww-daemon.service";
+        "PartOf" = "awww-daemon.service";
+        "After" = "awww-daemon.service";
       };
       script =
         let
@@ -126,7 +126,7 @@ in
               }"
             ]
           );
-          command = "${pkgs.swww}/bin/swww img";
+          command = "${pkgs.awww}/bin/awww img";
         in
         ''
           set -eu
