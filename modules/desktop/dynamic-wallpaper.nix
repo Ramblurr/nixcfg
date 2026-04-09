@@ -12,8 +12,6 @@ let
   cfg = config.services.dynamic-wallpaper;
 in
 {
-  imports = [ ];
-
   options.services.dynamic-wallpaper = {
     enable = mkEnableOption "dynamic wallpaper service";
     noResize = mkEnableOption "Do not resize the image. If the image is smaller than the screen's size, it will be padded with the value of `fill_color`.";
