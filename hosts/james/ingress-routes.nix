@@ -28,6 +28,7 @@ in
   deweyServices = [
     "y2pod.${home}"
     "dav.${home}"
+    "requests.${home}"
     "home.${home}"
     "books.${home}"
     "auth.${home}"

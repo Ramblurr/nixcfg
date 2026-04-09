@@ -23,7 +23,6 @@ inputs: [
       youtube-to-rss = prev.callPackage ./youtube-to-rss/package.nix { };
       deploy = prev.callPackage ./deploy.nix { };
       swhkd = prev.callPackage ./swhkd { };
-      overseerr = prev.callPackage ./overseerr/package.nix { };
       qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
       waytray = prev.callPackage ./waytray.nix { };
       sprite-bin = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./sprite-bin/package.nix { };
