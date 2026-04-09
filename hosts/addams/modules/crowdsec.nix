@@ -16,6 +16,15 @@ let
   siteNets = lib.attrByPath [ "site" "net" ] { } config;
   siteSubnet4s = map (netName: siteNets.${netName}.subnet4) (builtins.attrNames siteNets);
   trustedSourceCidrs = siteSubnet4s ++ crowdsecSecret.trustedSourceCidrs;
+  yaml = pkgs.formats.yaml { };
+  trustedNetworksParser = yaml.generate "crowdsec-whitelist-trusted-networks.yaml" {
+    name = "local/whitelist-trusted-networks";
+    description = "Whitelist site LAN and Tailscale source ranges.";
+    whitelist = {
+      reason = "trusted internal networks";
+      cidr = trustedSourceCidrs;
+    };
+  };
 
 in
 {
@@ -70,21 +79,12 @@ in
           labels.type = "kernel";
         }
       ];
-    localConfig.parsers.s02Enrich = [
-      {
-        name = "local/whitelist-trusted-networks";
-        description = "Whitelist site LAN and Tailscale source ranges.";
-        whitelist = {
-          reason = "trusted internal networks";
-          cidr = trustedSourceCidrs;
-        };
-      }
-    ];
     settings.general = {
       api.server = {
         enable = true;
-        # Bind LAPI to addams' Tailscale address only.
-        listen_uri = "${crowdsecSecret.lapiListenIp}:${crowdsecPort}";
+        # Listen on loopback and addams' Tailscale IPv4 so local consumers and
+        # remote tailnet nodes can both reach LAPI.
+        listen_uri = "0.0.0.0:${crowdsecPort}";
         console_path = consoleConfigPath;
       };
       cscli.output = "human";
@@ -101,6 +101,17 @@ in
     # attempts to stringify a null credentials path.
     settings.lapi.credentialsFile = lapiCredentialsPath;
     settings.capi.credentialsFile = capiCredentialsPath;
+  };
+
+  system.activationScripts.crowdsecParserCleanup.text = ''
+    ${lib.getExe' pkgs.coreutils "rm"} -f /etc/crowdsec/parsers/s02-enrich/*-parsers-s02-enrich.yaml
+  '';
+
+  systemd.tmpfiles.settings."10-crowdsec-local-parsers" = {
+    "/etc/crowdsec/parsers/s02-enrich/local-whitelist-trusted-networks.yaml".link = {
+      type = "L+";
+      argument = "${trustedNetworksParser}";
+    };
   };
 
   systemd.services.crowdsec.serviceConfig = {
