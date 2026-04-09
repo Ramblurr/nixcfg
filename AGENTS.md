@@ -1,74 +1,125 @@
-# CLAUDE.md
+# AGENTS.md
 
-## Repository Overview
+## Repository overview
 
-This is a NixOS configuration repository (`nixcfg`) that manages multiple systems using Nix flakes.
-It uses a modular approach to configure various hosts including workstations, servers, and virtual machines.
+This is a public NixOS configuration repository
+It manages multiple systems with Nix flakes and a modular host/module layout.
+The repo contains the shared source of truth for host definitions, modules, overlays, packages, and most configuration logic.
 
-IMPORTANT: There are a lot of untracked git files. They must never be added. And they must never be deleted.
+There are many untracked files in this repository.
+Never add them.
+Never delete them.
 
-## Code Style Guidelines
+## Public/private repo split
 
-- Never use `with lib;` or `with pkgs;`
-  Older code uses the `with lib;` pattern alot, but we NEVER DO THIS anymore.
+`~/nixcfg` is the public source repo.
+`~/nixcfg-private` is the private wrapper used for real host builds and deploys.
 
-- Never use emoji when writing code, documents, comments, ANYWHERE
+- `~/nixcfg` contains shared Nix code plus SOPS-encrypted files that are safe to keep public.
+- `~/nixcfg-private` contains evaluation-time private `.nix` data such as shared secret files and per-host `hosts/<host>/secrets/local.nix`.
+- `~/nixcfg-private` imports this repo as a flake input and constructs the real secret-bearing `nixosConfigurations` by overriding `repo.secretFiles.*` and `node.secretsDir`.
+- The agent will usually run from `~/nixcfg`, but `nix build`, `nixos-rebuild`, and similar real host commands should be run from `~/nixcfg-private`.
+- If a change depends on `config.repo.secrets.*`, assume those values come from the private wrapper repo at evaluation time.
+- Do not move evaluation-time secret `.nix` files or plaintext secret values back into this repo.
 
-## Common Commands
+## Code style guidelines
 
-TODO
+- Never use `with lib;` or `with pkgs;`.  Older code uses those patterns in places, but new code should not.
+- Never use emoji in code, comments, commit messages, or documentation.
+- Prefer explicit `lib.` and `pkgs.` qualification.
 
-## Architecture and Structure
+## Common workflow notes
 
-### Host System Organization
+- Treat this repo as the library/source repo.
+- When changing behavior that affects host construction, secret wiring, or deployment outputs, consider whether verification also needs to happen in `~/nixcfg-private`.
+- Do not assume that a successful evaluation in `~/nixcfg` means deploys are correct.
+
+## Architecture and structure
+
+### Host system organization
 
 The repository manages several types of systems:
 
-1. **Physical Hosts** (`/hosts/`):
-   - Each subdirectory represents a NixOS host configuration
-   - Hosts can use either stable or unstable NixOS channels
-   - Host configurations include hardware settings, networking, and enabled services
+1. Physical hosts in `/hosts/`
+   - Each subdirectory is a NixOS host configuration.
+   - Hosts may use stable or unstable nixpkgs.
+   - Host configs include hardware settings, networking, services, and host-specific modules.
 
-2. **Guest VMs** (`/guests/`):
-   - MicroVM configurations for containerized services
-   - Each subdirectory represents a guest VM configuration
-   - Deployed to host systems using `microvm.nix`
+2. Guest VMs in `/guests/`
+   - Each subdirectory is a guest or microvm-style configuration.
+   - Guests are deployed through the host-side microvm configuration.
 
-### Module System
+### Module system
 
-The configuration is highly modular with reusable NixOS modules in `/modules/`:
+Reusable NixOS modules live under `/modules/`.
+Major areas include:
 
-- **Desktop**: Hyprland, KDE, fonts, and desktop applications
-- **Development**: Language-specific tooling (Clojure, Python, Node.js, K8s)
-- **Services**: Server applications (PostgreSQL, Matrix, Docker, etc.)
-- **Shell**: Terminal utilities and shell configuration
-- **Hardware**: Hardware-specific configurations
-- **Networking**: VPN, firewall, and network configuration
+- desktop
+- development tooling
+- services
+- shell and CLI environment
+- hardware
+- networking
+- users
+- security
 
-### Key Technologies and Patterns
+### Key technologies and patterns
 
-1. **Flakes**: All configurations use Nix flakes for reproducibility
-2. **Channels**: Supports both stable (24.11) and unstable NixOS
-3. **Secrets Management**:
-   - `secrets.sops.yaml` files use SOPS encryption and are decrypted only at runtime on the target host
-       - Plaintext values from SOPS never appear in `/nix/store`
-   - Files in `secrets/` directories (e.g., `secrets/global.nix`, `hosts/mali/secrets/local.nix`) use git-crypt
-      - Git-crypt encrypted files appear encrypted on GitHub but their contents are visible in `/nix/store`
-4. **Impermanence**: Some hosts use impermanent root filesystems
-5. **Overlays**: Custom package overlays in `/overlays/`, including selective imports from `nixpkgs-mine`
-6. **Home Manager**: User environment management integrated with NixOS
+1. Flakes
+   - All configurations use flakes.
 
-### Package Management
+2. Channels
+   - The repo supports both stable and unstable nixpkgs, depending on host.
 
-- Custom packages are defined in `/pkgs/`
-- Overlays in `/overlays/` modify existing packages
-- The `nixpkgs-mine-packages.nix` overlay selectively imports packages from a custom nixpkgs fork
-- Packages can be referenced directly as `pkgs.<package-name>`
+3. Secrets
+   - SOPS-encrypted files such as `*.sops.yaml` and `*.sops.yml` stay in this public repo.
+   - Evaluation-time secret `.nix` files live in `~/nixcfg-private` and supply `config.repo.secrets.*`.
+   - Plaintext secret values from SOPS should not appear in `/nix/store`.
+   - Evaluation-time `.nix` secret data may end up in `/nix/store`, which is why that data lives only in the private repo.
 
-### Important Files
+4. Impermanence
+   - Some hosts use impermanent root filesystems.
 
-- `flake.nix` - Main flake definition with inputs and outputs
-- `nix/hosts.nix` - Host configuration definitions
-- `nix/nixos.nix` - NixOS system builder helper functions
-- `modules/default.nix` - Module imports and organization
-- `config/site.nix` - Site-specific network configuration
+5. Overlays
+   - Custom overlays live in `/overlays/`.
+   - This includes selective imports from `nixpkgs-mine`.
+
+6. Home Manager
+   - User environment management is integrated into host configs.
+
+### Package management
+
+- Custom packages are defined in `/pkgs/`.
+- Overlays in `/overlays/` modify or extend package sets.
+- Packages are typically referenced as `pkgs.<name>`.
+
+## Important files
+
+- `flake.nix`
+  - Main public flake definition.
+
+- `flake/hosts.nix`
+  - Declares host inventory and exports reusable host builder helpers through `lib.nixcfg`.
+
+- `flake/nixos.nix`
+  - Core host builder logic.
+
+- `modules/default.nix`
+  - Module import organization.
+
+- `config/secrets.nix`
+  - Default wiring for `repo.secretFiles.*` and `config.repo.secrets.*`.
+
+- `config/site.nix`
+  - Site-level data and default site secret wiring.
+
+- `~/nixcfg-private/flake.nix`
+  - Private wrapper flake that injects secret file paths and exposes the real deployable host configurations.
+
+## Expectations for agents
+
+- Prefer changes that keep the public/private boundary intact.
+- Do not reintroduce hardcoded assumptions that evaluation-time secret files live inside this public repo.
+- If you update secret-path plumbing, preserve the wrapper model used by `~/nixcfg-private`.
+- Be careful with git status because this repo often contains unrelated untracked files.
+- If a task involves deploys, secret-bearing builds, or final host evaluation, note whether the work belongs in `~/nixcfg`, `~/nixcfg-private`, or both, and run real host commands from `~/nixcfg-private`.
