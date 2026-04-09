@@ -45,6 +45,7 @@ let
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
   gluetunStateDir = "${stateDirActual}/gluetun";
+  overseerrStateDir = "${stateDirActual}/overseerr";
   qbittorrentStateDir = "${stateDirActual}/qbittorrent";
   qbittorrentConfigDir = "${qbittorrentStateDir}/qBittorrent";
   qbittorrentConfigFile = "${qbittorrentConfigDir}/qBittorrent.conf";
@@ -132,6 +133,7 @@ in
       "d ${dlLocalPath} 0770 ${mediaUser} ${mediaGroup}"
       "A ${dlLocalPath} - - - - d:group:${mediaGroup}:rwx"
       "d ${gluetunStateDir} 0700 root root"
+      "d ${overseerrStateDir} 0770 ${mediaUser} ${mediaGroup}"
       "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
     ];
 
@@ -177,7 +179,6 @@ in
           "sonarr.service"
           "sabnzbd.service"
           "prowlarr.service"
-          "overseerr.service"
           "recyclarr.service"
         ];
       };
@@ -249,31 +250,6 @@ in
       }
       // sharedServiceConfig;
     };
-    systemd.services.overseerr = {
-      enable = false;
-      description = "Request management and media discovery tool for the Plex ecosystem";
-      after = [ "network.target" ] ++ serviceDeps;
-      bindsTo = serviceDeps;
-      wantedBy = [ "multi-user.target" ];
-      environment = {
-        LOG_LEVEL = "info";
-        PORT = toString cfg.ports.overseerr;
-      };
-      serviceConfig = {
-        Type = "exec";
-        StateDirectory = "home-dl/overseerr";
-        WorkingDirectory = "${pkgs.overseerr}/libexec/overseerr/deps/overseerr";
-        ExecStart = "${pkgs.overseerr}/bin/overseerr";
-        BindPaths = [
-          "/var/lib/home-dl/overseerr/:${pkgs.overseerr}/libexec/overseerr/deps/overseerr/config/"
-        ];
-      }
-      // sharedServiceConfig
-      // {
-        PrivateMounts = true;
-      };
-    };
-
     #sops.secrets."home-dl/sonarr/apiKey" = { };
     #sops.secrets."home-dl/radarr/apiKey" = { };
     systemd.services.recyclarr = {
@@ -362,6 +338,33 @@ in
           };
         };
 
+        home-dl-overseerr = {
+          # Intentionally uses Podman's default networking, not the Gluetun/qBittorrent VPN network.
+          autoStart = true;
+          serviceConfig = {
+            RestartSec = "30";
+            Restart = "always";
+          };
+          unitConfig = {
+            RequiresMountsFor = [ stateDirActual ];
+          };
+          containerConfig = {
+            # renovate: docker-image
+            Image = "lscr.io/linuxserver/overseerr:1.35.0";
+            ContainerName = "home-dl-overseerr";
+            PublishPort = [ "127.0.0.1:${toString cfg.ports.overseerr}:5055" ];
+            User = toString mediaUid;
+            Group = toString mediaGid;
+            Environment = [
+              "PUID=${toString mediaUid}"
+              "PGID=${toString mediaGid}"
+              "TZ=Europe/Berlin"
+              "UMASK=007"
+            ];
+            Volume = [ "${overseerrStateDir}:/config:rw" ];
+          };
+        };
+
         home-dl-qbittorrent = {
           autoStart = true;
           serviceConfig = {
@@ -408,6 +411,11 @@ in
         }
       ) ingresses)
       // {
+        "${ingresses.overseerr.domain}" = {
+          acmeHost = cfg.ingress.domain;
+          upstream = "http://127.0.0.1:${toString cfg.ports.overseerr}";
+          forwardAuth = false;
+        };
         "${qbittorrentDomain}" = {
           acmeHost = cfg.ingress.domain;
           upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";
