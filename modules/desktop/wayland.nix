@@ -67,6 +67,17 @@ in
         };
       };
     };
+
+    services.gnome = {
+      evolution-data-server.enable = false;
+      glib-networking.enable = false;
+      # Niri upstream enables gnome-keyring by default, which in turn enables
+      # gcr-ssh-agent. This conflicts with the intended gpg-agent/ssh-agent
+      # setup used for smartcard and FIDO keys.
+      gnome-keyring.enable = false;
+      gnome-online-accounts.enable = false;
+    };
+
     myhm = {
       # begin: disabled questionable section
       #home.sessionVariables = {

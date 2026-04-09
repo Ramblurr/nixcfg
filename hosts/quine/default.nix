@@ -208,7 +208,7 @@ in
       direnv.enable = true;
       ffsend.enable = true;
       git.enable = true;
-      gpg-agent.enable = true;
+      #gpg-agent.enable = true;
       htop.enable = true;
       isd.enable = true;
       mpv.enable = true;
