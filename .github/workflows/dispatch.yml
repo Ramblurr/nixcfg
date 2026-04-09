@@ -1,0 +1,19 @@
+name: dispatch
+on:
+  push:
+    branches:
+      - main
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger nixcfg-private workflow
+        env:
+          GH_TOKEN: ${{ secrets.NIXCFG_PRIVATE_REPO_TOKEN }}
+        run: |
+          curl -fsSL \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/ramblurr/nixcfg-private/dispatches \
+            -d '{"event_type":"nixcfg-main-updated","client_payload":{"source_sha":"${{ github.sha }}","source_ref":"${{ github.ref }}","source_repository":"${{ github.repository }}"}}'
