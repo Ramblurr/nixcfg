@@ -77,8 +77,8 @@ in
           shfmt # shell format
           html-tidy # html format
           stylelint # css lint
-          nodePackages.js-beautify # js/css/html format
-          nodePackages.prettier
+          pkgs."js-beautify" # js/css/html format
+          pkgs.prettier
           fd # faster projectile indexing
           imagemagick # for image-dired
           zstd # for undo-fu-session/undo-tree compression
