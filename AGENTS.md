@@ -34,6 +34,14 @@ Never delete them.
 - When changing behavior that affects host construction, secret wiring, or deployment outputs, consider whether verification also needs to happen in `~/nixcfg-private`.
 - Do not assume that a successful evaluation in `~/nixcfg` means deploys are correct.
 
+## CI setup
+
+- `~/nixcfg/.github/workflows/dispatch.yml` runs on pushes to `main` and triggers `~/nixcfg-private/.github/workflows/update-from-public.yml` via `workflow_dispatch`.
+- The private workflow is the real CI entrypoint for secret-bearing updates.
+- It rewrites `inputs.nixcfg.url` to the GitHub form, while leaving the local `git+file` version commented out for local use.
+- It runs `nix flake update`, stages `flake.nix` and `flake.lock`, and commits with `update flake` when needed.
+- It also configures Garnix cache authentication for Determinate Nix using a netrc file built from the `GARNIX_NETRC_PASSWORD` GitHub secret.
+
 ## Architecture and structure
 
 ### Host system organization

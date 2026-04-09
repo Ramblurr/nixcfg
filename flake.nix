@@ -69,8 +69,8 @@
     nixos-nftables-firewall.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use nixos-raspberrypi's nixpkgs for their cache
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=consolidated";
+    nixpkgs.url = "github:ramblurr/nixpkgs/channel/personal-unstable";
+    nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=channel/personal-master";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.11";
     nur.url = "github:nix-community/NUR";
     nur.inputs.nixpkgs.follows = "nixpkgs";
