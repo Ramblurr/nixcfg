@@ -126,7 +126,7 @@ in
           piper-tts
           espeak
           jujutsu
-          mcp-inspector
+          #mcp-inspector
           llm-wrapper
           github-mcp-server-wrapper
           gemini-cli-wrapper
