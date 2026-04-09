@@ -17,7 +17,7 @@ let
         echo "emacs -> $command" >> ~/emacs-wm.log
         emacsclient -e "$command" >> ~/emacs-wm.log
     else
-        echo "hypr -> $@" >> ~/emacs-wm.log
+        echo "niri -> $@" >> ~/emacs-wm.log
         niri msg action "$@"
     fi
   '';

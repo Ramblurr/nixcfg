@@ -10,10 +10,6 @@
     ./desktop/dynamic-wallpaper.nix
 
     ./desktop/dconf.nix
-    ./desktop/hyprland/default.nix
-    ./desktop/hyprland/hyprland-config.nix
-    ./desktop/hyprland/theme.nix
-    ./desktop/hyprland/anyrun.nix
     ./desktop/hyprpaper.nix
     ./desktop/mako.nix
     ./desktop/niri

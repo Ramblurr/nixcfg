@@ -19,13 +19,6 @@ in
       enable = true;
       extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
       xdgOpenUsePortal = true;
-      #config = {
-      #  common = {
-      #    #    default = "gtk";
-      #    "org.freedesktop.impl.portal.Screencast" = "hyprland";
-      #    "org.freedesktop.impl.portal.Screenshot" = "hyprland";
-      #  };
-      #};
     };
     #services.gnome.at-spi2-core.enable = true;
     environment.systemPackages =
