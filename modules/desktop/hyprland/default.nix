@@ -65,7 +65,7 @@ in
         wl-clipboard
         pavucontrol
         brightnessctl
-        swww
+        awww
         wlr-randr
         swhkd
         wf-recorder # screen record cli
