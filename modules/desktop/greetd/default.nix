@@ -9,16 +9,6 @@ let
   cfg = config.modules.desktop.greetd;
   withImpermanence = config.modules.impermanence.enable;
 
-  #runHyprland = runViaShell {
-  #  env = {
-  #    XDG_SESSION_TYPE = "wayland";
-  #    XDG_CURRENT_DESKTOP = "Hyprland";
-  #    XDG_SESSION_DESKTOP = "Hyprland";
-  #  };
-  #  name = "hyprland";
-  #  cmd = "${pkgs.hyprland}/bin/Hyprland";
-  #};
-
   #runSway = runViaShell {
   #  env = {
   #    XDG_SESSION_TYPE = "wayland";
@@ -58,10 +48,6 @@ let
     #   path = desktopSession "river" "${runRiver}/bin/river";
     # }
     #{
-    #  name = "hyprland.desktop";
-    #  path = desktopSession "Hyprland" "${runHyprland}/bin/hyprland";
-    #}
-    #{
     #  name = "nushell.desktop";
     #  path = desktopSession "nushell" "${pkgs.nushell}/bin/nu";
     #}
@@ -87,7 +73,6 @@ let
       runtimeInputs = [
         #runSway
         #runRiver
-        #runHyprland
         pkgs.bashInteractive
         #pkgs.nushell
         pkgs.systemd
@@ -121,7 +106,6 @@ in
       restart = true;
       settings = {
         default_session.command = "${createGreeter "${pkgs.niri}/bin/niri-session" sessions}/bin/greeter";
-        #default_session.command = "${createGreeter "${runHyprland}/bin/hyprland" sessions}/bin/greeter";
       };
     };
     ## prevents systemd spewing the console with log messages when greeter is active
