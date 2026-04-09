@@ -95,6 +95,7 @@ in
         thunderbird.work.enable = false;
         musescore.enable = true;
         yubico.enable = true;
+        yubico.sshFidoAgent.enable = true;
       };
     };
     shell = {
@@ -104,7 +105,7 @@ in
       atuin.syncing.enable = true;
       direnv.enable = true;
       git.enable = true;
-      gpg-agent.enable = true;
+      gpg-agent.enable = false;
       htop.enable = true;
       isd.enable = true;
       random.enable = true;
