@@ -76,16 +76,14 @@ in
 
       fonts = {
         enable = true;
-        packages = [ pkgs.iosevka-bin ];
       };
       programs = {
         #cad.enable = true;
         junction.enable = true;
         #kdeconnect.enable = true;
-        kitty.enable = true;
-        wezterm.enable = true;
+        ghostty.enable = true;
         logseq.enable = true;
-        #element.enable = true;
+        element.enable = true;
         nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
@@ -100,7 +98,6 @@ in
     };
     shell = {
       aria2.enable = true;
-      #attic.enable = true;
       atuin.enable = true;
       atuin.syncing.enable = true;
       direnv.enable = true;
@@ -111,7 +108,6 @@ in
       random.enable = true;
       ssh.enable = true;
       tmux.enable = true;
-      zellij.enable = true;
       zoxide.enable = true;
       zsh.enable = true;
       zsh.powerlevel10k.enable = false;
@@ -134,7 +130,6 @@ in
     };
 
     services = {
-      #attic-watch-store.enable = true;
       docker.enable = true;
       docker.enableOnBoot = false;
       flatpak.enable = true;

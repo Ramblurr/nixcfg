@@ -214,7 +214,7 @@ in
       mpv.enable = true;
       ssh.enable = true;
       tmux.enable = true;
-      zellij.enable = true;
+      #zellij.enable = true;
       #zellij.web.enable = true;
       zoxide.enable = true;
       zsh.enable = true;
