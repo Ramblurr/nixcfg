@@ -2,7 +2,7 @@
 keys:
   - users:
       - &ramblurr-pgp 978C4D08058BA26EB97CB51820782DBCACFAACDA
-      - &disaster-recovery age15j42dspmmwprjau6l48xp05d97s8ml5s3tjxrfwvm37tvuynssuqtsevkj
+      - &disaster-recovery2026 age1pq1txa5jfq4y6xn2w6aj778jkyu8wsm47ke0pt05jm4dgmhj7chenqcnr0rq47y2sm4kacyp49w9wcyyc7z29luwrlvjcd0y7n7urnjkvheqx3nyl0xpvvwhdw0vkahpd5e9c8ctn7ej68y93z56eq4tw0cg92425tsmrr4t3frkwkyrv2t59ldwnsscwhqwqxtyv6q6gvrfj2trrclscvjd4plcsrtj8vhq9cc0f0sujwd5vuum59rnaxc4se0sh9uq223ln9n0hyt29m3578he24urp625k6wnmgkgmsncnamccy48wleaxzqrsnc463rstpgc7s3n3mu35457aasshr8n43s290f2s92kqps2n969h8g0djexymceqlqvq5ctrp68a9m5k0x5chxhqr7a7tr55n4r3wcynnwdyyehpxxp2ap25yt6hxqxkphtveyagd8wsa0dkah4mluj7nhd2ddlxne689h9euk6smsj8yfhda8kr8lw72vgjckwhzeeqxspxftgpuyr79q52ajdh0kz6duf2xlx4tr35z9ntfj3arzq4jehz0yjwrqwecsk4469x8p94ekswhfhp8mxagceaehgytvntn7nz6zeg832rp5vznmxndv5avc2ttlhgxuqvpssk4x3gl2xw80ksgz0gzru4d8gz3jlue82wtgk2pvhswle42ldecnrnx5klmhf0nsgywhkanzajpsg8dkgvf5yxgfjqeu5xn06vnmvepvfdkr5jand3ja3uz9axut35jvp85xjkrzlxtz5wvl29zqfkc8yxwujykx6v23njd33cufge9h0nt5400glvrfndd4hjfvvywh8rlq39lwl9f5yuc66n4v2ufzq0sgzrnmtz92dstfv93f59ymt5a33ds8kxst5997teu5hj8tqwuzk73z5wepcgsqys9ql7sjn5p9z9l2xft8s5zryrz6sstvxuj34p9jm36vsy5sj3z3ec7q8sg4chkeddy43qkqcaf5ave58xq40zngh9y55vjz7du4dtfcddxatwtm3p6pzxpepftqd8pkjmmughhxhdq7e6pealyv9gj6w5ps2tqx24kk7l9kl3zjlemvkvk38qgfva4wfpnjemjfjdjyzmc2sn88e3afz6553gstpffm0uu7d3gfwwm72fd7ezx9sxhffdrrnvymuknugepms79m6pyhjyp7ye366jrp59da07ufgcc6kyfdx26mgnqq74cdzqdr824vzx0vdff0gm8mnpudgmfxnz4r5yue5pln54m0pw542858frvhr30v5xt77cqh0qa29anyt7xuhchx40pf6d7mcz44nerpn5qq4g35qc7ad9kyma5uwrqenythpa7txkns5e5lu8yhuumnlu88yv8zssm5npku5af08tasfmy8kpm483jyddzkeve7asqsxw6x00ra3wg7rqhzu5zr8pykcf03c8cu3w48t2sd72wzffsky93pkwfw3jnmuc78me6t7hfg08ruxnp5xwz56q4f7evl6zuukgnxfrpqyk4aqaq0f7rdhlrfphume8tftsgn8ynjt7rgsgfgas5spn3s4nzrgp7ajurfj678h0d60p3l48e62eeps7q5n6m6n5mxw7mdr9a3sckkah9lctv33zfzvt48v4m4wjxqpywvgcdqs4cx9fedzm8klzkvussp5emv9zv4g3v68tgvfp57ap335kf8sq58h93e3tghudem0vzerqts5pxfel59k5gftsr4cxempk98uumjjdyc8pcwljflyftc6ne6a8lr4gumvtk77yyj9espzlskx5dz8prn38wn5xqfwy3xhjzx8xps5tdckxhaejy9mfjavjhrj68wwwzx809zgkckn63dsg2jqg85h3hnwnpw9rm8jy5udzd62ej52ycwkv7ejwsm6dr4zcavgsua
       - &ramblurr-yk-office age1yubikey1qt0lmjdz8l27zy8gqlwu5hpplunz5dcsszuqjau7q7sdnksjqhm5cg2jkkl
       - &ramblurr-yk-key age1yubikey1qvm060q3kense6l22nrjd5a9gqsm9k4eaanhuk5h3hpmvzes8xd6584fsvn
   - hosts:
@@ -24,9 +24,7 @@ keys:
       age:
         - *ramblurr-yk-office
         - *ramblurr-yk-key
-        - *disaster-recovery
-      pgp:
-        - *ramblurr-pgp
+        - *disaster-recovery2026
 creation_rules:
   - path_regex: terraform/secrets.sops.ya?ml$
     key_groups:
@@ -49,7 +47,7 @@ creation_rules:
           - *quine-user
           - *ramblurr-yk-office
           - *ramblurr-yk-key
-          - *disaster-recovery
+          - *disaster-recovery2026
   - path_regex: hosts/witt/secrets.sops.ya?ml$
     key_groups:
       - age:
