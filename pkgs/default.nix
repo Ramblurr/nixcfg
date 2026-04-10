@@ -7,7 +7,6 @@ inputs: [
     in
     {
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
-        inherit inputs;
         kernelPackages = prev.linuxPackages;
       };
       pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
