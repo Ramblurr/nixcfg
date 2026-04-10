@@ -1,4 +1,4 @@
-_final: prev: {
+_final: _prev: {
   #roon-server = prev.roon-server.overrideAttrs (
   #  old:
   #  let

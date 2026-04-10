@@ -50,8 +50,8 @@ let
   default-mono.pkg = ramsevka.ramsevka-full;
   default-mono.name = "Ramsevka Mono";
   default-mono.term = "Ramsevka Term";
-  iosevka-etoile = ramsevka.iosevka-etoile;
-  iosevka-aile = ramsevka.iosevka-aile;
+  inherit (ramsevka) iosevka-etoile;
+  inherit (ramsevka) iosevka-aile;
 in
 {
 

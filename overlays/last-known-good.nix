@@ -2,18 +2,6 @@
 # This overlay is a way to pin down a known-good version of nixpkgs for certain packages
 _final: prev:
 
-let
-  nixpkgs =
-    #args@{ rev, sha256 }:
-    args:
-    import (prev.fetchFromGitHub (
-      args
-      // {
-        owner = "NixOS";
-        repo = "nixpkgs";
-      }
-    )) { inherit (prev.stdenv.hostPlatform) system; };
-in
 {
   #inherit
   #  (nixpkgs {
