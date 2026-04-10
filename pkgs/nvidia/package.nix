@@ -1,5 +1,4 @@
 {
-  inputs,
   ast-grep,
   nix-prefetch-github,
   pkgs-lib,

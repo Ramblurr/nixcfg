@@ -65,7 +65,7 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://github.com/licht1stein/brepl/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.mpl20;
     maintainers = [ ];
-    platforms = babashka.meta.platforms;
+    inherit (babashka.meta) platforms;
     mainProgram = "brepl";
   };
 })
