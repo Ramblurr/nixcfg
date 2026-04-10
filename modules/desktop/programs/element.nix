@@ -22,7 +22,6 @@ in
 
     systemd.tmpfiles = lib.mkIf withImpermanence {
       rules = [
-        "d '/persist${homeDirectory}/.config/iamb' - ${username} ${username} - -"
         "d '/persist${homeDirectory}/.config/Element' - ${username} ${username} - -"
         "d '/persist${homeDirectory}/.config/Element-personal' - ${username} ${username} - -"
       ]
@@ -36,7 +35,6 @@ in
         directories = [
           ".config/Element"
           ".config/Element-personal"
-          ".config/iamb"
         ]
         ++ lib.optionals cfg.work.enable [ ".config/Element-work" ];
       };
@@ -46,7 +44,6 @@ in
       {
         home.packages = [
           pkgs.element-desktop
-          pkgs.iamb
         ];
 
         home.file.".local/share/applications/element-desktop-work.desktop" = lib.mkIf cfg.work.enable {
