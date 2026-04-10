@@ -80,7 +80,6 @@
     ./services/soju.nix
     ./services/invoiceninja.nix
     #./services/archivebox.nix
-    ./services/attic-watch-store.nix
     ./services/atuin-sync.nix
     ./services/authentik-module.nix
     ./services/authentik.nix
