@@ -14,7 +14,8 @@ authentik:
 paperless:
     adminPassword: ENC[AES256_GCM,data:l2LBGcEGJrY7utZlFZwb31+8syU=,iv:ptypm68YwYRcCKmBUXfVlfWTbYY0xGGF66QqZ5z3iFI=,tag:79hilJKk++0WwL7Hfuf92A==,type:str]
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
-gickup.yaml: ENC[AES256_GCM,data:hiNpgfyYywRBc2MyVBxihzlq2qPGuOX2oZ7vXLuxMTdjO0HbMJXmXo4gq/2J4jBxMNUAXBLv1lcfSLTEJY2SYHKoQOeu+ShYA1/DzFxdvcfI18y+gQC8gZuii7LlPqdAL5ADlulkxc4cmvoXefsNV18WnSdn393Lt7qFXF+Uw1KsRqijhrNHSOp68k3BE8im7zLW5BkOLsuTPlS+l7FmqnGOGFHIhI8bTql5Mf7+uy2YkBL/faSBpBrfwDOAX5sYjLSCdHQPVQv2VveWWxSaIKZnTTmVgVi2nVapwpkUQvhNOKLpebieulgd4jxI+KkfbpHoC15S1KYPhBUFsuj9CxtTxtMlMCDytYoqWTW7lnj/QpHPiNBGz5ET/MvtYPbcFR3UAWJvGSSU3THgbX6Gc9lxsXRt9qbPVmna4FBeWUru5uWZnNzGiUjl06Bfl0zywyhZuN+p7pLHFhEQ0Is04CfmPZC9OwdLT7t/qkR2TkJ1b7XKxTpx1XFozajlArjE84OU4lv7rxzyfe+PrufuKcQ16PLr9Ya2WSbgwAQyNXwreJiO1lGuVMsW1Ypa+OGkF6QDSTqJevnEZSpXP8Gd8pjMcA1JWAhDx/4uxcuoi5nHfI10e6rJj5WK8rQ4FpPXuxkhE3Mq5Mi8,iv:IlgU97zqFlwP3barPmwojWO4XnxV+XarW50L39MhOBc=,tag:OnKYHfe1U85+gaNU1pWiNg==,type:str]
+gickup-github-token-info: ENC[AES256_GCM,data:RLzCiie+WkFYycrAeS7b38Y+oDhmBFnV,iv:XlhfF74VZV2JNfLeG63+RoFEKYNIOjtHjwFNfwRJDQk=,tag:J0JgMNHkZA9/0KsZXCeXSA==,type:str]
+gickup.yaml: ENC[AES256_GCM,data:O6eiNfgX5t7nQKZmOPEWsgH0HQv99prCEykAR05Wu6nnTSlqtljmaXuLYup24WruPyv7WOUTZ6q5FsZM8m2DgDD+3juXDUb9niCQ3pIJdlGJeUb4wCiGumM1otabEyiH4rMPvAtzGNGjPxZ8quw8vDmDdf5fmvRwipTHTCduMeuJQGZ6HU0q5uSdEGvwHFZDarPun4NHb7OhRal2ydJVGD6GjShFxM4Kz7WOuOVITJ6Ci0lZG02DtRko2YFRlc46+tsRGla8x5ykE7yk76kgsvDgOlNO5S58RCSEnbIzKEAzZGgr4e6TARD4+lhMYgbew31LukacQCZWeHzVbM0aMdpUEHhP3Lzog3XNyochhzo3B22R+Z1zXi0oBOsVeOTK3LTuCo2XaQkVm2MHgV7YqUa7PHgkXDkCAjxdejYL+OGygbzAbQQerBCaK/oNPNnvRkDHIgtF1ufPaRF8zBiR98tEp16YQ0wWR2VmPXAUJIvNPbmmi7QJLiN/7liFab6Oy2SFpjwBrmW3tcqTapm4ycipkTsfS9bQRwXLslN8zaAXPfhc5Cp6YPcpZ2/DcYRxPPaJzKkFFS3UfvY3XJomuCmzoO04VjR2KnHj8SH+2JH/hL/ierKqmxigFL+h+l+KyXaZ/QqEzvr+,iv:yHe2deeaKlOn3bt4lnsB94gjVdLf8UPPrDSg807TiL0=,tag:4FJKWTgs+Lz1gdxY+rDwbQ==,type:str]
 sops:
     age:
         - recipient: age1yubikey1qt0lmjdz8l27zy8gqlwu5hpplunz5dcsszuqjau7q7sdnksjqhm5cg2jkkl
@@ -104,7 +105,7 @@ sops:
             THdZTjB3eU9SUlJQaUZFTUk3S0RpZ28KwgNDblVix3Qeb2p1clIeTBB7ZZO7iuv8
             vvw3AOcsEZleUlU4td8MQgbIEG8p94WbMAoAG/DPIOprK2+1ItVwMg==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-03-27T11:23:12Z"
-    mac: ENC[AES256_GCM,data:bpYwLJuxNMHbn/F7SYWvDJHhT32BWP68k6L4rJfQby4w7GX+qjljQiQZlpjFU9JBBdm0q6i6AFs04sz6daDK7whrGwvqhPqEMYGm0Z0EMBT5pUC8A26FUIuaicrhZs53wMTf/lOykqnOaKoUSBaVvFuit7EkYZ511ROrux1Pomg=,iv:vnKPI1AaWnNXNk0GnVHmqQWJ34VCxWO1TM/V1l6v9tc=,tag:KnqwDo8dFZGLzZ1FvrGW9A==,type:str]
+    lastmodified: "2026-04-13T15:41:01Z"
+    mac: ENC[AES256_GCM,data:DchvZtwSqsVfuxU5hgIsFfcrMhSFoUzpl5kUFOyZkG21OYl65SttrH1k9CJVO5z+2+eJBDHBv2BlIqCJBO5Lbh52iRgjXfdb7M/hjtLp+nMMeLdV8aWvBuyD56XaXBQr7xSUwfFy8tVb+vapN0k3SudItnUuxd9gJqn0tNX7nmU=,iv:3HaV71U2UeTWJicvpcWTN63CkwiXCvspAwEOOVrtwBs=,tag:G9cRW7KhNWrH80qLLuUzOA==,type:str]
     unencrypted_suffix: _unencrypted
-    version: 3.11.0
+    version: 3.12.2
