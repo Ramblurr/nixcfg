@@ -310,7 +310,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "ghcr.io/qdm12/gluetun:v3.41.0";
+            Image = "ghcr.io/qdm12/gluetun:3.41.1";
             ContainerName = "home-dl-gluetun";
             Network = "home-dl-torrent.network";
             AddCapability = [ "NET_ADMIN" ];
