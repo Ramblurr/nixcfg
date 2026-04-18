@@ -10,7 +10,7 @@ locals {
     #module.archivebox.proxy_provider_id,
     module.calibre-web.proxy_provider_id,
     module.calibre.proxy_provider_id,
-    #module.filebrowser.proxy_provider_id,
+    module.filebrowser.proxy_provider_id,
     module.sabnzbd.proxy_provider_id,
     module.prowlarr.proxy_provider_id,
     module.sonarr.proxy_provider_id,
@@ -25,18 +25,17 @@ locals {
   default_provider_invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
   default_invalidation_flow          = data.authentik_flow.default-invalidation-flow.id
 
-  admin_app_ids = toset([
-    module.grafana.application_id,
-    module.calibre.application_id,
-    #module.filebrowser.application_id,
-    module.sabnzbd.application_id,
-    module.prowlarr.application_id,
-    module.sonarr.application_id,
-    module.radarr.application_id,
-    module.grafana.application_id,
-    module.tubearchivist.application_id
-    #module.linkding.application_id
-  ])
+  admin_apps = {
+    "grafana"       = module.grafana.application_id
+    "calibre"       = module.calibre.application_id
+    "filebrowser"   = module.filebrowser.application_id
+    "sabnzbd"       = module.sabnzbd.application_id
+    "prowlarr"      = module.prowlarr.application_id
+    "sonarr"        = module.sonarr.application_id
+    "radarr"        = module.radarr.application_id
+    "tubearchivist" = module.tubearchivist.application_id
+    # "linkding"    = module.linkding.application_id
+  }
 
   household_apps = {
     "home-ocis"      = module.home-ocis-web.application_id
@@ -80,15 +79,17 @@ module "calibre" {
 }
 
 
-#module "filebrowser" {
-#  source                  = "./modules/forward-auth-application"
-#  name                    = "filebrowser"
-#  domain                  = "files.${var.internal_domain}"
-#  group                   = "admin"
-#  authorization_flow_uuid = local.implicit_authorization_flow
-#  invalidation_flow_uuid  = local.default_provider_invalidation_flow
-#  meta_icon               = "${local.icon_base}/filebrowser.png"
-#}
+module "filebrowser" {
+  source = "./modules/forward-auth-application"
+  # Keep the existing app/provider identity stable; this backs the
+  # NixOS filebrowser-quantum service at files.socozy.casa.
+  name                    = "filebrowser"
+  domain                  = "files.${var.internal_domain}"
+  group                   = "admin"
+  authorization_flow_uuid = local.implicit_authorization_flow
+  invalidation_flow_uuid  = local.default_provider_invalidation_flow
+  meta_icon               = "${local.icon_base}/filebrowser.png"
+}
 
 module "radarr" {
   source                  = "./modules/forward-auth-application"

@@ -90,6 +90,7 @@
     ./services/calibre-web.nix
     ./services/davis.nix
     ./services/docker.nix
+    ./services/filebrowser-quantum.nix
     ./services/flatpak.nix
     ./services/forgejo.nix
     ./services/git-archive.nix

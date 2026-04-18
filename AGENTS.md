@@ -133,3 +133,4 @@ Major areas include:
 - If a task involves deploys, secret-bearing builds, or final host evaluation, note whether the work belongs in `~/nixcfg`, `~/nixcfg-private`, or both, and run real host commands from `~/nixcfg-private`.
 - It's ok to flip the flake input in nixcfg-private to the local git+file when doing local development. Flip it back to github when doing a commit + push
 - When building/deploying nixos configurations use `build <hostname>` and `deploy <hostname>` these are special wrapper scripts. Don't deviate from this unless you reall need to.
+- Only the human operator runs OpenTofu/Terraform commands; the agent must not execute them.
