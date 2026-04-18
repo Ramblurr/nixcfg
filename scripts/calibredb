@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cmd=(sudo podman exec -it calibre calibredb "$@")
+printf -v remote_cmd '%q ' "${cmd[@]}"
+
+exec ssh dewey "${remote_cmd% }"
