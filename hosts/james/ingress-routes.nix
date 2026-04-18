@@ -31,6 +31,7 @@ in
     "requests.${home}"
     "home.${home}"
     "books.${home}"
+    "files.${home}"
     "auth.${home}"
     "clients.${work}"
     "auth.${work}"

@@ -75,6 +75,7 @@ in
       snowflake-proxy.enable = lib.mkEnableOption "snowflake proxy";
       my-y2r.enable = lib.mkEnableOption "my-y2r";
       audiobookshelf.enable = lib.mkEnableOption "audiobookshelf";
+      filebrowser-quantum.enable = lib.mkEnableOption "FileBrowser Quantum";
       tubearchivist.enable = lib.mkEnableOption "tubearchivist";
       stirling-pdf.enable = lib.mkEnableOption "Stirling PDF";
     };
@@ -464,6 +465,28 @@ in
       ports.http = home-ops.ports.audiobookshelf;
       ingress = {
         domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.filebrowser-quantum = lib.mkIf cfg.apps.filebrowser-quantum.enable {
+      enable = true;
+      domain = "files.${home-ops.homeDomain}";
+      user = home-ops.users.media;
+      group = home-ops.groups.media;
+      ports.http = home-ops.ports.filebrowser-quantum;
+      sources = [
+        {
+          name = "Downloads";
+          path = "/mnt/downloads";
+        }
+        {
+          name = "Media";
+          path = "/mnt/mali/tank2/media";
+        }
+      ];
+      ingress = {
+        domain = home-ops.homeDomain;
+        forwardAuth = true;
       };
     };
 

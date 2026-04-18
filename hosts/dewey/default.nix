@@ -45,6 +45,7 @@ in
     containers.enable = true;
     apps = {
       audiobookshelf.enable = true;
+      filebrowser-quantum.enable = true;
       roon-server.enable = true;
       authentik.enable = true;
       davis.enable = true;
