@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec ssh dewey bash -s -- "$@" <<'EOF'
+set -euo pipefail
+
+exec sudo podman exec calibre fetch-ebook-metadata "$@"
+EOF
