@@ -65,7 +65,7 @@ resource "authentik_policy_binding" "readers" {
 }
 
 resource "authentik_policy_binding" "admins" {
-  for_each = local.admin_app_ids
+  for_each = local.admin_apps
   target   = each.value
   group    = authentik_group.admins.id
   order    = 0
