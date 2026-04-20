@@ -73,4 +73,6 @@ final: _prev: {
   #  propagatedBuildInputs = [ prev.libgpiod_1 ];
   #});
   ffmpeg = final.rpi.ffmpeg-headless;
+  libcamera = final.rpi.libcamera;
+
 }
