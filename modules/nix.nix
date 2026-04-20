@@ -76,11 +76,11 @@ with lib;
       git-crypt
       sops
       gnupg
+      ghostty-terminfo
     ]
     ++ (map (x: x.terminfo) (
       with pkgs.pkgsBuildBuild;
       [
-        ghostty
         kitty
         tmux
         wezterm

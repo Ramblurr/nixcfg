@@ -1,8 +1,12 @@
 {
   lib,
+  config,
   ...
 }:
 
+let
+  cfg = config.modules.hardware.rpi.hifiberry-dac-plus;
+in
 {
   options = {
     modules.hardware.rpi.hifiberry-dac-plus = {
@@ -12,7 +16,7 @@
 
     };
   };
-  config = {
+  config = lib.mkIf cfg.enable {
     hardware.alsa.enablePersistence = true;
     environment.etc."asound.conf".text = ''
       defaults.pcm.!card 1
