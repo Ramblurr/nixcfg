@@ -109,7 +109,7 @@ in
     wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} ${./mjpeg_server.py} ${toString mjpegStreamerPort} ${rpicamApps}/bin/rpicam-vid -t 0 --codec mjpeg --inline --width 1280 --height 720 --framerate 10 --vflip --hflip -n -o -";
+      ExecStart = "${lib.getExe pkgs.python3} ${./mjpeg_server.py} ${toString mjpegStreamerPort} ${rpicamApps}/bin/rpicam-vid -t 0 --codec mjpeg --inline --mode 1640:1232:10:P --width 1280 --height 960 --framerate 10 --vflip --hflip -n -o -";
       Restart = "always";
       RestartSec = "5s";
       SupplementaryGroups = [ "video" ];
