@@ -40,6 +40,7 @@ in
         ".config/rclone"
         ".config/waytray"
         ".config/Zeal"
+        ".config/libro-fm-cli"
         ".local/bin"
         ".local/share/keyrings"
         ".local/share/audacity"

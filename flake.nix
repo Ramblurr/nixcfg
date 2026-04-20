@@ -32,6 +32,9 @@
     impermanence.inputs.home-manager.follows = "";
     # do not follow nixpkgs: impermanence does not need it when consumed as a module
     impermanence.inputs.nixpkgs.follows = "";
+    libro-fm-cli.url = "github:ramblurr/libro-fm-cli";
+    libro-fm-cli.inputs.devshell.follows = "devshell";
+    libro-fm-cli.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use llm-agents' nixpkgs for their cache
     llm-agents.url = "github:numtide/llm-agents.nix";
     microvm.url = "github:microvm-nix/microvm.nix";
