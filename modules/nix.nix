@@ -73,7 +73,6 @@ with lib;
       lsof
       # These are used by the flake tooling
       git
-      git-crypt
       sops
       gnupg
       ghostty-terminfo
