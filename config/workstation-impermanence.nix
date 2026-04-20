@@ -41,6 +41,8 @@ in
         ".config/waytray"
         ".config/Zeal"
         ".config/libro-fm-cli"
+        ".config/audiobookshelf-cli"
+        ".config/paperless-cli"
         ".local/bin"
         ".local/share/keyrings"
         ".local/share/audacity"
