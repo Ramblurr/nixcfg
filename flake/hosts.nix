@@ -70,6 +70,7 @@
         #};
         octoprint = {
           isStable = true;
+          isRpi = true;
           system = "aarch64-linux";
           hostOverlays = [
             (import ../overlays/rpi4.nix)
@@ -77,6 +78,7 @@
         };
         wyoming-satellite-bedroom = {
           isStable = true;
+          isRpi = true;
           system = "aarch64-linux";
           hostOverlays = [
             (import ../overlays/rpi4.nix)

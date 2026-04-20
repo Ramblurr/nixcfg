@@ -241,6 +241,18 @@ in
         };
       };
     };
+    services.nginx.virtualHosts."octoprint.${home-ops.homeDomain}".locations."/webcam/" =
+      lib.mkIf cfg.ingress.enable
+        {
+          proxyPass = "http://10.8.50.52:8080/";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_request_buffering off;
+            proxy_read_timeout 1d;
+            add_header X-Accel-Buffering no;
+          '';
+        };
 
     virtualisation.podman.enable = lib.mkIf cfg.containers.enable true;
     virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
