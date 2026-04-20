@@ -36,7 +36,7 @@
     users.primaryUser.extraGroups = [ "wheel" ];
     hardware.fwupd.enable = false;
     hardware.udisks2.enable = false;
-    hardware.rpi.camera-rpi-v1.enable = true;
+    hardware.rpi.camera-rpi-v2.enable = true;
   };
   home.wifi.iot.enable = true;
   services.tailscale.enable = true;
