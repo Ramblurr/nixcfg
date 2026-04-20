@@ -8,6 +8,7 @@
   imports = [
     ../modules/hardware/rpi/default.nix
     ../modules/hardware/rpi/hifiberry-dacplus.nix
+    ../modules/hardware/rpi/camera-rpi-v1.nix
   ];
   #imports = [ inputs.nixos-hardware.nixosModules.raspberry-pi-4 ];
   # Disable unnecessary filesystems.

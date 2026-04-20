@@ -269,11 +269,11 @@ in
         strace
         tree
         wget
+        ghostty-terminfo
       ]
       ++ (map (x: x.terminfo) (
         with pkgs.pkgsBuildBuild;
         [
-          ghostty
           kitty
           tmux
           wezterm
