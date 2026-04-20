@@ -1,16 +1,4 @@
 {
-  #nixConfig = {
-  #  extra-substituters = [
-  #    "https://numtide.cachix.org"
-  #    "https://nixos-raspberrypi.cachix.org"
-  #    "https://cache.flox.dev"
-  #  ];
-  #  extra-trusted-public-keys = [
-  #    "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
-  #    "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
-  #    "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
-  #  ];
-  #};
   inputs = {
     automatic-ripping-machine.url = "github:xieve/automatic-ripping-machine/main?dir=nixos";
     automatic-ripping-machine.inputs.nixpkgs.follows = "nixpkgs";
@@ -63,8 +51,8 @@
     nixos-generators.url = "github:nix-community/nixos-generators";
     # do not follow nixpkgs: keep nixos-generators on nixpkgs-stable for image builds
     nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
+    # nixos-hardware doe snot have a nixpkgs input
     nixos-hardware.url = "github:nixos/nixos-hardware";
-    nixos-hardware.inputs.nixpkgs.follows = "nixpkgs";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
     nixos-nftables-firewall.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use nixos-raspberrypi's nixpkgs for their cache

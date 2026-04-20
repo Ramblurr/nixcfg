@@ -53,7 +53,7 @@ let
     name:
     {
       isStable ? false,
-      # isRpi not useable until https://github.com/nvmd/nixos-raspberrypi/issues/90
+      isRpi ? false,
       system ? "x86_64-linux",
       hostPath ? ../hosts/${name},
       hostExtraModules ? [ ],
@@ -99,6 +99,9 @@ let
         unstable = nixpkgs-unstable;
         inherit (nixpkgs') lib;
         hostName = name;
+      }
+      // lib.optionalAttrs isRpi {
+        inherit (inputs) nixos-raspberrypi;
       };
     };
 
