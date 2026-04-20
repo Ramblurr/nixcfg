@@ -18,7 +18,7 @@ let
         port = cfg.ports.http;
         listen = "127.0.0.1";
         database = "${stateDir}/database.db";
-        cacheDir = cacheDir;
+        inherit cacheDir;
         disableUpdateCheck = true;
         sources = map (source: {
           inherit (source) name path;
@@ -26,7 +26,7 @@ let
         }) cfg.sources;
       };
       auth = {
-        adminUsername = cfg.adminUsername;
+        inherit (cfg) adminUsername;
         methods = {
           password.enabled = false;
           proxy = {
@@ -107,7 +107,7 @@ in
     };
 
     settings = lib.mkOption {
-      type = settingsFormat.type;
+      inherit (settingsFormat) type;
       default = { };
       description = "Extra FileBrowser Quantum settings merged into the generated YAML config.";
     };
@@ -191,7 +191,7 @@ in
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       inherit upstream;
-      forwardAuth = cfg.ingress.forwardAuth;
+      inherit (cfg.ingress) forwardAuth;
       extraConfig = ''
         client_max_body_size 0;
       '';
