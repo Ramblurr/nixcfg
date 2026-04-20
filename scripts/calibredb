@@ -1,7 +1,168 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cmd=(sudo podman exec -it calibre calibredb "$@")
-printf -v remote_cmd '%q ' "${cmd[@]}"
+serialized_args=$(printf '%s\0' "$@" | base64 | tr -d '\n')
 
-exec ssh dewey "${remote_cmd% }"
+exec ssh dewey env CALIBREDB_WRAPPER_ARGS_B64="$serialized_args" bash -s <<'EOF'
+set -euo pipefail
+
+forwarded_args=()
+if [[ -n ${CALIBREDB_WRAPPER_ARGS_B64:-} ]]; then
+  while IFS= read -r -d '' arg; do
+    forwarded_args+=("$arg")
+  done < <(printf '%s' "$CALIBREDB_WRAPPER_ARGS_B64" | base64 --decode)
+fi
+
+set -- "${forwarded_args[@]}"
+
+container=calibre
+default_library_path=/media/books
+lock_error='Another calibre program such as calibre-server or the main calibre program is running.'
+wrapper_info_flag=--wrapper-info
+
+has_arg() {
+  local needle=$1
+  shift
+
+  local arg
+  for arg in "$@"; do
+    if [[ $arg == "$needle" || $arg == "$needle="* ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+print_output() {
+  local output=$1
+  if [[ -n $output ]]; then
+    printf '%s\n' "$output"
+  fi
+}
+
+discover_server_info() {
+  sudo podman exec -i "$container" python3 - <<'PY'
+from pathlib import Path
+import sqlite3
+
+config_path = Path("/config/.config/calibre/server-config.txt")
+users_path = Path("/config/.config/calibre/server-users.sqlite")
+
+auth = "False"
+port = "8081"
+username = ""
+password = ""
+
+if config_path.exists():
+    for raw_line in config_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, *rest = line.split()
+        if key == "auth" and rest:
+            auth = rest[0]
+        elif key == "port" and rest:
+            port = rest[0]
+
+if auth.lower() == "true" and users_path.exists():
+    con = sqlite3.connect(users_path)
+    row = con.execute("select name, pw from users order by id limit 1").fetchone()
+    if row is not None:
+        username, password = row
+
+print(auth)
+print(port)
+print(username)
+print(password)
+PY
+}
+
+discover_library_id() {
+  local port=$1
+  local username=$2
+  local password=$3
+
+  local cmd=(
+    sudo podman exec "$container"
+    calibredb
+    --with-library "http://127.0.0.1:${port}/#-"
+  )
+
+  if [[ -n $username ]]; then
+    cmd+=(--username "$username" --password "$password")
+  fi
+
+  cmd+=(list)
+
+  local output
+  output=$("${cmd[@]}" 2>/dev/null || true)
+  output=${output%%$'\n'*}
+
+  if [[ -n $output ]]; then
+    printf '%s\n' "$output"
+  else
+    basename "$default_library_path"
+  fi
+}
+
+mapfile -t server_info < <(discover_server_info)
+
+server_auth=${server_info[0]:-False}
+server_port=${server_info[1]:-8081}
+server_username=${server_info[2]:-}
+server_password=${server_info[3]:-}
+library_id=$(discover_library_id "$server_port" "$server_username" "$server_password")
+server_url="http://127.0.0.1:${server_port}/#${library_id}"
+
+if [[ ${1:-} == "$wrapper_info_flag" ]]; then
+  printf 'CALIBRE_LIBRARY_PATH=%s\n' "$default_library_path"
+  printf 'CALIBRE_SERVER_URL=%s\n' "$server_url"
+  printf 'CALIBRE_SERVER_AUTH=%s\n' "$server_auth"
+  printf 'CALIBRE_SERVER_USERNAME=%s\n' "$server_username"
+  printf 'CALIBRE_SERVER_PASSWORD=%s\n' "$server_password"
+  exit 0
+fi
+
+used_default_library=0
+args=("$@")
+
+if ! has_arg --library-path "${args[@]}" && ! has_arg --with-library "${args[@]}"; then
+  args=(--library-path "$default_library_path" "${args[@]}")
+  used_default_library=1
+fi
+
+direct_cmd=(sudo podman exec "$container" calibredb "${args[@]}")
+
+if output=$("${direct_cmd[@]}" 2>&1); then
+  print_output "$output"
+  exit 0
+fi
+direct_status=$?
+
+if [[ $used_default_library -ne 1 || $output != *"$lock_error"* ]]; then
+  print_output "$output" >&2
+  exit "$direct_status"
+fi
+
+retry_cmd=(
+  sudo podman exec "$container"
+  calibredb
+  --with-library "$server_url"
+)
+
+if [[ ${server_auth,,} == true ]]; then
+  retry_cmd+=(--username "$server_username" --password "$server_password")
+fi
+
+retry_cmd+=("$@")
+
+if output=$("${retry_cmd[@]}" 2>&1); then
+  print_output "$output"
+  exit 0
+fi
+retry_status=$?
+
+print_output "$output" >&2
+exit "$retry_status"
+EOF
