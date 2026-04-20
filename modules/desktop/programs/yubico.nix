@@ -78,9 +78,8 @@ in
       # FIDO2 OpenSSH keys use the regular ssh-agent socket, not yubikey-agent.
       programs.ssh.startAgent = true;
       programs.ssh.enableAskPassword = true;
-      programs.ssh.askPassword = "${pkgs.wayprompt}/bin/wayprompt-ssh-askpass";
       environment.shellInit = ''
-        export SSH_ASKPASS=${pkgs.wayprompt}/bin/wayprompt-ssh-askpass
+        export SSH_AUTH_SOCK=/run/user/$UID/ssh-agent
       '';
       services.udev.packages = with pkgs; [ yubikey-personalization ];
       services.pcscd.enable = true;
