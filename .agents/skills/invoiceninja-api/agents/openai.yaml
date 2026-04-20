@@ -1,0 +1,4 @@
+interface:
+  display_name: "Invoice Ninja API"
+  short_description: "Inspect Invoice Ninja via Babashka"
+  default_prompt: "Use $invoiceninja-api to inspect invoices, fetch invoice details, and download invoice PDFs from the configured Invoice Ninja instance."

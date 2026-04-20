@@ -43,6 +43,7 @@ in
         ".config/libro-fm-cli"
         ".config/audiobookshelf-cli"
         ".config/paperless-cli"
+        ".config/invoiceninja-cli"
         ".local/bin"
         ".local/share/keyrings"
         ".local/share/audacity"
