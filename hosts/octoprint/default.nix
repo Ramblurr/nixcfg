@@ -3,9 +3,13 @@
   pkgs,
   lib,
   inputs,
-  unstable,
   ...
 }:
+let
+  mjpegStreamerPort = 8080;
+  ffmpeg = pkgs.rpi.ffmpeg_8-headless;
+  rpicamApps = pkgs.rpi.rpicam-apps;
+in
 {
   imports = [
     inputs.nixos-raspberrypi.nixosModules.nixpkgs-rpi
@@ -44,17 +48,13 @@
     useDHCP = true;
     interfaces.eth0.useDHCP = true;
   };
-  #services.mjpg-streamer = {
-  #  enable = true;
-  #  inputPlugin = "input_uvc.so --device ${camDevCont} --resolution 1280x720 --fps 30 -wb 4000 -bk 1 -ex 1000 -gain 255 -cagc auto -sh 100";
-  #  outputPlugin = "output_http.so -w @www@ -n -p ${toString camPort}";
-  #};
+  networking.firewall.allowedTCPPorts = [ mjpegStreamerPort ];
   users.users.octoprint.extraGroups = [
     "video"
   ];
 
   environment.systemPackages = [
-    pkgs.rpi.ffmpeg-headless
+    ffmpeg
     pkgs.v4l-utils # camera control
   ];
 
@@ -87,7 +87,7 @@
         octoprint-uicustomizer
       ];
     extraConfig = {
-      webcam.ffmpeg = lib.getExe pkgs.rpi.ffmpeg-headless;
+      webcam.ffmpeg = lib.getExe ffmpeg;
       server = {
         commands = {
           serverRestartCommand = "/run/wrappers/bin/sudo /run/current-system/sw/bin/systemctl restart octoprint";
@@ -105,12 +105,16 @@
     };
   };
   systemd.services.octostream = {
-    serviceConfig = {
-      ExecStart = "${unstable.mjpg-streamer}/bin/mjpg_streamer -i \"input_uvc.so -r 1280x720 -d /dev/video0 -f 60 -n\" -o \"output_http.so -p 8080 -w /usr/local/share/mjpg-streamer/www\"";
-    };
+    description = "MJPEG stream for OctoPrint";
     wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" ];
-    requires = [ "network-online.target" ];
+    after = [ "network.target" ];
+    serviceConfig = {
+      ExecStart = "${lib.getExe pkgs.python3} ${./mjpeg_server.py} ${toString mjpegStreamerPort} ${rpicamApps}/bin/rpicam-vid -t 0 --codec mjpeg --inline --width 1280 --height 720 --framerate 10 --vflip --hflip -n -o -";
+      Restart = "always";
+      RestartSec = "5s";
+      SupplementaryGroups = [ "video" ];
+      DynamicUser = true;
+    };
   };
 
   security = {
@@ -148,4 +152,16 @@
   users.groups.dialout.members = [ "octoprint" ];
   users.groups.video.members = [ "octoprint" ];
   #boot.zfs.enabled = lib.mkDefault false;
+  services.udev.enable = true;
+  services.udev.extraRules = ''
+    # fixes "Could not open any dmaHeap device"
+    # https://raspberrypi.stackexchange.com/a/141107
+    SUBSYSTEM=="dma_heap", GROUP="video", MODE="0660"
+  '';
+  system.activationScripts.octostreamDmaHeapTrigger = ''
+    if [ -d /sys/class/dma_heap ]; then
+      ${pkgs.systemd}/bin/udevadm control --reload-rules || true
+      ${pkgs.systemd}/bin/udevadm trigger --subsystem-match=dma_heap || true
+    fi
+  '';
 }
