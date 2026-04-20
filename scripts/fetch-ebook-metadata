@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec ssh dewey bash -s -- "$@" <<'EOF'
+serialized_args=$(printf '%s\0' "$@" | base64 | tr -d '\n')
+
+exec ssh dewey env FETCH_EBOOK_METADATA_ARGS_B64="$serialized_args" bash -s <<'EOF'
 set -euo pipefail
 
-exec sudo podman exec calibre fetch-ebook-metadata "$@"
+forwarded_args=()
+if [[ -n ${FETCH_EBOOK_METADATA_ARGS_B64:-} ]]; then
+  while IFS= read -r -d '' arg; do
+    forwarded_args+=("$arg")
+  done < <(printf '%s' "$FETCH_EBOOK_METADATA_ARGS_B64" | base64 --decode)
+fi
+
+exec sudo podman exec calibre fetch-ebook-metadata "${forwarded_args[@]}"
 EOF
