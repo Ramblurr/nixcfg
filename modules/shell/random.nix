@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 with lib;
@@ -16,6 +17,7 @@ in
     services.pcscd.enable = true;
     myhm = _hm: {
       home.packages = with pkgs; [
+        inputs.libro-fm-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
         fh
         internetarchive
         (warp-terminal.override { waylandSupport = true; })
