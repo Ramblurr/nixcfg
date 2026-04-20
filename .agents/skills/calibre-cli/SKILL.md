@@ -11,6 +11,13 @@ Use this skill to inspect and maintain the Calibre library on `dewey`.
 
 Use `./scripts/calibredb ...` from the repo root for all `calibredb` work. The examples below use bare `calibredb` syntax to match upstream docs, but in this repo the wrapper is the default entrypoint. `./scripts/calibredb` SSHes to `dewey` and runs `calibredb` inside the `calibre` container.
 
+The wrapper is not a dumb pass-through:
+
+- If no library is specified, it defaults to the live library at `/media/books`.
+- If direct access hits the Calibre live-library lock, it retries automatically through the local Calibre Content server.
+- It discovers the current content-server URL and credentials from the running container.
+- `./scripts/calibredb --wrapper-info` prints the discovered library path, server URL, auth mode, username, and password.
+
 Use `./scripts/fetch-ebook-metadata ...` from the repo root for metadata lookups. The examples below use bare `fetch-ebook-metadata` syntax to match upstream docs, but in this repo the wrapper is the default entrypoint. `./scripts/fetch-ebook-metadata` SSHes to `dewey` with an `EOF` heredoc and runs `fetch-ebook-metadata` inside the same `calibre` container.
 
 Example:
@@ -23,6 +30,40 @@ To save OPF output locally, redirect the wrapper output on the local side:
 
 ```bash
 ./scripts/fetch-ebook-metadata -t "1984" -a "George Orwell" -o > /tmp/metadata.opf
+```
+
+## Locked library and content server mode
+
+If direct `calibredb --library-path ...` access fails with:
+
+```text
+Another calibre program such as calibre-server or the main calibre program is running.
+```
+
+the wrapper should retry automatically through the Calibre Content server. Reach for manual `--with-library` only when you need to override the default behavior or inspect the connection details yourself.
+
+For this setup on `dewey`, the active library is usually available from inside the container as:
+
+```bash
+http://127.0.0.1:8081/#books
+```
+
+If the content server has authentication enabled, `calibredb` also needs `--username` and `--password`. The skill should not assume anonymous access when using `--with-library`.
+
+To inspect the auto-discovered connection details:
+
+```bash
+./scripts/calibredb --wrapper-info
+```
+
+Manual example:
+
+```bash
+./scripts/calibredb \
+  --with-library "http://127.0.0.1:8081/#books" \
+  --username "$CALIBRE_USER" \
+  --password "$CALIBRE_PASS" \
+  show_metadata 42
 ```
 
 ## Safety
@@ -257,6 +298,38 @@ calibredb set_metadata BOOK_ID --field "isbn:9780123456789"
 calibredb check_library -r missing_covers
 fetch-ebook-metadata -t "Title" -a "Author" -c /tmp/cover.jpg
 ```
+
+### Mark a book as read
+
+Default interpretation for this library:
+
+- If the human says "read date", treat that as setting both `#read_first_date` and `#read_last_date` to the same date unless they explicitly say otherwise.
+- Marking a book as read means adding the `read` tag and setting the read date fields.
+- Do not use `#percent_read` to mark a completed book unless the human explicitly asks for it.
+- Preserve the book's existing tags when adding `read`.
+
+Inspect first:
+
+```bash
+./scripts/calibredb search 'title:"The Tomb of Dragons" and author:"Katherine Addison"'
+./scripts/calibredb show_metadata 3921
+./scripts/calibredb show_metadata 3921 --as-opf
+```
+
+Apply the read state:
+
+```bash
+./scripts/calibredb set_metadata 3921 \
+  --field "#read_first_date:2026-04-17" \
+  --field "#read_last_date:2026-04-17" \
+  --field "tags:Fiction,read"
+```
+
+The custom fields used for this workflow are:
+
+- `#read_first_date`
+- `#read_last_date`
+- `#percent_read`
 
 ### Clean up duplicate authors
 
