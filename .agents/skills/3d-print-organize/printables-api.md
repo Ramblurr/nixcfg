@@ -76,6 +76,8 @@ Observed response patterns:
 - `downloadPacks` can include:
   - `MODEL_FILES`
   - `PRINT_FILES`
+  - `OTHER_FILES`
+- `OTHER_FILES` may duplicate `MODEL_FILES` byte-for-byte on some models
 - `stls` may include both `.stl` and `.3mf` entries
 
 This is the basis for downloading separate model-files and print-files zips.
