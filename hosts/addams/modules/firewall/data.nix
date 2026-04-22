@@ -402,6 +402,12 @@ let
           destPort = "homeassistant_shelly_ports";
           srcAddr = "shellys";
         }
+        #{
+        #  comment = "allow homeasssistant to shellys";
+        #  srcAddr = "homeassistant";
+        #  destPort = "shelly_ports";
+        #  destAddr = "shellys";
+        #}
         {
           comment = "allow ha voices to homeasssistant";
           destAddr = "homeassistant";

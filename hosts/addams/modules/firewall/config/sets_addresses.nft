@@ -73,7 +73,9 @@ set shellys {
     10.8.60.49,
     10.8.60.50,
     10.8.60.51, # lr bookshelf
-    10.8.60.55 # shelly-plug-fridge
+    10.8.60.55, # shelly-plug-fridge
+    10.8.60.62 # shelly-plug-viki-desk
+    # beware COMMAS ,
   }
 }
 
