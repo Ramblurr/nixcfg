@@ -1,0 +1,7 @@
+interface:
+  display_name: "Incident Response"
+  short_description: "Record home-ops incidents with clear RCA"
+  default_prompt: "Use $incident-response to write or update a home-ops incident record in ~/nixcfg-private/incidents."
+
+policy:
+  allow_implicit_invocation: true
