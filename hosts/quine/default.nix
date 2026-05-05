@@ -179,6 +179,7 @@ in
         wezterm.enable = true;
         ghostty.enable = true;
         logseq.enable = true;
+        morgen.enable = true;
         musescore.enable = true;
         nextcloud.enable = true;
         #nheko.enable = true;
