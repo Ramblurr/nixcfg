@@ -1,4 +1,4 @@
-_final: _prev: {
+final: prev: {
   #roon-server = prev.roon-server.overrideAttrs (
   #  old:
   #  let
@@ -34,4 +34,14 @@ _final: _prev: {
   #    '';
   #});
 
+  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+    (pyFinal: pyPrev: {
+      django-tenants = pyPrev.django-tenants.overridePythonAttrs (old: {
+        # ref: https://github.com/NixOS/nixpkgs/issues/516785
+        postInstall = (old.postInstall or "") + ''
+          rm -rf "$out/${pyFinal.python.sitePackages}/docs"
+        '';
+      });
+    })
+  ];
 }
