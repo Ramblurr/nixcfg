@@ -3,6 +3,8 @@
   writeShellApplication,
 }:
 let
+  localTargetHost = "quine";
+
   deploy = writeShellApplication {
     name = "deploy";
     text = ''
@@ -99,26 +101,41 @@ let
       done
 
       for host in "''${HOSTS[@]}"; do
-        ssh_host="root@$host"
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
-        echo "[1;36m     Copying [m➡️ [34m$host[m"
-        nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
+        if [[ "$host" == "${localTargetHost}" ]]; then
+          echo "[1;36m     Copying [m[34m$host[m skipped; target is local"
+        else
+          ssh_host="root@$host"
+          echo "[1;36m     Copying [m➡️ [34m$host[m"
+          nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
+        fi
         time_next
         echo "[1;32m      Copied [m✅ [34m$host[m [90min ''${T_LAST}s[m"
       done
 
       for host in "''${HOSTS[@]}"; do
-        ssh_host="root@$host"
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
         echo "[1;36m    Applying [m⚙️ [34m$host[m"
-        prev_system=$(ssh "$host" -- readlink -e /nix/var/nix/profiles/system)
-        ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
-          || die "Failed to set system profile"
-        ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \
-          || echo "Error while activating new system" >&2
-        if [[ -n "$prev_system" ]]; then
-          # nvd must be installed on the target system for this to work
-          ssh "$ssh_host" -- nvd --color always diff "$prev_system" "$store_path" || true
+        if [[ "$host" == "${localTargetHost}" ]]; then
+          prev_system=$(readlink -e /nix/var/nix/profiles/system)
+          sudo /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
+            || die "Failed to set system profile"
+          sudo "$store_path"/bin/switch-to-configuration "$ACTION" \
+            || echo "Error while activating new system" >&2
+          if [[ -n "$prev_system" ]]; then
+            nvd --color always diff "$prev_system" "$store_path" || true
+          fi
+        else
+          ssh_host="root@$host"
+          prev_system=$(ssh "$host" -- readlink -e /nix/var/nix/profiles/system)
+          ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
+            || die "Failed to set system profile"
+          ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \
+            || echo "Error while activating new system" >&2
+          if [[ -n "$prev_system" ]]; then
+            # nvd must be installed on the target system for this to work
+            ssh "$ssh_host" -- nvd --color always diff "$prev_system" "$store_path" || true
+          fi
         fi
         time_next
         echo "[1;32m     Applied [m✅ [34m$host[m [90min ''${T_LAST}s[m"
