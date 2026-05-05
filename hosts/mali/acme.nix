@@ -12,7 +12,7 @@ in
       email = email.acme;
       dnsProvider = "bunny";
       dnsPropagationCheck = false;
-      credentialsFile = config.sops.templates.acme-credentials.path;
+      credentialFiles."BUNNY_API_KEY_FILE" = config.sops.secrets.bunnyApiKey.path;
       reloadServices = [ "nginx.service" ];
     };
   };
