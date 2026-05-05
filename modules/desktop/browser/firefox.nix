@@ -39,6 +39,11 @@ in
         );
         programs.firefox = {
           enable = true;
+          # Keep the legacy profile location explicit. To migrate to the XDG
+          # location, move ~/.mozilla/firefox to
+          # $XDG_CONFIG_HOME/mozilla/firefox, change this to
+          # "${config.xdg.configHome}/mozilla/firefox", and update
+          # impermanence to persist the new config directory.
           configPath = ".mozilla/firefox";
           package = firefox;
           nativeMessagingHosts = [ pkgs.firefoxpwa ];
