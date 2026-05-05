@@ -90,16 +90,30 @@ in
 
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.secrets."tank2Key" = {
+    neededForUsers = true;
     mode = "400";
     owner = "root";
     group = "root";
   };
 
   sops.secrets."fastKey" = {
+    neededForUsers = true;
     mode = "400";
     owner = "root";
     group = "root";
   };
+
+  systemd.services.zfs-import-tank2 = {
+    requires = [ "sops-install-secrets-for-users.service" ];
+    after = [ "sops-install-secrets-for-users.service" ];
+  };
+
+  systemd.services.zfs-import-fast = {
+    requires = [ "sops-install-secrets-for-users.service" ];
+    after = [ "sops-install-secrets-for-users.service" ];
+  };
+
+  systemd.services.zfs-mount.requires = [ "zfs-import.target" ];
 
   environment.etc."mali-keys/tank2.key" = {
     user = "root";
@@ -177,6 +191,9 @@ in
   ];
   systemd.services.fix-media-perms = {
     description = "Fix media file permissions";
+    requires = [ "zfs-mount.service" ];
+    after = [ "zfs-mount.service" ];
+    unitConfig.AssertPathExists = "/mnt/tank2/media/fix-media.sh";
     path = [
       pkgs.coreutils
       pkgs.findutils
@@ -184,7 +201,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       User = "root";
-      ExecStart = "/mnt/tank2/media/fix-media.sh";
+      ExecStart = "${pkgs.runtimeShell} /mnt/tank2/media/fix-media.sh";
     };
   };
 
