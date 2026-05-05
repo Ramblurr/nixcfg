@@ -53,6 +53,7 @@ in
       tmp.cleanOnBoot = true;
       zfs.requestEncryptionCredentials = cfg.encrypted;
       zfs.extraPools = cfg.extraPools;
+      zfs.forceImportRoot = false;
 
       plymouth.enable = cfg.usePlymouth;
       initrd = {
