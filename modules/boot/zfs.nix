@@ -58,10 +58,8 @@ in
       plymouth.enable = cfg.usePlymouth;
       initrd = {
         supportedFilesystems = [ "zfs" ];
-        # NOTE: 2023-04-24
-        # I couldn't get initrd.systemd to work the rollback service failed with
-        # "The ZFS Modules are not loaded"
-        systemd.enable = false;
+        # Keep the legacy initrd default here; hosts that opt into systemd initrd use the rollback service below.
+        systemd.enable = lib.mkDefault false;
         systemd.services.rollback = mkIf config.boot.initrd.systemd.enable {
           description = "Rollback ZFS datasets to a pristine state";
           wantedBy = [ "initrd.target" ];

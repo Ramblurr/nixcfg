@@ -1,5 +1,4 @@
 {
-  lib,
   modulesPath,
   ...
 }:
@@ -104,16 +103,12 @@
         };
       };
 
+      systemd.enable = true;
+
       #postMountCommands = ''
       #  # Don't keep the cryptkey available all the time.
       #  cryptsetup close /dev/mapper/cryptkey
       #'';
-
-      postDeviceCommands = lib.mkAfter ''
-        zfs rollback -r rpool/encrypted/local/root@blank && \
-        zfs rollback -r rpool/encrypted/local/home@blank && \
-        echo "rollback complete"
-      '';
     };
   };
 }
