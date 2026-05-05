@@ -280,7 +280,7 @@ in
       acceptTerms = true;
       defaults = {
         email = config.repo.secrets.global.email.acme;
-        credentialsFile = config.sops.templates.acme-credentials.path;
+        credentialFiles."BUNNY_API_KEY_FILE" = config.sops.secrets.bunnyApiKey.path;
         dnsProvider = "bunny";
         dnsPropagationCheck = false;
         reloadServices = [ "nginx.service" ];
