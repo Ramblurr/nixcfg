@@ -16,7 +16,7 @@ let
   # these hosts can use the SOCKS proxy
   allowedCidrs = [
     "10.9.4.0/22"
-    "10.4.0.2/24"
+    "10.4.0.0/24"
     "10.8.70.0/24"
   ];
   # these hosts have their traffic NATed through the gateway
@@ -193,7 +193,7 @@ in
                     ${mullvad} tunnel set quantum-resistant on
                     ${mullvad} auto-connect set on
                     ${mullvad} lockdown-mode set off
-                    ${mullvad} obfuscation set mode off
+                    ${mullvad} anti-censorship set mode off
                     ${mullvad} lan set allow
                     ${mullvad} relay set location ${defaultLocation}
                     ${mullvad} connect
