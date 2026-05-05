@@ -47,14 +47,6 @@ let
   # my-ssh-askpass-wrapper wraps programs.ssh.askPassword in order to supply user-specific environment
   # variables.
   # TODO: replace this with makeWrapper
-  askPassWrapper = pkgs.writeScript "my-ssh-askpass-wrapper" ''
-    #! ${pkgs.runtimeShell} -e
-    set -x
-    export DISPLAY="$(systemctl --user show-environment | ${awk} -F= '/^DISPLAY/ {print $NF}')"
-    export WAYLAND_DISPLAY="$(systemctl --user show-environment | ${awk} -F= '/^WAYLAND_DISPLAY/ {print $NF}')"
-    export SSH_AUTH_SOCK="$(echo $XDG_RUNTIME_DIR/ssh-agent)";
-    exec ${config.programs.ssh.askPassword} "$@"
-  '';
 in
 {
   options.modules.desktop.programs.yubico = {
