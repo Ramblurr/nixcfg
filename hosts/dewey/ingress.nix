@@ -79,11 +79,16 @@ in
 {
   sops.secrets.gost-ingress-password = { };
   systemd.services.gost-ingress-client = {
+    requires = [ "sops-install-secrets.service" ];
+    wants = [ "network-online.target" ];
+    after = [
+      "sops-install-secrets.service"
+      "network-online.target"
+    ];
     preStart = ''
       rm -f $STATE_DIRECTORY/config.json
       export GOST_PASSWORD="$(<"$CREDENTIALS_DIRECTORY/GOST_PASSWORD")"
       echo "Generating gost ingress config"
-      echo "GOST_PASSWORD: $GOST_PASSWORD"
       ${pkgs.envsubst}/bin/envsubst \
         -o $STATE_DIRECTORY/config.json \
         -i ${gostConfig}
@@ -93,6 +98,8 @@ in
     '';
     serviceConfig = {
       LoadCredential = [ "GOST_PASSWORD:${config.sops.secrets.gost-ingress-password.path}" ];
+      Restart = "on-failure";
+      RestartSec = "15s";
       DynamicUser = true;
       StateDirectory = "gost-ingress-client";
       LockPersonality = true;

@@ -61,6 +61,11 @@ in
       mode = "400";
     };
 
+    systemd.services.davis-env-setup = {
+      requires = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+    };
+
     services.davis = {
       enable = true;
       hostname = cfg.domain;

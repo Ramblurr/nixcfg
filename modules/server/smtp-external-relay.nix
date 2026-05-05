@@ -61,7 +61,22 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          Restart = "on-failure";
+          RestartSec = "30s";
         };
+        preStart = ''
+          for attempt in $(${pkgs.coreutils}/bin/seq 1 30); do
+            if ${pkgs.coreutils}/bin/timeout 3 ${pkgs.bash}/bin/bash -c '</dev/tcp/${cfg.smtpHost}/25'; then
+              exit 0
+            fi
+
+            echo "SMTP relay ${cfg.smtpHost}:25 not reachable yet; attempt $attempt/30" >&2
+            ${pkgs.coreutils}/bin/sleep 2
+          done
+
+          echo "SMTP relay ${cfg.smtpHost}:25 did not become reachable" >&2
+          exit 75
+        '';
         script = sendEmailEvent { event = "just booted"; };
       };
       systemd.services."shutdown-mail-alert" = {
