@@ -195,7 +195,7 @@ in
         '';
       };
     };
-    myhm = _: {
+    myhm = hm: {
       home = {
         sessionVariables = {
           XCURSOR_THEME = cursorTheme.name;
@@ -214,6 +214,7 @@ in
       gtk = {
         enable = true;
         theme.name = theme.name;
+        gtk4.theme = hm.config.gtk.theme;
         inherit cursorTheme iconTheme;
         font = {
           inherit (cfg.sans) package;
