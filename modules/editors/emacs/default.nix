@@ -100,14 +100,6 @@ in
           sqlite
           # :lang latex & :lang org (latex previews)
           texlive.combined.scheme-medium
-          (python3.withPackages (
-            ps: with ps; [
-              virtualenv
-              black
-              #python-lsp-black
-              setuptools
-            ]
-          ))
           # :lang nix
           nixfmt
         ];
