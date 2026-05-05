@@ -8,11 +8,14 @@ let
   cfg = config.services.authentik;
   databaseActuallyCreateLocally =
     cfg.database.createLocally && cfg.database.host == "/run/postgresql";
+  redisActuallyCreateLocally = cfg.redis.createLocally && cfg.redis.host == "127.0.0.1";
+  databaseDeps = lib.optional databaseActuallyCreateLocally "postgresql.target";
+  redisDeps = lib.optional redisActuallyCreateLocally "redis-authentik.service";
   hostWithPort = h: p: "${h}:${toString p}";
   shouldImportSSL = cfg.ssl.cert != null && cfg.ssl.key != null && cfg.ssl.name != null;
   authentikBaseService = {
-    after = [ "network.target" ] ++ lib.optional databaseActuallyCreateLocally "postgresql.service";
-    requires = lib.optional databaseActuallyCreateLocally "postgresql.service";
+    after = [ "network.target" ] ++ databaseDeps ++ redisDeps;
+    requires = databaseDeps ++ redisDeps;
     wantedBy = [ "multi-user.target" ];
     path = [ cfg.package ];
     environment =
