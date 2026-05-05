@@ -51,6 +51,16 @@ in
       inherit (config.services.authentik) group;
       mode = "400";
     };
+
+    systemd.services.authentik-server = {
+      requires = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+    };
+    systemd.services.authentik-worker = {
+      requires = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+    };
+
     services.authentik = {
       enable = true;
       package = pkgs.authentik;
