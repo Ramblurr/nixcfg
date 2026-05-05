@@ -57,7 +57,6 @@
     # nixos-hardware doe snot have a nixpkgs input
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
-    nixos-nftables-firewall.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use nixos-raspberrypi's nixpkgs for their cache
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nixpkgs.url = "github:ramblurr/nixpkgs/channel/personal-unstable";
