@@ -46,7 +46,7 @@ in
             templates = "$HOME/docs/templates";
             videos = "$HOME/tmp/videos";
             extraConfig = {
-              XDG_SCREENSHOTS_DIR = "${hm.config.xdg.userDirs.pictures}/screenshots";
+              SCREENSHOTS = "${hm.config.xdg.userDirs.pictures}/screenshots";
             };
           };
           #mimeApps = {
