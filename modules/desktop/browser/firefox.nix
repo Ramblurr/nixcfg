@@ -39,6 +39,7 @@ in
         );
         programs.firefox = {
           enable = true;
+          configPath = ".mozilla/firefox";
           package = firefox;
           nativeMessagingHosts = [ pkgs.firefoxpwa ];
           profiles.personal = {
