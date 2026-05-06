@@ -210,14 +210,14 @@ in
       gtk = {
         enable = true;
         colorScheme = "dark";
-        theme = {
-          name = "Breeze-Dark";
-          package = pkgs.kdePackages.breeze-gtk;
-        };
         gtk3.extraConfig = {
           gtk-application-prefer-dark-theme = 1;
         };
         gtk4 = {
+          theme = {
+            name = "Breeze-Dark";
+            package = pkgs.kdePackages.breeze-gtk;
+          };
           extraConfig = {
             gtk-application-prefer-dark-theme = 1;
           };
