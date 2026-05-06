@@ -74,6 +74,9 @@ in
         ".cache/digikam"
       ];
       files = [
+        ".local/state/okularstaterc"
+        ".local/state/dolphinstaterc"
+        ".local/state/kid3staterc"
         #".config/akregatorrc"
         #".config/baloofileinformationrc"
         #".config/baloofilerc"
