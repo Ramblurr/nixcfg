@@ -4,7 +4,6 @@
   ...
 }:
 let
-  inherit (config.modules.users.primaryUser) username;
   homeDomain = config.repo.secrets.global.domain.home;
 in
 {
