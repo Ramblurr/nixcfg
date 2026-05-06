@@ -3,7 +3,6 @@
   lib,
   ...
 }:
-with lib;
 let
   cfg = config.modules.desktop.programs.nextcloud;
   inherit (config.modules.users.primaryUser) username;
@@ -13,11 +12,12 @@ in
   options.modules.desktop.programs.nextcloud = {
     enable = lib.mkEnableOption "";
   };
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
-    environment.persistence."/persist" = mkIf withImpermanence {
+    environment.persistence."/persist" = lib.mkIf withImpermanence {
       users.${username} = {
         directories = [
+          ".cache/Nextcloud"
           ".config/Nextcloud"
         ];
       };
