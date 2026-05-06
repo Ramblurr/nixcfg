@@ -144,6 +144,7 @@ in
         #".local/share/user-places.xbel"
         #".local/share/user-places.xbel.bak"
         #".local/share/user-places.xbel.tbcache"
+        ".local/share/recently-used.xbel"
       ];
     };
   };

@@ -49,6 +49,8 @@ in
     "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
   ];
   environment.persistence."/persist" = {
+    # Keep libvirt VM definitions, nvram, storage/network metadata, and
+    # qemu/autostart symlinks across impermanent-root reboots.
     directories = [ "/var/lib/libvirt" ];
     files = [
       {
@@ -63,10 +65,15 @@ in
         };
       }
     ];
+    users.${username} = {
+      directories = [
+        # remote-viewer is part of virt-viewer.
+        ".config/virt-viewer"
+        ".cache/virt-viewer"
+        ".local/share/virt-viewer"
+      ];
+    };
   };
-  environment.persistence."/persist".users.${username}.directories = [
-    ".config/virt-viewer"
-  ];
   virtualisation.libvirtd = {
     enable = true;
     allowedBridges = [
