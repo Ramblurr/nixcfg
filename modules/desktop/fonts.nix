@@ -17,10 +17,6 @@ let
     size = 24;
     package = pkgs.adwaita-icon-theme;
   };
-  iconTheme = {
-    name = "Adwaita";
-    package = pkgs.adwaita-icon-theme;
-  };
   mkAlias = font: ''
     <alias>
       <family>${font}</family>
@@ -168,7 +164,6 @@ in
         cfg.symbols.package
         theme.package
         cursorTheme.package
-        iconTheme.package
         pkgs.unscii
         iosevka-etoile
         iosevka-aile
@@ -195,7 +190,7 @@ in
         '';
       };
     };
-    myhm = hm: {
+    myhm = _hm: {
       home = {
         sessionVariables = {
           XCURSOR_THEME = cursorTheme.name;
@@ -211,22 +206,43 @@ in
         };
       };
 
+      # https://danklinux.com/docs/dankmaterialshell/application-themes#gtk-applications
       gtk = {
         enable = true;
-        theme.name = theme.name;
-        gtk4.theme = hm.config.gtk.theme;
-        inherit cursorTheme iconTheme;
+        colorScheme = "dark";
+        theme = {
+          name = "Breeze-Dark";
+          package = pkgs.kdePackages.breeze-gtk;
+        };
+        gtk4.theme = {
+          name = "Breeze-Dark";
+          package = pkgs.kdePackages.breeze-gtk;
+        };
+        iconTheme = {
+          name = "breeze-dark";
+          package = pkgs.kdePackages.breeze-icons;
+        };
         font = {
           inherit (cfg.sans) package;
           inherit (cfg.sans) name;
           inherit (cfg.sans) size;
         };
       };
-
+      # https://discourse.nixos.org/t/guide-to-installing-qt-theme/35523
+      # https://danklinux.com/docs/dankmaterialshell/application-themes#qt-applications
       qt = {
         enable = true;
-        platformTheme.name = "gnome";
-        style.name = "adwaita-dark";
+        style.name = "breeze-dark";
+        platformTheme.name = "kde";
+      };
+      # Use 'dconf-editor' or 'gnome-tweaks' to find options you can change with this.
+      dconf.settings = {
+        "org/gnome/desktop/interface" = {
+          # Fonts used by flakpak (and other things).
+          document-font-name = cfg.sans.name;
+          #font-name = cfg.sans.name;
+          monospace-font-name = cfg.mono.name;
+        };
       };
     };
   };
