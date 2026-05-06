@@ -22,6 +22,7 @@ in
         "vendor"
         "work"
         ".local/state"
+        ".cache/nix"
         ".cache/audacity"
         ".cache/gimp"
         ".cache/inkscape"

@@ -72,7 +72,22 @@ in
     ++ lib.optionals cfg.storage.zfs.enable [
       "L+ /persist/var/lib/libvirt/storage/zfs-local.xml - - - - ${localZfsStorageXml}"
     ];
-    environment.persistence."/persist".directories = [ "/var/lib/libvirt" ];
+    environment.persistence."/persist" = {
+      directories = [ "/var/lib/libvirt" ];
+      files = [
+        {
+          # libvirt 12+ stores its secret encryption key as a systemd encrypted
+          # credential. Persist the systemd host credential key too; otherwise
+          # the encrypted libvirt key survives reboot but cannot be decrypted.
+          file = "/var/lib/systemd/credential.secret";
+          parentDirectory = {
+            user = "root";
+            group = "root";
+            mode = "0755";
+          };
+        }
+      ];
+    };
 
     virtualisation.libvirtd = {
       enable = true;
