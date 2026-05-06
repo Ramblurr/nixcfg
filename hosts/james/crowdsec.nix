@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -9,7 +10,13 @@ let
   crowdsecSecret = config.repo.secrets.local.crowdsec;
   siteNets = lib.attrByPath [ "site" "net" ] { } config;
   siteSubnet4s = map (netName: siteNets.${netName}.subnet4) (builtins.attrNames siteNets);
-  trustedSourceCidrs = siteSubnet4s ++ crowdsecSecret.trustedSourceCidrs;
+  trustedSourceCidrs =
+    siteSubnet4s
+    ++ [
+      "127.0.0.0/8"
+      "::1/128"
+    ]
+    ++ crowdsecSecret.trustedSourceCidrs;
 in
 {
   users.users.crowdsec.extraGroups = lib.optionals config.services.nginx.enable [
@@ -66,6 +73,10 @@ in
     };
     settings.lapi.credentialsFile = config.sops.secrets."crowdsec/lapiCredentials".path;
   };
+
+  systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
+    "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
+  ];
 
   services.crowdsec-firewall-bouncer = {
     enable = true;
