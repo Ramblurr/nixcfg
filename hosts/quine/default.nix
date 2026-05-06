@@ -172,7 +172,7 @@ in
         #element.work.enable = true;
         #element.workProxy = "${lanVpnGateway}:1081";
         fritzing.enable = false;
-        #junction.enable = true;
+        junction.enable = true;
         kdeconnect.enable = true;
         kicad.enable = false;
         kitty.enable = true;
