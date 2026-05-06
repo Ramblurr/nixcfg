@@ -23,9 +23,9 @@ in
       polkitPolicyOwners = [ username ];
     };
     myhm = {
-      home.file.".config/autostart/1password.desktop" = lib.mkIf cfg.autostart.enable (
-        lib.my.autostart "1password"
-      );
+      #home.file.".config/autostart/1password.desktop" = lib.mkIf cfg.autostart.enable (
+      #  lib.my.autostart "1password"
+      #);
     };
     environment.persistence."/persist" = mkIf withImpermanence {
       users.${username} = {
