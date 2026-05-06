@@ -27,7 +27,7 @@ in
     forceSSL = true;
     kTLS = true;
     http3 = true;
-    quic = true;
+    quic = false;
     globalRedirect = work;
     locations."= /.well-known/carddav".extraConfig = ''
       return 301 https://dav.${home}/dav/;
@@ -42,7 +42,7 @@ in
     forceSSL = true;
     kTLS = true;
     http3 = true;
-    quic = true;
+    quic = false;
     locations."/" = {
       return = "302 ${codeLink}";
     };
