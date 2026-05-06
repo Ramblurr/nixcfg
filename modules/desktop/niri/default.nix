@@ -109,7 +109,11 @@ in
         };
 
     };
-
+    environment.sessionVariables = {
+      QT_QPA_PLATFORM = "wayland";
+      QT_QPA_PLATFORMTHEME = "qt6ct";
+      QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
+    };
     environment.systemPackages = [
       pkgs.kdePackages.okular
       pkgs.kdePackages.dolphin
@@ -119,7 +123,7 @@ in
       pkgs.kdePackages.gwenview
       pkgs.kdePackages.elisa
       pkgs.kdePackages.dragon
-      #pkgs.kdePackages.qt6ct
+      pkgs.kdePackages.qt6ct
     ];
   };
 }
