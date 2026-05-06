@@ -233,6 +233,12 @@ in
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       sshd.enable = true;
       flatpak.enable = true;
+      rclone.mounts.gdrive = {
+        user = "ramblurr";
+        group = "ramblurr";
+        remote_name = "google-personal";
+        mount_point = "/mnt/gdrive";
+      };
     };
     dev = {
       clojure.enable = true;

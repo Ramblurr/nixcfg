@@ -74,6 +74,7 @@
     ./security/default.nix
     ./server/smtp-external-relay.nix
     ./server/virtd/default.nix
+    ./services/rclone.nix
     ./services/udpbroadcastrelay.nix
     ./services/actual-budget.nix
     ./services/audiobookshelf.nix
