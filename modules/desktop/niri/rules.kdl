@@ -65,3 +65,14 @@ window-rule {
     match title="niri"
     open-on-workspace "scratch"
 }
+
+window-rule {
+    # match title="^(Open|Choose|Save)(.*)$"
+    match app-id="(xdg-desktop-portal)(.*)"
+    match app-id="filepicker"
+    match app-id="org.freedesktop.impl.portal.desktop.kde"
+    default-column-width { proportion 0.5; }
+    default-window-height { proportion 0.8; }
+    open-floating true
+    open-fullscreen false
+}
