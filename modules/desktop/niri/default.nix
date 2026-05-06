@@ -45,6 +45,7 @@ in
     ];
     programs.niri.enable = true;
     programs.niri.package = niri;
+    programs.niri.useNautilus = false;
     environment.persistence."/persist" = lib.mkIf withImpermanence {
       users.${username} = {
         directories = [
@@ -108,5 +109,17 @@ in
         };
 
     };
+
+    environment.systemPackages = [
+      pkgs.kdePackages.okular
+      pkgs.kdePackages.dolphin
+      pkgs.kdePackages.ark
+      pkgs.kdePackages.breeze-icons
+      pkgs.kdePackages.breeze-gtk
+      pkgs.kdePackages.gwenview
+      pkgs.kdePackages.elisa
+      pkgs.kdePackages.dragon
+      #pkgs.kdePackages.qt6ct
+    ];
   };
 }
