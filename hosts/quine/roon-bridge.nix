@@ -12,10 +12,6 @@ in
     options snd-aloop id=RoonLoopback
   '';
   services.avahi.enable = true;
-  environment.persistence."/persist".users.${username}.directories = [
-    ".local/state/squeezelite"
-  ];
-
   networking.firewall = {
     allowedTCPPorts = [
       3483 # Squeezebox/squeezelite discovery
