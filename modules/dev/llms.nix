@@ -113,6 +113,7 @@ in
         CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
         T3CODE_HOME = "$XDG_CONFIG_HOME/t3code";
+        PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
       };
       home.packages =
         with pkgs;
