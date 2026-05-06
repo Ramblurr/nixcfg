@@ -282,7 +282,7 @@ in
           forceSSL = true;
           kTLS = true;
           http3 = true;
-          quic = true;
+          quic = false;
           locations."= /count" = goatcounterProxyLocationPublic;
           locations."= /count.js" = goatcounterProxyLocationPublic;
           locations."/" = goatcounterProxyLocationPrivate;
@@ -295,7 +295,7 @@ in
         forceSSL = true;
         kTLS = true;
         http3 = true;
-        quic = true;
+        quic = false;
         extraConfig = goatcounterAllowlistConfig;
         locations."/" = {
           return = "302 https://${primaryCountVhost}$request_uri";

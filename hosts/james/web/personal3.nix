@@ -21,7 +21,7 @@ in
     forceSSL = true;
     kTLS = true;
     http3 = true;
-    quic = true;
+    quic = false;
     root = "/var/lib/static-web/${domain}";
     locations."= /.well-known/carddav".extraConfig = ''
       return 301 https://dav.${home}/dav/;

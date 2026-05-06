@@ -99,7 +99,7 @@ in
     forceSSL = true;
     kTLS = true;
     http3 = true;
-    quic = true;
+    quic = false;
     root = rootPath;
     extraConfig = ''
       add_header Alt-Svc 'h3=":443"; ma=86400';

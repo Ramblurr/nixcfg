@@ -29,7 +29,7 @@ let
       forceSSL = true;
       kTLS = true;
       http3 = true;
-      quic = true;
+      quic = false;
       globalRedirect = work;
 
       locations."= /.well-known/atproto-did".extraConfig = lib.mkIf (d == domain.personal2) ''

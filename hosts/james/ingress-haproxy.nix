@@ -36,6 +36,8 @@ in
   config = lib.mkIf (cfg.implementation == "haproxy") {
     networking.firewall.allowedTCPPorts = [ 443 ];
 
+    users.users.haproxy.extraGroups = [ config.services.nginx.group ];
+
     services.haproxy = {
       enable = true;
       package = pkgs.haproxy;
@@ -79,7 +81,7 @@ in
 
         backend bk_james_local
           mode tcp
-          server james-local ${routes.haproxyBackends.local.host}:${toString routes.haproxyBackends.local.port} send-proxy
+          server james-local /run/nginx/james-ingress.sock send-proxy
       '';
     };
 
