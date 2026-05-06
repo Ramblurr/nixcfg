@@ -17,7 +17,11 @@ in
     programs.dconf.enable = true;
     xdg.portal = {
       enable = true;
-      extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+      extraPortals = [
+        pkgs.xdg-desktop-portal-gtk
+        pkgs.kdePackages.xdg-desktop-portal-kde
+      ];
+      config.niri."org.freedesktop.impl.portal.FileChooser" = lib.mkForce "kde";
       xdgOpenUsePortal = true;
     };
     #services.gnome.at-spi2-core.enable = true;
