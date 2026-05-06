@@ -73,6 +73,8 @@ in
         ".kde"
         ".local/share/digikam"
         ".cache/digikam"
+        ".config/qt5ct"
+        ".config/qt6ct"
       ];
       files = [
         #".local/state/arkstaterc"

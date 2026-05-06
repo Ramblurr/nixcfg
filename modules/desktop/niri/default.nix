@@ -110,11 +110,11 @@ in
         };
 
     };
-    environment.sessionVariables = {
-      QT_QPA_PLATFORM = "wayland";
-      QT_QPA_PLATFORMTHEME = "qt6ct";
-      QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
-    };
+    #environment.sessionVariables = {
+    #  QT_QPA_PLATFORM = "wayland";
+    #  QT_QPA_PLATFORMTHEME = "qt6ct";
+    #  QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
+    #};
     environment.systemPackages = [
       pkgs.kdePackages.okular
       pkgs.kdePackages.dolphin
