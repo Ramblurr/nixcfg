@@ -210,6 +210,10 @@ in
       gtk = {
         enable = true;
         colorScheme = "dark";
+        theme = {
+          name = "Breeze-Dark";
+          package = pkgs.kdePackages.breeze-gtk;
+        };
         gtk3.extraConfig = {
           gtk-application-prefer-dark-theme = 1;
         };
@@ -232,7 +236,8 @@ in
           kdePackages.breeze
           kdePackages.qtstyleplugin-kvantum
         ];
-        style.name = "kvantum";
+        #style.name = "kvantum";
+        style.name = "Breeze";
         platformTheme.name = "qtct";
       };
       # Use 'dconf-editor' or 'gnome-tweaks' to find options you can change with this.
