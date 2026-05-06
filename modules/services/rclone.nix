@@ -24,6 +24,11 @@ let
         type = lib.types.str;
         description = "Where to mount the directory";
       };
+      extraOpts = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        description = "Extra options to pass to rclone mount.";
+        default = [ ];
+      };
       dependent_service = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         description = "Service name to wait for the mount.";
@@ -33,6 +38,9 @@ let
   };
 
   mkConfigArg = mcfg: "--config ${config.users.users.${mcfg.user}.home}/.config/rclone/rclone.conf";
+
+  mkExtraOpts = mcfg: lib.concatStringsSep " \
+              " mcfg.extraOpts;
 
   mkTmpfileRule = _: mcfg: "d ${mcfg.mount_point} 0770 ${mcfg.user} ${mcfg.group} -";
 
@@ -74,7 +82,8 @@ let
               --vfs-read-chunk-size-limit 512M \
               --no-modtime \
               --allow-non-empty \
-              --buffer-size 512M'';
+              --buffer-size 512M \
+              ${mkExtraOpts mcfg}'';
         ExecStop = "/run/wrappers/bin/fusermount -u ${mcfg.mount_point}";
         Type = "notify";
         User = mcfg.user;
