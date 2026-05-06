@@ -225,7 +225,8 @@ in
 
       qt = {
         enable = true;
-        platformTheme.name = "qtct";
+        platformTheme.name = "gnome";
+        style.name = "adwaita-dark";
       };
     };
   };
