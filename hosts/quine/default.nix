@@ -264,6 +264,7 @@ in
     impermanence.enable = true;
     boot.zfs.enable = true;
     boot.zfs.scrubPools = [ "rpool" ];
+    boot.zfs.usePlymouth = false;
     vpn.mullvad.enable = false;
     vpn.tailscale.enable = true;
     firewall.enable = true;
