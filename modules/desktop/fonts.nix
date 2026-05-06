@@ -210,17 +210,13 @@ in
       gtk = {
         enable = true;
         colorScheme = "dark";
-        theme = {
-          name = "Breeze-Dark";
-          package = pkgs.kdePackages.breeze-gtk;
+        gtk3.extraConfig = {
+          gtk-application-prefer-dark-theme = 1;
         };
-        gtk4.theme = {
-          name = "Breeze-Dark";
-          package = pkgs.kdePackages.breeze-gtk;
-        };
-        iconTheme = {
-          name = "breeze-dark";
-          package = pkgs.kdePackages.breeze-icons;
+        gtk4 = {
+          extraConfig = {
+            gtk-application-prefer-dark-theme = 1;
+          };
         };
         font = {
           inherit (cfg.sans) package;
@@ -232,8 +228,12 @@ in
       # https://danklinux.com/docs/dankmaterialshell/application-themes#qt-applications
       qt = {
         enable = true;
-        style.name = "breeze-dark";
-        platformTheme.name = "kde";
+        style.package = with pkgs; [
+          kdePackages.breeze
+          kdePackages.qtstyleplugin-kvantum
+        ];
+        style.name = "kvantum";
+        platformTheme.name = "qtct";
       };
       # Use 'dconf-editor' or 'gnome-tweaks' to find options you can change with this.
       dconf.settings = {
