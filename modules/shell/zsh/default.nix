@@ -7,7 +7,6 @@
 with lib;
 let
   cfg = config.modules.shell.zsh;
-  withImpermanence = config.modules.impermanence.enable;
 
   functions = ''
     function generate-password() { strings /dev/urandom | grep -o '[[:alnum:]]' | head -n ''${1:-32} | tr -d '\n'; echo }
