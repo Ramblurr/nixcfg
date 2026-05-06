@@ -117,4 +117,9 @@
       #'';
     };
   };
+  services.udev.extraRules = ''
+    KERNEL=="zd*", SUBSYSTEM=="block", ENV{UDISKS_IGNORE}="1"
+    SUBSYSTEM=="block", ENV{ID_FS_TYPE}=="crypto_LUKS", ENV{ID_FS_LABEL}=="cryptkey|cryptswap|cryptdata", ENV{UDISKS_IGNORE}="1"
+    SUBSYSTEM=="block", ENV{DM_NAME}=="cryptkey|cryptswap|cryptxdata", ENV{UDISKS_IGNORE}="1"
+  '';
 }
