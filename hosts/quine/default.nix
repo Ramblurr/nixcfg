@@ -233,11 +233,26 @@ in
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       sshd.enable = true;
       flatpak.enable = true;
-      rclone.mounts.gdrive = {
-        user = "ramblurr";
-        group = "ramblurr";
-        remote_name = "google-personal";
-        mount_point = "/mnt/gdrive";
+      rclone.mounts = {
+        Box = {
+          user = "ramblurr";
+          group = "ramblurr";
+          remote_name = "Box";
+          mount_point = "/mnt/Box";
+        };
+        gdrive = {
+          user = "ramblurr";
+          group = "ramblurr";
+          remote_name = "google-personal";
+          mount_point = "/mnt/gdrive";
+        };
+        gdrive-shared = {
+          user = "ramblurr";
+          group = "ramblurr";
+          remote_name = "google-personal";
+          mount_point = "/mnt/gdrive-shared";
+          extraOpts = [ "--drive-shared-with-me" ];
+        };
       };
     };
     dev = {
