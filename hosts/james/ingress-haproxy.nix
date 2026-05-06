@@ -34,7 +34,10 @@ let
 in
 {
   config = lib.mkIf (cfg.implementation == "haproxy") {
-    networking.firewall.allowedTCPPorts = [ 443 ];
+    networking.firewall.allowedTCPPorts = [
+      80
+      443
+    ];
 
     users.users.haproxy.extraGroups = [ config.services.nginx.group ];
 
@@ -63,6 +66,11 @@ in
           resolve_retries 3
           timeout retry 1s
           hold valid 10s
+
+        frontend http_redirect_frontend
+          mode http
+          bind *:80
+          http-request redirect scheme https code 301
 
         frontend tls_sni_frontend
           bind *:443
