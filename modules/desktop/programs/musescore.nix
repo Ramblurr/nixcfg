@@ -20,8 +20,6 @@ in
         directories = [
           ".config/MuseScore"
           ".local/share/MuseScore"
-          ".local/state/MuseScore"
-          ".local/state/muse-sounds-manager"
           ".local/share/MuseSampler"
           ".muse-hub"
         ];

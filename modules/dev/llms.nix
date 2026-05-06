@@ -93,7 +93,6 @@ in
           ".config/opencode"
           ".local/share/crush"
           ".local/share/opencode"
-          ".local/state/opencode"
         ];
       };
     };
