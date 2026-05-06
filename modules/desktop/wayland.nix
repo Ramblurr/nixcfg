@@ -18,10 +18,16 @@ in
     xdg.portal = {
       enable = true;
       extraPortals = [
-        pkgs.xdg-desktop-portal-gtk
         pkgs.kdePackages.xdg-desktop-portal-kde
+        pkgs.xdg-desktop-portal-gtk
+        pkgs.xdg-desktop-portal-wlr
       ];
-      config.niri."org.freedesktop.impl.portal.FileChooser" = lib.mkForce "kde";
+      config.niri = {
+        #"org.freedesktop.impl.portal.ScreenCast" = "gnome";
+        "org.freedesktop.impl.portal.Screenshot" = "kde";
+        #"org.freedesktop.impl.portal.RemoteDesktop" = "gnome";
+        "org.freedesktop.impl.portal.FileChooser" = lib.mkForce "kde";
+      };
       xdgOpenUsePortal = true;
     };
     #services.gnome.at-spi2-core.enable = true;
