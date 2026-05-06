@@ -42,8 +42,8 @@
     nad-api.url = "github:ramblurr/nad-api";
     nad-api.inputs.nixpkgs.follows = "nixpkgs";
     # Pin niri on commit where wtype isn't broken; ref: https://github.com/niri-wm/niri/issues/2314
-    niri.url = "github:YaLTeR/niri?rev=3ccb06f5644c4bcdf74ad2e4d388a13ac65207af";
-    niri.inputs.nixpkgs.follows = "nixpkgs";
+    #niri.url = "github:YaLTeR/niri?rev=3ccb06f5644c4bcdf74ad2e4d388a13ac65207af";
+    #niri.inputs.nixpkgs.follows = "nixpkgs";
     niri-scratchpad.url = "github:gvolpe/niri-scratchpad";
     niri-scratchpad.inputs.nixpkgs.follows = "nixpkgs";
     nix-gaming.url = "github:fufexan/nix-gaming";
