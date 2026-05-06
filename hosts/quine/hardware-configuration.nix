@@ -103,7 +103,13 @@
         };
       };
 
-      systemd.enable = true;
+      systemd = {
+        enable = true;
+        services.zfs-import-rpool = {
+          requires = [ "systemd-cryptsetup@cryptkey.service" ];
+          after = [ "systemd-cryptsetup@cryptkey.service" ];
+        };
+      };
 
       #postMountCommands = ''
       #  # Don't keep the cryptkey available all the time.

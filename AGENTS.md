@@ -88,7 +88,10 @@ Major areas include:
 4. Impermanence
    - Some hosts use impermanent root filesystems.
 
-5. Overlays
+5. Systemd initrd
+   - When converting an encrypted ZFS host from scripted initrd to systemd initrd, explicitly order ZFS import after the LUKS key mapper. For hosts like quine where ZFS `keylocation` points at `/dev/mapper/cryptkey`, add initrd systemd dependencies from `zfs-import-<pool>.service` to `systemd-cryptsetup@cryptkey.service`; otherwise ZFS import can race the password prompt and drop into initrd maintenance mode before continuing. Reference quine commits: `e24818af` for the systemd initrd conversion and `c5e9928e` for the ZFS/LUKS ordering fix.
+
+6. Overlays
    - Custom overlays live in `/overlays/`.
    - This includes selective imports from `nixpkgs-mine`.
 
