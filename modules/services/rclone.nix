@@ -8,6 +8,11 @@ let
   cfg = config.modules.services.rclone.mounts;
   mountType = lib.types.submodule {
     options = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        description = "Whether to enable this rclone mount.";
+        default = true;
+      };
       user = lib.mkOption {
         type = lib.types.str;
         description = "User to mount the directory for";
@@ -36,6 +41,8 @@ let
       };
     };
   };
+
+  enabledCfg = lib.filterAttrs (_: mcfg: mcfg.enable) cfg;
 
   mkConfigArg = mcfg: "--config ${config.users.users.${mcfg.user}.home}/.config/rclone/rclone.conf";
 
@@ -100,13 +107,13 @@ in
     default = { };
   };
 
-  config = lib.mkIf (cfg != { }) {
-    systemd.tmpfiles.rules = lib.mapAttrsToList mkTmpfileRule cfg;
+  config = lib.mkIf (enabledCfg != { }) {
+    systemd.tmpfiles.rules = lib.mapAttrsToList mkTmpfileRule enabledCfg;
 
     systemd.services = lib.mkMerge (
       lib.flatten [
-        (lib.mapAttrsToList mkRcloneService cfg)
-        (lib.mapAttrsToList setDependentServices cfg)
+        (lib.mapAttrsToList mkRcloneService enabledCfg)
+        (lib.mapAttrsToList setDependentServices enabledCfg)
       ]
     );
 

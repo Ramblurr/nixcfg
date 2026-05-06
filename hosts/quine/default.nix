@@ -235,18 +235,21 @@ in
       flatpak.enable = true;
       rclone.mounts = {
         Box = {
+          enable = true;
           user = "ramblurr";
           group = "ramblurr";
           remote_name = "Box";
           mount_point = "/mnt/Box";
         };
         gdrive = {
+          enable = true;
           user = "ramblurr";
           group = "ramblurr";
           remote_name = "google-personal";
           mount_point = "/mnt/gdrive";
         };
         gdrive-shared = {
+          enable = true;
           user = "ramblurr";
           group = "ramblurr";
           remote_name = "google-personal";
