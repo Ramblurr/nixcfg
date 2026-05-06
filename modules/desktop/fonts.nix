@@ -224,9 +224,8 @@ in
       };
 
       qt = {
-        # TODO: renable after  https://github.com/nix-community/home-manager/issues/7728
-        enable = false;
-        platformTheme.name = "kde";
+        enable = true;
+        platformTheme.name = "qtct";
       };
     };
   };
