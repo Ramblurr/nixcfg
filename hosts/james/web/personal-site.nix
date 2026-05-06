@@ -40,7 +40,7 @@ in
     kTLS = true;
     http3 = true;
     http2 = false;
-    quic = true;
+    quic = false;
     locations."= /.well-known/carddav".extraConfig = ''
       return 301 https://dav.${home}/dav/;
     '';
@@ -69,7 +69,7 @@ in
     kTLS = true;
     http3 = true;
     http2 = false;
-    quic = true;
+    quic = false;
     locations."/" = {
       return = "302 ${codeLink}";
     };

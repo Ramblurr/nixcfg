@@ -54,8 +54,8 @@ in
     defaultHTTPListenPort = 8080;
     defaultListen = [
       {
-        addr = "0.0.0.0";
-        port = 8443;
+        addr = "unix:/run/nginx/james-ingress.sock";
+        port = null;
         ssl = true;
         proxyProtocol = true;
       }
@@ -77,8 +77,12 @@ in
       proxy_headers_hash_bucket_size 256;
     '';
     appendHttpConfig = ''
-      set_real_ip_from 127.0.0.1;
+      set_real_ip_from unix:;
       real_ip_header proxy_protocol;
+      map $proxy_protocol_addr $crowdsec_client_ip {
+        "" $remote_addr;
+        default $proxy_protocol_addr;
+      }
       map $request_uri $loggable {
         default 1;
       }
@@ -119,7 +123,9 @@ in
         '"http_user_agent": "$http_user_agent",'
         '"upstream_addr": "$upstream_addr"'
       '}';
-      access_log /var/log/nginx/crowdsec.log combined if=$loggable;
+      log_format crowdsec_combined '$crowdsec_client_ip - $remote_user [$time_local] "$request" '
+        '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+      access_log /var/log/nginx/crowdsec.log crowdsec_combined if=$loggable;
       access_log /var/log/nginx/access.log json_combined2  if=$loggable;
     '';
     virtualHosts = {

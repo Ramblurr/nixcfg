@@ -77,7 +77,7 @@ in
     forceSSL = true;
     kTLS = true;
     http3 = true;
-    quic = true;
+    quic = false;
     extraConfig = ''
       allow 100.64.0.0/10;
       deny all;
