@@ -120,8 +120,9 @@ in
       pkgs.kdePackages.dolphin
       pkgs.kdePackages.ark
       pkgs.kdePackages.breeze-icons
-      #pkgs.kdePackages.breeze-gtk
+      pkgs.kdePackages.breeze-gtk
       pkgs.kdePackages.gwenview
+      pkgs.qimgv
       pkgs.kdePackages.elisa
       pkgs.kdePackages.dragon
       pkgs.kdePackages.qt6ct
