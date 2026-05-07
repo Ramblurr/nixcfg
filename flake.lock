@@ -3449,11 +3449,11 @@
     },
     "nixpkgs_19": {
       "locked": {
-        "lastModified": 1777961709,
-        "narHash": "sha256-3G/C6QKSDBhDEuDIQCsWyD6yW/Nw3w5KQ2D1PHhk9K0=",
+        "lastModified": 1778142252,
+        "narHash": "sha256-X/BuGXGTkev6iNsWyrk+zqR4nGa5bGLzYOVo4G+YUxM=",
         "owner": "ramblurr",
         "repo": "nixpkgs",
-        "rev": "921cc5e3f3a5a28be5cf5572004bcb9340b3dd22",
+        "rev": "464522943d0bd7081a529950677a4ed39128a17e",
         "type": "github"
       },
       "original": {
