@@ -4,6 +4,7 @@
 
 {
   imports = [
+    ./emergency-patch.nix
     ./boot/zfs.nix
     ./desktop/browser/chromium.nix
     ./desktop/browser/firefox.nix
