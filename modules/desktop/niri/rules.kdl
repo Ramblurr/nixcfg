@@ -67,7 +67,7 @@ window-rule {
 }
 
 window-rule {
-    # match title="^(Open|Choose|Save)(.*)$"
+    //match title="^(Open|Choose|Save)(.*)$"
     match app-id="(xdg-desktop-portal)(.*)"
     match app-id="filepicker"
     match app-id="org.freedesktop.impl.portal.desktop.kde"
