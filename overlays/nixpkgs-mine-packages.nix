@@ -18,26 +18,26 @@ in
   inherit (nixpkgs-mine) llm;
   inherit (nixpkgs-mine) clojure-lsp;
   inherit (nixpkgs-mine) davis;
-  inherit (nixpkgs-mine) plex;
+  #inherit (nixpkgs-mine) plex;
   inherit (nixpkgs-mine) emacs-pgtk;
-  inherit (nixpkgs-mine) gost;
+  #inherit (nixpkgs-mine) gost;
   inherit (nixpkgs-mine) ocis;
   inherit (nixpkgs-mine) ocis_71-bin;
   inherit (nixpkgs-mine) ocis_72-bin;
   inherit (nixpkgs-mine) ocis_73-bin;
   inherit (nixpkgs-mine) roon-server;
-  inherit (nixpkgs-mine) yt-dlp;
+  #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
   inherit (nixpkgs-mine) babashka;
   inherit (nixpkgs-mine) bbin;
-  inherit (nixpkgs-mine) jdk25;
-  inherit (nixpkgs-mine) jdk25_headless;
+  #inherit (nixpkgs-mine) jdk25;
+  #inherit (nixpkgs-mine) jdk25_headless;
   inherit (nixpkgs-mine) yubioath-flutter;
-  inherit (nixpkgs-mine) _1password-gui;
-  inherit (nixpkgs-mine) _1password-cli;
-  inherit (nixpkgs-mine) obs-cmd;
-  inherit (nixpkgs-mine) graphene-django;
+  #inherit (nixpkgs-mine) _1password-gui;
+  #inherit (nixpkgs-mine) _1password-cli;
+  #inherit (nixpkgs-mine) obs-cmd;
+  #inherit (nixpkgs-mine) graphene-django;
   sops = nixpkgs-mine.sops.withAgePlugins (p: [
     p.age-plugin-fido2-hmac
     p.age-plugin-yubikey
