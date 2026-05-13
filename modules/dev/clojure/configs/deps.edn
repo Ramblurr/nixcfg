@@ -24,7 +24,7 @@
                 io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
                 nrepl/nrepl                   {:mvn/version "1.7.0"}
                 cider/cider-nrepl             {:mvn/version "0.59.0"}
-                refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}
+                refactor-nrepl/refactor-nrepl {:mvn/version "3.12.0"}
                 criterium/criterium           {:mvn/version "0.4.6"}
                 com.github.gnl/playback       {:mvn/version "0.5.4"}
                 jedi-time/jedi-time           {:mvn/version "0.2.1"}
@@ -44,7 +44,7 @@
   :repl/lite
   {:extra-deps {nrepl/nrepl                   {:mvn/version "1.7.0"}
                 cider/cider-nrepl             {:mvn/version "0.59.0"}
-                refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}
+                refactor-nrepl/refactor-nrepl {:mvn/version "3.12.0"}
                 my/dev-repl                   {:git/sha "42127999fd534b47f5e0fa5689fa68fe34c81752"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
@@ -55,7 +55,7 @@
   {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1158"}
                 nrepl/nrepl                   {:mvn/version "1.7.0"}
                 cider/cider-nrepl             {:mvn/version "0.59.0"}
-                refactor-nrepl/refactor-nrepl {:mvn/version "3.11.0"}}
+                refactor-nrepl/refactor-nrepl {:mvn/version "3.12.0"}}
    :main-opts  ["--eval" "(require '[nextjournal.clerk])(nextjournal.clerk/show! 'nextjournal.clerk.tap)(nextjournal.clerk/serve! {:browse? true})"
                 "-m" "nrepl.cmdline"
                 "--middleware" "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"
