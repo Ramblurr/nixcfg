@@ -70,7 +70,6 @@ in
               properties = {
                 override = {
                   readonly = "on";
-
                   # these have been added to the parent dataset
                   # because this job will include some zvols and you cant set these props on them directly
                   #mountpoint = "none";
@@ -151,7 +150,7 @@ in
               "tank2/iocage<" = false;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
-              "tank2/replication<" = true;
+              "tank2/replication<" = false;
               "tank2/proxmox<" = false;
               "tank2/backups/gamsjaegers<" = false;
             };
