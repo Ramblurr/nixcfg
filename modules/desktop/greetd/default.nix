@@ -93,7 +93,10 @@ in
     security = {
       polkit.enable = true;
       # unlock keyring on login
-      pam.services.greetd.enableGnomeKeyring = true;
+      pam.services.greetd.kwallet = {
+        enable = true;
+        package = pkgs.kdePackages.kwallet-pam;
+      };
     };
 
     systemd.tmpfiles.rules = lib.mkIf withImpermanence [
