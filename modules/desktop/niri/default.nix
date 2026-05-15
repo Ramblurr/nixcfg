@@ -115,6 +115,23 @@ in
     #  QT_QPA_PLATFORMTHEME = "qt6ct";
     #  QT_QPA_PLATFORMTHEME_QT6 = "qt6ct";
     #};
+    security.pam.services = {
+      #login.kwallet = {
+      #  enable = true;
+      #  package = pkgs.kdePackages.kwallet-pam;
+      #};
+      kde = {
+        allowNullPassword = true;
+        kwallet = {
+          enable = true;
+          package = pkgs.kdePackages.kwallet-pam;
+        };
+        # "kde" must not have fingerprint authentication otherwise it can block password login.
+        # See https://github.com/NixOS/nixpkgs/issues/239770 and https://invent.kde.org/plasma/kscreenlocker/-/merge_requests/163.
+        fprintAuth = false;
+        p11Auth = false;
+      };
+    };
     environment.systemPackages = [
       pkgs.kdePackages.okular
       pkgs.kdePackages.dolphin
