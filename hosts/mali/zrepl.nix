@@ -236,6 +236,11 @@ in
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
               "tank2/replication<" = true;
+              "tank2/replication/dewey<" = false;
+              "tank2/replication/dewey/rpool/encrypted/safe/extra/atuin<" = true;
+              "tank2/replication/dewey/rpool/encrypted/safe/persist<" = true;
+              "tank2/replication/dewey/rpool/encrypted/safe/svc<" = true;
+              "tank2/replication/dewey/rpool/encrypted/safe/vms<" = true;
               "tank2/proxmox<" = false;
               "tank2/backups/gamsjaegers<" = false;
             };
