@@ -75,6 +75,7 @@ in
         ".cache/digikam"
         ".config/qt5ct"
         ".config/qt6ct"
+        ".sprites"
       ];
       files = [
         #".local/state/arkstaterc"
