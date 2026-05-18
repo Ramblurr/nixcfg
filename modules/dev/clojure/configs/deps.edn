@@ -34,7 +34,7 @@
                                                :git/tag "v0.1"
                                                :git/url "https://github.com/Datomic/dev.datafy.git"}
                 etaoin/etaoin                 {:mvn/version "1.1.43"}
-                my/dev-repl                   {:git/sha "42127999fd534b47f5e0fa5689fa68fe34c81752"
+                my/dev-repl                   {:git/sha "0397ba79ecb3069ca2f588a0b09f8c45a7f6c2ab"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -45,7 +45,7 @@
   {:extra-deps {nrepl/nrepl                   {:mvn/version "1.7.0"}
                 cider/cider-nrepl             {:mvn/version "0.59.0"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.12.0"}
-                my/dev-repl                   {:git/sha "42127999fd534b47f5e0fa5689fa68fe34c81752"
+                my/dev-repl                   {:git/sha "0397ba79ecb3069ca2f588a0b09f8c45a7f6c2ab"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -77,7 +77,7 @@
   :deps/outdated
   {:replace-paths ["."]
    :replace-deps  {com.github.liquidz/antq {:mvn/version "2.11.1276"}
-                   org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}}
+                   org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}}
    :exec-fn       antq.tool/outdated
    :exec-args     {:directory        ["."]         ; default
                    :exclude          ["org.clojure/tools.deps.alpha"
@@ -95,7 +95,7 @@
   :deps/outdated-upgrade
   {:replace-paths ["."]
    :replace-deps  {com.github.liquidz/antq {:mvn/version "2.11.1276"}
-                   org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}}
+                   org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}}
    :exec-fn       antq.tool/outdated
    :exec-args     {:directory        ["."]         ; default
                    :exclude          ["org.clojure/tools.deps.alpha"
@@ -116,7 +116,7 @@
   ;; - start a clojure-mcp server, requires run-clojure-mcp script, see modules/dev/clojure/default.nix
   ;;  claude mcp add clojure-mcp -- run-clojure-mcp
   :mcp/clojure
-  {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.17"}
+  {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}
              com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
                                       :git/tag "v0.3.1"
                                       :git/sha "81005cec94ab539fe92f45f42ab738a7e5f23f21"}}
@@ -128,9 +128,7 @@
   ;; cd project-directory && clojure -T:fmt/ns-fix
   :fmt/ns-fix
   {:replace-deps {com.github.clojure-lsp/clojure-lsp
-                  {:git/tag   "2026.02.20-16.08.58"
-                   :git/sha   "d18dd1ee754d081b2afa347de45e52910fcc86f7"
-                   :deps/root "cli"}}
+                  {:mvn/version "2026.05.05-12.58.26"}}
    :exec-fn      clojure-lsp.api/clean-ns!
    :exec-args    {:dry? false}}
 
@@ -139,9 +137,7 @@
   ;; - report namespaces whos requires+imports are unused and not well sorted
   ;; cd project-directory && clojure -T:fmt/ns-check
   :fmt/ns-check
-  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:git/tag   "2026.02.20-16.08.58"
-                                                      :git/sha   "d18dd1ee754d081b2afa347de45e52910fcc86f7"
-                                                      :deps/root "cli"}}
+  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:mvn/version "2026.05.05-12.58.26"}}
    :exec-fn      clojure-lsp.api/clean-ns!
    :exec-args    {:dry? true}}
 
