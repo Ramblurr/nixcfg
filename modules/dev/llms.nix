@@ -11,7 +11,7 @@ let
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   inherit (config.modules.users.primaryUser) username;
   inherit (llm-agents)
-    ccusage-codex
+    ccusage
     opencode
     pi
     mistral-vibe
@@ -57,6 +57,9 @@ let
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
   catnip-wrapper = pkgs.writeShellScriptBin "catnip" (wrapWithLLMKeys "${catnip}/bin/catnip" [ ]);
+  ccusage-codex-wrapper = pkgs.writeShellScriptBin "ccusage-codex" ''
+    exec ${ccusage}/bin/ccusage codex "$@"
+  '';
   pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
@@ -133,7 +136,7 @@ in
           catnip-wrapper
           pi-wrapper
           mistral-vibe-wrapper
-          ccusage-codex
+          ccusage-codex-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           opencode-wrapper
@@ -143,7 +146,7 @@ in
           wtype # handy (speech to text) uses this for clipboard access
           llm-agents.claude-code
           llm-agents.codex
-          llm-agents.ccusage
+          ccusage
           llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           pkgs.t3code
