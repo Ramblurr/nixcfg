@@ -57,9 +57,6 @@ let
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
   catnip-wrapper = pkgs.writeShellScriptBin "catnip" (wrapWithLLMKeys "${catnip}/bin/catnip" [ ]);
-  ccusage-codex-wrapper = pkgs.writeShellScriptBin "ccusage-codex" ''
-    exec ${ccusage}/bin/ccusage codex "$@"
-  '';
   pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
@@ -136,7 +133,6 @@ in
           catnip-wrapper
           pi-wrapper
           mistral-vibe-wrapper
-          ccusage-codex-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           opencode-wrapper
