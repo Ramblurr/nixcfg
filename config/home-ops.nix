@@ -593,6 +593,7 @@ in
         domain = home-ops.workDomain;
         external = true;
       };
+      ketesa.enable = true;
       bridges.discord = {
         enable = true;
         user = home-ops.users.mautrix-discord;

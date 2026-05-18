@@ -1,12 +1,16 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
   cfg = config.modules.services.matrix-synapse;
   service = "matrix-synapse";
   synapseDataDir = "${cfg.dataDir}/synapse";
+  ketesaSubpathPackage = pkgs.ketesa.overrideAttrs (oldAttrs: {
+    yarnBuildFlags = (oldAttrs.yarnBuildFlags or [ ]) ++ [ "--base=/admin/" ];
+  });
 in
 {
   options.modules.services.matrix-synapse = {
@@ -42,6 +46,23 @@ in
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
     bridgesGroup = lib.mkOption { type = lib.types.unspecified; };
+    ketesa = {
+      enable = lib.mkEnableOption "Ketesa Matrix admin UI";
+      package = lib.mkOption {
+        type = lib.types.package;
+        default = ketesaSubpathPackage.withConfig {
+          restrictBaseUrl = "https://${cfg.domain}";
+        };
+        defaultText = lib.literalExpression ''
+          (pkgs.ketesa.overrideAttrs (oldAttrs: {
+            yarnBuildFlags = (oldAttrs.yarnBuildFlags or [ ]) ++ [ "--base=/admin/" ];
+          })).withConfig {
+            restrictBaseUrl = "https://<matrix-domain>";
+          }
+        '';
+        description = "Ketesa package to serve under /admin on the Matrix domain.";
+      };
+    };
   };
   config = lib.mkIf cfg.enable {
     assertions = [
@@ -77,6 +98,23 @@ in
           add_header Content-Type application/json;
           return 200 '${builtins.toJSON server}';
         '';
+    }
+    // lib.optionalAttrs cfg.ketesa.enable {
+      "= /admin".return = "307 /admin/";
+      "/admin/" = {
+        alias = "${cfg.ketesa.package}/";
+        priority = 500;
+        tryFiles = "$uri $uri/ /admin/index.html";
+      };
+      "~ ^/admin/.*\\.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$" = {
+        priority = 400;
+        root = cfg.ketesa.package;
+        extraConfig = ''
+          rewrite ^/admin/(.*)$ /$1 break;
+          expires 30d;
+          add_header Cache-Control "public";
+        '';
+      };
     };
 
     # the nixos module hardcodes the user matrix-synapse
