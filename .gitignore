@@ -13,3 +13,4 @@ extra
 dns-migrate
 vars.auto.tfvars
 .terraform
+secret.edn
