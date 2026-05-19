@@ -14,7 +14,6 @@ let
     ccusage
     pi
     mistral-vibe
-    gemini-cli
     ;
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
@@ -43,9 +42,6 @@ let
     llm-pdf-to-images = true;
   };
   llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${llmWithPlugins}/bin/llm" [ ]);
-  gemini-cli-wrapper = pkgs.writeShellScriptBin "gemini" (
-    wrapWithLLMKeys "${gemini-cli}/bin/gemini" [ ]
-  );
   github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
@@ -121,7 +117,6 @@ in
           #mcp-inspector
           llm-wrapper
           github-mcp-server-wrapper
-          gemini-cli-wrapper
           pi-wrapper
           mistral-vibe-wrapper
           #codex
