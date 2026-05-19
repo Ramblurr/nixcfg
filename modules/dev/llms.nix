@@ -12,11 +12,9 @@ let
   inherit (config.modules.users.primaryUser) username;
   inherit (llm-agents)
     ccusage
-    opencode
     pi
     mistral-vibe
     gemini-cli
-    catnip
     ;
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
@@ -30,11 +28,6 @@ let
     fi
     exec ${cmd} "$@"
   '';
-  opencode-wrapper = pkgs.writeShellScriptBin "opencode" (
-    wrapWithLLMKeys "${opencode}/bin/opencode" [
-      "ANTHROPIC_API_KEY"
-    ]
-  );
   llmWithPlugins = pkgs.llm.withPlugins {
     llm-cmd = true;
     llm-anthropic = true;
@@ -56,7 +49,6 @@ let
   github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
-  catnip-wrapper = pkgs.writeShellScriptBin "catnip" (wrapWithLLMKeys "${catnip}/bin/catnip" [ ]);
   pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
@@ -130,12 +122,10 @@ in
           llm-wrapper
           github-mcp-server-wrapper
           gemini-cli-wrapper
-          catnip-wrapper
           pi-wrapper
           mistral-vibe-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
-          opencode-wrapper
           cat-url-markdown
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
           dotool # handy (speech to text) uses this for clipboard access
