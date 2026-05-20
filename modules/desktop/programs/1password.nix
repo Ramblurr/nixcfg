@@ -15,9 +15,7 @@ in
     autostart.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    programs._1password = {
-      enable = true;
-    };
+    programs._1password.enable = true;
     programs._1password-gui = {
       enable = true;
       polkitPolicyOwners = [ username ];
@@ -27,6 +25,15 @@ in
       #  lib.my.autostart "1password"
       #);
     };
+    environment.etc = {
+      "1password/custom_allowed_browsers" = {
+        text = ''
+          firefox-beta
+        '';
+        mode = "0755";
+      };
+    };
+
     environment.persistence."/persist" = mkIf withImpermanence {
       users.${username} = {
         directories = [ ".config/1Password" ];
