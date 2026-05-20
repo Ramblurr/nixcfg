@@ -123,6 +123,7 @@ in
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           cat-url-markdown
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
+          inputs.garnix-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
           dotool # handy (speech to text) uses this for clipboard access
           wtype # handy (speech to text) uses this for clipboard access
           llm-agents.claude-code

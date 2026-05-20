@@ -1846,6 +1846,33 @@
         "type": "github"
       }
     },
+    "garnix-cli": {
+      "inputs": {
+        "devenv": [
+          "libro-fm-cli",
+          "devenv"
+        ],
+        "devshell": [
+          "devshell"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779261409,
+        "narHash": "sha256-T6FvYQ6Uw/RCa/tUcmqH3GWPbsXCko1LyKXoBTeuqlo=",
+        "owner": "outskirtslabs",
+        "repo": "garnix-cli",
+        "rev": "df8746677f6ce5b5165ae6086fe00cf3670b22c4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "outskirtslabs",
+        "repo": "garnix-cli",
+        "type": "github"
+      }
+    },
     "git-hooks": {
       "inputs": {
         "flake-compat": "flake-compat_7",
@@ -4050,6 +4077,7 @@
         "firefox-nightly": "firefox-nightly",
         "flake-parts": "flake-parts_2",
         "flake-utils": "flake-utils_2",
+        "garnix-cli": "garnix-cli",
         "git-lines": "git-lines",
         "home-manager": "home-manager",
         "home-manager-stable": "home-manager-stable",
