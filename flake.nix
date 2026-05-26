@@ -29,7 +29,7 @@
     git-lines.inputs.treefmt-nix.follows = "treefmt-nix";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    home-manager-stable.url = "github:nix-community/home-manager/release-25.11";
+    home-manager-stable.url = "github:nix-community/home-manager/release-26.05";
     home-manager-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
     impermanence.url = "github:nix-community/impermanence";
     # do not follow home-manager: impermanence does not need it when consumed as a module
@@ -65,7 +65,7 @@
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nixpkgs.url = "github:ramblurr/nixpkgs/channel/personal-unstable";
     nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=channel/personal-master";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-26.05";
     nur.url = "github:nix-community/NUR";
     nur.inputs.nixpkgs.follows = "nixpkgs";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
