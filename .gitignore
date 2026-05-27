@@ -2,7 +2,6 @@ result
 modules-new
 modules-old
 archive
-
 .clj-kondo
 .lsp
 modules/editors/emacs/configs/doom.d/flycheck_*
@@ -14,3 +13,4 @@ dns-migrate
 vars.auto.tfvars
 .terraform
 secret.edn
+.env
