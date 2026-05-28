@@ -33,7 +33,6 @@
       {
         Table = 142;
         Destination = "10.9.4.0/22";
-        Gateway = "10.9.4.1";
       }
       {
         Table = 142;
