@@ -28,7 +28,9 @@ in
     environment.etc = {
       "1password/custom_allowed_browsers" = {
         text = ''
-          firefox-beta
+          firefox-beta-bin
+          firefox-bin
+          firefox
         '';
         mode = "0755";
       };
