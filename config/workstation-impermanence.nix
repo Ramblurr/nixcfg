@@ -54,6 +54,8 @@ in
         ".local/share/Zeal"
 
         ".config/adept"
+        ".config/pi-matrix-relay"
+        ".local/state/pi-matrix-relay"
         ".config/warp-terminal"
         ".config/libreoffice"
         ".config/gtk-3.0" # fuse mounted from /nix/dotfiles/Plasma/.config/gtk-3.0
