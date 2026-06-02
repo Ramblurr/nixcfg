@@ -17,10 +17,6 @@
     firefox-nightly.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-utils.url = "github:numtide/flake-utils";
-    garnix-cli.url = "github:outskirtslabs/garnix-cli";
-    garnix-cli.inputs.devenv.follows = "libro-fm-cli/devenv";
-    garnix-cli.inputs.devshell.follows = "devshell";
-    garnix-cli.inputs.nixpkgs.follows = "nixpkgs";
     git-lines.url = "github:omegaice/git-lines";
     git-lines.inputs.advisory-db.follows = "";
     git-lines.inputs.flake-parts.follows = "flake-parts";
