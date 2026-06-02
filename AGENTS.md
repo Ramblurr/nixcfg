@@ -40,7 +40,6 @@ Never delete them.
 - The private workflow is the real CI entrypoint for secret-bearing updates.
 - It rewrites `inputs.nixcfg.url` to the GitHub form, while leaving the local `git+file` version commented out for local use.
 - It runs `nix flake update`, stages `flake.nix` and `flake.lock`, and commits with `update flake` when needed.
-- It also configures Garnix cache authentication for Determinate Nix using a netrc file built from the `GARNIX_NETRC_PASSWORD` GitHub secret.
 
 ## Architecture and structure
 
