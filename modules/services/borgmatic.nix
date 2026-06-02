@@ -67,7 +67,14 @@ in
     sops.secrets.borgmatic-ssh-key = { };
     sops.secrets.borgmatic-env = { };
     systemd.services.borgmatic.serviceConfig.EnvironmentFile = "/run/secrets/borgmatic-env";
-    systemd.timers.borgmatic.wantedBy = [ "timers.target" ];
+    systemd.timers.borgmatic = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "*-*-* 04:00:00";
+        Persistent = true;
+        RandomizedDelaySec = "2h";
+      };
+    };
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
       enableConfigCheck = false; # We use environment variables in the config which aren't present during the config check
