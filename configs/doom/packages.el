@@ -72,7 +72,7 @@
   (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
   (package! treemacs-all-the-icons)
 
-  ;; (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
+  (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
   ;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
 
   (package! symex-core
@@ -109,8 +109,6 @@
   (package! org-roam-ui)
   (package! consult-flyspell))
 
-
-(package! adoc-mode)
 (package! org-modern-indent :recipe
   (:host github
    :repo "jdtsmith/org-modern-indent"))
