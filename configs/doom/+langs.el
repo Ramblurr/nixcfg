@@ -128,6 +128,76 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Janet
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun my/ajsc-send-top-level-form ()
+  "Send the top-level Janet form at point to the ajsc REPL."
+  (interactive)
+  (save-excursion
+    (let ((bounds (bounds-of-thing-at-point 'defun)))
+      (unless bounds
+        (user-error "No top-level form at point"))
+      (ajsc-send-region (car bounds) (cdr bounds)))))
+
+(defun my/ajsc-hide-repl ()
+  "Hide the visible ajsc REPL window without killing its buffer or process."
+  (interactive)
+  (let* ((buffer-name (if (boundp 'ajsc-repl-buffer-name)
+                          ajsc-repl-buffer-name
+                        "*ajsc-repl*"))
+         (window (get-buffer-window buffer-name t)))
+    (if window
+        (quit-window nil window)
+      (message "%s is not visible" buffer-name))))
+
+(use-package! ajsc
+  :load-path (lambda () (expand-file-name "lisp/ajsc" doom-user-dir))
+  :commands (ajsc
+             ajsc-interaction-mode
+             ajsc-send-buffer
+             ajsc-send-expression-at-point
+             ajsc-send-region
+             ajsc-switch-to-repl))
+
+(map! :after ajsc
+      :map ajsc-mode-map
+      :localleader
+      :desc "Hide REPL" "h" #'my/ajsc-hide-repl
+      :desc "Hide REPL" "q" #'my/ajsc-hide-repl)
+
+(map! :after janet-mode
+      :map janet-mode-map
+      :localleader
+      :desc "Connect to ajsc" "c" #'ajsc
+      (:prefix ("e" . "eval")
+       :desc "Eval buffer" "b" #'ajsc-send-buffer
+       :desc "Eval top-level form" "d" #'my/ajsc-send-top-level-form
+       :desc "Eval expression at point" "e" #'ajsc-send-expression-at-point
+       :desc "Eval region" "r" #'ajsc-send-region)
+      (:prefix ("r" . "repl")
+       :desc "Connect to ajsc" "c" #'ajsc
+       :desc "Switch to REPL" "b" #'ajsc-switch-to-repl
+       :desc "Hide REPL" "h" #'my/ajsc-hide-repl))
+
+(map! :after janet-ts-mode
+      :map janet-ts-mode-map
+      :localleader
+      :desc "Connect to ajsc" "c" #'ajsc
+      (:prefix ("e" . "eval")
+       :desc "Eval buffer" "b" #'ajsc-send-buffer
+       :desc "Eval top-level form" "d" #'my/ajsc-send-top-level-form
+       :desc "Eval expression at point" "e" #'ajsc-send-expression-at-point
+       :desc "Eval region" "r" #'ajsc-send-region)
+      (:prefix ("r" . "repl")
+       :desc "Connect to ajsc" "c" #'ajsc
+       :desc "Switch to REPL" "b" #'ajsc-switch-to-repl
+       :desc "Hide REPL" "h" #'my/ajsc-hide-repl))
+
+(use-package! inf-janet
+  :load-path (lambda () (expand-file-name "lisp/inf-janet" doom-user-dir))
+  :commands (inf-janet run-janet inf-janet-minor-mode)
+  :config
+  (add-to-list 'janet-source-modes 'janet-ts-mode))
+
 (use-package! ajrepl
   :after janet-ts-mode
   :config
