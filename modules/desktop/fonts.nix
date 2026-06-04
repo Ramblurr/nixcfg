@@ -230,7 +230,7 @@ in
       };
       # https://discourse.nixos.org/t/guide-to-installing-qt-theme/35523
       # https://danklinux.com/docs/dankmaterialshell/application-themes#qt-applications
-      qt = {
+      qt = lib.mkIf (!config.modules.desktop.kde.enable) {
         enable = true;
         style.package = with pkgs; [
           kdePackages.breeze
