@@ -13,7 +13,7 @@ in
     ./disk-config.nix
     ./hardware.nix
     ./home.nix
-    ./syncthing.nix
+    #./syncthing.nix
     ../../config
     ../../config/workstation-impermanence.nix
   ];
