@@ -53,7 +53,7 @@ in
     firewall.enable = true;
     security.default.enable = true;
     hardware.pipewire.enable = true;
-    hardware.pipewire.denoise.enable = true;
+    #hardware.pipewire.denoise.enable = true;
     users.enable = true;
     users.primaryUser.extraGroups = [
       "wheel"
@@ -145,6 +145,7 @@ in
     };
     dev = {
       clojure.enable = true;
+      janet.enable = true;
       jetbrains.enable = false;
       node.enable = true;
       python.enable = true;
