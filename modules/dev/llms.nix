@@ -130,7 +130,7 @@ in
           ccusage
           llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
-          pkgs.t3code
+          #pkgs.t3code
           universal-ctags
           difftastic
           ast-grep
