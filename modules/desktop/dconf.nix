@@ -180,7 +180,6 @@ in
               "firefox.desktop"
               "kitty.desktop"
               "org.gnome.Nautilus.desktop"
-              "logseq.desktop"
               "discord.desktop"
               "com.usebottles.bottles.desktop"
               "org.gnome.Software.desktop"
