@@ -111,6 +111,7 @@ in
         yamlfmt
         yamllint
         esphome
+        esptool
         shellcheck
         shadowsocks-rust
         ssh-to-age
