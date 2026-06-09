@@ -9,8 +9,9 @@ let
   cfg = devCfg.node;
   inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
-  nodejs = pkgs.nodejs-slim_24;
-  pnpm = pkgs.pnpm.override { inherit nodejs; };
+  nodejs-slim = pkgs.nodejs-slim;
+  nodejs = pkgs.nodejs;
+  pnpm = pkgs.pnpm.override { inherit nodejs-slim; };
   yarn = pkgs.yarn.override { inherit nodejs; };
   npmUnavailable = pkgs.writeShellScriptBin "npm" ''
     echo "npm not available use pnpm instead"
@@ -41,7 +42,7 @@ in
     myhm = _: {
       home.packages = [
         (lib.hiPrio npmUnavailable)
-        nodejs
+        nodejs-slim
         pnpm
         yarn
         pkgs.bun
