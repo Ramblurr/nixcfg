@@ -94,23 +94,6 @@
         };
       };
       folders = {
-        "logseq" = {
-          id = "lzv9p-tt1gf";
-          path = "/home/ramblurr/docs/brain";
-          devices = [
-            "quine"
-            "phone"
-            "phone2"
-            "ipad"
-          ];
-          versioning = {
-            type = "staggered";
-            params = {
-              cleanInterval = "3600"; # 1 hour
-              maxAge = "15768000"; # 180 days
-            };
-          };
-        };
         #"SNO-Noten" = {
         #  id = "jfi2q-111c3";
         #  path = "/home/ramblurr/docs/SNO/Noten - Scores";

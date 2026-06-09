@@ -163,25 +163,6 @@
             type = "simple";
           };
         };
-        "logseq" = {
-          id = "lzv9p-tt1gf";
-          path = "/home/ramblurr/docs/brain";
-          devices = [
-            "aquinas"
-            "witt"
-            "phone"
-            "phone2"
-            "ipad"
-            "pinenote"
-          ];
-          versioning = {
-            type = "staggered";
-            params = {
-              cleanInterval = "3600"; # 1 hour
-              maxAge = "15768000"; # 180 days
-            };
-          };
-        };
         "SNO-Noten" = {
           id = "jfi2q-111c3";
           path = "/home/ramblurr/docs/SNO/Noten - Scores";
