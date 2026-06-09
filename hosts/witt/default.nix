@@ -83,7 +83,6 @@ in
         junction.enable = true;
         #kdeconnect.enable = true;
         ghostty.enable = true;
-        logseq.enable = true;
         element.enable = true;
         nextcloud.enable = true;
         #nheko.enable = true;
