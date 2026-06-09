@@ -15,7 +15,7 @@ in
   #opencode = nixpkgs-mine.opencode;
   #gemini-cli = nixpkgs-mine.gemini-cli;
   #crush = nixpkgs-mine.crush;
-  inherit (nixpkgs-mine) llm;
+  #inherit (nixpkgs-mine) llm;
   inherit (nixpkgs-mine) clojure-lsp;
   inherit (nixpkgs-mine) davis;
   #inherit (nixpkgs-mine) plex;
@@ -29,18 +29,18 @@ in
   #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
-  inherit (nixpkgs-mine) babashka;
-  inherit (nixpkgs-mine) bbin;
+  #inherit (nixpkgs-mine) babashka;
+  #inherit (nixpkgs-mine) bbin;
   #inherit (nixpkgs-mine) jdk25;
   #inherit (nixpkgs-mine) jdk25_headless;
-  inherit (nixpkgs-mine) yubioath-flutter;
+  #inherit (nixpkgs-mine) yubioath-flutter;
   #inherit (nixpkgs-mine) _1password-gui;
   #inherit (nixpkgs-mine) _1password-cli;
   #inherit (nixpkgs-mine) obs-cmd;
   #inherit (nixpkgs-mine) graphene-django;
-  sops = nixpkgs-mine.sops.withAgePlugins (p: [
-    p.age-plugin-fido2-hmac
-    p.age-plugin-yubikey
-    p.age-plugin-tpm
-  ]);
+  #sops = nixpkgs-mine.sops.withAgePlugins (p: [
+  #  p.age-plugin-fido2-hmac
+  #  p.age-plugin-yubikey
+  #  p.age-plugin-tpm
+  #]);
 }
