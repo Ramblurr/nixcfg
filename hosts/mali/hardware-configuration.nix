@@ -86,7 +86,7 @@
         };
 
         cryptswap = {
-          device = "/dev/disk/by-label/cryptswap";
+          device = "/dev/disk/by-uuid/cc96454e-8d13-43bb-8c97-a199dcece4ca";
           keyFile = "/keyfile:/dev/mapper/cryptkey";
           keyFileSize = 64;
         };
