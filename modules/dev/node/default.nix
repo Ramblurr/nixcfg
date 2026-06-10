@@ -9,8 +9,8 @@ let
   cfg = devCfg.node;
   inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
-  nodejs-slim = pkgs.nodejs-slim;
-  nodejs = pkgs.nodejs;
+  inherit (pkgs) nodejs-slim;
+  inherit (pkgs) nodejs;
   pnpm = pkgs.pnpm.override { inherit nodejs-slim; };
   yarn = pkgs.yarn.override { inherit nodejs; };
   npmUnavailable = pkgs.writeShellScriptBin "npm" ''
