@@ -60,6 +60,9 @@
       };
     };
     initrd = {
+      checkJournalingFS = true;
+      supportedFilesystems = [ "ext4" ];
+
       availableKernelModules = [
         "aesni_intel"
         "ahci"
@@ -76,29 +79,46 @@
 
       luks.devices = {
         cryptkey = {
-          device = "/dev/disk/by-label/cryptkey";
-          keyFileSize = 4096;
+          device = "/dev/disk/by-partlabel/cryptkey";
           keyFile = "/dev/disk/by-partlabel/usbbootkey";
-          fallbackToPassword = true;
+          keyFileSize = 4096;
+          keyFileTimeout = 10;
         };
 
         cryptswap = {
           device = "/dev/disk/by-label/cryptswap";
-          keyFile = "/dev/mapper/cryptkey";
+          keyFile = "/keyfile:/dev/mapper/cryptkey";
           keyFileSize = 64;
         };
       };
 
-      postMountCommands = ''
-        # Don't keep the cryptkey available all the time.
-        #cryptsetup close /dev/mapper/cryptkey
-      '';
+      systemd = {
+        enable = true;
 
-      postDeviceCommands = lib.mkAfter ''
-        zfs rollback -r rpool2/encrypted/local/root@blank && \
-        zfs rollback -r rpool2/encrypted/local/home@blank && \
-        echo "rollback complete" || echo "rollback failed"
-      '';
+        mounts = [
+          {
+            what = "/dev/mapper/cryptkey";
+            where = "/run/cryptkey";
+            type = "ext4";
+            options = "ro";
+            requires = [ "systemd-cryptsetup@cryptkey.service" ];
+            after = [ "systemd-cryptsetup@cryptkey.service" ];
+            before = [ "zfs-import-rpool2.service" ];
+            wantedBy = [ "initrd.target" ];
+          }
+        ];
+
+        services.zfs-import-rpool2 = {
+          requires = [
+            "systemd-cryptsetup@cryptkey.service"
+            "run-cryptkey.mount"
+          ];
+          after = [
+            "systemd-cryptsetup@cryptkey.service"
+            "run-cryptkey.mount"
+          ];
+        };
+      };
     };
   };
 }

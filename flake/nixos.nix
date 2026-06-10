@@ -45,6 +45,8 @@ let
         permittedInsecurePackages = [
           "libsoup-2.74.3"
           "olm-3.2.16"
+          # Temporary exception for the mali cryptkey migration; remove after MinIO remediation.
+          "minio-2025-10-15T17-29-55Z"
         ];
       };
     };
