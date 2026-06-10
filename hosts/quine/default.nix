@@ -91,12 +91,10 @@ in
 
   nix.settings = {
     extra-substituters = [
-      "https://numtide.cachix.org"
       "https://cache.flox.dev"
       "https://cache.flakehub.com"
     ];
     extra-trusted-public-keys = [
-      "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
       "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
       "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
       "cache.flakehub.com-4:Asi8qIv291s0aYLyH6IOnr5Kf6+OF14WVjkE6t3xMio="
