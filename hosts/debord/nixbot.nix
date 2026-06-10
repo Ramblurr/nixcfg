@@ -1,5 +1,7 @@
 {
   config,
+  pkgs,
+  lib,
   ...
 }:
 # nixbot CI service (github.com/Mic92/nixbot)
@@ -10,6 +12,7 @@
 let
   nixbotPort = config.repo.secrets.home-ops.ports.nixbot;
   workDomain = config.repo.secrets.global.domain.work;
+  homeDomain = config.repo.secrets.global.domain.home;
 in
 {
   services.nixbot = {
@@ -30,6 +33,9 @@ in
       webhookSecretFile = config.sops.secrets."nixbot-github-webhook-secret".path;
       oauthId = config.repo.secrets.local.nixbot.oauthId;
       oauthSecretFile = config.sops.secrets."nixbot-github-oauth-secret".path;
+      # Required to see private repo builds in the UI; grants the GitHub
+      # "repo" OAuth scope (read+write) stored server-side for the session.
+      oauthPrivateRepoScope = true;
       # Repositories with this topic are enabled on first startup with an
       # empty database; afterwards projects are managed in the web UI.
       topic = "nixbot";
@@ -56,6 +62,51 @@ in
     "rpool/encrypted/safe/svc/postgresql"."com.sun:auto-snapshot" = "false";
   };
 
-  # Reached only by dewey's nginx over the prim VLAN.
   networking.firewall.allowedTCPPorts = [ nixbotPort ];
+
+  # Remote builders: quine acts as an x86_64-linux build machine.
+  # maxJobs/cores are intentionally low so remote builds share quine
+  # without starving its local workloads.
+  nix.distributedBuilds = true;
+  nix.buildMachines = [
+    {
+      hostName = "quine.prim.${homeDomain}";
+      system = "x86_64-linux";
+      protocol = "ssh-ng";
+      maxJobs = 2;
+      speedFactor = 2;
+      supportedFeatures = [
+        "nixos-test"
+        "benchmark"
+        "big-parallel"
+        "kvm"
+      ];
+      sshUser = "nix-remote-build";
+      sshKey = "/var/lib/nixbot/.ssh/id_ed25519";
+    }
+  ];
+
+  programs.ssh.knownHosts."quine.prim.${homeDomain}" = {
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFICZ13T85//UvjEjf+I72FqaXyGJNt9LD4mjYSq3LTl";
+  };
+
+  # Generate the nixbot user's SSH keypair on first boot if absent.
+  systemd.services.nixbot-ssh-keygen = {
+    description = "Generate nixbot SSH keypair for remote builders";
+    before = [ "nixbot.service" ];
+    requiredBy = [ "nixbot.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      User = "nixbot";
+      ExecStart = pkgs.writeShellScript "nixbot-ssh-keygen" ''
+        if [ ! -f /var/lib/nixbot/.ssh/id_ed25519 ]; then
+          mkdir -p /var/lib/nixbot/.ssh
+          chmod 700 /var/lib/nixbot/.ssh
+          ${lib.getExe' pkgs.openssh "ssh-keygen"} -t ed25519 \
+            -f /var/lib/nixbot/.ssh/id_ed25519 -N "" -C "nixbot@debord"
+        fi
+      '';
+    };
+  };
 }
