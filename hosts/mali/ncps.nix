@@ -1,10 +1,14 @@
 {
   config,
+  inputs,
+  pkgs,
+  lib,
   ...
 }:
 
 let
   inherit (config.repo.secrets.global) domain;
+  cfg = config.services.ncps;
   hostName = "nix-cache.int.${domain.home}";
 in
 {
@@ -12,7 +16,14 @@ in
     owner = "ncps";
     group = "ncps";
   };
+  # temporary workaround
+  # ref: https://github.com/kalbasit/ncps/issues/1388
+  # ref: https://github.com/kalbasit/ncps/issues/1329
+  systemd.services.ncps.preStart = lib.mkForce ''
+    ${lib.getExe cfg.package} migrate up --cache-database-url ${cfg.cache.databaseURL}
+  '';
   services.ncps = {
+    package = inputs.ncps.packages.${pkgs.stdenv.hostPlatform.system}.default;
     enable = true;
     logLevel = "info";
     prometheus = {
