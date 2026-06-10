@@ -95,6 +95,8 @@ in
 
     systemd.services.haproxy.serviceConfig = {
       AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
+      Restart = "always";
+      RestartSec = "5s";
     };
   };
 }

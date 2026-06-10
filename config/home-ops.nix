@@ -384,6 +384,15 @@ in
         '';
     };
 
+    # dnsdist is the sole DNS resolver on hosts where systemd-resolved is
+    # disabled. If it is stopped during nixos-rebuild switch activation and
+    # not restarted (because its unit file did not change), all DNS lookups
+    # fail until it is manually restarted. Always-restart prevents that window.
+    systemd.services.dnsdist.serviceConfig = {
+      Restart = "always";
+      RestartSec = "5s";
+    };
+
     ########################
     # Application Services #
     ########################
