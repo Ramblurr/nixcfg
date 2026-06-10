@@ -41,7 +41,7 @@ in
     settings.General.Experimental = true;
   };
 
-  home.nix-lan-cache.enable = false;
+  home.nix-lan-cache.enable = true;
 
   modules = {
     impermanence.enable = true;
