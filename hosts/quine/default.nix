@@ -29,6 +29,7 @@ in
     #./microvm-host-opts.nix
     ./microvm-host.nix
     #./arm.nix
+    ./remote-builder.nix
   ];
 
   system.stateVersion = "23.05";
