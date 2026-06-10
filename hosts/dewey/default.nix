@@ -77,6 +77,23 @@ in
     };
   };
 
+  # nixbot CI on debord: dewey terminates TLS for internal clients and for
+  # the james gost tunnel, then proxies over the prim VLAN to debord.
+  # See hosts/debord/nixbot.nix.
+  modules.services.ingress.virtualHosts."ci.${config.repo.secrets.global.domain.work}" = {
+    acmeHost = config.repo.secrets.global.domain.work;
+    upstream = "http://debord.prim.${config.repo.secrets.global.domain.home}:${toString config.repo.secrets.home-ops.ports.nixbot}";
+    upstreamExtraConfig = ''
+      # GitHub webhook payloads can be up to 25 MB.
+      client_max_body_size 25m;
+      proxy_connect_timeout 120s;
+      proxy_send_timeout 120s;
+      # Long timeout keeps SSE log streams alive; buffering would stall SSE.
+      proxy_read_timeout 3600s;
+      proxy_buffering off;
+    '';
+  };
+
   inherit (config.repo.secrets.site) site;
   systemd.network = {
     links = {

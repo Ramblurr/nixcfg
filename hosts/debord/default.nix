@@ -14,6 +14,7 @@ in
     ./hardware.nix
     ./disk-config.nix
     ./networking.nix
+    ./nixbot.nix
     #./prometheus.nix
     #./grafana
     ../../config

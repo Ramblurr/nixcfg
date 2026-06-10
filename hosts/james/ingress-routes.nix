@@ -26,6 +26,8 @@ let
 in
 {
   deweyServices = [
+    # nixbot CI on debord, relayed through dewey's nginx
+    "ci.${work}"
     "y2pod.${home}"
     "dav.${home}"
     "requests.${home}"
