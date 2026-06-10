@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib,
+  self,
   ...
 }:
 # nixbot CI service (github.com/Mic92/nixbot)
@@ -10,9 +11,44 @@
 # exposure happen on dewey's nginx ingress (ci.<work> -> debord:<port>),
 # which in turn is reachable from the internet via the james gost tunnel.
 let
+  inherit (self.inputs.nixbot.lib) interpolate;
+
   nixbotPort = config.repo.secrets.home-ops.ports.nixbot;
   workDomain = config.repo.secrets.global.domain.work;
   homeDomain = config.repo.secrets.global.domain.home;
+  localAtticSubstituter = config.repo.secrets.global.localAtticSubstituter;
+  atticServer = "mali";
+  atticCacheName = builtins.baseNameOf localAtticSubstituter;
+  atticEndpoint = lib.removeSuffix "/${atticCacheName}" localAtticSubstituter;
+  atticCache = "${atticServer}:${atticCacheName}";
+
+  atticPush = pkgs.writeShellScript "nixbot-attic-push" ''
+    set -euo pipefail
+
+    if [ "$#" -ne 1 ]; then
+      echo "usage: nixbot-attic-push OUT_LINK" >&2
+      exit 64
+    fi
+
+    out_link=$1
+    token_file="$CREDENTIALS_DIRECTORY/attic-nixbot-token"
+    attic_config_home=$(mktemp -d)
+    trap 'rm -rf "$attic_config_home"' EXIT
+    attic_config_dir="$attic_config_home/attic"
+    attic_config="$attic_config_dir/config.toml"
+
+    install -d -m 0700 "$attic_config_dir"
+    token=$(cat "$token_file")
+    {
+      printf 'default-server = "%s"\n\n' ${lib.escapeShellArg atticServer}
+      printf '[servers.%s]\n' ${lib.escapeShellArg atticServer}
+      printf 'endpoint = "%s"\n' ${lib.escapeShellArg atticEndpoint}
+      printf 'token = "%s"\n' "$token"
+    } > "$attic_config"
+    chmod 0600 "$attic_config"
+
+    XDG_CONFIG_HOME="$attic_config_home" ${lib.getExe pkgs.attic-client} push --jobs 4 ${lib.escapeShellArg atticCache} "$out_link"
+  '';
 in
 {
   services.nixbot = {
@@ -40,6 +76,18 @@ in
       # empty database; afterwards projects are managed in the web UI.
       topic = "nixbot";
     };
+    postBuildSteps = [
+      {
+        name = "Upload to Mali Attic";
+        command = [
+          "${atticPush}"
+          (interpolate "%(prop:out_link)s")
+        ];
+        # Cache upload is part of Debord CI's success criteria: a build that
+        # cannot be pushed should not be reported as a successful cached build.
+        warnOnly = false;
+      }
+    ];
   };
 
   sops.secrets."nixbot-github-app-key" = {
@@ -51,6 +99,13 @@ in
   sops.secrets."nixbot-github-oauth-secret" = {
     sopsFile = ./nixbot.sops.yaml;
   };
+  sops.secrets."attic-nixbot-token" = {
+    sopsFile = ./nixbot.sops.yaml;
+  };
+
+  systemd.services.nixbot.serviceConfig.LoadCredential = [
+    "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"
+  ];
 
   # Root is impermanent; keep service state and the CI database on safe
   # datasets. The postgresql dataset is already declared in disk-config.nix;

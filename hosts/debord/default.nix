@@ -52,6 +52,7 @@ in
     hypervisor.enable = true;
     ingress.enable = true;
   };
+  home.nix-lan-cache.enable = true;
   myhm = _: {
     #home.persistence."/persist${ramblurr.homeDirectory}" = {
     #  directories = [ { directory = "work"; } ];
