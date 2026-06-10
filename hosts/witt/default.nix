@@ -133,7 +133,7 @@ in
       docker.enable = true;
       docker.enableOnBoot = false;
       flatpak.enable = true;
-      microsocks.enable = true;
+      #microsocks.enable = true;
       podman.enable = true;
       printing.enable = true;
       printing.drivers = [
@@ -145,11 +145,11 @@ in
     };
     dev = {
       clojure.enable = true;
-      janet.enable = true;
+      #janet.enable = true;
       jetbrains.enable = false;
       node.enable = true;
-      python.enable = true;
-      random.enable = true;
+      #python.enable = true;
+      #random.enable = true;
       llms.enable = true;
     };
     hardware.keyboardio.enable = true;
