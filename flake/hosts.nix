@@ -23,7 +23,10 @@
           # Guy Debord - https://en.wikipedia.org/wiki/Guy_Debord
           isStable = false;
           system = "x86_64-linux";
-          hostExtraModules = [ inputs.nad-api.nixosModules.default ];
+          hostExtraModules = [
+            inputs.nad-api.nixosModules.default
+            inputs.nixbot.nixosModules.nixbot
+          ];
           # inputs.nixos-nftables-firewall.nixosModules.default
           hostOverlays = [ inputs.nad-api.overlays.default ];
         };
