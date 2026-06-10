@@ -74,6 +74,9 @@
     };
 
     initrd = {
+      checkJournalingFS = true;
+      supportedFilesystems = [ "ext4" ];
+
       availableKernelModules = [
         "nvme"
         "xhci_pci"
@@ -92,22 +95,42 @@
 
         cryptxdata = {
           device = "/dev/disk/by-label/cryptdata";
-          keyFile = "/dev/mapper/cryptkey";
+          keyFile = "/keyfile:/dev/mapper/cryptkey";
           keyFileSize = 64;
         };
 
         cryptswap = {
           device = "/dev/disk/by-label/cryptswap";
-          keyFile = "/dev/mapper/cryptkey";
+          keyFile = "/keyfile:/dev/mapper/cryptkey";
           keyFileSize = 64;
         };
       };
 
       systemd = {
         enable = true;
+
+        mounts = [
+          {
+            what = "/dev/mapper/cryptkey";
+            where = "/run/cryptkey";
+            type = "ext4";
+            options = "ro";
+            requires = [ "systemd-cryptsetup@cryptkey.service" ];
+            after = [ "systemd-cryptsetup@cryptkey.service" ];
+            before = [ "zfs-import-rpool.service" ];
+            wantedBy = [ "initrd.target" ];
+          }
+        ];
+
         services.zfs-import-rpool = {
-          requires = [ "systemd-cryptsetup@cryptkey.service" ];
-          after = [ "systemd-cryptsetup@cryptkey.service" ];
+          requires = [
+            "systemd-cryptsetup@cryptkey.service"
+            "run-cryptkey.mount"
+          ];
+          after = [
+            "systemd-cryptsetup@cryptkey.service"
+            "run-cryptkey.mount"
+          ];
         };
       };
 
