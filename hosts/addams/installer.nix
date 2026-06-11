@@ -165,6 +165,7 @@ in
     "xfs"
     "zfs"
   ];
+  boot.zfs.forceImportRoot = false;
   networking.hostId = lib.mkDefault "8425e349";
 
   console = {
