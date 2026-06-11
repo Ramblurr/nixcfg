@@ -17,8 +17,8 @@ stdenvNoCC.mkDerivation {
   src = fetchFromGitHub {
     owner = "outskirtslabs";
     repo = "nixbot-cli";
-    rev = "e6f96dbcca4bf024fa06dc2d43bfc9936e72eeb1";
-    hash = "sha256-84865/16hCWzN70kkLKl6MzV623eO8bxCxhrY/H2nRw=";
+    rev = "1b92eb30d191a980370af7d9459b98866fc002d7";
+    hash = "sha256-ZBn/4SNsH/xQxq5RcOAY3LDrMw44CSBcpHsSUJtPbMg=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
