@@ -55,6 +55,7 @@ in
 
         ".config/adept"
         ".config/pi-matrix-relay"
+        ".config/nixbot-cli"
         ".local/state/pi-matrix-relay"
         ".config/warp-terminal"
         ".config/libreoffice"
