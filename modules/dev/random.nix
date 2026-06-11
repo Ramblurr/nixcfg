@@ -66,7 +66,7 @@ in
         mani
         ghq
         sprite-bin
-        inputs.spdx-util.packages.${pkgs.stdenv.hostPlatform.system}.default
+        spdx-util
         tailwindcss_4
         hclfmt
         virt-manager
