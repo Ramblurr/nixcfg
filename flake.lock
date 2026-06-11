@@ -2640,16 +2640,16 @@
         "trilium": "trilium"
       },
       "locked": {
-        "lastModified": 1781064923,
-        "narHash": "sha256-C7uwBo8dSKXYEhOUEPeyjRHJorc1EUXJ4BTBukz7yuM=",
+        "lastModified": 1781160764,
+        "narHash": "sha256-6Aem8USOYeUvDrQi3wZIsTidJpZBqnj75hxoyTrJqMo=",
         "owner": "kalbasit",
         "repo": "ncps",
-        "rev": "0f03901375f37d8350d522e3bd0b176522291499",
+        "rev": "f5dbd68a0003349c5091870f66d5ecabf736af16",
         "type": "github"
       },
       "original": {
         "owner": "kalbasit",
-        "ref": "v0.10.0-rc12",
+        "ref": "v0.10.0-rc13",
         "repo": "ncps",
         "type": "github"
       }

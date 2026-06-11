@@ -45,7 +45,7 @@
     # temporary workaround
     # ref: https://github.com/kalbasit/ncps/issues/1388
     # ref: https://github.com/kalbasit/ncps/issues/1329
-    ncps.url = "github:kalbasit/ncps/v0.10.0-rc12";
+    ncps.url = "github:kalbasit/ncps/v0.10.0-rc13";
     ncps.inputs.nixpkgs.follows = "nixpkgs";
 
     # Pin niri on commit where wtype isn't broken; ref: https://github.com/niri-wm/niri/issues/2314
