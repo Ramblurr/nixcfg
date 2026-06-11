@@ -17,6 +17,8 @@ inputs: [
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
+      spdx-util = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./spdx-util/package.nix { };
+      nixbot-cli = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nixbot-cli/package.nix { };
       #linux-voice-assistant = (import ./linux-voice-assistant.nix) prev;
       linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
       youtube-to-rss = prev.callPackage ./youtube-to-rss/package.nix { };
