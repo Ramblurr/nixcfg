@@ -15,8 +15,8 @@ let
 
   nixbotPort = config.repo.secrets.home-ops.ports.nixbot;
   workDomain = config.repo.secrets.global.domain.work;
-  homeDomain = config.repo.secrets.global.domain.home;
   localAtticSubstituter = config.repo.secrets.global.localAtticSubstituter;
+  quineMgmtIp = builtins.head config.site.net.mgmt.hosts4.quine;
   atticServer = "mali";
   atticCacheName = builtins.baseNameOf localAtticSubstituter;
   atticEndpoint = lib.removeSuffix "/${atticCacheName}" localAtticSubstituter;
@@ -118,6 +118,7 @@ in
   };
 
   networking.firewall.allowedTCPPorts = [ nixbotPort ];
+  networking.hosts.${quineMgmtIp} = [ "quine" ];
 
   # Remote builders: quine acts as an x86_64-linux build machine.
   # maxJobs/cores are intentionally low so remote builds share quine
@@ -125,7 +126,7 @@ in
   nix.distributedBuilds = true;
   nix.buildMachines = [
     {
-      hostName = "quine.prim.${homeDomain}";
+      hostName = "quine";
       system = "x86_64-linux";
       protocol = "ssh-ng";
       maxJobs = 2;
@@ -141,7 +142,7 @@ in
     }
   ];
 
-  programs.ssh.knownHosts."quine.prim.${homeDomain}" = {
+  programs.ssh.knownHosts.quine = {
     publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFICZ13T85//UvjEjf+I72FqaXyGJNt9LD4mjYSq3LTl";
   };
 
