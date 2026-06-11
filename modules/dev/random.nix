@@ -67,6 +67,7 @@ in
         ghq
         sprite-bin
         spdx-util
+        nixbot-cli
         tailwindcss_4
         hclfmt
         virt-manager
