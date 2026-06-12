@@ -148,6 +148,7 @@
     ./distributed-config.nix
     ./meta.nix
     ./nix.nix
+    ./nix-prune-aged-gcroots.nix
     ./secrets.nix
     ./sops.nix
     ./zfs-attrs.nix
