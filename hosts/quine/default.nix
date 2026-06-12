@@ -118,6 +118,7 @@ in
   networking.firewall.allowedUDPPorts = [ 67 ];
 
   modules = {
+    nix.pruneAgedGcroots.enable = true;
     desktop = {
       wayland.enable = true;
       niri.enable = true;
