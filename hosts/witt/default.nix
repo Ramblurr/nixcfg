@@ -44,6 +44,7 @@ in
   home.nix-lan-cache.enable = true;
 
   modules = {
+    nix.pruneAgedGcroots.enable = true;
     impermanence.enable = true;
     boot.zfs.enable = true;
     boot.zfs.usePlymouth = false;

@@ -104,8 +104,6 @@ with lib;
     serviceConfig.Type = "oneshot";
     script = ''
       set -eu
-      # delete automatic gcroots older than 90 days
-      ${pkgs.findutils}/bin/find /nix/var/nix/gcroots/auto /nix/var/nix/gcroots/per-user -type l -mtime +90 -delete || true
       # created by nix-collect-garbage, might be stale
       ${pkgs.findutils}/bin/find /nix/var/nix/temproots -type f -mtime +10 -delete || true
       # delete broken symlinks
