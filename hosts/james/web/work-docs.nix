@@ -115,10 +115,29 @@ in
         return 404;
       '';
     };
+    locations."~ ^(?<slashless>.+)/$" = {
+      extraConfig = ''
+        try_files $slashless/index.html @strip_trailing_slash;
+        expires 30m;
+        add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
+      '';
+    };
+    locations."@strip_trailing_slash" = {
+      extraConfig = ''
+        rewrite ^(.+)/$ $1 permanent;
+      '';
+    };
+    locations."= /" = {
+      extraConfig = ''
+        try_files /index.html =404;
+        expires 30m;
+        add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
+      '';
+    };
     locations."/" = {
       extraConfig = ''
-        if ($uri ~ "^(.+)/$") {
-          return 301 $1$is_args$args;
+        if (-d $request_filename) {
+          rewrite ^(.+[^/])$ $1/ permanent;
         }
         try_files $uri $uri.html $uri/index.html $uri/ =404;
         expires 30m;
