@@ -67,9 +67,9 @@
   ;; (package! clojure-essential-ref)
   ;; (package! clojure-essential-ref-nov)
   (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "f5ea2d098b90ac4fcb0e6ebfe71dd5524bf42d81")
-  (package! gptel :pin "fd876e6c82f4b76563aafb36234180c8a75dd22f")
-  (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "6198ce3d9bff0555cf098a77b78d6c2d79baf4f9")
+  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "eb702479eafb4fb49b4790f308e21fe4fc172838")
+  (package! gptel :pin "983cb1fece13b245b99da252b396cc163f591b09")
+  (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "fd9bf5787a99dd31a4bdf54d2bd9821aacf84e93")
   (package! treemacs-all-the-icons)
 
   (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
@@ -79,25 +79,25 @@
     :recipe (:host github
              :repo "drym-org/symex.el"
              :files ("symex-core/symex*.el" ))
-    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+    :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! symex
     :recipe (:host github
              :repo "drym-org/symex.el"
              :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
-    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+    :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! symex-evil
     :recipe (:host github
              :repo "drym-org/symex.el"
              :files ("symex-evil/symex*.el"))
-    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+    :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! symex-ide
     :recipe (:host github
              :repo "drym-org/symex.el"
              :files ("symex-ide/symex*.el"))
-    :pin "955c7b866c6cda3d035404b68ca8d4d3c9741c77")
+    :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! modus-themes
     :recipe (:host github :repo "protesilaos/modus-themes"))
