@@ -23,7 +23,10 @@ in
 
   };
   config = mkIf cfg.enable {
-    fonts.packages = [ pkgs.emacs-all-the-icons-fonts ];
+    fonts.packages = [
+      pkgs.emacs-all-the-icons-fonts
+      pkgs.symbola
+    ];
     environment.wordlist.enable = true;
     environment.persistence."/persist".users.${username}.directories = lib.mkIf withImpermanence [
       ".config/emacs"
@@ -61,6 +64,7 @@ in
         xdg.configFile.doom.source = config.lib.file.mkOutOfStoreSymlink cfg.localDoomConfigRepo;
 
         home.packages = with pkgs; [
+          symbola
           ## Some emacs package dependencies
           ffmpegthumbnailer
           copilot-language-server
