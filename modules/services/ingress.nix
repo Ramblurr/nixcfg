@@ -266,23 +266,16 @@ in
       #  '';
       #};
     };
-    sops.templates.acme-credentials = {
-      mode = "440";
-      group = "acme";
-      content = ''
-        BUNNY_API_KEY=${config.sops.placeholder.bunnyApiKey}
-      '';
-    };
-
     users.groups.acme.members = [ "nginx" ];
     environment.persistence."/persist".directories = [ "/var/lib/acme" ];
+    sops.secrets.desec_api_token.sopsFile = ../../configs/home-ops/shared.sops.yml;
     security.acme = {
       acceptTerms = true;
       defaults = {
         email = config.repo.secrets.global.email.acme;
-        credentialFiles."BUNNY_API_KEY_FILE" = config.sops.secrets.bunnyApiKey.path;
-        dnsProvider = "bunny";
-        dnsPropagationCheck = false;
+        credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
+        dnsProvider = "desec";
+        dnsResolver = "ns1.desec.io:53";
         reloadServices = [ "nginx.service" ];
       };
       certs = lib.mapAttrs' (
@@ -294,10 +287,6 @@ in
           ];
         })
       ) cfg.domains;
-    };
-
-    sops.secrets.bunnyApiKey = {
-      sopsFile = ../../configs/home-ops/shared.sops.yml;
     };
     # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
     boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
