@@ -43,7 +43,7 @@
        `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
    (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
 
-   (setq!
+   (setopt
     modus-themes-completions '((matches . (extrabold background intense))
                                (selection . (semibold accented intense))
                                (popup . (accented)))
@@ -191,7 +191,7 @@ exists, prepends additional parent directories until unique."
 
 
 (after! hl-line
-  (setq! hl-line-sticky-flag nil))
+  (setopt hl-line-sticky-flag nil))
 
 (if not-android
     (use-package ligature
