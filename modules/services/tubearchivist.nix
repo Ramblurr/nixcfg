@@ -84,7 +84,7 @@ in
     virtualisation.oci-containers.containers = {
       tubearchivist = {
         autoStart = true;
-        image = "docker.io/bbilly1/tubearchivist:v0.5.8";
+        image = "docker.io/bbilly1/tubearchivist:v0.5.10";
         ports = [ "127.0.0.1:${toString cfg.port}:8000" ];
         volumes = [
           "${mediaLocalPath}:/youtube"
