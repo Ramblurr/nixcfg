@@ -57,6 +57,7 @@ in
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
       plex.enable = lib.mkEnableOption "Plex";
+      jellyfin.enable = lib.mkEnableOption "Jellyfin";
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
       calibre.enable = lib.mkEnableOption "Calibre";
@@ -474,6 +475,18 @@ in
       nfsShare = "tank2/media";
       ingress = {
         domain = home-ops.homeDomain;
+      };
+    };
+
+    modules.services.jellyfin = lib.mkIf cfg.apps.jellyfin.enable {
+      enable = true;
+      domain = "jelly.${home-ops.homeDomain}";
+      user = home-ops.users.jellyfin;
+      group = home-ops.groups.jellyfin;
+      nfsShare = "tank2/media";
+      ingress = {
+        domain = home-ops.homeDomain;
+        forwardAuth = false;
       };
     };
 
