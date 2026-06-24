@@ -110,6 +110,7 @@
     ./services/ocis.nix
     ./services/powerdns.nix
     #./services/onepassword-connect.nix
+    ./services/pi-web.nix
     ./services/paperless.nix
     ./services/plex.nix
     ./services/podman.nix
