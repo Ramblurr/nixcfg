@@ -99,6 +99,7 @@
     ./services/haproxy.nix
     ./services/home-dl.nix
     ./services/influxdb.nix
+    ./services/jellyfin.nix
     ./services/ingress.nix
     ./services/ingress-options.nix
     ./services/linux-voice-assistant.nix
