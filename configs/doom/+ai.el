@@ -58,7 +58,7 @@
 
 (use-package! gptel
   :init
-  (setq!
+  (setopt
    gptel-default-mode 'org-mode
    gptel-expert-commands t
    gptel-temperature 0.8
