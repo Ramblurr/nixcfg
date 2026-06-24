@@ -33,16 +33,114 @@
 #   repo -F             # frecent sort (zoxide)
 #   repo -t             # toggle sort for this invocation (alpha <-> frecent)
 #   repo <query...>     # prefill fzf query
+#   repo --refresh      # refresh repo cache now and exit
 #   repo-link [query...]        # pick repo, symlink it into $PWD
 #   repo-link -d DIR [query...]  # pick repo, symlink it into DIR
 #
 # Env:
 #   REPO_BASE=~/src     # change search base
 #   REPO_SORT=auto      # auto|frecent|alpha (auto => frecent if zoxide exists)
+#   REPO_CACHE_DIR=...  # cache directory (defaults to ${XDG_CACHE_HOME:-~/.cache}/repo)
 #
 # Recommended:
 #   source /path/to/repo.zsh
 #   # optional: alias repo=repo  (function name already repo)
+
+_repo_cache_file() {
+  local base="$1"
+  local cache_dir="${REPO_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/repo}"
+  local name="${base:t}"
+  local key
+
+  [[ -n "$name" ]] || name="root"
+  key="$(print -rn -- "$base" | cksum | awk '{print $1 "-" $2}')" || return 1
+  print -r -- "${cache_dir}/repos-${name}-${key}.txt"
+}
+
+_repo_cache_stale() {
+  local cache="$1"
+  local stale
+
+  [[ -s "$cache" ]] || return 0
+  stale="$(find "$cache" -mmin +1440 -print -quit 2>/dev/null)" || return 0
+  [[ -n "$stale" ]]
+}
+
+_repo_scan_repos() {
+  setopt local_options pipefail
+
+  local base="$1"
+
+  if command -v bfs >/dev/null 2>&1; then
+    bfs -L "$base" -maxdepth 4 -name .git -type d \
+      -exclude -name node_modules \
+      -exclude -name vendor \
+      -exclude -name dist \
+      -exclude -name build \
+      -exclude -name target \
+      -exclude -name .cache \
+      -exclude -name .direnv \
+      | sed -E 's|/\.git/?$||'
+  elif command -v fd >/dev/null 2>&1; then
+    fd -H -t d '^\.git$' "$base" \
+      --max-depth 4 \
+      --exclude node_modules \
+      --exclude vendor \
+      --exclude dist \
+      --exclude build \
+      --exclude target \
+      --exclude .cache \
+      --exclude .direnv \
+      | sed -E 's|/\.git/?$||'
+  else
+    find -L "$base" -maxdepth 4 -type d -name .git -print \
+      | sed -E 's|/\.git/?$||'
+  fi
+}
+
+_repo_refresh_cache() {
+  setopt local_options pipefail
+
+  local base="$1"
+  local cache="$2"
+  local lock_mode="${3:-wait}"
+  local cache_dir="${cache:h}"
+  local tmp="${cache}.$$.$RANDOM.tmp"
+  local lock="${cache}.lock"
+  local status
+
+  mkdir -p "$cache_dir" || return 1
+
+  if command -v flock >/dev/null 2>&1; then
+    (
+      setopt pipefail
+
+      if [[ "$lock_mode" == "nowait" ]]; then
+        flock -n 9 || exit 0
+      else
+        flock 9 || exit 1
+      fi
+
+      _repo_scan_repos "$base" | sort -u > "$tmp"
+      status=$?
+      if [[ $status -eq 0 ]]; then
+        mv "$tmp" "$cache"
+      else
+        rm -f "$tmp"
+        exit "$status"
+      fi
+    ) 9>"$lock"
+  else
+    _repo_scan_repos "$base" | sort -u > "$tmp"
+    status=$?
+    if [[ $status -eq 0 ]]; then
+      mv "$tmp" "$cache"
+    else
+      rm -f "$tmp"
+      return "$status"
+    fi
+  fi
+}
 
 repo() {
   setopt local_options pipefail
@@ -51,8 +149,20 @@ repo() {
   local mode="cd"
   local TAB=$'\t'
   local sort_mode="${REPO_SORT:-auto}"   # auto|frecent|alpha
-  local -a q
-  local OPTIND opt
+  local refresh_cache=0
+  local -a q args
+  local arg
+  local OPTIND=1 opt
+
+  args=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--refresh" ]]; then
+      refresh_cache=1
+    else
+      args+=("$arg")
+    fi
+  done
+  set -- "${args[@]}"
 
   while getopts ":pcoAFt" opt; do
     case "$opt" in
@@ -70,6 +180,16 @@ repo() {
   q=("$@")
 
   [[ -d "$base" ]] || { print -u2 "repo: base not found: $base"; return 1; }
+  base="${base:a}"
+
+  local cache
+  cache="$(_repo_cache_file "$base")" || return 1
+
+  if [[ $refresh_cache -eq 1 ]]; then
+    _repo_refresh_cache "$base" "$cache" wait || return 1
+    [[ -s "$cache" ]] || { print -u2 "repo: no repos found under: $base"; return 1; }
+    return 0
+  fi
 
   local has_zoxide=0
   command -v zoxide >/dev/null 2>&1 && has_zoxide=1
@@ -77,35 +197,16 @@ repo() {
     [[ $has_zoxide -eq 1 ]] && sort_mode="frecent" || sort_mode="alpha"
   fi
 
-  # 1) Find repo roots (parents of .git)
+  # 1) Load repo roots from cache. First run warms synchronously; stale caches refresh in the background.
   local all_repos
-  all_repos="$(
-    if command -v bfs >/dev/null 2>&1; then
-      bfs -L "$base" -maxdepth 4 -name .git -type d \
-        -exclude -name node_modules \
-        -exclude -name vendor \
-        -exclude -name dist \
-        -exclude -name build \
-        -exclude -name target \
-        -exclude -name .cache \
-        -exclude -name .direnv \
-        | sed -E 's|/\.git/?$||'
-    elif command -v fd >/dev/null 2>&1; then
-      fd -H -t d '^\.git$' "$base" \
-        --max-depth 4 \
-        --exclude node_modules \
-        --exclude vendor \
-        --exclude dist \
-        --exclude build \
-        --exclude target \
-        --exclude .cache \
-        --exclude .direnv \
-        | sed -E 's|/\.git/?$||'
-    else
-      find -L "$base" -type d -name .git -maxdepth 4 -print \
-        | sed -E 's|/\.git/?$||'
-    fi
-  )" || return 1
+  if [[ ! -s "$cache" ]]; then
+    print -u2 "repo: warming cache for $base"
+    _repo_refresh_cache "$base" "$cache" wait || return 1
+  elif _repo_cache_stale "$cache"; then
+    _repo_refresh_cache "$base" "$cache" nowait >/dev/null 2>&1 &!
+  fi
+
+  all_repos="$(< "$cache")" || return 1
 
   [[ -n "$all_repos" ]] || { print -u2 "repo: no repos found under: $base"; return 1; }
 
@@ -190,6 +291,11 @@ repo() {
 
   local repo_path="${selected%%"$TAB"*}"
   [[ -n "$repo_path" ]] || return 1
+  if [[ ! -d "$repo_path" ]]; then
+    print -u2 "repo: cached repo no longer exists: $repo_path"
+    print -u2 "repo: run 'repo --refresh' to rebuild the cache"
+    return 1
+  fi
 
   case "$mode" in
     print)
