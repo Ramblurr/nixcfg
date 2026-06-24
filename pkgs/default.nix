@@ -15,6 +15,7 @@ inputs: [
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       bunny-api-proxy = prev.callPackage ./bunny-api-proxy/package.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
+      pi-web = prev.callPackage ./pi-web/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
       spdx-util = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./spdx-util/package.nix { };
