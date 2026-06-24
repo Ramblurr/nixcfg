@@ -14,23 +14,16 @@ in
   boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
   boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 2500000;
 
-  sops.templates.acme-credentials.content = ''
-    BUNNY_API_KEY=${config.sops.placeholder.bunnyApiKey}
-  '';
-
-  sops.secrets.bunnyApiKey = {
-    #restartUnits = [ ];
-  };
-
   users.groups.acme.members = [ "nginx" ];
   environment.persistence."/persist".directories = [ "/var/lib/acme" ];
+  sops.secrets.desec_api_token = { };
   security.acme = {
     acceptTerms = true;
     defaults = {
       email = email.acme;
-      dnsProvider = "bunny";
-      dnsPropagationCheck = false;
-      credentialFiles."BUNNY_API_KEY_FILE" = config.sops.secrets.bunnyApiKey.path;
+      credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
+      dnsProvider = "desec";
+      dnsResolver = "ns1.desec.io:53";
       reloadServices = lib.optional config.services.nginx.enable "nginx";
     };
   };
