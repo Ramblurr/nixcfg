@@ -118,7 +118,7 @@
   :mcp/clojure
   {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}
              com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
-                                      :git/tag "v0.3.1"
+                                      :git/tag "0.4.0"
                                       :git/sha "81005cec94ab539fe92f45f42ab738a7e5f23f21"}}
    :exec-fn clojure-mcp.main/start-mcp-server}
 
