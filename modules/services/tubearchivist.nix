@@ -112,7 +112,7 @@ in
 
       tubearchivist-es = {
         autoStart = true;
-        image = "docker.io/bbilly1/tubearchivist-es:8.18.2";
+        image = "docker.io/bbilly1/tubearchivist-es:8.19.0";
         environment = {
           ELASTIC_PASSWORD = "tubearchivist";
           ES_JAVA_OPTS = "-Xms1g -Xmx1g";
@@ -129,7 +129,7 @@ in
 
       tubearchivist-redis = {
         autoStart = true;
-        image = "docker.io/library/redis:8.4.0";
+        image = "docker.io/library/redis:8";
         volumes = [ "${stateDir}/redis:/data" ];
         extraOptions = [ "--network=${networkName}" ];
       };
