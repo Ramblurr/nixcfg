@@ -52,6 +52,7 @@ in
       paperless.enable = true;
       ocis-work.enable = true;
       plex.enable = true;
+      jellyfin.enable = true;
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
