@@ -14,6 +14,7 @@ let
   inherit (config.repo.secrets) home-ops;
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
+  jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
 in
 {
   options.home-ops = {
@@ -58,6 +59,19 @@ in
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
       plex.enable = lib.mkEnableOption "Plex";
       jellyfin.enable = lib.mkEnableOption "Jellyfin";
+      jellyplex-watched = {
+        enable = lib.mkEnableOption "JellyPlex-Watched";
+        dryRun = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = "Log changes without marking shows or movies as played.";
+        };
+        interval = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 3600;
+          description = "Seconds between JellyPlex-Watched sync passes.";
+        };
+      };
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
       calibre.enable = lib.mkEnableOption "Calibre";
@@ -93,6 +107,11 @@ in
       {
         assertion = !(cfg.apps.ocis-work.enable && cfg.apps.ocis-home.enable);
         message = "OCIS Work and OCIS Home cannot be enabled at the same time on the same host";
+      }
+      {
+        assertion =
+          !cfg.apps.jellyplex-watched.enable || (cfg.apps.plex.enable && cfg.apps.jellyfin.enable);
+        message = "JellyPlex-Watched requires both Plex and Jellyfin to be enabled";
       }
     ];
 
@@ -409,6 +428,15 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
+    # Expected SOPS key: jellyplex-watched.env with PLEX_TOKEN and JELLYFIN_TOKEN.
+    sops.secrets."jellyplex-watched/env" = lib.mkIf cfg.apps.jellyplex-watched.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+      mode = "400";
+    };
+    systemd.services.jellyplex-watched = lib.mkIf cfg.apps.jellyplex-watched.enable {
+      wants = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+    };
     modules.services.git-archive = lib.mkIf cfg.apps.git-archive.enable { enable = true; };
 
     modules.services.davis = lib.mkIf cfg.apps.davis.enable {
@@ -487,6 +515,16 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         forwardAuth = false;
+      };
+      "jellyplex-watched" = lib.mkIf cfg.apps.jellyplex-watched.enable {
+        enable = true;
+        environmentFile = config.sops.secrets."jellyplex-watched/env".path;
+        dryRun = cfg.apps.jellyplex-watched.dryRun;
+        interval = cfg.apps.jellyplex-watched.interval;
+        mappings = {
+          users = jellyplexWatchedMappings.users or { };
+          libraries = jellyplexWatchedMappings.libraries or { };
+        };
       };
     };
 

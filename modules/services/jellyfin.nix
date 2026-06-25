@@ -9,6 +9,7 @@ let
   cfg = config.modules.services.jellyfin;
   localPath = "/mnt/mali/${cfg.nfsShare}";
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
+  jpwCfg = cfg."jellyplex-watched";
 in
 {
   options.modules.services.jellyfin = {
@@ -26,6 +27,68 @@ in
     nfsShare = lib.mkOption { type = lib.types.str; };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
+    jellyplex-watched = {
+      enable = lib.mkEnableOption "JellyPlex-Watched sync for this Jellyfin server";
+      package = lib.mkPackageOption pkgs "jellyplex-watched" { };
+      environmentFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "/run/secrets/jellyplex-watched/env";
+        description = ''
+          Runtime EnvironmentFile containing JellyPlex-Watched secrets, such
+          as PLEX_TOKEN and JELLYFIN_TOKEN.
+        '';
+      };
+      dryRun = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Log changes without marking shows or movies as played.";
+      };
+      interval = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 3600;
+        description = "Seconds between JellyPlex-Watched sync passes.";
+      };
+      logLevel = lib.mkOption {
+        type = lib.types.enum [
+          "INFO"
+          "DEBUG"
+          "TRACE"
+          "info"
+          "debug"
+          "trace"
+        ];
+        default = "INFO";
+        apply = lib.toUpper;
+        description = "JellyPlex-Watched log level.";
+      };
+
+      mappings = {
+        users = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+          description = "Map usernames that differ between Jellyfin and Plex.";
+        };
+
+        libraries = lib.mkOption {
+          type = lib.types.attrsOf lib.types.str;
+          default = { };
+          description = "Map library names that differ between Jellyfin and Plex.";
+        };
+      };
+
+      plexUrl = lib.mkOption {
+        type = lib.types.strMatching "^https?://.*$";
+        default = "http://127.0.0.1:32400";
+        description = "Local Plex URL for JellyPlex-Watched.";
+      };
+
+      jellyfinUrl = lib.mkOption {
+        type = lib.types.strMatching "^https?://.*$";
+        default = "http://127.0.0.1:8096";
+        description = "Local Jellyfin URL for JellyPlex-Watched.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -42,6 +105,25 @@ in
       upstreamExtraConfig = ''
         proxy_buffering off;
       '';
+    };
+
+    modules.services.jellyplex-watched = lib.mkIf jpwCfg.enable {
+      enable = true;
+      inherit (jpwCfg)
+        package
+        environmentFile
+        dryRun
+        interval
+        logLevel
+        mappings
+        ;
+      plex.urls = [ jpwCfg.plexUrl ];
+      jellyfin.urls = [ jpwCfg.jellyfinUrl ];
+    };
+
+    systemd.services.jellyplex-watched = lib.mkIf jpwCfg.enable {
+      wants = [ "jellyfin.service" ] ++ lib.optional config.modules.services.plex.enable "plex.service";
+      after = [ "jellyfin.service" ] ++ lib.optional config.modules.services.plex.enable "plex.service";
     };
 
     users.users.${cfg.user.name} = {
