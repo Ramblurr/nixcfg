@@ -22,6 +22,7 @@ inputs: [
       #linux-voice-assistant = (import ./linux-voice-assistant.nix) prev;
       linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
       youtube-to-rss = prev.callPackage ./youtube-to-rss/package.nix { };
+      jellyplex-watched = prev.callPackage ./jellyplex-watched/package.nix { };
       deploy = prev.callPackage ./deploy.nix { };
       swhkd = prev.callPackage ./swhkd { };
       qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
