@@ -275,7 +275,21 @@ in
         email = config.repo.secrets.global.email.acme;
         credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
         dnsProvider = "desec";
-        dnsResolver = "ns1.desec.io:53";
+        environmentFile = pkgs.writeText "lego-desec.env" ''
+          DESEC_PROPAGATION_TIMEOUT=600
+          DESEC_POLLING_INTERVAL=10
+        '';
+        extraLegoFlags = [
+          "--dns.resolvers"
+          "ns.desec.ch:53"
+          "--dns.resolvers"
+          "ns.desec.cz:53"
+          "--dns.resolvers"
+          "ns.desec.li:53"
+          "--dns.propagation-rns"
+          "--dns-timeout"
+          "30"
+        ];
         reloadServices = [ "nginx.service" ];
       };
       certs = lib.mapAttrs' (
