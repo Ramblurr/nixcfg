@@ -40,10 +40,6 @@ in
 
   time.timeZone = "Europe/Berlin";
 
-  myhm = _: {
-    nix.registry.nixpkgs.flake = actual-nixpkgs;
-  };
-
   sops.secrets.HASS_TOKEN = {
     owner = username;
     mode = "0400";
@@ -400,4 +396,11 @@ in
     pkgs.kdePackages.okular
     pkgs.kdePackages.dolphin
   ];
+
+  myhm = _: {
+    nix.registry.nixpkgs.flake = actual-nixpkgs;
+    home.packages = with pkgs; [
+      libation
+    ];
+  };
 }
