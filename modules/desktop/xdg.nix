@@ -19,12 +19,6 @@ in
       xdgOpenUsePortal = true;
     };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        files = [ ".config/mimeapps.list" ];
-      };
-    };
-
     myhm =
       { pkgs, ... }@hm:
       {

@@ -142,7 +142,6 @@ in
       pkgs.qimgv
       pkgs.kdePackages.elisa
       pkgs.kdePackages.dragon
-      pkgs.kdePackages.qt6ct
     ];
   };
 }
