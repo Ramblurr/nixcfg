@@ -228,8 +228,11 @@ in
           inherit (cfg.sans) size;
         };
       };
-      # https://discourse.nixos.org/t/guide-to-installing-qt-theme/35523
-      # https://danklinux.com/docs/dankmaterialshell/application-themes#qt-applications
+      # Keep Qt/KDE theme plugins available without forcing Qt control-panel
+      # palette settings into every Qt process. Setting qt.platformTheme.name =
+      # "qtct" exports QT_QPA_PLATFORMTHEME=qt5ct, which makes Qt 6 load the
+      # qt6ct palette; a dark qt6ct palette conflicts with Dolphin's KDE color
+      # scheme and causes mixed dark/light startup rendering.
       qt = lib.mkIf (!config.modules.desktop.kde.enable) {
         enable = true;
         style.package = [
@@ -240,7 +243,9 @@ in
         # and QT_STYLE_OVERRIDE=Breeze makes Qt Quick Controls apps (such as
         # ownCloud) try to import a non-existent "Breeze" QML module.
         style.name = null;
-        platformTheme.name = "qtct";
+        # Keep qt.platformTheme.name unset so Home Manager does not export
+        # QT_QPA_PLATFORMTHEME=qt5ct and force the qt6ct palette globally.
+        platformTheme.name = null;
       };
       # Use 'dconf-editor' or 'gnome-tweaks' to find options you can change with this.
       dconf.settings = {
