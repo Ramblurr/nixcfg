@@ -23,6 +23,7 @@ in
     };
     myhm = {
       home.packages = [ pkgs.owncloud-client ];
+      services.owncloud-client.enable = true;
     };
   };
 }
