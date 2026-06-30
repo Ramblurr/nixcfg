@@ -77,6 +77,7 @@ in
         ".local/share/gwenview"
         ".local/share/dolphin"
         ".local/share/okular"
+        ".local/share/Libation"
         ".kde"
         ".local/share/digikam"
         ".cache/digikam"
