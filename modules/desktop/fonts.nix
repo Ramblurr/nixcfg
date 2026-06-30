@@ -232,12 +232,14 @@ in
       # https://danklinux.com/docs/dankmaterialshell/application-themes#qt-applications
       qt = lib.mkIf (!config.modules.desktop.kde.enable) {
         enable = true;
-        style.package = with pkgs; [
-          kdePackages.breeze
-          kdePackages.qtstyleplugin-kvantum
+        style.package = [
+          pkgs.kdePackages.breeze
+          pkgs.kdePackages.qtstyleplugin-kvantum
         ];
-        #style.name = "kvantum";
-        style.name = "Breeze";
+        # Keep qt.style.name unset: Home Manager exports it as QT_STYLE_OVERRIDE,
+        # and QT_STYLE_OVERRIDE=Breeze makes Qt Quick Controls apps (such as
+        # ownCloud) try to import a non-existent "Breeze" QML module.
+        style.name = null;
         platformTheme.name = "qtct";
       };
       # Use 'dconf-editor' or 'gnome-tweaks' to find options you can change with this.
