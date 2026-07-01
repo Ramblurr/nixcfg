@@ -22,9 +22,6 @@ in
       directories = [
         "/var/lib/waydroid"
       ];
-      users.${username} = {
-        directories = [ ".local/share/waydroid" ];
-      };
     };
 
     systemd.services."waydroid-container".wantedBy = mkForce (

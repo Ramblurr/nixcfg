@@ -16,12 +16,6 @@ in
   config = mkIf cfg.enable {
     myhm = {
       home.packages = with pkgs; [ pkgs.aseprite ];
-      persistence = mkIf withImpermanence {
-        directories = [
-          ".config/libresprite"
-          ".config/aseprite"
-        ];
-      };
     };
   };
 }

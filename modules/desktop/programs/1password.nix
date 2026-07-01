@@ -36,10 +36,5 @@ in
       };
     };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [ ".config/1Password" ];
-      };
-    };
   };
 }

@@ -21,12 +21,6 @@ in
           discord
           betterdiscordctl
         ];
-        home.persistence."/persist" = mkIf withImpermanence {
-          directories = [
-            ".config/BetterDiscord"
-            ".config/discord"
-          ];
-        };
       };
   };
 }

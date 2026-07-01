@@ -22,15 +22,6 @@ in
 
     environment.systemPackages = [ pkgs.firefoxpwa ];
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".mozilla/extensions"
-          ".mozilla/firefox"
-          ".cache/mozilla/firefox"
-        ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

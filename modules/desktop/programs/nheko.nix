@@ -14,15 +14,6 @@ in
     enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/nheko"
-          ".cache/nheko"
-          ".local/share/nheko"
-        ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

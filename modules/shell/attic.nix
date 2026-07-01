@@ -21,13 +21,5 @@ in
       "d /persist${homeDirectory}/.config/attic 700 ${username} ${username}"
       "d /persist${homeDirectory}/.local/share/attic 700 ${username} ${username}"
     ];
-    home-manager.users."${username}" = _: {
-      home.persistence."/persist" = mkIf withImpermanence {
-        directories = [
-          ".config/attic"
-          ".local/share/attic"
-        ];
-      };
-    };
   };
 }

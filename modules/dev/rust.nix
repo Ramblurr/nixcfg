@@ -16,15 +16,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".local/share/rusthome"
-          ".local/share/cargo"
-        ];
-      };
-    };
-
     myhm = _: {
       home.sessionVariables = {
         RUSTUP_HOME = "$XDG_DATA_HOME/rusthome";

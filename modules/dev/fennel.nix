@@ -34,9 +34,6 @@ in
     home-manager.users."${username}" = {
       #home.packages = with pkgs; [
       #];
-      home.persistence."/persist" = mkIf withImpermanence {
-        directories = [ ".config/fennel" ];
-      };
     };
   };
 }

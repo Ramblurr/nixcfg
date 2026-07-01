@@ -5,6 +5,7 @@
 }:
 let
   inherit (config.networking) hostName;
+  inherit (config.modules.users.primaryUser) username;
 in
 {
   imports = [
@@ -73,11 +74,7 @@ in
     };
   };
 
-  myhm = _: {
-    home.persistence."/persist" = {
-      directories = [ { directory = "work"; } ];
-    };
-  };
+  environment.persistence."/persist".users.${username}.directories = [ "work" ];
 
   # nixbot CI on debord: dewey terminates TLS for internal clients and for
   # the james gost tunnel, then proxies over the prim VLAN to debord.

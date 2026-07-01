@@ -45,7 +45,6 @@ in
         };
       };
 
-      persistence = mkIf withImpermanence { directories = [ ".config/.gnupg" ]; };
     };
   };
 }

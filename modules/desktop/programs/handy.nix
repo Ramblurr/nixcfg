@@ -17,14 +17,6 @@ in
     autostart.enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/com.pais.handy"
-          ".local/share/com.pais.handy"
-        ];
-      };
-    };
     myhm = {
       home.file.".config/autostart/handy.desktop" = lib.mkIf cfg.autostart.enable (
         lib.my.autostart "handy"

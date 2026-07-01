@@ -36,9 +36,6 @@ in
     ];
     myhm = {
       home.packages = with pkgs; [ pyright ];
-      home.persistence."/persist" = mkIf withImpermanence {
-        directories = [ ".cache/pypoetry/virtualenvs/" ];
-      };
       xdg.configFile."uv/uv.toml".text = ''
         exclude-newer = "7 days"
       '';

@@ -17,21 +17,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/maven"
-          ".cache/maven"
-          ".config/clojure"
-          ".config/clj-kondo"
-          ".config/clojure-lsp"
-          ".cache/clojure"
-          ".cache/clojure-gitlibs"
-          ".local/share/deps.clj"
-        ];
-      };
-    };
-
     myhm =
       hm:
       let

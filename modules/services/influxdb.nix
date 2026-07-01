@@ -73,10 +73,5 @@ in
     systemd.tmpfiles.rules = [
       "d '/persist${config.modules.users.primaryUser.homeDirectory}/.influxdbv2' - ${config.modules.users.primaryUser.username} ${config.modules.users.primaryUser.username} - -"
     ];
-    myhm = {
-      persistence = {
-        directories = [ ".influxdbv2" ];
-      };
-    };
   };
 }
