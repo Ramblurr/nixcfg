@@ -10,6 +10,15 @@ let
   cfg = config.modules.desktop.niri;
   inherit (config.modules.users.primaryUser) username;
   withImpermanence = config.modules.impermanence.enable;
+  plasmaApplicationMenuData = pkgs.runCommand "plasma-application-menu-data" { } ''
+    mkdir -p "$out/etc/xdg/menus" "$out/share/desktop-directories"
+
+    ln -s ${pkgs.kdePackages.plasma-workspace}/etc/xdg/menus/plasma-applications.menu \
+      "$out/etc/xdg/menus/plasma-applications.menu"
+
+    ln -s ${pkgs.kdePackages.plasma-workspace}/share/desktop-directories/* \
+      "$out/share/desktop-directories/"
+  '';
 
   niri-emacs = pkgs.writeScriptBin "niri-emacs" ''
     if [[ $(niri msg --json focused-window | jq -r .app_id) == "emacs" ]]; then
@@ -132,7 +141,12 @@ in
         p11Auth = false;
       };
     };
+    environment.sessionVariables = {
+      XDG_MENU_PREFIX = "plasma-";
+    };
     environment.systemPackages = [
+      plasmaApplicationMenuData
+      pkgs.kdePackages.kservice
       pkgs.kdePackages.okular
       pkgs.kdePackages.dolphin
       pkgs.kdePackages.ark
