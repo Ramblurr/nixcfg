@@ -15,16 +15,6 @@ in
   };
   config = mkIf cfg.enable {
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/MuseScore"
-          ".local/share/MuseScore"
-          ".local/share/MuseSampler"
-          ".muse-hub"
-        ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

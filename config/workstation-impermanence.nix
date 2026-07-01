@@ -23,10 +23,19 @@ in
         "work"
         ".cache"
         ".config"
+        ".influxdbv2"
+        ".java"
         ".local/bin"
         ".local/share"
         ".local/state"
+        ".mozilla"
+        ".muse-hub"
         ".sprites"
+        ".ssh"
+        ".steam"
+        ".thunderbird"
+        ".var/app"
+        ".vscode"
       ];
     };
   };

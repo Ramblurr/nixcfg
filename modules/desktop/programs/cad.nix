@@ -15,23 +15,6 @@ in
   };
   config = lib.mkIf cfg.enable {
 
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-
-      users.${username} = {
-        directories = [
-          ".config/FreeCAD"
-          ".cache/FreeCAD"
-          ".local/share/FreeCAD"
-          ".config/OpenSCAD"
-          ".local/share/OpenSCAD"
-        ];
-        files = [
-          ".config/CQ-editorrc"
-          ".config/OpenSCADrc"
-        ];
-
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

@@ -15,13 +15,6 @@ in
     enable = lib.mkEnableOption "";
   };
   config = lib.mkIf cfg.enable {
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".cache/ffsend"
-        ];
-      };
-    };
     systemd.tmpfiles.rules = lib.mkIf withImpermanence [
       "d '/persist${homeDirectory}/.cache/ffsend' - ${username} ${username} - -"
     ];

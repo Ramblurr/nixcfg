@@ -30,15 +30,6 @@ in
       ]);
     };
 
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/Element"
-          ".config/Element-personal"
-        ]
-        ++ lib.optionals cfg.work.enable [ ".config/Element-work" ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

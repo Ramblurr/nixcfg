@@ -32,14 +32,6 @@ in
         cloudflared
       ];
 
-      persistence = mkIf withImpermanence {
-        directories = [
-          ".config/k9s"
-          ".config/kube"
-          ".config/krew"
-          ".influxdbv2"
-        ];
-      };
     };
   };
 }

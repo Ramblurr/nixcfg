@@ -287,6 +287,7 @@ in
         "/var/lib/systemd/coredump"
       ];
       files = [ ];
+      users.${username}.directories = [ ".config/sops" ];
     };
 
     systemd.tmpfiles.rules = [

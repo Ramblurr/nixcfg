@@ -15,15 +15,6 @@ in
     enable = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/isd_tui"
-          ".local/share/isd_tui"
-          ".cache/isd_tui"
-        ];
-      };
-    };
     myhm = {
       home.packages = [
         pkgs.isd

@@ -68,22 +68,6 @@ in
     ollama.enable = lib.mkEnableOption "";
   };
   config = lib.mkIf cfg.enable {
-    environment.persistence."/persist" = {
-      directories = [ ];
-      users.${username} = {
-        directories = [
-          ".config/claude"
-          ".config/pi"
-          ".config/vibe"
-          ".config/codex"
-          ".config/crush"
-          ".config/eca"
-          ".config/opencode"
-          ".local/share/crush"
-          ".local/share/opencode"
-        ];
-      };
-    };
     services.ollama = lib.mkIf cfg.ollama.enable {
       enable = true;
       package = pkgs.ollama-cuda;

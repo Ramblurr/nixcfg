@@ -18,9 +18,6 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [ calibre ];
-        home.persistence."/persist" = mkIf withImpermanence {
-          directories = [ ".config/calibre" ];
-        };
       };
   };
 }

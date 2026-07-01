@@ -65,14 +65,6 @@ in
         };
       }
     ];
-    users.${username} = {
-      directories = [
-        # remote-viewer is part of virt-viewer.
-        ".config/virt-viewer"
-        ".cache/virt-viewer"
-        ".local/share/virt-viewer"
-      ];
-    };
   };
   virtualisation.libvirtd = {
     enable = true;

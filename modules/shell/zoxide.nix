@@ -18,9 +18,6 @@ in
       programs.zoxide = {
         enable = true;
       };
-      home.persistence."/persist" = mkIf withImpermanence {
-        directories = [ ".local/share/zoxide" ];
-      };
     };
   };
 }

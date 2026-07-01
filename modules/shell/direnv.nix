@@ -26,8 +26,5 @@ in
     '';
     environment.pathsToLink = [ "/share/nix-direnv" ];
 
-    myhm = {
-      persistence = mkIf withImpermanence { directories = [ ".local/share/direnv" ]; };
-    };
   };
 }

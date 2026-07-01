@@ -28,9 +28,6 @@ in
       pkgs.symbola
     ];
     environment.wordlist.enable = true;
-    environment.persistence."/persist".users.${username}.directories = lib.mkIf withImpermanence [
-      ".config/emacs"
-    ];
     myhm =
       { config, ... }:
       {

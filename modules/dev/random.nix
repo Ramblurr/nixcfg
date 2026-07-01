@@ -39,18 +39,6 @@ in
       ];
     };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".local/share/containers"
-          ".config/containers"
-          ".cache/pre-commit"
-          ".config/gh"
-          ".config/github-copilot"
-          ".config/docker"
-        ];
-      };
-    };
     myhm = {
       home.sessionVariables = {
         KUBECONFIG = "$XDG_CONFIG_HOME/kube/config";

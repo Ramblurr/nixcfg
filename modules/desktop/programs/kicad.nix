@@ -18,12 +18,6 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [ kicad ];
-        home.persistence."/persist" = mkIf withImpermanence {
-          directories = [
-            ".config/kicad"
-            ".config/kicad5"
-          ];
-        };
       };
   };
 }
