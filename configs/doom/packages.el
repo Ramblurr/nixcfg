@@ -52,10 +52,6 @@
 (defconst not-android (not is-android))
 (when not-android
   (package! transpose-frame)
-  ;; (package! copilot :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")) :pin
-  ;;           ;2025-09-16
-  ;;           "6a2ad80489b8a0d021df95293eb7ac370aea140b"
-  ;;           )
 
   (unpin! hover)
   (unpin! treemacs)
@@ -67,8 +63,8 @@
   ;; (package! clojure-essential-ref)
   ;; (package! clojure-essential-ref-nov)
   (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "eb702479eafb4fb49b4790f308e21fe4fc172838")
-  (package! gptel :pin "983cb1fece13b245b99da252b396cc163f591b09")
+  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "de940cc5203b79f1bd9c8581fa91b5fdfafdc86f")
+  (package! gptel :pin "33ed0f6f69857157973bca72fb4d454e29965bdd")
   (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "fd9bf5787a99dd31a4bdf54d2bd9821aacf84e93")
   (package! treemacs-all-the-icons)
 
@@ -77,26 +73,26 @@
 
   (package! symex-core
     :recipe (:host github
-             :repo "drym-org/symex.el"
-             :files ("symex-core/symex*.el" ))
+              :repo "drym-org/symex.el"
+              :files ("symex-core/symex*.el" ))
     :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! symex
     :recipe (:host github
-             :repo "drym-org/symex.el"
-             :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
+              :repo "drym-org/symex.el"
+              :files ("symex/symex*.el" "symex/doc/*.texi" "symex/doc/figures"))
     :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! symex-evil
     :recipe (:host github
-             :repo "drym-org/symex.el"
-             :files ("symex-evil/symex*.el"))
+              :repo "drym-org/symex.el"
+              :files ("symex-evil/symex*.el"))
     :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! symex-ide
     :recipe (:host github
-             :repo "drym-org/symex.el"
-             :files ("symex-ide/symex*.el"))
+              :repo "drym-org/symex.el"
+              :files ("symex-ide/symex*.el"))
     :pin "4025d17ba260c893d58848258647005b58964b42")
 
   (package! modus-themes
@@ -111,5 +107,5 @@
 
 (package! org-modern-indent :recipe
   (:host github
-   :repo "jdtsmith/org-modern-indent"))
+    :repo "jdtsmith/org-modern-indent"))
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
