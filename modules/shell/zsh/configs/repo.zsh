@@ -107,7 +107,7 @@ _repo_refresh_cache() {
   local cache_dir="${cache:h}"
   local tmp="${cache}.$$.$RANDOM.tmp"
   local lock="${cache}.lock"
-  local status
+  local refresh_status
 
   mkdir -p "$cache_dir" || return 1
 
@@ -122,22 +122,22 @@ _repo_refresh_cache() {
       fi
 
       _repo_scan_repos "$base" | sort -u > "$tmp"
-      status=$?
-      if [[ $status -eq 0 ]]; then
+      refresh_status=$?
+      if [[ $refresh_status -eq 0 ]]; then
         mv "$tmp" "$cache"
       else
         rm -f "$tmp"
-        exit "$status"
+        exit "$refresh_status"
       fi
     ) 9>"$lock"
   else
     _repo_scan_repos "$base" | sort -u > "$tmp"
-    status=$?
-    if [[ $status -eq 0 ]]; then
+    refresh_status=$?
+    if [[ $refresh_status -eq 0 ]]; then
       mv "$tmp" "$cache"
     else
       rm -f "$tmp"
-      return "$status"
+      return "$refresh_status"
     fi
   fi
 }
