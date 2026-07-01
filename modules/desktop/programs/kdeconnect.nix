@@ -31,9 +31,6 @@ in
         enable = true;
         indicator = true;
       };
-      home.persistence."/persist" = mkIf withImpermanence {
-        directories = [ ".config/kdeconnect" ];
-      };
     };
   };
 }

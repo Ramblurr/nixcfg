@@ -225,8 +225,14 @@ in
 
     users.${username} = {
       directories = [
-        ".config/rclone"
+        ".config/attic"
+        ".config/atuin"
         ".config/qobuz-dl"
+        ".config/rclone"
+        ".config/sops"
+        ".local/share/attic"
+        ".local/share/direnv"
+        ".local/share/zoxide"
       ];
     };
   };

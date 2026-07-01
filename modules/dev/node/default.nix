@@ -24,21 +24,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".cache/bun"
-          ".cache/node"
-          ".cache/yarn"
-          ".config/yarn"
-          ".local/share/bun"
-          ".local/share/pnpm"
-          ".local/share/volta"
-          ".local/share/yarn"
-        ];
-      };
-    };
-
     myhm = _: {
       home.packages = [
         (lib.hiPrio npmUnavailable)

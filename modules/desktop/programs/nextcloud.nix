@@ -14,14 +14,6 @@ in
   };
   config = lib.mkIf cfg.enable {
 
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".cache/Nextcloud"
-          ".config/Nextcloud"
-        ];
-      };
-    };
     myhm = {
       services.nextcloud-client = {
         enable = true;

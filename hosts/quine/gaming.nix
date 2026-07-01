@@ -116,21 +116,6 @@ in
       # xboxdrv.enable = true; # userspace xbox driver
     };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/lutris"
-          ".local/share/lutris"
-          ".local/share/bottles"
-          ".local/share/applications/wine"
-          ".config/heroic"
-          ".config/legendary"
-          ".config/steamtinkerlaunch"
-          ".local/share/Steam"
-          ".steam"
-        ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

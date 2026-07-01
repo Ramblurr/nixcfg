@@ -23,11 +23,6 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${username} = {
-        directories = [ ".thunderbird" ];
-      };
-    };
     myhm = hm: {
       programs.thunderbird = {
         enable = true;

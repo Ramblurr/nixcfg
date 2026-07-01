@@ -15,14 +15,6 @@ in
   };
   config = mkIf cfg.enable {
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".config/chromium"
-          ".cache/chromium"
-        ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

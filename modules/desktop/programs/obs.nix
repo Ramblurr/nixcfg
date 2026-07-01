@@ -51,11 +51,6 @@ in
             # obs-studio-plugins.wlrobs
           ];
         };
-        home.persistence."/persist" = mkIf withImpermanence {
-          directories = [
-            ".config/obs-studio"
-          ];
-        };
       };
   };
 }

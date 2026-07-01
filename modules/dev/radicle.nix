@@ -27,10 +27,6 @@ in
         RAD_HOME = "${hm.config.xdg.configHome}/radicle";
       };
 
-      home.persistence."/persist" = mkIf withImpermanence {
-        directories = [ ".config/radicle" ];
-      };
-
       systemd.user.services.radicle-node = {
         Unit = {
           Description = "radicle-cli node ";

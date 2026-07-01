@@ -15,11 +15,6 @@ in
   };
   config = mkIf cfg.enable {
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [ ".ssh" ];
-      };
-    };
     home-manager.users."${username}" = {
       # note using home-manager programs.ssh because of
       # https://github.com/nix-community/home-manager/issues/322

@@ -15,11 +15,6 @@ in
   };
   config = mkIf cfg.enable {
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [ ".config/Slack" ];
-      };
-    };
     home-manager.users."${username}" =
       { pkgs, ... }:
       {

@@ -99,13 +99,6 @@ in
     sops.secrets.root-password = lib.mkIf cfg.root.enable {
       neededForUsers = true;
     };
-    environment.persistence."/persist" = lib.mkIf withImpermanence {
-      users.${cfg.primaryUser.username} = {
-        directories = [
-          ".config/sops"
-        ];
-      };
-    };
     systemd.tmpfiles.rules =
       let
         u = cfg.primaryUser.username;
@@ -237,9 +230,6 @@ in
           CARGO_HOME = "${hm.config.xdg.dataHome}/cargo";
           NIX_PATH = "nixpkgs=flake:nixpkgs\${NIX_PATH:+:$NIX_PATH}";
         };
-        # This is an alias for
-        #home.persistence."/persist" = ..
-        #persistence = lib.mkIf config.modules.impermanence.enable { };
       };
   };
 }

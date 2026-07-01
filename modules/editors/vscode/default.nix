@@ -17,16 +17,6 @@ in
 
   config = mkIf cfg.enable {
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      users.${username} = {
-        directories = [
-          ".vscode/extensions"
-          ".config/Code"
-          ".config/code-work"
-          ".config/code-personal"
-        ];
-      };
-    };
     myhm = {
       home.packages = with pkgs; [ vscode.fhs ];
       home.file.".local/share/applications/code-personal.desktop" = {

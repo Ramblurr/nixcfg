@@ -45,14 +45,5 @@ in
       ];
     };
 
-    home-manager.users."${username}" =
-      _:
-      mkIf cfg.enable {
-        home.persistence."/persist" = mkIf config.modules.impermanence.enable {
-          directories = [
-            ".config/Mullvad VPN"
-          ];
-        };
-      };
   };
 }

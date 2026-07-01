@@ -103,9 +103,6 @@ in
         // lib.optionalAttrs (builtins.hasAttr "daemon" hm.options.programs.atuin) {
           daemon.enable = true;
         };
-        home.persistence."/persist" = mkIf withImpermanence {
-          directories = [ ".config/atuin" ];
-        };
         home.file = mkIf withImpermanence {
           ".local/share/atuin".source = config.lib.file.mkOutOfStoreSymlink "/persist/extra/atuin";
         };

@@ -18,13 +18,6 @@ in
     services.flatpak.enable = true;
     environment.persistence."/persist" = mkIf withImpermanence {
       directories = [ "/var/lib/flatpak" ];
-      users.${username} = {
-        directories = [
-          ".cache/flatpak"
-          ".local/share/flatpak"
-          ".var/app"
-        ];
-      };
     };
     # Workaround for https://github.com/NixOS/nixpkgs/issues/119433#issuecomment-1694123978
     system.fsPackages = [ pkgs.bindfs ];

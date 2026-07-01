@@ -66,12 +66,6 @@ in
         ])
       ];
 
-      persistence = {
-        files = [
-          ".config/kritarc"
-          ".config/kritadisplayrc"
-        ];
-      };
     };
   };
 }

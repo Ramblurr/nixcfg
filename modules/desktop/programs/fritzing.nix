@@ -18,9 +18,6 @@ in
       { pkgs, ... }:
       {
         home.packages = [ pkgs.fritzing ];
-        home.persistence."/persist" = mkIf withImpermanence {
-          directories = [ ".config/Fritzing" ];
-        };
       };
   };
 }
