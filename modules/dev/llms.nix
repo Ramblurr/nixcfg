@@ -49,8 +49,8 @@ let
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
   );
-  whisper-cpp =
-    if cfg.cudaSupport then (pkgs.whisper-cpp.override { cudaSupport = true; }) else pkgs.whisper-cpp;
+  #whisper-cpp =
+  #  if cfg.cudaSupport then (pkgs.whisper-cpp.override { cudaSupport = true; }) else pkgs.whisper-cpp;
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
       echo "usage: $(basename "$0") URL [FILENAME]"
@@ -122,7 +122,7 @@ in
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
-          whisper-cpp
+          #whisper-cpp
         ];
     };
   };
