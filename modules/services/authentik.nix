@@ -80,7 +80,7 @@ in
         http2 = false;
         quic = true;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
+          proxyPass = "https://127.0.0.1:${toString cfg.ports.https}";
           recommendedProxySettings = true;
           proxyWebsockets = true;
         };
@@ -93,7 +93,7 @@ in
         http2 = false;
         quic = true;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
+          proxyPass = "https://127.0.0.1:${toString cfg.ports.https}";
           recommendedProxySettings = true;
           proxyWebsockets = true;
         };
