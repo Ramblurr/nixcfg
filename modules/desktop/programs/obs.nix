@@ -8,7 +8,6 @@ with lib;
 let
   cfg = config.modules.desktop.programs.obs;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.desktop.programs.obs = {

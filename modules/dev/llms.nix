@@ -9,7 +9,6 @@
 let
   cfg = config.modules.dev.llms;
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  inherit (config.modules.users.primaryUser) username;
   inherit (llm-agents)
     ccusage
     pi

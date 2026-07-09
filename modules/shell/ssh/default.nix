@@ -7,7 +7,6 @@ with lib;
 let
   cfg = config.modules.shell.ssh;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.shell.ssh = {

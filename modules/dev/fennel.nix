@@ -10,7 +10,6 @@ let
   devCfg = config.modules.dev;
   cfg = devCfg.fennel;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
   nur = import inputs.nur {
     nurpkgs = pkgs;
     inherit pkgs;

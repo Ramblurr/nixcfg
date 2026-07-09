@@ -7,8 +7,6 @@
 with lib;
 let
   cfg = config.modules.shell.isd;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.shell.isd = {

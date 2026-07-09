@@ -8,8 +8,6 @@ with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.jetbrains;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.dev.jetbrains = {

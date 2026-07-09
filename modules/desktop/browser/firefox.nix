@@ -9,7 +9,6 @@ with lib;
 let
   cfg = config.modules.desktop.browsers.firefox;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
   #firefox = pkgs.firefox-bin;
   firefox = inputs.firefox-nightly.packages.${pkgs.stdenv.hostPlatform.system}.firefox-beta-bin;
 in

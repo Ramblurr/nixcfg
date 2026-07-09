@@ -9,7 +9,6 @@ with lib.my;
 let
   cfg = config.modules.desktop.gaming;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 
   steam-with-pkgs = pkgs.steam.override {
     extraPkgs =

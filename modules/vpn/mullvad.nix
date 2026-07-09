@@ -7,7 +7,6 @@
 with lib;
 let
   cfg = config.modules.vpn.mullvad;
-  inherit (config.modules.users.primaryUser) username;
 in
 {
   options.modules.vpn.mullvad = {
