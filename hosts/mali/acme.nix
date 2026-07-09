@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   ...
 }:
 let
@@ -10,21 +11,31 @@ in
     acceptTerms = true;
     defaults = {
       email = email.acme;
-      dnsProvider = "bunny";
-      dnsPropagationCheck = false;
-      credentialFiles."BUNNY_API_KEY_FILE" = config.sops.secrets.bunnyApiKey.path;
+      credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
+      dnsProvider = "desec";
+      environmentFile = pkgs.writeText "lego-desec.env" ''
+        DESEC_PROPAGATION_TIMEOUT=600
+        DESEC_POLLING_INTERVAL=10
+      '';
+      extraLegoFlags = [
+        "--dns.resolvers"
+        "ns.desec.ch:53"
+        "--dns.resolvers"
+        "ns.desec.cz:53"
+        "--dns.resolvers"
+        "ns.desec.li:53"
+        "--dns.propagation-rns"
+        "--dns-timeout"
+        "30"
+      ];
       reloadServices = [ "nginx.service" ];
     };
   };
 
-  sops.secrets.bunnyApiKey = {
+  sops.secrets.desec_api_token = {
     sopsFile = ../../configs/home-ops/shared.sops.yml;
     restartUnits = [ ];
   };
-
-  sops.templates.acme-credentials.content = ''
-    BUNNY_API_KEY=${config.sops.placeholder.bunnyApiKey}
-  '';
   security.acme.certs = {
     #"mali" = {
     #  domain = "mali.int.${domain.home}";
