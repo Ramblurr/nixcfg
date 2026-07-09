@@ -114,12 +114,6 @@
         # set guest overrides
         # hello-world = { system ...};
       };
-      mkSdImage =
-        host:
-        (self.nixosConfigurations.${host}.extendModules {
-          modules = [ ../hosts/${host}/sd-image.nix ];
-        });
-      #.config.system.build.sdImage;
     in
     {
       lib.nixcfg = {
@@ -133,21 +127,13 @@
           ;
       };
 
-      nixosConfigurations =
-        (mkHosts hosts)
-        // (mkGuests guests)
-        // {
-          octoprint-sd-image = mkSdImage "octoprint";
-          wyoming-satellite-bedroom-sd-image = mkSdImage "wyoming-satellite-bedroom";
-          addams-installer = inputs.nixpkgs.lib.nixosSystem {
-            specialArgs = {
-              targetSystem = inputs.self.nixosConfigurations.addams;
-            };
-            modules = [
-              { nixpkgs.hostPlatform = "x86_64-linux"; }
-              ../hosts/addams/installer.nix
-            ];
-          };
-        };
+      # Do not export public nixosConfigurations from this flake.
+      # The host modules intentionally depend on evaluation-time repo.secretFiles
+      # supplied by ramblurr/nixcfg-private.  Keeping the concrete NixOS systems out of
+      # the public flake output lets `nix flake show` inspect this flake without
+      # trying to evaluate missing private site/global secrets.  Consumers that
+      # have those secrets should build hosts via lib.nixcfg.mkHost/mkHosts; see
+      # ramblurr/nixcfg-private/flake.nix's mkPrivateHost wrapper.
+      nixosConfigurations = { };
     };
 }
