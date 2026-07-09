@@ -55,6 +55,7 @@ in
           "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
           "--preview='head -$LINES {}'"
         ];
+        historyWidget.command = "";
       };
       home.file = {
         ".config/zsh" = {
