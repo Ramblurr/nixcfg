@@ -44,18 +44,25 @@ in
         defaultOptions = [
           "--height=40%"
         ];
-        changeDirWidget.options = [
+        # TODO(2026.11): fix renamed options
+        # changeDirWidget.options = ...
+        changeDirWidgetOptions = [
           "--preview='${pkgs.tree}/bin/tree -L 1 {}'"
           "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
           "--bind='?:toggle-preview'"
           "--preview-window=hidden"
         ];
-        fileWidget.command = defaultCommand;
-        fileWidget.options = [
+        # TODO(2026.11): fix renamed options
+        # fileWidget.command = defaultCommand;
+        fileWidgetCommand = defaultCommand;
+        # TODO(2026.11): fix renamed options
+        # fileWidget.options = ...
+        fileWidgetOptions = [
           "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
           "--preview='head -$LINES {}'"
         ];
-        historyWidget.command = "";
+        # TODO(2026.11): fix renamed options
+        # historyWidget.command = "";
       };
       home.file = {
         ".config/zsh" = {
