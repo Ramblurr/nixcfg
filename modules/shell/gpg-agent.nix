@@ -7,7 +7,6 @@
 with lib;
 let
   cfg = config.modules.shell.gpg-agent;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.shell.gpg-agent = {

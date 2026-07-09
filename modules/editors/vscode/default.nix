@@ -8,7 +8,6 @@ with lib;
 let
   cfg = config.modules.editors.vscode;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.editors.vscode = {

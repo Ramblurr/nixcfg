@@ -8,8 +8,6 @@ with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.clojure;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.dev.clojure = {

@@ -5,8 +5,6 @@
 }:
 let
   cfg = config.modules.desktop.programs.thunderbird;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 
   proxyParts = lib.splitString ":" cfg.workProxy;
   proxyAddr = builtins.elemAt proxyParts 0;

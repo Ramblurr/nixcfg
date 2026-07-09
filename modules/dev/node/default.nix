@@ -7,8 +7,6 @@
 let
   devCfg = config.modules.dev;
   cfg = devCfg.node;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
   inherit (pkgs) nodejs-slim;
   inherit (pkgs) nodejs;
   pnpm = pkgs.pnpm.override { inherit nodejs-slim; };

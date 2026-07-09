@@ -7,7 +7,6 @@ with lib;
 let
   cfg = config.modules.shell.zoxide;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.shell.zoxide = {

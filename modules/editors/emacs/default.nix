@@ -7,8 +7,7 @@
 with lib;
 let
   cfg = config.modules.editors.emacs;
-  inherit (config.modules.users.primaryUser) homeDirectory username;
-  withImpermanence = config.modules.impermanence.enable;
+  inherit (config.modules.users.primaryUser) homeDirectory;
   nixosConfig = config;
 in
 {

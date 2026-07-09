@@ -8,8 +8,6 @@
 with lib;
 let
   cfg = config.modules.desktop.niri;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
   plasmaApplicationMenuData = pkgs.runCommand "plasma-application-menu-data" { } ''
     mkdir -p "$out/etc/xdg/menus" "$out/share/desktop-directories"
 
