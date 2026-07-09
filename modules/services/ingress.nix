@@ -276,8 +276,8 @@ in
         credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
         dnsProvider = "desec";
         environmentFile = pkgs.writeText "lego-desec.env" ''
-          DESEC_PROPAGATION_TIMEOUT=600
-          DESEC_POLLING_INTERVAL=10
+          DESEC_PROPAGATION_TIMEOUT=700
+          DESEC_POLLING_INTERVAL=20
         '';
         extraLegoFlags = [
           "--dns.resolvers"
@@ -286,9 +286,13 @@ in
           "ns.desec.cz:53"
           "--dns.resolvers"
           "ns.desec.li:53"
-          "--dns.propagation-rns"
+          "--dns.resolvers"
+          "ns1.desec.io:53"
+          "--dns.resolvers"
+          "ns2.desec.org:53"
           "--dns-timeout"
           "30"
+          "--dns.propagation-rns"
         ];
         reloadServices = [ "nginx.service" ];
       };
