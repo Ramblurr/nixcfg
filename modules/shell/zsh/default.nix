@@ -44,14 +44,14 @@ in
         defaultOptions = [
           "--height=40%"
         ];
-        changeDirWidgetOptions = [
+        changeDirWidget.options = [
           "--preview='${pkgs.tree}/bin/tree -L 1 {}'"
           "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
           "--bind='?:toggle-preview'"
           "--preview-window=hidden"
         ];
-        fileWidgetCommand = defaultCommand;
-        fileWidgetOptions = [
+        fileWidget.command = defaultCommand;
+        fileWidget.options = [
           "--bind='ctrl-y:execute-silent(echo -n {+} | wl-copy)'"
           "--preview='head -$LINES {}'"
         ];
