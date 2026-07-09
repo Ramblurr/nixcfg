@@ -514,7 +514,7 @@
         "nix2container": "nix2container",
         "nixpkgs": "nixpkgs_22",
         "spdx-util": "spdx-util_2",
-        "treefmt-nix": "treefmt-nix_7"
+        "treefmt-nix": "treefmt-nix_6"
       },
       "locked": {
         "lastModified": 1767861100,
@@ -2159,7 +2159,7 @@
       "inputs": {
         "blueprint": "blueprint_2",
         "nixpkgs": "nixpkgs_20",
-        "treefmt-nix": "treefmt-nix_6"
+        "treefmt-nix": "treefmt-nix_5"
       },
       "locked": {
         "lastModified": 1767842977,
@@ -2534,7 +2534,9 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "treefmt-nix": "treefmt-nix_5"
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
       },
       "locked": {
         "lastModified": 1783577359,
@@ -3669,7 +3671,7 @@
         "ramsevka": "ramsevka",
         "sops-nix": "sops-nix",
         "tmux-buddy": "tmux-buddy",
-        "treefmt-nix": "treefmt-nix_8"
+        "treefmt-nix": "treefmt-nix_7"
       }
     },
     "rust-analyzer-src": {
@@ -4162,27 +4164,6 @@
     "treefmt-nix_5": {
       "inputs": {
         "nixpkgs": [
-          "nixbot",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1780220602,
-        "narHash": "sha256-eynAfOmbmxJnkp7YewvCEbShNnnYJ9gLLqkzsYtBPeM=",
-        "owner": "numtide",
-        "repo": "treefmt-nix",
-        "rev": "db947814a175b7ca6ded66e21383d938df01c227",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "treefmt-nix_6": {
-      "inputs": {
-        "nixpkgs": [
           "tmux-buddy",
           "devenv",
           "llm-agents",
@@ -4203,7 +4184,7 @@
         "type": "github"
       }
     },
-    "treefmt-nix_7": {
+    "treefmt-nix_6": {
       "inputs": {
         "nixpkgs": [
           "tmux-buddy",
@@ -4226,7 +4207,7 @@
         "type": "github"
       }
     },
-    "treefmt-nix_8": {
+    "treefmt-nix_7": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
