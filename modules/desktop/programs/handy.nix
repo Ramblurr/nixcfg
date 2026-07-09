@@ -8,8 +8,6 @@
 with lib;
 let
   cfg = config.modules.desktop.programs.handy;
-  inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.desktop.programs.handy = {

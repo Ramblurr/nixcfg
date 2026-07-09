@@ -8,7 +8,6 @@ with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.python;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.dev.python = {

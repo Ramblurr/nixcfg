@@ -4,8 +4,6 @@
   ...
 }:
 let
-
-  inherit (config.modules.users.primaryUser) username;
   localZfsStorageXml = pkgs.writeText "zfs-local.xml" ''
     <pool type='zfs'>
       <name>zfs-local</name>

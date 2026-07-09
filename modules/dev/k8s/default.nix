@@ -8,7 +8,6 @@ with lib;
 let
   devCfg = config.modules.dev;
   cfg = devCfg.k8s;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.dev.k8s = {

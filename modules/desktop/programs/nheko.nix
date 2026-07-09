@@ -7,7 +7,6 @@ with lib;
 let
   cfg = config.modules.desktop.programs.nheko;
   inherit (config.modules.users.primaryUser) username;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.desktop.programs.nheko = {

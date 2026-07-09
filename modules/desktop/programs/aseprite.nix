@@ -7,7 +7,6 @@
 with lib;
 let
   cfg = config.modules.desktop.programs.aseprite;
-  withImpermanence = config.modules.impermanence.enable;
 in
 {
   options.modules.desktop.programs.aseprite = {
