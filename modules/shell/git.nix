@@ -17,6 +17,7 @@ in
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
       programs.difftastic.enable = true;
+      programs.difftastic.git.enable = true;
       programs.git = {
         enable = true;
         signing.key = "8865AA3A7BD80355";
