@@ -71,6 +71,11 @@
   (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
   ;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
 
+  (package! fluent-ts-mode
+    :recipe (:type nil
+             :local-repo "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
+             :files ("editors/emacs/*.el")))
+
   (package! symex-core
     :recipe (:host github
               :repo "drym-org/symex.el"
