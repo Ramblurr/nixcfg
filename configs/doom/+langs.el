@@ -226,7 +226,7 @@
 
 (setq fluent-ts-mode-checker 'auto
       fluent-ts-mode-linter-executable
-      (expand-file-name "result/bin/fl-lint" my/fluent-tooling-root))
+      (expand-file-name "result/bin/ftl-lint" my/fluent-tooling-root))
 
 (setf (alist-get 'fluent treesit-language-source-alist)
       (list my/fluent-tooling-root))
