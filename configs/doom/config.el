@@ -184,12 +184,6 @@ exists, prepends additional parent directories until unique."
                                         ;  (setf (alist-get 'nixfmt apheleia-formatters)
                                         ;        '("nixfmt" "--width=100")))
 
-(after! tree-sitter
-  (setq treesit-language-source-alist
-        '(
-          (fluent . ("https://github.com/tree-sitter/tree-sitter-fluent")))))
-
-
 (after! hl-line
   (setopt hl-line-sticky-flag nil))
 

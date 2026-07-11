@@ -212,6 +212,26 @@
   :init)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fluent
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defconst my/fluent-tooling-root
+  "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
+  "Local checkout containing the Fluent grammar and Emacs integration.")
+
+(add-to-list 'load-path
+             (expand-file-name "editors/emacs" my/fluent-tooling-root))
+
+(require 'fluent-ts-mode)
+
+(setq fluent-ts-mode-checker 'auto
+      fluent-ts-mode-linter-executable
+      (expand-file-name "result/bin/fl-lint" my/fluent-tooling-root))
+
+(setf (alist-get 'fluent treesit-language-source-alist)
+      (list my/fluent-tooling-root))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Asciidoc
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package! adoc-mode
