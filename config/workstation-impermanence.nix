@@ -36,6 +36,7 @@ in
         ".thunderbird"
         ".var/app"
         ".vscode"
+        ".particle"
       ];
     };
   };
