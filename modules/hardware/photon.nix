@@ -16,6 +16,9 @@ in
   };
 
   config = mkIf cfg.enable {
+    environment.systemPackages = [
+      pkgs.particle-cli
+    ];
     # cannot use services.udev.extraRules because it does not work with uaccess
     # ref: https://github.com/NixOS/nixpkgs/issues/308681
     # ref: https://github.com/NixOS/nixpkgs/issues/210856#issue-1533727709
