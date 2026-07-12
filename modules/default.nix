@@ -65,6 +65,7 @@
     ./firewall/default.nix
     ./hardware/misc.nix
     ./hardware/keyboardio.nix
+    ./hardware/photon.nix
     ./hardware/om-footswitch.nix
     ./hardware/pipewire.nix
     ./hardware/ryzen.nix
