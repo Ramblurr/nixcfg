@@ -16,6 +16,9 @@ in
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
+      home.packages = with pkgs; [
+        forgejo-cli
+      ];
       programs.difftastic.enable = true;
       programs.difftastic.git.enable = true;
       programs.git = {
