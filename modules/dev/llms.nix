@@ -108,9 +108,13 @@ in
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
           dotool # handy (speech to text) uses this for clipboard access
           wtype # handy (speech to text) uses this for clipboard access
+          llm-agents.annot
           llm-agents.claude-code
+          llm-agents.code-review-graph
           llm-agents.codex
+          llm-agents.jscpd
           llm-agents.plannotator
+          llm-agents.voxtype
           ccusage
           llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
