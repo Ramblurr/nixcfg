@@ -104,6 +104,27 @@ in
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
       };
+      systemd.user.services.voxtype = lib.mkForce {
+        Unit = {
+          Description = "Voxtype push-to-talk voice-to-text daemon";
+          Documentation = "https://voxtype.io";
+          After = [
+            "graphical-session.target"
+            "pipewire.service"
+            "pipewire-pulse.service"
+          ];
+          PartOf = [ "graphical-session.target" ];
+        };
+        Service = {
+          Type = "simple";
+          ExecStart = "${voxtype}/bin/voxtype daemon";
+          Restart = "on-failure";
+          RestartSec = 5;
+        };
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+      };
       home.packages =
         with pkgs;
         [
