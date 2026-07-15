@@ -22,7 +22,8 @@ binds {
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
 
-    XF86AudioPrev hotkey-overlay-title="Toggle Voice Transcribe" { spawn-sh "pkill -USR2 -n handy"; }
+    // XF86AudioPrev hotkey-overlay-title="Toggle Voice Transcribe" { spawn-sh "pkill -USR2 -n handy"; }
+    XF86AudioPrev hotkey-overlay-title="Toggle Voice Transcribe" { spawn-sh "voxtype record toggle"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
