@@ -104,6 +104,7 @@ in
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
+        PLANNOTATOR_SHARE = "disabled";
       };
       systemd.user.services.voxtype = lib.mkForce {
         Unit = {
