@@ -14,6 +14,23 @@ let
     pi
     mistral-vibe
     ;
+  # llm-agents packages only Voxtype's default Whisper backend. Match
+  # upstream's CPU ONNX package for Parakeet and Cohere support.
+  voxtype = llm-agents.voxtype.overrideAttrs (oldAttrs: {
+    cargoBuildFeatures = (oldAttrs.cargoBuildFeatures or [ ]) ++ [
+      "parakeet-load-dynamic"
+      "cohere"
+    ];
+    buildInputs = (oldAttrs.buildInputs or [ ]) ++ [ pkgs.onnxruntime ];
+    env = (oldAttrs.env or { }) // {
+      ORT_LIB_LOCATION = "${pkgs.onnxruntime}/lib";
+    };
+    postFixup = (oldAttrs.postFixup or "") + ''
+      wrapProgram $out/bin/voxtype \
+        --set ORT_DYLIB_PATH "${pkgs.onnxruntime}/lib/libonnxruntime.so" \
+        --prefix LD_LIBRARY_PATH : "${pkgs.onnxruntime}/lib"
+    '';
+  });
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
     export PI_CONFIG_DIR="$HOME/.config/pi"
@@ -114,7 +131,7 @@ in
           llm-agents.codex
           llm-agents.jscpd
           llm-agents.plannotator
-          llm-agents.voxtype
+          voxtype
           ccusage
           llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
