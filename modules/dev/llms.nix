@@ -110,6 +110,7 @@ in
           wtype # handy (speech to text) uses this for clipboard access
           llm-agents.claude-code
           llm-agents.codex
+          llm-agents.plannotator
           ccusage
           llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
