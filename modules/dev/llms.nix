@@ -133,6 +133,7 @@ in
           #playwright-mcp
           geckodriver
           chromedriver
+          pkgs.glimpseui
           piper-tts
           espeak
           jujutsu
