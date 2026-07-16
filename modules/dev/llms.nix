@@ -13,6 +13,7 @@ let
     ccusage
     pi
     mistral-vibe
+    vix
     ;
   # llm-agents packages only Voxtype's default Whisper backend. Match
   # upstream's CPU ONNX package for Parakeet and Cohere support.
@@ -62,6 +63,7 @@ let
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
   pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
+  vix-wrapper = pkgs.writeShellScriptBin "vix" (wrapWithLLMKeys "${vix}/bin/vix" [ ]);
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
   );
@@ -143,6 +145,7 @@ in
           llm-wrapper
           github-mcp-server-wrapper
           pi-wrapper
+          vix-wrapper
           mistral-vibe-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
