@@ -88,7 +88,7 @@ in
         dig
         gitleaks
         doggo
-        scc
+        cloc
         whois
         nmap
         pre-commit
