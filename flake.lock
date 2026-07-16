@@ -729,29 +729,6 @@
         "type": "github"
       }
     },
-    "emacs-overlay": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "nixpkgs-stable": [
-          "nixpkgs-stable"
-        ]
-      },
-      "locked": {
-        "lastModified": 1783568636,
-        "narHash": "sha256-C118TUr5iashM/XFG+GW0QRyFC8nS1ezvsR244vu3HM=",
-        "owner": "nix-community",
-        "repo": "emacs-overlay",
-        "rev": "5443e671783cad46463e2641975fa8db33d4e9b8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "emacs-overlay",
-        "type": "github"
-      }
-    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -864,11 +841,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783983299,
-        "narHash": "sha256-HluKFJNzA/oMo+ApRuATihBWsjs4c23X7O2Y0uf/7e8=",
+        "lastModified": 1784156292,
+        "narHash": "sha256-YpdLOdl6JGz7oLzdP+b+k28Z8CeaSjWuGZG7y7D6dWg=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "edee9a43a2a459b9dafd23f348f3f553cd87eb04",
+        "rev": "34e1e992e6f5297804270f0a525892308824d012",
         "type": "github"
       },
       "original": {
@@ -2116,11 +2093,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1784084279,
-        "narHash": "sha256-8Dq5kO1gWUjpiRp4OmmSxlf1DdnmMiGcw0l3yZ47Qig=",
+        "lastModified": 1784184960,
+        "narHash": "sha256-GDaosvAr6p6E8Xxxu5+EBFgoccZglgBl15CO8YSNc/A=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "4dd1fbeaa112097d896aceafff35a4137ed96346",
+        "rev": "e5c093a02c980b6e1081cc17b751fa9e74abb842",
         "type": "github"
       },
       "original": {
@@ -3614,7 +3591,6 @@
         "devshell": "devshell",
         "disko-stable": "disko-stable",
         "disko-unstable": "disko-unstable",
-        "emacs-overlay": "emacs-overlay",
         "firefox-nightly": "firefox-nightly",
         "flake-parts": "flake-parts_2",
         "flake-utils": "flake-utils_2",

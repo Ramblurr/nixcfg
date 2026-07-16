@@ -23,7 +23,6 @@ let
 
   defaultOverlays = [
     inputs.nixos-extra-modules.overlays.default
-    #inputs.emacs-overlay.overlays.default
     (import ../lib inputs)
     (import ../overlays/last-known-good.nix)
     (import ../overlays/nixpkgs-mine-packages.nix inputs)
