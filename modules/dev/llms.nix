@@ -9,6 +9,7 @@
 let
   cfg = config.modules.dev.llms;
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  dirge = inputs.dirge.packages.${pkgs.stdenv.hostPlatform.system}.default;
   inherit (llm-agents)
     ccusage
     pi
@@ -137,7 +138,8 @@ in
           #playwright-mcp
           geckodriver
           chromedriver
-          pkgs.glimpseui
+          glimpseui
+          dirge
           piper-tts
           espeak
           jujutsu
