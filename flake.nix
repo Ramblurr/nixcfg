@@ -6,6 +6,7 @@
     devshell.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use determinate's pinned nixpkgs for nixd integration
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+    dirge.url = "github:dirge-code/dirge";
     disko-stable.url = "github:nix-community/disko";
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
     disko-unstable.url = "github:nix-community/disko";
