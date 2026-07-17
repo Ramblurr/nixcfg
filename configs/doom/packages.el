@@ -73,8 +73,8 @@
 
   (package! fluent-ts-mode
     :recipe (:type nil
-             :local-repo "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
-             :files ("editors/emacs/*.el")))
+              :local-repo "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
+              :files ("editors/emacs/*.el")))
 
   (package! symex-core
     :recipe (:host github
@@ -108,7 +108,9 @@
   ;;   :pin "2632a53ba35332aaa8fbfffa11db17c52304ec51")
 
   (package! org-roam-ui)
-  (package! consult-flyspell))
+  (package! consult-flyspell)
+  (package! magit-difftastic
+    :recipe (:host github :repo "rschmukler/magit-difftastic")))
 
 (package! org-modern-indent :recipe
   (:host github
