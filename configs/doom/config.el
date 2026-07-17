@@ -245,6 +245,12 @@ exists, prepends additional parent directories until unique."
   (setq dired-create-destination-dirs 'always))
 
 (if not-android
+  (use-package! magit-difftastic
+    :after magit
+    :config
+    (magit-difftastic-mode +1)))
+
+(if not-android
     (use-package! treemacs
       :config
       (setq treemacs-missing-project-action 'remove)))
