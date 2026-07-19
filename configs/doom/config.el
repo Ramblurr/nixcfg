@@ -27,36 +27,36 @@
   "Faded face is for information that are less important.")
 
 (comment
- (use-package! modus-themes
-   :init
-   (defun my/modus-themes-custom-faces (&rest _)
-     (modus-themes-with-colors
-      (custom-set-faces
-       ;; Make foreground the same as background for a uniform bar on
-       ;; Doom Emacs.
-       ;;
-       ;; Doom should not be implementing such hacks because themes
-       ;; cannot support them:
-       ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
-       `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
-       `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
-       `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
-   (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
+  (use-package! modus-themes
+    :init
+    (defun my/modus-themes-custom-faces (&rest _)
+      (modus-themes-with-colors
+        (custom-set-faces
+          ;; Make foreground the same as background for a uniform bar on
+          ;; Doom Emacs.
+          ;;
+          ;; Doom should not be implementing such hacks because themes
+          ;; cannot support them:
+          ;; <https://protesilaos.com/codelog/2022-08-04-doom-git-gutter-modus-themes/>.
+          `(git-gutter-fr:added ((,c :foreground ,bg-added-fringe)))
+          `(git-gutter-fr:deleted ((,c :foreground ,bg-removed-fringe)))
+          `(git-gutter-fr:modified ((,c :foreground ,bg-changed-fringe))))))
+    (add-hook! 'modus-themes-after-load-theme-hook 'my/modus-themes-custom-faces)
 
-   (setopt
-    modus-themes-completions '((matches . (extrabold background intense))
-                               (selection . (semibold accented intense))
-                               (popup . (accented)))
-    modus-themes-common-palette-overrides
-    '((bg-paren-match bg-magenta-intense)
-      (underline-paren-match fg-main) )
-    )
+    (setopt
+      modus-themes-completions '((matches . (extrabold background intense))
+                                  (selection . (semibold accented intense))
+                                  (popup . (accented)))
+      modus-themes-common-palette-overrides
+      '((bg-paren-match bg-magenta-intense)
+         (underline-paren-match fg-main) )
+      )
 
-   (comment
-    (custom-theme-set-faces! '(modus-vivendi)
-      `(symex-highlight-face     :inherit ,nil :background ,(modus-themes-get-color-value 'bg-active) :weight ,'normal)
-      `(clojure-discard-face     :foreground ,(modus-themes-get-color-value 'bg-active))
-      `(my-face-faded            :foreground ,(modus-themes-get-color-value 'fg-dim))))))
+    (comment
+      (custom-theme-set-faces! '(modus-vivendi)
+        `(symex-highlight-face     :inherit ,nil :background ,(modus-themes-get-color-value 'bg-active) :weight ,'normal)
+        `(clojure-discard-face     :foreground ,(modus-themes-get-color-value 'bg-active))
+        `(my-face-faded            :foreground ,(modus-themes-get-color-value 'fg-dim))))))
 
 
 (custom-theme-set-faces! '(doom-gruvbox)
@@ -75,20 +75,20 @@
 
 (defun my/clojure-faces ()
   (comment
-   (setq-local +my/face-remap-cookies
-               (list
-                (face-remap-add-relative 'font-lock-comment-face :foreground (doom-color 'yellow))
-                (face-remap-add-relative 'font-lock-doc-face :foreground (doom-color 'yellow))
-                ;; (face-remap-add-relative 'font-lock-constant-face :inherit 'default)
-                (face-remap-add-relative 'font-lock-function-name-face :foreground (doom-color 'teal))
-                (face-remap-add-relative 'font-lock-string-face :foreground (doom-color 'blue))
-                (face-remap-add-relative 'font-lock-number-face :foreground (doom-color 'blue))
-                ;; (face-remap-add-relative 'lsp-face-highlight-textual :foreground (doom-color 'yellow))
-                (face-remap-add-relative 'clojure-keyword-face :foreground (doom-color 'violet))
-                (face-remap-add-relative 'font-lock-keyword-face :inherit 'default :foreground 'unspecified)
-                ;; (face-remap-add-relative 'font-lock-keyword-face :foreground (doom-color 'teal))
+    (setq-local +my/face-remap-cookies
+      (list
+        (face-remap-add-relative 'font-lock-comment-face :foreground (doom-color 'yellow))
+        (face-remap-add-relative 'font-lock-doc-face :foreground (doom-color 'yellow))
+        ;; (face-remap-add-relative 'font-lock-constant-face :inherit 'default)
+        (face-remap-add-relative 'font-lock-function-name-face :foreground (doom-color 'teal))
+        (face-remap-add-relative 'font-lock-string-face :foreground (doom-color 'blue))
+        (face-remap-add-relative 'font-lock-number-face :foreground (doom-color 'blue))
+        ;; (face-remap-add-relative 'lsp-face-highlight-textual :foreground (doom-color 'yellow))
+        (face-remap-add-relative 'clojure-keyword-face :foreground (doom-color 'violet))
+        (face-remap-add-relative 'font-lock-keyword-face :inherit 'default :foreground 'unspecified)
+        ;; (face-remap-add-relative 'font-lock-keyword-face :foreground (doom-color 'teal))
 
-                )       )))
+        )       )))
 
 (defun my/dim-parens ()
   "Make parenthesis less prominent by matching comment face."
@@ -111,8 +111,8 @@
 (after! projectile
   ;; Projects all over
   (setq projectile-project-search-path '(("~/src" . 3)
-                                         ("~/src/scratch" . 3)
-                                         ("~/work" . 3)))
+                                          ("~/src/scratch" . 3)
+                                          ("~/work" . 3)))
 
   ;; Show me projects in LIFO order
   (setq projectile-sort-order 'recently-active)
@@ -131,7 +131,7 @@
   )
 
 (setq my/persp-disambiguated-buffer-basenames
-      '("default.nix" "package.nix"))
+  '("default.nix" "package.nix"))
 
 (defun my/persp-disambiguated-buffer-name (file-name)
   "Return a readable unique buffer name for FILE-NAME.
@@ -139,30 +139,30 @@
 Uses `parent/filename` as the first choice. If that name already
 exists, prepends additional parent directories until unique."
   (let* ((base-name (file-name-nondirectory file-name))
-         (dir-parts
-          (nreverse
-           (split-string
-            (directory-file-name (file-name-directory file-name))
-            "/"
-            t)))
-         (name base-name))
+          (dir-parts
+            (nreverse
+              (split-string
+                (directory-file-name (file-name-directory file-name))
+                "/"
+                t)))
+          (name base-name))
     (when dir-parts
       (setq name (format "%s/%s" (pop dir-parts) base-name)))
     (while (and dir-parts
-                (let ((buffer (get-buffer name)))
-                  (and buffer (not (eq buffer (current-buffer))))))
+             (let ((buffer (get-buffer name)))
+               (and buffer (not (eq buffer (current-buffer))))))
       (setq name (format "%s/%s" (pop dir-parts) name)))
     (if (let ((buffer (get-buffer name)))
           (and buffer (not (eq buffer (current-buffer)))))
-        (abbreviate-file-name file-name)
+      (abbreviate-file-name file-name)
       name)))
 
 (defun my/rename-disambiguated-buffer ()
   "Rename configured buffers to include parent directory names."
   (when-let* ((file-name (buffer-file-name))
-              (base-name (file-name-nondirectory file-name))
-              ((member base-name my/persp-disambiguated-buffer-basenames))
-              (target-name (my/persp-disambiguated-buffer-name file-name)))
+               (base-name (file-name-nondirectory file-name))
+               ((member base-name my/persp-disambiguated-buffer-basenames))
+               (target-name (my/persp-disambiguated-buffer-name file-name)))
     (unless (string= (buffer-name) target-name)
       (rename-buffer target-name t))))
 
@@ -188,84 +188,84 @@ exists, prepends additional parent directories until unique."
   (setopt hl-line-sticky-flag nil))
 
 (if not-android
-    (use-package ligature
-      :config
-      ;; Enable all Iosevka ligatures in programming modes
-      ;; https://github.com/mickeynp/ligature.el/wiki
-      (defvar iosevka-ligation-set '("<---" "<--"  "<<-" "<-" "->" "-->" "--->" "<->" "<-->" "<--->" "<---->" "<!--"
-                                     "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
-                                     "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
-                                     ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
-      (defvar berkeley-mono-ligation-set '(; Group A
-                                           ".." ".=" "..." "..<" "::" ":::" ":=" "::=" ";;" ";;;" "??" "???"
-                                           ".?" "?." ":?" "?:" "?=" "**" "***" "/*" "*/" "/**"
+  (use-package ligature
+    :config
+    ;; Enable all Iosevka ligatures in programming modes
+    ;; https://github.com/mickeynp/ligature.el/wiki
+    (defvar iosevka-ligation-set '("<---" "<--"  "<<-" "<-" "->" "-->" "--->" "<->" "<-->" "<--->" "<---->" "<!--"
+                                    "<==" "<===" "<=" "=>" "=>>" "==>" "===>" ">=" "<=>" "<==>" "<===>" "<====>" "<!---"
+                                    "<~~" "<~" "~>" "~~>" "::" ":::" "==" "!=" "===" "!=="
+                                    ":=" ":-" ":+" "<*" "<*>" "*>" "<|" "<|>" "|>" "+:" "-:" "=:" "<******>" "++" "+++"))
+    (defvar berkeley-mono-ligation-set '(; Group A
+                                          ".." ".=" "..." "..<" "::" ":::" ":=" "::=" ";;" ";;;" "??" "???"
+                                          ".?" "?." ":?" "?:" "?=" "**" "***" "/*" "*/" "/**"
                                         ; Group B
-                                           "<-" "->" "-<" ">-" "<--" "-->" "<<-" "->>" "-<<" ">>-" "<-<" ">->"
-                                           "<-|" "|->" "-|" "|-" "||-" "<!--" "<#--" "<=" "=>" ">=" "<==" "==>"
-                                           "<<=" "=>>" "=<<" ">>=" "<=<" ">=>" "<=|" "|=>" "<=>" "<==>" "||="
-                                           "|=" "//=" "/="
+                                          "<-" "->" "-<" ">-" "<--" "-->" "<<-" "->>" "-<<" ">>-" "<-<" ">->"
+                                          "<-|" "|->" "-|" "|-" "||-" "<!--" "<#--" "<=" "=>" ">=" "<==" "==>"
+                                          "<<=" "=>>" "=<<" ">>=" "<=<" ">=>" "<=|" "|=>" "<=>" "<==>" "||="
+                                          "|=" "//=" "/="
                                         ; Group C
-                                           "<<" ">>" "<<<" ">>>" "<>" "<$" "$>" "<$>" "<+" "+>" "<+>" "<:" ":<"
-                                           "<:<" ">:" ":>" "<~" "~>" "<~>" "<<~" "<~~" "~~>" "~~" "<|" "|>"
-                                           "<|>" "<||" "||>" "<|||" "|||>" "</" "/>" "</>" "<*" "*>" "<*>" ":?>"
+                                          "<<" ">>" "<<<" ">>>" "<>" "<$" "$>" "<$>" "<+" "+>" "<+>" "<:" ":<"
+                                          "<:<" ">:" ":>" "<~" "~>" "<~>" "<<~" "<~~" "~~>" "~~" "<|" "|>"
+                                          "<|>" "<||" "||>" "<|||" "|||>" "</" "/>" "</>" "<*" "*>" "<*>" ":?>"
                                         ; Group D
-                                           "#(" "#{" "#[" "]#" "#!" "#?" "#=" "#_" "#_(" "##" "###" "####"
+                                          "#(" "#{" "#[" "]#" "#!" "#?" "#=" "#_" "#_(" "##" "###" "####"
                                         ; Group E
-                                           "[|" "|]" "[<" ">]" "{!!" "!!}" "{|" "|}" "{{" "}}" "{{--" "--}}"
-                                           "{!--" "//" "///" "!!"
+                                          "[|" "|]" "[<" ">]" "{!!" "!!}" "{|" "|}" "{{" "}}" "{{--" "--}}"
+                                          "{!--" "//" "///" "!!"
                                         ; Group F
-                                           "www" "@_" "&&" "&&&" "&=" "~@" "++" "+++" "/\\" "\\/" "_|_" "||"
+                                          "www" "@_" "&&" "&&&" "&=" "~@" "++" "+++" "/\\" "\\/" "_|_" "||"
                                         ; Group G
-                                           "=:" "=:=" "=!=" "==" "===" "=/=" "=~" "~-" "^=" "__" "!=" "!==" "-~"
-                                           "--" "---"))
-      (defun setup-ligatures-for-font ()
-        (let ((font-family (symbol-name (font-get doom-font :family))))
-          (cond
-           ((and font-family (string-match-p "Iosevka" font-family))
+                                          "=:" "=:=" "=!=" "==" "===" "=/=" "=~" "~-" "^=" "__" "!=" "!==" "-~"
+                                          "--" "---"))
+    (defun setup-ligatures-for-font ()
+      (let ((font-family (symbol-name (font-get doom-font :family))))
+        (cond
+          ((and font-family (string-match-p "Iosevka" font-family))
             (message "Setting up ligatures for Iosevka")
             (ligature-set-ligatures 'prog-mode iosevka-ligation-set))
 
-           ((and font-family (string-match-p "Berkeley Mono" font-family))
+          ((and font-family (string-match-p "Berkeley Mono" font-family))
             (message "Setting up ligatures for Berkeley Mono")
             (ligature-set-ligatures 'prog-mode berkeley-mono-ligation-set))
 
-           (t (message "No specific ligature set for %s" font-family)))))
+          (t (message "No specific ligature set for %s" font-family)))))
 
-      (setup-ligatures-for-font)
+    (setup-ligatures-for-font)
 
-      ;; Enables ligature checks globally in all buffers. You can also do it per
-      ;; mode with `ligature-mode'.
-      (global-ligature-mode t)))
+    ;; Enables ligature checks globally in all buffers. You can also do it per
+    ;; mode with `ligature-mode'.
+    (global-ligature-mode t)))
 
 (if not-android
-    (use-package! consult-flyspell
-      :after (flyspell consult)))
+  (use-package! consult-flyspell
+    :after (flyspell consult)))
 
 (after! dired
   (setq dired-create-destination-dirs 'always))
 
+;;(if not-android
+;;  (use-package! magit-difftastic
+;;    :after magit
+;;    :config
+;;    (magit-difftastic-mode nil)))
+
 (if not-android
-  (use-package! magit-difftastic
-    :after magit
+  (use-package! treemacs
     :config
-    (magit-difftastic-mode +1)))
+    (setq treemacs-missing-project-action 'remove)))
 
 (if not-android
-    (use-package! treemacs
-      :config
-      (setq treemacs-missing-project-action 'remove)))
-
-(if not-android
-    (progn
-      (load! "+helpers.el")
-      (load! "+my-commands.el")
-      (load! "+org.el")
-      (load! "+ai.el")
-      ;;(load! "+assistant.el")
-      (load! "+lisp-editing.el")
-      (load! "+langs.el")
-      (load! "+clojure.el")
-      (load! "+emacs-wm.el")
-      (load! "+bindings.el")))
+  (progn
+    (load! "+helpers.el")
+    (load! "+my-commands.el")
+    (load! "+org.el")
+    (load! "+ai.el")
+    ;;(load! "+assistant.el")
+    (load! "+lisp-editing.el")
+    (load! "+langs.el")
+    (load! "+clojure.el")
+    (load! "+emacs-wm.el")
+    (load! "+bindings.el")))
 (if is-android
-    (load! "+android.el"))
+  (load! "+android.el"))
