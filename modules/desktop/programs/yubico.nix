@@ -69,7 +69,7 @@ in
       programs.yubikey-touch-detector.enable = true;
       # FIDO2 OpenSSH keys use the regular ssh-agent socket, not yubikey-agent.
       programs.ssh.startAgent = true;
-      programs.ssh.enableAskPassword = false;
+      programs.ssh.enableAskPassword = true;
       environment.shellInit = ''
         export SSH_AUTH_SOCK=/run/user/$UID/ssh-agent
       '';
