@@ -118,6 +118,7 @@
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
+        ./flake/checks.nix
         ./flake/hosts.nix
         ./flake/pkgs.nix
         #./flake/iso-test.nix
