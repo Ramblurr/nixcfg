@@ -14,3 +14,4 @@ vars.auto.tfvars
 .terraform
 secret.edn
 .env
+.worktrees/

@@ -74,6 +74,7 @@ in
       };
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
+      hindsight.enable = lib.mkEnableOption "Hindsight agent memory";
       calibre.enable = lib.mkEnableOption "Calibre";
       koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
@@ -583,6 +584,12 @@ in
         domain = home-ops.homeDomain;
         forwardAuth = true;
       };
+    };
+
+    modules.services.hindsight = lib.mkIf cfg.apps.hindsight.enable {
+      enable = true;
+      domain = "hindsight.${home-ops.homeDomain}";
+      acmeHost = home-ops.homeDomain;
     };
 
     modules.services.calibre = lib.mkIf cfg.apps.calibre.enable {
