@@ -6,6 +6,8 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
+  homeDomain = config.repo.secrets.home-ops.homeDomain;
+  phonieboxDomain = "phoniebox.${homeDomain}";
 in
 {
   imports = [
@@ -91,6 +93,35 @@ in
       proxy_read_timeout 3600s;
       proxy_buffering off;
     '';
+  };
+
+  modules.services.ingress.virtualHosts.${phonieboxDomain} = {
+    acmeHost = homeDomain;
+    upstream = "http://10.9.6.26:80";
+    upstreamExtraConfig = ''
+      proxy_connect_timeout 3s;
+      proxy_intercept_errors on;
+      proxy_buffering off;
+      proxy_cache off;
+      proxy_read_timeout 1h;
+      error_page 502 503 504 =503 /.fairybox-offline.html;
+    '';
+  };
+
+  services.nginx.virtualHosts.${phonieboxDomain}.locations = {
+    "= /.fairybox-offline.html" = {
+      alias = "${./phoniebox-offline}/index.html";
+      extraConfig = ''
+        internal;
+      '';
+    };
+    "^~ /.fairybox-offline/" = {
+      alias = "${./phoniebox-offline}/";
+      extraConfig = ''
+        access_log off;
+        expires 1h;
+      '';
+    };
   };
 
   inherit (config.repo.secrets.site) site;
