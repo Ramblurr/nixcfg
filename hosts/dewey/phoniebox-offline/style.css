@@ -1,0 +1,119 @@
+:root {
+  color-scheme: light;
+  font-family: ui-rounded, "Avenir Next", Avenir, system-ui, sans-serif;
+  color: #472c2d;
+  background: #f5efe3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: grid;
+  min-height: 100vh;
+  margin: 0;
+  padding: 2rem 1.25rem;
+  place-items: center;
+  background:
+    radial-gradient(circle at top, rgb(255 247 236 / 90%), transparent 42rem),
+    #eadfd2;
+}
+
+.card {
+  width: min(100%, 34rem);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  overflow: hidden;
+  text-align: center;
+  background: rgb(255 251 241 / 92%);
+  border: 1px solid #cdb8aa;
+  border-radius: 2rem;
+  box-shadow: 0 1.5rem 4rem rgb(71 44 45 / 16%);
+}
+
+.jukebox {
+  display: block;
+  width: min(100%, 19rem);
+  height: auto;
+  margin: -0.75rem auto 1.25rem;
+  border-radius: 22%;
+}
+
+.label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0.75rem;
+  color: #7b5d57;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.label::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  content: "";
+  background: #c87873;
+  border: 2px solid #f7d7ce;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgb(200 120 115 / 35%);
+  animation: quiet-pulse 2.4s ease-out infinite;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 8vw, 3.25rem);
+  font-weight: 500;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.message {
+  max-width: 29rem;
+  margin: 1.25rem auto 1.75rem;
+  color: #725b58;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.retry {
+  display: inline-block;
+  padding: 0.75rem 1.2rem;
+  color: #fffaf0;
+  font-weight: 700;
+  text-decoration: none;
+  background: #664344;
+  border-radius: 999px;
+  box-shadow: 0 0.3rem 0 #422b2c;
+}
+
+.retry:hover {
+  background: #795354;
+}
+
+.retry:focus-visible {
+  outline: 3px solid #7b5d57;
+  outline-offset: 4px;
+}
+
+.retry:active {
+  box-shadow: 0 0.1rem 0 #422b2c;
+  transform: translateY(0.2rem);
+}
+
+@keyframes quiet-pulse {
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.5rem rgb(200 120 115 / 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label::before {
+    animation: none;
+  }
+}
