@@ -50,6 +50,7 @@ in
     containers.enable = false;
     hypervisor.enable = true;
     ingress.enable = true;
+    apps.hindsight.enable = true;
   };
   home.nix-lan-cache.enable = true;
   myhm = _: {
