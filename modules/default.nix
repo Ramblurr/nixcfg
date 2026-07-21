@@ -98,6 +98,7 @@
     ./services/github-runner.nix
     ./services/haproxy.nix
     ./services/home-dl.nix
+    ./services/hindsight.nix
     ./services/influxdb.nix
     ./services/jellyfin.nix
     ./services/jellyplex-watched.nix
