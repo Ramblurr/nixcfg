@@ -11,6 +11,15 @@ let
       provider = "openai";
       model = "gpt-5-mini";
       apiKeySecret = "hindsight/openai-api-key";
+      codexOAuth = false;
+      extraEnvironment = [ ];
+    };
+
+    "openai-codex-gpt-4.1-nano" = {
+      provider = "openai-codex";
+      model = "gpt-4.1-nano";
+      apiKeySecret = null;
+      codexOAuth = true;
       extraEnvironment = [ ];
     };
 
@@ -18,6 +27,7 @@ let
       provider = "openai";
       model = "gpt-oss-120b";
       apiKeySecret = "hindsight/cerebras-api-key";
+      codexOAuth = false;
       extraEnvironment = [
         "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
         "HINDSIGHT_API_RETAIN_LLM_MODEL=gpt-oss-120b"
@@ -32,6 +42,7 @@ let
       provider = "openai";
       model = "gemma-4-31b";
       apiKeySecret = "hindsight/cerebras-api-key";
+      codexOAuth = false;
       extraEnvironment = [
         "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
         "HINDSIGHT_API_RETAIN_LLM_MODEL=gemma-4-31b"
@@ -46,6 +57,7 @@ let
       provider = "gemini";
       model = "gemini-3.1-flash-lite";
       apiKeySecret = "hindsight/gemini-api-key";
+      codexOAuth = false;
       extraEnvironment = [ ];
     };
   };
@@ -54,6 +66,7 @@ let
     openai-small = {
       provider = "openai";
       model = "text-embedding-3-small";
+      modelEnvironment = "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL";
       apiKeySecret = "hindsight/openai-api-key";
       codexOAuth = false;
     };
@@ -61,6 +74,7 @@ let
     openai-large = {
       provider = "openai";
       model = "text-embedding-3-large";
+      modelEnvironment = "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL";
       apiKeySecret = "hindsight/openai-api-key";
       codexOAuth = false;
     };
@@ -68,6 +82,7 @@ let
     openai-codex-small = {
       provider = "openai-codex";
       model = "text-embedding-3-small";
+      modelEnvironment = "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL";
       apiKeySecret = null;
       codexOAuth = true;
     };
@@ -75,14 +90,24 @@ let
     openai-codex-large = {
       provider = "openai-codex";
       model = "text-embedding-3-large";
+      modelEnvironment = "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL";
       apiKeySecret = null;
       codexOAuth = true;
+    };
+
+    "local-bge-small-en-v1.5" = {
+      provider = "local";
+      model = "BAAI/bge-small-en-v1.5";
+      modelEnvironment = "HINDSIGHT_API_EMBEDDINGS_LOCAL_MODEL";
+      apiKeySecret = null;
+      codexOAuth = false;
     };
   };
 
   cfg = config.modules.services.hindsight;
   llmProfile = llmProfiles.${cfg.llm.profile};
   embeddingsProfile = embeddingsProfiles.${cfg.embeddings.profile};
+  usesCodexOAuth = llmProfile.codexOAuth || embeddingsProfile.codexOAuth;
   dbEnvironmentFile = config.sops.templates."hindsight-db.env".path;
   appEnvironmentFile = config.sops.templates."hindsight-app.env".path;
   codexAuthDir = "${cfg.dataDir}/codex";
@@ -349,7 +374,7 @@ in
             ExecStartPre = [
               "${pkgs.coreutils}/bin/test -r ${appEnvironmentFile}"
             ]
-            ++ lib.optionals embeddingsProfile.codexOAuth [ codexAuthCheck ];
+            ++ lib.optionals usesCodexOAuth [ codexAuthCheck ];
             Restart = "on-failure";
             RestartMode = "direct";
             RestartSec = "5s";
@@ -366,7 +391,7 @@ in
               "HINDSIGHT_API_LLM_PROVIDER=${llmProfile.provider}"
               "HINDSIGHT_API_LLM_MODEL=${llmProfile.model}"
               "HINDSIGHT_API_EMBEDDINGS_PROVIDER=${embeddingsProfile.provider}"
-              "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=${embeddingsProfile.model}"
+              "${embeddingsProfile.modelEnvironment}=${embeddingsProfile.model}"
               "HINDSIGHT_API_WORKER_ID=${config.networking.hostName}"
               "HINDSIGHT_API_HOST=0.0.0.0"
               "HINDSIGHT_API_PORT=8888"
@@ -374,10 +399,10 @@ in
               "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension"
             ]
             ++ llmProfile.extraEnvironment
-            ++ lib.optionals embeddingsProfile.codexOAuth [
+            ++ lib.optionals usesCodexOAuth [
               "CODEX_HOME=${codexContainerDir}"
             ];
-            Volume = lib.optionals embeddingsProfile.codexOAuth [
+            Volume = lib.optionals usesCodexOAuth [
               "${codexAuthDir}:${codexContainerDir}:U"
             ];
             PublishPort = [
