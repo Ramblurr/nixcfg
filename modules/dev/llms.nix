@@ -122,6 +122,7 @@ in
         PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
         CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
+        HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
         T3CODE_HOME = "$XDG_CONFIG_HOME/t3code";
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
@@ -180,6 +181,7 @@ in
           llm-agents.codex
           llm-agents.jscpd
           llm-agents.plannotator
+          pkgs.hindsight-cli
           voxtype
           ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
