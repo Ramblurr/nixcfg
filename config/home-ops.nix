@@ -16,7 +16,7 @@ let
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
-    until ${pkgs.glibc.bin}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
+    until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
       ${pkgs.coreutils}/bin/sleep 0.5
     done
   '';
