@@ -43,8 +43,8 @@ in
         YARN_GLOBAL_FOLDER = "$XDG_DATA_HOME/yarn";
         VOLTA_HOME = "$XDG_DATA_HOME/volta";
       };
-      xdg.configFile."pnpm/rc".text = ''
-        minimum-release-age=10080
+      xdg.configFile."pnpm/config.yaml".text = ''
+        minimumReleaseAge: 10080
       '';
 
       xdg.configFile.".bunfig.toml".text = ''
