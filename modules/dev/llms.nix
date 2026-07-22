@@ -83,6 +83,9 @@ let
     wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
   );
   pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
+  hindsight-cli-wrapper = pkgs.writeShellScriptBin "hindsight" (
+    wrapWithLLMKeys "${pkgs.hindsight-cli}/bin/hindsight" [ ]
+  );
   vix-wrapper = pkgs.writeShellScriptBin "vix" (wrapWithLLMKeys "${vix}/bin/vix" [ ]);
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
@@ -181,8 +184,8 @@ in
           llm-agents.codex
           llm-agents.jscpd
           llm-agents.plannotator
-          pkgs.hindsight-cli
           voxtype
+          hindsight-cli-wrapper
           ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           #pkgs.t3code
