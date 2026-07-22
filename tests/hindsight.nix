@@ -93,6 +93,7 @@ let
         inputs.impermanence.nixosModules.impermanence
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
+        ../modules/zfs-attrs.nix
         ../modules/services/ingress.nix
         ../modules/services/hindsight.nix
         {
@@ -150,6 +151,7 @@ pkgs.testers.runNixOSTest {
       network = config.virtualisation.quadlet.networks.hindsight;
       volume = config.virtualisation.quadlet.volumes.hindsight-db-data;
       ingress = config.modules.services.ingress.virtualHosts."hindsight.socozy.casa";
+      hindsightDataset = config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/hindsight";
       appTemplate = config.sops.templates."hindsight-app.env";
       dbTemplate = config.sops.templates."hindsight-db.env";
       cerebrasGptApp = cerebrasGptConfig.virtualisation.quadlet.containers.hindsight;
@@ -161,6 +163,7 @@ pkgs.testers.runNixOSTest {
         inputs.impermanence.nixosModules.impermanence
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
+        ../modules/zfs-attrs.nix
         ../modules/services/ingress.nix
         ../modules/services/hindsight.nix
       ];
@@ -312,6 +315,13 @@ pkgs.testers.runNixOSTest {
             && builtins.hasAttr "hindsight/gemini-api-key" geminiCodexConfig.sops.secrets
             && !(builtins.hasAttr "hindsight/openai-api-key" geminiCodexConfig.sops.secrets);
           message = "The Gemini and Codex large profiles must select the requested models and Gemini key.";
+        }
+        {
+          assertion =
+            hindsightDataset.mountpoint == "/var/lib/hindsight"
+            && hindsightDataset."com.sun:auto-snapshot" == "false"
+            && lib.elem "d '/var/lib/hindsight' 0750 hindsight hindsight - -" config.systemd.tmpfiles.rules;
+          message = "Hindsight state must use an owned, dedicated ZFS dataset.";
         }
         {
           assertion = lib.elem "d /var/lib/hindsight/codex 0700 :hindsight :hindsight -" config.systemd.tmpfiles.rules;
