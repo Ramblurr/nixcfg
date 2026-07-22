@@ -8,29 +8,24 @@
 
 buildNpmPackage rec {
   pname = "pi-web";
-  version = "1.202606.3";
+  version = "1.202607.1";
 
   src = fetchFromGitHub {
     owner = "jmfederico";
     repo = "pi-web";
     rev = "v${version}";
-    hash = "sha256-D8LVjjdOjBAi6S227CBk9ywkvV34NS9x6hyv+TskhRY=";
+    hash = "sha256-llMtBYOqH92KCrz6lUiJRG0rQgwGZQpeCZ9LU8VFPgY=";
   };
 
   postPatch = ''
     # Upstream package-lock has these nested npm registry entries without integrity.
     # npm-config-hook needs integrities to prefetch the dependency closure.
-    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-agent-core/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.79.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.79.1.tgz",\n      "integrity": "sha512-PBPjBa2YBm9jauiLtHAKaSfVJ4Dvm3/nK/bR/oHebLjwBCS2tGx3aQDX7MSGAOXi6BejlhzbB/z82BkyAyNjjQ==",#' package-lock.json
-    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-ai/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.79.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.79.1.tgz",\n      "integrity": "sha512-UnORwrcsTNLm4StEvoM8iEom0u87Te7BXEWxhec3iNXygWD6eEBosUoq9ddcveqtj/QpUZBMPWUu81cCtZxzkQ==",#' package-lock.json
-    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-tui/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.79.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.79.1.tgz",\n      "integrity": "sha512-YvZCMfSE0YDSLNklAwMY6LC6SyEgnP0zMOoioTLNnXFNdexrCexMJdee7iDJsNcFlKt7+DVLccomuURtZS1C6g==",#' package-lock.json
-
-    # Respect PI_WEB_DATA_DIR for archived-session state instead of using ~/.pi-web.
-    substituteInPlace src/server/sessions/sessionArchiveStore.ts \
-      --replace-fail 'import { homedir } from "node:os";' 'import { piWebDataDir } from "../../config.js";' \
-      --replace-fail 'join(homedir(), ".pi-web", "archived-sessions.json")' 'join(piWebDataDir(), "archived-sessions.json")'
+    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-agent-core/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.80.10.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.80.10.tgz",\n      "integrity": "sha512-nwnOR3SuLYGRFfyQm8ri4Nj5VGVAvAM9GuqQd3u7BUQj0d6hmD2F8w7OHAAjThE3CuySIdM+v8E22QJG6/RfCg==",#' package-lock.json
+    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-ai/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.80.10.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.80.10.tgz",\n      "integrity": "sha512-Moe/H8c87yacDGK9dPbWphZNjVsrb3nTrIHycOQJAkFEnY9PYxOOd74+ny44kATfPU9Dm7aTHefar3pZF+UKUA==",#' package-lock.json
+    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-tui/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.80.10.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.80.10.tgz",\n      "integrity": "sha512-c2JO29PbhKPEQ6fgHQKAl0WhwuFqzWfzspMmP+8B5tpDuP+0mvarRbKKg8gq4b+pQx/QX+6aVS4ko7deoyjQjg==",#' package-lock.json
   '';
 
-  npmDepsHash = "sha256-wWmBOaaubi8hGJt+fm1aAlSbY3a3zq/vU1ZCIqrRT/c=";
+  npmDepsHash = "sha256-cwMjId1rUZUjUpVmOWJ5U0JUIRrBKovFSGpxa3c6UvU=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
 
