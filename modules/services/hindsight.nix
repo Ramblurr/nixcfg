@@ -6,9 +6,102 @@
 }:
 
 let
+  llmProfiles = {
+    openai-gpt-5-mini = {
+      provider = "openai";
+      model = "gpt-5-mini";
+      apiKeySecret = "hindsight/openai-api-key";
+      extraEnvironment = [ ];
+    };
+
+    cerebras-gpt-oss-120b = {
+      provider = "openai";
+      model = "gpt-oss-120b";
+      apiKeySecret = "hindsight/cerebras-api-key";
+      extraEnvironment = [
+        "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
+        "HINDSIGHT_API_RETAIN_LLM_MODEL=gpt-oss-120b"
+        "HINDSIGHT_API_REFLECT_LLM_MODEL=gpt-oss-120b"
+        "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
+        "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
+        "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
+      ];
+    };
+
+    cerebras-gemma-4-31b = {
+      provider = "openai";
+      model = "gemma-4-31b";
+      apiKeySecret = "hindsight/cerebras-api-key";
+      extraEnvironment = [
+        "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
+        "HINDSIGHT_API_RETAIN_LLM_MODEL=gemma-4-31b"
+        "HINDSIGHT_API_REFLECT_LLM_MODEL=gemma-4-31b"
+        "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
+        "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
+        "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
+      ];
+    };
+
+    "gemini-3.1-flash-lite" = {
+      provider = "gemini";
+      model = "gemini-3.1-flash-lite";
+      apiKeySecret = "hindsight/gemini-api-key";
+      extraEnvironment = [ ];
+    };
+  };
+
+  embeddingsProfiles = {
+    openai-small = {
+      provider = "openai";
+      model = "text-embedding-3-small";
+      apiKeySecret = "hindsight/openai-api-key";
+      codexOAuth = false;
+    };
+
+    openai-large = {
+      provider = "openai";
+      model = "text-embedding-3-large";
+      apiKeySecret = "hindsight/openai-api-key";
+      codexOAuth = false;
+    };
+
+    openai-codex-small = {
+      provider = "openai-codex";
+      model = "text-embedding-3-small";
+      apiKeySecret = null;
+      codexOAuth = true;
+    };
+
+    openai-codex-large = {
+      provider = "openai-codex";
+      model = "text-embedding-3-large";
+      apiKeySecret = null;
+      codexOAuth = true;
+    };
+  };
+
   cfg = config.modules.services.hindsight;
+  llmProfile = llmProfiles.${cfg.llm.profile};
+  embeddingsProfile = embeddingsProfiles.${cfg.embeddings.profile};
   dbEnvironmentFile = config.sops.templates."hindsight-db.env".path;
   appEnvironmentFile = config.sops.templates."hindsight-app.env".path;
+  codexAuthDir = "${cfg.dataDir}/codex";
+  codexContainerDir = "/var/lib/hindsight/codex";
+  codexAuthFile = "${codexAuthDir}/auth.json";
+  requiredProviderSecrets = lib.unique (
+    lib.filter (secret: secret != null) [
+      llmProfile.apiKeySecret
+      embeddingsProfile.apiKeySecret
+    ]
+  );
+  providerSecrets = lib.genAttrs requiredProviderSecrets (_: { });
+  codexAuthCheck = pkgs.writeShellScript "hindsight-check-codex-auth" ''
+    if ! ${pkgs.podman}/bin/podman unshare ${pkgs.coreutils}/bin/test -r ${lib.escapeShellArg codexAuthFile}; then
+      echo "Hindsight Codex OAuth credentials are missing: ${codexAuthFile}" >&2
+      echo "Copy a dedicated Codex auth.json to that path with mode 0600." >&2
+      exit 1
+    fi
+  '';
   postgresInit = pkgs.writeText "hindsight-postgres-init.sql" ''
     CREATE EXTENSION IF NOT EXISTS vector;
   '';
@@ -77,6 +170,21 @@ in
       description = "PostgreSQL container image with pgvector installed.";
     };
 
+    llm.profile = lib.mkOption {
+      type = lib.types.enum (builtins.attrNames llmProfiles);
+      default = "openai-gpt-5-mini";
+      description = "Fixed provider and model profile for Hindsight LLM operations.";
+    };
+
+    embeddings.profile = lib.mkOption {
+      type = lib.types.enum (builtins.attrNames embeddingsProfiles);
+      default = "openai-small";
+      description = ''
+        Fixed provider and model profile for Hindsight embeddings. Changing this
+        after storing memories requires re-embedding or recreating vector data.
+      '';
+    };
+
     ports = {
       api = lib.mkOption {
         type = lib.types.port;
@@ -125,36 +233,51 @@ in
       }
     ];
 
+    systemd.tmpfiles.rules = [
+      "d ${codexAuthDir} 0700 :${cfg.user.name} :${cfg.group.name} -"
+    ];
+
     sops.secrets = {
-      "hindsight/openai-api-key" = { };
       "hindsight/postgres-password" = { };
       "hindsight/api-key" = { };
       "hindsight/control-plane-access-key" = { };
-    };
+    }
+    // providerSecrets;
 
     sops.templates = {
       "hindsight-db.env" = {
         owner = cfg.user.name;
         group = cfg.group.name;
         mode = "0400";
-        content = ''
-          POSTGRES_PASSWORD=${config.sops.placeholder."hindsight/postgres-password"}
-        '';
+        content = "POSTGRES_PASSWORD=${config.sops.placeholder."hindsight/postgres-password"}\n";
       };
 
       "hindsight-app.env" = {
         owner = cfg.user.name;
         group = cfg.group.name;
         mode = "0400";
-        content = ''
-          HINDSIGHT_API_DATABASE_URL=postgresql://hindsight:${
-            config.sops.placeholder."hindsight/postgres-password"
-          }@hindsight-db:5432/hindsight
-          HINDSIGHT_API_LLM_API_KEY=${config.sops.placeholder."hindsight/openai-api-key"}
-          HINDSIGHT_API_TENANT_API_KEY=${config.sops.placeholder."hindsight/api-key"}
-          HINDSIGHT_CP_DATAPLANE_API_KEY=${config.sops.placeholder."hindsight/api-key"}
-          HINDSIGHT_CP_ACCESS_KEY=${config.sops.placeholder."hindsight/control-plane-access-key"}
-        '';
+        content =
+          lib.concatStringsSep "\n" (
+            [
+              "HINDSIGHT_API_DATABASE_URL=postgresql://hindsight:${
+                config.sops.placeholder."hindsight/postgres-password"
+              }@hindsight-db:5432/hindsight"
+            ]
+            ++
+              lib.optional (llmProfile.apiKeySecret != null)
+                "HINDSIGHT_API_LLM_API_KEY=${config.sops.placeholder.${llmProfile.apiKeySecret}}"
+            ++
+              lib.optional (embeddingsProfile.apiKeySecret != null)
+                "HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY=${
+                  config.sops.placeholder.${embeddingsProfile.apiKeySecret}
+                }"
+            ++ [
+              "HINDSIGHT_API_TENANT_API_KEY=${config.sops.placeholder."hindsight/api-key"}"
+              "HINDSIGHT_CP_DATAPLANE_API_KEY=${config.sops.placeholder."hindsight/api-key"}"
+              "HINDSIGHT_CP_ACCESS_KEY=${config.sops.placeholder."hindsight/control-plane-access-key"}"
+            ]
+          )
+          + "\n";
       };
     };
 
@@ -222,7 +345,10 @@ in
             Wants = [ "network-online.target" ];
           };
           serviceConfig = {
-            ExecStartPre = [ "${pkgs.coreutils}/bin/test -r ${appEnvironmentFile}" ];
+            ExecStartPre = [
+              "${pkgs.coreutils}/bin/test -r ${appEnvironmentFile}"
+            ]
+            ++ lib.optionals embeddingsProfile.codexOAuth [ codexAuthCheck ];
             Restart = "on-failure";
             RestartSec = "5s";
             TimeoutStartSec = "900s";
@@ -235,13 +361,22 @@ in
             EnvironmentFile = [ appEnvironmentFile ];
             Environment = [
               "HINDSIGHT_API_VECTOR_EXTENSION=pgvector"
-              "HINDSIGHT_API_LLM_PROVIDER=openai"
-              "HINDSIGHT_API_LLM_MODEL=gpt-5-mini"
+              "HINDSIGHT_API_LLM_PROVIDER=${llmProfile.provider}"
+              "HINDSIGHT_API_LLM_MODEL=${llmProfile.model}"
+              "HINDSIGHT_API_EMBEDDINGS_PROVIDER=${embeddingsProfile.provider}"
+              "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=${embeddingsProfile.model}"
               "HINDSIGHT_API_WORKER_ID=${config.networking.hostName}"
               "HINDSIGHT_API_HOST=0.0.0.0"
               "HINDSIGHT_API_PORT=8888"
               "HINDSIGHT_CP_DATAPLANE_API_URL=http://127.0.0.1:8888"
               "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension"
+            ]
+            ++ llmProfile.extraEnvironment
+            ++ lib.optionals embeddingsProfile.codexOAuth [
+              "CODEX_HOME=${codexContainerDir}"
+            ];
+            Volume = lib.optionals embeddingsProfile.codexOAuth [
+              "${codexAuthDir}:${codexContainerDir}:U"
             ];
             PublishPort = [
               "127.0.0.1:${toString cfg.ports.api}:8888"

@@ -52,6 +52,10 @@ in
     ingress.enable = true;
     apps.hindsight.enable = true;
   };
+  modules.services.hindsight = {
+    llm.profile = "openai-gpt-5-mini";
+    embeddings.profile = "openai-small";
+  };
   home.nix-lan-cache.enable = true;
   myhm = _: {
     #home.persistence."/persist${ramblurr.homeDirectory}" = {
