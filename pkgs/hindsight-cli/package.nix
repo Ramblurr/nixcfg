@@ -27,6 +27,10 @@ rustPlatform.buildRustPackage rec {
 
   postPatch = ''
     cp ${./Cargo.lock} hindsight-cli/Cargo.lock
+    substituteInPlace hindsight-cli/src/config.rs \
+      --replace-fail \
+        'dirs::home_dir().map(|home| home.join(CONFIG_DIR_NAME))' \
+        'env::var_os("HINDSIGHT_CONFIG_DIR").map(PathBuf::from).or_else(|| dirs::home_dir().map(|home| home.join(CONFIG_DIR_NAME)))'
   '';
 
   nativeBuildInputs = [ pkg-config ];
