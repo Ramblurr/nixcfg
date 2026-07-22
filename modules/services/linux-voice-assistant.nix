@@ -17,11 +17,15 @@ let
     mkIf
     mkPackageOption
     optional
+    optionalString
     optionals
     types
     ;
 
   finalPackage = cfg.package;
+  pipewireSystemWide = config.services.pipewire.enable && config.services.pipewire.systemWide;
+  audioInputDevice =
+    if cfg.dummyAudioInput.enable then cfg.dummyAudioInput.deviceName else cfg.audioInputDevice;
   #finalPackage = cfg.package.overridePythonAttrs (oldAttrs: {
   #  dependencies =
   #    oldAttrs.dependencies
@@ -99,6 +103,18 @@ in
         Soundcard name for input device.
         Use `linux-voice-assistant --list-input-devices` to find available devices.
       '';
+    };
+
+    dummyAudioInput = {
+      enable = mkEnableOption "a silent virtual audio input for an announcement-only satellite";
+
+      deviceName = mkOption {
+        type = str;
+        default = "linux-voice-assistant-dummy-input";
+        description = ''
+          PipeWire node name for the silent virtual audio input.
+        '';
+      };
     };
 
     audioInputBlockSize = mkOption {
@@ -216,21 +232,74 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !cfg.dummyAudioInput.enable || cfg.audioInputDevice == null;
+        message = "services.linux-voice-assistant.dummyAudioInput conflicts with audioInputDevice.";
+      }
+      {
+        assertion = !cfg.dummyAudioInput.enable || config.services.pipewire.enable;
+        message = "services.linux-voice-assistant.dummyAudioInput requires PipeWire.";
+      }
+      {
+        assertion = !cfg.dummyAudioInput.enable || config.services.pipewire.pulse.enable;
+        message = "services.linux-voice-assistant.dummyAudioInput requires services.pipewire.pulse.enable.";
+      }
+      {
+        assertion = !pipewireSystemWide || config.services.pipewire.pulse.enable;
+        message = "services.linux-voice-assistant with system-wide PipeWire requires services.pipewire.pulse.enable.";
+      }
+    ];
+
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.port ];
+
+    services.pipewire.extraConfig.pipewire = mkIf cfg.dummyAudioInput.enable {
+      "99-linux-voice-assistant-dummy-input" = {
+        "context.objects" = [
+          {
+            factory = "adapter";
+            args = {
+              "factory.name" = "support.null-audio-sink";
+              "node.name" = cfg.dummyAudioInput.deviceName;
+              "node.description" = "Linux Voice Assistant Dummy Input";
+              "media.class" = "Audio/Source/Virtual";
+              "audio.position" = [ "MONO" ];
+              "monitor.passthrough" = true;
+            };
+          }
+        ];
+      };
+    };
 
     systemd.services."linux-voice-assistant" = {
       description = "Linux Voice Assistant";
       after = [
         "network-online.target"
         "sound.target"
+      ]
+      ++ optionals pipewireSystemWide [
+        "pipewire.service"
+        "pipewire-pulse.service"
+        "wireplumber.service"
       ];
       wants = [
         "network-online.target"
         "sound.target"
+      ]
+      ++ optionals pipewireSystemWide [
+        "wireplumber.service"
+      ];
+      requires = optionals pipewireSystemWide [
+        "pipewire.service"
+        "pipewire-pulse.service"
       ];
       wantedBy = [
         "multi-user.target"
       ];
+      environment = mkIf pipewireSystemWide {
+        PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
+        PULSE_SERVER = "unix:/run/pulse/native";
+      };
       path = with pkgs; [
         alsa-utils
         iproute2
@@ -251,7 +320,7 @@ in
             if cfg.preferencesFile != null then cfg.preferencesFile else "${cfg.stateDir}/preferences.json";
         in
         ''
-          export XDG_RUNTIME_DIR=/run/user/$UID
+          ${optionalString (!pipewireSystemWide) "export XDG_RUNTIME_DIR=/run/user/\$UID"}
           ${escapeShellArgs (
             [
               (getExe finalPackage)
@@ -266,7 +335,7 @@ in
               "--preferences-file"
               preferencesFile
             ]
-            ++ optionalParam "--audio-input-device" cfg.audioInputDevice
+            ++ optionalParam "--audio-input-device" audioInputDevice
             ++ optionalParam "--audio-input-block-size" cfg.audioInputBlockSize
             ++ optionalParam "--audio-output-device" cfg.audioOutputDevice
             ++ optionalParam "--wake-word-dir" cfg.wakeWordDir

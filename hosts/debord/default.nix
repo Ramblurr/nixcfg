@@ -37,6 +37,7 @@ in
     gptfdisk
     parted
   ];
+  users.users.ramblurr.extraGroups = [ "pipewire" ];
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -44,6 +45,7 @@ in
     jack.enable = false;
     wireplumber.enable = true;
     audio.enable = true;
+    systemWide = true;
   };
   home-ops = {
     enable = true;
@@ -118,6 +120,8 @@ in
     user = "ramblurr";
     group = "audio";
     name = "kitchen-announce-satellite";
+    audioOutputDevice = "pipewire";
+    dummyAudioInput.enable = true;
   };
   services.nad-api = {
     enable = true;
