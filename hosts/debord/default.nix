@@ -53,8 +53,8 @@ in
     apps.hindsight.enable = true;
   };
   modules.services.hindsight = {
-    llm.profile = "openai-gpt-5-mini";
-    embeddings.profile = "openai-small";
+    llm.profile = "openai-codex-gpt-4.1-nano";
+    embeddings.profile = "local-bge-small-en-v1.5";
   };
   home.nix-lan-cache.enable = true;
   myhm = _: {
