@@ -6,11 +6,14 @@ let
     name = "hindsight-test-server";
     runtimeInputs = [ pkgs.busybox ];
     text = ''
-      mkdir -p /tmp/hindsight-test
-      printf '%s\n' healthy > /tmp/hindsight-test/health
-      printf '%s\n' hindsight-control-plane > /tmp/hindsight-test/index.html
-      httpd -f -p 8888 -h /tmp/hindsight-test &
-      httpd -f -p 9999 -h /tmp/hindsight-test &
+      mkdir -p /tmp/hindsight-test/api/v1/default /tmp/hindsight-test/control-plane/api
+      printf '%s\n' healthy > /tmp/hindsight-test/api/health
+      printf '%s\n' '{"api_version":"test"}' > /tmp/hindsight-test/api/version
+      printf '%s\n' '{"banks":[]}' > /tmp/hindsight-test/api/v1/default/banks
+      printf '%s\n' hindsight-control-plane > /tmp/hindsight-test/control-plane/index.html
+      printf '%s\n' control-plane-api > /tmp/hindsight-test/control-plane/api/health
+      httpd -f -p 8888 -h /tmp/hindsight-test/api &
+      httpd -f -p 9999 -h /tmp/hindsight-test/control-plane &
       wait
     '';
   };
@@ -185,6 +188,14 @@ pkgs.testers.runNixOSTest {
         postgresImage = "docker-archive:${testPostgresImage}";
       };
 
+      services.nginx = {
+        enable = true;
+        virtualHosts."hindsight.socozy.casa".locations."/" = {
+          proxyPass = "http://127.0.0.1:9999";
+          recommendedProxySettings = true;
+        };
+      };
+
       sops = {
         defaultSopsFile = testSecrets;
         age.keyFile = "/etc/sops/age/keys.txt";
@@ -242,9 +253,9 @@ pkgs.testers.runNixOSTest {
         }
         {
           assertion =
-            config.services.nginx.virtualHosts."hindsight.socozy.casa".locations."/v1/".proxyPass
-            == "http://127.0.0.1:8888";
-          message = "The direct Hindsight API route must target the loopback API port.";
+            config.services.nginx.virtualHosts."hindsight.socozy.casa".locations."^~ /hindsight-api/".proxyPass
+            == "http://127.0.0.1:8888/";
+          message = "The prefixed Hindsight API route must strip its prefix and target the loopback API port.";
         }
         {
           assertion = lib.elem "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension" app.containerConfig.Environment;
@@ -392,9 +403,17 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("hindsight.service", user=user, timeout=120)
     machine.wait_for_open_port(8888)
     machine.wait_for_open_port(9999)
+    machine.wait_for_unit("nginx.service")
+    machine.wait_for_open_port(80)
 
     assert "healthy" in machine.succeed("curl -fsS http://127.0.0.1:8888/health")
     assert "hindsight-control-plane" in machine.succeed("curl -fsS http://127.0.0.1:9999/")
+    nginx_curl = "curl -fsS -H 'Host: hindsight.socozy.casa' http://127.0.0.1"
+    assert "hindsight-control-plane" in machine.succeed(f"{nginx_curl}/")
+    assert "control-plane-api" in machine.succeed(f"{nginx_curl}/api/health")
+    assert "healthy" in machine.succeed(f"{nginx_curl}/hindsight-api/health")
+    assert '"api_version":"test"' in machine.succeed(f"{nginx_curl}/hindsight-api/version")
+    assert '"banks":[]' in machine.succeed(f"{nginx_curl}/hindsight-api/v1/default/banks")
 
     machine.succeed("ss -ltn | grep -q '127.0.0.1:8888'")
     machine.succeed("ss -ltn | grep -q '127.0.0.1:9999'")

@@ -401,8 +401,9 @@ in
       forwardAuth = false;
     };
 
-    services.nginx.virtualHosts.${cfg.domain}.locations."/v1/" = {
-      proxyPass = "http://127.0.0.1:${toString cfg.ports.api}";
+    services.nginx.virtualHosts.${cfg.domain}.locations."^~ /hindsight-api/" = {
+      # The trailing slash strips the public prefix before proxying to Hindsight.
+      proxyPass = "http://127.0.0.1:${toString cfg.ports.api}/";
       recommendedProxySettings = true;
     };
   };
