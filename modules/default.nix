@@ -16,7 +16,6 @@
     ./desktop/niri
     ./desktop/kde.nix
     ./desktop/fonts.nix
-    ./desktop/programs/handy.nix
     ./desktop/programs/1password.nix
     ./desktop/programs/aseprite.nix
     ./desktop/programs/cad.nix
@@ -24,12 +23,12 @@
     ./desktop/programs/discord.nix
     ./desktop/programs/element.nix
     ./desktop/programs/fritzing.nix
+    ./desktop/programs/ghostty/default.nix
+    ./desktop/programs/handy.nix
     ./desktop/programs/junction.nix
     ./desktop/programs/kdeconnect.nix
     ./desktop/programs/kicad.nix
     ./desktop/programs/kitty/default.nix
-    ./desktop/programs/wezterm/default.nix
-    ./desktop/programs/ghostty/default.nix
     ./desktop/programs/morgen.nix
     ./desktop/programs/musescore.nix
     ./desktop/programs/nextcloud.nix
@@ -39,7 +38,10 @@
     ./desktop/programs/signal.nix
     ./desktop/programs/slack.nix
     ./desktop/programs/thunderbird.nix
+    ./desktop/programs/voxtype.nix
+    ./desktop/programs/voxtype.nix
     ./desktop/programs/waydroid.nix
+    ./desktop/programs/wezterm/default.nix
     ./desktop/programs/yubico.nix
     ./desktop/random-apps.nix
     ./desktop/services/hacompanion.nix
