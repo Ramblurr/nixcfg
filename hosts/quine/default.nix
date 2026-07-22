@@ -187,8 +187,8 @@ in
         thunderbird.autostart.enable = true;
         thunderbird.work.enable = true;
         thunderbird.workProxy = "${lanVpnGateway}:1081";
-        handy.enable = true;
-        handy.autostart.enable = true;
+        #handy.enable = true;
+        #handy.autostart.enable = true;
         #waydroid.enable = true;
         yubico.enable = true;
         yubico.sshFidoAgent.enable = true;
