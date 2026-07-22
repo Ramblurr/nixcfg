@@ -31,7 +31,7 @@ in
         magic-wormhole-rs
         nix-update
         psmisc
-        #(openai-whisper-cpp.override { cudaSupport = true; })
+        #pkgs.pkgsCuda.whisper-cpp
         #openai-whisper
         smem
         #pkgs.my.mysql-backup
