@@ -182,7 +182,6 @@ in
           llm-agents.plannotator
           voxtype
           ccusage
-          llm-agents.handy
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           #pkgs.t3code
           universal-ctags
