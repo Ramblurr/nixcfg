@@ -211,10 +211,11 @@ in
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
-      isSystemUser = true;
+      isNormalUser = true;
       group = cfg.group.name;
       home = cfg.dataDir;
       createHome = false;
+      shell = pkgs.shadow;
       linger = true;
       autoSubUidGidRange = true;
     };
@@ -300,10 +301,12 @@ in
           unitConfig = {
             After = [ "network-online.target" ];
             Wants = [ "network-online.target" ];
+            StartLimitIntervalSec = 0;
           };
           serviceConfig = {
             ExecStartPre = [ "${pkgs.coreutils}/bin/test -r ${dbEnvironmentFile}" ];
             Restart = "on-failure";
+            RestartMode = "direct";
             RestartSec = "5s";
             TimeoutStopSec = "120s";
           };
@@ -340,6 +343,7 @@ in
               "network-online.target"
             ];
             Wants = [ "network-online.target" ];
+            StartLimitIntervalSec = 0;
           };
           serviceConfig = {
             ExecStartPre = [
@@ -347,6 +351,7 @@ in
             ]
             ++ lib.optionals embeddingsProfile.codexOAuth [ codexAuthCheck ];
             Restart = "on-failure";
+            RestartMode = "direct";
             RestartSec = "5s";
             TimeoutStartSec = "900s";
             TimeoutStopSec = "120s";

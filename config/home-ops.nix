@@ -15,6 +15,11 @@ let
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
+  podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
+    until ${pkgs.glibc.bin}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
+      ${pkgs.coreutils}/bin/sleep 0.5
+    done
+  '';
 in
 {
   options.home-ops = {
@@ -414,6 +419,20 @@ in
       Restart = "always";
       RestartSec = "5s";
     };
+
+    # Podman's rootless Quadlets already wait for this user unit to observe the
+    # system network-online target. On these hosts, DNS is provided by the local
+    # dnsdist instance and can remain unavailable while its upstream health
+    # checks recover. Keep the unit activating until external DNS works so
+    # containers do not exhaust their image-pull retries during boot.
+    systemd.user.services.podman-user-wait-network-online =
+      lib.mkIf config.virtualisation.podman.enable
+        {
+          serviceConfig = {
+            ExecStartPost = podmanWaitForDns;
+            TimeoutStartSec = "180s";
+          };
+        };
 
     ########################
     # Application Services #
