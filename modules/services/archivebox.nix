@@ -95,7 +95,7 @@ in
             let
               sharedContainerConfig = {
                 # renovate: docker-image
-                image = "ghcr.io/archivebox/archivebox:0.9.35rc137@sha256:08ec7b1c59dc96d4678879ca5269a2baeef2e6d11265e53adc91df57cc46050f";
+                image = "ghcr.io/archivebox/archivebox:0.9.35rc98@sha256:dd096e791d57aacd3df7c5ebc6964c554bb985d74022324c505d7e20cf4f251d";
                 userns = "keep-id:uid=${toString cfg.user.uid},gid=${toString cfg.group.gid}";
                 environments = {
                   REVERSE_PROXY_USER_HEADER = "X-authentik-username";
