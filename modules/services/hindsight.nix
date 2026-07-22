@@ -224,16 +224,13 @@ in
       gid = lib.mkForce cfg.group.gid;
     };
 
-    environment.persistence."/persist".directories = [
-      {
-        directory = cfg.dataDir;
-        user = cfg.user.name;
-        group = cfg.group.name;
-        mode = "0750";
-      }
-    ];
+    modules.zfs.datasets.properties = {
+      "rpool/encrypted/safe/svc/hindsight"."mountpoint" = cfg.dataDir;
+      "rpool/encrypted/safe/svc/hindsight"."com.sun:auto-snapshot" = "false";
+    };
 
     systemd.tmpfiles.rules = [
+      "d '${cfg.dataDir}' 0750 ${cfg.user.name} ${cfg.group.name} - -"
       "d ${codexAuthDir} 0700 :${cfg.user.name} :${cfg.group.name} -"
     ];
 
