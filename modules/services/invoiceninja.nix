@@ -135,7 +135,8 @@ in
             Restart = "always";
           };
           containerConfig = {
-            Image = "public.ecr.aws/docker/library/redis:alpine";
+            # renovate: docker-image
+            Image = "public.ecr.aws/docker/library/redis:8.8.0-alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005";
             Network = "app.network";
             Volume = [ "${rootDir}/redis:/data:rw" ];
             HealthCmd = "redis-cli ping";
@@ -157,7 +158,7 @@ in
           autoStart = true;
           containerConfig = {
             # renovate: docker-image
-            Image = "ghcr.io/ramblurr/invoiceninja-octane:5.12.69";
+            Image = "ghcr.io/ramblurr/invoiceninja-octane:5.12.69@sha256:81a45bcd9b1040b96ddf7ab1cbe27c7d5936c0aec4269d364b9737016e84cbfb";
             Exec = "app --port=${containerPort} --workers=2 --log-level=info";
             PublishPort = [ "${toString cfg.ports.http}:${containerPort}" ];
             ContainerName = "app";

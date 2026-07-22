@@ -84,7 +84,8 @@ in
     virtualisation.oci-containers.containers = {
       tubearchivist = {
         autoStart = true;
-        image = "docker.io/bbilly1/tubearchivist:v0.5.10";
+        # renovate: docker-image
+        image = "docker.io/bbilly1/tubearchivist:v0.5.10@sha256:dfe723cf008520e1758ecc3e59e6ea8761dd10d5bb099cd87289e80f5bd66567";
         ports = [ "127.0.0.1:${toString cfg.port}:8000" ];
         volumes = [
           "${mediaLocalPath}:/youtube"
@@ -112,7 +113,8 @@ in
 
       tubearchivist-es = {
         autoStart = true;
-        image = "docker.io/bbilly1/tubearchivist-es:8.19.0";
+        # renovate: docker-image
+        image = "docker.io/bbilly1/tubearchivist-es:8.19.0@sha256:9da63fb1973ec3d57daf6916be948eddd0d8a404cc8e447c938480c85fe2c554";
         environment = {
           ELASTIC_PASSWORD = "tubearchivist";
           ES_JAVA_OPTS = "-Xms1g -Xmx1g";
@@ -129,7 +131,8 @@ in
 
       tubearchivist-redis = {
         autoStart = true;
-        image = "docker.io/library/redis:8";
+        # renovate: docker-image
+        image = "docker.io/library/redis:8.8.0@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b";
         volumes = [ "${stateDir}/redis:/data" ];
         extraOptions = [ "--network=${networkName}" ];
       };

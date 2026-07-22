@@ -310,7 +310,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "ghcr.io/qdm12/gluetun:v3.41.1";
+            Image = "ghcr.io/qdm12/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab";
             ContainerName = "home-dl-gluetun";
             Network = "home-dl-torrent.network";
             AddCapability = [ "NET_ADMIN" ];
@@ -350,7 +350,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "lscr.io/linuxserver/overseerr:1.35.0";
+            Image = "lscr.io/linuxserver/overseerr:1.35.0@sha256:6108ed066d4a919c05251d9dab041c1e55e67ff7247e7b31be97b65ffcbaeeb1";
             ContainerName = "home-dl-overseerr";
             PublishPort = [ "127.0.0.1:${toString cfg.ports.overseerr}:5055" ];
             User = toString mediaUid;
@@ -379,7 +379,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "lscr.io/linuxserver/qbittorrent:libtorrentv1";
+            Image = "lscr.io/linuxserver/qbittorrent:5.2.3-libtorrentv1@sha256:1a4ebea9aaf5907a2eabc461a086a2989769c269d6b508ac07b7db9051c33c74";
             ContainerName = "home-dl-qbittorrent";
             Network = "home-dl-gluetun.container";
             User = toString mediaUid;

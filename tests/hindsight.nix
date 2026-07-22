@@ -414,12 +414,14 @@ pkgs.testers.runNixOSTest {
         }
         {
           assertion =
-            options.modules.services.hindsight.image.default == "ghcr.io/vectorize-io/hindsight:0.8.4";
+            options.modules.services.hindsight.image.default
+            == "ghcr.io/vectorize-io/hindsight:0.8.4@sha256:2c60f233eaba8f51db31adb920a560735aaf6f314e4b63c36c73159742dfa1a7";
           message = "The production Hindsight image must remain pinned.";
         }
         {
           assertion =
-            options.modules.services.hindsight.postgresImage.default == "docker.io/pgvector/pgvector:pg18";
+            options.modules.services.hindsight.postgresImage.default
+            == "docker.io/pgvector/pgvector:0.8.5-pg18@sha256:12a379b47ad65289572ea0756efc11b7c241a6662833e8af7038cd3b73d647e0";
           message = "The production pgvector image must remain pinned.";
         }
       ];
