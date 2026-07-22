@@ -77,6 +77,55 @@ let
     };
   };
 
+  # aioesphomeapi 45.3.1 requires zeroconf 0.149.16, which is newer than
+  # the version in stable nixpkgs.
+  zeroconf = python3Packages.zeroconf.overridePythonAttrs rec {
+    version = "0.149.16";
+
+    src = fetchFromGitHub {
+      owner = "jstasiak";
+      repo = "python-zeroconf";
+      rev = version;
+      hash = "sha256-l/F+Cz0HEtsgfQj01ayl+FQYoQbZVpMfRhNs27BqThI=";
+    };
+  };
+
+  # LVA 1.1.13 uses ESPHome's multi-channel audio API from aioesphomeapi 45.3.1.
+  # Pin it here because stable nixpkgs still carries the incompatible 44.x API.
+  aioesphomeapi = python3Packages.aioesphomeapi.overridePythonAttrs rec {
+    version = "45.3.1";
+
+    src = fetchFromGitHub {
+      owner = "esphome";
+      repo = "aioesphomeapi";
+      rev = "v${version}";
+      hash = "sha256-+8P6OL+4Y+qrKLYqXtjBL2ylcamsF24Ccn00Vt9ohD0=";
+    };
+
+    postPatch = ''
+      substituteInPlace pyproject.toml \
+        --replace-fail "setuptools>=82.0.1" setuptools \
+        --replace-fail "Cython>=3.2.5" Cython
+    '';
+
+    pythonRelaxDeps = [
+      "aiohappyeyeballs"
+      "cryptography"
+    ];
+
+    dependencies = [
+      python3Packages.aiohappyeyeballs
+      python3Packages.async-interrupt
+      python3Packages.chacha20poly1305-reuseable
+      python3Packages.cryptography
+      python3Packages.noiseprotocol
+      python3Packages.protobuf
+      python3Packages.tzdata
+      python3Packages.tzlocal
+      zeroconf
+    ];
+  };
+
   # Override pyopen-wakeword to disable tests on aarch64
   # The tests use TensorFlow Lite which crashes under QEMU emulation.
   # On native aarch64 the binary cache is used anyway.
@@ -87,54 +136,54 @@ let
 in
 python3Packages.buildPythonPackage rec {
   pname = "linux-voice-assistant";
-  version = "1.1.9";
+  version = "1.1.13";
   pyproject = true;
 
-  disabled = python3Packages.pythonOlder "3.9";
+  disabled = python3Packages.pythonOlder "3.11";
 
   src = fetchFromGitHub {
     owner = "OHF-Voice";
     repo = "linux-voice-assistant";
-    rev = "v1.1.9";
-    hash = "sha256-HKhvM92atSM1nOHrRcES3Un2zHIkC0np6UtT6NM3YuY=";
+    rev = "v${version}";
+    hash = "sha256-1M1INDXhJJvkDhZD96yMe7xsuxmHELs6sMQ9fdd18Q0=";
   };
 
-  build-system = [ python3Packages.setuptools ];
+  # Upstream output-only mode still imports SoundCard and opens a microphone.
+  patches = [ ./linux-voice-assistant-output-only.patch ];
 
-  # Relax version constraints for nixpkgs compatibility
-  # Add console script entry point
-  # Fix data directory paths
+  build-system = [
+    python3Packages.setuptools
+    python3Packages.setuptools-scm
+  ];
+
+  pythonRelaxDeps = [
+    "getmac"
+    "netifaces2"
+    "numpy"
+    "pymicro-wakeword"
+    "pyopen-wakeword"
+    "mpv"
+    "soundcard"
+    "websockets"
+    "webrtc-noise-gain"
+    "zeroconf"
+  ];
+
   postPatch = ''
-        sed -i 's/aioesphomeapi==42.7.0/aioesphomeapi/g' pyproject.toml
-        sed -i 's/pymicro-wakeword>=2,<3/pymicro_wakeword/g' pyproject.toml
-        sed -i 's/pyopen-wakeword>=1,<2/pyopen_wakeword/g' pyproject.toml
-        sed -i 's/python-mpv>=1,<2/mpv/g' pyproject.toml
-        sed -i 's/soundcard<1/soundcard/g' pyproject.toml
-        sed -i 's/zeroconf<1/zeroconf/g' pyproject.toml
-        sed -i 's/netifaces2==0.0.22/netifaces2/g' pyproject.toml
-        sed -i 's/getmac<1/getmac/g' pyproject.toml
-        # Include subpackages (e.g. linux_voice_assistant.player)
-        sed -i 's/include = \["linux_voice_assistant"\]/include = ["linux_voice_assistant", "linux_voice_assistant.*"]/' pyproject.toml
+    # Match the distribution name used by nixpkgs' Python MPV package.
+    substituteInPlace pyproject.toml \
+      --replace-fail '"python-mpv>=1,<2"' '"mpv"'
 
-        # Fix data directory path to use installed location for read-only data
-        # (wakewords, sounds). Writable data paths should be passed via CLI args.
-        substituteInPlace linux_voice_assistant/__main__.py \
-          --replace-fail '_REPO_DIR = _MODULE_DIR.parent' '_REPO_DIR = Path("@out@/share/linux-voice-assistant")'
+    # GitHub source archives do not contain the Git metadata setuptools-scm uses.
+    cat >> pyproject.toml << EOF
 
-        # Add sync wrapper for console script
-        cat >> linux_voice_assistant/__main__.py << 'EOF'
-
-    def _cli():
-        """Sync entry point for console script."""
-        asyncio.run(main())
+    [tool.setuptools_scm]
+    fallback_version = "${version}"
     EOF
 
-        # Add console script entry point
-        cat >> pyproject.toml << 'EOF'
-
-    [project.scripts]
-    linux-voice-assistant = "linux_voice_assistant.__main__:_cli"
-    EOF
+    # Read-only data is installed below; writable paths come from CLI arguments.
+    substituteInPlace linux_voice_assistant/__main__.py \
+      --replace-fail '_REPO_DIR = _MODULE_DIR.parent' '_REPO_DIR = Path("@out@/share/linux-voice-assistant")'
   '';
 
   postInstall = ''
@@ -149,25 +198,32 @@ python3Packages.buildPythonPackage rec {
   '';
 
   dependencies = [
-    python3Packages.aioesphomeapi
+    aioesphomeapi
     python3Packages.soundcard
     python3Packages.numpy
-    python3Packages.zeroconf
+    zeroconf
     pyopen-wakeword
     python3Packages.mpv
     pymicro-wakeword
     python3Packages.netifaces2
     python3Packages.getmac
     python3Packages.types-protobuf
+    python3Packages.websockets
+    python3Packages.webrtc-noise-gain
   ];
 
-  # Tests require network access
-  doCheck = false;
+  nativeCheckInputs = [
+    python3Packages.pytest-asyncio
+    python3Packages.pytestCheckHook
+  ];
+
+  # TensorFlow Lite crashes when these tests run under aarch64 QEMU emulation.
+  doCheck = !stdenv.hostPlatform.isAarch64;
 
   pythonImportsCheck = [ "linux_voice_assistant" ];
 
   meta = {
-    changelog = "https://github.com/OHF-Voice/linux-voice-assistant/releases/tag/v1.1.9";
+    changelog = "https://github.com/OHF-Voice/linux-voice-assistant/releases/tag/v${version}";
     description = "Linux voice assistant for Home Assistant using the ESPHome protocol";
     homepage = "https://github.com/OHF-Voice/linux-voice-assistant";
     license = lib.licenses.asl20;

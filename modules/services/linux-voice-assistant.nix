@@ -24,16 +24,7 @@ let
 
   finalPackage = cfg.package;
   pipewireSystemWide = config.services.pipewire.enable && config.services.pipewire.systemWide;
-  audioInputDevice =
-    if cfg.dummyAudioInput.enable then cfg.dummyAudioInput.deviceName else cfg.audioInputDevice;
-  #finalPackage = cfg.package.overridePythonAttrs (oldAttrs: {
-  #  dependencies =
-  #    oldAttrs.dependencies
-  #    # for audio enhancements like auto-gain, noise suppression
-  #    ++ cfg.package.optional-dependencies.webrtc
-  #    # vad is currently optional, because it is broken on aarch64-linux
-  #    ++ optionals cfg.vad.enable cfg.package.optional-dependencies.silerovad;
-  #});
+  pipewirePulseSystemWide = pipewireSystemWide && config.services.pipewire.pulse.enable;
 in
 
 {
@@ -95,6 +86,15 @@ in
       '';
     };
 
+    outputOnly = mkOption {
+      type = bool;
+      default = false;
+      description = ''
+        Run as an output-only satellite for announcements and media playback.
+        No microphone or audio capture device is used.
+      '';
+    };
+
     audioInputDevice = mkOption {
       type = nullOr str;
       default = null;
@@ -103,18 +103,6 @@ in
         Soundcard name for input device.
         Use `linux-voice-assistant --list-input-devices` to find available devices.
       '';
-    };
-
-    dummyAudioInput = {
-      enable = mkEnableOption "a silent virtual audio input for an announcement-only satellite";
-
-      deviceName = mkOption {
-        type = str;
-        default = "linux-voice-assistant-dummy-input";
-        description = ''
-          PipeWire node name for the silent virtual audio input.
-        '';
-      };
     };
 
     audioInputBlockSize = mkOption {
@@ -234,42 +222,16 @@ in
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = !cfg.dummyAudioInput.enable || cfg.audioInputDevice == null;
-        message = "services.linux-voice-assistant.dummyAudioInput conflicts with audioInputDevice.";
+        assertion = !cfg.outputOnly || cfg.audioInputDevice == null;
+        message = "services.linux-voice-assistant.outputOnly conflicts with audioInputDevice.";
       }
       {
-        assertion = !cfg.dummyAudioInput.enable || config.services.pipewire.enable;
-        message = "services.linux-voice-assistant.dummyAudioInput requires PipeWire.";
-      }
-      {
-        assertion = !cfg.dummyAudioInput.enable || config.services.pipewire.pulse.enable;
-        message = "services.linux-voice-assistant.dummyAudioInput requires services.pipewire.pulse.enable.";
-      }
-      {
-        assertion = !pipewireSystemWide || config.services.pipewire.pulse.enable;
-        message = "services.linux-voice-assistant with system-wide PipeWire requires services.pipewire.pulse.enable.";
+        assertion = cfg.outputOnly || !pipewireSystemWide || config.services.pipewire.pulse.enable;
+        message = "services.linux-voice-assistant with system-wide PipeWire requires services.pipewire.pulse.enable unless outputOnly is enabled.";
       }
     ];
 
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.port ];
-
-    services.pipewire.extraConfig.pipewire = mkIf cfg.dummyAudioInput.enable {
-      "99-linux-voice-assistant-dummy-input" = {
-        "context.objects" = [
-          {
-            factory = "adapter";
-            args = {
-              "factory.name" = "support.null-audio-sink";
-              "node.name" = cfg.dummyAudioInput.deviceName;
-              "node.description" = "Linux Voice Assistant Dummy Input";
-              "media.class" = "Audio/Source/Virtual";
-              "audio.position" = [ "MONO" ];
-              "monitor.passthrough" = true;
-            };
-          }
-        ];
-      };
-    };
 
     systemd.services."linux-voice-assistant" = {
       description = "Linux Voice Assistant";
@@ -279,9 +241,9 @@ in
       ]
       ++ optionals pipewireSystemWide [
         "pipewire.service"
-        "pipewire-pulse.service"
         "wireplumber.service"
-      ];
+      ]
+      ++ optional pipewirePulseSystemWide "pipewire-pulse.service";
       wants = [
         "network-online.target"
         "sound.target"
@@ -289,21 +251,26 @@ in
       ++ optionals pipewireSystemWide [
         "wireplumber.service"
       ];
-      requires = optionals pipewireSystemWide [
-        "pipewire.service"
-        "pipewire-pulse.service"
-      ];
+      requires =
+        optionals pipewireSystemWide [
+          "pipewire.service"
+        ]
+        ++ optional pipewirePulseSystemWide "pipewire-pulse.service";
       wantedBy = [
         "multi-user.target"
       ];
-      environment = mkIf pipewireSystemWide {
-        PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
-        PULSE_SERVER = "unix:/run/pulse/native";
-      };
-      path = with pkgs; [
-        alsa-utils
-        iproute2
-        which
+      environment = mkIf pipewireSystemWide (
+        {
+          PIPEWIRE_RUNTIME_DIR = "/run/pipewire";
+        }
+        // lib.optionalAttrs pipewirePulseSystemWide {
+          PULSE_SERVER = "unix:/run/pulse/native";
+        }
+      );
+      path = [
+        pkgs.alsa-utils
+        pkgs.iproute2
+        pkgs.which
       ];
       script =
         let
@@ -335,7 +302,8 @@ in
               "--preferences-file"
               preferencesFile
             ]
-            ++ optionalParam "--audio-input-device" audioInputDevice
+            ++ optional cfg.outputOnly "--output-only"
+            ++ optionalParam "--audio-input-device" cfg.audioInputDevice
             ++ optionalParam "--audio-input-block-size" cfg.audioInputBlockSize
             ++ optionalParam "--audio-output-device" cfg.audioOutputDevice
             ++ optionalParam "--wake-word-dir" cfg.wakeWordDir

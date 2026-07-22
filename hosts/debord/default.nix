@@ -27,21 +27,21 @@ in
 
   security.rtkit.enable = true;
 
-  environment.systemPackages = with pkgs; [
-    alsa-utils
-    pipewire
-    wireplumber
-    pulsemixer
-    jless
-    linux-voice-assistant-unstable
-    gptfdisk
-    parted
+  environment.systemPackages = [
+    pkgs.alsa-utils
+    pkgs.pipewire
+    pkgs.wireplumber
+    pkgs.pulsemixer
+    pkgs.jless
+    pkgs.linux-voice-assistant-unstable
+    pkgs.gptfdisk
+    pkgs.parted
   ];
   users.users.ramblurr.extraGroups = [ "pipewire" ];
   services.pipewire = {
     enable = true;
     alsa.enable = true;
-    pulse.enable = true;
+    pulse.enable = false;
     jack.enable = false;
     wireplumber.enable = true;
     audio.enable = true;
@@ -121,7 +121,7 @@ in
     group = "audio";
     name = "kitchen-announce-satellite";
     audioOutputDevice = "pipewire";
-    dummyAudioInput.enable = true;
+    outputOnly = true;
   };
   services.nad-api = {
     enable = true;
