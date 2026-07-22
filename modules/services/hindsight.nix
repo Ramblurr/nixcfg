@@ -6,21 +6,33 @@
 }:
 
 let
+  cerebrasBaseUrl = "https://api.cerebras.ai/v1";
   llmProfiles = {
     openai-gpt-5-mini = {
       provider = "openai";
       model = "gpt-5-mini";
       apiKeySecret = "hindsight/openai-api-key";
       codexOAuth = false;
-      extraEnvironment = [ ];
+      baseUrl = null;
+      maxConcurrent = null;
     };
 
-    "openai-codex-gpt-4.1-nano" = {
-      provider = "openai-codex";
+    "openai-gpt-4.1-nano" = {
+      provider = "openai";
       model = "gpt-4.1-nano";
+      apiKeySecret = "hindsight/openai-api-key";
+      codexOAuth = false;
+      baseUrl = null;
+      maxConcurrent = null;
+    };
+
+    "openai-codex-gpt-5.4-mini" = {
+      provider = "openai-codex";
+      model = "gpt-5.4-mini";
       apiKeySecret = null;
       codexOAuth = true;
-      extraEnvironment = [ ];
+      baseUrl = null;
+      maxConcurrent = null;
     };
 
     cerebras-gpt-oss-120b = {
@@ -28,14 +40,8 @@ let
       model = "gpt-oss-120b";
       apiKeySecret = "hindsight/cerebras-api-key";
       codexOAuth = false;
-      extraEnvironment = [
-        "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
-        "HINDSIGHT_API_RETAIN_LLM_MODEL=gpt-oss-120b"
-        "HINDSIGHT_API_REFLECT_LLM_MODEL=gpt-oss-120b"
-        "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
-        "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
-        "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
-      ];
+      baseUrl = cerebrasBaseUrl;
+      maxConcurrent = 2;
     };
 
     cerebras-gemma-4-31b = {
@@ -43,14 +49,8 @@ let
       model = "gemma-4-31b";
       apiKeySecret = "hindsight/cerebras-api-key";
       codexOAuth = false;
-      extraEnvironment = [
-        "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
-        "HINDSIGHT_API_RETAIN_LLM_MODEL=gemma-4-31b"
-        "HINDSIGHT_API_REFLECT_LLM_MODEL=gemma-4-31b"
-        "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
-        "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
-        "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
-      ];
+      baseUrl = cerebrasBaseUrl;
+      maxConcurrent = 2;
     };
 
     "gemini-3.1-flash-lite" = {
@@ -58,7 +58,8 @@ let
       model = "gemini-3.1-flash-lite";
       apiKeySecret = "hindsight/gemini-api-key";
       codexOAuth = false;
-      extraEnvironment = [ ];
+      baseUrl = null;
+      maxConcurrent = null;
     };
   };
 
@@ -105,25 +106,72 @@ let
   };
 
   cfg = config.modules.services.hindsight;
-  llmProfile = llmProfiles.${cfg.llm.profile};
+  retainLlmProfile = llmProfiles.${cfg.llm.retain.profile};
+  reflectLlmProfile = llmProfiles.${cfg.llm.reflect.profile};
   embeddingsProfile = embeddingsProfiles.${cfg.embeddings.profile};
-  usesCodexOAuth = llmProfile.codexOAuth || embeddingsProfile.codexOAuth;
+  usesCodexOAuth =
+    retainLlmProfile.codexOAuth || reflectLlmProfile.codexOAuth || embeddingsProfile.codexOAuth;
+  usesCerebras =
+    retainLlmProfile.baseUrl == cerebrasBaseUrl || reflectLlmProfile.baseUrl == cerebrasBaseUrl;
   dbEnvironmentFile = config.sops.templates."hindsight-db.env".path;
   appEnvironmentFile = config.sops.templates."hindsight-app.env".path;
   codexAuthDir = "${cfg.dataDir}/codex";
   codexContainerDir = "/var/lib/hindsight/codex";
   codexAuthFile = "${codexAuthDir}/auth.json";
-  requiredProviderSecrets = lib.unique (
-    lib.filter (secret: secret != null) [
-      llmProfile.apiKeySecret
-      embeddingsProfile.apiKeySecret
-    ]
-  );
+  providerSecretEnvironment =
+    lib.optionalAttrs (retainLlmProfile.apiKeySecret != null) {
+      HINDSIGHT_API_LLM_API_KEY = retainLlmProfile.apiKeySecret;
+      HINDSIGHT_API_RETAIN_LLM_API_KEY = retainLlmProfile.apiKeySecret;
+    }
+    // lib.optionalAttrs (reflectLlmProfile.apiKeySecret != null) {
+      HINDSIGHT_API_REFLECT_LLM_API_KEY = reflectLlmProfile.apiKeySecret;
+    }
+    // lib.optionalAttrs (embeddingsProfile.apiKeySecret != null) {
+      HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY = embeddingsProfile.apiKeySecret;
+    };
+  requiredProviderSecrets = lib.unique (builtins.attrValues providerSecretEnvironment);
+  providerEnvironment = [
+    "HINDSIGHT_API_LLM_PROVIDER=${retainLlmProfile.provider}"
+    "HINDSIGHT_API_LLM_MODEL=${retainLlmProfile.model}"
+    "HINDSIGHT_API_RETAIN_LLM_PROVIDER=${retainLlmProfile.provider}"
+    "HINDSIGHT_API_RETAIN_LLM_MODEL=${retainLlmProfile.model}"
+    "HINDSIGHT_API_REFLECT_LLM_PROVIDER=${reflectLlmProfile.provider}"
+    "HINDSIGHT_API_REFLECT_LLM_MODEL=${reflectLlmProfile.model}"
+  ]
+  ++ lib.optional (
+    retainLlmProfile.baseUrl != null
+  ) "HINDSIGHT_API_LLM_BASE_URL=${retainLlmProfile.baseUrl}"
+  ++ lib.optional (
+    retainLlmProfile.baseUrl != null
+  ) "HINDSIGHT_API_RETAIN_LLM_BASE_URL=${retainLlmProfile.baseUrl}"
+  ++ lib.optional (
+    reflectLlmProfile.baseUrl != null
+  ) "HINDSIGHT_API_REFLECT_LLM_BASE_URL=${reflectLlmProfile.baseUrl}"
+  ++ lib.optional (
+    retainLlmProfile.maxConcurrent != null
+  ) "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=${toString retainLlmProfile.maxConcurrent}"
+  ++ lib.optional (
+    reflectLlmProfile.maxConcurrent != null
+  ) "HINDSIGHT_API_REFLECT_LLM_MAX_CONCURRENT=${toString reflectLlmProfile.maxConcurrent}"
+  ++ lib.optional usesCerebras "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
+  ++ lib.optional (
+    retainLlmProfile.baseUrl == cerebrasBaseUrl
+  ) "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2";
   providerSecrets = lib.genAttrs requiredProviderSecrets (_: { });
   codexAuthCheck = pkgs.writeShellScript "hindsight-check-codex-auth" ''
     if ! ${pkgs.podman}/bin/podman unshare ${pkgs.coreutils}/bin/test -r ${lib.escapeShellArg codexAuthFile}; then
       echo "Hindsight Codex OAuth credentials are missing: ${codexAuthFile}" >&2
       echo "Copy a dedicated Codex auth.json to that path with mode 0600." >&2
+      exit 1
+    fi
+
+    if ! ${pkgs.podman}/bin/podman unshare ${pkgs.jq}/bin/jq -e '
+      .auth_mode == "chatgpt"
+      and (.tokens.access_token | type == "string")
+      and (.tokens.account_id | type == "string")
+    ' ${lib.escapeShellArg codexAuthFile} >/dev/null; then
+      echo "Hindsight Codex OAuth credentials have an incompatible schema: ${codexAuthFile}" >&2
+      echo 'Expected auth_mode="chatgpt" with access_token and account_id token fields.' >&2
       exit 1
     fi
   '';
@@ -195,10 +243,21 @@ in
       description = "PostgreSQL container image with pgvector installed.";
     };
 
-    llm.profile = lib.mkOption {
-      type = lib.types.enum (builtins.attrNames llmProfiles);
-      default = "openai-gpt-5-mini";
-      description = "Fixed provider and model profile for Hindsight LLM operations.";
+    llm = {
+      retain.profile = lib.mkOption {
+        type = lib.types.enum (builtins.attrNames llmProfiles);
+        default = "openai-gpt-5-mini";
+        description = ''
+          Fixed provider and model profile for retain operations. This profile
+          also supplies the global LLM fallback used by consolidation.
+        '';
+      };
+
+      reflect.profile = lib.mkOption {
+        type = lib.types.enum (builtins.attrNames llmProfiles);
+        default = "openai-gpt-5-mini";
+        description = "Fixed provider and model profile for reflect operations.";
+      };
     };
 
     embeddings.profile = lib.mkOption {
@@ -286,14 +345,9 @@ in
                 config.sops.placeholder."hindsight/postgres-password"
               }@hindsight-db:5432/hindsight"
             ]
-            ++
-              lib.optional (llmProfile.apiKeySecret != null)
-                "HINDSIGHT_API_LLM_API_KEY=${config.sops.placeholder.${llmProfile.apiKeySecret}}"
-            ++
-              lib.optional (embeddingsProfile.apiKeySecret != null)
-                "HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY=${
-                  config.sops.placeholder.${embeddingsProfile.apiKeySecret}
-                }"
+            ++ lib.mapAttrsToList (
+              environmentVariable: secret: "${environmentVariable}=${config.sops.placeholder.${secret}}"
+            ) providerSecretEnvironment
             ++ [
               "HINDSIGHT_API_TENANT_API_KEY=${config.sops.placeholder."hindsight/api-key"}"
               "HINDSIGHT_CP_DATAPLANE_API_KEY=${config.sops.placeholder."hindsight/api-key"}"
@@ -388,8 +442,6 @@ in
             EnvironmentFile = [ appEnvironmentFile ];
             Environment = [
               "HINDSIGHT_API_VECTOR_EXTENSION=pgvector"
-              "HINDSIGHT_API_LLM_PROVIDER=${llmProfile.provider}"
-              "HINDSIGHT_API_LLM_MODEL=${llmProfile.model}"
               "HINDSIGHT_API_EMBEDDINGS_PROVIDER=${embeddingsProfile.provider}"
               "${embeddingsProfile.modelEnvironment}=${embeddingsProfile.model}"
               "HINDSIGHT_API_WORKER_ID=${config.networking.hostName}"
@@ -398,7 +450,7 @@ in
               "HINDSIGHT_CP_DATAPLANE_API_URL=http://127.0.0.1:8888"
               "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension"
             ]
-            ++ llmProfile.extraEnvironment
+            ++ providerEnvironment
             ++ lib.optionals usesCodexOAuth [
               "CODEX_HOME=${codexContainerDir}"
             ];
