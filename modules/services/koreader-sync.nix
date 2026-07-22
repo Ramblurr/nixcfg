@@ -55,7 +55,7 @@ in
     virtualisation.oci-containers.containers.koreader-sync = {
       autoStart = false;
       # renovate: docker-image
-      image = "ghcr.io/ramblurr/kosync:0.1.0";
+      image = "ghcr.io/ramblurr/kosync:0.1.0@sha256:07bf51b5ee0cb41e6c84e9a2a136ef711c50b076bcd44be0244e0f42d643cd9f";
       ports = [ "127.0.0.1:${toString cfg.ports.http}:3000" ];
       volumes = [ "${stateDir}/kosync:/srv/data:rw" ];
       podman = {

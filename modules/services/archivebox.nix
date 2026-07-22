@@ -91,13 +91,11 @@ in
           '';
         };
         virtualisation.user.quadlet = {
-          autoUpdate.enable = true;
           containers =
             let
               sharedContainerConfig = {
                 # renovate: docker-image
-                image = "ghcr.io/archivebox/archivebox:dev";
-                autoUpdate = "registry";
+                image = "ghcr.io/archivebox/archivebox:0.9.35rc137@sha256:08ec7b1c59dc96d4678879ca5269a2baeef2e6d11265e53adc91df57cc46050f";
                 userns = "keep-id:uid=${toString cfg.user.uid},gid=${toString cfg.group.gid}";
                 environments = {
                   REVERSE_PROXY_USER_HEADER = "X-authentik-username";

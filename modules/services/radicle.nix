@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
@@ -125,47 +124,5 @@ in
       forwardAuth = true;
     };
 
-    home-manager.users.${cfg.user.name} =
-      { pkgs, ... }:
-      {
-        imports = [ inputs.quadlet-nix.homeManagerModules.default ];
-        home.stateVersion = "21.11";
-        home.homeDirectory = homeDir;
-        home.packages = [ pkgs.podman ];
-        systemd.user.startServices = "sd-switch";
-        virtualisation.user.quadlet = {
-          autoUpdate.enable = true;
-          containers = {
-            archivebox = {
-              autoStart = true;
-              unitConfig = {
-                RequiresMountsFor = [ dataDir ];
-              };
-              serviceConfig = {
-                RestartSec = "10";
-                Restart = "always";
-              };
-              containerConfig = {
-                # renovate: docker-image
-                image = "ghcr.io/archivebox/archivebox/archivebox:0.74";
-                autoUpdate = "registry";
-                userns = "keep-id";
-                exec = "server --quick-init 0.0.0.0:8000";
-                publishPorts = [ "127.0.0.1:${toString cfg.ports.http}:8000" ];
-                environments = {
-                  REVERSE_PROXY_USER_HEADER = "X-authentik-username";
-                  REVERSE_PROXY_WHITELIST = "127.0.0.1/24";
-                  PUBLIC_ADD_VIEW = "True";
-                  ALLOWED_HOSTS = "*";
-                  PUBLIC_INDEX = "False";
-                  PUBLIC_SNAPSHOTS = "False";
-                };
-                podmanArgs = [ ];
-                volumes = [ "${dataDir}:/data:rw" ];
-              };
-            };
-          };
-        };
-      };
   };
 }
