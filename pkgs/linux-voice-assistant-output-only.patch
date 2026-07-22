@@ -1,0 +1,53 @@
+--- a/linux_voice_assistant/__main__.py
++++ b/linux_voice_assistant/__main__.py
+@@ -15 +14,0 @@
+-import soundcard as sc
+@@ -244,0 +244,2 @@
++        import soundcard as sc
++
+@@ -317,10 +318,14 @@
+-    # Resolve microphone
+-    if args.audio_input_device is not None:
+-        try:
+-            args.audio_input_device = int(args.audio_input_device)
+-        except ValueError:
+-            pass
+-
+-        mic = sc.get_microphone(args.audio_input_device)
+-    else:
+-        mic = sc.default_microphone()
++    mic = None
++    if not args.output_only:
++        import soundcard as sc
++
++        # Resolve microphone
++        if args.audio_input_device is not None:
++            try:
++                args.audio_input_device = int(args.audio_input_device)
++            except ValueError:
++                pass
++
++            mic = sc.get_microphone(args.audio_input_device)
++        else:
++            mic = sc.default_microphone()
+@@ -526,6 +531,8 @@
+-    process_audio_thread = threading.Thread(
+-        target=process_audio,
+-        args=(state, mic, args.audio_input_block_size),
+-        daemon=True,
+-    )
+-    process_audio_thread.start()
++    process_audio_thread = None
++    if mic is not None:
++        process_audio_thread = threading.Thread(
++            target=process_audio,
++            args=(state, mic, args.audio_input_block_size),
++            daemon=True,
++        )
++        process_audio_thread.start()
+@@ -570,2 +577,3 @@
+-        state.audio_queue.put_nowait(None)
+-        process_audio_thread.join()
++        if process_audio_thread is not None:
++            state.audio_queue.put_nowait(None)
++            process_audio_thread.join()
