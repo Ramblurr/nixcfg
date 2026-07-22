@@ -37,13 +37,7 @@ in
         home.packages = [ pkgs.obs-cmd ];
         programs.obs-studio = {
           enable = true;
-          package =
-            if cfg.cudaSupport then
-              (pkgs.obs-studio.override {
-                cudaSupport = true;
-              })
-            else
-              pkgs.obs-studio;
+          package = if cfg.cudaSupport then pkgs.pkgsCuda.obs-studio else pkgs.obs-studio;
 
           # TODO: is this even needed? isn't it built in?
           plugins = with pkgs; [
