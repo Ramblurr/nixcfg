@@ -206,6 +206,21 @@ pkgs.testers.runNixOSTest {
           message = "Every Hindsight Quadlet object must run as the rootless service user.";
         }
         {
+          assertion =
+            config.users.users.hindsight.isNormalUser
+            && config.users.users.hindsight.autoSubUidGidRange
+            && config.users.users.hindsight.shell == pkgs.shadow;
+          message = "The non-login Hindsight user must receive subordinate IDs for rootless Podman.";
+        }
+        {
+          assertion =
+            database.unitConfig.StartLimitIntervalSec == 0
+            && database.serviceConfig.RestartMode == "direct"
+            && app.unitConfig.StartLimitIntervalSec == 0
+            && app.serviceConfig.RestartMode == "direct";
+          message = "Hindsight Quadlets must keep retrying transient image-pull and dependency failures.";
+        }
+        {
           assertion = lib.hasInfix "ConditionUser=3020" app.text;
           message = "The generated Hindsight Quadlet must be a UID-gated user unit.";
         }
@@ -371,6 +386,8 @@ pkgs.testers.runNixOSTest {
     machine.succeed(
         "test $(stat -c '%U:%G:%a' /run/secrets/rendered/hindsight-app.env) = hindsight:hindsight:400"
     )
+    machine.succeed("grep -Eq '^hindsight:[0-9]+:65536$' /etc/subuid")
+    machine.succeed("grep -Eq '^hindsight:[0-9]+:65536$' /etc/subgid")
     machine.wait_for_unit("hindsight-db.service", user=user, timeout=120)
     machine.wait_for_unit("hindsight.service", user=user, timeout=120)
     machine.wait_for_open_port(8888)
