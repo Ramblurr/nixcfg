@@ -16,42 +16,6 @@ let
     mistral-vibe
     vix
     ;
-  onnxruntime =
-    if cfg.cudaSupport then pkgs.onnxruntime.override { cudaSupport = true; } else pkgs.onnxruntime;
-  # llm-agents packages only Voxtype's default Whisper backend. Match
-  # upstream's ONNX package for Parakeet and Cohere support, enabling CUDA
-  # for Parakeet on hosts where modules.dev.llms.cudaSupport is set.
-  voxtype = llm-agents.voxtype.overrideAttrs (oldAttrs: {
-    cargoBuildFeatures =
-      (oldAttrs.cargoBuildFeatures or [ ])
-      ++ [
-        "parakeet-load-dynamic"
-        "cohere"
-      ]
-      ++ lib.optionals cfg.cudaSupport [
-        "parakeet-cuda"
-      ];
-    nativeBuildInputs =
-      (oldAttrs.nativeBuildInputs or [ ])
-      ++ lib.optionals cfg.cudaSupport [
-        pkgs.cudaPackages.cuda_nvcc
-      ];
-    buildInputs =
-      (oldAttrs.buildInputs or [ ])
-      ++ [ onnxruntime ]
-      ++ lib.optionals cfg.cudaSupport [
-        pkgs.cudaPackages.cudatoolkit
-        pkgs.cudaPackages.cudnn
-      ];
-    env = (oldAttrs.env or { }) // {
-      ORT_LIB_LOCATION = "${onnxruntime}/lib";
-    };
-    postFixup = (oldAttrs.postFixup or "") + ''
-      wrapProgram $out/bin/voxtype \
-        --set ORT_DYLIB_PATH "${onnxruntime}/lib/libonnxruntime.so" \
-        --prefix LD_LIBRARY_PATH : "${onnxruntime}/lib"
-    '';
-  });
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
     export PI_CONFIG_DIR="$HOME/.config/pi"
@@ -90,8 +54,6 @@ let
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
   );
-  #whisper-cpp =
-  #  if cfg.cudaSupport then (pkgs.whisper-cpp.override { cudaSupport = true; }) else pkgs.whisper-cpp;
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
       echo "usage: $(basename "$0") URL [FILENAME]"
@@ -103,9 +65,6 @@ in
 {
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
-    cudaSupport = lib.mkEnableOption {
-      description = "Enable CUDA support";
-    };
     ollama.enable = lib.mkEnableOption "";
   };
   config = lib.mkIf cfg.enable {
@@ -131,27 +90,6 @@ in
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
         PLANNOTATOR_SHARE = "disabled";
-      };
-      systemd.user.services.voxtype = lib.mkForce {
-        Unit = {
-          Description = "Voxtype push-to-talk voice-to-text daemon";
-          Documentation = "https://voxtype.io";
-          After = [
-            "graphical-session.target"
-            "pipewire.service"
-            "pipewire-pulse.service"
-          ];
-          PartOf = [ "graphical-session.target" ];
-        };
-        Service = {
-          Type = "simple";
-          ExecStart = "${voxtype}/bin/voxtype daemon";
-          Restart = "on-failure";
-          RestartSec = 5;
-        };
-        Install = {
-          WantedBy = [ "graphical-session.target" ];
-        };
       };
       home.packages =
         with pkgs;
@@ -184,7 +122,6 @@ in
           llm-agents.codex
           llm-agents.jscpd
           llm-agents.plannotator
-          voxtype
           hindsight-cli-wrapper
           ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
@@ -196,7 +133,6 @@ in
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
-          #whisper-cpp
         ];
     };
   };

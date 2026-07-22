@@ -187,6 +187,11 @@ in
         thunderbird.autostart.enable = true;
         thunderbird.work.enable = true;
         thunderbird.workProxy = "${lanVpnGateway}:1081";
+        voxtype = {
+          enable = true;
+          autostart.enable = true;
+          cudaSupport = true;
+        };
         #handy.enable = true;
         #handy.autostart.enable = true;
         #waydroid.enable = true;
@@ -265,7 +270,6 @@ in
       random.enable = true;
       llms.enable = true;
       llms.ollama.enable = true;
-      llms.cudaSupport = true;
     };
 
     editors = {
