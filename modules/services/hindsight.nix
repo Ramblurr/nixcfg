@@ -232,14 +232,14 @@ in
     image = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "ghcr.io/vectorize-io/hindsight:0.8.4";
+      default = "ghcr.io/vectorize-io/hindsight:0.8.4@sha256:2c60f233eaba8f51db31adb920a560735aaf6f314e4b63c36c73159742dfa1a7";
       description = "Hindsight standalone container image.";
     };
 
     postgresImage = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "docker.io/pgvector/pgvector:pg18";
+      default = "docker.io/pgvector/pgvector:0.8.5-pg18@sha256:12a379b47ad65289572ea0756efc11b7c241a6662833e8af7038cd3b73d647e0";
       description = "PostgreSQL container image with pgvector installed.";
     };
 
