@@ -16,21 +16,40 @@ let
     mistral-vibe
     vix
     ;
+  onnxruntime =
+    if cfg.cudaSupport then pkgs.onnxruntime.override { cudaSupport = true; } else pkgs.onnxruntime;
   # llm-agents packages only Voxtype's default Whisper backend. Match
-  # upstream's CPU ONNX package for Parakeet and Cohere support.
+  # upstream's ONNX package for Parakeet and Cohere support, enabling CUDA
+  # for Parakeet on hosts where modules.dev.llms.cudaSupport is set.
   voxtype = llm-agents.voxtype.overrideAttrs (oldAttrs: {
-    cargoBuildFeatures = (oldAttrs.cargoBuildFeatures or [ ]) ++ [
-      "parakeet-load-dynamic"
-      "cohere"
-    ];
-    buildInputs = (oldAttrs.buildInputs or [ ]) ++ [ pkgs.onnxruntime ];
+    cargoBuildFeatures =
+      (oldAttrs.cargoBuildFeatures or [ ])
+      ++ [
+        "parakeet-load-dynamic"
+        "cohere"
+      ]
+      ++ lib.optionals cfg.cudaSupport [
+        "parakeet-cuda"
+      ];
+    nativeBuildInputs =
+      (oldAttrs.nativeBuildInputs or [ ])
+      ++ lib.optionals cfg.cudaSupport [
+        pkgs.cudaPackages.cuda_nvcc
+      ];
+    buildInputs =
+      (oldAttrs.buildInputs or [ ])
+      ++ [ onnxruntime ]
+      ++ lib.optionals cfg.cudaSupport [
+        pkgs.cudaPackages.cudatoolkit
+        pkgs.cudaPackages.cudnn
+      ];
     env = (oldAttrs.env or { }) // {
-      ORT_LIB_LOCATION = "${pkgs.onnxruntime}/lib";
+      ORT_LIB_LOCATION = "${onnxruntime}/lib";
     };
     postFixup = (oldAttrs.postFixup or "") + ''
       wrapProgram $out/bin/voxtype \
-        --set ORT_DYLIB_PATH "${pkgs.onnxruntime}/lib/libonnxruntime.so" \
-        --prefix LD_LIBRARY_PATH : "${pkgs.onnxruntime}/lib"
+        --set ORT_DYLIB_PATH "${onnxruntime}/lib/libonnxruntime.so" \
+        --prefix LD_LIBRARY_PATH : "${onnxruntime}/lib"
     '';
   });
   wrapWithLLMKeys = cmd: removeVars: ''
