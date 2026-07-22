@@ -54,8 +54,8 @@ in
   };
   modules.services.hindsight = {
     llm = {
-      retain.profile = "openai-gpt-4.1-nano";
-      reflect.profile = "cerebras-gpt-oss-120b";
+      retain.profile = "openai-codex-gpt-5.4-mini";
+      reflect.profile = "openai-codex-gpt-5.4-mini";
     };
     embeddings.profile = "local-bge-small-en-v1.5";
   };
