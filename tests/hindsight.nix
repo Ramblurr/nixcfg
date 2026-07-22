@@ -81,6 +81,58 @@ let
       ];
     };
   };
+
+  profileConfig =
+    {
+      llmProfile ? "openai-gpt-5-mini",
+      embeddingsProfile ? "openai-small",
+    }:
+    (inputs.nixpkgs.lib.nixosSystem {
+      system = pkgs.stdenv.hostPlatform.system;
+      modules = [
+        inputs.impermanence.nixosModules.impermanence
+        inputs.quadlet-nix2.nixosModules.default
+        inputs.sops-nix.nixosModules.sops
+        ../modules/services/ingress.nix
+        ../modules/services/hindsight.nix
+        {
+          networking.hostName = "debord";
+          system.stateVersion = "26.05";
+
+          fileSystems."/persist" = {
+            device = "tmpfs";
+            fsType = "tmpfs";
+            neededForBoot = true;
+          };
+
+          modules.services.hindsight = {
+            enable = true;
+            domain = "hindsight.socozy.casa";
+            acmeHost = "socozy.casa";
+            llm.profile = llmProfile;
+            embeddings.profile = embeddingsProfile;
+          };
+
+          sops = {
+            defaultSopsFile = testSecrets;
+            age.keyFile = "/etc/sops/age/keys.txt";
+          };
+        }
+      ];
+    }).config;
+
+  cerebrasGptConfig = profileConfig {
+    llmProfile = "cerebras-gpt-oss-120b";
+    embeddingsProfile = "openai-large";
+  };
+  cerebrasGemmaCodexConfig = profileConfig {
+    llmProfile = "cerebras-gemma-4-31b";
+    embeddingsProfile = "openai-codex-small";
+  };
+  geminiCodexConfig = profileConfig {
+    llmProfile = "gemini-3.1-flash-lite";
+    embeddingsProfile = "openai-codex-large";
+  };
 in
 pkgs.testers.runNixOSTest {
   name = "hindsight-rootless";
@@ -100,6 +152,9 @@ pkgs.testers.runNixOSTest {
       ingress = config.modules.services.ingress.virtualHosts."hindsight.socozy.casa";
       appTemplate = config.sops.templates."hindsight-app.env";
       dbTemplate = config.sops.templates."hindsight-db.env";
+      cerebrasGptApp = cerebrasGptConfig.virtualisation.quadlet.containers.hindsight;
+      cerebrasGemmaCodexApp = cerebrasGemmaCodexConfig.virtualisation.quadlet.containers.hindsight;
+      geminiCodexApp = geminiCodexConfig.virtualisation.quadlet.containers.hindsight;
     in
     {
       imports = [
@@ -179,6 +234,91 @@ pkgs.testers.runNixOSTest {
         }
         {
           assertion =
+            options.modules.services.hindsight.llm.profile.default == "openai-gpt-5-mini"
+            && options.modules.services.hindsight.embeddings.profile.default == "openai-small"
+            && lib.elem "HINDSIGHT_API_LLM_PROVIDER=openai" app.containerConfig.Environment
+            && lib.elem "HINDSIGHT_API_LLM_MODEL=gpt-5-mini" app.containerConfig.Environment
+            && lib.elem "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai" app.containerConfig.Environment
+            && lib.elem "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-small" app.containerConfig.Environment;
+          message = "The default Hindsight profiles must use OpenAI gpt-5-mini and small embeddings.";
+        }
+        {
+          assertion =
+            builtins.hasAttr "hindsight/openai-api-key" config.sops.secrets
+            &&
+              builtins.length (
+                lib.filter (name: name == "hindsight/openai-api-key") (builtins.attrNames config.sops.secrets)
+              ) == 1
+            && lib.hasInfix "HINDSIGHT_API_LLM_API_KEY=" appTemplate.content
+            && lib.hasInfix "HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY=" appTemplate.content;
+          message = "The default profiles must share one OpenAI SOPS secret.";
+        }
+        {
+          assertion = lib.all (entry: lib.elem entry cerebrasGptApp.containerConfig.Environment) [
+            "HINDSIGHT_API_LLM_PROVIDER=openai"
+            "HINDSIGHT_API_LLM_MODEL=gpt-oss-120b"
+            "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
+            "HINDSIGHT_API_RETAIN_LLM_MODEL=gpt-oss-120b"
+            "HINDSIGHT_API_REFLECT_LLM_MODEL=gpt-oss-120b"
+            "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
+            "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
+            "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
+            "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai"
+            "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-large"
+          ];
+          message = "The Cerebras GPT-OSS and OpenAI large profiles must map to their upstream settings.";
+        }
+        {
+          assertion =
+            builtins.hasAttr "hindsight/cerebras-api-key" cerebrasGptConfig.sops.secrets
+            && builtins.hasAttr "hindsight/openai-api-key" cerebrasGptConfig.sops.secrets;
+          message = "Cerebras LLM with OpenAI embeddings must request both provider keys.";
+        }
+        {
+          assertion =
+            lib.all (entry: lib.elem entry cerebrasGemmaCodexApp.containerConfig.Environment) [
+              "HINDSIGHT_API_LLM_PROVIDER=openai"
+              "HINDSIGHT_API_LLM_MODEL=gemma-4-31b"
+              "HINDSIGHT_API_LLM_BASE_URL=https://api.cerebras.ai/v1"
+              "HINDSIGHT_API_RETAIN_LLM_MODEL=gemma-4-31b"
+              "HINDSIGHT_API_REFLECT_LLM_MODEL=gemma-4-31b"
+              "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai-codex"
+              "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-small"
+              "CODEX_HOME=/var/lib/hindsight/codex"
+            ]
+            &&
+              cerebrasGemmaCodexApp.containerConfig.Volume == [
+                "/var/lib/hindsight/codex:/var/lib/hindsight/codex:U"
+              ]
+            &&
+              builtins.length cerebrasGemmaCodexApp.serviceConfig.ExecStartPre
+              == builtins.length app.serviceConfig.ExecStartPre + 1
+            && builtins.hasAttr "hindsight/cerebras-api-key" cerebrasGemmaCodexConfig.sops.secrets
+            && !(builtins.hasAttr "hindsight/openai-api-key" cerebrasGemmaCodexConfig.sops.secrets)
+            && !(lib.hasInfix "HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY="
+              cerebrasGemmaCodexConfig.sops.templates."hindsight-app.env".content
+            );
+          message = "The Cerebras Gemma and Codex small profiles must use dedicated writable OAuth state without an embeddings API key.";
+        }
+        {
+          assertion =
+            lib.all (entry: lib.elem entry geminiCodexApp.containerConfig.Environment) [
+              "HINDSIGHT_API_LLM_PROVIDER=gemini"
+              "HINDSIGHT_API_LLM_MODEL=gemini-3.1-flash-lite"
+              "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai-codex"
+              "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-large"
+              "CODEX_HOME=/var/lib/hindsight/codex"
+            ]
+            && builtins.hasAttr "hindsight/gemini-api-key" geminiCodexConfig.sops.secrets
+            && !(builtins.hasAttr "hindsight/openai-api-key" geminiCodexConfig.sops.secrets);
+          message = "The Gemini and Codex large profiles must select the requested models and Gemini key.";
+        }
+        {
+          assertion = lib.elem "d /var/lib/hindsight/codex 0700 :hindsight :hindsight -" config.systemd.tmpfiles.rules;
+          message = "The Codex credential directory must preserve Podman's remapped ownership on later activations.";
+        }
+        {
+          assertion =
             lib.hasInfix "HINDSIGHT_API_TENANT_API_KEY=" appTemplate.content
             && lib.hasInfix "HINDSIGHT_CP_DATAPLANE_API_KEY=" appTemplate.content
             && lib.hasInfix "HINDSIGHT_CP_ACCESS_KEY=" appTemplate.content;
@@ -249,6 +389,9 @@ pkgs.testers.runNixOSTest {
     for expected in [
         "HINDSIGHT_API_LLM_PROVIDER=openai",
         "HINDSIGHT_API_LLM_MODEL=gpt-5-mini",
+        "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai",
+        "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-small",
+        "HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY=test-openai-key",
         "HINDSIGHT_API_VECTOR_EXTENSION=pgvector",
         "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension",
         "HINDSIGHT_API_TENANT_API_KEY=test-api-key",
