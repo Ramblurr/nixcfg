@@ -53,7 +53,10 @@ in
     apps.hindsight.enable = true;
   };
   modules.services.hindsight = {
-    llm.profile = "openai-codex-gpt-4.1-nano";
+    llm = {
+      retain.profile = "openai-gpt-4.1-nano";
+      reflect.profile = "cerebras-gpt-oss-120b";
+    };
     embeddings.profile = "local-bge-small-en-v1.5";
   };
   home.nix-lan-cache.enable = true;
