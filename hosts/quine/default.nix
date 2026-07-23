@@ -230,6 +230,10 @@ in
         listenAddress = "10.9.4.3";
         listenInterface = "prim";
         allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
+        maxConcurrentRequests = 512;
+        maxBatchRequests = 128;
+        maxBatchTokens = 32768;
+        maxClientBatchSize = 512;
       };
       nomad.enable = false;
       microsocks.enable = false;
