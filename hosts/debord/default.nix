@@ -60,7 +60,8 @@ in
   modules.services.hindsight = {
     llm = {
       retain.profile = "openai-codex-gpt-5.4-mini";
-      consolidation.profile = "cerebras-gpt-oss-120b";
+      consolidation.profile = "openai-codex-gpt-5.4-mini";
+      #consolidation.profile = "cerebras-gpt-oss-120b";
       reflect.profile = "openai-codex-gpt-5.4-mini";
     };
     embeddings.profile = "local-bge-small-en-v1.5";
