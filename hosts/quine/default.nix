@@ -225,6 +225,12 @@ in
       docker.enable = true;
       docker.enableOnBoot = false;
       podman.enable = true;
+      text-embeddings-inference = {
+        enable = true;
+        listenAddress = builtins.head config.site.net.svc.hosts4.quine;
+        listenInterface = "svc";
+        allowedIPv4Ranges = [ config.site.net.svc.subnet4 ];
+      };
       nomad.enable = false;
       microsocks.enable = false;
       printing.enable = true;

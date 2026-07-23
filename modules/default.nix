@@ -119,6 +119,7 @@
     ./services/paperless.nix
     ./services/plex.nix
     ./services/podman.nix
+    ./services/text-embeddings-inference.nix
     ./services/postgresql.nix
     ./services/printing.nix
     ./services/roon-server.nix
