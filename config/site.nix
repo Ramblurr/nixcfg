@@ -70,6 +70,7 @@ in
       debord = [ "10.9.4.21" ];
       dewey = [ "10.9.4.17" ];
       mali = [ "10.9.4.10" ];
+      #quine = [ "10.9.4.3" ]; uses dhcp
     };
     hosts6 = { };
     #hosts6.main = {
