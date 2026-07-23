@@ -18,6 +18,20 @@ let
     "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
     "HINDSIGHT_API_WORKER_MAX_SLOTS=4"
   ];
+  debordWorkloadEnvironment = {
+    HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "2";
+    HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "2";
+    HINDSIGHT_API_RETAIN_BATCH_ENABLED = "true";
+    HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT = "2";
+    HINDSIGHT_API_WORKER_MAX_SLOTS = "4";
+  };
+  expectedDebordWorkloadEnvironment = [
+    "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
+    "HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM=2"
+    "HINDSIGHT_API_RETAIN_BATCH_ENABLED=true"
+    "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
+    "HINDSIGHT_API_WORKER_MAX_SLOTS=4"
+  ];
   testHindsightServer = pkgs.writeShellApplication {
     name = "hindsight-test-server";
     runtimeInputs = [ pkgs.busybox ];
@@ -104,8 +118,10 @@ let
   profileConfig =
     {
       retainLlmProfile ? "openai-gpt-5-mini",
+      consolidationLlmProfile ? null,
       reflectLlmProfile ? "openai-gpt-5-mini",
       embeddingsProfile ? "openai-small",
+      extraEnvironment ? { },
     }:
     (inputs.nixpkgs.lib.nixosSystem {
       system = pkgs.stdenv.hostPlatform.system;
@@ -133,8 +149,12 @@ let
             llm = {
               retain.profile = retainLlmProfile;
               reflect.profile = reflectLlmProfile;
+            }
+            // inputs.nixpkgs.lib.optionalAttrs (consolidationLlmProfile != null) {
+              consolidation.profile = consolidationLlmProfile;
             };
             embeddings.profile = embeddingsProfile;
+            inherit extraEnvironment;
           };
 
           sops = {
@@ -160,6 +180,19 @@ let
     reflectLlmProfile = "gemini-3.1-flash-lite";
     embeddingsProfile = "openai-large";
   };
+  nanoCodexConfig = profileConfig {
+    retainLlmProfile = "openai-gpt-4.1-nano";
+    consolidationLlmProfile = "openai-codex-gpt-5.4-mini";
+    reflectLlmProfile = "openai-codex-gpt-5.4-mini";
+    embeddingsProfile = "local-bge-small-en-v1.5";
+    extraEnvironment = debordWorkloadEnvironment;
+  };
+  cerebrasConsolidationConfig = profileConfig {
+    retainLlmProfile = "openai-gpt-4.1-nano";
+    consolidationLlmProfile = "cerebras-gemma-4-31b";
+    reflectLlmProfile = "openai-codex-gpt-5.4-mini";
+    embeddingsProfile = "openai-large";
+  };
 in
 pkgs.testers.runNixOSTest {
   name = "hindsight-rootless";
@@ -183,6 +216,10 @@ pkgs.testers.runNixOSTest {
       openaiCerebrasApp = openaiCerebrasConfig.virtualisation.quadlet.containers.hindsight;
       cerebrasCodexApp = cerebrasCodexConfig.virtualisation.quadlet.containers.hindsight;
       codexGeminiApp = codexGeminiConfig.virtualisation.quadlet.containers.hindsight;
+      nanoCodexApp = nanoCodexConfig.virtualisation.quadlet.containers.hindsight;
+      nanoCodexTemplate = nanoCodexConfig.sops.templates."hindsight-app.env";
+      cerebrasConsolidationApp = cerebrasConsolidationConfig.virtualisation.quadlet.containers.hindsight;
+      cerebrasConsolidationTemplate = cerebrasConsolidationConfig.sops.templates."hindsight-app.env";
     in
     {
       imports = [
@@ -296,11 +333,13 @@ pkgs.testers.runNixOSTest {
             && lib.elem "HINDSIGHT_API_LLM_MODEL=gpt-5-mini" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_RETAIN_LLM_PROVIDER=openai" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_RETAIN_LLM_MODEL=gpt-5-mini" app.containerConfig.Environment
+            && lib.elem "HINDSIGHT_API_CONSOLIDATION_LLM_PROVIDER=openai" app.containerConfig.Environment
+            && lib.elem "HINDSIGHT_API_CONSOLIDATION_LLM_MODEL=gpt-5-mini" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_REFLECT_LLM_PROVIDER=openai" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_REFLECT_LLM_MODEL=gpt-5-mini" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-small" app.containerConfig.Environment;
-          message = "Explicit retain, reflect, and embeddings profiles must map to their provider settings.";
+          message = "Explicit retain, consolidation, reflect, and embeddings profiles must map to their provider settings.";
         }
         {
           assertion = lib.all (
@@ -317,6 +356,7 @@ pkgs.testers.runNixOSTest {
               ) == 1
             && lib.hasInfix "HINDSIGHT_API_LLM_API_KEY=" appTemplate.content
             && lib.hasInfix "HINDSIGHT_API_RETAIN_LLM_API_KEY=" appTemplate.content
+            && lib.hasInfix "HINDSIGHT_API_CONSOLIDATION_LLM_API_KEY=" appTemplate.content
             && lib.hasInfix "HINDSIGHT_API_REFLECT_LLM_API_KEY=" appTemplate.content
             && lib.hasInfix "HINDSIGHT_API_EMBEDDINGS_OPENAI_API_KEY=" appTemplate.content;
           message = "Profiles using one provider must share one declared SOPS secret.";
@@ -406,6 +446,43 @@ pkgs.testers.runNixOSTest {
               codexGeminiConfig.sops.templates."hindsight-app.env".content
             );
           message = "The Codex gpt-5.4-mini retain profile must coexist with independent reflect and embeddings profiles.";
+        }
+        {
+          assertion =
+            lib.all (entry: lib.elem entry nanoCodexApp.containerConfig.Environment) (
+              [
+                "HINDSIGHT_API_LLM_PROVIDER=openai"
+                "HINDSIGHT_API_LLM_MODEL=gpt-4.1-nano"
+                "HINDSIGHT_API_RETAIN_LLM_PROVIDER=openai"
+                "HINDSIGHT_API_RETAIN_LLM_MODEL=gpt-4.1-nano"
+                "HINDSIGHT_API_CONSOLIDATION_LLM_PROVIDER=openai-codex"
+                "HINDSIGHT_API_CONSOLIDATION_LLM_MODEL=gpt-5.4-mini"
+                "HINDSIGHT_API_REFLECT_LLM_PROVIDER=openai-codex"
+                "HINDSIGHT_API_REFLECT_LLM_MODEL=gpt-5.4-mini"
+                "CODEX_HOME=/var/lib/hindsight/codex"
+              ]
+              ++ expectedDebordWorkloadEnvironment
+            )
+            && !(lib.any (lib.hasInfix "cerebras.ai") nanoCodexApp.containerConfig.Environment)
+            && builtins.hasAttr "hindsight/openai-api-key" nanoCodexConfig.sops.secrets
+            && lib.hasInfix "HINDSIGHT_API_LLM_API_KEY=" nanoCodexTemplate.content
+            && lib.hasInfix "HINDSIGHT_API_RETAIN_LLM_API_KEY=" nanoCodexTemplate.content
+            && !(lib.hasInfix "HINDSIGHT_API_CONSOLIDATION_LLM_API_KEY=" nanoCodexTemplate.content)
+            && !(lib.hasInfix "HINDSIGHT_API_REFLECT_LLM_API_KEY=" nanoCodexTemplate.content);
+          message = "Retain must support OpenAI Batch API credentials while consolidation and reflect use Codex OAuth.";
+        }
+        {
+          assertion =
+            lib.all (entry: lib.elem entry cerebrasConsolidationApp.containerConfig.Environment) [
+              "HINDSIGHT_API_CONSOLIDATION_LLM_PROVIDER=openai"
+              "HINDSIGHT_API_CONSOLIDATION_LLM_MODEL=gemma-4-31b"
+              "HINDSIGHT_API_CONSOLIDATION_LLM_BASE_URL=https://api.cerebras.ai/v1"
+              "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2"
+            ]
+            && builtins.hasAttr "hindsight/openai-api-key" cerebrasConsolidationConfig.sops.secrets
+            && builtins.hasAttr "hindsight/cerebras-api-key" cerebrasConsolidationConfig.sops.secrets
+            && lib.hasInfix "HINDSIGHT_API_CONSOLIDATION_LLM_API_KEY=" cerebrasConsolidationTemplate.content;
+          message = "A distinct consolidation profile must render its provider, model, base URL, concurrency, and secret.";
         }
         {
           assertion =

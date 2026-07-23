@@ -56,7 +56,8 @@ in
   };
   modules.services.hindsight = {
     llm = {
-      retain.profile = "openai-codex-gpt-5.4-mini";
+      retain.profile = "openai-gpt-4.1-nano";
+      consolidation.profile = "openai-codex-gpt-5.4-mini";
       reflect.profile = "openai-codex-gpt-5.4-mini";
     };
     embeddings.profile = "local-bge-small-en-v1.5";
@@ -75,8 +76,9 @@ in
       HINDSIGHT_API_RERANKER_LOCAL_MAX_CONCURRENT = "1";
 
       # Workload controls.
-      HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
-      HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
+      HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "2";
+      HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "2";
+      HINDSIGHT_API_RETAIN_BATCH_ENABLED = "true";
       HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT = "2";
       HINDSIGHT_API_WORKER_MAX_SLOTS = "4";
     };
