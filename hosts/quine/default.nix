@@ -227,9 +227,9 @@ in
       podman.enable = true;
       text-embeddings-inference = {
         enable = true;
-        listenAddress = builtins.head config.site.net.svc.hosts4.quine;
-        listenInterface = "svc";
-        allowedIPv4Ranges = [ config.site.net.svc.subnet4 ];
+        listenAddress = "10.9.4.3";
+        listenInterface = "prim";
+        allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
       };
       nomad.enable = false;
       microsocks.enable = false;
