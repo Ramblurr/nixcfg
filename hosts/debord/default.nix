@@ -60,6 +60,15 @@ in
       reflect.profile = "openai-codex-gpt-5.4-mini";
     };
     embeddings.profile = "local-bge-small-en-v1.5";
+    # Temporary CPU-only profile to limit contention between local Hindsight jobs.
+    extraEnvironment = {
+      HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
+      HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
+      HINDSIGHT_API_RERANKER_LOCAL_BUCKET_BATCHING = "true";
+      HINDSIGHT_API_RERANKER_LOCAL_MAX_CONCURRENT = "1";
+      HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT = "2";
+      HINDSIGHT_API_WORKER_MAX_SLOTS = "4";
+    };
   };
   home.nix-lan-cache.enable = true;
   myhm = _: {
