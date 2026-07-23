@@ -62,10 +62,21 @@ in
     embeddings.profile = "local-bge-small-en-v1.5";
     # Temporary CPU-only profile to limit contention between local Hindsight jobs.
     extraEnvironment = {
-      HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
-      HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
+      # Active GPU reranker.
+      HINDSIGHT_API_RERANKER_PROVIDER = "tei";
+      HINDSIGHT_API_RERANKER_TEI_URL = "http://10.9.4.3:8082";
+      HINDSIGHT_API_RERANKER_TEI_BATCH_SIZE = "128";
+      HINDSIGHT_API_RERANKER_TEI_MAX_CONCURRENT = "4";
+      HINDSIGHT_API_RERANKER_TEI_HTTP_TIMEOUT = "5";
+      HINDSIGHT_API_RERANKER_MAX_CANDIDATES = "1000";
+
+      # Used only when RERANKER_PROVIDER is changed back to local.
       HINDSIGHT_API_RERANKER_LOCAL_BUCKET_BATCHING = "true";
       HINDSIGHT_API_RERANKER_LOCAL_MAX_CONCURRENT = "1";
+
+      # Workload controls.
+      HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
+      HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
       HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT = "2";
       HINDSIGHT_API_WORKER_MAX_SLOTS = "4";
     };
