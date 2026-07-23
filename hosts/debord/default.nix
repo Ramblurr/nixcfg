@@ -37,7 +37,10 @@ in
     pkgs.gptfdisk
     pkgs.parted
   ];
-  users.users.ramblurr.extraGroups = [ "pipewire" ];
+  users.users.ramblurr = {
+    extraGroups = [ "pipewire" ];
+    linger = true;
+  };
   services.pipewire = {
     enable = true;
     alsa.enable = true;

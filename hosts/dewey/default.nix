@@ -24,6 +24,7 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  users.users.${username}.linger = true;
 
   modules.vpn.tailscale.enable = true;
   modules.microvm-host = {
