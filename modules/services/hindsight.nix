@@ -107,12 +107,22 @@ let
 
   cfg = config.modules.services.hindsight;
   retainLlmProfile = llmProfiles.${cfg.llm.retain.profile};
+  consolidationLlmProfile =
+    if cfg.llm.consolidation.profile == null then
+      retainLlmProfile
+    else
+      llmProfiles.${cfg.llm.consolidation.profile};
   reflectLlmProfile = llmProfiles.${cfg.llm.reflect.profile};
   embeddingsProfile = embeddingsProfiles.${cfg.embeddings.profile};
   usesCodexOAuth =
-    retainLlmProfile.codexOAuth || reflectLlmProfile.codexOAuth || embeddingsProfile.codexOAuth;
+    retainLlmProfile.codexOAuth
+    || consolidationLlmProfile.codexOAuth
+    || reflectLlmProfile.codexOAuth
+    || embeddingsProfile.codexOAuth;
   usesCerebras =
-    retainLlmProfile.baseUrl == cerebrasBaseUrl || reflectLlmProfile.baseUrl == cerebrasBaseUrl;
+    retainLlmProfile.baseUrl == cerebrasBaseUrl
+    || consolidationLlmProfile.baseUrl == cerebrasBaseUrl
+    || reflectLlmProfile.baseUrl == cerebrasBaseUrl;
   dbEnvironmentFile = config.sops.templates."hindsight-db.env".path;
   appEnvironmentFile = config.sops.templates."hindsight-app.env".path;
   codexAuthDir = "${cfg.dataDir}/codex";
@@ -122,6 +132,9 @@ let
     lib.optionalAttrs (retainLlmProfile.apiKeySecret != null) {
       HINDSIGHT_API_LLM_API_KEY = retainLlmProfile.apiKeySecret;
       HINDSIGHT_API_RETAIN_LLM_API_KEY = retainLlmProfile.apiKeySecret;
+    }
+    // lib.optionalAttrs (consolidationLlmProfile.apiKeySecret != null) {
+      HINDSIGHT_API_CONSOLIDATION_LLM_API_KEY = consolidationLlmProfile.apiKeySecret;
     }
     // lib.optionalAttrs (reflectLlmProfile.apiKeySecret != null) {
       HINDSIGHT_API_REFLECT_LLM_API_KEY = reflectLlmProfile.apiKeySecret;
@@ -135,6 +148,8 @@ let
     "HINDSIGHT_API_LLM_MODEL=${retainLlmProfile.model}"
     "HINDSIGHT_API_RETAIN_LLM_PROVIDER=${retainLlmProfile.provider}"
     "HINDSIGHT_API_RETAIN_LLM_MODEL=${retainLlmProfile.model}"
+    "HINDSIGHT_API_CONSOLIDATION_LLM_PROVIDER=${consolidationLlmProfile.provider}"
+    "HINDSIGHT_API_CONSOLIDATION_LLM_MODEL=${consolidationLlmProfile.model}"
     "HINDSIGHT_API_REFLECT_LLM_PROVIDER=${reflectLlmProfile.provider}"
     "HINDSIGHT_API_REFLECT_LLM_MODEL=${reflectLlmProfile.model}"
   ]
@@ -145,18 +160,21 @@ let
     retainLlmProfile.baseUrl != null
   ) "HINDSIGHT_API_RETAIN_LLM_BASE_URL=${retainLlmProfile.baseUrl}"
   ++ lib.optional (
+    consolidationLlmProfile.baseUrl != null
+  ) "HINDSIGHT_API_CONSOLIDATION_LLM_BASE_URL=${consolidationLlmProfile.baseUrl}"
+  ++ lib.optional (
     reflectLlmProfile.baseUrl != null
   ) "HINDSIGHT_API_REFLECT_LLM_BASE_URL=${reflectLlmProfile.baseUrl}"
   ++ lib.optional (
     retainLlmProfile.maxConcurrent != null
   ) "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=${toString retainLlmProfile.maxConcurrent}"
   ++ lib.optional (
+    consolidationLlmProfile.maxConcurrent != null
+  ) "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=${toString consolidationLlmProfile.maxConcurrent}"
+  ++ lib.optional (
     reflectLlmProfile.maxConcurrent != null
   ) "HINDSIGHT_API_REFLECT_LLM_MAX_CONCURRENT=${toString reflectLlmProfile.maxConcurrent}"
-  ++ lib.optional usesCerebras "HINDSIGHT_API_LLM_MAX_CONCURRENT=4"
-  ++ lib.optional (
-    retainLlmProfile.baseUrl == cerebrasBaseUrl
-  ) "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=2";
+  ++ lib.optional usesCerebras "HINDSIGHT_API_LLM_MAX_CONCURRENT=4";
   providerSecrets = lib.genAttrs requiredProviderSecrets (_: { });
   codexAuthCheck = pkgs.writeShellScript "hindsight-check-codex-auth" ''
     if ! ${pkgs.podman}/bin/podman unshare ${pkgs.coreutils}/bin/test -r ${lib.escapeShellArg codexAuthFile}; then
@@ -249,7 +267,17 @@ in
         default = "openai-gpt-5-mini";
         description = ''
           Fixed provider and model profile for retain operations. This profile
-          also supplies the global LLM fallback used by consolidation.
+          also supplies the global LLM fallback and, when no dedicated profile
+          is selected, the consolidation defaults.
+        '';
+      };
+
+      consolidation.profile = lib.mkOption {
+        type = lib.types.nullOr (lib.types.enum (builtins.attrNames llmProfiles));
+        default = null;
+        description = ''
+          Optional fixed provider and model profile for consolidation operations.
+          When unset, consolidation inherits the retain profile for backward compatibility.
         '';
       };
 
