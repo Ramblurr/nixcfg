@@ -121,7 +121,7 @@ let
           sudo /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
             || die "Failed to set system profile"
           sudo "$store_path"/bin/switch-to-configuration "$ACTION" \
-            || echo "Error while activating new system" >&2
+            || die "Failed to activate $host"
           if [[ -n "$prev_system" ]]; then
             nvd --color always diff "$prev_system" "$store_path" || true
           fi
@@ -131,7 +131,7 @@ let
           ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
             || die "Failed to set system profile"
           ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \
-            || echo "Error while activating new system" >&2
+            || die "Failed to activate $host"
           if [[ -n "$prev_system" ]]; then
             # nvd must be installed on the target system for this to work
             ssh "$ssh_host" -- nvd --color always diff "$prev_system" "$store_path" || true

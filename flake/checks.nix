@@ -4,6 +4,10 @@
     { pkgs, ... }:
     {
       checks = {
+        deploy = import ../tests/deploy.nix {
+          inherit pkgs;
+          inherit (pkgs) deploy;
+        };
         hindsight = import ../tests/hindsight.nix {
           inherit inputs pkgs;
         };
