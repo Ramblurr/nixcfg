@@ -177,7 +177,7 @@ in
           pull = "missing";
           devices = [ cfg.gpuDevice ];
           networks = [ "host" ];
-          volumes = [ "${cfg.dataDir}/cache:/data:rw" ];
+          volumes = [ "${cfg.dataDir}:/data:rw" ];
           cmd = [
             "--model-id"
             cfg.modelId
@@ -226,7 +226,6 @@ in
 
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 root root -"
-      "d ${cfg.dataDir}/cache 0750 root root -"
     ];
 
     systemd.services.${serviceName} = {
