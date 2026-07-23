@@ -2,6 +2,22 @@
 
 let
   testSecrets = ./fixtures/hindsight.sops.yaml;
+  latencyEnvironment = {
+    HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
+    HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
+    HINDSIGHT_API_RERANKER_LOCAL_BUCKET_BATCHING = "true";
+    HINDSIGHT_API_RERANKER_LOCAL_MAX_CONCURRENT = "1";
+    HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT = "2";
+    HINDSIGHT_API_WORKER_MAX_SLOTS = "4";
+  };
+  expectedLatencyEnvironment = [
+    "HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT=1"
+    "HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM=1"
+    "HINDSIGHT_API_RERANKER_LOCAL_BUCKET_BATCHING=true"
+    "HINDSIGHT_API_RERANKER_LOCAL_MAX_CONCURRENT=1"
+    "HINDSIGHT_API_RETAIN_LLM_MAX_CONCURRENT=2"
+    "HINDSIGHT_API_WORKER_MAX_SLOTS=4"
+  ];
   testHindsightServer = pkgs.writeShellApplication {
     name = "hindsight-test-server";
     runtimeInputs = [ pkgs.busybox ];
@@ -198,6 +214,7 @@ pkgs.testers.runNixOSTest {
           reflect.profile = "openai-gpt-5-mini";
         };
         embeddings.profile = "openai-small";
+        extraEnvironment = latencyEnvironment;
       };
 
       services.nginx = {
@@ -284,6 +301,12 @@ pkgs.testers.runNixOSTest {
             && lib.elem "HINDSIGHT_API_EMBEDDINGS_PROVIDER=openai" app.containerConfig.Environment
             && lib.elem "HINDSIGHT_API_EMBEDDINGS_OPENAI_MODEL=text-embedding-3-small" app.containerConfig.Environment;
           message = "Explicit retain, reflect, and embeddings profiles must map to their provider settings.";
+        }
+        {
+          assertion = lib.all (
+            entry: lib.elem entry app.containerConfig.Environment
+          ) expectedLatencyEnvironment;
+          message = "Extra Hindsight environment values must render in the generated container.";
         }
         {
           assertion =
@@ -489,6 +512,9 @@ pkgs.testers.runNixOSTest {
         "HINDSIGHT_CP_ACCESS_KEY=test-control-plane-key",
     ]:
         assert expected in environment, f"Missing Hindsight environment setting: {expected}"
+
+    for expected in ${builtins.toJSON expectedLatencyEnvironment}:
+        assert expected in environment, f"Missing Hindsight latency setting: {expected}"
 
     machine.succeed(
         "sudo -u hindsight -- podman exec hindsight-db "

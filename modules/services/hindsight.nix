@@ -269,6 +269,18 @@ in
       '';
     };
 
+    extraEnvironment = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      example = {
+        HINDSIGHT_API_WORKER_MAX_SLOTS = "4";
+      };
+      description = ''
+        Extra non-secret environment variables for the Hindsight container.
+        Keep credentials in the SOPS-backed environment file instead.
+      '';
+    };
+
     ports = {
       api = lib.mkOption {
         type = lib.types.port;
@@ -453,7 +465,8 @@ in
             ++ providerEnvironment
             ++ lib.optionals usesCodexOAuth [
               "CODEX_HOME=${codexContainerDir}"
-            ];
+            ]
+            ++ lib.mapAttrsToList (name: value: "${name}=${value}") cfg.extraEnvironment;
             Volume = lib.optionals usesCodexOAuth [
               "${codexAuthDir}:${codexContainerDir}:U"
             ];
