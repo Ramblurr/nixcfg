@@ -6,26 +6,29 @@
   nodejs,
 }:
 
+let
+  rev = "165928a54308233b8bb318d927c5c78496833d4a";
+in
 buildNpmPackage rec {
   pname = "pi-web";
-  version = "1.202607.1";
+  version = "1.202607.1-unstable-2026-07-23";
 
   src = fetchFromGitHub {
     owner = "jmfederico";
     repo = "pi-web";
-    rev = "v${version}";
-    hash = "sha256-llMtBYOqH92KCrz6lUiJRG0rQgwGZQpeCZ9LU8VFPgY=";
+    inherit rev;
+    hash = "sha256-GhrVec9b1GCWnTE7p583SwglkcgJaWapKtN64Ttw2Rw=";
   };
 
   postPatch = ''
     # Upstream package-lock has these nested npm registry entries without integrity.
     # npm-config-hook needs integrities to prefetch the dependency closure.
-    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-agent-core/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.80.10.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.80.10.tgz",\n      "integrity": "sha512-nwnOR3SuLYGRFfyQm8ri4Nj5VGVAvAM9GuqQd3u7BUQj0d6hmD2F8w7OHAAjThE3CuySIdM+v8E22QJG6/RfCg==",#' package-lock.json
-    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-ai/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.80.10.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.80.10.tgz",\n      "integrity": "sha512-Moe/H8c87yacDGK9dPbWphZNjVsrb3nTrIHycOQJAkFEnY9PYxOOd74+ny44kATfPU9Dm7aTHefar3pZF+UKUA==",#' package-lock.json
-    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-tui/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.80.10.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.80.10.tgz",\n      "integrity": "sha512-c2JO29PbhKPEQ6fgHQKAl0WhwuFqzWfzspMmP+8B5tpDuP+0mvarRbKKg8gq4b+pQx/QX+6aVS4ko7deoyjQjg==",#' package-lock.json
+    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-agent-core/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.81.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-agent-core/-/pi-agent-core-0.81.1.tgz",\n      "integrity": "sha512-yqbh68CyhqxMov/jUogFJfMqlu2Gd37GAki+tr59YCmAPHfomiCA5ESzusXtpGzABeiZFC/OrRdQ4GwCCOMIHA==",#' package-lock.json
+    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-ai/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.81.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-0.81.1.tgz",\n      "integrity": "sha512-hzHE7Z8l5mgJk+ke67Lge0rwS2+wbKJrFKl9o5M1R1rh33+cCT7D1AHz1OAtX5wFs90E1/BTGhyJRTUHaMxGvQ==",#' package-lock.json
+    sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-tui/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.81.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.81.1.tgz",\n      "integrity": "sha512-OMEe+Zt8oQYi/rCq3upxsTlIScWL0FPhXwQus34TbQb3EmTx88S7Uzx32JxvQiEeWOw8eDCdJf2PBUBE9r6wIg==",#' package-lock.json
   '';
 
-  npmDepsHash = "sha256-cwMjId1rUZUjUpVmOWJ5U0JUIRrBKovFSGpxa3c6UvU=";
+  npmDepsHash = "sha256-WuULzZgs56rfA5G9yJ0K/bt7lYlvE7Oo8+99Yb6vmXE=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
 
@@ -60,7 +63,7 @@ buildNpmPackage rec {
   meta = {
     description = "Web control plane for persistent Pi Coding Agent sessions";
     homepage = "https://pi-web.dev/";
-    changelog = "https://github.com/jmfederico/pi-web/releases/tag/v${version}";
+    changelog = "https://github.com/jmfederico/pi-web/compare/v1.202607.1...${rev}";
     license = lib.licenses.mit;
     mainProgram = "pi-web";
     platforms = lib.platforms.linux;
