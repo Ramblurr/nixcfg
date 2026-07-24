@@ -194,16 +194,10 @@ in
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.ports.http ];
 
     systemd.tmpfiles.rules = [
-      "d ${homeDirectory}/.config 0700 ${cfg.user} ${cfg.group} - -"
-      "d ${homeDirectory}/.local 0700 ${cfg.user} ${cfg.group} - -"
-      "d ${homeDirectory}/.local/share 0700 ${cfg.user} ${cfg.group} - -"
-      "d ${homeDirectory}/.cache 0700 ${cfg.user} ${cfg.group} - -"
       "d ${cfg.configDir} 0700 ${cfg.user} ${cfg.group} - -"
       "d ${cfg.dataDir} 0700 ${cfg.user} ${cfg.group} - -"
       "d ${cfg.cacheDir} 0700 ${cfg.user} ${cfg.group} - -"
       "d ${cfg.cacheDir}/npm 0700 ${cfg.user} ${cfg.group} - -"
-      "d ${cfg.npmGlobalPrefix} 0750 ${cfg.user} ${cfg.group} - -"
-      "d ${cfg.npmGlobalPrefix}/bin 0750 ${cfg.user} ${cfg.group} - -"
     ];
 
     systemd.services.${sessiondServiceName} = {
@@ -223,7 +217,7 @@ in
         RestartSec = "5s";
         RuntimeDirectory = runtimeDirectory;
         RuntimeDirectoryMode = "0700";
-        UMask = "0077";
+        UMask = "0022";
       };
     };
 
@@ -246,7 +240,7 @@ in
         ExecStart = getExe' cfg.package "pi-web-server";
         Restart = "on-failure";
         RestartSec = "5s";
-        UMask = "0077";
+        UMask = "0022";
       };
     };
 
