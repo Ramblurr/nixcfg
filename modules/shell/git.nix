@@ -83,6 +83,7 @@ in
           };
         };
         ignores = [
+          ".tmuxb_session"
           "prompts"
           "archive"
           ".worktrees"
