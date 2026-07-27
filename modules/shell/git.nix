@@ -82,6 +82,14 @@ in
             churn = "!git log --format='' --name-only --diff-filter=AM --since='1 year ago' | sort | uniq -c | sort -nr | head -20";
           };
         };
+        ignores = [
+          "prompts"
+          "archive"
+          ".worktrees"
+          "extra"
+          ".direnv"
+          ".scratch"
+        ];
       };
     };
   };
