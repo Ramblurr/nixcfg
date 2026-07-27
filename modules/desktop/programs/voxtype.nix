@@ -69,8 +69,8 @@ in
           };
           Service = {
             Type = "simple";
-            #ExecStart = "${voxtype}/bin/voxtype daemon";
-            ExecStart = "/home/ramblurr/src/github.com/peteonrails/voxtype/target/debug/voxtype daemon";
+            ExecStart = "${voxtype}/bin/voxtype daemon";
+            #ExecStart = "/home/ramblurr/src/github.com/peteonrails/voxtype/target/debug/voxtype daemon";
             Restart = "on-failure";
             RestartSec = 5;
             EnvironmentFile = "/home/ramblurr/.llm-keys";
