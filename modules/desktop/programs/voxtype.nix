@@ -11,11 +11,9 @@ let
 
   wrapWithLLMKeys = cmd: removeVars: ''
     #!${pkgs.runtimeShell}
-    export PI_CONFIG_DIR="$HOME/.config/pi"
-    export VIBE_HOME="$HOME/.config/vibe"
-    if [ -f "$HOME/.llm-keys" ]; then
+    if [ -f "$/home/ramblurr/.llm-keys" ]; then
       set -a  # automatically export all variables
-      source "$HOME/.llm-keys"
+      source "/home/ramblurr/.llm-keys"
       set +a  # turn off automatic export
       ${lib.concatStringsSep "\n" (map (v: "unset ${v}") removeVars)}
     fi
