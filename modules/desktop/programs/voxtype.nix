@@ -8,21 +8,6 @@
 
 let
   cfg = config.modules.desktop.programs.voxtype;
-
-  wrapWithLLMKeys = cmd: removeVars: ''
-    #!${pkgs.runtimeShell}
-    if [ -f "$/home/ramblurr/.llm-keys" ]; then
-      set -a  # automatically export all variables
-      source "/home/ramblurr/.llm-keys"
-      set +a  # turn off automatic export
-      ${lib.concatStringsSep "\n" (map (v: "unset ${v}") removeVars)}
-    fi
-    exec ${cmd} "$@"
-  '';
-
-  voxtype-local = pkgs.writeShellScriptBin "voxtype" (
-    wrapWithLLMKeys "/home/ramblurr/src/github.com/peteonrails/voxtype/target/debug/voxtype" [ ]
-  );
   onnxruntime = if cfg.cudaSupport then pkgs.pkgsCuda.onnxruntime else pkgs.onnxruntime;
   # llm-agents packages only Voxtype's default Whisper backend. Match
   # upstream's ONNX package for Parakeet and Cohere support, enabling CUDA
@@ -84,9 +69,11 @@ in
           };
           Service = {
             Type = "simple";
-            ExecStart = "${voxtype-local}/bin/voxtype daemon";
+            #ExecStart = "${voxtype}/bin/voxtype daemon";
+            ExecStart = "/home/ramblurr/src/github.com/peteonrails/voxtype/target/debug/voxtype daemon";
             Restart = "on-failure";
             RestartSec = 5;
+            EnvironmentFile = "/home/ramblurr/.llm-keys";
           };
           Install.WantedBy = [ "graphical-session.target" ];
         };
