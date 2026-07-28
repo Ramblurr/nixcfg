@@ -63,9 +63,8 @@
   ;; (package! clojure-essential-ref)
   ;; (package! clojure-essential-ref-nov)
   (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
-  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "de940cc5203b79f1bd9c8581fa91b5fdfafdc86f")
-  (package! gptel :pin "33ed0f6f69857157973bca72fb4d454e29965bdd")
-  (package! whisper :recipe (:host github :repo "natrys/whisper.el") :pin "fd9bf5787a99dd31a4bdf54d2bd9821aacf84e93")
+  (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "49a05fbedf4605251c3b4d1a90dd7ebaa621eccb")
+  (package! gptel :pin "513a6b74310d7bcc2a6138ccc1860b4577e73800" )
   (package! treemacs-all-the-icons)
 
   (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
@@ -112,7 +111,5 @@
   (package! magit-difftastic
     :recipe (:host github :repo "rschmukler/magit-difftastic")))
 
-(package! org-modern-indent :recipe
-  (:host github
-    :repo "jdtsmith/org-modern-indent"))
+(package! org-modern-indent :recipe (:host github :repo "jdtsmith/org-modern-indent"))
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
