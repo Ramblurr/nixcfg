@@ -113,3 +113,5 @@
 
 (package! org-modern-indent :recipe (:host github :repo "jdtsmith/org-modern-indent"))
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
+
+(package! pollen-mode :recipe (:host github :repo "lijunsong/pollen-mode") :pin "19174fab69ce4d2ae903ef2c3da44054e8b84268")
