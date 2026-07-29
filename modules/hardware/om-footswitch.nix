@@ -22,13 +22,20 @@ in
         };
         middle = lib.mkOption {
           type = lib.types.str;
-          default = "f15";
+          default = "enter";
         };
       };
     };
   };
 
   config = mkIf cfg.enable {
+    services.keyd = {
+      keyboards.om-footswitch = {
+        ids = [ "33a2:0218" ];
+        settings.main."${cfg.keys.right}" = "C-c";
+      };
+    };
+
     services.udev.extraRules = ''
       # OM Digital Solutions HID FootSwitch RS Series (33a2:0218)
       # it presents as a mouse, make it a keyboard instead
