@@ -17,6 +17,13 @@ in
     programs.dconf.enable = true;
     services.keyd = {
       enable = true;
+      keyboards.default = {
+        ids = [ "*" ];
+        settings.alt = {
+          slash = "◊";
+          minus = "λ";
+        };
+      };
     };
     xdg.portal = {
       enable = true;
