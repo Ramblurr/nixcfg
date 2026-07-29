@@ -20,80 +20,80 @@
 (defun lva/lsp-ui-toggle-doc (arg)
   (interactive "P")
   (if lsp-ui-doc-mode
-      (lsp-ui-doc-mode 0)
+    (lsp-ui-doc-mode 0)
     (progn
       (if arg
-          (setq lsp-ui-doc-position 'at-point
-                lsp-ui-doc-max-height lva--lsp-ui-doc-atpoint-h
-                lsp-ui-doc-max-width lva--lsp-ui-doc-atpoint-w)
+        (setq lsp-ui-doc-position 'at-point
+          lsp-ui-doc-max-height lva--lsp-ui-doc-atpoint-h
+          lsp-ui-doc-max-width lva--lsp-ui-doc-atpoint-w)
         (setq lsp-ui-doc-position 'top
-              lsp-ui-doc-max-height lva--lsp-ui-doc-anchored-h
-              lsp-ui-doc-max-width lva--lsp-ui-doc-anchored-w))
+          lsp-ui-doc-max-height lva--lsp-ui-doc-anchored-h
+          lsp-ui-doc-max-width lva--lsp-ui-doc-anchored-w))
       (lsp-ui-doc-mode))))
 
 (use-package! lsp-mode
   :commands lsp
   :config
   (setq lsp-headerline-breadcrumb-enable t
-        lsp-signature-render-documentation nil
-        lsp-signature-function 'lsp-signature-posframe
-        lsp-signature-auto-activate nil
-        lsp-semantic-tokens-enable nil
-        lsp-enable-indentation nil
-        lsp-inlay-hint-enable t
-        lsp-idle-delay  0.05
-        lsp-diagnostics-provider :auto
-        lsp-use-plists t
-        read-process-output-max (* 1024 1024)
-        lsp-enable-file-watchers t
-        lsp-inline-completion-idle-delay 1
-        lsp-copilot-enabled t
-        ;; lsp-restart 'auto-restart
-        ;; lsp-headerline-breadcrumb-enable t              ; Breadcrumb trail
-        ;; lsp-headerline-breadcrumb-segments '(symbols)   ; namespace & symbols, no file path
-        ;; lsp-ui-peek-enable nil                          ; popups for refs, errors, symbols, etc.
-        ;; lsp-eldoc-enable-hover nil                      ; disable all hover actions
-        ;; lsp-ui-doc-enable nil                           ; doc hover popups
-        ;; lsp-ui-sideline-enable nil                      ; sidebar code actions visual indicator
-        )
+    lsp-signature-render-documentation nil
+    lsp-signature-function 'lsp-signature-posframe
+    lsp-signature-auto-activate nil
+    lsp-semantic-tokens-enable nil
+    lsp-enable-indentation nil
+    lsp-inlay-hint-enable t
+    lsp-idle-delay  0.05
+    lsp-diagnostics-provider :auto
+    lsp-use-plists t
+    read-process-output-max (* 1024 1024)
+    lsp-enable-file-watchers t
+    lsp-inline-completion-idle-delay 1
+    lsp-copilot-enabled t
+    ;; lsp-restart 'auto-restart
+    ;; lsp-headerline-breadcrumb-enable t              ; Breadcrumb trail
+    ;; lsp-headerline-breadcrumb-segments '(symbols)   ; namespace & symbols, no file path
+    ;; lsp-ui-peek-enable nil                          ; popups for refs, errors, symbols, etc.
+    ;; lsp-eldoc-enable-hover nil                      ; disable all hover actions
+    ;; lsp-ui-doc-enable nil                           ; doc hover popups
+    ;; lsp-ui-sideline-enable nil                      ; sidebar code actions visual indicator
+    )
   (add-hook 'lsp-after-apply-edits-hook (lambda (&rest _) (save-buffer)))
 
   (custom-set-faces
-   '(lsp-face-highlight-textual ((t (:background "#32302f" :bold t :foreground unspecified ))))
-   '(lsp-face-highlight-read ((t (:background "#32302f" :bold t  :foreground unspecified ))))
-   '(lsp-face-highlight-write ((t (:background "#32302f" :bold t  :foreground unspecified )))))
+    '(lsp-face-highlight-textual ((t (:background "#32302f" :bold t :foreground unspecified ))))
+    '(lsp-face-highlight-read ((t (:background "#32302f" :bold t  :foreground unspecified ))))
+    '(lsp-face-highlight-write ((t (:background "#32302f" :bold t  :foreground unspecified )))))
 
   (dolist (dir '("[/\\\\]\\.ccls-cache\\'"
-                 "[/\\\\]\\.mypy_cache\\'"
-                 "[/\\\\]\\.pytest_cache\\'"
-                 "[/\\\\]\\.cache\\'"
-                 "[/\\\\]\\.clwb\\'"
-                 "[/\\\\]\\.env\\'"
-                 "[/\\\\]\\.zig-cache\\'"
-                 "[/\\\\]\\.zig-cache-global\\'"
-                 "[/\\\\]__pycache__\\'"
-                 "[/\\\\]extra\\'"
-                 "[/\\\\]dist\\'"
-                 "[/\\\\]target\\'"
-                 "[/\\\\]out\\'"
-                 "[/\\\\]build\\'"
-                 "[/\\\\]tmp\\'"
-                 "[/\\\\]node_modules\\'"
-                 "[/\\\\]zig-out\\'"
-                 "[/\\\\]extra\\'"
-                 "[/\\\\]\\.portal\\'"
-                 "[/\\\\]\\.eca\\'"
-                 "[/\\\\]\\.claude\\'"
-                 "[/\\\\]\\.clojure-mcp\\'"
-                 "[/\\\\]archive\\'"
-                 ))
+                  "[/\\\\]\\.mypy_cache\\'"
+                  "[/\\\\]\\.pytest_cache\\'"
+                  "[/\\\\]\\.cache\\'"
+                  "[/\\\\]\\.clwb\\'"
+                  "[/\\\\]\\.env\\'"
+                  "[/\\\\]\\.zig-cache\\'"
+                  "[/\\\\]\\.zig-cache-global\\'"
+                  "[/\\\\]__pycache__\\'"
+                  "[/\\\\]extra\\'"
+                  "[/\\\\]dist\\'"
+                  "[/\\\\]target\\'"
+                  "[/\\\\]out\\'"
+                  "[/\\\\]build\\'"
+                  "[/\\\\]tmp\\'"
+                  "[/\\\\]node_modules\\'"
+                  "[/\\\\]zig-out\\'"
+                  "[/\\\\]extra\\'"
+                  "[/\\\\]\\.portal\\'"
+                  "[/\\\\]\\.eca\\'"
+                  "[/\\\\]\\.claude\\'"
+                  "[/\\\\]\\.clojure-mcp\\'"
+                  "[/\\\\]archive\\'"
+                  ))
     (push dir lsp-file-watch-ignored-directories))
 
 
   (comment
-   (let ((clojure-lsp-dev (expand-file-name "/etc/profiles/per-user/ramblurr/bin/clojure-lsp")))
-     (when (file-exists-p clojure-lsp-dev)
-       (setq  lsp-clojure-custom-server-command `("bash" "-c" ,clojure-lsp-dev))))))
+    (let ((clojure-lsp-dev (expand-file-name "/etc/profiles/per-user/ramblurr/bin/clojure-lsp")))
+      (when (file-exists-p clojure-lsp-dev)
+        (setq  lsp-clojure-custom-server-command `("bash" "-c" ,clojure-lsp-dev))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,7 +104,7 @@
   :after java-mode
   :config
   (setq lsp-java-references-code-lens-enabled t
-        lsp-java-implementations-code-lens-enabled t))
+    lsp-java-implementations-code-lens-enabled t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Web
@@ -115,15 +115,15 @@
 (setq typescript-indent-level 2)
 
 (comment
- (use-package! prettier-js
-   :config
-   (add-hook 'js2-mode-hook #'prettier-js-mode)
-   (add-hook 'json-mode-hook #'prettier-js-mode)
-   (add-hook 'rjsx-mode-hook 'prettier-js-mode)
-   (add-hook 'css-mode-hook #'prettier-js-mode)
-   (add-hook 'typescript-mode-hook #'prettier-js-mode)
-   (add-hook 'typescript-tsx-mode #'prettier-js-mode))
- )
+  (use-package! prettier-js
+    :config
+    (add-hook 'js2-mode-hook #'prettier-js-mode)
+    (add-hook 'json-mode-hook #'prettier-js-mode)
+    (add-hook 'rjsx-mode-hook 'prettier-js-mode)
+    (add-hook 'css-mode-hook #'prettier-js-mode)
+    (add-hook 'typescript-mode-hook #'prettier-js-mode)
+    (add-hook 'typescript-tsx-mode #'prettier-js-mode))
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Janet
@@ -142,55 +142,55 @@
   "Hide the visible ajsc REPL window without killing its buffer or process."
   (interactive)
   (let* ((buffer-name (if (boundp 'ajsc-repl-buffer-name)
-                          ajsc-repl-buffer-name
+                        ajsc-repl-buffer-name
                         "*ajsc-repl*"))
-         (window (get-buffer-window buffer-name t)))
+          (window (get-buffer-window buffer-name t)))
     (if window
-        (quit-window nil window)
+      (quit-window nil window)
       (message "%s is not visible" buffer-name))))
 
 (use-package! ajsc
   :load-path (lambda () (expand-file-name "lisp/ajsc" doom-user-dir))
   :commands (ajsc
-             ajsc-interaction-mode
-             ajsc-send-buffer
-             ajsc-send-expression-at-point
-             ajsc-send-region
-             ajsc-switch-to-repl))
+              ajsc-interaction-mode
+              ajsc-send-buffer
+              ajsc-send-expression-at-point
+              ajsc-send-region
+              ajsc-switch-to-repl))
 
 (map! :after ajsc
-      :map ajsc-mode-map
-      :localleader
-      :desc "Hide REPL" "h" #'my/ajsc-hide-repl
-      :desc "Hide REPL" "q" #'my/ajsc-hide-repl)
+  :map ajsc-mode-map
+  :localleader
+  :desc "Hide REPL" "h" #'my/ajsc-hide-repl
+  :desc "Hide REPL" "q" #'my/ajsc-hide-repl)
 
 (map! :after janet-mode
-      :map janet-mode-map
-      :localleader
-      :desc "Connect to ajsc" "c" #'ajsc
-      (:prefix ("e" . "eval")
-       :desc "Eval buffer" "b" #'ajsc-send-buffer
-       :desc "Eval top-level form" "d" #'my/ajsc-send-top-level-form
-       :desc "Eval expression at point" "e" #'ajsc-send-expression-at-point
-       :desc "Eval region" "r" #'ajsc-send-region)
-      (:prefix ("r" . "repl")
-       :desc "Connect to ajsc" "c" #'ajsc
-       :desc "Switch to REPL" "b" #'ajsc-switch-to-repl
-       :desc "Hide REPL" "h" #'my/ajsc-hide-repl))
+  :map janet-mode-map
+  :localleader
+  :desc "Connect to ajsc" "c" #'ajsc
+  (:prefix ("e" . "eval")
+    :desc "Eval buffer" "b" #'ajsc-send-buffer
+    :desc "Eval top-level form" "d" #'my/ajsc-send-top-level-form
+    :desc "Eval expression at point" "e" #'ajsc-send-expression-at-point
+    :desc "Eval region" "r" #'ajsc-send-region)
+  (:prefix ("r" . "repl")
+    :desc "Connect to ajsc" "c" #'ajsc
+    :desc "Switch to REPL" "b" #'ajsc-switch-to-repl
+    :desc "Hide REPL" "h" #'my/ajsc-hide-repl))
 
 (map! :after janet-ts-mode
-      :map janet-ts-mode-map
-      :localleader
-      :desc "Connect to ajsc" "c" #'ajsc
-      (:prefix ("e" . "eval")
-       :desc "Eval buffer" "b" #'ajsc-send-buffer
-       :desc "Eval top-level form" "d" #'my/ajsc-send-top-level-form
-       :desc "Eval expression at point" "e" #'ajsc-send-expression-at-point
-       :desc "Eval region" "r" #'ajsc-send-region)
-      (:prefix ("r" . "repl")
-       :desc "Connect to ajsc" "c" #'ajsc
-       :desc "Switch to REPL" "b" #'ajsc-switch-to-repl
-       :desc "Hide REPL" "h" #'my/ajsc-hide-repl))
+  :map janet-ts-mode-map
+  :localleader
+  :desc "Connect to ajsc" "c" #'ajsc
+  (:prefix ("e" . "eval")
+    :desc "Eval buffer" "b" #'ajsc-send-buffer
+    :desc "Eval top-level form" "d" #'my/ajsc-send-top-level-form
+    :desc "Eval expression at point" "e" #'ajsc-send-expression-at-point
+    :desc "Eval region" "r" #'ajsc-send-region)
+  (:prefix ("r" . "repl")
+    :desc "Connect to ajsc" "c" #'ajsc
+    :desc "Switch to REPL" "b" #'ajsc-switch-to-repl
+    :desc "Hide REPL" "h" #'my/ajsc-hide-repl))
 
 (use-package! inf-janet
   :load-path (lambda () (expand-file-name "lisp/inf-janet" doom-user-dir))
@@ -202,7 +202,7 @@
   :after janet-ts-mode
   :config
   (add-hook 'janet-ts-mode-hook
-            #'ajrepl-interaction-mode))
+    #'ajrepl-interaction-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; KDL
@@ -220,20 +220,29 @@
   "Local checkout containing the Fluent grammar and Emacs integration.")
 
 (add-to-list 'load-path
-             (expand-file-name "editors/emacs" my/fluent-tooling-root))
+  (expand-file-name "editors/emacs" my/fluent-tooling-root))
 
 (require 'fluent-ts-mode)
 
 (setq fluent-ts-mode-checker 'auto
-      fluent-ts-mode-linter-executable
-      (expand-file-name "result/bin/ftl-lint" my/fluent-tooling-root))
+  fluent-ts-mode-linter-executable
+  (expand-file-name "result/bin/ftl-lint" my/fluent-tooling-root))
 
 (setf (alist-get 'fluent treesit-language-source-alist)
-      (list my/fluent-tooling-root))
+  (list my/fluent-tooling-root))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Asciidoc
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package! adoc-mode
   :mode (("\\.adoc$" . adoc-mode)
-         ("\\.asciidoc$" . adoc-mode)))
+          ("\\.asciidoc$" . adoc-mode)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; pollen
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package! pollen-mode
+  :mode (("\\.pm$" . pollen-mode)
+          ("\\.pp$" . pollen-mode)
+          ("\\.pmd$" . pollen-mode)))
