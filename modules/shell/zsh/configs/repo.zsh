@@ -256,10 +256,21 @@ repo() {
     ordered="$(
       {
         if [[ -n "$zlist" ]]; then
-          print -r -- "$zlist" \
-          | while IFS= read -r p; do
-              awk -v want="$p" -F "$TAB" '$1==want {print; exit}' <<< "$labeled_all"
-            done
+          print -r -- "$labeled_all" \
+          | awk -v z="$zlist" -F "$TAB" '
+              BEGIN {
+                n=split(z, paths, "\n")
+                for (i=1; i<=n; i++) {
+                  if (paths[i] != "") rank[paths[i]]=i
+                }
+              }
+              $1 in rank { rows[rank[$1]]=$0 }
+              END {
+                for (i=1; i<=n; i++) {
+                  if (i in rows) print rows[i]
+                }
+              }
+            '
         fi
         print -r -- "$labeled_all" \
         | awk -v z="$zlist" -F "$TAB" 'BEGIN{n=split(z,arr,"\n"); for(i=1;i<=n;i++) if(arr[i]!="") seen[arr[i]]=1} !($1 in seen)' \
