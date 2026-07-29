@@ -15,6 +15,9 @@ in
   config = mkIf cfg.enable {
     services.flatpak.enable = true;
     programs.dconf.enable = true;
+    services.keyd = {
+      enable = true;
+    };
     xdg.portal = {
       enable = true;
       extraPortals = [
@@ -89,6 +92,10 @@ in
     };
 
     myhm = {
+      home.file.".XCompose".text = ''
+        include "%L"
+        include "${config.services.keyd.package}/share/keyd/keyd.compose"
+      '';
       # begin: disabled questionable section
       #home.sessionVariables = {
       #  QT_QPA_PLATFORM = "wayland";
