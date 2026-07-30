@@ -115,3 +115,9 @@
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
 
 (package! pollen-mode :recipe (:host github :repo "lijunsong/pollen-mode") :pin "19174fab69ce4d2ae903ef2c3da44054e8b84268")
+
+(package! polymode)
+(package! clojure-prose-mode
+  :recipe (:type nil
+            :local-repo "/home/ramblurr/src/github.com/ramblurr/clojure-prose-mode"
+            :files ("clojure-prose-mode.el")))
