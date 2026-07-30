@@ -10,6 +10,7 @@ let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
   inherit (config.modules.users.primaryUser) username;
   piWebTailscaleAddress = "100.93.18.79";
+  piWebPrimaryAddress = "10.9.4.3";
 in
 {
   imports = [
@@ -115,10 +116,11 @@ in
   networking.firewall.allowedUDPPorts = [ 67 ];
 
   systemd.sockets.pi-web-tailscale-proxy = {
-    description = "PI WEB proxy socket on Tailscale";
+    description = "PI WEB proxy socket on external addresses";
     wantedBy = [ "sockets.target" ];
     listenStreams = [
       "${piWebTailscaleAddress}:${toString config.modules.services.pi-web.ports.http}"
+      "${piWebPrimaryAddress}:${toString config.modules.services.pi-web.ports.http}"
     ];
     socketConfig = {
       FreeBind = true;
@@ -126,7 +128,7 @@ in
     };
   };
   systemd.services.pi-web-tailscale-proxy = {
-    description = "PI WEB Tailscale proxy";
+    description = "PI WEB external address proxy";
     requires = [
       "pi-web.service"
       "pi-web-tailscale-proxy.socket"
@@ -275,6 +277,7 @@ in
       pi-web = {
         enable = true;
         ports.http = 8504;
+        openFirewall = true;
       };
       rclone.mounts = {
         Box = {
