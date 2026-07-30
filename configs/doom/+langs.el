@@ -246,3 +246,6 @@
   :mode (("\\.pm$" . pollen-mode)
           ("\\.pp$" . pollen-mode)
           ("\\.pmd$" . pollen-mode)))
+
+(use-package! clojure-prose-mode
+  :mode ("\\.prose\\'" . clojure-prose-mode))
