@@ -250,7 +250,7 @@ in
     image = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "ghcr.io/vectorize-io/hindsight:0.8.4@sha256:2c60f233eaba8f51db31adb920a560735aaf6f314e4b63c36c73159742dfa1a7";
+      default = "ghcr.io/vectorize-io/hindsight:0.8.6@sha256:ffa391a77284e49f6b55e32c86f33529ac4257831407b14038a72b6a0a232039";
       description = "Hindsight standalone container image.";
     };
 
