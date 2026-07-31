@@ -59,6 +59,13 @@ in
 
         xdg.configFile.doom.source = config.lib.file.mkOutOfStoreSymlink cfg.localDoomConfigRepo;
 
+        home.file = {
+          ".config/emacs/bin/local-issues".source =
+            config.lib.file.mkOutOfStoreSymlink "${cfg.localDoomConfigRepo}/bin/local-issues";
+          ".config/emacs/lisp/local-issues-core.el".source =
+            config.lib.file.mkOutOfStoreSymlink "${cfg.localDoomConfigRepo}/lisp/local-issues-core.el";
+        };
+
         home.packages = with pkgs; [
           symbola
           ## Some emacs package dependencies
