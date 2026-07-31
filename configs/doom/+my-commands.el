@@ -14,6 +14,20 @@
              (evil-change-state lispyville-preferred-state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Window and buffer commands
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun my/persp-switch-to-buffer-main-window ()
+  "Switch workspace buffers in the largest ordinary window.
+Dedicated windows and windows marked `no-other-window' are excluded."
+  (interactive)
+  (let ((command (or (command-remapping #'persp-switch-to-buffer)
+                     #'persp-switch-to-buffer)))
+    (when-let ((window (get-largest-window nil nil nil t)))
+      (select-window window))
+    (call-interactively command)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Custom Clojure commands
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
