@@ -11,6 +11,7 @@
         hindsight = import ../tests/hindsight.nix {
           inherit inputs pkgs;
         };
+        local-issues = import ../tests/local-issues.nix { inherit inputs pkgs; };
         linux-voice-assistant = import ../tests/linux-voice-assistant.nix {
           inherit inputs pkgs;
         };
