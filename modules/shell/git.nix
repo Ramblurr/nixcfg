@@ -90,6 +90,7 @@ in
           "extra"
           ".direnv"
           ".scratch"
+          ".scratch-org"
         ];
       };
     };

@@ -260,6 +260,7 @@ exists, prepends additional parent directories until unique."
     (load! "+helpers.el")
     (load! "+my-commands.el")
     (load! "+org.el")
+    (load! "+local-issues.el")
     (load! "+ai.el")
     ;;(load! "+assistant.el")
     (load! "+lisp-editing.el")
