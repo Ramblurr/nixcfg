@@ -14,7 +14,8 @@
                         local-issues-test--repository-root)))
 
 (defvar local-issues-test--socket-name
-  (format "local-issues-absent-%d" (emacs-pid))
+  (or (getenv "LOCAL_ISSUES_TEST_SOCKET")
+      (format "local-issues-absent-%d" (emacs-pid)))
   "Emacs server socket selected for launcher process tests.")
 
 (defvar local-issues-test--server-counter 0)
@@ -103,6 +104,15 @@
              (buffer-string))))
    (directory-files-recursively root "\\.org\\'")))
 
+(defun local-issues-test--matches (regexp string)
+  "Return every first capture matching REGEXP in STRING."
+  (let ((start 0)
+        matches)
+    (while (string-match regexp string start)
+      (push (match-string 1 string) matches)
+      (setq start (match-end 0)))
+    (nreverse matches)))
+
 (cl-defmacro local-issues-test--with-repository ((root) &rest body)
   (declare (indent 1))
   `(let ((,root (make-temp-file "local-issues-repository-" t)))
@@ -175,7 +185,12 @@
                           (plist-get result :stderr))))))))))
 
 (ert-deftest local-issues-falls-back-silently-for-unusable-daemons ()
-  (local-issues-test--with-repository (root)
+  (let ((batch-emacs (getenv "LOCAL_ISSUES_TEST_BATCH_EMACS"))
+        (process-environment (copy-sequence process-environment)))
+    (when batch-emacs
+      (setenv "PATH" (concat (file-name-directory batch-emacs)
+                             path-separator (getenv "PATH"))))
+    (local-issues-test--with-repository (root)
     (local-issues-test--ticket
      root ".scratch-org/001-alpha/issues/01-first.org"
      "READY-FOR-AGENT" "001-01" "Fallback result")
@@ -221,7 +236,7 @@
             (let ((local-issues-test--socket-name transport))
               (should (equal fallback
                              (local-issues-test--run root "list" "--format" "json"))))
-          (delete-file transport))))))
+          (delete-file transport)))))))
 
 (ert-deftest local-issues-daemon-and-batch-have-full-command-parity ()
   (local-issues-test--with-repository (root)
@@ -288,7 +303,23 @@
       (let ((result (apply #'local-issues-test--run root arguments)))
         (should (= 0 (plist-get result :status)))
         (should (string-match-p "Usage: local-issues" (plist-get result :stdout)))
-        (should (string-empty-p (plist-get result :stderr))))))
+        (should (string-empty-p (plist-get result :stderr)))))
+    (let ((top (plist-get (local-issues-test--run root "--help") :stdout)))
+      (should (equal '("list" "suggest" "why" "doctor")
+                     (local-issues-test--matches "^  \\([a-z]+\\)[ \t]" top)))
+      (should (equal '("--root" "--help")
+                     (local-issues-test--matches "^  \\(--[a-z-]+\\)[ \t]" top))))
+    (dolist (spec '((("list" "--help")
+                     ("--all" "--work-item" "--format" "--help"))
+                    (("suggest" "--help")
+                     ("--limit" "--work-item" "--format" "--help"))
+                    (("why" "--help") ("--all" "--format" "--help"))
+                    (("doctor" "--help") ("--format" "--help"))))
+      (let* ((result (apply #'local-issues-test--run root (car spec)))
+             (options (local-issues-test--matches
+                       "^  \\(--[a-z-]+\\)[ \t]"
+                       (plist-get result :stdout))))
+        (should (equal (cadr spec) options)))))
   (local-issues-test--with-repository (root)
     (let ((help (local-issues-test--run root "why" "--help")))
       (dolist (text '("TICKET_ID" "--all" "--format" "Missing" "ambiguous" "invalid"))
@@ -885,6 +916,30 @@
       (should (equal '((diagnostics))
                      (local-issues-test--json json-result))))))
 
+(ert-deftest local-issues-large-unusual-bodies-stay-out-of-metadata ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-foundation.org"
+     "READY-FOR-AGENT" "001-01" "Foundation" "" nil
+     (concat "** Notes\nBODY-SENTINEL λ\n"
+             (make-string (* 128 1024) ?x)
+             "\n#+begin_src org\n"
+             "* READY-FOR-AGENT Decoy\n:PROPERTIES:\n:TICKET_ID: 999-99\n:END:\n"
+             "#+end_src\n"))
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-dependent.org"
+     "READY-FOR-HUMAN" "001-02" "Dependent" "001-01")
+    (dolist (arguments '(("list") ("list" "--format" "json")
+                         ("suggest") ("suggest" "--format" "json")
+                         ("why" "001-02") ("why" "001-02" "--format" "json")
+                         ("doctor") ("doctor" "--format" "json")))
+      (let ((result (apply #'local-issues-test--run root arguments)))
+        (should (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr)))
+        (should-not (string-match-p "BODY-SENTINEL\\|Decoy\\|999-99"
+                                    (plist-get result :stdout)))
+        (should (< (length (plist-get result :stdout)) 20000))))))
+
 (ert-deftest local-issues-operational-and-argument-errors-are-nonzero ()
   (local-issues-test--with-repository (root)
     (let ((path (local-issues-test--ticket
@@ -893,6 +948,10 @@
       (dolist (arguments '(("list" "--format" "yaml")
                            ("list" "--work-item" "abc")
                            ("list" "--wat")
+                           ("list" "--todo" "READY-FOR-AGENT")
+                           ("list" "--blocked")
+                           ("list" "--text" "ticket")
+                           ("list" "--org-ql" "anything")
                            ("suggest" "--limit" "0")
                            ("suggest" "--limit" "nope")
                            ("suggest" "--all")
@@ -900,6 +959,9 @@
                            ("why" "001-01" "--limit" "2")
                            ("doctor" "--fix")
                            ("doctor" "--work-item" "001")
+                           ("status")
+                           ("show" "001-01")
+                           ("query" "ticket")
                            ("--all")
                            ("--limit" "2")
                            ("--format" "json")
