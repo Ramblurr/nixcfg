@@ -255,6 +255,9 @@ exists, prepends additional parent directories until unique."
     :config
     (setq treemacs-missing-project-action 'remove)))
 
+;; The agent CLI fast path is independent of the interactive issue agenda.
+(load! "lisp/local-issues-core.el")
+
 (if not-android
   (progn
     (load! "+helpers.el")
