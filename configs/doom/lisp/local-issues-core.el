@@ -21,10 +21,13 @@
   "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
 
 (defconst local-issues--help
-  "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n  why        Explain one ticket's dependency chain\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
+  "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n  suggest    Suggest unassigned agent-ready tickets\n  why        Explain one ticket's dependency chain\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
 
 (defconst local-issues--list-help
   "Usage: local-issues [--root PATH] list [OPTIONS]\n\nOptions:\n  --all             Include closed tickets\n  --work-item NNN   Restrict output to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
+
+(defconst local-issues--suggest-help
+  "Usage: local-issues [--root PATH] suggest [OPTIONS]\n\nEligibility:\n  Unassigned READY-FOR-AGENT tickets with READY dependencies.\n\nRanking:\n  Most valid open tickets directly requiring the candidate first, then canonical ID. Tags do not affect ranking.\n\nOptions:\n  --limit N         Return at most N suggestions (default: 1)\n  --work-item NNN   Restrict candidate selection to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
 
 (defconst local-issues--why-help
   "Usage: local-issues [--root PATH] why TICKET_ID [OPTIONS]\n\nArguments:\n  TICKET_ID         Canonical ticket ID to explain\n\nOptions:\n  --all             Include resolved dependency nodes\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n\nFailures:\n  Missing, ambiguous, or invalid requested tickets exit nonzero without partial output.\n")
@@ -277,6 +280,13 @@
   "Return non-nil when RECORD has a closed TODO state."
   (member (plist-get record :todo) local-issues--closed-states))
 
+(defun local-issues--suggestible-p (record)
+  "Return non-nil when RECORD is eligible for agent suggestion."
+  (and (not (plist-get record :invalid))
+       (equal "READY-FOR-AGENT" (plist-get record :todo))
+       (equal "READY" (plist-get record :dependency))
+       (string-empty-p (plist-get record :assignee))))
+
 (defun local-issues--select-records (records all work-item)
   "Select RECORDS according to ALL and WORK-ITEM."
   (cl-remove-if-not
@@ -292,9 +302,7 @@
     (dolist (record records)
       (unless (local-issues--closed-p record)
         (cl-incf open)
-        (when (and (equal "READY-FOR-AGENT" (plist-get record :todo))
-                   (equal "READY" (plist-get record :dependency))
-                   (string-empty-p (plist-get record :assignee)))
+        (when (local-issues--suggestible-p record)
           (cl-incf ready))
         (when (equal "BLOCKED" (plist-get record :dependency))
           (cl-incf blocked))
@@ -403,6 +411,91 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
    (when-let* ((record (plist-get edge :record)))
      `((ticket . ,(local-issues--record-alist record))))))
 
+(defun local-issues--ensure-work-item (root work-item)
+  "Fail when WORK-ITEM does not exist under ROOT."
+  (when (and work-item (not (member work-item (local-issues--work-items root))))
+    (error "unknown work item %s" work-item)))
+
+(defun local-issues--suggestion-impact (candidate records)
+  "Count valid open RECORDS that directly require CANDIDATE."
+  (cl-count-if
+   (lambda (record)
+     (and (not (plist-get record :invalid))
+          (not (local-issues--closed-p record))
+          (member (plist-get candidate :id) (plist-get record :blockers))))
+   records))
+
+(defun local-issues--impact-reason (impact)
+  "Return the stable ranking reason for IMPACT."
+  (format "required by %d open ticket%s" impact (if (= impact 1) "" "s")))
+
+(defun local-issues--suggestions (records work-item limit)
+  "Return up to LIMIT ranked candidates from RECORDS in WORK-ITEM."
+  (let (suggestions)
+    (dolist (record records)
+      (when (and (local-issues--suggestible-p record)
+                 (or (null work-item)
+                     (equal work-item (plist-get record :work-item))))
+        (push (list :record record
+                    :impact (local-issues--suggestion-impact record records))
+              suggestions)))
+    (setq suggestions
+          (sort suggestions
+                (lambda (left right)
+                  (let ((left-impact (plist-get left :impact))
+                        (right-impact (plist-get right :impact)))
+                    (if (= left-impact right-impact)
+                        (string< (plist-get (plist-get left :record) :id)
+                                 (plist-get (plist-get right :record) :id))
+                      (> left-impact right-impact))))))
+    (cl-subseq suggestions 0 (min limit (length suggestions)))))
+
+(defun local-issues--suggestion-fields (suggestion)
+  "Return SUGGESTION as stable table fields."
+  (let* ((record (plist-get suggestion :record))
+         (impact (plist-get suggestion :impact)))
+    (list (plist-get record :id)
+          (plist-get record :todo)
+          (plist-get record :title)
+          (local-issues--impact-reason impact)
+          (number-to-string impact)
+          (expand-file-name (plist-get record :path)))))
+
+(defun local-issues--suggestion-alist (suggestion)
+  "Convert SUGGESTION to a semantic JSON-ready alist."
+  (let* ((record (plist-get suggestion :record))
+         (impact (plist-get suggestion :impact)))
+    `((id . ,(plist-get record :id))
+      (todo . ,(plist-get record :todo))
+      (title . ,(plist-get record :title))
+      (reason . ,(local-issues--impact-reason impact))
+      (impact . ,impact)
+      (path . ,(expand-file-name (plist-get record :path))))))
+
+(defun local-issues--print-suggestions (suggestions format)
+  "Print SUGGESTIONS in FORMAT."
+  (pcase format
+    ("table"
+     (princ "ID\tTODO\tTITLE\tREASON\tIMPACT\tPATH\n")
+     (dolist (suggestion suggestions)
+       (princ (mapconcat #'identity (local-issues--suggestion-fields suggestion) "\t"))
+       (princ "\n")))
+    ("json"
+     (princ
+      (json-encode
+       `((suggestions . ,(vconcat
+                          (mapcar #'local-issues--suggestion-alist suggestions))))))
+     (princ "\n"))))
+
+(defun local-issues--print-suggest (root options)
+  "Print ranked suggestions under ROOT according to OPTIONS."
+  (let ((work-item (plist-get options :work-item)))
+    (local-issues--ensure-work-item root work-item)
+    (local-issues--print-suggestions
+     (local-issues--suggestions
+      (local-issues--records root) work-item (plist-get options :limit))
+     (plist-get options :format))))
+
 (defun local-issues--print-summary (summary)
   "Print SUMMARY in stable table form."
   (princ
@@ -432,8 +525,7 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
 (defun local-issues--print-list (root options)
   "Print a ticket listing for ROOT according to OPTIONS."
   (let ((work-item (plist-get options :work-item)))
-    (when (and work-item (not (member work-item (local-issues--work-items root))))
-      (error "unknown work item %s" work-item))
+    (local-issues--ensure-work-item root work-item)
     (let* ((records (local-issues--select-records
                      (local-issues--records root)
                      (plist-get options :all)
@@ -485,8 +577,9 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
 
 (defun local-issues--parse-arguments (arguments)
   "Parse launcher ARGUMENTS into a command plist."
-  (let (command help root all work-item ticket command-option)
-    (let ((format "table"))
+  (let (command help root all work-item ticket command-option limit-option)
+    (let ((format "table")
+          (limit 1))
       (while arguments
         (pcase (pop arguments)
           ("--root"
@@ -494,6 +587,15 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
              (error "--root requires a path"))
            (setq root (pop arguments)))
           ("--all" (setq all t command-option t))
+          ("--limit"
+           (unless arguments
+             (error "--limit requires a positive integer"))
+           (let ((value (pop arguments)))
+             (unless (string-match-p "\\`[1-9][0-9]*\\'" value)
+               (error "invalid limit %s" value))
+             (setq limit (string-to-number value)
+                   limit-option t
+                   command-option t)))
           ("--work-item"
            (unless arguments
              (error "--work-item requires an ID"))
@@ -513,6 +615,10 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
            (if command
                (error "unexpected command list")
              (setq command 'list)))
+          ("suggest"
+           (if command
+               (error "unexpected command suggest")
+             (setq command 'suggest)))
           ("why"
            (if command
                (error "unexpected command why")
@@ -525,12 +631,17 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
              (error "unknown argument %s" argument)))))
       (when (and (null command) command-option)
         (error "command options require a command"))
-      (when (and work-item (not (eq command 'list)))
-        (error "--work-item is supported only by list"))
+      (when (and all (not (memq command '(list why))))
+        (error "--all is supported only by list and why"))
+      (when (and limit-option (not (eq command 'suggest)))
+        (error "--limit is supported only by suggest"))
+      (when (and work-item (not (memq command '(list suggest))))
+        (error "--work-item is supported only by list and suggest"))
       (list :command command
             :help help
             :root root
             :all all
+            :limit limit
             :work-item work-item
             :ticket ticket
             :format format))))
@@ -545,12 +656,18 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
           (cond
            ((and (eq command 'list) (plist-get options :help))
             (princ local-issues--list-help))
+           ((and (eq command 'suggest) (plist-get options :help))
+            (princ local-issues--suggest-help))
            ((and (eq command 'why) (plist-get options :help))
             (princ local-issues--why-help))
            ((or (null command) (plist-get options :help))
             (princ local-issues--help))
            ((eq command 'list)
             (local-issues--print-list
+             (local-issues--repository-root (plist-get options :root))
+             options))
+           ((eq command 'suggest)
+            (local-issues--print-suggest
              (local-issues--repository-root (plist-get options :root))
              options))
            ((eq command 'why)
