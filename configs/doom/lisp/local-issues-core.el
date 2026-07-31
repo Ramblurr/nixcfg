@@ -5,6 +5,9 @@
 (require 'org)
 (require 'subr-x)
 
+(defconst local-issues-protocol-version "1"
+  "Protocol version shared by the daemon request and launcher.")
+
 (defconst local-issues--todo-states
   '("NEEDS-TRIAGE"
     "NEEDS-INFO"
@@ -708,47 +711,86 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
             :ticket ticket
             :format format))))
 
+(defun local-issues-cli-run (arguments &optional error-output)
+  "Dispatch ARGUMENTS and return the exit status.
+Write failures to ERROR-OUTPUT, or standard error when it is nil."
+  (condition-case condition
+      (let* ((options (local-issues--parse-arguments arguments))
+             (command (plist-get options :command))
+             unhealthy)
+        (cond
+         ((and (eq command 'list) (plist-get options :help))
+          (princ local-issues--list-help))
+         ((and (eq command 'suggest) (plist-get options :help))
+          (princ local-issues--suggest-help))
+         ((and (eq command 'why) (plist-get options :help))
+          (princ local-issues--why-help))
+         ((and (eq command 'doctor) (plist-get options :help))
+          (princ local-issues--doctor-help))
+         ((or (null command) (plist-get options :help))
+          (princ local-issues--help))
+         ((eq command 'list)
+          (local-issues--print-list
+           (local-issues--repository-root (plist-get options :root))
+           options))
+         ((eq command 'suggest)
+          (local-issues--print-suggest
+           (local-issues--repository-root (plist-get options :root))
+           options))
+         ((eq command 'why)
+          (unless (plist-get options :ticket)
+            (error "why requires TICKET_ID"))
+          (local-issues--print-why
+           (local-issues--repository-root (plist-get options :root))
+           options))
+         ((eq command 'doctor)
+          (setq unhealthy
+                (local-issues--print-doctor
+                 (local-issues--repository-root (plist-get options :root))
+                 options))))
+        (if unhealthy 1 0))
+    (error
+     (princ (format "local-issues: %s\n" (error-message-string condition))
+            (or error-output 'external-debugging-output))
+     2)))
+
+(defun local-issues-daemon-request
+    (protocol directory response-directory arguments)
+  "Run ARGUMENTS from DIRECTORY using PROTOCOL.
+Write the complete result beneath RESPONSE-DIRECTORY."
+  (when (equal protocol local-issues-protocol-version)
+    (let ((stdout (generate-new-buffer " *local-issues daemon stdout*"))
+          (stderr (generate-new-buffer " *local-issues daemon stderr*"))
+          (response (expand-file-name "response" response-directory))
+          (response-temp (expand-file-name "response.tmp" response-directory))
+          status)
+      (unwind-protect
+          (progn
+            (let ((default-directory (file-name-as-directory directory))
+                  (standard-output stdout))
+              (setq status (local-issues-cli-run arguments stderr)))
+            (with-current-buffer stdout
+              (write-region nil nil
+                            (expand-file-name "stdout" response-directory)
+                            nil 'silent))
+            (with-current-buffer stderr
+              (write-region nil nil
+                            (expand-file-name "stderr" response-directory)
+                            nil 'silent))
+            (with-temp-file response-temp
+              (insert local-issues-protocol-version "\n"
+                      (number-to-string status) "\n"
+                      "complete\n"))
+            (rename-file response-temp response t)
+            t)
+        (kill-buffer stdout)
+        (kill-buffer stderr)))))
+
 (defun local-issues-cli-main ()
   "Dispatch `local-issues' using `command-line-args-left'."
   (let ((arguments (delete "--" command-line-args-left)))
     (setq command-line-args-left nil)
-    (condition-case condition
-        (let* ((options (local-issues--parse-arguments arguments))
-               (command (plist-get options :command)))
-          (cond
-           ((and (eq command 'list) (plist-get options :help))
-            (princ local-issues--list-help))
-           ((and (eq command 'suggest) (plist-get options :help))
-            (princ local-issues--suggest-help))
-           ((and (eq command 'why) (plist-get options :help))
-            (princ local-issues--why-help))
-           ((and (eq command 'doctor) (plist-get options :help))
-            (princ local-issues--doctor-help))
-           ((or (null command) (plist-get options :help))
-            (princ local-issues--help))
-           ((eq command 'list)
-            (local-issues--print-list
-             (local-issues--repository-root (plist-get options :root))
-             options))
-           ((eq command 'suggest)
-            (local-issues--print-suggest
-             (local-issues--repository-root (plist-get options :root))
-             options))
-           ((eq command 'why)
-            (unless (plist-get options :ticket)
-              (error "why requires TICKET_ID"))
-            (local-issues--print-why
-             (local-issues--repository-root (plist-get options :root))
-             options))
-           ((eq command 'doctor)
-            (when (local-issues--print-doctor
-                   (local-issues--repository-root (plist-get options :root))
-                   options)
-              (kill-emacs 1)))))
-      (error
-       (princ (format "local-issues: %s\n" (error-message-string condition))
-              'external-debugging-output)
-       (kill-emacs 2)))))
+    (kill-emacs (local-issues-cli-run arguments))))
 
 (provide 'local-issues-core)
 
