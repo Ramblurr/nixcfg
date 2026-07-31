@@ -83,7 +83,8 @@
 
 (ert-deftest local-issues-help-is-available ()
   (local-issues-test--with-repository (root)
-    (dolist (arguments '(() ("--help") ("list" "--help") ("why" "--help")))
+    (dolist (arguments '(() ("--help") ("list" "--help")
+                         ("suggest" "--help") ("why" "--help")))
       (let ((result (apply #'local-issues-test--run root arguments)))
         (should (= 0 (plist-get result :status)))
         (should (string-match-p "Usage: local-issues" (plist-get result :stdout)))
@@ -91,6 +92,11 @@
   (local-issues-test--with-repository (root)
     (let ((help (local-issues-test--run root "why" "--help")))
       (dolist (text '("TICKET_ID" "--all" "--format" "Missing" "ambiguous" "invalid"))
+        (should (string-match-p text (plist-get help :stdout))))))
+  (local-issues-test--with-repository (root)
+    (let ((help (local-issues-test--run root "suggest" "--help")))
+      (dolist (text '("READY-FOR-AGENT" "READY" "Unassigned" "requiring"
+                      "default: 1" "--limit" "--work-item" "--format"))
         (should (string-match-p text (plist-get help :stdout))))))
 
 (ert-deftest local-issues-discovers-root-and-accepts-override ()
@@ -471,6 +477,109 @@
         (should (string-empty-p (plist-get result :stdout)))
         (should (string-match-p (car case) (plist-get result :stderr)))))))
 
+(ert-deftest local-issues-suggest-ranks-eligible-tickets-and-matches-json ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/01-foundation.org"
+     "* READY-FOR-AGENT Foundation A :bug:\n:PROPERTIES:\n:TICKET_ID: 001-01\n:BLOCKED_BY:\n:ASSIGNEE:\n:END:\n\nSECRET-SUGGESTION-BODY\n")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-alternative.org"
+     "READY-FOR-AGENT" "001-02" "Alternative B")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-wrong-state.org"
+     "READY-FOR-HUMAN" "001-03" "Human only")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/04-assigned.org"
+     "READY-FOR-AGENT" "001-04" "Assigned" "" "worker")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/05-blocked.org"
+     "READY-FOR-AGENT" "001-05" "Blocked" "001-20")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/06-invalid.org"
+     "READY-FOR-AGENT" "001-06" "Invalid" "999-99")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/07-invalid-dependent.org"
+     "READY-FOR-AGENT" "001-07" "Invalid dependent" "001-06")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/10-dependent-a.org"
+     "READY-FOR-HUMAN" "001-10" "Requires A" "001-01")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/20-wontfix.org"
+     "WONTFIX" "001-20" "Wontfix blocker")
+    (local-issues-test--write
+     root ".scratch-org/002-beta/issues/01-scoped.org"
+     "* READY-FOR-AGENT Scoped C :bug:\n:PROPERTIES:\n:TICKET_ID: 002-01\n:BLOCKED_BY:\n:ASSIGNEE:\n:END:\n")
+    (local-issues-test--ticket
+     root ".scratch-org/002-beta/issues/10-dependent-all.org"
+     "READY-FOR-HUMAN" "002-10" "Requires all" "001-01 001-02 002-01")
+    (local-issues-test--ticket
+     root ".scratch-org/002-beta/issues/11-dependent-all.org"
+     "READY-FOR-HUMAN" "002-11" "Also requires all" "001-01 001-02 002-01")
+    (local-issues-test--ticket
+     root ".scratch-org/002-beta/issues/12-resolved-dependent.org"
+     "RESOLVED" "002-12" "Closed dependent" "001-01")
+    (local-issues-test--ticket
+     root ".scratch-org/002-beta/issues/13-invalid-dependent.org"
+     "READY-FOR-HUMAN" "002-13" "Invalid dependent" "001-01 999-99")
+    (local-issues-test--ticket
+     root ".scratch-org/003-empty/issues/01-human.org"
+     "READY-FOR-HUMAN" "003-01" "No agent candidate")
+    (let* ((default (local-issues-test--run root "suggest"))
+           (limited-table (local-issues-test--run root "suggest" "--limit" "3"))
+           (limited-json-result
+            (local-issues-test--run root "suggest" "--limit" "99" "--format" "json"))
+           (scoped-result
+            (local-issues-test--run root "suggest" "--work-item" "002" "--format" "json"))
+           (empty-result
+            (local-issues-test--run root "suggest" "--work-item" "003" "--format" "json"))
+           (suggestions (alist-get 'suggestions
+                                   (local-issues-test--json limited-json-result)))
+           (ids (mapcar (lambda (suggestion) (alist-get 'id suggestion)) suggestions)))
+      (dolist (result (list default limited-table limited-json-result scoped-result empty-result))
+        (should (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr)))
+        (should-not (string-match-p "SECRET-SUGGESTION-BODY"
+                                    (plist-get result :stdout))))
+      (should (equal '("001-01" "001-02" "002-01") ids))
+      (should (equal '(3 2 2)
+                     (mapcar (lambda (suggestion) (alist-get 'impact suggestion))
+                             suggestions)))
+      (should (equal '("required by 3 open tickets"
+                       "required by 2 open tickets"
+                       "required by 2 open tickets")
+                     (mapcar (lambda (suggestion) (alist-get 'reason suggestion))
+                             suggestions)))
+      (should (equal (mapcar (lambda (id)
+                               (expand-file-name
+                                (pcase id
+                                  ("001-01" ".scratch-org/001-alpha/issues/01-foundation.org")
+                                  ("001-02" ".scratch-org/001-alpha/issues/02-alternative.org")
+                                  ("002-01" ".scratch-org/002-beta/issues/01-scoped.org"))
+                                root))
+                             ids)
+                     (mapcar (lambda (suggestion) (alist-get 'path suggestion))
+                             suggestions)))
+      (should (equal '("001-01")
+                     (mapcar (lambda (line) (car (split-string line "\t")))
+                             (cdr (split-string (plist-get default :stdout) "\n" t)))))
+      (dolist (suggestion suggestions)
+        (should (string-match-p
+                 (regexp-quote
+                  (format "%s\t%s\t%s\t%s\t%d\t%s"
+                          (alist-get 'id suggestion)
+                          (alist-get 'todo suggestion)
+                          (alist-get 'title suggestion)
+                          (alist-get 'reason suggestion)
+                          (alist-get 'impact suggestion)
+                          (alist-get 'path suggestion)))
+                 (plist-get limited-table :stdout))))
+      (should (equal '("002-01")
+                     (mapcar (lambda (suggestion) (alist-get 'id suggestion))
+                             (alist-get 'suggestions
+                                        (local-issues-test--json scoped-result)))))
+      (should (equal '((suggestions))
+                     (local-issues-test--json empty-result))))))
+
 (ert-deftest local-issues-operational-and-argument-errors-are-nonzero ()
   (local-issues-test--with-repository (root)
     (let ((path (local-issues-test--ticket
@@ -479,7 +588,13 @@
       (dolist (arguments '(("list" "--format" "yaml")
                            ("list" "--work-item" "abc")
                            ("list" "--wat")
+                           ("suggest" "--limit" "0")
+                           ("suggest" "--limit" "nope")
+                           ("suggest" "--all")
+                           ("suggest" "--work-item" "999")
+                           ("why" "001-01" "--limit" "2")
                            ("--all")
+                           ("--limit" "2")
                            ("--format" "json")
                            ("--work-item" "001")))
         (let ((result (apply #'local-issues-test--run root arguments)))
