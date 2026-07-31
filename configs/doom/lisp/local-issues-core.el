@@ -21,7 +21,7 @@
   "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
 
 (defconst local-issues--help
-  "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n  suggest    Suggest unassigned agent-ready tickets\n  why        Explain one ticket's dependency chain\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
+  "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n  suggest    Suggest unassigned agent-ready tickets\n  why        Explain one ticket's dependency chain\n  doctor     Diagnose tracker integrity\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
 
 (defconst local-issues--list-help
   "Usage: local-issues [--root PATH] list [OPTIONS]\n\nOptions:\n  --all             Include closed tickets\n  --work-item NNN   Restrict output to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
@@ -31,6 +31,9 @@
 
 (defconst local-issues--why-help
   "Usage: local-issues [--root PATH] why TICKET_ID [OPTIONS]\n\nArguments:\n  TICKET_ID         Canonical ticket ID to explain\n\nOptions:\n  --all             Include resolved dependency nodes\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n\nFailures:\n  Missing, ambiguous, or invalid requested tickets exit nonzero without partial output.\n")
+
+(defconst local-issues--doctor-help
+  "Usage: local-issues [--root PATH] doctor [OPTIONS]\n\nBehavior:\n  Performs a read-only tracker check and never edits tracker files.\n\nOptions:\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n\nExit status:\n  Exits zero when no findings exist and nonzero when any finding exists.\n")
 
 (defun local-issues--repository-root (&optional override)
   "Return the tracker root at OVERRIDE or above `default-directory'."
@@ -89,7 +92,9 @@
                   (equal message (plist-get diagnostic :message))))
            (plist-get record :diagnostics))
     (setf (plist-get record :diagnostics)
-          (cons (list :code code :message message)
+          (cons (list :severity (if invalid "error" "warning")
+                      :code code
+                      :message message)
                 (plist-get record :diagnostics))))
   (when invalid
     (setf (plist-get record :invalid) t)))
@@ -137,9 +142,13 @@
           (unless (member state local-issues--todo-states)
             (local-issues--add-diagnostic
              record "unknown-todo" (format "unknown TODO state %s" state) t))
-          (unless (local-issues--canonical-id-p id)
+          (cond
+           ((null id)
             (local-issues--add-diagnostic
-             record "malformed-id" (format "malformed TICKET_ID %s" (or id "<missing>")) t))
+             record "missing-id" "missing TICKET_ID property" t))
+           ((not (local-issues--canonical-id-p id))
+            (local-issues--add-diagnostic
+             record "malformed-id" (format "malformed TICKET_ID %s" id) t)))
           (when (and (local-issues--canonical-id-p id)
                      (not (equal id expected-id)))
             (local-issues--add-diagnostic
@@ -152,6 +161,9 @@
                record "malformed-blocker"
                (format "malformed blocker %s" blocker)
                t)))
+          (when (null blocker-value)
+            (local-issues--add-diagnostic
+             record "missing-blocked-by" "missing BLOCKED_BY property"))
           (when (null assignee-value)
             (local-issues--add-diagnostic
              record "missing-assignee" "missing ASSIGNEE property")))))
@@ -357,6 +369,52 @@
           (plist-get record :assignee))
         (plist-get record :title)
         (local-issues--diagnostic-codes-string record)))
+
+(defun local-issues--doctor-diagnostics (records)
+  "Return ordered tracker diagnostics from RECORDS."
+  (let (findings)
+    (dolist (record records)
+      (dolist (diagnostic (plist-get record :diagnostics))
+        (push (list :severity (plist-get diagnostic :severity)
+                    :code (plist-get diagnostic :code)
+                    :id (plist-get record :sort-id)
+                    :source (expand-file-name (plist-get record :path))
+                    :message (plist-get diagnostic :message))
+              findings)))
+    (nreverse findings)))
+
+(defun local-issues--doctor-fields (diagnostic)
+  "Return DIAGNOSTIC as stable table fields."
+  (mapcar (lambda (key) (plist-get diagnostic key))
+          '(:severity :code :id :source :message)))
+
+(defun local-issues--doctor-alist (diagnostic)
+  "Convert DIAGNOSTIC to a semantic JSON-ready alist."
+  `((severity . ,(plist-get diagnostic :severity))
+    (code . ,(plist-get diagnostic :code))
+    (id . ,(plist-get diagnostic :id))
+    (source . ,(plist-get diagnostic :source))
+    (message . ,(plist-get diagnostic :message))))
+
+(defun local-issues--print-doctor (root options)
+  "Print tracker diagnostics under ROOT according to OPTIONS.
+Return non-nil when findings exist."
+  (let ((diagnostics (local-issues--doctor-diagnostics
+                      (local-issues--records root))))
+    (pcase (plist-get options :format)
+      ("table"
+       (princ "SEVERITY\tCODE\tID\tSOURCE\tMESSAGE\n")
+       (dolist (diagnostic diagnostics)
+         (princ (mapconcat #'identity
+                           (local-issues--doctor-fields diagnostic) "\t"))
+         (princ "\n")))
+      ("json"
+       (princ
+        (json-encode
+         `((diagnostics . ,(vconcat
+                            (mapcar #'local-issues--doctor-alist diagnostics))))))
+       (princ "\n")))
+    diagnostics))
 
 (defun local-issues--requested-record (records id)
   "Return the unique valid record named ID from RECORDS, or fail clearly."
@@ -623,6 +681,10 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
            (if command
                (error "unexpected command why")
              (setq command 'why)))
+          ("doctor"
+           (if command
+               (error "unexpected command doctor")
+             (setq command 'doctor)))
           (argument
            (if (and (eq command 'why) (null ticket))
                (if (local-issues--canonical-id-p argument)
@@ -660,6 +722,8 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
             (princ local-issues--suggest-help))
            ((and (eq command 'why) (plist-get options :help))
             (princ local-issues--why-help))
+           ((and (eq command 'doctor) (plist-get options :help))
+            (princ local-issues--doctor-help))
            ((or (null command) (plist-get options :help))
             (princ local-issues--help))
            ((eq command 'list)
@@ -675,7 +739,12 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
               (error "why requires TICKET_ID"))
             (local-issues--print-why
              (local-issues--repository-root (plist-get options :root))
-             options))))
+             options))
+           ((eq command 'doctor)
+            (when (local-issues--print-doctor
+                   (local-issues--repository-root (plist-get options :root))
+                   options)
+              (kill-emacs 1)))))
       (error
        (princ (format "local-issues: %s\n" (error-message-string condition))
               'external-debugging-output)

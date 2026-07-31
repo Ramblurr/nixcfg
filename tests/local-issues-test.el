@@ -72,6 +72,29 @@
      (lambda (line) (seq-take (split-string line "\t") 4))
      (cdr (member header lines)))))
 
+(defun local-issues-test--doctor-json-rows (document)
+  "Return doctor DOCUMENT diagnostics as stable row fields."
+  (mapcar
+   (lambda (diagnostic)
+     (mapcar (lambda (key) (alist-get key diagnostic))
+             '(severity code id source message)))
+   (alist-get 'diagnostics document)))
+
+(defun local-issues-test--doctor-table-rows (result)
+  "Return doctor table RESULT as stable row fields."
+  (cdr (mapcar (lambda (line) (split-string line "\t"))
+               (split-string (plist-get result :stdout) "\n" t))))
+
+(defun local-issues-test--file-snapshot (root)
+  "Return the literal contents of every Org file below ROOT."
+  (mapcar
+   (lambda (path)
+     (cons path
+           (with-temp-buffer
+             (insert-file-contents-literally path)
+             (buffer-string))))
+   (directory-files-recursively root "\\.org\\'")))
+
 (cl-defmacro local-issues-test--with-repository ((root) &rest body)
   (declare (indent 1))
   `(let ((,root (make-temp-file "local-issues-repository-" t)))
@@ -84,11 +107,12 @@
 (ert-deftest local-issues-help-is-available ()
   (local-issues-test--with-repository (root)
     (dolist (arguments '(() ("--help") ("list" "--help")
-                         ("suggest" "--help") ("why" "--help")))
+                         ("suggest" "--help") ("why" "--help")
+                         ("doctor" "--help")))
       (let ((result (apply #'local-issues-test--run root arguments)))
         (should (= 0 (plist-get result :status)))
         (should (string-match-p "Usage: local-issues" (plist-get result :stdout)))
-        (should (string-empty-p (plist-get result :stderr)))))))
+        (should (string-empty-p (plist-get result :stderr))))))
   (local-issues-test--with-repository (root)
     (let ((help (local-issues-test--run root "why" "--help")))
       (dolist (text '("TICKET_ID" "--all" "--format" "Missing" "ambiguous" "invalid"))
@@ -98,6 +122,10 @@
       (dolist (text '("READY-FOR-AGENT" "READY" "Unassigned" "requiring"
                       "default: 1" "--limit" "--work-item" "--format"))
         (should (string-match-p text (plist-get help :stdout))))))
+  (local-issues-test--with-repository (root)
+    (let ((help (local-issues-test--run root "doctor" "--help")))
+      (dolist (text '("read-only" "never edits" "--format" "zero" "nonzero"))
+        (should (string-match-p text (plist-get help :stdout)))))))
 
 (ert-deftest local-issues-discovers-root-and-accepts-override ()
   (local-issues-test--with-repository (root)
@@ -580,6 +608,107 @@
       (should (equal '((suggestions))
                      (local-issues-test--json empty-result))))))
 
+(ert-deftest local-issues-doctor-reports-every-finding-deterministically ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-unknown-blocker.org"
+     "READY-FOR-AGENT" "001-01" "Unknown blocker" "999-99" nil
+     "SECRET-DOCTOR-BODY")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-malformed-blocker.org"
+     "READY-FOR-AGENT" "001-02" "Malformed blocker" "bad")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-malformed-id.org"
+     "READY-FOR-AGENT" "bad-id" "Malformed ID")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/04-mismatch.org"
+     "READY-FOR-AGENT" "900-04" "Path mismatch")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/05-unknown-todo.org"
+     "BOGUS" "001-05" "Unknown TODO")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/06-duplicate-a.org"
+     "READY-FOR-AGENT" "001-06" "Duplicate A")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/07-duplicate-b.org"
+     "READY-FOR-AGENT" "001-06" "Duplicate B")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/08-ambiguous.org"
+     "READY-FOR-AGENT" "001-08" "Ambiguous blocker" "001-06")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/09-cycle-a.org"
+     "READY-FOR-AGENT" "001-09" "Cycle A" "001-10")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/10-cycle-b.org"
+     "READY-FOR-AGENT" "001-10" "Cycle B" "001-09")
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/11-missing-id.org"
+     "* READY-FOR-AGENT Missing ID\n:PROPERTIES:\n:BLOCKED_BY:\n:ASSIGNEE:\n:END:\n")
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/12-missing-assignee.org"
+     "* READY-FOR-AGENT Missing assignee\n:PROPERTIES:\n:TICKET_ID: 001-12\n:BLOCKED_BY:\n:END:\n")
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/13-missing-blocked-by.org"
+     "* READY-FOR-AGENT Missing blockers property\n:PROPERTIES:\n:TICKET_ID: 001-13\n:ASSIGNEE:\n:END:\n")
+    (let* ((before (local-issues-test--file-snapshot root))
+           (table (local-issues-test--run root "doctor" "--format" "table"))
+           (json-result (local-issues-test--run root "doctor" "--format" "json"))
+           (repeat (local-issues-test--run root "doctor" "--format" "json"))
+           (document (local-issues-test--json json-result))
+           (rows (local-issues-test--doctor-json-rows document))
+           (codes (delete-dups (mapcar #'cadr rows))))
+      (dolist (result (list table json-result repeat))
+        (should-not (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr)))
+        (should-not (string-match-p "SECRET-DOCTOR-BODY"
+                                    (plist-get result :stdout))))
+      (should (equal (plist-get json-result :stdout)
+                     (plist-get repeat :stdout)))
+      (should (equal rows (local-issues-test--doctor-table-rows table)))
+      (should (equal '("ambiguous-blocker" "dependency-cycle" "duplicate-id"
+                       "malformed-blocker" "malformed-id" "missing-assignee"
+                       "missing-blocked-by"
+                       "missing-id" "path-id-mismatch" "unknown-blocker"
+                       "unknown-todo")
+                     (sort (cl-intersection
+                            codes
+                            '("ambiguous-blocker" "dependency-cycle" "duplicate-id"
+                              "malformed-blocker" "malformed-id" "missing-assignee"
+                              "missing-blocked-by"
+                              "missing-id" "path-id-mismatch" "unknown-blocker"
+                              "unknown-todo")
+                            :test #'equal)
+                           #'string<)))
+      (should (cl-every (lambda (row)
+                          (and (member (car row) '("error" "warning"))
+                               (string-match-p "\\`[0-9]\\{3\\}-[0-9]\\{2\\}\\'"
+                                               (nth 2 row))
+                               (file-name-absolute-p (nth 3 row))
+                               (not (string-empty-p (nth 4 row)))))
+                        rows))
+      (should (equal '("missing-assignee" "missing-blocked-by")
+                     (sort (mapcar #'cadr
+                                   (cl-remove-if-not
+                                    (lambda (row) (equal "warning" (car row)))
+                                    rows))
+                           #'string<)))
+      (should (equal before (local-issues-test--file-snapshot root))))))
+
+(ert-deftest local-issues-doctor-clean-tracker-exits-zero ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-clean.org"
+     "READY-FOR-AGENT" "001-01" "Clean")
+    (let ((table (local-issues-test--run root "doctor"))
+          (json-result (local-issues-test--run root "doctor" "--format" "json")))
+      (dolist (result (list table json-result))
+        (should (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr))))
+      (should (equal "SEVERITY\tCODE\tID\tSOURCE\tMESSAGE\n"
+                     (plist-get table :stdout)))
+      (should (equal '((diagnostics))
+                     (local-issues-test--json json-result))))))
+
 (ert-deftest local-issues-operational-and-argument-errors-are-nonzero ()
   (local-issues-test--with-repository (root)
     (let ((path (local-issues-test--ticket
@@ -593,6 +722,8 @@
                            ("suggest" "--all")
                            ("suggest" "--work-item" "999")
                            ("why" "001-01" "--limit" "2")
+                           ("doctor" "--fix")
+                           ("doctor" "--work-item" "001")
                            ("--all")
                            ("--limit" "2")
                            ("--format" "json")
