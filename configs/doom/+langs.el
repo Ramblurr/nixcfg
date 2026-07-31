@@ -95,6 +95,10 @@
       (when (file-exists-p clojure-lsp-dev)
         (setq  lsp-clojure-custom-server-command `("bash" "-c" ,clojure-lsp-dev))))))
 
+(after! lsp-copilot
+  (puthash "didChangeStatus/v2" #'ignore
+    (lsp--client-notification-handlers
+      (gethash 'copilot-ls lsp-clients))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Java
