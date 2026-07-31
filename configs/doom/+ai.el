@@ -5,6 +5,68 @@
   nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; pi-coding-agent
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun my/pi-coding-agent-send-or-steer ()
+  "Send input, steering the active turn when Pi is busy."
+  (interactive)
+  (if-let* ((chat-buf (pi-coding-agent--get-chat-buffer))
+            ((pi-coding-agent--session-busy-p chat-buf)))
+      (pi-coding-agent-queue-steering)
+    (pi-coding-agent-send)))
+
+(use-package! pi-coding-agent
+  :commands (pi-coding-agent
+             pi-coding-agent-open-session-file
+             pi-coding-agent-toggle)
+  :init
+  (defalias 'pi #'pi-coding-agent)
+  (map! :leader :desc "Pi" :n "l l" #'pi-coding-agent)
+  :config
+  (map!
+    :map (pi-coding-agent-chat-mode-map pi-coding-agent-input-mode-map)
+    (:localleader
+      :desc "menu"      :nm "?" #'pi-coding-agent-menu
+      :desc "abort"     :nm "a" #'pi-coding-agent-abort
+      :desc "compact"   :nm "c" #'pi-coding-agent-compact
+      :desc "export"    :nm "e" #'pi-coding-agent-export-html
+      :desc "model"     :nm "m" #'pi-coding-agent-select-model
+      :desc "thinking"  :nm "t" #'pi-coding-agent-select-thinking
+      :desc "copy last" :nm "y" #'pi-coding-agent-copy-last-message
+      :desc "quit"      :nm "q" #'pi-coding-agent-quit
+      (:prefix ("I" . "info")
+        :desc "stats"   :nm "s" #'pi-coding-agent-session-stats
+        :desc "process" :nm "p" #'pi-coding-agent-process-info)
+      (:prefix ("s" . "session")
+        :desc "new"    :nm "n" #'pi-coding-agent-new-session
+        :desc "resume" :nm "r" #'pi-coding-agent-resume-session
+        :desc "reload" :nm "R" #'pi-coding-agent-reload
+        :desc "rename" :nm "N" #'pi-coding-agent-set-session-name
+        :desc "open"   :nm "o" #'pi-coding-agent-open-session-file)))
+
+  (map!
+    :map pi-coding-agent-input-mode-map
+    "C-c C-c" #'my/pi-coding-agent-send-or-steer
+    "C-c C-f" #'pi-coding-agent-send
+    "M-RET"   #'pi-coding-agent-send
+    (:localleader
+      :desc "send/steer" :nm "RET" #'my/pi-coding-agent-send-or-steer
+      :desc "follow up"  :nm "f"   #'pi-coding-agent-send
+      :desc "prev prompt" :nm "p"  #'pi-coding-agent-previous-input
+      :desc "next prompt" :nm "n"  #'pi-coding-agent-next-input))
+
+  (map!
+    :map pi-coding-agent-chat-mode-map
+    (:localleader
+      :desc "input"    :nm "i"   #'pi-coding-agent
+      :desc "next msg" :nm "n"   #'pi-coding-agent-next-message
+      :desc "prev msg" :nm "p"   #'pi-coding-agent-previous-message
+      :desc "toggle"   :nm "TAB" #'pi-coding-agent-toggle-tool-section
+      :desc "visit"    :nm "v"   #'pi-coding-agent-visit-file
+      :desc "shell"    :nm "!"   #'pi-coding-agent-shell-command-at-point)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; gptel
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
