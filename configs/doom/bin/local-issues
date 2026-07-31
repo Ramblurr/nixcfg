@@ -2,8 +2,59 @@
 set -eu
 
 launcher_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-exec emacs --batch -Q \
-  -L "$launcher_dir/../lisp" \
-  -l local-issues-core \
-  --eval '(local-issues-cli-main)' \
-  -- "$@"
+protocol=1
+
+run_batch() {
+  exec emacs --batch -Q \
+    -L "$launcher_dir/../lisp" \
+    -l local-issues-core \
+    --eval '(local-issues-cli-main)' \
+    -- "$@"
+}
+
+elisp_quote() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+if command -v emacsclient >/dev/null 2>&1; then
+  response_dir=$(mktemp -d "${TMPDIR:-/tmp}/local-issues.XXXXXX") || run_batch "$@"
+  trap 'rm -rf "$response_dir"' EXIT HUP INT TERM
+
+  request="(and (boundp 'local-issues-protocol-version)"
+  request="$request (fboundp 'local-issues-daemon-request)"
+  request="$request (equal local-issues-protocol-version \"$protocol\")"
+  request="$request (local-issues-daemon-request \"$protocol\""
+  request="$request \"$(elisp_quote "$PWD")\""
+  request="$request \"$(elisp_quote "$response_dir")\" '("
+  for argument do
+    request="$request \"$(elisp_quote "$argument")\""
+  done
+  request="$request)))"
+
+  if emacsclient --alternate-editor=false --timeout=1 --suppress-output \
+      --eval "$request" >/dev/null 2>&1 \
+      && [ -r "$response_dir/response" ] \
+      && [ -r "$response_dir/stdout" ] \
+      && [ -r "$response_dir/stderr" ]; then
+    response_protocol=$(sed -n '1p' "$response_dir/response")
+    response_status=$(sed -n '2p' "$response_dir/response")
+    response_complete=$(sed -n '3p' "$response_dir/response")
+    if [ "$response_protocol" = "$protocol" ] \
+        && [ "$response_complete" = complete ]; then
+      case "$response_status" in
+        0 | 1 | 2)
+          cat "$response_dir/stdout"
+          cat "$response_dir/stderr" >&2
+          rm -rf "$response_dir"
+          trap - EXIT HUP INT TERM
+          exit "$response_status"
+          ;;
+      esac
+    fi
+  fi
+
+  rm -rf "$response_dir"
+  trap - EXIT HUP INT TERM
+fi
+
+run_batch "$@"

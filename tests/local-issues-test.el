@@ -13,6 +13,12 @@
       (expand-file-name "configs/doom/bin/local-issues"
                         local-issues-test--repository-root)))
 
+(defvar local-issues-test--socket-name
+  (format "local-issues-absent-%d" (emacs-pid))
+  "Emacs server socket selected for launcher process tests.")
+
+(defvar local-issues-test--server-counter 0)
+
 (defun local-issues-test--write (root relative content)
   (let ((path (expand-file-name relative root)))
     (make-directory (file-name-directory path) t)
@@ -28,8 +34,10 @@
 
 (defun local-issues-test--run (directory &rest arguments)
   (let ((default-directory (file-name-as-directory directory))
+        (process-environment (copy-sequence process-environment))
         (stdout (generate-new-buffer " *local-issues stdout*"))
         (stderr (make-temp-file "local-issues-stderr-")))
+    (setenv "EMACS_SOCKET_NAME" local-issues-test--socket-name)
     (unwind-protect
         (let ((status (apply #'call-process
                              local-issues-test--launcher nil
@@ -103,6 +111,174 @@
            (make-directory (expand-file-name ".scratch-org" ,root))
            ,@body)
        (delete-directory ,root t))))
+
+(defun local-issues-test--server-eval (socket expression)
+  "Evaluate EXPRESSION through the isolated Emacs server at SOCKET."
+  (let ((process-environment (copy-sequence process-environment)))
+    (setenv "EMACS_SOCKET_NAME" socket)
+    (call-process "emacsclient" nil nil nil
+                  "--alternate-editor=false" "--timeout=2"
+                  "--suppress-output" "--eval" expression)))
+
+(cl-defmacro local-issues-test--with-server ((socket &optional load-core) &rest body)
+  "Start an isolated server as SOCKET, optionally LOAD-CORE, then run BODY."
+  (declare (indent 1))
+  `(let ((,socket (format "local-issues-test-%d-%d"
+                          (emacs-pid)
+                          (cl-incf local-issues-test--server-counter))))
+     (should (= 0 (call-process "emacs" nil nil nil
+                                "-Q" (concat "--daemon=" ,socket))))
+     (unwind-protect
+         (progn
+           (when ,load-core
+             (should
+              (= 0
+                 (local-issues-test--server-eval
+                  ,socket
+                  (format "(load %S nil t)"
+                          (expand-file-name
+                           "configs/doom/lisp/local-issues-core.el"
+                           local-issues-test--repository-root))))))
+           ,@body)
+       (local-issues-test--server-eval ,socket "(kill-emacs)"))))
+
+(cl-defmacro local-issues-test--without-batch-emacs (&rest body)
+  "Run BODY with an =emacs= command that fails with status 97."
+  (declare (indent 0))
+  `(let* ((bin (make-temp-file "local-issues-bin-" t))
+          (emacs-shim (expand-file-name "emacs" bin))
+          (process-environment (copy-sequence process-environment)))
+     (unwind-protect
+         (progn
+           (with-temp-file emacs-shim
+             (insert "#!/bin/sh\nexit 97\n"))
+           (set-file-modes emacs-shim #o755)
+           (setenv "PATH" (concat bin path-separator (getenv "PATH")))
+           ,@body)
+       (delete-directory bin t))))
+
+(ert-deftest local-issues-uses-compatible-daemon-when-batch-is-unavailable ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-first.org"
+     "READY-FOR-AGENT" "001-01" "Daemon result")
+    (local-issues-test--with-server (socket t)
+      (let ((local-issues-test--socket-name socket))
+        (local-issues-test--without-batch-emacs
+          (let ((result (local-issues-test--run root "list")))
+            (should
+             (equal (list 0 t "")
+                    (list (plist-get result :status)
+                          (and (string-match-p "Daemon result"
+                                               (plist-get result :stdout))
+                               t)
+                          (plist-get result :stderr))))))))))
+
+(ert-deftest local-issues-falls-back-silently-for-unusable-daemons ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-first.org"
+     "READY-FOR-AGENT" "001-01" "Fallback result")
+    (let ((fallback (local-issues-test--run root "list" "--format" "json")))
+      (should (equal '(0 "")
+                     (list (plist-get fallback :status)
+                           (plist-get fallback :stderr))))
+      (local-issues-test--with-server (socket)
+        (let ((local-issues-test--socket-name socket))
+          (should (equal fallback
+                         (local-issues-test--run root "list" "--format" "json")))))
+      (local-issues-test--with-server (socket)
+        (should (= 0 (local-issues-test--server-eval
+                      socket
+                      "(setq local-issues-protocol-version \"1\")")))
+        (let ((local-issues-test--socket-name socket))
+          (should (equal fallback
+                         (local-issues-test--run root "list" "--format" "json")))))
+      (local-issues-test--with-server (socket t)
+        (should (= 0 (local-issues-test--server-eval
+                      socket
+                      "(setq local-issues-protocol-version \"stale\")")))
+        (let ((local-issues-test--socket-name socket))
+          (should (equal fallback
+                         (local-issues-test--run root "list" "--format" "json")))))
+      (local-issues-test--with-server (socket t)
+        (should
+         (= 0
+            (local-issues-test--server-eval
+             socket
+             (concat
+              "(fset 'local-issues-daemon-request "
+              "(lambda (_protocol _directory response-directory _arguments) "
+              "(dolist (name '(\"stdout\" \"stderr\")) "
+              "(with-temp-file (expand-file-name name response-directory))) "
+              "(with-temp-file (expand-file-name \"response\" response-directory) "
+              "(insert \"1\\n0\\n\")) t))"))))
+        (let ((local-issues-test--socket-name socket))
+          (should (equal fallback
+                         (local-issues-test--run root "list" "--format" "json")))))
+      (let ((transport (make-temp-file "local-issues-not-a-socket-")))
+        (unwind-protect
+            (let ((local-issues-test--socket-name transport))
+              (should (equal fallback
+                             (local-issues-test--run root "list" "--format" "json"))))
+          (delete-file transport))))))
+
+(ert-deftest local-issues-daemon-and-batch-have-full-command-parity ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-resolved.org"
+     "RESOLVED" "001-01" "Resolved")
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/02-candidate.org"
+     "* READY-FOR-AGENT Candidate\n:PROPERTIES:\n:TICKET_ID: 001-02\n:BLOCKED_BY: 001-01\n:END:\n")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-dependent.org"
+     "READY-FOR-AGENT" "001-03" "Dependent" "001-02")
+    (let ((commands '(("list")
+                      ("list" "--format" "json")
+                      ("suggest")
+                      ("suggest" "--format" "json")
+                      ("why" "001-03")
+                      ("why" "001-03" "--format" "json")
+                      ("doctor")
+                      ("doctor" "--format" "json")
+                      ("why" "999-99"))))
+      (local-issues-test--with-server (socket t)
+        (dolist (arguments commands)
+          (let ((batch (apply #'local-issues-test--run root arguments))
+                (daemon
+                 (let ((local-issues-test--socket-name socket))
+                   (apply #'local-issues-test--run root arguments))))
+            (should (equal batch daemon))))))))
+
+(ert-deftest local-issues-daemon-reads-disk-instead-of-modified-buffer ()
+  (local-issues-test--with-repository (root)
+    (let ((path (local-issues-test--ticket
+                 root ".scratch-org/001-alpha/issues/01-first.org"
+                 "READY-FOR-AGENT" "001-01" "Saved title")))
+      (local-issues-test--with-server (socket t)
+        (should
+         (= 0
+            (local-issues-test--server-eval
+             socket
+             (format
+              "(progn (find-file %S) (goto-char (point-min)) (search-forward \"Saved title\") (replace-match \"Unsaved title\") (set-buffer-modified-p t))"
+              path))))
+        (let ((local-issues-test--socket-name socket))
+          (local-issues-test--without-batch-emacs
+            (let ((result (local-issues-test--run root "list")))
+              (should
+               (equal '(0 t nil "")
+                      (list (plist-get result :status)
+                            (and (string-match-p "Saved title"
+                                                 (plist-get result :stdout))
+                                 t)
+                            (string-match-p "Unsaved title"
+                                            (plist-get result :stdout))
+                            (plist-get result :stderr)))))))
+        (local-issues-test--server-eval
+         socket
+         "(progn (set-buffer-modified-p nil) (kill-buffer))")))))
 
 (ert-deftest local-issues-help-is-available ()
   (local-issues-test--with-repository (root)
