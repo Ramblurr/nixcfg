@@ -17,11 +17,17 @@
 
 (defconst local-issues--closed-states '("RESOLVED" "WONTFIX"))
 
+(defconst local-issues--record-header
+  "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
+
 (defconst local-issues--help
-  "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
+  "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n  why        Explain one ticket's dependency chain\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
 
 (defconst local-issues--list-help
   "Usage: local-issues [--root PATH] list [OPTIONS]\n\nOptions:\n  --all             Include closed tickets\n  --work-item NNN   Restrict output to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
+
+(defconst local-issues--why-help
+  "Usage: local-issues [--root PATH] why TICKET_ID [OPTIONS]\n\nArguments:\n  TICKET_ID         Canonical ticket ID to explain\n\nOptions:\n  --all             Include resolved dependency nodes\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n\nFailures:\n  Missing, ambiguous, or invalid requested tickets exit nonzero without partial output.\n")
 
 (defun local-issues--repository-root (&optional override)
   "Return the tracker root at OVERRIDE or above `default-directory'."
@@ -323,6 +329,80 @@
                      (mapcar #'local-issues--diagnostic-alist
                              (plist-get record :diagnostics))))))
 
+(defun local-issues--diagnostic-codes-string (record)
+  "Return RECORD's diagnostic codes as compact stable text."
+  (if-let* ((diagnostics (plist-get record :diagnostics)))
+      (string-join
+       (mapcar (lambda (diagnostic) (plist-get diagnostic :code)) diagnostics) ",")
+    "-"))
+
+(defun local-issues--record-fields (record)
+  "Return RECORD as stable table fields."
+  (list (plist-get record :id)
+        (plist-get record :todo)
+        (plist-get record :dependency)
+        (if-let* ((ids (plist-get record :unresolved-blockers)))
+            (string-join ids ",")
+          "-")
+        (if (string-empty-p (plist-get record :assignee))
+            "-"
+          (plist-get record :assignee))
+        (plist-get record :title)
+        (local-issues--diagnostic-codes-string record)))
+
+(defun local-issues--requested-record (records id)
+  "Return the unique valid record named ID from RECORDS, or fail clearly."
+  (let ((matches (gethash id (local-issues--record-table records))))
+    (cond
+     ((null matches) (error "missing ticket %s" id))
+     ((> (length matches) 1) (error "ambiguous ticket %s" id))
+     ((plist-get (car matches) :invalid)
+      (error "invalid ticket %s: %s"
+             id (local-issues--diagnostic-codes-string (car matches))))
+     (t (car matches)))))
+
+(defun local-issues--why-edges (records root include-resolved)
+  "Return stable dependency edges below ROOT in RECORDS.
+When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
+  (let ((by-id (local-issues--record-table records))
+        (expanded (make-hash-table :test #'equal))
+        edges)
+    (puthash (plist-get root :id) t expanded)
+    (cl-labels
+        ((visit
+          (record depth)
+          (let ((blockers
+                 (sort (copy-sequence
+                        (if include-resolved
+                            (plist-get record :blockers)
+                          (plist-get record :unresolved-blockers)))
+                       #'string<)))
+            (dolist (id blockers)
+              (let* ((target (or (local-issues--single-record by-id id)
+                                 (error "cannot resolve dependency %s" id)))
+                     (reference (gethash id expanded)))
+                (push (list :from (plist-get record :id)
+                            :to id
+                            :depth depth
+                            :reference reference
+                            :record (unless reference target))
+                      edges)
+                (unless reference
+                  (puthash id t expanded)
+                  (visit target (1+ depth))))))))
+      (visit root 1))
+    (nreverse edges)))
+
+(defun local-issues--why-edge-alist (edge)
+  "Convert EDGE to a semantic JSON-ready alist."
+  (append
+   `((from . ,(plist-get edge :from))
+     (to . ,(plist-get edge :to))
+     (depth . ,(plist-get edge :depth))
+     (reference . ,(if (plist-get edge :reference) t :json-false)))
+   (when-let* ((record (plist-get edge :record)))
+     `((ticket . ,(local-issues--record-alist record))))))
+
 (defun local-issues--print-summary (summary)
   "Print SUMMARY in stable table form."
   (princ
@@ -336,27 +416,9 @@
 (defun local-issues--print-table (records summary)
   "Print RECORDS and SUMMARY as a stable plain-text table."
   (local-issues--print-summary summary)
-  (princ "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
+  (princ local-issues--record-header)
   (dolist (record records)
-    (princ
-     (mapconcat
-      #'identity
-      (list (plist-get record :id)
-            (plist-get record :todo)
-            (plist-get record :dependency)
-            (if-let* ((ids (plist-get record :unresolved-blockers)))
-                (string-join ids ",")
-              "-")
-            (if (string-empty-p (plist-get record :assignee))
-                "-"
-              (plist-get record :assignee))
-            (plist-get record :title)
-            (if-let* ((diagnostics (plist-get record :diagnostics)))
-                (string-join
-                 (mapcar (lambda (diagnostic) (plist-get diagnostic :code)) diagnostics)
-                 ",")
-              "-"))
-      "\t"))
+    (princ (mapconcat #'identity (local-issues--record-fields record) "\t"))
     (princ "\n")))
 
 (defun local-issues--print-json (records summary)
@@ -381,9 +443,49 @@
         ("table" (local-issues--print-table records summary))
         ("json" (local-issues--print-json records summary))))))
 
+(defun local-issues--print-why-table (root edges)
+  "Print ROOT and dependency EDGES as a stable plain-text table."
+  (princ "ROOT\n")
+  (princ local-issues--record-header)
+  (princ (mapconcat #'identity (local-issues--record-fields root) "\t"))
+  (princ "\nDEPENDENCIES\n")
+  (princ "FROM\tTO\tDEPTH\tEXPANSION\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
+  (dolist (edge edges)
+    (let ((record (plist-get edge :record)))
+      (princ
+       (mapconcat
+        #'identity
+        (append
+         (list (plist-get edge :from)
+               (plist-get edge :to)
+               (number-to-string (plist-get edge :depth))
+               (if (plist-get edge :reference) "REFERENCE" "EXPANDED"))
+         (if record
+             (cdr (local-issues--record-fields record))
+           '("-" "-" "-" "-" "-" "-")))
+        "\t"))
+      (princ "\n"))))
+
+(defun local-issues--print-why-json (root edges)
+  "Print ROOT and dependency EDGES as semantic JSON."
+  (princ
+   (json-encode
+    `((root . ,(local-issues--record-alist root))
+      (dependencies . ,(vconcat (mapcar #'local-issues--why-edge-alist edges))))))
+  (princ "\n"))
+
+(defun local-issues--print-why (root-path options)
+  "Explain one ticket under ROOT-PATH according to OPTIONS."
+  (let* ((records (local-issues--records root-path))
+         (root (local-issues--requested-record records (plist-get options :ticket)))
+         (edges (local-issues--why-edges records root (plist-get options :all))))
+    (pcase (plist-get options :format)
+      ("table" (local-issues--print-why-table root edges))
+      ("json" (local-issues--print-why-json root edges)))))
+
 (defun local-issues--parse-arguments (arguments)
   "Parse launcher ARGUMENTS into a command plist."
-  (let (command help root all work-item list-option)
+  (let (command help root all work-item ticket command-option)
     (let ((format "table"))
       (while arguments
         (pcase (pop arguments)
@@ -391,19 +493,19 @@
            (unless arguments
              (error "--root requires a path"))
            (setq root (pop arguments)))
-          ("--all" (setq all t list-option t))
+          ("--all" (setq all t command-option t))
           ("--work-item"
            (unless arguments
              (error "--work-item requires an ID"))
            (setq work-item (pop arguments)
-                 list-option t)
+                 command-option t)
            (unless (string-match-p "\\`[0-9]\\{3\\}\\'" work-item)
              (error "invalid work item %s" work-item)))
           ("--format"
            (unless arguments
              (error "--format requires table or json"))
            (setq format (pop arguments)
-                 list-option t)
+                 command-option t)
            (unless (member format '("table" "json"))
              (error "unknown format %s" format)))
           ("--help" (setq help t))
@@ -411,14 +513,26 @@
            (if command
                (error "unexpected command list")
              (setq command 'list)))
-          (argument (error "unknown argument %s" argument))))
-      (when (and (null command) list-option)
-        (error "list options require the list command"))
+          ("why"
+           (if command
+               (error "unexpected command why")
+             (setq command 'why)))
+          (argument
+           (if (and (eq command 'why) (null ticket))
+               (if (local-issues--canonical-id-p argument)
+                   (setq ticket argument)
+                 (error "invalid ticket ID %s" argument))
+             (error "unknown argument %s" argument)))))
+      (when (and (null command) command-option)
+        (error "command options require a command"))
+      (when (and work-item (not (eq command 'list)))
+        (error "--work-item is supported only by list"))
       (list :command command
             :help help
             :root root
             :all all
             :work-item work-item
+            :ticket ticket
             :format format))))
 
 (defun local-issues-cli-main ()
@@ -431,10 +545,18 @@
           (cond
            ((and (eq command 'list) (plist-get options :help))
             (princ local-issues--list-help))
+           ((and (eq command 'why) (plist-get options :help))
+            (princ local-issues--why-help))
            ((or (null command) (plist-get options :help))
             (princ local-issues--help))
            ((eq command 'list)
             (local-issues--print-list
+             (local-issues--repository-root (plist-get options :root))
+             options))
+           ((eq command 'why)
+            (unless (plist-get options :ticket)
+              (error "why requires TICKET_ID"))
+            (local-issues--print-why
              (local-issues--repository-root (plist-get options :root))
              options))))
       (error

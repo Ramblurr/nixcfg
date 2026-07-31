@@ -56,6 +56,22 @@
   (mapcar (lambda (diagnostic) (alist-get 'code diagnostic))
           (alist-get 'diagnostics ticket)))
 
+(defun local-issues-test--why-json-edges (document)
+  (mapcar
+   (lambda (edge)
+     (list (alist-get 'from edge)
+           (alist-get 'to edge)
+           (alist-get 'depth edge)
+           (eq t (alist-get 'reference edge))))
+   (alist-get 'dependencies document)))
+
+(defun local-issues-test--why-table-edges (result)
+  (let* ((lines (split-string (plist-get result :stdout) "\n" t))
+         (header "FROM\tTO\tDEPTH\tEXPANSION\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS"))
+    (mapcar
+     (lambda (line) (seq-take (split-string line "\t") 4))
+     (cdr (member header lines)))))
+
 (cl-defmacro local-issues-test--with-repository ((root) &rest body)
   (declare (indent 1))
   `(let ((,root (make-temp-file "local-issues-repository-" t)))
@@ -67,11 +83,15 @@
 
 (ert-deftest local-issues-help-is-available ()
   (local-issues-test--with-repository (root)
-    (dolist (arguments '(() ("--help") ("list" "--help")))
+    (dolist (arguments '(() ("--help") ("list" "--help") ("why" "--help")))
       (let ((result (apply #'local-issues-test--run root arguments)))
         (should (= 0 (plist-get result :status)))
         (should (string-match-p "Usage: local-issues" (plist-get result :stdout)))
         (should (string-empty-p (plist-get result :stderr)))))))
+  (local-issues-test--with-repository (root)
+    (let ((help (local-issues-test--run root "why" "--help")))
+      (dolist (text '("TICKET_ID" "--all" "--format" "Missing" "ambiguous" "invalid"))
+        (should (string-match-p text (plist-get help :stdout))))))
 
 (ert-deftest local-issues-discovers-root-and-accepts-override ()
   (local-issues-test--with-repository (root)
@@ -329,6 +349,127 @@
                      (mapcar (lambda (ticket) (alist-get 'id ticket)) tickets)))
       (should (equal '("path-id-mismatch")
                      (local-issues-test--diagnostic-codes (car (last tickets))))))))
+
+(ert-deftest local-issues-why-explains-complete-graph-in-table-and-json ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-branch-a.org"
+     "READY-FOR-HUMAN" "001-01" "Branch A" "002-01")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-branch-b.org"
+     "READY-FOR-HUMAN" "001-02" "Branch B" "002-01 001-03")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-wontfix.org"
+     "WONTFIX" "001-03" "Wontfix blocker")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/04-resolved.org"
+     "RESOLVED" "001-04" "Resolved blocker")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/06-linear.org"
+     "READY-FOR-HUMAN" "001-06" "Linear branch" "001-07")
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/07-leaf.org"
+     "* READY-FOR-HUMAN Diagnostic leaf\n:PROPERTIES:\n:TICKET_ID: 001-07\n:BLOCKED_BY:\n:END:\n")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/09-root.org"
+     "READY-FOR-HUMAN" "001-09" "Root ticket" "001-01 001-02 001-06" "agent"
+     "SECRET-TICKET-BODY")
+    (local-issues-test--ticket
+     root ".scratch-org/002-beta/issues/01-shared.org"
+     "READY-FOR-HUMAN" "002-01" "Shared cross-item" "002-02 001-04")
+    (local-issues-test--ticket
+     root ".scratch-org/002-beta/issues/02-leaf.org"
+     "READY-FOR-HUMAN" "002-02" "Cross-item leaf")
+    (let* ((table (local-issues-test--run root "why" "001-09" "--format" "table"))
+           (json-result (local-issues-test--run root "why" "001-09" "--format" "json"))
+           (all-table (local-issues-test--run root "why" "001-09" "--all"))
+           (all-json-result
+            (local-issues-test--run root "why" "001-09" "--all" "--format" "json"))
+           (document (local-issues-test--json json-result))
+           (all-document (local-issues-test--json all-json-result))
+           (expected-json
+            '(("001-09" "001-01" 1 nil)
+              ("001-01" "002-01" 2 nil)
+              ("002-01" "002-02" 3 nil)
+              ("001-09" "001-02" 1 nil)
+              ("001-02" "001-03" 2 nil)
+              ("001-02" "002-01" 2 t)
+              ("001-09" "001-06" 1 nil)
+              ("001-06" "001-07" 2 nil)))
+           (expected-table
+            '(("001-09" "001-01" "1" "EXPANDED")
+              ("001-01" "002-01" "2" "EXPANDED")
+              ("002-01" "002-02" "3" "EXPANDED")
+              ("001-09" "001-02" "1" "EXPANDED")
+              ("001-02" "001-03" "2" "EXPANDED")
+              ("001-02" "002-01" "2" "REFERENCE")
+              ("001-09" "001-06" "1" "EXPANDED")
+              ("001-06" "001-07" "2" "EXPANDED")))
+           (expected-all-json
+            '(("001-09" "001-01" 1 nil)
+              ("001-01" "002-01" 2 nil)
+              ("002-01" "001-04" 3 nil)
+              ("002-01" "002-02" 3 nil)
+              ("001-09" "001-02" 1 nil)
+              ("001-02" "001-03" 2 nil)
+              ("001-02" "002-01" 2 t)
+              ("001-09" "001-06" 1 nil)
+              ("001-06" "001-07" 2 nil)))
+           (expected-all-table
+            (mapcar (lambda (edge)
+                      (list (nth 0 edge) (nth 1 edge)
+                            (number-to-string (nth 2 edge))
+                            (if (nth 3 edge) "REFERENCE" "EXPANDED")))
+                    expected-all-json)))
+      (dolist (result (list table json-result all-table all-json-result))
+        (should (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr)))
+        (should-not (string-match-p "SECRET-TICKET-BODY" (plist-get result :stdout))))
+      (should (equal "001-09" (alist-get 'id (alist-get 'root document))))
+      (should (equal "BLOCKED" (alist-get 'dependency (alist-get 'root document))))
+      (should (equal '("001-01" "001-02" "001-06")
+                     (alist-get 'blocked_by (alist-get 'root document))))
+      (should (equal expected-json (local-issues-test--why-json-edges document)))
+      (should (equal expected-table (local-issues-test--why-table-edges table)))
+      (should (equal expected-all-json
+                     (local-issues-test--why-json-edges all-document)))
+      (should (equal expected-all-table
+                     (local-issues-test--why-table-edges all-table)))
+      (should-not (string-match-p "001-04" (plist-get table :stdout)))
+      (should (string-match-p "001-03.*WONTFIX" (plist-get table :stdout)))
+      (should (string-match-p "001-04.*RESOLVED" (plist-get all-table :stdout)))
+      (should (string-match-p "001-07.*missing-assignee" (plist-get table :stdout)))
+      (let* ((edges (alist-get 'dependencies document))
+             (reference (nth 5 edges))
+             (diagnostic-leaf (nth 7 edges)))
+        (should (eq t (alist-get 'reference reference)))
+        (should-not (alist-get 'ticket reference))
+        (should (equal '("missing-assignee")
+                       (local-issues-test--diagnostic-codes
+                        (alist-get 'ticket diagnostic-leaf))))))))
+
+(ert-deftest local-issues-why-fails-for-missing-ambiguous-and-invalid-tickets ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-duplicate-a.org"
+     "READY-FOR-AGENT" "001-02" "Duplicate A")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-duplicate-b.org"
+     "READY-FOR-AGENT" "001-02" "Duplicate B")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-invalid.org"
+     "READY-FOR-AGENT" "001-03" "Invalid" "999-99")
+    (dolist (case '(("missing ticket 001-99" "why" "001-99")
+                    ("ambiguous ticket 001-02" "why" "001-02")
+                    ("invalid ticket 001-03" "why" "001-03")
+                    ("why requires TICKET_ID" "why")
+                    ("invalid ticket ID bad" "why" "bad")
+                    ("--work-item is supported only by list"
+                     "why" "001-03" "--work-item" "001")))
+      (let ((result (apply #'local-issues-test--run root (cdr case))))
+        (should-not (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stdout)))
+        (should (string-match-p (car case) (plist-get result :stderr)))))))
 
 (ert-deftest local-issues-operational-and-argument-errors-are-nonzero ()
   (local-issues-test--with-repository (root)
