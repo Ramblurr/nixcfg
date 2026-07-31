@@ -1,7 +1,7 @@
 
 (map!
   ;; intellij muscle memory dies hard
-  :n "C-e" #'persp-switch-to-buffer
+  :n "C-e" #'my/persp-switch-to-buffer-main-window
   :n "C-n" #'consult-lsp-symbols
   :n "<f2>" #'flycheck-next-error
   :n "<f5>" #'consult-lsp-diagnostics
