@@ -98,6 +98,9 @@
 (after! lsp-copilot
   (puthash "didChangeStatus/v2" #'ignore
     (lsp--client-notification-handlers
+      (gethash 'copilot-ls lsp-clients)))
+  (puthash "copilot/customInstruction/didChange" #'ignore
+    (lsp--client-notification-handlers
       (gethash 'copilot-ls lsp-clients))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
