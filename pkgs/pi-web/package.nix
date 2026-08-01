@@ -7,7 +7,7 @@
 }:
 
 let
-  rev = "7103bfcb4c13565a79d248f124fdb3118f778928";
+  rev = "c09b67d15a2e9f90a2eeac1b71ce0d216e03aaa8";
 in
 buildNpmPackage rec {
   pname = "pi-web";
@@ -17,7 +17,7 @@ buildNpmPackage rec {
     owner = "jmfederico";
     repo = "pi-web";
     inherit rev;
-    hash = "sha256-Ya0UUeKtYjZxUqP7hM+U7k+aKSShEGjhNXg/gJpsGX8=";
+    hash = "sha256-iJP8okEklCNi6lVg5JhYGLrUBUy32oj57YPevaEfhx0=";
   };
 
   postPatch = ''
