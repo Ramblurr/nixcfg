@@ -89,6 +89,7 @@ in
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
         PLANNOTATOR_SHARE = "disabled";
+        PASEO_HOME = "$XDG_STATE_HOME/paseo";
       };
       home.packages =
         with pkgs;
@@ -107,6 +108,7 @@ in
           llm-wrapper
           github-mcp-server-wrapper
           pi-wrapper
+          inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
           vix-wrapper
           mistral-vibe-wrapper
           #codex
