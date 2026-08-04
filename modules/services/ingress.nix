@@ -7,10 +7,107 @@
 
 let
   cfg = config.modules.services.ingress;
+  directWanVirtualHosts = lib.filterAttrs (_: service: service.directWan) cfg.virtualHosts;
+  hasDirectWanVirtualHosts = directWanVirtualHosts != { };
+
+  mkVirtualHost =
+    name: service: directWan:
+    {
+      useACMEHost = service.acmeHost;
+      forceSSL = !directWan;
+      onlySSL = directWan;
+      kTLS = true;
+      inherit (service) extraConfig;
+      http3 = !directWan && service.http3.enable;
+      http2 = false;
+      quic = !directWan && service.http3.enable;
+      inherit (service) root;
+      locations = {
+        "/" =
+          let
+            hasUpstream = service.upstream != null;
+          in
+          {
+            proxyPass = if hasUpstream then service.upstream else null;
+            recommendedProxySettings = hasUpstream;
+            proxyWebsockets = hasUpstream;
+            extraConfig = ''
+              ${service.upstreamExtraConfig}
+              ${lib.optionalString (!directWan && service.http3.enable) ''
+                add_header Alt-Svc 'h3=":443"; ma=86400';
+              ''}
+              ${lib.optionalString service.forwardAuth ''
+                auth_request        /outpost.goauthentik.io/auth/nginx;
+                error_page          401 = @goauthentik_proxy_signin;
+                auth_request_set $auth_cookie $upstream_http_set_cookie;
+                add_header Set-Cookie $auth_cookie;
+
+                # translate headers from the outposts back to the actual upstream
+                auth_request_set $authentik_username $upstream_http_x_authentik_username;
+                auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
+                auth_request_set $authentik_email $upstream_http_x_authentik_email;
+                auth_request_set $authentik_name $upstream_http_x_authentik_name;
+                auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
+
+                proxy_set_header X-authentik-username $authentik_username;
+                proxy_set_header X_authentik_username $authentik_username;
+                proxy_set_header X-authentik-groups $authentik_groups;
+                proxy_set_header X-authentik-email $authentik_email;
+                proxy_set_header X-authentik-name $authentik_name;
+                proxy_set_header X-authentik-uid $authentik_uid;
+              ''}
+            '';
+          };
+        "/outpost.goauthentik.io" = lib.mkIf service.forwardAuth {
+          extraConfig = ''
+            proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;
+            proxy_set_header        Host $host;
+            proxy_set_header        X-Original-URL $scheme://$http_host$request_uri;
+            auth_request_set        $auth_cookie $upstream_http_set_cookie;
+            add_header              Set-Cookie $auth_cookie;
+            proxy_pass_request_body off;
+            proxy_set_header        Content-Length "";
+          '';
+        };
+        "@goauthentik_proxy_signin" = lib.mkIf service.forwardAuth {
+          extraConfig = ''
+            internal;
+            auth_request_set $auth_cookie $upstream_http_set_cookie;
+            add_header Set-Cookie $auth_cookie;
+            return 302 /outpost.goauthentik.io/start?rd=$request_uri;
+            # For domain level, use the below error_page to redirect to your authentik server with the full redirect path
+            # return 302 https://auth.${service.acmeHost}/outpost.goauthentik.io/start?rd=$scheme://$http_host$request_uri;
+          '';
+        };
+      };
+    }
+    // lib.optionalAttrs directWan {
+      serverName = name;
+      listen = [
+        {
+          addr = cfg.directWan.listenAddress;
+          port = cfg.directWan.listenPort;
+          ssl = true;
+        }
+      ];
+    };
 in
 {
   options.modules.services.ingress = {
     enable = lib.mkEnableOption "node ingress";
+    directWan = {
+      enable = lib.mkEnableOption "direct WAN ingress listener";
+      listenAddress = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Address for the direct WAN ingress listener";
+      };
+      listenPort = lib.mkOption {
+        type = lib.types.port;
+        default = 8443;
+        description = "Port for the direct WAN ingress listener";
+      };
+    };
     forwardServices = lib.mkOption {
       default = { };
       type = lib.types.attrsOf (
@@ -65,6 +162,11 @@ in
               type = lib.types.bool;
               default = false;
             };
+            directWan = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Expose this virtual host through the direct WAN listener";
+            };
             upstreamExtraConfig = lib.mkOption {
               type = lib.types.lines;
               default = "";
@@ -95,219 +197,189 @@ in
     #  "${inputs.nixpkgs-mine}/nixos/modules/services/web-servers/nginx/default.nix"
   ];
 
-  config = lib.mkIf cfg.enable {
-    networking.firewall.allowedTCPPorts = [
-      443
-      8081
-    ];
-    services.nginx = {
-      enable = true;
-      package = pkgs.nginx;
-      enableReload = true;
-      enableQuicBPF = true;
-      defaultSSLListenPort = 443;
-      defaultHTTPListenPort = 8081;
-      recommendedBrotliSettings = true;
-      recommendedGzipSettings = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-      sslCiphers = "EECDH+AESGCM:EDH+AESGCM:!aNULL";
-      appendHttpConfig = ''
-        map $request_uri $loggable {
-          default 1;
+  config = lib.mkMerge [
+    {
+      assertions = [
+        {
+          assertion = !hasDirectWanVirtualHosts || cfg.directWan.enable;
+          message = "Direct WAN virtual hosts require modules.services.ingress.directWan.enable";
         }
-        map $http_x_request_id $req_id {
-          default   $http_x_request_id;
-          ""        $request_id;
+        {
+          assertion = !cfg.directWan.enable || cfg.enable;
+          message = "The direct WAN listener requires modules.services.ingress.enable";
         }
-        log_format json_combined escape=json '{'
-          '"time": $time_iso8601,'
-          '"remote_addr":"$remote_addr",'
-          '"status":$status,'
-          '"method":"$request_method",'
-          '"host":"$host",'
-          '"uri":"$uri",'
-          '"request_uri":"$request_uri",'
-          '"request_size":$request_length,'
-          '"response_size":$body_bytes_sent,'
-          '"response_time":$request_time,'
-          '"referrer":"$http_referer",'
-          '"user_agent":"$http_user_agent",'
-          '"request_id": "$req_id"'
-        '}';
-        log_format json_combined2 escape=json '{'
-          '"time": "$time_iso8601",'
-          '"remote_addr": "$proxy_protocol_addr",'
-          '"x_forwarded_for": "$proxy_add_x_forwarded_for",'
-          '"remote_user": "$remote_user",'
-          '"bytes_sent": $bytes_sent,'
-          '"request_time": $request_time,'
-          '"status": $status,'
-          '"vhost": "$host",'
-          '"request_proto": "$server_protocol",'
-          '"path": "$uri",'
-          '"request_uri":"$request_uri",'
-          '"request_query": "$args",'
-          '"request_length": $request_length,'
-          '"duration": $request_time,'
-          '"method": "$request_method",'
-          '"http_referrer": "$http_referer",'
-          '"http_user_agent": "$http_user_agent",'
-          '"upstream_addr": "$upstream_addr"'
-        '}';
-
-
-        access_log /var/log/nginx/access.log json_combined2  if=$loggable;
-      '';
-      virtualHosts =
-        lib.mapAttrs' (
-          name: service:
-          lib.nameValuePair name {
-            useACMEHost = service.acmeHost;
-            forceSSL = true;
-            kTLS = true;
-            inherit (service) extraConfig;
-            http3 = true;
-            http2 = false;
-            quic = true;
-            locations."/" = {
-              proxyPass = service.upstream;
-              recommendedProxySettings = true;
-              proxyWebsockets = true;
-              extraConfig = ''
-                ${service.upstreamExtraConfig}
-                ${lib.optionalString true ''
-                  add_header Alt-Svc 'h3=":443"; ma=86400';
-                ''}
-              '';
-            };
+        {
+          assertion = !cfg.directWan.enable || cfg.directWan.listenAddress != null;
+          message = "The direct WAN listener requires modules.services.ingress.directWan.listenAddress";
+        }
+      ];
+    }
+    (lib.mkIf cfg.enable {
+      networking.firewall.allowedTCPPorts = [
+        443
+        8081
+      ];
+      services.nginx = {
+        enable = true;
+        package = pkgs.nginx;
+        enableReload = true;
+        enableQuicBPF = true;
+        defaultSSLListenPort = 443;
+        defaultHTTPListenPort = 8081;
+        recommendedBrotliSettings = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        sslCiphers = "EECDH+AESGCM:EDH+AESGCM:!aNULL";
+        appendHttpConfig = ''
+          map $request_uri $loggable {
+            default 1;
           }
-        ) cfg.forwardServices
-        // lib.mapAttrs' (
-          name: service:
-          lib.nameValuePair name {
-            useACMEHost = service.acmeHost;
-            forceSSL = true;
-            kTLS = true;
-            inherit (service) extraConfig;
-            http3 = service.http3.enable;
-            http2 = false;
-            quic = service.http3.enable;
-            inherit (service) root;
-            locations = {
-              "/" =
-                let
-                  hasUpstream = service.upstream != null;
-                in
-                {
-                  proxyPass = if hasUpstream then service.upstream else null;
-                  recommendedProxySettings = hasUpstream;
-                  proxyWebsockets = hasUpstream;
-                  extraConfig = ''
-                    ${service.upstreamExtraConfig}
-                    ${lib.optionalString service.http3.enable ''
-                      add_header Alt-Svc 'h3=":443"; ma=86400';
-                    ''}
-                    ${lib.optionalString service.forwardAuth ''
-                      auth_request        /outpost.goauthentik.io/auth/nginx;
-                      error_page          401 = @goauthentik_proxy_signin;
-                      auth_request_set $auth_cookie $upstream_http_set_cookie;
-                      add_header Set-Cookie $auth_cookie;
-
-                      # translate headers from the outposts back to the actual upstream
-                      auth_request_set $authentik_username $upstream_http_x_authentik_username;
-                      auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
-                      auth_request_set $authentik_email $upstream_http_x_authentik_email;
-                      auth_request_set $authentik_name $upstream_http_x_authentik_name;
-                      auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
-
-                      proxy_set_header X-authentik-username $authentik_username;
-                      proxy_set_header X_authentik_username $authentik_username;
-                      proxy_set_header X-authentik-groups $authentik_groups;
-                      proxy_set_header X-authentik-email $authentik_email;
-                      proxy_set_header X-authentik-name $authentik_name;
-                      proxy_set_header X-authentik-uid $authentik_uid;
-                    ''}
-                  '';
-                };
-              "/outpost.goauthentik.io" = lib.mkIf service.forwardAuth {
-                extraConfig = ''
-                  proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;
-                  proxy_set_header        Host $host;
-                  proxy_set_header        X-Original-URL $scheme://$http_host$request_uri;
-                  auth_request_set        $auth_cookie $upstream_http_set_cookie;
-                  add_header              Set-Cookie $auth_cookie;
-                  proxy_pass_request_body off;
-                  proxy_set_header        Content-Length "";
-                '';
-              };
-              "@goauthentik_proxy_signin" = lib.mkIf service.forwardAuth {
-                extraConfig = ''
-                  internal;
-                  auth_request_set $auth_cookie $upstream_http_set_cookie;
-                  add_header Set-Cookie $auth_cookie;
-                  return 302 /outpost.goauthentik.io/start?rd=$request_uri;
-                  # For domain level, use the below error_page to redirect to your authentik server with the full redirect path
-                  # return 302 https://auth.${service.acmeHost}/outpost.goauthentik.io/start?rd=$scheme://$http_host$request_uri;
-                '';
-              };
-            };
+          map $http_x_request_id $req_id {
+            default   $http_x_request_id;
+            ""        $request_id;
           }
-        ) cfg.virtualHosts;
+          log_format json_combined escape=json '{'
+            '"time": $time_iso8601,'
+            '"remote_addr":"$remote_addr",'
+            '"status":$status,'
+            '"method":"$request_method",'
+            '"host":"$host",'
+            '"uri":"$uri",'
+            '"request_uri":"$request_uri",'
+            '"request_size":$request_length,'
+            '"response_size":$body_bytes_sent,'
+            '"response_time":$request_time,'
+            '"referrer":"$http_referer",'
+            '"user_agent":"$http_user_agent",'
+            '"request_id": "$req_id"'
+          '}';
+          log_format json_combined2 escape=json '{'
+            '"time": "$time_iso8601",'
+            '"remote_addr": "$proxy_protocol_addr",'
+            '"x_forwarded_for": "$proxy_add_x_forwarded_for",'
+            '"remote_user": "$remote_user",'
+            '"bytes_sent": $bytes_sent,'
+            '"request_time": $request_time,'
+            '"status": $status,'
+            '"vhost": "$host",'
+            '"request_proto": "$server_protocol",'
+            '"path": "$uri",'
+            '"request_uri":"$request_uri",'
+            '"request_query": "$args",'
+            '"request_length": $request_length,'
+            '"duration": $request_time,'
+            '"method": "$request_method",'
+            '"http_referrer": "$http_referer",'
+            '"http_user_agent": "$http_user_agent",'
+            '"upstream_addr": "$upstream_addr"'
+          '}';
 
-      # This is selected when no matching host is found for a request.
-      #virtualHosts."\"\"" = {
-      #  useACMEHost = cfg.ingress.domain;
-      #  onlySSL = true;
-      #  kTLS = true;
-      #  extraConfig = ''
-      #    return 404;
-      #  '';
-      #};
-    };
-    users.groups.acme.members = [ "nginx" ];
-    environment.persistence."/persist".directories = [ "/var/lib/acme" ];
-    sops.secrets.desec_api_token.sopsFile = ../../configs/home-ops/shared.sops.yml;
-    security.acme = {
-      acceptTerms = true;
-      defaults = {
-        email = config.repo.secrets.global.email.acme;
-        credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
-        dnsProvider = "desec";
-        environmentFile = pkgs.writeText "lego-desec.env" ''
-          DESEC_PROPAGATION_TIMEOUT=700
-          DESEC_POLLING_INTERVAL=20
+
+          access_log /var/log/nginx/access.log json_combined2  if=$loggable;
         '';
-        extraLegoFlags = [
-          "--dns.resolvers"
-          "ns.desec.ch:53"
-          "--dns.resolvers"
-          "ns.desec.cz:53"
-          "--dns.resolvers"
-          "ns.desec.li:53"
-          "--dns.resolvers"
-          "ns1.desec.io:53"
-          "--dns.resolvers"
-          "ns2.desec.org:53"
-          "--dns-timeout"
-          "30"
-          "--dns.propagation-rns"
-        ];
-        reloadServices = [ "nginx.service" ];
+        virtualHosts =
+          lib.mapAttrs' (
+            name: service:
+            lib.nameValuePair name {
+              useACMEHost = service.acmeHost;
+              forceSSL = true;
+              kTLS = true;
+              inherit (service) extraConfig;
+              http3 = true;
+              http2 = false;
+              quic = true;
+              locations."/" = {
+                proxyPass = service.upstream;
+                recommendedProxySettings = true;
+                proxyWebsockets = true;
+                extraConfig = ''
+                  ${service.upstreamExtraConfig}
+                  ${lib.optionalString true ''
+                    add_header Alt-Svc 'h3=":443"; ma=86400';
+                  ''}
+                '';
+              };
+            }
+          ) cfg.forwardServices
+          // lib.mapAttrs (name: service: mkVirtualHost name service false) cfg.virtualHosts
+          // lib.optionalAttrs (cfg.directWan.enable && cfg.directWan.listenAddress != null) (
+            lib.mapAttrs' (
+              name: service: lib.nameValuePair "direct-wan:${name}" (mkVirtualHost name service true)
+            ) directWanVirtualHosts
+            // {
+              "direct-wan:default" = {
+                serverName = "_direct-wan-default";
+                listen = [
+                  {
+                    addr = cfg.directWan.listenAddress;
+                    port = cfg.directWan.listenPort;
+                    ssl = true;
+                  }
+                ];
+                default = true;
+                rejectSSL = true;
+                http2 = false;
+                http3 = false;
+                quic = false;
+              };
+            }
+          );
+
+        # This is selected when no matching host is found for a request.
+        #virtualHosts."\"\"" = {
+        #  useACMEHost = cfg.ingress.domain;
+        #  onlySSL = true;
+        #  kTLS = true;
+        #  extraConfig = ''
+        #    return 404;
+        #  '';
+        #};
       };
-      certs = lib.mapAttrs' (
-        name: domain:
-        (lib.nameValuePair name {
-          extraDomainNames = lib.optionals domain.wildcard.enable [
-            "*.${name}"
-            "*.int.${name}"
+      users.groups.acme.members = [ "nginx" ];
+      environment.persistence."/persist".directories = [ "/var/lib/acme" ];
+      sops.secrets.desec_api_token.sopsFile = ../../configs/home-ops/shared.sops.yml;
+      security.acme = {
+        acceptTerms = true;
+        defaults = {
+          email = config.repo.secrets.global.email.acme;
+          credentialFiles."DESEC_TOKEN_FILE" = config.sops.secrets.desec_api_token.path;
+          dnsProvider = "desec";
+          environmentFile = pkgs.writeText "lego-desec.env" ''
+            DESEC_PROPAGATION_TIMEOUT=700
+            DESEC_POLLING_INTERVAL=20
+          '';
+          extraLegoFlags = [
+            "--dns.resolvers"
+            "ns.desec.ch:53"
+            "--dns.resolvers"
+            "ns.desec.cz:53"
+            "--dns.resolvers"
+            "ns.desec.li:53"
+            "--dns.resolvers"
+            "ns1.desec.io:53"
+            "--dns.resolvers"
+            "ns2.desec.org:53"
+            "--dns-timeout"
+            "30"
+            "--dns.propagation-rns"
           ];
-        })
-      ) cfg.domains;
-    };
-    # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
-    boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
-    boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 2500000;
-  };
+          reloadServices = [ "nginx.service" ];
+        };
+        certs = lib.mapAttrs' (
+          name: domain:
+          (lib.nameValuePair name {
+            extraDomainNames = lib.optionals domain.wildcard.enable [
+              "*.${name}"
+              "*.int.${name}"
+            ];
+          })
+        ) cfg.domains;
+      };
+      # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
+      boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
+      boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 2500000;
+    })
+  ];
 }

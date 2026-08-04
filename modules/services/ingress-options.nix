@@ -7,6 +7,11 @@
       default = false;
       description = "Whether to expose the service externally";
     };
+    directWan = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Expose this virtual host through the direct WAN listener";
+    };
     domain = lib.mkOption {
       type = lib.types.str;
       example = "example.com";

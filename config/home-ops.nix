@@ -536,6 +536,7 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         forwardAuth = false;
+        directWan = true;
       };
       "jellyplex-watched" = lib.mkIf cfg.apps.jellyplex-watched.enable {
         enable = true;
