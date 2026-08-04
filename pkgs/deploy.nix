@@ -10,6 +10,7 @@ let
     text = ''
       set -euo pipefail
       shopt -s lastpipe # allow cmd | readarray
+      declare -A SSH_TARGETS=([addams]="addams-lan")
 
       function die() { echo "error: $*" >&2; exit 1; }
       function show_help() {
@@ -24,6 +25,7 @@ let
         echo ""
         echo 'OPTIONS: [passed to nix build]'
       }
+
 
       function time_start() {
         T_START=$(date +%s.%N)
@@ -105,7 +107,8 @@ let
         if [[ "$host" == "${localTargetHost}" ]]; then
           echo "[1;36m     Copying [m[34m$host[m skipped; target is local"
         else
-          ssh_host="root@$host"
+          ssh_target="''${SSH_TARGETS[$host]-$host}"
+          ssh_host="root@$ssh_target"
           echo "[1;36m     Copying [m➡️ [34m$host[m"
           nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
         fi
@@ -126,8 +129,9 @@ let
             nvd --color always diff "$prev_system" "$store_path" || true
           fi
         else
-          ssh_host="root@$host"
-          prev_system=$(ssh "$host" -- readlink -e /nix/var/nix/profiles/system)
+          ssh_target="''${SSH_TARGETS[$host]-$host}"
+          ssh_host="root@$ssh_target"
+          prev_system=$(ssh "$ssh_target" -- readlink -e /nix/var/nix/profiles/system)
           ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
             || die "Failed to set system profile"
           ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \

@@ -114,50 +114,70 @@ in
     };
   };
 
-  systemd.services.crowdsec.serviceConfig = {
-    ExecStartPre = lib.mkAfter [
-      (pkgs.writeShellScript "crowdsec-console-enroll" ''
-        set -eu
-        set -o pipefail
+  systemd.services.crowdsec = {
+    after = [ "dnsdist.service" ];
+    requires = [ "dnsdist.service" ];
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = lib.mkForce "5s";
+      RestartSteps = 5;
+      RestartMaxDelaySec = "60s";
+      ExecStartPre = lib.mkAfter [
+        (pkgs.writeShellScript "crowdsec-console-enroll" ''
+          set -eu
+          set -o pipefail
 
-        cscli=/run/current-system/sw/bin/cscli
-        grep=${lib.getExe pkgs.gnugrep}
-        cat=${lib.getExe' pkgs.coreutils "cat"}
+          cscli=/run/current-system/sw/bin/cscli
+          grep=${lib.getExe pkgs.gnugrep}
+          cat=${lib.getExe' pkgs.coreutils "cat"}
 
-        if ! "$grep" -q password "${capiCredentialsPath}" 2>/dev/null; then
-          "$cscli" capi register
-        fi
+          if ! "$grep" -q password "${capiCredentialsPath}" 2>/dev/null; then
+            "$cscli" capi register
+          fi
 
-        if [ ! -e "${consoleConfigPath}" ]; then
-          "$cscli" console enroll "$("$cat" ${
-            config.sops.secrets."crowdsec/enrollKey".path
-          })" --name ${hostName}
-        fi
-      '')
-    ];
-    ExecStartPost = lib.mkAfter [
-      (pkgs.writeShellScript "crowdsec-register-bouncer" ''
-        set -eu
-        set -o pipefail
+          if [ ! -e "${consoleConfigPath}" ]; then
+            "$cscli" console enroll "$("$cat" ${
+              config.sops.secrets."crowdsec/enrollKey".path
+            })" --name ${hostName}
+          fi
+        '')
+      ];
+      ExecStartPost = lib.mkAfter [
+        (pkgs.writeShellScript "crowdsec-register-bouncer" ''
+          set -eu
+          set -o pipefail
 
-        cscli=/run/current-system/sw/bin/cscli
-        grep=${lib.getExe pkgs.gnugrep}
-        cat=${lib.getExe' pkgs.coreutils "cat"}
-        bouncerName="${hostName}-bouncer"
-        bouncerKey="$("$cat" ${config.sops.secrets."crowdsec/apiKey".path})"
+          cscli=/run/current-system/sw/bin/cscli
+          grep=${lib.getExe pkgs.gnugrep}
+          cat=${lib.getExe' pkgs.coreutils "cat"}
+          bouncerName="${hostName}-bouncer"
+          bouncerKey="$("$cat" ${config.sops.secrets."crowdsec/apiKey".path})"
 
-        while ! "$cscli" lapi status >/dev/null 2>&1; do
-          sleep 1
-        done
+          while ! "$cscli" lapi status >/dev/null 2>&1; do
+            sleep 1
+          done
 
-        if "$cscli" bouncers list | "$grep" -q "$bouncerName"; then
-          "$cscli" bouncers delete "$bouncerName" || true
-        fi
+          if "$cscli" bouncers list | "$grep" -q "$bouncerName"; then
+            "$cscli" bouncers delete "$bouncerName" || true
+          fi
 
-        "$cscli" bouncers add "$bouncerName" --key "$bouncerKey"
-      '')
-    ];
+          "$cscli" bouncers add "$bouncerName" --key "$bouncerKey"
+        '')
+      ];
+    };
   };
+
+  systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
+    "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
+  ];
+
+  systemd.services.crowdsec-firewall-bouncer.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = "5s";
+    RestartSteps = 5;
+    RestartMaxDelaySec = "60s";
+  };
+
   services.crowdsec-firewall-bouncer = {
     enable = true;
     createRulesets = false;
