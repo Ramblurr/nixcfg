@@ -102,6 +102,7 @@ in
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:8096";
       forwardAuth = cfg.ingress.forwardAuth;
+      directWan = cfg.ingress.directWan;
       upstreamExtraConfig = ''
         proxy_buffering off;
       '';

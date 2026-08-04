@@ -38,6 +38,7 @@ let
   ++ keys (filter (_: iface: iface.type == "bridge") config.site.hosts.${hostName}.interfaces);
 
   lan0_ip = first config.site.net.lan0.hosts4.${hostName};
+  dewey_mgmt_ip = first config.site.net.mgmt.hosts4.dewey;
 
   # ──────────────────────────────────────────────────────────────────
   # Begin my actual config data
@@ -144,6 +145,17 @@ let
         port = 25;
       };
     };
+    directWanIngress = {
+      priority = 107;
+      interfaces = wan_interfaces;
+      protocols = [ "tcp" ];
+      destination.port = 443;
+      translation = {
+        address = dewey_mgmt_ip;
+        port = 8443;
+      };
+      comment = "direct WAN ingress to dewey";
+    };
   };
   rules = {
     wan_to_lan_ingress = {
@@ -151,6 +163,13 @@ let
       to = "all";
       ruleType = "policy";
       extraLines = mkRules [
+        {
+          comment = "allow direct WAN ingress to dewey";
+          destPort = "direct_wan_ingress_ports";
+          destAddr = "home_ops_ingress";
+          proto = [ "tcp" ];
+          extra = [ "counter" ];
+        }
         {
           comment = "allow roon arc";
           destPort = "roon_arc_ports";
