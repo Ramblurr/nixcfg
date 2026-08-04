@@ -1,6 +1,6 @@
 ---
 name: calibre-cli
-description: Use Calibre CLI tools (calibredb, fetch-ebook-metadata) to search, fix, and improve your eBook library metadata
+description: Use Calibre CLI tools (calibredb, fetch-ebook-metadata) to import local ebook files into the Calibre server on dewey, search the library, and fix or improve book metadata.
 ---
 
 # Calibre CLI
@@ -65,6 +65,146 @@ Manual example:
   --password "$CALIBRE_PASS" \
   show_metadata 42
 ```
+
+## Import a local book file
+
+`./scripts/calibredb` does not transfer files from the workstation. It runs `calibredb` inside the Calibre container on `dewey`, so every CLI file argument must name a container-visible path.
+
+The live Calibre GUI watches `/downloads/books-inbox` as its auto-add directory. Moving a book there is the add operation: Calibre imports it, adds the `auto-added` tag, and removes the inbox copy. Do not run `calibredb add` against a file in that directory; the watcher can consume the file first and make the CLI report `not found` after the record has already been created.
+
+Use the non-watched temporary directory for preflight:
+
+| Purpose | `dewey` host path | Calibre container path |
+|---|---|---|
+| Temporary preflight | `/mnt/downloads/tmp/FILE` | `/downloads/tmp/FILE` |
+| Watched auto-add inbox | `/mnt/downloads/books-inbox/FILE` | `/downloads/books-inbox/FILE` |
+| Calibre-managed library | `/mnt/mali/tank2/media/books` | `/media/books` |
+
+Do not SCP files into the watched inbox until metadata and duplicate checks pass. Never copy directly into the Calibre-managed library on Mali's NFS share. Let Calibre create and update its layout and database.
+
+### Single-file import workflow
+
+The following Bash workflow handles spaces in the filename. Run the snippets in one Bash process so their variables remain defined, or repeat the setup block in each shell invocation. Set `src` to the exact local source file:
+
+```bash
+set -euo pipefail
+
+src="/absolute/path/to/Book.epub"
+name=$(basename -- "$src")
+tmp_host_path="/mnt/downloads/tmp/$name"
+tmp_container_path="/downloads/tmp/$name"
+inbox_host_path="/mnt/downloads/books-inbox/$name"
+printf -v tmp_host_path_q '%q' "$tmp_host_path"
+printf -v tmp_container_path_q '%q' "$tmp_container_path"
+printf -v inbox_host_path_q '%q' "$inbox_host_path"
+
+test -f "$src"
+file "$src"
+local_hash=$(sha256sum "$src" | cut -d ' ' -f1)
+printf 'source_sha256=%s\n' "$local_hash"
+```
+
+Check SSH before copying. If Tailscale SSH prints an authentication URL, stop and give that URL to the human. Retry after they authenticate.
+
+```bash
+ssh -o BatchMode=yes dewey true
+```
+
+Prove that neither exact remote target exists. Do not overwrite a temporary file or an inbox file.
+
+```bash
+existing=$(
+  ssh dewey \
+    "for p in $tmp_host_path_q $inbox_host_path_q; do
+       test ! -e \"\$p\" || printf '%s\n' \"\$p\"
+     done"
+)
+if [[ -n $existing ]]; then
+  printf 'remote target already exists: %s\n' "$existing" >&2
+  exit 1
+fi
+```
+
+Copy to the non-watched temporary directory and verify the copy:
+
+```bash
+scp -- "$src" dewey:/mnt/downloads/tmp/
+ssh dewey "chmod 0644 $tmp_host_path_q"
+remote_hash=$(ssh dewey "sha256sum $tmp_host_path_q" | cut -d ' ' -f1)
+test "$local_hash" = "$remote_hash"
+```
+
+Inspect embedded metadata from the temporary container path:
+
+```bash
+ssh dewey "sudo podman exec calibre ebook-meta $tmp_container_path_q"
+```
+
+Use the reported title and author to search before adding anything:
+
+```bash
+./scripts/calibredb search 'title:"TITLE" and author:"AUTHOR"'
+./scripts/calibredb list \
+  -s 'title:"TITLE" or author:"AUTHOR"' \
+  -f id,title,authors,formats
+```
+
+If an exact record already has the same format, stop. Inspect it with `show_metadata` and compare content when necessary. Remove the temporary copy; do not add a duplicate. If the existing format differs, ask the human whether to replace it. Do not use `--duplicates` or `--automerge` unless the human explicitly requests that behavior.
+
+```bash
+ssh dewey "rm -- $tmp_host_path_q"
+```
+
+If no matching record exists, atomically move the verified file into the watched auto-add inbox:
+
+```bash
+ssh dewey "mv -- $tmp_host_path_q $inbox_host_path_q"
+```
+
+Wait for Calibre to consume the inbox file, then search for the new record. Do not follow the move with `calibredb add`.
+
+```bash
+for _ in $(seq 1 30); do
+  ssh dewey "test ! -e $inbox_host_path_q" && break
+  sleep 2
+done
+ssh dewey "test ! -e $inbox_host_path_q"
+
+./scripts/calibredb search 'title:"TITLE" and author:"AUTHOR"'
+./scripts/calibredb list \
+  -s 'title:"TITLE" and author:"AUTHOR"' \
+  -f id,title,authors,formats
+```
+
+Require exactly one matching ID, then validate it:
+
+```bash
+./scripts/calibredb show_metadata BOOK_ID
+```
+
+Calibre may repack an EPUB during auto-add, changing the whole-file size and checksum while preserving every uncompressed archive entry. If strict content verification is needed, compare each ZIP entry's name, uncompressed length, and checksum instead of requiring the outer EPUB checksums to match.
+
+If the inbox file remains after the wait, or it disappears without exactly one matching record, stop and diagnose the auto-add service. Do not retry by copying another file or by running `calibredb add`.
+
+### Explicit CLI add
+
+When the human explicitly wants `calibredb add` instead of auto-add, keep the source in the non-watched `/downloads/tmp` path:
+
+```bash
+./scripts/calibredb add "$tmp_container_path"
+```
+
+Validate the returned ID before removing the temporary copy. Never use `/downloads/books-inbox` as the source for this command.
+
+### Add another format to an existing record
+
+When the book record exists but lacks the incoming format, keep the file in `/downloads/tmp`, use `add_format`, and prevent replacement:
+
+```bash
+./scripts/calibredb add_format BOOK_ID "$tmp_container_path" --dont-replace
+```
+
+Without `--dont-replace`, `add_format` replaces an existing file of the same format. Get explicit human approval before replacing one. Remove the temporary copy only after validation.
 
 ## Safety
 
@@ -168,12 +308,14 @@ calibredb set_metadata --list-fields
 
 `calibredb add`
 
+Paths passed to the repo wrapper are resolved inside the container. Use a non-watched path such as `/downloads/tmp`; never run this command against `/downloads/books-inbox`.
+
 ```bash
-calibredb add book.epub
-calibredb add book.epub -t "Title" -a "Author"
-calibredb add -r /path/to/folder
+calibredb add /downloads/tmp/book.epub
+calibredb add /downloads/tmp/book.epub -t "Title" -a "Author"
+calibredb add -r /downloads/tmp/folder
 calibredb add -e
-calibredb add book.epub -m ignore
+calibredb add /downloads/tmp/book.epub -m ignore
 ```
 
 `calibredb remove`
@@ -187,7 +329,7 @@ calibredb remove 42 --permanent
 `calibredb add_format ID file`
 
 ```bash
-calibredb add_format 42 book.mobi
+calibredb add_format 42 /downloads/tmp/book.mobi --dont-replace
 ```
 
 `calibredb export IDs`
