@@ -74,9 +74,48 @@ in
     settings.lapi.credentialsFile = config.sops.secrets."crowdsec/lapiCredentials".path;
   };
 
-  systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
-    "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
-  ];
+  # The module uses content-addressed filenames for local parsers, so remove
+  # links left by older generations before tmpfiles recreates the current link.
+  systemd.tmpfiles.settings."09-crowdsec-local-parser-cleanup" = {
+    "/etc/crowdsec/parsers/s02-enrich/*-parsers-s02-enrich.yaml".r = { };
+  };
+
+  systemd.services = {
+    crowdsec = {
+      after = [ "tailscaled.service" ];
+      wants = [ "tailscaled.service" ];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = lib.mkForce "5s";
+        RestartSteps = 5;
+        RestartMaxDelaySec = "60s";
+      };
+    };
+
+    crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
+      "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
+    ];
+
+    crowdsec-firewall-bouncer = {
+      # James's watcher and bouncer independently consume Addams LAPI.
+      # The bouncer manages its own iptables chains; James has no firewall.service.
+      after = lib.mkForce [
+        "network-online.target"
+        "tailscaled.service"
+      ];
+      wants = lib.mkForce [
+        "network-online.target"
+        "tailscaled.service"
+      ];
+      partOf = lib.mkForce [ ];
+      serviceConfig = {
+        Restart = "on-failure";
+        RestartSec = "5s";
+        RestartSteps = 5;
+        RestartMaxDelaySec = "60s";
+      };
+    };
+  };
 
   services.crowdsec-firewall-bouncer = {
     enable = true;
