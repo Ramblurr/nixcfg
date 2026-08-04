@@ -54,6 +54,11 @@ let
   mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
     wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
   );
+  paseo-cli = inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  paseo-wrapper = pkgs.writeShellScriptBin "paseo" ''
+    export PASEO_PASSWORD="$(<${cfg.paseo.passwordFile})"
+    exec ${paseo-cli}/bin/paseo "$@"
+  '';
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
       echo "usage: $(basename "$0") URL [FILENAME]"
@@ -66,6 +71,11 @@ in
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
+    paseo.passwordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "File containing the Paseo CLI password.";
+    };
   };
   config = lib.mkIf cfg.enable {
     services.ollama = lib.mkIf cfg.ollama.enable {
@@ -130,6 +140,9 @@ in
           difftastic
           ast-grep
           nushell
+        ]
+        ++ lib.optionals (cfg.paseo.passwordFile != null) [
+          paseo-wrapper
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
