@@ -60,9 +60,7 @@ in
       davis.enable = true;
       paperless.enable = true;
       ocis-work.enable = true;
-      plex.enable = true;
       jellyfin.enable = true;
-      jellyplex-watched.enable = true;
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
