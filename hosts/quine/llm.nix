@@ -9,38 +9,6 @@ let
   homeDomain = config.repo.secrets.global.domain.home;
 in
 {
-  # pi-web tailscale proxy
-  systemd.sockets.pi-web-tailscale-proxy = {
-    description = "PI WEB proxy socket on external addresses";
-    wantedBy = [ "sockets.target" ];
-    listenStreams = [
-      "${tailscaleIp4}:${toString config.modules.services.pi-web.ports.http}"
-      "${primAddress}:${toString config.modules.services.pi-web.ports.http}"
-    ];
-    socketConfig = {
-      FreeBind = true;
-      NoDelay = true;
-    };
-  };
-  systemd.services.pi-web-tailscale-proxy = {
-    description = "PI WEB external address proxy";
-    requires = [
-      "pi-web.service"
-      "pi-web-tailscale-proxy.socket"
-    ];
-    after = [
-      "pi-web.service"
-      "pi-web-tailscale-proxy.socket"
-    ];
-    serviceConfig = {
-      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString config.modules.services.pi-web.ports.http}";
-      DynamicUser = true;
-      PrivateTmp = true;
-      ProtectHome = true;
-      ProtectSystem = "strict";
-    };
-  };
-
   # paseo tailscale proxy
   systemd.sockets.paseo-tailscale-proxy = {
     description = "Paseo proxy socket on external addresses";

@@ -245,11 +245,11 @@ in
       printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       sshd.enable = true;
       flatpak.enable = true;
-      pi-web = {
-        enable = true;
-        ports.http = 8504;
-        openFirewall = true;
-      };
+      #pi-web = {
+      #  enable = true;
+      #  ports.http = 8504;
+      #  openFirewall = true;
+      #};
       rclone.mounts = {
         Box = {
           enable = true;
