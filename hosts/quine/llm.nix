@@ -4,6 +4,7 @@
   ...
 }:
 let
+  paseoPort = 6767;
   tailscaleIp4 = "100.93.18.79";
   primAddress = "10.9.4.3";
 in
@@ -78,6 +79,15 @@ in
     group = "ramblurr";
     dataDir = "/home/ramblurr/.local/state/paseo";
     inheritUserEnvironment = true;
-    environment.PI_CODING_AGENT_DIR = "/home/ramblurr/.config/pi/agent";
+    environment = {
+      PI_CODING_AGENT_DIR = "/home/ramblurr/.config/pi/agent";
+      PASEO_LISTEN = "127.0.0.1:${toString paseoPort}";
+      PASEO_RELAY_ENABLED = "false";
+      PASEO_WEB_UI_ENABLED = "true";
+      PASEO_HOSTNAMES = ".socozy.casa";
+    };
   };
+
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ paseoPort ];
+  networking.firewall.interfaces."prim".allowedTCPPorts = [ paseoPort ];
 }
