@@ -54,6 +54,13 @@ set ntp_ports {
   }
 }
 
+set direct_wan_ingress_ports {
+  type inet_service
+  elements = {
+    8443
+  }
+}
+
 set http_ports {
   type inet_service
   elements = {

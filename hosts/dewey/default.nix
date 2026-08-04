@@ -35,6 +35,13 @@ in
     5432
     3306
   ];
+  networking.firewall.interfaces.mgmt.allowedTCPPorts = [
+    config.modules.services.ingress.directWan.listenPort
+  ];
+  modules.services.ingress.directWan = {
+    enable = true;
+    listenAddress = builtins.head config.site.net.mgmt.hosts4.${hostName};
+  };
   home-ops = {
     enable = true;
     ingress.enable = true;
