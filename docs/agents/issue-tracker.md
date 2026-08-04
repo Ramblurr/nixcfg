@@ -2,18 +2,7 @@
 
 Issues and specs (you may know a spec as a PRD) for this repo live as Org mode files in `.scratch-org/`. This directory is local working state: never stage, commit, or otherwise add it to Git.
 
-## Agent metadata workflow
-
-Use `/home/ramblurr/.config/emacs/bin/local-issues` as the preferred source for tracker metadata. Invoke this absolute path; the command is deliberately absent from `PATH`. It reads saved canonical tickets without printing their bodies or changing tracker files.
-
-- `list [--all] [--work-item NNN] [--format table|json]` gives a deterministic overview of ticket states, readiness, direct unresolved blockers, assignees, and titles.
-- `suggest [--limit N] [--work-item NNN] [--format table|json]` selects unassigned, dependency-ready `READY-FOR-AGENT` work. Its default result contains one candidate and its absolute canonical ticket path.
-- `why TICKET_ID [--all] [--format table|json]` explains dependency readiness and every unresolved blocker branch for one ticket.
-- `doctor [--format table|json]` reports malformed tracker metadata and dependency integrity failures. It exits nonzero when it finds any problem.
-
-Run commands from the repository or pass `--root PATH` before the command. Use table output for compact reading and JSON for automation.
-
-The CLI supplies metadata, not ticket instructions. After selecting work, read the canonical ticket returned by `suggest` before claiming or implementing it. Confirm that its state, blockers, and assignee still permit work; then change its state to `CLAIMED`, set `ASSIGNEE`, and save before implementation. When a skill defines a frontier order, including Wayfinding's lowest-ticket rule below, keep that order and use the CLI to verify readiness.
+Use Skill(local-org-issues-cli) to inspect tracker metadata, readiness, and dependency health.
 
 ## Conventions
 
@@ -27,7 +16,7 @@ The CLI supplies metadata, not ticket instructions. After selecting work, read t
 - Store the canonical ID in a `TICKET_ID` property. Store canonical blocker IDs in `BLOCKED_BY`, and the claimant in `ASSIGNEE`.
 - Use the heading tags `bug` or `enhancement` for the triage category.
 - Append comments and conversation history under a `** Comments` heading.
-- `.scratch-org/` is not tracked by git
+- Do not mention ticket issue numbers in commit messages
 
 A local ticket starts with this shape:
 
