@@ -9,6 +9,13 @@ let
   cfg = config.modules.editors.emacs;
   inherit (config.modules.users.primaryUser) homeDirectory;
   nixosConfig = config;
+  localIssues = pkgs.runCommandLocal "local-issues" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
+    mkdir -p "$out/bin" "$out/lisp"
+    install -m755 ${../../../configs/doom/bin/local-issues} "$out/bin/local-issues"
+    install -m644 ${../../../configs/doom/lisp/local-issues-core.el} "$out/lisp/local-issues-core.el"
+    wrapProgram "$out/bin/local-issues" \
+      --suffix PATH : ${lib.makeBinPath [ cfg.package ]}
+  '';
 in
 {
   options.modules.editors.emacs = {
@@ -59,14 +66,8 @@ in
 
         xdg.configFile.doom.source = config.lib.file.mkOutOfStoreSymlink cfg.localDoomConfigRepo;
 
-        home.file = {
-          ".config/emacs/bin/local-issues".source =
-            config.lib.file.mkOutOfStoreSymlink "${cfg.localDoomConfigRepo}/bin/local-issues";
-          ".config/emacs/lisp/local-issues-core.el".source =
-            config.lib.file.mkOutOfStoreSymlink "${cfg.localDoomConfigRepo}/lisp/local-issues-core.el";
-        };
-
         home.packages = with pkgs; [
+          localIssues
           symbola
           ## Some emacs package dependencies
           ffmpegthumbnailer
