@@ -21,7 +21,8 @@ in
           #freecad
           # BLOCKED: https://github.com/NixOS/nixpkgs/issues/375763
           #(inputs.cadquery.packages.${pkgs.stdenv.hostPlatform.system}.cq-editor)
-          openscad-unstable
+          # BLOCKED: 2027-08-04  > ld.lld: error: openscad.lto.libopenscadinternal.a(openscad.cc.o at 31755504).o:
+          #openscad-unstable
           #openscad-lsp
         ];
       };
