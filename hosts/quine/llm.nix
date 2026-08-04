@@ -1,6 +1,7 @@
 {
   pkgs,
   config,
+  lib,
   ...
 }:
 let
@@ -40,6 +41,11 @@ in
       ProtectSystem = "strict";
     };
   };
+
+  systemd.services.paseo.serviceConfig.ExecStart =
+    lib.mkForce "${lib.getExe pkgs.zsh} -c 'exec ${config.services.paseo.package}/bin/paseo-server${
+      lib.optionalString (!config.services.paseo.relay.enable) " --no-relay"
+    }'";
 
   services.paseo = {
     enable = true;
