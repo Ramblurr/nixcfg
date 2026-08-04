@@ -79,18 +79,7 @@ in
 
   environment.persistence."/persist".users.${username}.directories = [ "work" ];
 
-  modules.services.ingress.virtualHosts."paseo.${config.repo.secrets.global.domain.home}" = {
-    acmeHost = config.repo.secrets.global.domain.home;
-    upstream = "http://quine.prim.${config.repo.secrets.global.domain.home}:6767";
-    upstreamExtraConfig = ''
-      client_max_body_size 100m;
-      proxy_connect_timeout 120s;
-      proxy_send_timeout 120s;
-      # Long timeout keeps SSE log streams alive; buffering would stall SSE.
-      proxy_read_timeout 3600s;
-      proxy_buffering off;
-    '';
-  };
+  modules.services.ingress-paseo.enable = true;
 
   # nixbot CI on debord: dewey terminates TLS for internal clients and for
   # the james gost tunnel, then proxies over the prim VLAN to debord.
