@@ -4,9 +4,9 @@
   ...
 }:
 let
-  paseoPort = 6767;
   tailscaleIp4 = "100.93.18.79";
   primAddress = "10.9.4.3";
+  homeDomain = config.repo.secrets.global.domain.home;
 in
 {
   # pi-web tailscale proxy
@@ -79,16 +79,20 @@ in
     group = "ramblurr";
     dataDir = "/home/ramblurr/.local/state/paseo";
     inheritUserEnvironment = true;
+    hostnames = [
+      ".${homeDomain}"
+      "localhost"
+    ];
+    listenAddress = "127.0.0.1";
+    port = 6767;
     environment = {
       PI_CODING_AGENT_DIR = "/home/ramblurr/.config/pi/agent";
-      PASEO_LISTEN = "127.0.0.1:${toString paseoPort}";
       PASEO_RELAY_ENABLED = "false";
       PASEO_WEB_UI_ENABLED = "true";
-      PASEO_HOSTNAMES = ".socozy.casa";
       PASEO_TRUSTED_PROXIES = "10.9.4.17/32";
     };
   };
 
-  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ paseoPort ];
-  networking.firewall.interfaces."prim".allowedTCPPorts = [ paseoPort ];
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ config.services.paseo.port ];
+  networking.firewall.interfaces."prim".allowedTCPPorts = [ config.services.paseo.port ];
 }
