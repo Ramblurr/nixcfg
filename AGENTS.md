@@ -136,3 +136,17 @@ Major areas include:
 - It's ok to flip the flake input in nixcfg-private to the local git+file when doing local development. Flip it back to github when doing a commit + push
 - When building/deploying nixos configurations use `build <hostname>` and `deploy <hostname>` these are special wrapper scripts. Don't deviate from this unless you reall need to.
 - Only the human operator runs OpenTofu/Terraform commands; the agent must not execute them.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked as local Org files under `.scratch-org/NNN-<slug>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage states
+
+Ticket workflow roles use the canonical Org TODO keyword mapping. See `docs/agents/triage-states.md`.
+
+### Domain docs
+
+This repository uses the single-context domain documentation layout. See `docs/agents/domain.md`.

@@ -15,3 +15,5 @@ vars.auto.tfvars
 secret.edn
 .env
 .worktrees
+.scratch/
+.scratch-org/
