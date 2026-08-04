@@ -104,6 +104,7 @@
     ./services/jellyfin.nix
     ./services/jellyplex-watched.nix
     ./services/ingress.nix
+    ./services/ingress-paseo.nix
     ./services/ingress-options.nix
     ./services/linux-voice-assistant.nix
     ./services/mariadb.nix
