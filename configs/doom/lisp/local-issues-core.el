@@ -5,7 +5,7 @@
 (require 'org)
 (require 'subr-x)
 
-(defconst local-issues-protocol-version "1"
+(defconst local-issues-protocol-version "2"
   "Protocol version shared by the daemon request and launcher.")
 
 (defconst local-issues--todo-states
@@ -126,10 +126,16 @@
           (local-issues--add-diagnostic
            record "missing-heading" "missing top-level heading" t)
         (beginning-of-line)
-        (let* ((heading-parts
-                (split-string (org-get-heading t t t t) "[[:space:]]+" t))
+        (let* ((raw-heading
+                (buffer-substring-no-properties
+                 (line-beginning-position) (line-end-position)))
+               (heading-parts
+                (split-string (string-trim (substring raw-heading 2))
+                              "[[:space:]]+" t))
                (state (or (car heading-parts) ""))
-               (title (string-join (cdr heading-parts) " "))
+               (title (replace-regexp-in-string
+                       "[[:space:]]+:[^[:space:]:]+\\(?::[^[:space:]:]+\\)*:\\'"
+                       "" (string-join (cdr heading-parts) " ")))
                (id (org-entry-get nil "TICKET_ID"))
                (blocker-value (org-entry-get nil "BLOCKED_BY"))
                (assignee-value (org-entry-get nil "ASSIGNEE"))
