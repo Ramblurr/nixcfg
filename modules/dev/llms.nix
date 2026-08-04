@@ -85,7 +85,6 @@ in
         CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
         HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
-        T3CODE_HOME = "$XDG_CONFIG_HOME/t3code";
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
@@ -125,7 +124,6 @@ in
           hindsight-cli-wrapper
           ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
-          #pkgs.t3code
           universal-ctags
           difftastic
           ast-grep
