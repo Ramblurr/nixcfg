@@ -3474,6 +3474,26 @@
         "type": "github"
       }
     },
+    "paseo": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785832192,
+        "narHash": "sha256-1bgeE1jVy1X00v6sdUanCd2GK/SKkj99xFmKp9TN8E4=",
+        "owner": "getpaseo",
+        "repo": "paseo",
+        "rev": "df32e6ddcd8dc6785b249aee4d7ba107a2e1655e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "getpaseo",
+        "repo": "paseo",
+        "type": "github"
+      }
+    },
     "pnpm2nix": {
       "inputs": {
         "flake-utils": [
@@ -3651,6 +3671,7 @@
         "nixpkgs-mine": "nixpkgs-mine",
         "nixpkgs-stable": "nixpkgs-stable",
         "nur": "nur",
+        "paseo": "paseo",
         "pre-commit-hooks": "pre-commit-hooks_2",
         "quadlet-nix2": "quadlet-nix2",
         "ramsevka": "ramsevka",

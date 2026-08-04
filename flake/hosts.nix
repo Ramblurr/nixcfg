@@ -61,6 +61,7 @@
           ];
           hostExtraModules = [
             inputs.automatic-ripping-machine.nixosModules.default
+            inputs.paseo.nixosModules.default
           ];
         };
         mali = {

@@ -9,8 +9,6 @@
 let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
   inherit (config.modules.users.primaryUser) username;
-  piWebTailscaleAddress = "100.93.18.79";
-  piWebPrimaryAddress = "10.9.4.3";
 in
 {
   imports = [
@@ -32,6 +30,7 @@ in
     ./microvm-host.nix
     #./arm.nix
     ./remote-builder.nix
+    ./llm.nix
   ];
 
   system.stateVersion = "23.05";
@@ -114,37 +113,6 @@ in
     1080
   ];
   networking.firewall.allowedUDPPorts = [ 67 ];
-
-  systemd.sockets.pi-web-tailscale-proxy = {
-    description = "PI WEB proxy socket on external addresses";
-    wantedBy = [ "sockets.target" ];
-    listenStreams = [
-      "${piWebTailscaleAddress}:${toString config.modules.services.pi-web.ports.http}"
-      "${piWebPrimaryAddress}:${toString config.modules.services.pi-web.ports.http}"
-    ];
-    socketConfig = {
-      FreeBind = true;
-      NoDelay = true;
-    };
-  };
-  systemd.services.pi-web-tailscale-proxy = {
-    description = "PI WEB external address proxy";
-    requires = [
-      "pi-web.service"
-      "pi-web-tailscale-proxy.socket"
-    ];
-    after = [
-      "pi-web.service"
-      "pi-web-tailscale-proxy.socket"
-    ];
-    serviceConfig = {
-      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString config.modules.services.pi-web.ports.http}";
-      DynamicUser = true;
-      PrivateTmp = true;
-      ProtectHome = true;
-      ProtectSystem = "strict";
-    };
-  };
 
   modules = {
     nix.pruneAgedGcroots.enable = true;
