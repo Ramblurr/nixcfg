@@ -38,6 +38,7 @@ in
   networking.firewall.interfaces.mgmt.allowedTCPPorts = [
     config.modules.services.ingress.directWan.listenPort
   ];
+  networking.firewall.interfaces.prim.allowedTCPPorts = [ 8096 ];
   modules.services.ingress.directWan = {
     enable = true;
     listenAddress = builtins.head config.site.net.mgmt.hosts4.${hostName};

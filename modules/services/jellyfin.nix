@@ -175,7 +175,6 @@ in
 
     services.jellyfin = {
       enable = true;
-      openFirewall = true;
       package = pkgs.jellyfin;
       user = cfg.user.name;
       group = cfg.group.name;
