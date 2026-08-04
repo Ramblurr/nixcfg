@@ -3,6 +3,7 @@ let
   inherit (pkgs) lib;
   doomConfig = "/checkout/configs/doom";
   evaluated = lib.evalModules {
+    specialArgs = { inherit pkgs; };
     modules = [
       ../modules/editors/emacs/default.nix
       (
@@ -51,25 +52,52 @@ let
       }
     ];
   };
-  launcher = homeConfiguration.config.home.file.".config/emacs/bin/local-issues";
-  core = homeConfiguration.config.home.file.".config/emacs/lisp/local-issues-core.el";
+  homeFiles = homeConfiguration.config.home.file;
+  localIssuesPackage = lib.findFirst (
+    package: lib.getName package == "local-issues"
+  ) null homeConfiguration.config.home.packages;
+  launcher = "${localIssuesPackage}/bin/local-issues";
+  isolatedPath = lib.makeBinPath [
+    pkgs.coreutils
+    pkgs.gnused
+  ];
 in
-assert launcher.target == ".config/emacs/bin/local-issues";
-assert core.target == ".config/emacs/lisp/local-issues-core.el";
+assert localIssuesPackage != null;
+assert !(homeFiles ? ".config/emacs/bin/local-issues");
+assert !(homeFiles ? ".config/emacs/lisp/local-issues-core.el");
 assert lib.all (
   path: !(lib.hasInfix ".config/emacs/bin" path)
 ) homeConfiguration.config.home.sessionPath;
 pkgs.runCommand "local-issues-tests" { nativeBuildInputs = [ pkgs.emacs ]; } ''
-    test "$(readlink ${launcher.source})" = "${doomConfig}/bin/local-issues"
-    test "$(readlink ${core.source})" = "${doomConfig}/lisp/local-issues-core.el"
+    test -x ${launcher}
+    test "$(basename ${launcher})" = local-issues
+
+    isolatedRoot="$TMPDIR/isolated"
+    mkdir -p "$isolatedRoot/.scratch-org/001-test/issues"
+    cat > "$isolatedRoot/.scratch-org/001-test/issues/01-packaged.org" <<'EOF'
+  * READY-FOR-AGENT Packaged launcher
+  :PROPERTIES:
+  :TICKET_ID: 001-01
+  :BLOCKED_BY:
+  :ASSIGNEE:
+  :END:
+  EOF
+    isolatedOutput=$(
+      EMACS_SOCKET_NAME="local-issues-absent-$$" \
+        PATH=${isolatedPath} \
+        ${launcher} --root "$isolatedRoot" list
+    )
+    case "$isolatedOutput" in
+      *"Packaged launcher"*) ;;
+      *) exit 1 ;;
+    esac
+
     sourceRoot="$TMPDIR/source"
-    mkdir -p "$sourceRoot/configs/doom/bin" "$sourceRoot/configs/doom/lisp" "$sourceRoot/tests"
-    cp ${../configs/doom/bin/local-issues} "$sourceRoot/configs/doom/bin/local-issues"
+    mkdir -p "$sourceRoot/configs/doom/lisp" "$sourceRoot/tests"
     cp ${../configs/doom/lisp/local-issues-core.el} "$sourceRoot/configs/doom/lisp/local-issues-core.el"
     cp ${./local-issues-test.el} "$sourceRoot/tests/local-issues-test.el"
-    chmod +x "$sourceRoot/configs/doom/bin/local-issues"
 
-    LOCAL_ISSUES_LAUNCHER="$sourceRoot/configs/doom/bin/local-issues" \
+    LOCAL_ISSUES_LAUNCHER=${launcher} \
       ${pkgs.emacs}/bin/emacs --batch -Q \
         -l "$sourceRoot/tests/local-issues-test.el" \
         -f ert-run-tests-batch-and-exit
@@ -99,8 +127,7 @@ pkgs.runCommand "local-issues-tests" { nativeBuildInputs = [ pkgs.emacs ]; } ''
     substituteInPlace "$daemonBin/emacs" \
       --replace-fail @emacs@ ${pkgs.emacs}/bin/emacs
     chmod +x "$daemonBin/emacs"
-
-    LOCAL_ISSUES_LAUNCHER="$sourceRoot/configs/doom/bin/local-issues" \
+    LOCAL_ISSUES_LAUNCHER=${launcher} \
       LOCAL_ISSUES_TEST_SOCKET="$socket" \
       LOCAL_ISSUES_TEST_BATCH_EMACS=${pkgs.emacs}/bin/emacs \
       PATH="$daemonBin:$PATH" \
