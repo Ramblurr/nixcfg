@@ -99,7 +99,7 @@ in
           geckodriver
           chromedriver
           glimpseui
-          dirge
+          #dirge
           piper-tts
           espeak
           jujutsu
