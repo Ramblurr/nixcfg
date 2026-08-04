@@ -85,6 +85,7 @@ in
       PASEO_RELAY_ENABLED = "false";
       PASEO_WEB_UI_ENABLED = "true";
       PASEO_HOSTNAMES = ".private.invalid";
+      PASEO_TRUSTED_PROXIES = "10.9.4.17/32";
     };
   };
 
