@@ -227,7 +227,7 @@
               "(dolist (name '(\"stdout\" \"stderr\")) "
               "(with-temp-file (expand-file-name name response-directory))) "
               "(with-temp-file (expand-file-name \"response\" response-directory) "
-              "(insert \"1\\n0\\n\")) t))"))))
+              "(insert \"2\\n0\\n\")) t))"))))
         (let ((local-issues-test--socket-name socket))
           (should (equal fallback
                          (local-issues-test--run root "list" "--format" "json")))))
@@ -259,6 +259,11 @@
                       ("doctor" "--format" "json")
                       ("why" "999-99"))))
       (local-issues-test--with-server (socket t)
+        (should
+         (= 0
+            (local-issues-test--server-eval
+             socket
+             "(progn (setq org-todo-keywords '((sequence \"NEEDS-TRIAGE\" \"NEEDS-INFO\" \"READY-FOR-AGENT\" \"READY-FOR-HUMAN\" \"IN-PROGRESS\" \"CLAIMED\" \"|\" \"RESOLVED\" \"WONTFIX\"))) (org-set-regexps-and-options))")))
         (dolist (arguments commands)
           (let ((batch (apply #'local-issues-test--run root arguments))
                 (daemon
