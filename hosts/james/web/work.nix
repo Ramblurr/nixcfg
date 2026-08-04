@@ -14,10 +14,17 @@ let
   hookId = "deploy-${domain}";
   hookSocketPath = config.hosts.james.webhooks.hookSocketPaths.${hookId};
   sitePath = "/var/lib/static-web/${domain}";
+  hookSocketDirectory = "${sitePath}/.run";
+  hookUser = config.hosts.james.webhooks.user;
+  hookGroup = config.hosts.james.webhooks.group;
   rootPath = "${sitePath}/www";
   webhookService = config.hosts.james.webhooks.hookServiceNames.${hookId};
 in
 {
+  systemd.tmpfiles.rules = [
+    "d '${hookSocketDirectory}' 0750 ${hookUser} ${hookGroup} - -"
+  ];
+
   security.acme.certs.${domain} = {
     domain = "${domain}";
     extraDomainNames = [
@@ -106,6 +113,7 @@ in
     enable = true;
     serviceName = "work-site";
     urlPrefix = "_deploy";
+    socketDirectory = hookSocketDirectory;
     secretsFile = config.sops.secrets.webhook-github-work-secret.path;
     hooks = {
       ${hookId} = {

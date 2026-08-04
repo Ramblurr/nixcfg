@@ -118,17 +118,23 @@ let
         "socketPath"
         "extraPath"
       ];
+      # webhook suppresses invalid-signature errors only while evaluating an or rule.
       signatureRule = {
-        match = {
-          type = cfg.signatureType;
-          secret = secretPlaceholder hookEntry.secretsFile;
-          parameter = {
-            source = "header";
-            name = cfg.signatureHeader;
-          };
-        };
+        or = [
+          {
+            match = {
+              type = cfg.signatureType;
+              secret = secretPlaceholder hookEntry.secretsFile;
+              parameter = {
+                source = "header";
+                name = cfg.signatureHeader;
+              };
+            };
+          }
+        ];
       };
       renderedHook = hookAttrs // {
+        trigger-signature-soft-failures = true;
         trigger-rule =
           if hookAttrs ? trigger-rule then
             {
@@ -266,7 +272,15 @@ in
       _name: hookEntry:
       lib.nameValuePair hookEntry.serviceName {
         description = "Webhook listener (${cfg.serviceName}/${hookEntry.hookId})";
-        after = [ "network.target" ];
+        after = [
+          "network.target"
+          "sops-install-secrets.service"
+          "systemd-tmpfiles-setup.service"
+        ];
+        requires = [
+          "sops-install-secrets.service"
+          "systemd-tmpfiles-setup.service"
+        ];
         wantedBy = [ "multi-user.target" ];
         script = ''
           export ${secretEnvVar hookEntry.secretsFile}="$(cat "$CREDENTIALS_DIRECTORY/${secretCredential hookEntry.secretsFile}")"
@@ -278,9 +292,12 @@ in
             -socket ${hookEntry.socketPath}
         '';
         restartIfChanged = true;
+        startLimitIntervalSec = 300;
+        startLimitBurst = 10;
         serviceConfig = {
           LoadCredential = [ "${secretCredential hookEntry.secretsFile}:${hookEntry.secretsFile}" ];
-          Restart = "always";
+          Restart = "on-failure";
+          RestartSec = "5s";
           User = hookEntry.user;
           Group = hookEntry.group;
           UMask = "0007";
