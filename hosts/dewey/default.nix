@@ -6,8 +6,6 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
-  homeDomain = config.repo.secrets.home-ops.homeDomain;
-  phonieboxDomain = "phoniebox.${homeDomain}";
 in
 {
   imports = [
@@ -79,53 +77,9 @@ in
 
   environment.persistence."/persist".users.${username}.directories = [ "work" ];
 
+  modules.services.ingress-nixbot.enable = true;
   modules.services.ingress-paseo.enable = true;
-
-  # nixbot CI on debord: dewey terminates TLS for internal clients and for
-  # the james gost tunnel, then proxies over the prim VLAN to debord.
-  # See hosts/debord/nixbot.nix.
-  modules.services.ingress.virtualHosts."ci.${config.repo.secrets.global.domain.work}" = {
-    acmeHost = config.repo.secrets.global.domain.work;
-    upstream = "http://debord.prim.${config.repo.secrets.global.domain.home}:${toString config.repo.secrets.home-ops.ports.nixbot}";
-    upstreamExtraConfig = ''
-      # GitHub webhook payloads can be up to 25 MB.
-      client_max_body_size 25m;
-      proxy_connect_timeout 120s;
-      proxy_send_timeout 120s;
-      # Long timeout keeps SSE log streams alive; buffering would stall SSE.
-      proxy_read_timeout 3600s;
-      proxy_buffering off;
-    '';
-  };
-
-  modules.services.ingress.virtualHosts.${phonieboxDomain} = {
-    acmeHost = homeDomain;
-    upstream = "http://10.9.6.26:80";
-    upstreamExtraConfig = ''
-      proxy_connect_timeout 3s;
-      proxy_intercept_errors on;
-      proxy_buffering off;
-      proxy_cache off;
-      proxy_read_timeout 1h;
-      error_page 502 503 504 =503 /.fairybox-offline.html;
-    '';
-  };
-
-  services.nginx.virtualHosts.${phonieboxDomain}.locations = {
-    "= /.fairybox-offline.html" = {
-      alias = "${./phoniebox-offline}/index.html";
-      extraConfig = ''
-        internal;
-      '';
-    };
-    "^~ /.fairybox-offline/" = {
-      alias = "${./phoniebox-offline}/";
-      extraConfig = ''
-        access_log off;
-        expires 1h;
-      '';
-    };
-  };
+  modules.services.ingress-phoniebox.enable = true;
 
   inherit (config.repo.secrets.site) site;
   systemd.network = {
