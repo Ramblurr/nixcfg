@@ -50,7 +50,7 @@ in
       home.packages = with pkgs; [
         mani
         ghq
-        sprite-bin
+        sprite
         spdx-util
         nixbot-cli
         tailwindcss_4
