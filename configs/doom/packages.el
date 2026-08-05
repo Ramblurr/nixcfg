@@ -125,3 +125,4 @@
   :recipe (:type nil
             :local-repo "/home/ramblurr/src/github.com/ramblurr/clojure-prose-mode"
             :files ("clojure-prose-mode.el")))
+(package! adoc-mode)
