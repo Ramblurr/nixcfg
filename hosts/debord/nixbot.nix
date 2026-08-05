@@ -60,6 +60,7 @@ in
     nginx.enable = false;
     admins = [ "github:ramblurr" ];
     buildSystems = [ "x86_64-linux" ];
+    buildConcurrency = 2;
     evalWorkerCount = 4;
     evalMaxMemorySize = 4096;
     github = {
@@ -127,6 +128,11 @@ in
   # Remote builders: quine acts as an x86_64-linux build machine.
   # maxJobs/cores are intentionally low so remote builds share quine
   # without starving its local workloads.
+  nix.settings = {
+    max-jobs = 2;
+    cores = 4;
+  };
+
   nix.distributedBuilds = true;
   nix.buildMachines = [
     {
