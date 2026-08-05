@@ -103,6 +103,10 @@ in
     sopsFile = ./nixbot.sops.yaml;
   };
 
+  # Nixbot's flake prefetch is incompatible with Determinate Nix's archive behavior.
+  # Prefer upstream Nix for this service while retaining the Determinate daemon.
+  systemd.services.nixbot.path = lib.mkBefore [ pkgs.nix ];
+
   systemd.services.nixbot.serviceConfig.LoadCredential = [
     "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"
   ];
