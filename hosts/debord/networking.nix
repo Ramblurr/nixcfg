@@ -18,9 +18,12 @@
     4214
   ];
   networking.firewall.allowedTCPPorts = [
-    10700 # wyoming-satellite
     4214
   ];
+  systemd.network.config.networkConfig = {
+    IPv4Forwarding = true;
+    IPv6Forwarding = true;
+  };
   systemd.network.networks."30-prim" = {
     routingPolicyRules = [
       {
