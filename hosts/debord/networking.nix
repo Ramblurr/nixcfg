@@ -9,6 +9,11 @@
   networking.firewall.logRefusedConnections = lib.mkForce false;
   modules.vpn.tailscale.enable = true;
   modules.vpn.tailscale.useRoutingFeatures = "both";
+  services.tailscale.extraSetFlags = [
+    "--advertise-exit-node=true"
+    "--snat-subnet-routes=true"
+    "--ssh=true"
+  ];
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = true;
     "net.ipv4.conf.all.forwarding" = true;
