@@ -19,6 +19,13 @@ in
     modules.services.ingress.virtualHosts."ci.${workDomain}" = {
       acmeHost = workDomain;
       upstream = "http://debord.prim.${homeDomain}:${toString config.repo.secrets.home-ops.ports.nixbot}";
+      extraConfig = ''
+        location = /robots.txt {
+          default_type text/plain;
+          add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
+          return 200 "User-agent: *\nDisallow: /\n";
+        }
+      '';
       upstreamExtraConfig = ''
         # GitHub webhook payloads can be up to 25 MB.
         client_max_body_size 25m;
@@ -27,6 +34,7 @@ in
         # Long timeout keeps SSE log streams alive; buffering would stall SSE.
         proxy_read_timeout 3600s;
         proxy_buffering off;
+        add_header X-Robots-Tag "noindex, nofollow, noarchive" always;
       '';
     };
   };
