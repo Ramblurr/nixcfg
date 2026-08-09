@@ -122,18 +122,18 @@
             };
           };
         };
-        "src" = {
-          id = "3afjx-a2sse";
-          path = "/home/ramblurr/src";
-          devices = [ "quine" ];
-          versioning = {
-            type = "staggered";
-            params = {
-              cleanInterval = "3600"; # 1 hour
-              maxAge = "1209600"; # 14 days
-            };
-          };
-        };
+        #"src" = {
+        #  id = "3afjx-a2sse";
+        #  path = "/home/ramblurr/src";
+        #  devices = [ "quine" ];
+        #  versioning = {
+        #    type = "staggered";
+        #    params = {
+        #      cleanInterval = "3600"; # 1 hour
+        #      maxAge = "1209600"; # 14 days
+        #    };
+        #  };
+        #};
         "work-src" = {
           id = "pcdsa-wgsys";
           path = "/home/ramblurr/work";
