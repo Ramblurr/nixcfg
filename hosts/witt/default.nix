@@ -81,10 +81,10 @@ in
       };
       programs = {
         #cad.enable = true;
-        junction.enable = true;
+        #junction.enable = true;
         #kdeconnect.enable = true;
         ghostty.enable = true;
-        element.enable = true;
+        #element.enable = true;
         nextcloud.enable = true;
         #nheko.enable = true;
         onepassword.enable = true;
@@ -147,8 +147,8 @@ in
     dev = {
       clojure.enable = true;
       #janet.enable = true;
-      jetbrains.enable = false;
-      node.enable = true;
+      #jetbrains.enable = true;
+      #node.enable = true;
       #python.enable = true;
       #random.enable = true;
       llms.enable = true;
