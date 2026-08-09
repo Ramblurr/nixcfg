@@ -18,7 +18,7 @@ in
   };
   config = mkIf cfg.enable {
 
-    environment.systemPackages = [ pkgs.firefoxpwa ];
+    #environment.systemPackages = [ pkgs.firefoxpwa ];
 
     home-manager.users."${username}" =
       { pkgs, ... }:
@@ -37,7 +37,7 @@ in
           # impermanence to persist the new config directory.
           configPath = ".mozilla/firefox";
           package = firefox;
-          nativeMessagingHosts = [ pkgs.firefoxpwa ];
+          #nativeMessagingHosts = [ pkgs.firefoxpwa ];
           profiles.personal = {
             id = 0;
             path = "personal";
