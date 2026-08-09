@@ -90,7 +90,7 @@ in
       };
 
       home.sessionVariables = {
-        PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
+        #PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
         CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
         HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
@@ -118,8 +118,8 @@ in
           github-mcp-server-wrapper
           pi-wrapper
           inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
-          vix-wrapper
-          mistral-vibe-wrapper
+          #vix-wrapper
+          #mistral-vibe-wrapper
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           cat-url-markdown
@@ -128,12 +128,12 @@ in
           wtype # handy (speech to text) uses this for clipboard access
           llm-agents.annot
           llm-agents.claude-code
-          llm-agents.code-review-graph
+          #llm-agents.code-review-graph
           llm-agents.codex
-          llm-agents.jscpd
+          #llm-agents.jscpd
           llm-agents.plannotator
           hindsight-cli-wrapper
-          ccusage
+          #ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           universal-ctags
           difftastic
