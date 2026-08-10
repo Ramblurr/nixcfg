@@ -139,6 +139,7 @@ in
           difftastic
           ast-grep
           nushell
+          pkgs.nono
         ]
         ++ lib.optionals (cfg.paseo.passwordFile != null) [
           paseo-wrapper
