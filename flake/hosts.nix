@@ -11,6 +11,7 @@
           config
           ;
       };
+      mkDnsTerranix = import ../terranix/dns/package.nix;
       inherit (hostHelpers)
         mkHost
         mkGuest
@@ -125,6 +126,7 @@
           mkGuest
           mkHosts
           mkGuests
+          mkDnsTerranix
           ;
       };
 
