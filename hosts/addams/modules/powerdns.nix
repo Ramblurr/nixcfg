@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -11,6 +12,8 @@ let
   homeZone = config.repo.secrets.global.domain.home;
   workZone = config.repo.secrets.global.domain.work;
   pdns = pkgs.pdns-unstable;
+  addamsMgmtIp = lib.head config.site.net.mgmt.hosts4.addams;
+  quineMgmtIp = lib.head config.site.net.mgmt.hosts4.quine;
 in
 {
   services.resolved.enable = false;
@@ -31,8 +34,8 @@ in
       enable-lua-records=yes
       webserver=yes
       webserver-port = 8068
-      webserver-address=127.0.0.1
-      webserver-allow-from=0.0.0.0/0
+      webserver-address=${addamsMgmtIp}
+      webserver-allow-from=${quineMgmtIp}
       api=yes
       api-key=$API_KEY_HASH
       log-dns-queries=no

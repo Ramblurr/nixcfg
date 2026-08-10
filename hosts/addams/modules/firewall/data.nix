@@ -39,6 +39,7 @@ let
 
   lan0_ip = first config.site.net.lan0.hosts4.${hostName};
   dewey_mgmt_ip = first config.site.net.mgmt.hosts4.dewey;
+  quine_mgmt_ip = first config.site.net.mgmt.hosts4.quine;
 
   # ──────────────────────────────────────────────────────────────────
   # Begin my actual config data
@@ -316,6 +317,14 @@ let
           comment = "allow dns";
           destPort = "dns_ports";
         }
+      ];
+    };
+
+    powerdns_api = {
+      from = [ zones.mgmt ];
+      to = [ local_zone ];
+      extraLines = [
+        ''ip saddr ${quine_mgmt_ip} tcp dport 8068 counter accept comment "allow Quine PowerDNS API"''
       ];
     };
 
