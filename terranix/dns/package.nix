@@ -3,15 +3,12 @@
   zones,
 }:
 let
-  module = pkgs.writeText "dns-terranix.nix" ''
-    import ${./default.nix} {
-      zones = ${builtins.toJSON zones};
-    }
-  '';
+  terranix = import "${pkgs.terranix}/core/default.nix" {
+    inherit pkgs;
+    modules = [ (import ./default.nix { inherit zones; }) ];
+  };
 in
 {
-  config = pkgs.runCommand "dns-config.tf.json" { nativeBuildInputs = [ pkgs.terranix ]; } ''
-    ${pkgs.terranix}/bin/terranix ${module} > "$out"
-  '';
+  config = (pkgs.formats.json { }).generate "config.tf.json" terranix.config;
   runtime = pkgs.opentofu-powerdns;
 }

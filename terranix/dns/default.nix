@@ -18,11 +18,11 @@
       };
       method.aes_gcm.dns_state.keys = lib.tf.ref "key_provider.pbkdf2.dns_state";
       state = {
-        method = lib.tf.ref "method.aes_gcm.dns_state";
+        method = "method.aes_gcm.dns_state";
         enforced = true;
       };
       plan = {
-        method = lib.tf.ref "method.aes_gcm.dns_state";
+        method = "method.aes_gcm.dns_state";
         enforced = true;
       };
     };
