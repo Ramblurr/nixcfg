@@ -10,6 +10,8 @@ inputs: [
         kernelPackages = prev.linuxPackages;
       };
       pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
+      terraform-provider-powerdns = prev.callPackage ./terraform-providers/powerdns.nix { };
+      opentofu-powerdns = prev.opentofu.withPlugins (plugins: [ _final.terraform-provider-powerdns ]);
       # webkitgtk_4_0' has been removed, port to `libsoup_3` and switch to `webkitgtk_4_1
       #java-mission-control = prev.callPackage ./java-mission-control { };
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
