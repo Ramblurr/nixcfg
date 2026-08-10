@@ -126,6 +126,7 @@
     ./services/printing.nix
     ./services/roon-server.nix
     ./services/sshd.nix
+    ./services/pocket-id.nix
     ./services/stirling-pdf.nix
     ./services/tautulli.nix
     ./services/tubearchivist.nix
