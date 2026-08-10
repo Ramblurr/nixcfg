@@ -43,6 +43,7 @@ in
       zsh.enable = true;
     };
     services = {
+      pocket-id.enable = true;
       sshd.enable = true;
     };
     editors = {
@@ -73,6 +74,20 @@ in
   };
 
   hosts.james.ingress.implementation = "haproxy";
+
+  security.acme.certs."id.private.invalid".domain = "id.private.invalid";
+  services.nginx.virtualHosts."id.private.invalid" = {
+    useACMEHost = "id.private.invalid";
+    forceSSL = true;
+    kTLS = true;
+    http3 = false;
+    quic = false;
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:1411";
+      recommendedProxySettings = true;
+      proxyWebsockets = true;
+    };
+  };
 
   environment.persistence."/persist" = {
     hideMounts = true;
