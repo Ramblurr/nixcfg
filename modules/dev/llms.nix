@@ -37,7 +37,10 @@ let
   '';
 in
 {
-  imports = [ ./llms/nono.nix ];
+  imports = [
+    ./llms/nono.nix
+    ./llms/pi.nix
+  ];
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
@@ -83,7 +86,6 @@ in
           #mcp-inspector
           llmWithPlugins
           pkgs.github-mcp-server
-          llm-agents.pi
           inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
           #llm-agents.vix
           #llm-agents.mistral-vibe
@@ -94,6 +96,8 @@ in
           dotool # handy (speech to text) uses this for clipboard access
           wtype # handy (speech to text) uses this for clipboard access
           llm-agents.annot
+          llm-agents.herdr
+          llm-agents.collie
           llm-agents.claude-code
           #llm-agents.code-review-graph
           llm-agents.codex
