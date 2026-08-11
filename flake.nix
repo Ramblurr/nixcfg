@@ -11,6 +11,8 @@
     disko-stable.inputs.nixpkgs.follows = "nixpkgs-stable";
     disko-unstable.url = "github:nix-community/disko";
     disko-unstable.inputs.nixpkgs.follows = "nixpkgs";
+    emacs-tramp-rpc.url = "github:Ramblurr/emacs-tramp-rpc/fix/nix-test-runtime-dependencies";
+    emacs-tramp-rpc.inputs.nixpkgs.follows = "nixpkgs";
     firefox-nightly.url = "github:nix-community/flake-firefox-nightly";
     firefox-nightly.inputs.nixpkgs.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";

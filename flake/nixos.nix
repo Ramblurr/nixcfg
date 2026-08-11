@@ -22,6 +22,7 @@ let
   stableDefaultModules = [ inputs.disko-stable.nixosModules.disko ];
 
   defaultOverlays = [
+    inputs.emacs-tramp-rpc.overlays.default
     inputs.nixos-extra-modules.overlays.default
     (import ../lib inputs)
     (import ../overlays/last-known-good.nix)

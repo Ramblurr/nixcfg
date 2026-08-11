@@ -220,7 +220,7 @@
           "paisano-mdbook-preprocessor",
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay_2"
+        "rust-overlay": "rust-overlay_3"
       },
       "locked": {
         "lastModified": 1676162383,
@@ -816,6 +816,28 @@
       "original": {
         "owner": "nix-community",
         "repo": "emacs-overlay",
+        "type": "github"
+      }
+    },
+    "emacs-tramp-rpc": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1786522281,
+        "narHash": "sha256-s4Xr8tPA9VwT0H2jmmXmDj4UW9UP6jUjSZp9LRqpd/A=",
+        "owner": "Ramblurr",
+        "repo": "emacs-tramp-rpc",
+        "rev": "8fa3c23257a35706d5a6b5e2b980f8df6dcc9ee0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Ramblurr",
+        "ref": "fix/nix-test-runtime-dependencies",
+        "repo": "emacs-tramp-rpc",
         "type": "github"
       }
     },
@@ -1883,7 +1905,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "rust-overlay": "rust-overlay",
+        "rust-overlay": "rust-overlay_2",
         "treefmt-nix": [
           "treefmt-nix"
         ]
@@ -3777,6 +3799,7 @@
         "dirge": "dirge",
         "disko-stable": "disko-stable",
         "disko-unstable": "disko-unstable",
+        "emacs-tramp-rpc": "emacs-tramp-rpc",
         "firefox-nightly": "firefox-nightly",
         "flake-parts": "flake-parts_2",
         "flake-utils": "flake-utils_2",
@@ -3867,6 +3890,27 @@
     "rust-overlay": {
       "inputs": {
         "nixpkgs": [
+          "emacs-tramp-rpc",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768445213,
+        "narHash": "sha256-y0BglISgDr61vvdb35m0O4npuqh1pojlBNDILo9j8AI=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "1cd63408e71cc0e6a89ff2cb7c4107214e2523cc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_2": {
+      "inputs": {
+        "nixpkgs": [
           "git-lines",
           "nixpkgs"
         ]
@@ -3885,7 +3929,7 @@
         "type": "github"
       }
     },
-    "rust-overlay_2": {
+    "rust-overlay_3": {
       "inputs": {
         "flake-utils": [
           "nixos-extra-modules",
