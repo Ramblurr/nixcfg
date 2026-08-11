@@ -228,38 +228,30 @@ def main():
         fetch_powerdns(zone_key, zone, "tailscale", groups, excluded, anomalies)
 
     groups = dict(groups)
-    managed_ids = []
-    eligible_private_ids = []
-    eligible_public_ids = []
-    incomplete_ids = []
-    eligible_keys = set()
+    included_ids = []
+    included_keys = set()
+    included_surface_counts = Counter()
     for key, surfaces in sorted(groups.items()):
         zone_key, name, record_type = key
         identifier = stable_id(zone_key, name, record_type)
         surface_names = set(surfaces) - {"conflict"}
         if surfaces.get("conflict"):
-            continue
-        if key in managed_records:
-            managed_ids.append(identifier)
-        elif surface_names == {"lan", "tailscale"}:
-            eligible_keys.add(key)
-            eligible_private_ids.append(identifier)
-        elif surface_names == {"public", "lan", "tailscale"}:
-            eligible_keys.add(key)
-            eligible_public_ids.append(identifier)
+            excluded["conflicting-surface"] += 1
+        elif key in managed_records:
+            excluded["already-managed"] += 1
         else:
-            incomplete_ids.append(identifier)
+            included_keys.add(key)
+            included_ids.append(identifier)
+            included_surface_counts["+".join(sorted(surface_names))] += 1
 
-    records = render_records(groups, zones, eligible_keys)
-    imports = render_imports(groups, eligible_keys)
+    records = render_records(groups, zones, included_keys)
+    imports = render_imports(groups, included_keys)
     report = {
-        "managed_ids": managed_ids,
-        "eligible_private_ids": eligible_private_ids,
-        "eligible_public_ids": eligible_public_ids,
-        "incomplete_ids": incomplete_ids,
+        "included_ids": included_ids,
+        "included_surface_counts": dict(sorted(included_surface_counts.items())),
         "excluded": dict(sorted(excluded.items())),
         "anomalies": dict(sorted(anomalies.items())),
-        "generated_record_count": len(eligible_keys),
+        "generated_record_count": len(included_keys),
     }
     for path, content in ((output / "records.nix", records), (output / "imports.nix", imports)):
         path.write_text(content)
@@ -267,7 +259,7 @@ def main():
     report_path = output / "report.json"
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     report_path.chmod(0o600)
-    print(f"dns-dump: wrote {len(eligible_keys)} eligible groups to {output}", file=sys.stderr)
+    print(f"dns-dump: wrote {len(included_keys)} included groups to {output}", file=sys.stderr)
 
 
 if __name__ == "__main__":
