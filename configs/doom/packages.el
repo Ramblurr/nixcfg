@@ -122,7 +122,9 @@
     :recipe (:host github :repo "rschmukler/magit-difftastic")
     :pin "0e9fd361b77bcd40ac76ab18b7afd5c3a9331194"))
 
-(package! org-modern-indent :recipe (:host github :repo "jdtsmith/org-modern-indent"))
+(package! org-modern-indent
+  :recipe (:host github :repo "jdtsmith/org-modern-indent")
+  :pin "86bd83ee1ad95f123810eb3b116beb543db1960a")
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
 
 (package! pollen-mode :recipe (:host github :repo "lijunsong/pollen-mode") :pin "19174fab69ce4d2ae903ef2c3da44054e8b84268")
