@@ -41,6 +41,7 @@ in
 
         programs.doom-emacs = {
           enable = true;
+          doomDir = ../../../configs/doom;
           doomLocalDir = "${config.xdg.dataHome}/nix-doom-ndeu";
           emacs = cfg.package;
           experimentalFetchTree = true;

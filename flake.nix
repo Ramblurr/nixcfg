@@ -50,7 +50,6 @@
     niri-scratchpad.url = "github:gvolpe/niri-scratchpad";
     niri-scratchpad.inputs.nixpkgs.follows = "nixpkgs";
     nix-doom-emacs-unstraightened.url = "github:marienz/nix-doom-emacs-unstraightened";
-    nix-doom-emacs-unstraightened.inputs.doomdir.url = "./configs/doom";
     nix-doom-emacs-unstraightened.inputs.nixpkgs.follows = "nixpkgs";
     nixbot.url = "github:Mic92/nixbot";
     nixbot.inputs.nixpkgs.follows = "nixpkgs";
