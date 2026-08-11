@@ -295,7 +295,8 @@ The user's chat will now follow. Generate the title."))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package! eca
   :config
-  (setq eca-extra-args '("--verbose" "--log-level" "debug")))
+  (setq eca-custom-command '("nono-eca" "server")
+    eca-extra-args '("--verbose" "--log-level" "debug")))
 
 (defun my/eca-chat-toggle-or-start ()
   "Toggle ECA chat window, starting a new session if needed.
