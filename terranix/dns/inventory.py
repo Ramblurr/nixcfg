@@ -63,10 +63,11 @@ def exclude_reason(zone, name, record_type):
     return None
 
 
-def add_rrset(groups, excluded, anomalies, zone_key, zone, surface, name, record_type, values, ttl):
+def add_rrset(groups, excluded, excluded_records, anomalies, zone_key, zone, surface, name, record_type, values, ttl):
     reason = exclude_reason(zone, name, record_type)
     if reason:
         excluded[reason] += 1
+        excluded_records[(zone_key, name, record_type)].add(reason)
         return
     if not values or any(not isinstance(value, str) or not value for value in values):
         anomalies["invalid-rdata"] += 1
@@ -81,16 +82,16 @@ def add_rrset(groups, excluded, anomalies, zone_key, zone, surface, name, record
     groups[key][surface] = candidate
 
 
-def fetch_desec(zone_key, zone, groups, excluded, anomalies):
+def fetch_desec(zone_key, zone, groups, excluded, excluded_records, anomalies):
     url = f"https://desec.io/api/v1/domains/{urllib.parse.quote(zone, safe='')}/rrsets/"
     data = get_json(url, {"Authorization": f"Token {os.environ['DESEC_API_TOKEN']}"})
     for rrset in data:
         name = rrset.get("subname") or "@"
         record_type = rrset.get("type", "").upper()
-        add_rrset(groups, excluded, anomalies, zone_key, zone, "public", name, record_type, rrset.get("records", []), rrset.get("ttl"))
+        add_rrset(groups, excluded, excluded_records, anomalies, zone_key, zone, "public", name, record_type, rrset.get("records", []), rrset.get("ttl"))
 
 
-def fetch_powerdns(zone_key, zone, surface, groups, excluded, anomalies):
+def fetch_powerdns(zone_key, zone, surface, groups, excluded, excluded_records, anomalies):
     api = os.environ["PDNS_SERVER_URL"].rstrip("/")
     zone_id = zone if surface == "lan" else f"{zone}..tailscale"
     url = f"{api}/api/v1/servers/localhost/zones/{urllib.parse.quote(zone_id, safe='')}"
@@ -108,6 +109,7 @@ def fetch_powerdns(zone_key, zone, surface, groups, excluded, anomalies):
         add_rrset(
             groups,
             excluded,
+            excluded_records,
             anomalies,
             zone_key,
             zone,
@@ -221,14 +223,15 @@ def main():
 
     groups = defaultdict(dict)
     excluded = Counter()
+    excluded_records = defaultdict(set)
     anomalies = Counter()
     for zone_key, zone in sorted(zones.items()):
-        fetch_desec(zone_key, zone, groups, excluded, anomalies)
-        fetch_powerdns(zone_key, zone, "lan", groups, excluded, anomalies)
-        fetch_powerdns(zone_key, zone, "tailscale", groups, excluded, anomalies)
+        fetch_desec(zone_key, zone, groups, excluded, excluded_records, anomalies)
+        fetch_powerdns(zone_key, zone, "lan", groups, excluded, excluded_records, anomalies)
+        fetch_powerdns(zone_key, zone, "tailscale", groups, excluded, excluded_records, anomalies)
 
     groups = dict(groups)
-    included_ids = []
+    included_records = []
     included_keys = set()
     included_surface_counts = Counter()
     for key, surfaces in sorted(groups.items()):
@@ -237,18 +240,27 @@ def main():
         surface_names = set(surfaces) - {"conflict"}
         if surfaces.get("conflict"):
             excluded["conflicting-surface"] += 1
+            excluded_records[key].add("conflicting-surface")
         elif key in managed_records:
             excluded["already-managed"] += 1
+            excluded_records[key].add("already-managed")
         else:
             included_keys.add(key)
-            included_ids.append(identifier)
+            included_records.append({"id": identifier, "surfaces": sorted(surface_names)})
             included_surface_counts["+".join(sorted(surface_names))] += 1
 
     records = render_records(groups, zones, included_keys)
     imports = render_imports(groups, included_keys)
     report = {
-        "included_ids": included_ids,
+        "included_records": included_records,
         "included_surface_counts": dict(sorted(included_surface_counts.items())),
+        "excluded_records": [
+            {
+                "id": stable_id(zone_key, name, record_type),
+                "reasons": sorted(reasons),
+            }
+            for (zone_key, name, record_type), reasons in sorted(excluded_records.items())
+        ],
         "excluded": dict(sorted(excluded.items())),
         "anomalies": dict(sorted(anomalies.items())),
         "generated_record_count": len(included_keys),
