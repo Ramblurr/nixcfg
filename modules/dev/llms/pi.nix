@@ -25,7 +25,7 @@ let
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
       (toString pkgs.brepl-balance)
-      "${home}/src/github.com/ramblurr/pi-extensions/pi-sexp-edit"
+      (toString pkgs.pi-sexp-edit)
       (toString pkgs.pi-nrepl)
       (toString pkgs.pi-hashline-edit)
       (toString pkgs.plannotator-pi-extension)
