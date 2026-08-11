@@ -62,7 +62,9 @@
   (package! aggressive-indent)
   ;; (package! clojure-essential-ref)
   ;; (package! clojure-essential-ref-nov)
-  (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
+  (package! clj-ns-name
+    :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el"))
+    :pin "24e6a147dac872e1af9f540c2806f54eb25ffcc1")
   (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "49a05fbedf4605251c3b4d1a90dd7ebaa621eccb")
   (package! gptel :pin "513a6b74310d7bcc2a6138ccc1860b4577e73800" )
   ;; Disabled during the NDEU canary.
