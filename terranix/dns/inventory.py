@@ -119,10 +119,10 @@ def fetch_powerdns(zone_key, zone, surface, groups, excluded, anomalies):
         )
 
 
-def render_records(groups, zones):
+def render_records(groups, zones, eligible_keys):
     lines = ["{ zones }:", "["]
     for (zone_key, name, record_type), surfaces in sorted(groups.items()):
-        if surfaces.get("conflict"):
+        if (zone_key, name, record_type) not in eligible_keys:
             continue
         lines.extend([
             "  {",
@@ -140,10 +140,10 @@ def render_records(groups, zones):
     return "\n".join(lines) + "\n"
 
 
-def render_imports(groups):
+def render_imports(groups, eligible_keys):
     lines = ["{ zones }:", "["]
     for (zone_key, name, record_type), surfaces in sorted(groups.items()):
-        if surfaces.get("conflict"):
+        if (zone_key, name, record_type) not in eligible_keys:
             continue
         identifier = stable_id(zone_key, name, record_type)
         lines.append("  {")
@@ -175,9 +175,30 @@ def render_imports(groups):
     return "\n".join(lines) + "\n"
 
 
+def load_managed_records(path, zones):
+    try:
+        records = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        fail(f"cannot read managed-records file: {error}")
+    if not isinstance(records, list):
+        fail("managed-records file must contain a list")
+    identities = set()
+    for record in records:
+        if not isinstance(record, dict):
+            fail("managed-records entries must be objects")
+        zone_key = record.get("zoneKey")
+        name = record.get("name")
+        record_type = record.get("type")
+        if zone_key not in zones or not isinstance(name, str) or not isinstance(record_type, str):
+            fail("managed-records entry is invalid")
+        identities.add((zone_key, name, record_type.upper()))
+    return identities
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--managed-records", required=True, type=Path)
     parser.add_argument("--zone", action="append", required=True, metavar="KEY=ZONE")
     args = parser.parse_args()
 
@@ -192,6 +213,7 @@ def main():
         if not separator or not key or not zone or key in zones:
             fail("--zone values must be unique KEY=ZONE pairs")
         zones[key] = zone.rstrip(".")
+    managed_records = load_managed_records(args.managed_records, zones)
 
     for required in ("DESEC_API_TOKEN", "PDNS_API_KEY", "PDNS_SERVER_URL"):
         if not os.environ.get(required):
@@ -206,24 +228,38 @@ def main():
         fetch_powerdns(zone_key, zone, "tailscale", groups, excluded, anomalies)
 
     groups = dict(groups)
-    records = render_records(groups, zones)
-    imports = render_imports(groups)
-    candidates = [
-        stable_id(zone_key, name, record_type)
-        for (zone_key, name, record_type), surfaces in sorted(groups.items())
-        if not surfaces.get("conflict")
-    ]
-    complete = [
-        stable_id(zone_key, name, record_type)
-        for (zone_key, name, record_type), surfaces in sorted(groups.items())
-        if not surfaces.get("conflict") and {"lan", "tailscale"}.issubset(surfaces)
-    ]
+    managed_ids = []
+    eligible_private_ids = []
+    eligible_public_ids = []
+    incomplete_ids = []
+    eligible_keys = set()
+    for key, surfaces in sorted(groups.items()):
+        zone_key, name, record_type = key
+        identifier = stable_id(zone_key, name, record_type)
+        surface_names = set(surfaces) - {"conflict"}
+        if surfaces.get("conflict"):
+            continue
+        if key in managed_records:
+            managed_ids.append(identifier)
+        elif surface_names == {"lan", "tailscale"}:
+            eligible_keys.add(key)
+            eligible_private_ids.append(identifier)
+        elif surface_names == {"public", "lan", "tailscale"}:
+            eligible_keys.add(key)
+            eligible_public_ids.append(identifier)
+        else:
+            incomplete_ids.append(identifier)
+
+    records = render_records(groups, zones, eligible_keys)
+    imports = render_imports(groups, eligible_keys)
     report = {
-        "candidate_ids": candidates,
-        "complete_ids": complete,
+        "managed_ids": managed_ids,
+        "eligible_private_ids": eligible_private_ids,
+        "eligible_public_ids": eligible_public_ids,
+        "incomplete_ids": incomplete_ids,
         "excluded": dict(sorted(excluded.items())),
         "anomalies": dict(sorted(anomalies.items())),
-        "generated_record_count": len(candidates),
+        "generated_record_count": len(eligible_keys),
     }
     for path, content in ((output / "records.nix", records), (output / "imports.nix", imports)):
         path.write_text(content)
@@ -231,7 +267,7 @@ def main():
     report_path = output / "report.json"
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     report_path.chmod(0o600)
-    print(f"dns-dump: wrote {len(candidates)} candidate groups to {output}", file=sys.stderr)
+    print(f"dns-dump: wrote {len(eligible_keys)} eligible groups to {output}", file=sys.stderr)
 
 
 if __name__ == "__main__":
