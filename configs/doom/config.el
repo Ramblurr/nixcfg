@@ -244,6 +244,10 @@ exists, prepends additional parent directories until unique."
 (after! dired
   (setq dired-create-destination-dirs 'always))
 
+(if not-android
+  (use-package! tramp-rpc
+    :after tramp))
+
 ;;(if not-android
 ;;  (use-package! magit-difftastic
 ;;    :after magit

@@ -50,6 +50,7 @@ in
           provideEmacs = false;
           extraPackages = epkgs: [
             epkgs.eldev
+            epkgs.tramp-rpc
             epkgs.vterm
             epkgs.treesit-grammars.with-all-grammars
           ];
@@ -60,6 +61,7 @@ in
           inherit (cfg) package;
           extraPackages = epkgs: [
             epkgs.eldev
+            epkgs.tramp-rpc
             epkgs.vterm
             #epkgs.pdf-tools
             epkgs.treesit-grammars.with-all-grammars
