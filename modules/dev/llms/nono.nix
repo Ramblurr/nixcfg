@@ -136,6 +136,7 @@ let
         signal_mode = "isolated";
         capability_elevation = false;
       };
+      environment.set_vars.JITI_FS_CACHE = "false";
       commands = {
         allow = [ ];
         deny = [ ];
