@@ -33,7 +33,7 @@ let
       (toString pkgs.pi-mcp-adapter)
       (toString pkgs.pi-openai-fast)
       (toString pkgs.pi-nono-sandbox)
-      "${home}/src/github.com/ramblurr/pi-matrix-relay/extension"
+      (toString pkgs.pi-matrix-relay)
       (toString pkgs.pi-link)
     ];
     npmCommand = [ "pnpm" ];

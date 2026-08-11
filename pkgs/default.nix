@@ -35,6 +35,7 @@ inputs: [
       pi-nono-sandbox = prev.callPackage ./pi/pi-nono-sandbox/package.nix { };
       pi-openai-fast = prev.callPackage ./pi/pi-openai-fast/package.nix { };
       pi-sexp-edit = prev.callPackage ./pi/pi-sexp-edit/package.nix { };
+      pi-matrix-relay = prev.callPackage ./pi/pi-matrix-relay/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
