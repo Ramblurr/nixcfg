@@ -168,7 +168,7 @@ def render_imports(groups, eligible_keys):
                     "      {",
                     "        address = " + json.dumps(f'powerdns_record.{surface}["{identifier}"]') + ";",
                     "        provider = \"powerdns\";",
-                    f"        zone = zones.{zone_key}" + (";" if surface == "lan" else " + \"..tailscale\";"),
+                    f"        zone = zones.{zone_key}" + (" + \".\";" if surface == "lan" else " + \"..tailscale\";"),
                     f"        name = {json.dumps(name)};",
                     f"        type = {json.dumps(record_type)};",
                     "      }",
