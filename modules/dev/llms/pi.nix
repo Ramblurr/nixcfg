@@ -21,7 +21,7 @@ let
     ];
     packages = [
       (toString pkgs.pi-reload)
-      "${home}/src/github.com/ramblurr/pi-extensions/pi-ghost"
+      (toString pkgs.pi-ghost)
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
       "${home}/src/github.com/ramblurr/pi-extensions/brepl-balance"
