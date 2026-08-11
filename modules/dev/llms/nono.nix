@@ -10,6 +10,26 @@ let
   cfg = config.modules.dev.llms;
   jsonFormat = pkgs.formats.json { };
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  agentRuntimeGroups = [
+    "node_runtime"
+    "rust_runtime"
+    "python_runtime"
+    {
+      name = "user_caches_macos";
+      when = "macos";
+    }
+    {
+      name = "user_caches_linux";
+      when = "linux";
+    }
+    {
+      name = "linux_sysfs_read";
+      when = "linux";
+    }
+    "nix_runtime"
+    "git_config"
+    "unlink_protection"
+  ];
 
   providerCatalog = {
     openrouter.route = {
@@ -106,11 +126,15 @@ let
 
   piProfile = mkProfile {
     profile = {
-      extends = "always-further/pi";
+      extends = "default";
       meta.name = "pi";
       groups = {
-        include = [ ];
+        include = agentRuntimeGroups;
         exclude = [ ];
+      };
+      security = {
+        signal_mode = "isolated";
+        capability_elevation = false;
       };
       commands = {
         allow = [ ];
@@ -141,9 +165,24 @@ let
         listen_port = [ ];
       };
       hooks = { };
+      open_urls = {
+        allow_origins = [
+          "https://auth.openai.com"
+          "https://claude.ai"
+          "https://github.com"
+        ];
+        allow_localhost = true;
+      };
+      allow_launch_services = true;
       rollback = {
-        exclude_patterns = [ ];
-        exclude_globs = [ ];
+        exclude_patterns = [
+          "node_modules"
+          ".next"
+          "__pycache__"
+          "target"
+          ".pi"
+        ];
+        exclude_globs = [ "*.tmp.[0-9]*.[0-9]*" ];
       };
     };
   };
@@ -161,17 +200,7 @@ let
       extends = "default";
       meta.name = "eca";
       groups = {
-        include = [
-          "node_runtime"
-          "rust_runtime"
-          "python_runtime"
-          "user_caches_macos"
-          "user_caches_linux"
-          "linux_sysfs_read"
-          "nix_runtime"
-          "git_config"
-          "unlink_protection"
-        ];
+        include = agentRuntimeGroups;
         exclude = [ ];
       };
       security = {
