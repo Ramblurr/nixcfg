@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -36,6 +37,21 @@ in
     myhm =
       { config, ... }:
       {
+        imports = [ inputs.nix-doom-emacs-unstraightened.homeModule ];
+
+        programs.doom-emacs = {
+          enable = true;
+          doomLocalDir = "${config.xdg.dataHome}/nix-doom-ndeu";
+          emacs = cfg.package;
+          experimentalFetchTree = true;
+          provideEmacs = false;
+          extraPackages = epkgs: [
+            epkgs.eldev
+            epkgs.vterm
+            epkgs.treesit-grammars.with-all-grammars
+          ];
+        };
+
         programs.emacs = {
           enable = true;
           inherit (cfg) package;
