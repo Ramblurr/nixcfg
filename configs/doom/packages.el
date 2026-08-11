@@ -53,11 +53,12 @@
 (when not-android
   (package! transpose-frame)
 
-  (unpin! hover)
-  (unpin! treemacs)
-  (unpin! lsp-treemacs)
-  (unpin! lsp-ui)
-  (unpin! lsp-mode)
+  ;; Disabled during the NDEU canary; NDEU rejects Doom's exported :unpin metadata.
+  ;; (unpin! hover)
+  ;; (unpin! treemacs)
+  ;; (unpin! lsp-treemacs)
+  ;; (unpin! lsp-ui)
+  ;; (unpin! lsp-mode)
 
   (package! aggressive-indent)
   ;; (package! clojure-essential-ref)
