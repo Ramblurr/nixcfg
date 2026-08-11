@@ -92,7 +92,7 @@ in
             Environment = [
               "VOXTYPE_OSD_QML_PATH=${voxtype.src}/quickshell"
             ];
-            EnvironmentFile = "/home/ramblurr/.llm-keys";
+            #EnvironmentFile = "/home/ramblurr/.llm-keys";
           };
           Install.WantedBy = [ "graphical-session.target" ];
         };
