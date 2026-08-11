@@ -1,5 +1,88 @@
-{ zones }:
+{
+  zones,
+  records ? [ ],
+}:
 { lib, ... }:
+let
+  surfaces = [
+    "lan"
+    "tailscale"
+  ];
+  ensure = condition: message: if condition then true else throw "terranix/dns: ${message}";
+  isNonEmptyString = value: builtins.isString value && builtins.stringLength value > 0;
+  isNonEmptyStringList =
+    values: builtins.isList values && values != [ ] && lib.all isNonEmptyString values;
+  ownerName =
+    record: if record.name == "@" then "${record.zone}." else "${record.name}.${record.zone}.";
+  validateRecord =
+    record:
+    builtins.seq (ensure (builtins.isAttrs record) "records must be attribute sets") (
+      builtins.seq (ensure (isNonEmptyString record.id) "record IDs must be non-empty strings") (
+        builtins.seq
+          (ensure (builtins.elem record.zone (builtins.attrValues zones)) "${record.id}: zone is not selected")
+          (
+            builtins.seq (ensure (isNonEmptyString record.name) "${record.id}: name must be non-empty") (
+              builtins.seq
+                (ensure (
+                  record.name == "@" || !(lib.hasInfix "." record.name)
+                ) "${record.id}: name must be relative")
+                (
+                  builtins.seq
+                    (ensure (
+                      isNonEmptyString record.type && record.type == lib.toUpper record.type
+                    ) "${record.id}: type must be uppercase")
+                    (
+                      builtins.seq
+                        (ensure (lib.any (
+                          surface: builtins.hasAttr surface record
+                        ) surfaces) "${record.id}: at least one surface is required")
+                        (
+                          builtins.seq
+                            (ensure (lib.all (
+                              surface: !(builtins.hasAttr surface record) || isNonEmptyStringList record.${surface}
+                            ) surfaces) "${record.id}: present surfaces must be non-empty string lists")
+                            (
+                              record
+                              // {
+                                owner = ownerName record;
+                                baseZone = "${record.zone}.";
+                                tailscaleZone = "${record.zone}..tailscale";
+                              }
+                            )
+                        )
+                    )
+                )
+            )
+          )
+      )
+    );
+  compiledRecords = builtins.map validateRecord records;
+  recordIds = builtins.map (record: record.id) compiledRecords;
+  surfaceOwners = lib.concatMap (
+    record:
+    builtins.map (surface: "${record.zone}|${record.name}|${record.type}|${surface}") (
+      builtins.filter (surface: builtins.hasAttr surface record) surfaces
+    )
+  ) compiledRecords;
+  validatedRecords =
+    builtins.seq
+      (ensure (
+        builtins.length recordIds == builtins.length (lib.unique recordIds)
+      ) "record IDs must be unique")
+      (
+        builtins.seq (ensure (
+          builtins.length surfaceOwners == builtins.length (lib.unique surfaceOwners)
+        ) "RRsets must have one declaration per zone, name, type, and surface") compiledRecords
+      );
+  recordsFor =
+    surface:
+    builtins.listToAttrs (
+      builtins.map (record: {
+        name = record.id;
+        value = record;
+      }) (builtins.filter (record: builtins.hasAttr surface record) validatedRecords)
+    );
+in
 {
   terraform = {
     required_providers.powerdns = {
@@ -57,6 +140,24 @@
     powerdns_network.tailscale_ipv6 = {
       network = "fd7a:115c:a1e0::/48";
       view = "tailscale";
+    };
+
+    powerdns_record.lan = {
+      for_each = recordsFor "lan";
+      zone = "\${each.value.baseZone}";
+      name = "\${each.value.owner}";
+      type = "\${each.value.type}";
+      ttl = 300;
+      records = "\${each.value.lan}";
+    };
+
+    powerdns_record.tailscale = {
+      for_each = recordsFor "tailscale";
+      zone = "\${each.value.tailscaleZone}";
+      name = "\${each.value.owner}";
+      type = "\${each.value.type}";
+      ttl = 300;
+      records = "\${each.value.tailscale}";
     };
   };
 }
