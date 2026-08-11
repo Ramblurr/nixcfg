@@ -23,14 +23,6 @@ let
     llm-openai-plugin = true;
     llm-pdf-to-images = true;
   };
-  nono-eca = pkgs.writeShellScriptBin "nono-eca" ''
-    exec ${lib.getExe pkgs.nono} --silent run \
-      --profile pi \
-      --allow-cwd \
-      --read "$HOME/.config/eca" \
-      --allow "$HOME/.cache/eca" \
-      -- ${lib.getExe llm-agents.eca} "$@"
-  '';
   paseo-cli = inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.default;
   paseo-wrapper = pkgs.writeShellScriptBin "paseo" ''
     export PASEO_PASSWORD="$(<${cfg.paseo.passwordFile})"
@@ -45,6 +37,7 @@ let
   '';
 in
 {
+  imports = [ ./llms/nono.nix ];
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
@@ -91,7 +84,6 @@ in
           llmWithPlugins
           pkgs.github-mcp-server
           llm-agents.pi
-          nono-eca
           inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
           #llm-agents.vix
           #llm-agents.mistral-vibe
