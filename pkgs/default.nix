@@ -12,8 +12,8 @@ inputs: [
       pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
       terraform-provider-powerdns = prev.callPackage ./terraform-providers/powerdns.nix { };
       terraform-provider-desec = prev.callPackage ./terraform-providers/desec.nix { };
-      opentofu-powerdns = prev.opentofu.withPlugins (plugins: [ _final.terraform-provider-powerdns ]);
-      opentofu-dns = prev.opentofu.withPlugins (plugins: [
+      opentofu-powerdns = prev.opentofu.withPlugins (_plugins: [ _final.terraform-provider-powerdns ]);
+      opentofu-dns = prev.opentofu.withPlugins (_plugins: [
         _final.terraform-provider-desec
         _final.terraform-provider-powerdns
       ]);

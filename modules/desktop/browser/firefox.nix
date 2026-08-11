@@ -20,46 +20,44 @@ in
 
     #environment.systemPackages = [ pkgs.firefoxpwa ];
 
-    home-manager.users."${username}" =
-      { pkgs, ... }:
-      {
-        #home.packages = [ firefox-devedition-bin ];
+    home-manager.users."${username}" = _: {
+      #home.packages = [ firefox-devedition-bin ];
 
-        home.file.".config/autostart/firefox.desktop" = lib.mkIf cfg.autostart.enable (
-          lib.my.autostart "firefox"
-        );
-        programs.firefox = {
-          enable = true;
-          # Keep the legacy profile location explicit. To migrate to the XDG
-          # location, move ~/.mozilla/firefox to
-          # $XDG_CONFIG_HOME/mozilla/firefox, change this to
-          # "${config.xdg.configHome}/mozilla/firefox", and update
-          # impermanence to persist the new config directory.
-          configPath = ".mozilla/firefox";
-          package = firefox;
-          #nativeMessagingHosts = [ pkgs.firefoxpwa ];
-          profiles.personal = {
-            id = 0;
-            path = "personal";
-            settings = {
-              "browser.tabs.loadInBackground" = true;
-            };
+      home.file.".config/autostart/firefox.desktop" = lib.mkIf cfg.autostart.enable (
+        lib.my.autostart "firefox"
+      );
+      programs.firefox = {
+        enable = true;
+        # Keep the legacy profile location explicit. To migrate to the XDG
+        # location, move ~/.mozilla/firefox to
+        # $XDG_CONFIG_HOME/mozilla/firefox, change this to
+        # "${config.xdg.configHome}/mozilla/firefox", and update
+        # impermanence to persist the new config directory.
+        configPath = ".mozilla/firefox";
+        package = firefox;
+        #nativeMessagingHosts = [ pkgs.firefoxpwa ];
+        profiles.personal = {
+          id = 0;
+          path = "personal";
+          settings = {
+            "browser.tabs.loadInBackground" = true;
           };
+        };
 
-          profiles.work = {
-            id = 1;
-            path = "work";
-          };
+        profiles.work = {
+          id = 1;
+          path = "work";
+        };
 
-          profiles.dev = {
-            id = 2;
-            path = "dev";
-            settings = {
-              # always do a clean start
-              "browser.sessionstore.resume_from_crash" = false;
-            };
+        profiles.dev = {
+          id = 2;
+          path = "dev";
+          settings = {
+            # always do a clean start
+            "browser.sessionstore.resume_from_crash" = false;
           };
         };
       };
+    };
   };
 }
