@@ -72,7 +72,8 @@
   ;;             :files ("*.el")))
   (package! treemacs-all-the-icons)
 
-  (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
+  ;; Disabled during the NDEU canary.
+  ;; (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
   ;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
 
   ;; Disabled during the NDEU canary.
