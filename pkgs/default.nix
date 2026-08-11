@@ -27,6 +27,7 @@ inputs: [
       plannotator-pi-extension = prev.callPackage ./pi/plannotator/package.nix { };
       epimetheus = prev.callPackage ./pi/epimetheus/package.nix { };
       pi-mcp-adapter = prev.callPackage ./pi/pi-mcp-adapter/package.nix { };
+      pi-link = prev.callPackage ./pi/pi-link/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
