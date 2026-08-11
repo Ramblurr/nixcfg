@@ -5,6 +5,7 @@
 { lib, ... }:
 let
   surfaces = [
+    "public"
     "lan"
     "tailscale"
   ];
@@ -47,6 +48,7 @@ let
                                 owner = ownerName record;
                                 baseZone = "${record.zone}.";
                                 tailscaleZone = "${record.zone}..tailscale";
+                                desecDomain = record.zone;
                               }
                             )
                         )
@@ -89,6 +91,10 @@ in
       source = "mmianl/powerdns";
       version = "2.3.0";
     };
+    required_providers.desec = {
+      source = "timofurrer/desec";
+      version = "0.6.3";
+    };
 
     encryption = {
       key_provider.pbkdf2.dns_state = {
@@ -117,6 +123,7 @@ in
   };
 
   provider.powerdns = { };
+  provider.desec = { };
 
   resource = {
     powerdns_zone.tailscale = {
@@ -140,6 +147,15 @@ in
     powerdns_network.tailscale_ipv6 = {
       network = "fd7a:115c:a1e0::/48";
       view = "tailscale";
+    };
+
+    desec_rrset.public = {
+      for_each = recordsFor "public";
+      domain = "\${each.value.desecDomain}";
+      subname = "\${each.value.name}";
+      type = "\${each.value.type}";
+      ttl = 3600;
+      rdata = "\${each.value.public}";
     };
 
     powerdns_record.lan = {
