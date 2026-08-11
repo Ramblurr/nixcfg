@@ -40,6 +40,7 @@
       for_each = zones;
       name = "\${each.value}..tailscale";
       kind = "Native";
+      account = "";
     };
 
     powerdns_view_zone_association.tailscale = {
