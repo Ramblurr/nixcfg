@@ -119,7 +119,8 @@
   (package! org-roam-ui)
   (package! consult-flyspell)
   (package! magit-difftastic
-    :recipe (:host github :repo "rschmukler/magit-difftastic")))
+    :recipe (:host github :repo "rschmukler/magit-difftastic")
+    :pin "0e9fd361b77bcd40ac76ab18b7afd5c3a9331194"))
 
 (package! org-modern-indent :recipe (:host github :repo "jdtsmith/org-modern-indent"))
 (package! org-ql :pin "4b8330a683c43bb4a2c64ccce8cd5a90c8b174ca")
