@@ -36,7 +36,7 @@ let
   sessiondSocket = "/run/${runtimeDirectory}/sessiond.sock";
 
   # PI WEB spawns shells and agents; include the user's profile so the
-  # modules.dev.llms pi wrapper is visible to the system services.
+  # modules.dev.llms Pi package is visible to the system services.
   binPath = concatStringsSep ":" (
     [
       "${cfg.npmGlobalPrefix}/bin"

@@ -9,24 +9,6 @@
 let
   cfg = config.modules.dev.llms;
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  inherit (llm-agents)
-    ccusage
-    pi
-    mistral-vibe
-    vix
-    ;
-  wrapWithLLMKeys = cmd: removeVars: ''
-    #!${pkgs.runtimeShell}
-    export PI_CONFIG_DIR="$HOME/.config/pi"
-    export VIBE_HOME="$HOME/.config/vibe"
-    if [ -f "$HOME/.llm-keys" ]; then
-      set -a  # automatically export all variables
-      source "$HOME/.llm-keys"
-      set +a  # turn off automatic export
-      ${lib.concatStringsSep "\n" (map (v: "unset ${v}") removeVars)}
-    fi
-    exec ${cmd} "$@"
-  '';
   llmWithPlugins = pkgs.llm.withPlugins {
     llm-cmd = true;
     llm-anthropic = true;
@@ -41,18 +23,6 @@ let
     llm-openai-plugin = true;
     llm-pdf-to-images = true;
   };
-  llm-wrapper = pkgs.writeShellScriptBin "llm" (wrapWithLLMKeys "${llmWithPlugins}/bin/llm" [ ]);
-  github-mcp-server-wrapper = pkgs.writeShellScriptBin "github-mcp-server" (
-    wrapWithLLMKeys "${pkgs.github-mcp-server}/bin/github-mcp-server" [ ]
-  );
-  pi-wrapper = pkgs.writeShellScriptBin "pi" (wrapWithLLMKeys "${pi}/bin/pi" [ ]);
-  hindsight-cli-wrapper = pkgs.writeShellScriptBin "hindsight" (
-    wrapWithLLMKeys "${pkgs.hindsight-cli}/bin/hindsight" [ ]
-  );
-  vix-wrapper = pkgs.writeShellScriptBin "vix" (wrapWithLLMKeys "${vix}/bin/vix" [ ]);
-  mistral-vibe-wrapper = pkgs.writeShellScriptBin "vibe" (
-    wrapWithLLMKeys "${mistral-vibe}/bin/vibe" [ ]
-  );
   paseo-cli = inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.default;
   paseo-wrapper = pkgs.writeShellScriptBin "paseo" ''
     export PASEO_PASSWORD="$(<${cfg.paseo.passwordFile})"
@@ -84,17 +54,13 @@ in
     services.open-webui.enable = cfg.ollama.enable;
     services.open-webui.port = 11180;
     myhm = {
-      sops.secrets.llm-keys = {
-        mode = "0400";
-        path = ".llm-keys";
-      };
-
       home.sessionVariables = {
         #PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
         CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
         HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
+        VIBE_HOME = "$XDG_CONFIG_HOME/vibe";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
         PLANNOTATOR_SHARE = "disabled";
@@ -114,12 +80,12 @@ in
           espeak
           jujutsu
           #mcp-inspector
-          llm-wrapper
-          github-mcp-server-wrapper
-          pi-wrapper
+          llmWithPlugins
+          pkgs.github-mcp-server
+          llm-agents.pi
           inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
-          #vix-wrapper
-          #mistral-vibe-wrapper
+          #llm-agents.vix
+          #llm-agents.mistral-vibe
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           cat-url-markdown
@@ -132,7 +98,7 @@ in
           llm-agents.codex
           #llm-agents.jscpd
           llm-agents.plannotator
-          hindsight-cli-wrapper
+          pkgs.hindsight-cli
           #ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           universal-ctags
