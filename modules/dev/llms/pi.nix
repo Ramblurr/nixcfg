@@ -31,7 +31,7 @@ let
       (toString pkgs.plannotator-pi-extension)
       (toString pkgs.epimetheus)
       (toString pkgs.pi-mcp-adapter)
-      "${home}/src/github.com/ramblurr/pi-extensions/pi-openai-fast"
+      (toString pkgs.pi-openai-fast)
       "${home}/src/github.com/ramblurr/pi-extensions/pi-nono-sandbox"
       "${home}/src/github.com/ramblurr/pi-matrix-relay/extension"
       (toString pkgs.pi-link)

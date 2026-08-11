@@ -31,6 +31,7 @@ inputs: [
       pi-reload = prev.callPackage ./pi/pi-reload/package.nix { };
       pi-ghost = prev.callPackage ./pi/pi-ghost/package.nix { };
       brepl-balance = prev.callPackage ./pi/brepl-balance/package.nix { };
+      pi-openai-fast = prev.callPackage ./pi/pi-openai-fast/package.nix { };
       pi-sexp-edit = prev.callPackage ./pi/pi-sexp-edit/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
