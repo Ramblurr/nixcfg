@@ -2,6 +2,7 @@
   pkgs,
   config,
   lib,
+  inputs,
   ...
 }:
 let
@@ -10,6 +11,7 @@ let
   homeDomain = config.repo.secrets.global.domain.home;
 in
 {
+  environment.systemPackages = [ inputs.smolvm.packages.${pkgs.stdenv.hostPlatform.system}.default ];
   # paseo tailscale proxy
   systemd.sockets.paseo-tailscale-proxy = {
     description = "Paseo proxy socket on external addresses";
