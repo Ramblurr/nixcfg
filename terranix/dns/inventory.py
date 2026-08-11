@@ -137,6 +137,7 @@ def render_records(groups, zones, eligible_keys):
             if surface in surfaces:
                 values = " ".join(nix_string(value, zones[zone_key], zone_key) for value in surfaces[surface]["values"])
                 lines.append(f"    {surface} = [ {values} ];")
+                lines.append(f"    {surface}Ttl = {surfaces[surface]['ttl']};")
         lines.extend(["  }", ""])
     lines.append("]")
     return "\n".join(lines) + "\n"
