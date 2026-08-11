@@ -30,6 +30,7 @@ let
     "git_config"
     "unlink_protection"
   ];
+  piRuntimeGroups = agentRuntimeGroups ++ [ "java_runtime" ];
 
   providerCatalog = {
     openrouter.route = {
@@ -129,7 +130,7 @@ let
       extends = "default";
       meta.name = "pi";
       groups = {
-        include = agentRuntimeGroups;
+        include = piRuntimeGroups;
         exclude = [ ];
       };
       security = {
@@ -148,6 +149,10 @@ let
           "$HOME/.config/nono/profile-drafts"
         ];
         read = [
+          "$XDG_CONFIG_HOME/clojure"
+          "$XDG_CONFIG_HOME/nrepl"
+          "$XDG_CONFIG_HOME/clj-kondo"
+          "$HOME/vendor/jdks"
           "$HOME/src/github.com/ramblurr/nix-devenv/skills"
           "$HOME/src/github.com/ramblurr/pi-extensions"
         ];
@@ -182,6 +187,13 @@ let
           "__pycache__"
           "target"
           ".pi"
+          ".cpcache"
+          ".direnv"
+          ".zig-cache"
+          ".zig-cache-global"
+          "zig-out"
+          ".gradle"
+          "build"
         ];
         exclude_globs = [ "*.tmp.[0-9]*.[0-9]*" ];
       };
