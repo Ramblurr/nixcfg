@@ -45,6 +45,8 @@ in
           doomLocalDir = "${config.xdg.dataHome}/nix-doom-ndeu";
           emacs = cfg.package;
           experimentalFetchTree = true;
+          # Cutover: save daemon work, set this true, retire programs.emacs below,
+          # then build/deploy quine and restart emacs.service.
           provideEmacs = false;
           extraPackages = epkgs: [
             epkgs.eldev
