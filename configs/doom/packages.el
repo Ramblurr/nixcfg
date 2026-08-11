@@ -65,19 +65,21 @@
   (package! clj-ns-name :recipe (:host github :repo "plexus/plexmacs" :files ("clj-ns-name/clj-ns-name.el")))
   (package! eca :recipe (:host github :repo "editor-code-assistant/eca-emacs" :files ("*.el")) :pin "49a05fbedf4605251c3b4d1a90dd7ebaa621eccb")
   (package! gptel :pin "513a6b74310d7bcc2a6138ccc1860b4577e73800" )
-  (package! pi-coding-agent
-    :recipe (:type nil
-              :local-repo "/home/ramblurr/src/github.com/dnouri/pi-coding-agent"
-              :files ("*.el")))
+  ;; Disabled during the NDEU canary.
+  ;; (package! pi-coding-agent
+  ;;   :recipe (:type nil
+  ;;             :local-repo "/home/ramblurr/src/github.com/dnouri/pi-coding-agent"
+  ;;             :files ("*.el")))
   (package! treemacs-all-the-icons)
 
   (package! ajrepl :recipe (:type git :host github :repo "sogaiu/ajrepl" :files (:defaults ("ajrepl/" "ajrepl/*"))))
   ;; (package! kdl-ts-mode :recipe (:host github :repo "merrickluo/kdl-ts-mode"))
 
-  (package! fluent-ts-mode
-    :recipe (:type nil
-              :local-repo "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
-              :files ("editors/emacs/*.el")))
+  ;; Disabled during the NDEU canary.
+  ;; (package! fluent-ts-mode
+  ;;   :recipe (:type nil
+  ;;             :local-repo "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
+  ;;             :files ("editors/emacs/*.el")))
 
   (package! symex-core
     :recipe (:host github
@@ -121,8 +123,9 @@
 (package! pollen-mode :recipe (:host github :repo "lijunsong/pollen-mode") :pin "19174fab69ce4d2ae903ef2c3da44054e8b84268")
 
 (package! polymode)
-(package! clojure-prose-mode
-  :recipe (:type nil
-            :local-repo "/home/ramblurr/src/github.com/ramblurr/clojure-prose-mode"
-            :files ("clojure-prose-mode.el")))
+;; Disabled during the NDEU canary.
+;; (package! clojure-prose-mode
+;;   :recipe (:type nil
+;;             :local-repo "/home/ramblurr/src/github.com/ramblurr/clojure-prose-mode"
+;;             :files ("clojure-prose-mode.el")))
 (package! adoc-mode)

@@ -136,6 +136,8 @@
 ;; Janet
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; ajsc and inf-janet are disabled during the NDEU canary.
+(comment
 (defun my/ajsc-send-top-level-form ()
   "Send the top-level Janet form at point to the ajsc REPL."
   (interactive)
@@ -204,6 +206,7 @@
   :commands (inf-janet run-janet inf-janet-minor-mode)
   :config
   (add-to-list 'janet-source-modes 'janet-ts-mode))
+)
 
 (use-package! ajrepl
   :after janet-ts-mode
@@ -222,6 +225,8 @@
 ;; Fluent
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Disabled during the NDEU canary.
+(comment
 (defconst my/fluent-tooling-root
   "/home/ramblurr/src/github.com/outskirtslabs/fluent-tooling"
   "Local checkout containing the Fluent grammar and Emacs integration.")
@@ -237,6 +242,7 @@
 
 (setf (alist-get 'fluent treesit-language-source-alist)
   (list my/fluent-tooling-root))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Asciidoc
@@ -254,5 +260,8 @@
           ("\\.pp$" . pollen-mode)
           ("\\.pmd$" . pollen-mode)))
 
+;; Disabled during the NDEU canary.
+(comment
 (use-package! clojure-prose-mode
   :mode ("\\.prose\\'" . clojure-prose-mode))
+)

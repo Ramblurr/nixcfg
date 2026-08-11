@@ -8,6 +8,8 @@
 ;; pi-coding-agent
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Disabled during the NDEU canary.
+(comment
 (defun my/pi-coding-agent-send-or-steer ()
   "Send input, steering the active turn when Pi is busy."
   (interactive)
@@ -65,6 +67,7 @@
       :desc "toggle"   :nm "TAB" #'pi-coding-agent-toggle-tool-section
       :desc "visit"    :nm "v"   #'pi-coding-agent-visit-file
       :desc "shell"    :nm "!"   #'pi-coding-agent-shell-command-at-point)))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; gptel
