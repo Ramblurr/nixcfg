@@ -162,7 +162,7 @@ let
         write_file = [ ];
         deny = [ ];
         bypass_protection = [ ];
-        suppress_save_prompt = [ ];
+        suppress_save_prompt = [ "/etc/nix/sentry-endpoint" ];
       };
       network = {
         block = false;
