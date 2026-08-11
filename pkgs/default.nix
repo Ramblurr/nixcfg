@@ -25,6 +25,7 @@ inputs: [
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
       pi-hashline-edit = prev.callPackage ./pi/pi-hashline-edit/package.nix { };
       plannotator-pi-extension = prev.callPackage ./pi/plannotator/package.nix { };
+      epimetheus = prev.callPackage ./pi/epimetheus/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
