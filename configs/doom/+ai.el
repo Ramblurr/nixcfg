@@ -12,14 +12,14 @@
   "Send input, steering the active turn when Pi is busy."
   (interactive)
   (if-let* ((chat-buf (pi-coding-agent--get-chat-buffer))
-            ((pi-coding-agent--session-busy-p chat-buf)))
-      (pi-coding-agent-queue-steering)
+             ((pi-coding-agent--session-busy-p chat-buf)))
+    (pi-coding-agent-queue-steering)
     (pi-coding-agent-send)))
 
 (use-package! pi-coding-agent
   :commands (pi-coding-agent
-             pi-coding-agent-open-session-file
-             pi-coding-agent-toggle)
+              pi-coding-agent-open-session-file
+              pi-coding-agent-toggle)
   :init
   (defalias 'pi #'pi-coding-agent)
   (map! :leader :desc "Pi" :n "l l" #'pi-coding-agent)
@@ -289,28 +289,6 @@ The user's chat will now follow. Generate the title."))
         (end-of-line)
         (skip-chars-backward " \t\r")
         (insert-and-inherit "*")))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MCP
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(comment (use-package! mcp
-           :after (gptel)
-           :config (require 'mcp-hub)
-           :init (setq mcp-hub-servers
-                   '(
-                      ;;("github" , (:command "github-mcp-server" :args ("stdio")
-                      ;;             :env (:GITHUB_READ_ONLY "1"
-                      ;;                   :GITHUB_TOOLSETS "context,repos,pull_requests,issues")))
-                      ;; this tells that it can launch an MCP server
-                      ;; for my-project by running the following
-                      ;; command line:
-                      ;;    clojure-mcp my-project
-                      ;; ("my-project" :command "clojure-mcp" :args ("my-project"))
-                      )
-                   )
-           :hook (after-init . mcp-hub-start-all-server)
-           ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ECA (Editor Code Assistant by the venerable Eric Dallo)

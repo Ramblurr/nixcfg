@@ -118,17 +118,6 @@
 
   ;; -------------------------------------
 
-  ;; - start a clojure-mcp server, requires run-clojure-mcp script, see modules/dev/clojure/default.nix
-  ;;  claude mcp add clojure-mcp -- run-clojure-mcp
-  :mcp/clojure
-  {:deps    {org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}
-             com.bhauman/clojure-mcp {:git/url "https://github.com/bhauman/clojure-mcp.git"
-                                      :git/tag "v0.5.1"
-                                      :git/sha "c9cdd6bf61b2265954f0445f8bea389c50b09bcb"}}
-   :exec-fn clojure-mcp.main/start-mcp-server}
-
-  ;; -------------------------------------
-
   ;; - fix namespaces whos requires+imports are unused and not well sorted
   ;; cd project-directory && clojure -T:fmt/ns-fix
   :fmt/ns-fix
