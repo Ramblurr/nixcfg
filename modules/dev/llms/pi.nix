@@ -20,7 +20,7 @@ let
       "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
     ];
     packages = [
-      "${home}/src/github.com/ramblurr/pi-extensions/reload"
+      (toString pkgs.pi-reload)
       "${home}/src/github.com/ramblurr/pi-extensions/pi-ghost"
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
