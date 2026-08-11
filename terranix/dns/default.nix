@@ -18,6 +18,14 @@ let
   isNonEmptyString = value: builtins.isString value && builtins.stringLength value > 0;
   isNonEmptyStringList =
     values: builtins.isList values && values != [ ] && lib.all isNonEmptyString values;
+  isRelativeName =
+    name:
+    name == "@"
+    || (
+      !(lib.hasPrefix "." name)
+      && !(lib.hasSuffix "." name)
+      && lib.all isNonEmptyString (lib.splitString "." name)
+    );
   ownerName =
     record: if record.name == "@" then "${record.zone}." else "${record.name}.${record.zone}.";
   surfaceTtl = surface: record: record.${surface + "Ttl"} or surfaceDefaults.${surface};
@@ -41,43 +49,39 @@ let
           (ensure (builtins.elem record.zone (builtins.attrValues zones)) "${record.id}: zone is not selected")
           (
             builtins.seq (ensure (isNonEmptyString record.name) "${record.id}: name must be non-empty") (
-              builtins.seq
-                (ensure (
-                  record.name == "@" || !(lib.hasInfix "." record.name)
-                ) "${record.id}: name must be relative")
-                (
-                  builtins.seq
-                    (ensure (
-                      isNonEmptyString record.type && record.type == lib.toUpper record.type
-                    ) "${record.id}: type must be uppercase")
-                    (
-                      builtins.seq
-                        (ensure (lib.any (
-                          surface: builtins.hasAttr surface record
-                        ) surfaces) "${record.id}: at least one surface is required")
-                        (
-                          builtins.seq
-                            (ensure (lib.all (
-                              surface: !(builtins.hasAttr surface record) || isNonEmptyStringList record.${surface}
-                            ) surfaces) "${record.id}: present surfaces must be non-empty string lists")
-                            (
-                              if validSurfaceTtls record then
-                                record
-                                // {
-                                  owner = ownerName record;
-                                  baseZone = "${record.zone}.";
-                                  tailscaleZone = "${record.zone}..tailscale";
-                                  desecDomain = record.zone;
-                                  publicTtl = surfaceTtl "public" record;
-                                  lanTtl = surfaceTtl "lan" record;
-                                  tailscaleTtl = surfaceTtl "tailscale" record;
-                                }
-                              else
-                                throw "terranix/dns: ${record.id}: surface TTLs must be positive integers on present surfaces"
-                            )
-                        )
-                    )
-                )
+              builtins.seq (ensure (isRelativeName record.name) "${record.id}: name must be relative") (
+                builtins.seq
+                  (ensure (
+                    isNonEmptyString record.type && record.type == lib.toUpper record.type
+                  ) "${record.id}: type must be uppercase")
+                  (
+                    builtins.seq
+                      (ensure (lib.any (
+                        surface: builtins.hasAttr surface record
+                      ) surfaces) "${record.id}: at least one surface is required")
+                      (
+                        builtins.seq
+                          (ensure (lib.all (
+                            surface: !(builtins.hasAttr surface record) || isNonEmptyStringList record.${surface}
+                          ) surfaces) "${record.id}: present surfaces must be non-empty string lists")
+                          (
+                            if validSurfaceTtls record then
+                              record
+                              // {
+                                owner = ownerName record;
+                                baseZone = "${record.zone}.";
+                                tailscaleZone = "${record.zone}..tailscale";
+                                desecDomain = record.zone;
+                                publicTtl = surfaceTtl "public" record;
+                                lanTtl = surfaceTtl "lan" record;
+                                tailscaleTtl = surfaceTtl "tailscale" record;
+                              }
+                            else
+                              throw "terranix/dns: ${record.id}: surface TTLs must be positive integers on present surfaces"
+                          )
+                      )
+                  )
+              )
             )
           )
       )
