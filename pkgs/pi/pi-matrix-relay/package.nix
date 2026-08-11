@@ -11,8 +11,8 @@ stdenvNoCC.mkDerivation {
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "pi-matrix-relay";
-    rev = "27beeabc347ae51b225c24f4bba026a1a977c000";
-    hash = "sha256-ef8UASsp3Dh3AyIx3wd9w74y3dGBkBTysvrWQTaDTa8=";
+    rev = "ef245befca2f7384711aedb36ca3f8ec234bb9da";
+    hash = "sha256-0PggWa8btp7NI7niOu8iPqNIzwPQS+X8pVSF+fsL1V4=";
   };
   sourceRoot = "source/extension";
 
