@@ -4,7 +4,7 @@
   lib,
 }:
 
-buildNpmPackage (finalAttrs: {
+buildNpmPackage (_finalAttrs: {
   pname = "plannotator-pi-extension";
   version = "0.24.2";
 

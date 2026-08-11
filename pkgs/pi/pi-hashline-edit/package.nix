@@ -4,7 +4,7 @@
   lib,
 }:
 
-buildNpmPackage (finalAttrs: {
+buildNpmPackage (_finalAttrs: {
   pname = "pi-hashline-edit";
   version = "0.8.3-unstable-2026-08-16";
 

@@ -4,7 +4,7 @@
   lib,
 }:
 
-buildNpmPackage (finalAttrs: {
+buildNpmPackage (_finalAttrs: {
   pname = "pi-mcp-adapter";
   version = "2.21.0";
 
