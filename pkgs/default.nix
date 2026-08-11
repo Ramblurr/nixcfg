@@ -29,6 +29,7 @@ inputs: [
       pi-mcp-adapter = prev.callPackage ./pi/pi-mcp-adapter/package.nix { };
       pi-link = prev.callPackage ./pi/pi-link/package.nix { };
       pi-reload = prev.callPackage ./pi/pi-reload/package.nix { };
+      pi-ghost = prev.callPackage ./pi/pi-ghost/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
