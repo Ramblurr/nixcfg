@@ -208,11 +208,14 @@
   (add-to-list 'janet-source-modes 'janet-ts-mode))
 )
 
+;; Disabled during the NDEU canary.
+(comment
 (use-package! ajrepl
   :after janet-ts-mode
   :config
   (add-hook 'janet-ts-mode-hook
     #'ajrepl-interaction-mode))
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; KDL
