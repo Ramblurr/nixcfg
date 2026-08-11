@@ -8,7 +8,6 @@ with lib;
 let
   cfg = config.modules.editors.emacs;
   inherit (config.modules.users.primaryUser) homeDirectory;
-  nixosConfig = config;
   localIssues = pkgs.runCommandLocal "local-issues" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
     mkdir -p "$out/bin" "$out/lisp"
     install -m755 ${../../../configs/doom/bin/local-issues} "$out/bin/local-issues"
@@ -47,10 +46,6 @@ in
             epkgs.treesit-grammars.with-all-grammars
             #epkgs.mu4e
           ];
-        };
-
-        systemd.user.services.emacs.Service = lib.mkIf nixosConfig.modules.dev.llms.enable {
-          EnvironmentFile = [ "%h/.llm-keys" ];
         };
 
         services.emacs = {
