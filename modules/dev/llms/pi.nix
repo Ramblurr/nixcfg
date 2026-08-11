@@ -24,7 +24,7 @@ let
       (toString pkgs.pi-ghost)
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-      "${home}/src/github.com/ramblurr/pi-extensions/brepl-balance"
+      (toString pkgs.brepl-balance)
       "${home}/src/github.com/ramblurr/pi-extensions/pi-sexp-edit"
       (toString pkgs.pi-nrepl)
       (toString pkgs.pi-hashline-edit)
