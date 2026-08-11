@@ -3,7 +3,7 @@ let
   inherit (pkgs) lib;
   doomConfig = "/checkout/configs/doom";
   evaluated = lib.evalModules {
-    specialArgs = { inherit pkgs; };
+    specialArgs = { inherit inputs pkgs; };
     modules = [
       ../modules/editors/emacs/default.nix
       (
