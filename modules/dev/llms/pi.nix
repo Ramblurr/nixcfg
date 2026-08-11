@@ -32,7 +32,7 @@ let
       (toString pkgs.epimetheus)
       (toString pkgs.pi-mcp-adapter)
       (toString pkgs.pi-openai-fast)
-      "${home}/src/github.com/ramblurr/pi-extensions/pi-nono-sandbox"
+      (toString pkgs.pi-nono-sandbox)
       "${home}/src/github.com/ramblurr/pi-matrix-relay/extension"
       (toString pkgs.pi-link)
     ];
