@@ -22,6 +22,7 @@ inputs: [
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       pi-web = prev.callPackage ./pi-web/package.nix { };
+      pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
