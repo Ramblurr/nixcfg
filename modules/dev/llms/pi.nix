@@ -34,7 +34,7 @@ let
       "${home}/src/github.com/ramblurr/pi-extensions/pi-openai-fast"
       "${home}/src/github.com/ramblurr/pi-extensions/pi-nono-sandbox"
       "${home}/src/github.com/ramblurr/pi-matrix-relay/extension"
-      "${home}/src/github.com/alvivar/pi-link"
+      (toString pkgs.pi-link)
     ];
     npmCommand = [ "pnpm" ];
     hideThinkingBlock = true;
