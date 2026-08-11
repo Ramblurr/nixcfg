@@ -4,7 +4,7 @@
   lib,
 }:
 
-buildNpmPackage (finalAttrs: {
+buildNpmPackage (_finalAttrs: {
   pname = "epimetheus";
   version = "0.6.0";
 

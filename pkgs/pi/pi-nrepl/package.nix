@@ -4,7 +4,7 @@
   stdenvNoCC,
 }:
 
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenvNoCC.mkDerivation (_finalAttrs: {
   pname = "pi-nrepl";
   version = "0.1.0";
 

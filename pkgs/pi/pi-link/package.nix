@@ -4,7 +4,7 @@
   lib,
 }:
 
-buildNpmPackage (finalAttrs: {
+buildNpmPackage (_finalAttrs: {
   pname = "pi-link";
   version = "0.2.0-unstable-2026-08-04";
 
