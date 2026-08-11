@@ -36,10 +36,12 @@ def relative_name(owner, zone):
     return owner[: -len(suffix)]
 
 
-def nix_string(value, zone, zone_key):
+def nix_string(value, zones):
     if not isinstance(value, str) or not value:
         fail("encountered an empty or non-string RDATA value")
-    return json.dumps(value.replace(f"{zone}.", f"${{zones.{zone_key}}}."))
+    for zone_key, zone in sorted(zones.items(), key=lambda item: len(item[1]), reverse=True):
+        value = value.replace(zone, f"${{zones.{zone_key}}}")
+    return json.dumps(value)
 
 
 def stable_id(zone_key, name, record_type):
@@ -135,7 +137,7 @@ def render_records(groups, zones, eligible_keys):
         ])
         for surface in ("public", "lan", "tailscale"):
             if surface in surfaces:
-                values = " ".join(nix_string(value, zones[zone_key], zone_key) for value in surfaces[surface]["values"])
+                values = " ".join(nix_string(value, zones) for value in surfaces[surface]["values"])
                 lines.append(f"    {surface} = [ {values} ];")
                 lines.append(f"    {surface}Ttl = {surfaces[surface]['ttl']};")
         lines.extend(["  }", ""])
