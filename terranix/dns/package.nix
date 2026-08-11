@@ -11,5 +11,5 @@ let
 in
 {
   config = (pkgs.formats.json { }).generate "config.tf.json" terranix.config;
-  runtime = pkgs.opentofu-powerdns;
+  runtime = pkgs.opentofu-dns;
 }
