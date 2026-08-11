@@ -108,6 +108,9 @@ in
   # Prefer upstream Nix for this service while retaining the Determinate daemon.
   systemd.services.nixbot.path = lib.mkBefore [ pkgs.nix ];
 
+  # Materialize flake inputs so upstream Nix can register Nixbot's input GC roots.
+  nix.settings.lazy-trees = false;
+
   systemd.services.nixbot.serviceConfig.LoadCredential = [
     "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"
   ];
