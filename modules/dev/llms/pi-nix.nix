@@ -14,8 +14,14 @@ in
     myhm =
       hm:
       let
+        piSettings = settings hm.config.home.homeDirectory;
         settingsFile = pkgs.writeText "pi-settings.json" (
-          builtins.toJSON (settings hm.config.home.homeDirectory)
+          builtins.toJSON (
+            piSettings
+            // {
+              packages = map toString piSettings.packages;
+            }
+          )
         );
         syncSettings = pkgs.writeShellScript "sync-pi-settings" ''
           agent_dir="''${PI_CODING_AGENT_DIR:-''${XDG_CONFIG_HOME:-$HOME/.config}/pi/agent}"
