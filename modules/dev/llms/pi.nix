@@ -20,21 +20,21 @@ let
       "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
     ];
     packages = [
-      (toString pkgs.pi-reload)
-      (toString pkgs.pi-ghost)
+      pkgs.pi-reload
+      pkgs.pi-ghost
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-      (toString pkgs.brepl-balance)
-      (toString pkgs.pi-sexp-edit)
-      (toString pkgs.pi-nrepl)
-      (toString pkgs.pi-hashline-edit)
-      (toString pkgs.plannotator-pi-extension)
-      (toString pkgs.epimetheus)
-      (toString pkgs.pi-mcp-adapter)
-      (toString pkgs.pi-openai-fast)
-      (toString pkgs.pi-nono-sandbox)
-      (toString pkgs.pi-matrix-relay)
-      (toString pkgs.pi-link)
+      pkgs.brepl-balance
+      pkgs.pi-sexp-edit
+      pkgs.pi-nrepl
+      pkgs.pi-hashline-edit
+      pkgs.plannotator-pi-extension
+      pkgs.epimetheus
+      pkgs.pi-mcp-adapter
+      pkgs.pi-openai-fast
+      pkgs.pi-nono-sandbox
+      pkgs.pi-matrix-relay
+      pkgs.pi-link
     ];
     npmCommand = [ "pnpm" ];
     hideThinkingBlock = true;
