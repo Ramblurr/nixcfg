@@ -222,7 +222,7 @@ let
   };
 
   nono-eca = pkgs.writeShellScriptBin "nono-eca" ''
-    exec ${lib.getExe pkgs.nono} --silent run \
+    exec ${lib.getExe llmAgents.nono} --silent run \
       --profile eca \
       --allow-cwd \
       -- ${lib.getExe llmAgents.eca} "$@"
