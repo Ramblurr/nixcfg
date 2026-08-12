@@ -9,7 +9,7 @@ modules/editors/emacs/configs/doom.d/flycheck_*
 dumps
 tmp
 extra
-dns-migrate
+scratch
 vars.auto.tfvars
 .terraform
 secret.edn
