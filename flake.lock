@@ -1821,11 +1821,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778507602,
-        "narHash": "sha256-kTwur1wV+01SdqskVMSo6JMEpg71ps3HpbFY2GsflKs=",
+        "lastModified": 1781733627,
+        "narHash": "sha256-U3yTuGBnmXvXoQI3qkpfEDsn9RovQPAjN7ndRco+3u0=",
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "61ab0e80d9c7ab14c256b5b453d8b3fb0189ba0a",
+        "rev": "3bbec39bc90eadfa031e6f3b77272f3f60803e39",
         "type": "github"
       },
       "original": {
@@ -2389,16 +2389,16 @@
         "trilium": "trilium"
       },
       "locked": {
-        "lastModified": 1781160764,
-        "narHash": "sha256-6Aem8USOYeUvDrQi3wZIsTidJpZBqnj75hxoyTrJqMo=",
+        "lastModified": 1782884873,
+        "narHash": "sha256-b8cYpPkJYmt0WJiTtuSsNqbGKViok6zPHpQHTBc9wZc=",
         "owner": "kalbasit",
         "repo": "ncps",
-        "rev": "f5dbd68a0003349c5091870f66d5ecabf736af16",
+        "rev": "2880f19ecf3b34277d4a3484b99b7f3935bab26e",
         "type": "github"
       },
       "original": {
         "owner": "kalbasit",
-        "ref": "v0.10.0-rc13",
+        "ref": "v0.10.0-rc16",
         "repo": "ncps",
         "type": "github"
       }
@@ -3720,11 +3720,11 @@
     },
     "process-compose-flake": {
       "locked": {
-        "lastModified": 1767863885,
-        "narHash": "sha256-XXekPAxzbv1DmHFo3Elmj/vDnvWc1V0jdDUvM0/Wf7k=",
+        "lastModified": 1782060835,
+        "narHash": "sha256-Q8HH2t1l3MITtWCWY4ytcH5F/Q7aAHo3Iq/QTMAKTe0=",
         "owner": "Platonic-Systems",
         "repo": "process-compose-flake",
-        "rev": "99bea96cf269cfd235833ebdf645b567069fd398",
+        "rev": "464ff6880737f063c3f0d3d2c7781fda9190868f",
         "type": "github"
       },
       "original": {
