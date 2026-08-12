@@ -121,13 +121,40 @@ Always inspect the plan before applying a deletion.
 
 ## Add another zone
 
-1. Add the private zone name to the domain settings used by `nixcfg-private`.
-2. Create `terranix/dns/zones/NAME.nix` with a list of records.
-3. Add `NAME = ./zones/NAME.nix;` to `terranix/dns/zones.nix`.
-4. Create and inspect a zone plan with `nix run .#dns -- NAME plan`.
+1. Add a short private key and zone name to the domain settings used by
+   `nixcfg-private`.
+2. Create `terranix/dns/zones/KEY.nix` with a list of records.
+3. Register the file and exact surfaces in `terranix/dns/zones.nix`:
 
-The shared module automatically creates the public, LAN, and Tailscale records
-declared in the new file. No copy of the module is needed.
+```nix
+example = {
+  file = ./zones/example.nix;
+  surfaces = [ "public" ];
+};
+```
+
+Use `[ "public" "lan" "tailscale" ]` only when the zone needs all three
+surfaces. Public-only zones create no PowerDNS resources.
+
+For a new zone with existing records, create review artifacts before copying
+records into the authoritative zone file:
+
+```bash
+nix run .#dns-dump -- example OUTPUT-DIR=terranix/dns-staging/example
+```
+
+Review `zone.nix`, `imports.nix`, and `report.json`. After copying the accepted
+`zone.nix` list to `terranix/dns/zones/example.nix`, create and apply one
+encrypted, configuration-driven import plan:
+
+```bash
+nix run .#dns-import -- plan example terranix/dns-staging/example example.tfplan
+nix run .#dns-import -- apply example terranix/dns-staging/example example.tfplan
+```
+
+The importer rejects record mutations, destructive actions, unrelated module
+addresses, and topology changes absent from the reviewed report. Confirm the
+result with a zone plan and then a full plan.
 
 ## Files in this folder
 
