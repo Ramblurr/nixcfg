@@ -18,6 +18,8 @@ in
       };
     };
 
+    sops.secrets.pocket-id-encryption-key = { };
+
     sops.templates.pocket-id-env = {
       owner = config.services.pocket-id.user;
       group = config.services.pocket-id.group;
