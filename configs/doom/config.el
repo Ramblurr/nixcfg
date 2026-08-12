@@ -244,10 +244,9 @@ exists, prepends additional parent directories until unique."
 (after! dired
   (setq dired-create-destination-dirs 'always))
 
-;; Disabled until tramp-rpc's Nix sandbox tests are fixed.
-;; (if not-android
-;;   (use-package! tramp-rpc
-;;     :after tramp))
+(if not-android
+  (use-package! tramp-rpc
+    :after tramp))
 
 ;;(if not-android
 ;;  (use-package! magit-difftastic
