@@ -45,27 +45,13 @@ in
           doomLocalDir = "${config.xdg.dataHome}/nix-doom-ndeu";
           emacs = cfg.package;
           experimentalFetchTree = true;
-          # Cutover: save daemon work, set this true, retire programs.emacs below,
-          # then build/deploy quine and restart emacs.service.
-          provideEmacs = false;
+          # NDEU provides emacs/emacsclient and backs the managed user daemon.
+          provideEmacs = true;
           extraPackages = epkgs: [
             epkgs.eldev
             epkgs.tramp-rpc
             epkgs.vterm
             epkgs.treesit-grammars.with-all-grammars
-          ];
-        };
-
-        programs.emacs = {
-          enable = true;
-          inherit (cfg) package;
-          extraPackages = epkgs: [
-            epkgs.eldev
-            epkgs.tramp-rpc
-            epkgs.vterm
-            #epkgs.pdf-tools
-            epkgs.treesit-grammars.with-all-grammars
-            #epkgs.mu4e
           ];
         };
 
