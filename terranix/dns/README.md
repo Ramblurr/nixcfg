@@ -10,6 +10,22 @@ For normal DNS work, start here:
 
 Run all commands from `~/nixcfg-private`.
 
+## Local record editor
+
+Start the file-only editor from `~/nixcfg`:
+
+```bash
+./scripts/dns-admin-ui.clj
+```
+
+Open `http://127.0.0.1:8083/`. The editor binds only to loopback and stages
+changes in memory. **Commit changes** writes the affected JSON files atomically;
+it does not create a Git commit, run Nix or OpenTofu, or contact DNS providers.
+Review the resulting file diff before using the plan and apply workflow below.
+
+Use `--zones-dir PATH` for fixtures or another checkout and `--port PORT` to
+select a different loopback port.
+
 ## Add or change a record
 
 Records are grouped into authoritative JSON documents, such as
