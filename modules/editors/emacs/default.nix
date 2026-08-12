@@ -49,7 +49,7 @@ in
           provideEmacs = true;
           extraPackages = epkgs: [
             epkgs.eldev
-            epkgs.tramp-rpc
+            # epkgs.tramp-rpc # Disabled until its Nix sandbox tests are fixed.
             epkgs.vterm
             epkgs.treesit-grammars.with-all-grammars
           ];
