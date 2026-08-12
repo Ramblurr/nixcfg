@@ -33,6 +33,13 @@
       (log :error (str "Failed to run update script for " pkg ": " (.getMessage e)))
       false)))
 
+(defn tracked-file-changes []
+  (->> (sh "git" "status" "--short" "--untracked-files=no")
+       :out
+       str/split-lines
+       (remove str/blank?)
+       vec))
+
 (defn fetch-package-version [pkg]
   (-> (sh "nix" "eval" "--raw" (str ".#" pkg ".version"))
       :out
@@ -55,6 +62,12 @@
         (shell "git" "commit" "-m" message)))))
 
 (defn -main [& args]
+  (let [changes (tracked-file-changes)]
+    (when (seq changes)
+      (log :error "Aborting: tracked files have staged or unstaged changes")
+      (doseq [change changes]
+        (println (str "  " change)))
+      (System/exit 1)))
   (let [{:keys [opts args]} (cli/parse-args args
                                             {:spec {:no-commit {:coerce :boolean
                                                                 :desc "Stage changes but don't commit"}}})
