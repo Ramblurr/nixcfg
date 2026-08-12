@@ -12,14 +12,12 @@ Run all commands from `~/nixcfg-private`.
 
 ## Add or change a record
 
-Records are grouped by zone:
+Records are grouped into authoritative JSON documents, such as
+`terranix/dns/zones/home.json` and `terranix/dns/zones/work.json`.
 
-- `terranix/dns/zones/home.nix` contains the home zone.
-- `terranix/dns/zones/work.nix` contains the work zone.
-
-Search those files for the name or record ID. Edit the record where it already
-exists. Add a new record to the file for its zone. You do not need to write a
-`zone` field; the file supplies it automatically.
+Search the zone document for the name or record ID. Edit the record where it
+already exists, or append a new record to its `records` array. Records do not
+contain a `zone` field; the document's literal `domain` supplies it.
 
 A record may appear on any combination of these networks:
 
@@ -29,26 +27,26 @@ A record may appear on any combination of these networks:
 
 Only fields present in the record are managed. For example, a record with `lan` and `tailscale` but no `public` field stays private.
 
-```nix
+```json
 {
-  id = "home-books-cname";
-  name = "books";
-  type = "CNAME";
-  public = [ "dewey.${zones.home}." ];
-  lan = [ "dewey.prim.${zones.home}." ];
-  tailscale = [ "dewey.prim.${zones.home}." ];
+  "id": "home-books-cname",
+  "name": "books",
+  "type": "CNAME",
+  "public": ["dewey.example.net."],
+  "lan": ["dewey.prim.example.net."],
+  "tailscale": ["dewey.prim.example.net."]
 }
 ```
 
 For an address record:
 
-```nix
+```json
 {
-  id = "home-printer-a";
-  name = "printer";
-  type = "A";
-  lan = [ "10.9.4.20" ];
-  tailscale = [ "10.9.4.20" ];
+  "id": "home-printer-a",
+  "name": "printer",
+  "type": "A",
+  "lan": ["10.9.4.20"],
+  "tailscale": ["10.9.4.20"]
 }
 ```
 
@@ -59,22 +57,23 @@ For an address record:
 - `type`: the uppercase DNS type, such as `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `SRV`, or `CAA`.
 - `public`, `lan`, `tailscale`: non-empty lists of values for each network.
 
-Use zone references instead of writing private zone names directly. Domain names used as DNS values normally need a trailing dot:
+Store fully resolved literal DNS values. Domain names used as values normally
+need a trailing dot:
 
-```nix
-lan = [ "host.prim.${zones.home}." ];
+```json
+"lan": ["host.prim.example.net."]
 ```
 
 TTL fields are optional. The defaults are:
 
-- `publicTtl = 3600`
-- `lanTtl = 300`
-- `tailscaleTtl = 300`
+- `"publicTtl": 3600`
+- `"lanTtl": 300`
+- `"tailscaleTtl": 300`
 
 Set a TTL only when the record needs a different value:
 
-```nix
-lanTtl = 3600;
+```json
+"lanTtl": 3600
 ```
 
 ## Review and publish one zone
@@ -121,30 +120,22 @@ Always inspect the plan before applying a deletion.
 
 ## Add another zone
 
-1. Add a short private key and zone name to the domain settings used by
-   `nixcfg-private`.
-2. Create `terranix/dns/zones/KEY.nix` with a list of records.
-3. Register the file and exact surfaces in `terranix/dns/zones.nix`:
+1. Choose a short private zone key.
+2. Create `terranix/dns/zones/KEY.json` with the zone key, literal domain, exact
+   `public`, `lan`, and `tailscale` surfaces, and its ordered record list.
 
-```nix
-example = {
-  file = ./zones/example.nix;
-  surfaces = [ "public" ];
-};
-```
+Use all three surfaces only when the zone needs all three. Public-only zones
+create no PowerDNS resources.
 
-Use `[ "public" "lan" "tailscale" ]` only when the zone needs all three
-surfaces. Public-only zones create no PowerDNS resources.
-
-For a new zone with existing records, create review artifacts before copying
-records into the authoritative zone file:
+For a new zone with existing records, create review artifacts before accepting
+the authoritative zone document:
 
 ```bash
 nix run .#dns-dump -- example OUTPUT-DIR=terranix/dns-staging/example
 ```
 
-Review `zone.nix`, `imports.nix`, and `report.json`. After copying the accepted
-`zone.nix` list to `terranix/dns/zones/example.nix`, create and apply one
+Review `zone.json`, `imports.nix`, and `report.json`. Copy the accepted
+`zone.json` to `terranix/dns/zones/example.json`, then create and apply one
 encrypted, configuration-driven import plan:
 
 ```bash
@@ -160,7 +151,7 @@ result with a zone plan and then a full plan.
 
 The public files in this directory validate records and turn them into deSEC
 and PowerDNS configuration. Most DNS changes require no edits here; edit the
-private file under `terranix/dns/zones/` instead.
+authoritative private JSON document under `terranix/dns/zones/` instead.
 
-The private `records.nix` file only loads the zone files and adds their zone to
-each record. Do not add individual records to that loader.
+The private `zones.nix` discovers the JSON documents. Its `records.nix` loader
+only adds the correct literal domain to each record.
