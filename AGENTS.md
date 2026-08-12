@@ -107,24 +107,23 @@ Major areas include:
 
 - `flake.nix`
   - Main public flake definition.
-
 - `flake/hosts.nix`
   - Declares host inventory and exports reusable host builder helpers through `lib.nixcfg`.
-
 - `flake/nixos.nix`
   - Core host builder logic.
-
 - `modules/default.nix`
   - Module import organization.
-
 - `config/secrets.nix`
   - Default wiring for `repo.secretFiles.*` and `config.repo.secrets.*`.
-
 - `config/site.nix`
   - Site-level data and default site secret wiring.
-
 - `~/nixcfg-private/flake.nix`
   - Private wrapper flake that injects secret file paths and exposes the real deployable host configurations.
+- `~/nixcfg-private/secrets/site.nix`
+  - The site secret file, mac addresses and dhcp reservations for network devices. Can be in the nix store, but not public.
+- `~/nixcfg-private/secrets/global.nix`
+  - Global secrets: domains, ips, pub keys. Can be in the nix store, but not public.
+
 
 ## Expectations for agents
 
