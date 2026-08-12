@@ -77,38 +77,57 @@ Set a TTL only when the record needs a different value:
 lanTtl = 3600;
 ```
 
-## Review and publish changes
+## Review and publish one zone
 
-First create a saved plan:
+Run all commands from `~/nixcfg-private`. Give the zone name before `plan`:
 
 ```bash
 cd ~/nixcfg-private
-nix run .#dns -- plan -out=dns.tfplan
+nix run .#dns -- home plan -out=home.tfplan
 ```
 
-Read the plan carefully. It must show only the DNS changes you intended. Creating the plan does not change DNS.
+Use `work` instead of `home` for the work zone. The plan includes only the
+selected zone. Read it carefully; it must show only the changes you intended.
+Creating a plan does not change DNS.
 
-Apply that exact plan:
+Apply that exact saved plan:
 
 ```bash
-nix run .#dns -- apply dns.tfplan
+nix run .#dns -- home apply home.tfplan
 ```
 
-Then confirm that no work remains:
+The zone name makes the command reject an apply without a saved plan. OpenTofu
+does not recalculate the plan during apply.
+
+Run a full plan when you want to check every zone and the shared Tailscale
+network settings:
 
 ```bash
 nix run .#dns -- plan -detailed-exitcode
 ```
 
-An exit code of `0` means the configuration and DNS providers agree. An exit code of `2` means OpenTofu still proposes changes.
+An exit code of `0` means the files and DNS providers agree. An exit code of
+`2` means OpenTofu proposes changes.
 
-Credentials are loaded automatically from SOPS. OpenTofu's encrypted tracking data is stored in the private S3 backend; do not create or commit local state files.
+Credentials are loaded automatically from SOPS. OpenTofu's encrypted tracking
+data is stored in the private S3 backend; do not create or commit local state
+files.
 
 ## Removing records or networks
 
 Deleting a record from the files makes the next plan propose deleting it from DNS. Removing `public`, `lan`, or `tailscale` removes only that version of the record.
 
 Always inspect the plan before applying a deletion.
+
+## Add another zone
+
+1. Add the private zone name to the domain settings used by `nixcfg-private`.
+2. Create `terranix/dns/zones/NAME.nix` with a list of records.
+3. Add `NAME = ./zones/NAME.nix;` to `terranix/dns/zones.nix`.
+4. Create and inspect a zone plan with `nix run .#dns -- NAME plan`.
+
+The shared module automatically creates the public, LAN, and Tailscale records
+declared in the new file. No copy of the module is needed.
 
 ## Files in this folder
 
