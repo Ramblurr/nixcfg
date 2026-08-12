@@ -1,0 +1,116 @@
+# Managing DNS
+
+This folder defines the rules used to manage DNS. The actual zones and records are private.
+
+For normal DNS work, start here:
+
+```text
+~/nixcfg-private/terranix/dns/
+```
+
+Run all commands from `~/nixcfg-private`.
+
+## Add or change a record
+
+Search these files for the name or record ID:
+
+- `terranix/dns/records.nix`
+- `terranix/dns/adopted-records.nix`
+
+Edit the record where it already exists. Add new records to `records.nix`.
+
+A record may appear on any combination of these networks:
+
+- `public`: internet DNS, served by deSEC
+- `lan`: DNS for the local network, served by PowerDNS
+- `tailscale`: DNS for Tailscale devices, served by PowerDNS
+
+Only fields present in the record are managed. For example, a record with `lan` and `tailscale` but no `public` field stays private.
+
+```nix
+{
+  id = "home-books-cname";
+  zone = zones.home;
+  name = "books";
+  type = "CNAME";
+  public = [ "dewey.${zones.home}." ];
+  lan = [ "dewey.prim.${zones.home}." ];
+  tailscale = [ "dewey.prim.${zones.home}." ];
+}
+```
+
+For an address record:
+
+```nix
+{
+  id = "home-printer-a";
+  zone = zones.home;
+  name = "printer";
+  type = "A";
+  lan = [ "10.9.4.20" ];
+  tailscale = [ "10.9.4.20" ];
+}
+```
+
+## Record fields
+
+- `id`: a unique permanent name used to track the record. Do not change it after the first apply.
+- `zone`: usually `zones.home` or `zones.work`.
+- `name`: the part before the zone. Use `"@"` for the zone itself.
+- `type`: the uppercase DNS type, such as `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `SRV`, or `CAA`.
+- `public`, `lan`, `tailscale`: non-empty lists of values for each network.
+
+Use zone references instead of writing private zone names directly. Domain names used as DNS values normally need a trailing dot:
+
+```nix
+lan = [ "host.prim.${zones.home}." ];
+```
+
+TTL fields are optional. The defaults are:
+
+- `publicTtl = 3600`
+- `lanTtl = 300`
+- `tailscaleTtl = 300`
+
+Set a TTL only when the record needs a different value:
+
+```nix
+lanTtl = 3600;
+```
+
+## Review and publish changes
+
+First create a saved plan:
+
+```bash
+cd ~/nixcfg-private
+nix run .#dns -- plan -out=dns.tfplan
+```
+
+Read the plan carefully. It must show only the DNS changes you intended. Creating the plan does not change DNS.
+
+Apply that exact plan:
+
+```bash
+nix run .#dns -- apply dns.tfplan
+```
+
+Then confirm that no work remains:
+
+```bash
+nix run .#dns -- plan -detailed-exitcode
+```
+
+An exit code of `0` means the configuration and DNS providers agree. An exit code of `2` means OpenTofu still proposes changes.
+
+Credentials are loaded automatically from SOPS. OpenTofu's encrypted tracking data is stored in the private S3 backend; do not create or commit local state files.
+
+## Removing records or networks
+
+Deleting a record from the files makes the next plan propose deleting it from DNS. Removing `public`, `lan`, or `tailscale` removes only that version of the record.
+
+Always inspect the plan before applying a deletion.
+
+## Files in this folder
+
+The public files in this directory validate records and turn them into deSEC and PowerDNS configuration. Most DNS changes require no edits here; edit the private record files instead.
