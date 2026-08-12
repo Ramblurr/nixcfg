@@ -44,21 +44,6 @@ def nix_zone_ref(zone_key):
     return f"zones.{json.dumps(zone_key)}"
 
 
-def nix_string(value, zones):
-    if not isinstance(value, str) or not value:
-        fail("encountered an empty or non-string RDATA value")
-    zone_keys = {zone: zone_key for zone_key, zone in zones.items()}
-    pattern = re.compile("|".join(re.escape(zone) for zone in sorted(zone_keys, key=len, reverse=True)))
-    parts = []
-    cursor = 0
-    for match in pattern.finditer(value):
-        if match.start() > cursor:
-            parts.append(json.dumps(value[cursor : match.start()]))
-        parts.append(nix_zone_ref(zone_keys[match.group()]))
-        cursor = match.end()
-    if cursor < len(value):
-        parts.append(json.dumps(value[cursor:]))
-    return f"({' + '.join(parts)})" if parts else json.dumps(value)
 
 
 def stable_id(zone_key, name, record_type):
@@ -164,25 +149,31 @@ def fetch_tailscale_view(zone):
     }
 
 
-def render_records(groups, zones, eligible_keys):
-    lines = ["{ zones }:", "["]
-    for (zone_key, name, record_type), surfaces in sorted(groups.items()):
-        if (zone_key, name, record_type) not in eligible_keys:
+def render_zone(groups, zone_key, domain, selected_surfaces, eligible_keys):
+    records = []
+    for (record_zone_key, name, record_type), surfaces in sorted(groups.items()):
+        key = (record_zone_key, name, record_type)
+        if key not in eligible_keys:
             continue
-        lines.extend([
-            "  {",
-            f'    id = {json.dumps(stable_id(zone_key, name, record_type))};',
-            f"    name = {json.dumps(name)};",
-            f"    type = {json.dumps(record_type)};",
-        ])
+        record = {
+            "id": stable_id(record_zone_key, name, record_type),
+            "name": name,
+            "type": record_type,
+        }
         for surface in ("public", "lan", "tailscale"):
             if surface in surfaces:
-                values = " ".join(nix_string(value, zones) for value in surfaces[surface]["values"])
-                lines.append(f"    {surface} = [ {values} ];")
-                lines.append(f"    {surface}Ttl = {surfaces[surface]['ttl']};")
-        lines.extend(["  }", ""])
-    lines.append("]")
-    return "\n".join(lines) + "\n"
+                record[surface] = surfaces[surface]["values"]
+                record[f"{surface}Ttl"] = surfaces[surface]["ttl"]
+        records.append(record)
+    return json.dumps(
+        {
+            "zone": zone_key,
+            "domain": domain,
+            "surfaces": selected_surfaces,
+            "records": records,
+        },
+        indent=2,
+    ) + "\n"
 
 
 def render_imports(groups, eligible_keys):
@@ -318,7 +309,7 @@ def main():
             included_records.append({"id": identifier, "surfaces": sorted(surface_names)})
             included_surface_counts["+".join(sorted(surface_names))] += 1
 
-    records = render_records(groups, zones, included_keys)
+    zone_document = render_zone(groups, zone_key, zone, args.surface, included_keys)
     imports = render_imports(groups, included_keys)
     report = {
         "included_records": included_records,
@@ -338,7 +329,7 @@ def main():
         "zone_key": zone_key,
         "domain": zone,
     }
-    for path, content in ((output / "zone.nix", records), (output / "imports.nix", imports)):
+    for path, content in ((output / "zone.json", zone_document), (output / "imports.nix", imports)):
         path.write_text(content)
         path.chmod(0o600)
     report_path = output / "report.json"
