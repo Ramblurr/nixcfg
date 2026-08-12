@@ -12,12 +12,14 @@ Run all commands from `~/nixcfg-private`.
 
 ## Add or change a record
 
-Search these files for the name or record ID:
+Records are grouped by zone:
 
-- `terranix/dns/records.nix`
-- `terranix/dns/adopted-records.nix`
+- `terranix/dns/zones/home.nix` contains the home zone.
+- `terranix/dns/zones/work.nix` contains the work zone.
 
-Edit the record where it already exists. Add new records to `records.nix`.
+Search those files for the name or record ID. Edit the record where it already
+exists. Add a new record to the file for its zone. You do not need to write a
+`zone` field; the file supplies it automatically.
 
 A record may appear on any combination of these networks:
 
@@ -30,7 +32,6 @@ Only fields present in the record are managed. For example, a record with `lan` 
 ```nix
 {
   id = "home-books-cname";
-  zone = zones.home;
   name = "books";
   type = "CNAME";
   public = [ "dewey.${zones.home}." ];
@@ -44,7 +45,6 @@ For an address record:
 ```nix
 {
   id = "home-printer-a";
-  zone = zones.home;
   name = "printer";
   type = "A";
   lan = [ "10.9.4.20" ];
@@ -55,7 +55,6 @@ For an address record:
 ## Record fields
 
 - `id`: a unique permanent name used to track the record. Do not change it after the first apply.
-- `zone`: usually `zones.home` or `zones.work`.
 - `name`: the part before the zone. Use `"@"` for the zone itself.
 - `type`: the uppercase DNS type, such as `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `SRV`, or `CAA`.
 - `public`, `lan`, `tailscale`: non-empty lists of values for each network.
@@ -113,4 +112,9 @@ Always inspect the plan before applying a deletion.
 
 ## Files in this folder
 
-The public files in this directory validate records and turn them into deSEC and PowerDNS configuration. Most DNS changes require no edits here; edit the private record files instead.
+The public files in this directory validate records and turn them into deSEC
+and PowerDNS configuration. Most DNS changes require no edits here; edit the
+private file under `terranix/dns/zones/` instead.
+
+The private `records.nix` file only loads the zone files and adds their zone to
+each record. Do not add individual records to that loader.
