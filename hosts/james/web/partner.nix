@@ -4,8 +4,8 @@
 }:
 
 let
-  inherit (config.repo.secrets.global.domain) personal3 home;
-  domain = personal3;
+  inherit (config.repo.secrets.global.domain) partner home;
+  domain = partner;
 in
 {
   security.acme.certs.${domain} = {

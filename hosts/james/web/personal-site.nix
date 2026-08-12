@@ -5,13 +5,11 @@
 }:
 
 let
-  inherit (config.repo.secrets.global.domain)
-    home
-    personal2
-    ;
+  inherit (config.repo.secrets.global.domain) home;
+  caseyLink = config.repo.secrets.global.domain."casey.link";
   inherit (config.repo.secrets.local) atprotoDid;
   codeLink = config.repo.secrets.global.code;
-  deployUser = personal2;
+  deployUser = caseyLink;
   deployUserCfg = config.modules.users.deploy-users.${deployUser};
   domain = deployUser;
   inherit (deployUserCfg) homeDirectory;

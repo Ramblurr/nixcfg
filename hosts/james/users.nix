@@ -5,12 +5,13 @@
 }:
 
 let
-  inherit (config.repo.secrets.global.domain) personal2 work;
+  inherit (config.repo.secrets.global.domain) work;
+  caseyLink = config.repo.secrets.global.domain."casey.link";
   docsDomain = "docs.${work}";
   authorizedKeys = config.repo.secrets.global.pubKeys;
 
   deployUsers = {
-    ${personal2} = {
+    ${caseyLink} = {
       inherit authorizedKeys;
       uid = 993;
       gid = 991;
