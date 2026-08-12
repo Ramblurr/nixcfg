@@ -5,7 +5,7 @@
 }:
 let
   dataDir = "/var/lib/pocket-id";
-  inherit (config.repo.secrets.local) domains;
+  inherit (config.repo.secrets.global) domain;
 in
 {
   options.modules.services.pocket-id.enable = lib.mkEnableOption "Pocket ID";
@@ -38,7 +38,7 @@ in
       enable = true;
       environmentFile = config.sops.templates.pocket-id-env.path;
       settings = {
-        APP_URL = "https://id.${domains.home}";
+        APP_URL = "https://id.${domain.home}";
         TRUST_PROXY = true;
         HOST = "127.0.0.1";
         PORT = 1411;
