@@ -34,6 +34,10 @@ Never delete them.
 - When changing behavior that affects host construction, secret wiring, or deployment outputs, consider whether verification also needs to happen in `~/nixcfg-private`.
 - Do not assume that a successful evaluation in `~/nixcfg` means deploys are correct.
 
+## Local forbidden-string check
+
+A local pre-commit hook checks staged text case-insensitively against `.git/info/forbidden-strings`. Keep the patterns only in that untracked file; never copy them into tracked files. Add new patterns one per line.
+
 ## CI setup
 
 - `~/nixcfg/.github/workflows/dispatch.yml` runs on pushes to `main` and triggers `~/nixcfg-private/.github/workflows/update-from-public.yml` via `workflow_dispatch`.
