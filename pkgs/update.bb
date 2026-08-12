@@ -33,16 +33,26 @@
       (log :error (str "Failed to run update script for " pkg ": " (.getMessage e)))
       false)))
 
-(defn commit-changes [no-commit]
-  (try
-    (shell "git" "add" "-u" "pkgs/")
+(defn fetch-package-version [pkg]
+  (-> (sh "nix" "eval" "--raw" (str ".#" pkg ".version"))
+      :out
+      str/trim))
+
+(defn commit-message [pkg old-version new-version]
+  (format "%s: %s -> %s"
+          pkg
+          (str/replace-first old-version #"^v" "")
+          (str/replace-first new-version #"^v" "")))
+
+(defn commit-changes [pkg old-version new-version no-commit]
+  (shell "git" "add" "-u" "pkgs/")
+  (if (zero? (:exit (sh {:continue true} "git" "diff" "--cached" "--quiet")))
+    (log :warning "No changes to stage")
     (if no-commit
       (log :info "Changes staged (not committed)")
-      (do
-        (log :info "Committing changes")
-        (shell "git" "commit" "-m" "update(pkgs): Update sources of all downstream packages")))
-    (catch Exception _
-      (log :warning "No changes to stage"))))
+      (let [message (commit-message pkg old-version new-version)]
+        (log :info (str "Committing changes: " message))
+        (shell "git" "commit" "-m" message)))))
 
 (defn -main [& args]
   (let [{:keys [opts args]} (cli/parse-args args
@@ -55,15 +65,13 @@
                              packages-with-updatescript
                              (filterv #(some #{%} packages-arg) packages-with-updatescript))]
     (log :info (format "Found %d packages to update" (count packages-to-update)))
-    (let [results (mapv (fn [pkg] {:pkg pkg :success (run-update-script pkg)}) packages-to-update)
-          failures (filterv #(not (:success %)) results)]
-      (if (seq failures)
-        (do
-          (log :error (format "Aborting: %d package(s) failed to update: %s"
-                              (count failures)
-                              (str/join ", " (map :pkg failures))))
-          (System/exit 1))
-        (commit-changes no-commit)))))
+    (doseq [pkg packages-to-update]
+      (let [old-version (fetch-package-version pkg)]
+        (if (run-update-script pkg)
+          (commit-changes pkg old-version (fetch-package-version pkg) no-commit)
+          (do
+            (log :error (str "Aborting: failed to update " pkg))
+            (System/exit 1)))))))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))
