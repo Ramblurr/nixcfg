@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
@@ -22,8 +23,11 @@ def fail(message):
 
 def get_json(url, headers):
     request = urllib.request.Request(url, headers=headers, method="GET")
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return response.status, json.load(response)
+    except urllib.error.HTTPError as error:
+        return error.code, None
 
 
 def relative_name(owner, zone):
@@ -36,17 +40,36 @@ def relative_name(owner, zone):
     return owner[: -len(suffix)]
 
 
+def nix_zone_ref(zone_key):
+    return f"zones.{json.dumps(zone_key)}"
+
+
 def nix_string(value, zones):
     if not isinstance(value, str) or not value:
         fail("encountered an empty or non-string RDATA value")
-    for zone_key, zone in sorted(zones.items(), key=lambda item: len(item[1]), reverse=True):
-        value = value.replace(zone, f"${{zones.{zone_key}}}")
-    return json.dumps(value)
+    zone_keys = {zone: zone_key for zone_key, zone in zones.items()}
+    pattern = re.compile("|".join(re.escape(zone) for zone in sorted(zone_keys, key=len, reverse=True)))
+    parts = []
+    cursor = 0
+    for match in pattern.finditer(value):
+        if match.start() > cursor:
+            parts.append(json.dumps(value[cursor : match.start()]))
+        parts.append(nix_zone_ref(zone_keys[match.group()]))
+        cursor = match.end()
+    if cursor < len(value):
+        parts.append(json.dumps(value[cursor:]))
+    return f"({' + '.join(parts)})" if parts else json.dumps(value)
 
 
 def stable_id(zone_key, name, record_type):
-    label = "apex" if name == "@" else re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
-    return f"{zone_key}-{label}-{record_type.lower()}"
+    zone_label = re.sub(r"[^a-z0-9]+", "-", zone_key.lower()).strip("-")
+    if name == "@":
+        name_label = "apex"
+    elif name == "*":
+        name_label = "wildcard"
+    else:
+        name_label = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    return f"{zone_label}-{name_label}-{record_type.lower()}"
 
 
 def exclude_reason(zone, name, record_type):
@@ -86,18 +109,23 @@ def add_rrset(groups, excluded, excluded_records, anomalies, zone_key, zone, sur
 
 def fetch_desec(zone_key, zone, groups, excluded, excluded_records, anomalies):
     url = f"https://desec.io/api/v1/domains/{urllib.parse.quote(zone, safe='')}/rrsets/"
-    data = get_json(url, {"Authorization": f"Token {os.environ['DESEC_API_TOKEN']}"})
+    status, data = get_json(url, {"Authorization": f"Token {os.environ['DESEC_API_TOKEN']}"})
+    if status != 200:
+        return {"http": status, "rrsets": None}
     for rrset in data:
         name = rrset.get("subname") or "@"
         record_type = rrset.get("type", "").upper()
         add_rrset(groups, excluded, excluded_records, anomalies, zone_key, zone, "public", name, record_type, rrset.get("records", []), rrset.get("ttl"))
+    return {"http": status, "rrsets": len(data)}
 
 
 def fetch_powerdns(zone_key, zone, surface, groups, excluded, excluded_records, anomalies):
     api = os.environ["PDNS_SERVER_URL"].rstrip("/")
     zone_id = zone if surface == "lan" else f"{zone}..tailscale"
     url = f"{api}/api/v1/servers/localhost/zones/{urllib.parse.quote(zone_id, safe='')}"
-    data = get_json(url, {"X-API-Key": os.environ["PDNS_API_KEY"]})
+    status, data = get_json(url, {"X-API-Key": os.environ["PDNS_API_KEY"]})
+    if status != 200:
+        return {"http": status, "rrsets": None, "exists": False}
     for rrset in data.get("rrsets", []):
         records = rrset.get("records", [])
         if any(record.get("disabled") for record in records):
@@ -121,6 +149,19 @@ def fetch_powerdns(zone_key, zone, surface, groups, excluded, excluded_records, 
             [record.get("content") for record in records],
             rrset.get("ttl"),
         )
+    return {"http": status, "rrsets": len(data.get("rrsets", [])), "exists": True}
+
+
+def fetch_tailscale_view(zone):
+    api = os.environ["PDNS_SERVER_URL"].rstrip("/")
+    url = f"{api}/api/v1/servers/localhost/views/tailscale"
+    status, data = get_json(url, {"X-API-Key": os.environ["PDNS_API_KEY"]})
+    if status != 200:
+        return {"http": status, "associated": False}
+    return {
+        "http": status,
+        "associated": f"{zone}..tailscale" in data.get("zones", []),
+    }
 
 
 def render_records(groups, zones, eligible_keys):
@@ -131,7 +172,6 @@ def render_records(groups, zones, eligible_keys):
         lines.extend([
             "  {",
             f'    id = {json.dumps(stable_id(zone_key, name, record_type))};',
-            f"    zone = zones.{zone_key};",
             f"    name = {json.dumps(name)};",
             f"    type = {json.dumps(record_type)};",
         ])
@@ -157,9 +197,9 @@ def render_imports(groups, eligible_keys):
         if "public" in surfaces:
             lines.extend([
                 "      {",
-                "        address = " + json.dumps(f'desec_rrset.public["{identifier}"]') + ";",
+                "        address = " + json.dumps(f'module.zone["{zone_key}"].desec_rrset.public["{identifier}"]') + ";",
                 "        provider = \"desec\";",
-                f"        domain = zones.{zone_key};",
+                f"        domain = {nix_zone_ref(zone_key)};",
                 f"        subname = {json.dumps(name)};",
                 f"        type = {json.dumps(record_type)};",
                 "      }",
@@ -168,9 +208,9 @@ def render_imports(groups, eligible_keys):
             if surface in surfaces:
                 lines.extend([
                     "      {",
-                    "        address = " + json.dumps(f'powerdns_record.{surface}["{identifier}"]') + ";",
+                    "        address = " + json.dumps(f'module.zone["{zone_key}"].powerdns_record.{surface}["{identifier}"]') + ";",
                     "        provider = \"powerdns\";",
-                    f"        zone = zones.{zone_key}" + (" + \".\";" if surface == "lan" else " + \"..tailscale\";"),
+                    f"        zone = {nix_zone_ref(zone_key)}" + (" + \".\";" if surface == "lan" else " + \"..tailscale\";"),
                     f"        name = {json.dumps(name)};",
                     f"        type = {json.dumps(record_type)};",
                     "      }",
@@ -205,6 +245,8 @@ def main():
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--managed-records", required=True, type=Path)
     parser.add_argument("--zone", action="append", required=True, metavar="KEY=ZONE")
+    parser.add_argument("--selected-zone", required=True, metavar="KEY")
+    parser.add_argument("--surface", action="append", required=True, choices=("public", "lan", "tailscale"))
     args = parser.parse_args()
 
     output = args.output_dir
@@ -218,9 +260,18 @@ def main():
         if not separator or not key or not zone or key in zones:
             fail("--zone values must be unique KEY=ZONE pairs")
         zones[key] = zone.rstrip(".")
+    if args.selected_zone not in zones:
+        fail("--selected-zone must name one of the --zone keys")
+    if len(args.surface) != len(set(args.surface)):
+        fail("--surface values must be unique")
     managed_records = load_managed_records(args.managed_records, zones)
 
-    for required in ("DESEC_API_TOKEN", "PDNS_API_KEY", "PDNS_SERVER_URL"):
+    required_variables = []
+    if "public" in args.surface:
+        required_variables.append("DESEC_API_TOKEN")
+    if set(args.surface) & {"lan", "tailscale"}:
+        required_variables.extend(("PDNS_API_KEY", "PDNS_SERVER_URL"))
+    for required in required_variables:
         if not os.environ.get(required):
             fail(f"missing required environment variable {required}")
 
@@ -228,10 +279,25 @@ def main():
     excluded = Counter()
     excluded_records = defaultdict(set)
     anomalies = Counter()
-    for zone_key, zone in sorted(zones.items()):
-        fetch_desec(zone_key, zone, groups, excluded, excluded_records, anomalies)
-        fetch_powerdns(zone_key, zone, "lan", groups, excluded, excluded_records, anomalies)
-        fetch_powerdns(zone_key, zone, "tailscale", groups, excluded, excluded_records, anomalies)
+    zone_key = args.selected_zone
+    zone = zones[zone_key]
+    preflight = {}
+    fatal_error = None
+    if "public" in args.surface:
+        preflight["public"] = fetch_desec(zone_key, zone, groups, excluded, excluded_records, anomalies)
+        if preflight["public"]["http"] != 200:
+            fatal_error = f"deSEC returned HTTP {preflight['public']['http']} for {zone_key}"
+    if "lan" in args.surface:
+        preflight["lan"] = fetch_powerdns(zone_key, zone, "lan", groups, excluded, excluded_records, anomalies)
+        if preflight["lan"]["http"] not in (200, 404):
+            fatal_error = f"PowerDNS returned HTTP {preflight['lan']['http']} for LAN zone {zone_key}"
+    if "tailscale" in args.surface:
+        preflight["tailscale"] = fetch_powerdns(zone_key, zone, "tailscale", groups, excluded, excluded_records, anomalies)
+        preflight["tailscale_view"] = fetch_tailscale_view(zone)
+        if preflight["tailscale"]["http"] not in (200, 404):
+            fatal_error = f"PowerDNS returned HTTP {preflight['tailscale']['http']} for Tailscale zone {zone_key}"
+        if preflight["tailscale_view"]["http"] != 200:
+            fatal_error = f"PowerDNS returned HTTP {preflight['tailscale_view']['http']} for Tailscale view"
 
     groups = dict(groups)
     included_records = []
@@ -267,14 +333,20 @@ def main():
         "excluded": dict(sorted(excluded.items())),
         "anomalies": dict(sorted(anomalies.items())),
         "generated_record_count": len(included_keys),
+        "preflight": preflight,
+        "selected_surfaces": sorted(args.surface),
+        "zone_key": zone_key,
+        "domain": zone,
     }
-    for path, content in ((output / "records.nix", records), (output / "imports.nix", imports)):
+    for path, content in ((output / "zone.nix", records), (output / "imports.nix", imports)):
         path.write_text(content)
         path.chmod(0o600)
     report_path = output / "report.json"
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     report_path.chmod(0o600)
     print(f"dns-dump: wrote {len(included_keys)} included groups to {output}", file=sys.stderr)
+    if fatal_error:
+        fail(fatal_error)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 {
   moduleSource,
   zones,
+  zoneSurfaces,
   records ? [ ],
 }:
 { lib, ... }:
@@ -16,6 +17,26 @@ let
     tailscale = 300;
   };
   ensure = condition: message: if condition then true else throw "terranix/dns: ${message}";
+  zoneKeys = builtins.attrNames zones;
+  validatedZoneSurfaces =
+    builtins.seq
+      (ensure (
+        zoneKeys == builtins.attrNames zoneSurfaces
+      ) "zones and zoneSurfaces must have identical keys")
+      (
+        builtins.mapAttrs (
+          zoneKey: selectedSurfaces:
+          if
+            builtins.isList selectedSurfaces
+            && selectedSurfaces != [ ]
+            && lib.all (surface: builtins.elem surface surfaces) selectedSurfaces
+            && builtins.length selectedSurfaces == builtins.length (lib.unique selectedSurfaces)
+          then
+            selectedSurfaces
+          else
+            throw "terranix/dns: ${zoneKey}: surfaces must be a unique non-empty subset of public, lan, and tailscale"
+        ) zoneSurfaces
+      );
   isNonEmptyString = value: builtins.isString value && builtins.stringLength value > 0;
   isNonEmptyStringList =
     values: builtins.isList values && values != [ ] && lib.all isNonEmptyString values;
@@ -34,7 +55,7 @@ let
     record:
     lib.findFirst (
       key: zones.${key} == record.zone
-    ) (throw "terranix/dns: ${record.id}: zone is not selected") (builtins.attrNames zones);
+    ) (throw "terranix/dns: ${record.id}: zone is not selected") zoneKeys;
   validSurfaceTtls =
     record:
     lib.all (
@@ -47,6 +68,29 @@ let
         builtins.hasAttr surface record && builtins.isInt record.${attribute} && record.${attribute} > 0
       )
     ) surfaces;
+  compileRecord =
+    record:
+    let
+      zoneKey = zoneKeyFor record;
+      recordSurfaces = builtins.filter (surface: builtins.hasAttr surface record) surfaces;
+    in
+    builtins.seq
+      (ensure (lib.all (
+        surface: builtins.elem surface validatedZoneSurfaces.${zoneKey}
+      ) recordSurfaces) "${record.id}: record surface is not enabled for zone ${zoneKey}")
+      (
+        record
+        // {
+          inherit zoneKey;
+          owner = ownerName record;
+          baseZone = "${record.zone}.";
+          tailscaleZone = "${record.zone}..tailscale";
+          desecDomain = record.zone;
+          publicTtl = surfaceTtl "public" record;
+          lanTtl = surfaceTtl "lan" record;
+          tailscaleTtl = surfaceTtl "tailscale" record;
+        }
+      );
   validateRecord =
     record:
     builtins.seq (ensure (builtins.isAttrs record) "records must be attribute sets") (
@@ -69,17 +113,7 @@ let
                       ) surfaces) "${record.id}: present surfaces must be non-empty string lists")
                       (
                         if validSurfaceTtls record then
-                          record
-                          // {
-                            zoneKey = zoneKeyFor record;
-                            owner = ownerName record;
-                            baseZone = "${record.zone}.";
-                            tailscaleZone = "${record.zone}..tailscale";
-                            desecDomain = record.zone;
-                            publicTtl = surfaceTtl "public" record;
-                            lanTtl = surfaceTtl "lan" record;
-                            tailscaleTtl = surfaceTtl "tailscale" record;
-                          }
+                          compileRecord record
                         else
                           throw "terranix/dns: ${record.id}: surface TTLs must be positive integers on present surfaces"
                       )
@@ -157,13 +191,17 @@ in
   provider.powerdns = { };
   provider.desec = { };
 
-  locals.records_by_zone = recordsByZone;
+  locals = {
+    records_by_zone = recordsByZone;
+    zone_surfaces = validatedZoneSurfaces;
+  };
 
   module.zone = {
     source = moduleSource;
     for_each = zones;
     zone = "\${each.value}";
     records = "\${local.records_by_zone[each.key]}";
+    surfaces = "\${local.zone_surfaces[each.key]}";
   };
 
   resource = {

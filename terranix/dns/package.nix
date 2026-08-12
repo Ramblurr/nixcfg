@@ -1,6 +1,7 @@
 {
   pkgs,
   zones,
+  zoneSurfaces,
   records ? [ ],
 }:
 let
@@ -15,7 +16,7 @@ let
     modules = [
       (import ./default.nix {
         moduleSource = "${zoneModule}";
-        inherit records zones;
+        inherit records zones zoneSurfaces;
       })
     ];
   };

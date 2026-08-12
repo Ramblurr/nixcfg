@@ -12,17 +12,27 @@
 
   variable.zone.type = "string";
   variable.records.type = "any";
+  variable.surfaces.type = "list(string)";
 
   resource = {
+    powerdns_zone.lan = {
+      count = "\${contains(var.surfaces, \"lan\") ? 1 : 0}";
+      name = "\${var.zone}.";
+      kind = "Native";
+      account = "";
+    };
+
     powerdns_zone.tailscale = {
+      count = "\${contains(var.surfaces, \"tailscale\") ? 1 : 0}";
       name = "\${var.zone}..tailscale";
       kind = "Native";
       account = "";
     };
 
     powerdns_view_zone_association.tailscale = {
+      count = "\${contains(var.surfaces, \"tailscale\") ? 1 : 0}";
       view = "tailscale";
-      zone = "\${powerdns_zone.tailscale.name}";
+      zone = "\${powerdns_zone.tailscale[0].name}";
     };
 
     desec_rrset.public = {
@@ -36,7 +46,7 @@
 
     powerdns_record.lan = {
       for_each = "\${{ for id, record in var.records : id => record if try(record.lan, null) != null }}";
-      zone = "\${each.value.baseZone}";
+      zone = "\${powerdns_zone.lan[0].name}";
       name = "\${each.value.owner}";
       type = "\${each.value.type}";
       ttl = "\${each.value.lanTtl}";
@@ -45,11 +55,22 @@
 
     powerdns_record.tailscale = {
       for_each = "\${{ for id, record in var.records : id => record if try(record.tailscale, null) != null }}";
-      zone = "\${each.value.tailscaleZone}";
+      zone = "\${powerdns_zone.tailscale[0].name}";
       name = "\${each.value.owner}";
       type = "\${each.value.type}";
       ttl = "\${each.value.tailscaleTtl}";
       records = "\${each.value.tailscale}";
     };
   };
+
+  moved = [
+    {
+      from = "powerdns_zone.tailscale";
+      to = "powerdns_zone.tailscale[0]";
+    }
+    {
+      from = "powerdns_view_zone_association.tailscale";
+      to = "powerdns_view_zone_association.tailscale[0]";
+    }
+  ];
 }
