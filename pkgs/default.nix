@@ -52,10 +52,6 @@ inputs: [
       swhkd = prev.callPackage ./swhkd { };
       qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
       waytray = prev.callPackage ./waytray.nix { };
-      #parakeet-writer = prev.callPackage ./parakeet-writer/package.nix { };
-      #kwin6-bismuth-decoration = prev.callPackage ./kwin6-bismuth-decoration.nix { };
-      #klassy = prev.callPackage ./klassy.nix { };
-      #invoiceninja-mine = prev.callPackage ./invoiceninja/package.nix { };
 
       # 2026-01: disabled due to not building, they want poetry1 but nixpkgs only has poetry 2
       # ref: https://github.com/gtronset/beets-filetote/pull/202

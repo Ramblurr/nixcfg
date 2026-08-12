@@ -12,7 +12,6 @@ in
     ./hardware.nix
     ./disk-config.nix
     ./guests.nix
-    #./networking.nix
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
