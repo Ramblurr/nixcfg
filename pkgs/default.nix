@@ -10,8 +10,12 @@ inputs: [
         kernelPackages = prev.linuxPackages;
       };
       pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
-      terraform-provider-powerdns = prev.callPackage ./terraform-providers/powerdns.nix { };
-      terraform-provider-desec = prev.callPackage ./terraform-providers/desec.nix { };
+      terraform-provider-powerdns = prev.lib.callPackageWith (
+        prev // { inherit pkgs-lib; }
+      ) ./terraform-providers/powerdns.nix { };
+      terraform-provider-desec = prev.lib.callPackageWith (
+        prev // { inherit pkgs-lib; }
+      ) ./terraform-providers/desec.nix { };
       opentofu-powerdns = prev.opentofu.withPlugins (_plugins: [ _final.terraform-provider-powerdns ]);
       opentofu-dns = prev.opentofu.withPlugins (_plugins: [
         _final.terraform-provider-desec
