@@ -6,6 +6,7 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
+  pocketIdDomain = "id.${config.repo.secrets.global.domain.home}";
 in
 {
   imports = [
@@ -75,9 +76,9 @@ in
 
   hosts.james.ingress.implementation = "haproxy";
 
-  security.acme.certs."id.private.invalid".domain = "id.private.invalid";
-  services.nginx.virtualHosts."id.private.invalid" = {
-    useACMEHost = "id.private.invalid";
+  security.acme.certs.${pocketIdDomain}.domain = pocketIdDomain;
+  services.nginx.virtualHosts.${pocketIdDomain} = {
+    useACMEHost = pocketIdDomain;
     forceSSL = true;
     kTLS = true;
     http3 = false;

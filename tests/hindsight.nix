@@ -144,8 +144,8 @@ let
 
           modules.services.hindsight = {
             enable = true;
-            domain = "hindsight.private.invalid";
-            acmeHost = "private.invalid";
+            domain = "hindsight.example.test";
+            acmeHost = "example.test";
             llm = {
               retain.profile = retainLlmProfile;
               reflect.profile = reflectLlmProfile;
@@ -209,7 +209,7 @@ pkgs.testers.runNixOSTest {
       database = config.virtualisation.quadlet.containers.hindsight-db;
       network = config.virtualisation.quadlet.networks.hindsight;
       volume = config.virtualisation.quadlet.volumes.hindsight-db-data;
-      ingress = config.modules.services.ingress.virtualHosts."hindsight.private.invalid";
+      ingress = config.modules.services.ingress.virtualHosts."hindsight.example.test";
       hindsightDataset = config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/hindsight";
       appTemplate = config.sops.templates."hindsight-app.env";
       dbTemplate = config.sops.templates."hindsight-db.env";
@@ -242,8 +242,8 @@ pkgs.testers.runNixOSTest {
 
       modules.services.hindsight = {
         enable = true;
-        domain = "hindsight.private.invalid";
-        acmeHost = "private.invalid";
+        domain = "hindsight.example.test";
+        acmeHost = "example.test";
         image = "docker-archive:${testHindsightImage}";
         postgresImage = "docker-archive:${testPostgresImage}";
         llm = {
@@ -256,7 +256,7 @@ pkgs.testers.runNixOSTest {
 
       services.nginx = {
         enable = true;
-        virtualHosts."hindsight.private.invalid".locations."/" = {
+        virtualHosts."hindsight.example.test".locations."/" = {
           proxyPass = "http://127.0.0.1:9999";
           recommendedProxySettings = true;
         };
@@ -319,7 +319,7 @@ pkgs.testers.runNixOSTest {
         }
         {
           assertion =
-            config.services.nginx.virtualHosts."hindsight.private.invalid".locations."^~ /hindsight-api/".proxyPass
+            config.services.nginx.virtualHosts."hindsight.example.test".locations."^~ /hindsight-api/".proxyPass
             == "http://127.0.0.1:8888/";
           message = "The prefixed Hindsight API route must strip its prefix and target the loopback API port.";
         }
@@ -552,7 +552,7 @@ pkgs.testers.runNixOSTest {
 
     assert "healthy" in machine.succeed("curl -fsS http://127.0.0.1:8888/health")
     assert "hindsight-control-plane" in machine.succeed("curl -fsS http://127.0.0.1:9999/")
-    nginx_curl = "curl -fsS -H 'Host: hindsight.private.invalid' http://127.0.0.1"
+    nginx_curl = "curl -fsS -H 'Host: hindsight.example.test' http://127.0.0.1"
     assert "hindsight-control-plane" in machine.succeed(f"{nginx_curl}/")
     assert "control-plane-api" in machine.succeed(f"{nginx_curl}/api/health")
     assert "healthy" in machine.succeed(f"{nginx_curl}/hindsight-api/health")
