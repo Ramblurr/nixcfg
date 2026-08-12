@@ -17,3 +17,4 @@ secret.edn
 .worktrees
 .scratch/
 .scratch-org/
+__pycache__
