@@ -9,10 +9,9 @@ Use Babashka for all scripting and interactive API work. Keep the workflow Cloju
 
 ## Preconditions
 
-- Store and read the API key from `~/.config/audiobookshelf-cli/config.edn`.
-- The config must be EDN with the key at `:api-key`.
+- Store and read the API key and base URL from `~/.config/audiobookshelf-cli/config.edn`.
+- The config must be EDN with values at `:api-key` and `:base-url`.
 - Keep the file owner-readable only with mode `0600`.
-- Use base URL `https://audiobookshelf.private.invalid`.
 - Audiobooks library ID is `58f1e481-efb7-4b88-ae43-010e921441a7`.
 - If you need Babashka or API reference material, use the `extra-reference-material` skill first and `local-git-reference` second.
 
@@ -32,10 +31,11 @@ Start most sessions with:
 (require '[clojure.edn :as edn])
 (require '[clojure.string :as str])
 
-(def base-url "https://audiobookshelf.private.invalid")
 (def config-file
   (str (System/getProperty "user.home") "/.config/audiobookshelf-cli/config.edn"))
-(def api-key (:api-key (edn/read-string (slurp config-file))))
+(def config (edn/read-string (slurp config-file)))
+(def base-url (:base-url config))
+(def api-key (:api-key config))
 (def lib-id "58f1e481-efb7-4b88-ae43-010e921441a7")
 (def headers {"Authorization" (str "Bearer " api-key)})
 ```
@@ -160,10 +160,14 @@ This example finds `Das Rad der Zeit 01 - Drohende Schatten`, renames it to `Dro
 ```clojure
 (require '[babashka.http-client :as http])
 (require '[cheshire.core :as json])
+(require '[clojure.edn :as edn])
 (require '[clojure.string :as str])
 
-(def base-url "https://audiobookshelf.private.invalid")
-(def api-key (System/getenv "AUDIOBOOKSHELF_API_KEY"))
+(def config-file
+  (str (System/getProperty "user.home") "/.config/audiobookshelf-cli/config.edn"))
+(def config (edn/read-string (slurp config-file)))
+(def base-url (:base-url config))
+(def api-key (:api-key config))
 (def lib-id "58f1e481-efb7-4b88-ae43-010e921441a7")
 (def headers {"Authorization" (str "Bearer " api-key)})
 

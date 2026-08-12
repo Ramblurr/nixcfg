@@ -82,7 +82,7 @@ module "calibre" {
 module "filebrowser" {
   source = "./modules/forward-auth-application"
   # Keep the existing app/provider identity stable; this backs the
-  # NixOS filebrowser-quantum service at files.private.invalid.
+  # NixOS filebrowser-quantum service at files.${var.internal_domain}.
   name                    = "filebrowser"
   domain                  = "files.${var.internal_domain}"
   group                   = "admin"

@@ -54,7 +54,7 @@ Replace the final `ak dump_config` part in the wrapper with:
 ak shell -c 'from authentik.core.models import Application; from authentik.outposts.models import Outpost; app=Application.objects.get(slug="filebrowser"); outpost=Outpost.objects.get(name="authentik Embedded Outpost"); providers=set(outpost.providers.values_list("pk", flat=True)); print(app.provider_id); print(app.provider_id in providers)'
 ```
 
-Use this when `files.private.invalid` fails auth and you need to confirm whether the `filebrowser` proxy provider is attached to the embedded outpost.
+Use this when filebrowser fails auth and you need to confirm whether its proxy provider is attached to the embedded outpost.
 
 ## Confirm the live service environment
 
