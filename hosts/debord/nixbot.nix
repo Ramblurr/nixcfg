@@ -58,7 +58,7 @@ in
     # TLS is terminated by dewey's ingress; generate https:// URLs.
     useHTTPS = true;
     nginx.enable = false;
-    admins = [ "github:ramblurr" ];
+    admins = [ "github:Ramblurr" ];
     buildSystems = [ "x86_64-linux" ];
     buildConcurrency = 2;
     evalWorkerCount = 4;
@@ -70,9 +70,6 @@ in
       webhookSecretFile = config.sops.secrets."nixbot-github-webhook-secret".path;
       oauthId = config.repo.secrets.local.nixbot.oauthId;
       oauthSecretFile = config.sops.secrets."nixbot-github-oauth-secret".path;
-      # Required to see private repo builds in the UI; grants the GitHub
-      # "repo" OAuth scope (read+write) stored server-side for the session.
-      oauthPrivateRepoScope = true;
       # Repositories with this topic are enabled on first startup with an
       # empty database; afterwards projects are managed in the web UI.
       topic = "nixbot";
