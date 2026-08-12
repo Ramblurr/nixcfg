@@ -24,7 +24,7 @@ in
     ./web/personal.nix
     ./web/personal-site.nix
     ./web/personals.nix
-    ./web/personal3.nix
+    ./web/partner.nix
     ./goaccess.nix
     ./goatcounter.nix
     ./crowdsec.nix

@@ -6,10 +6,8 @@
 }:
 
 let
-  inherit (config.repo.secrets.global.domain)
-    personal2
-    work
-    ;
+  inherit (config.repo.secrets.global.domain) work;
+  caseyLink = config.repo.secrets.global.domain."casey.link";
 
   domain = work;
   docsDomain = "docs.${domain}";
@@ -18,7 +16,7 @@ let
   importVhosts = [
     domain
     docsDomain
-    personal2
+    caseyLink
   ];
   countSites = map (sourceHost: {
     inherit sourceHost;
@@ -270,7 +268,7 @@ in
       (countHostFor domain)
     ];
     ${docsDomain}.extraDomainNames = [ (countHostFor docsDomain) ];
-    ${personal2}.extraDomainNames = [ (countHostFor personal2) ];
+    ${caseyLink}.extraDomainNames = [ (countHostFor caseyLink) ];
   };
 
   services.nginx.virtualHosts = lib.mkMerge [

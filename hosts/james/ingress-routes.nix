@@ -1,26 +1,27 @@
 { config }:
 let
   inherit (config.repo.secrets.global.domain)
+    be
+    caseylink
+    et
     family
     home
-    personal1
-    personal2
-    personal3
-    personal4
-    personal5
-    personal6
+    moot
+    ov
+    partner
     work
     work2
     ;
+  caseyLink = config.repo.secrets.global.domain."casey.link";
   localBaseDomains = [
     work
     work2
-    personal1
-    personal2
-    personal3
-    personal4
-    personal5
-    personal6
+    caseylink
+    caseyLink
+    partner
+    ov
+    be
+    et
     family
   ];
 in
@@ -42,8 +43,8 @@ in
   ];
 
   thingsteadServices = [
-    "moot.land"
-    ".moot.land"
+    moot
+    ".${moot}"
   ];
 
   localServices = builtins.concatMap (domain: [

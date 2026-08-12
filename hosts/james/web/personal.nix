@@ -5,12 +5,12 @@
 
 let
   inherit (config.repo.secrets.global.domain)
+    caseylink
     home
     work
-    personal1
     ;
   codeLink = config.repo.secrets.global.code;
-  domain = personal1;
+  domain = caseylink;
 in
 {
   security.acme.certs.${domain} = {

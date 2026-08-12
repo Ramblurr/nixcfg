@@ -10,9 +10,9 @@ let
   inherit (config.repo.secrets.local) atprotoDid;
   inherit (domain) work;
   domains = [
-    domain.personal4
-    domain.personal5
-    domain.personal6
+    domain.ov
+    domain.be
+    domain.et
   ];
   certFor = domain: {
     ${domain} = {
@@ -32,7 +32,7 @@ let
       quic = false;
       globalRedirect = work;
 
-      locations."= /.well-known/atproto-did".extraConfig = lib.mkIf (d == domain.personal2) ''
+      locations."= /.well-known/atproto-did".extraConfig = lib.mkIf (d == domain."casey.link") ''
         add_header Content-Type text/plain;
         return 200 '${atprotoDid}';
       '';
