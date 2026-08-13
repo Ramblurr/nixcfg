@@ -15,7 +15,7 @@ in
     services.smartd = {
       enable = true;
       notifications = {
-        test = true;
+        test = false;
       };
     };
   };
