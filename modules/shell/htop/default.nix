@@ -36,7 +36,6 @@ in
           show_cpu_frequency = true;
           show_cpu_temperature = true;
           show_program_path = false;
-          tree_view = true;
         };
       };
     };
