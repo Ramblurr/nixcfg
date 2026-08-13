@@ -643,7 +643,7 @@
 
 (declare change-draft toggle-surface add-value remove-value save-draft cancel-draft
          begin-add begin-clone begin-edit confirm-delete cancel-delete commit-changes
-         select-zone change-filter change-sort)
+         reset-session select-zone change-filter change-sort)
 
 (defn value-inputs [surface values]
   (map-indexed
@@ -821,7 +821,8 @@
         [:button {:class "primary"
                   :disabled (zero? (staged-count session))
                   :data-on:click (action-js commit-changes)}
-         "Commit changes"]]]
+         "Commit changes"]
+        [:button {:data-on:click (action-js reset-session)} "Reset"]]]
       [:div {:class "toolbar"}
        [:label "Zone "
         (into [:select {:data-bind "zone"
@@ -1028,6 +1029,19 @@
 (defaction cancel-delete [_request]
   nil)
 
+(defaction reset-session [{:keys [zones-dir] :as request}]
+  (update-session! request
+                   (fn [session]
+                     (try
+                       (let [zones (load-zones zones-dir)
+                             selected (:selected session)
+                             reset (initial-session zones)]
+                         (cond-> (assoc reset :message "Reloaded zone files from disk.")
+                           (contains? zones selected) (assoc :selected selected)))
+                       (catch Exception exception
+                         (assoc session :message (str "Reset failed: " (ex-message exception)))))))
+  nil)
+
 (defaction commit-changes [request]
   (update-session! request
                    (fn [session]
@@ -1043,7 +1057,7 @@
 (def actions
   (action-map select-zone change-filter change-sort begin-edit begin-add begin-clone change-draft
               toggle-surface add-value remove-value save-draft cancel-draft confirm-delete
-              cancel-delete commit-changes))
+              cancel-delete commit-changes reset-session))
 
 (defn router [{:keys [request-method uri] :as request}]
   (case [request-method uri]
@@ -1059,11 +1073,12 @@
   (spit (str (fs/path dir (str (:zone document) ".json")))
         (str (json/generate-string document {:pretty true}) "\n")))
 
-(defn action-request [sessions_ zones sid signals]
+(defn action-request [sessions_ zones zones-dir sid signals]
   {:request-method :post
    :sid sid
    :sessions_ sessions_
    :zones zones
+   :zones-dir (str zones-dir)
    :body (json/generate-string signals)})
 
 #_{:clj-kondo/ignore [:unresolved-symbol]}
@@ -1080,7 +1095,7 @@
           zones (load-zones dir)
           sessions_ (atom {"a" (initial-session zones) "b" (initial-session zones)})
           post! (fn [sid action signals]
-                  (action (action-request sessions_ zones sid signals)))
+                  (action (action-request sessions_ zones dir sid signals)))
           home-path (str (fs/path dir "home.json"))
           home-before (slurp home-path)]
       (test/is (= ["casey.link" "home"] (vec (keys zones))))
@@ -1133,6 +1148,17 @@
       (post! "a" commit-changes-fn {})
       (test/is (= 0 (staged-count (get @sessions_ "a"))))
       (test/is (= 2 (count (:records (json/parse-string (slurp home-path) true)))))
+      (post! "a" begin-edit-fn {:recordid "home-text-txt"})
+      (post! "a" confirm-delete-fn {})
+      (post! "a" reset-session-fn {})
+      (test/is (= {:staged 0
+                   :records 2
+                   :selected "casey.link"
+                   :message "Reloaded zone files from disk."}
+                  {:staged (staged-count (get @sessions_ "a"))
+                   :records (count (get-in @sessions_ ["a" :working "home" :records]))
+                   :selected (get-in @sessions_ ["a" :selected])
+                   :message (get-in @sessions_ ["a" :message])}))
       (post! "a" select-zone-fn {:zone "home"})
       (post! "a" begin-edit-fn {:recordid "home-text-txt"})
       (post! "a" confirm-delete-fn {})
@@ -1146,8 +1172,16 @@
                    :disk (slurp home-path)}))
       (test/is (try (load-zones dir) false (catch Exception _ true)))
       (test/is (= "{external}\n" (slurp home-path)))
-      (println "dns-admin-ui: 18 fixture assertions passed")
-      {:test 18 :pass 18 :fail 0 :error 0})))
+      (post! "a" reset-session-fn {})
+      (test/is (= {:staged 1
+                   :disk "{external}\n"
+                   :error? true}
+                  {:staged (staged-count (get @sessions_ "a"))
+                   :disk (slurp home-path)
+                   :error? (str/starts-with? (get-in @sessions_ ["a" :message])
+                                             "Reset failed:")}))
+      (println "dns-admin-ui: 20 fixture assertions passed")
+      {:test 20 :pass 20 :fail 0 :error 0})))
 
 (defn parse-args [args]
   (loop [options {:port 8083
@@ -1179,7 +1213,7 @@
       (let [zones (load-zones zones-dir)
             sessions_ (atom {})
             url (str "http://127.0.0.1:" port "/")]
-        (start-local-app {:zones zones :sessions_ sessions_} port)
+        (start-local-app {:zones zones :zones-dir zones-dir :sessions_ sessions_} port)
         (println "serving" url "from" zones-dir)
         @(promise)))))
 
