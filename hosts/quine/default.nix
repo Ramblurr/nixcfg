@@ -108,14 +108,24 @@ in
   };
 
   networking.firewall.allowedTCPPorts = [
-    3000
-    3001
     8080
     8081
     8090
     1080
   ];
   networking.firewall.allowedUDPPorts = [ 67 ];
+  networking.firewall.allowedTCPPortRanges = [
+    {
+      from = 3000;
+      to = 3050;
+    }
+  ];
+  networking.firewall.allowedUDPPortRanges = [
+    {
+      from = 3000;
+      to = 3050;
+    }
+  ];
 
   modules = {
     nix.pruneAgedGcroots.enable = true;
