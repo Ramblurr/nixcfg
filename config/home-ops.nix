@@ -359,21 +359,39 @@ in
           ) "paseo.${home-ops.homeDomain}")
           (lib.optional (plainCaddyEnabled && cfg.apps.stirling-pdf.enable) "pdf.${home-ops.homeDomain}")
           (lib.optional (plainCaddyEnabled && cfg.apps.home-dl.enable) "qbittorrent.${home-ops.homeDomain}")
+          (lib.optionals (plainCaddyEnabled && cfg.apps.authentik.enable) [
+            "auth.${home-ops.homeDomain}"
+            "auth.${home-ops.workDomain}"
+          ])
+          (lib.optional (
+            plainCaddyEnabled && cfg.apps.calibre-web.enable
+          ) "books-kobo.${home-ops.homeDomain}")
+          (lib.optional (
+            plainCaddyEnabled && cfg.apps.calibre.enable
+          ) "calibre-server.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.davis.enable) "dav.${home-ops.homeDomain}")
+          (lib.optional plainCaddyEnabled "home.${home-ops.homeDomain}")
+          (lib.optional (
+            plainCaddyEnabled && cfg.apps.koreader-sync.enable
+          ) "koreader.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.matrix-synapse.enable) "matrix.${home-ops.workDomain}")
+          (lib.optional plainCaddyEnabled "octoprint.${home-ops.homeDomain}")
+          (lib.optional (
+            plainCaddyEnabled && config.modules.services.ingress-phoniebox.enable
+          ) "phoniebox.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.my-y2r.enable) "y2pod.${home-ops.homeDomain}")
         ];
       };
       virtualHosts."books.${home-ops.homeDomain}" = lib.mkIf cfg.apps.calibre-web.enable {
         usesCaddySecurity = cfg.apps.calibre-web.caddySecurity.enable;
       };
-      forwardServices = {
-        "home.${home-ops.homeDomain}" = {
-          upstream = "http://10.9.4.25:8123";
-          external = true;
-          acmeHost = home-ops.homeDomain;
-        };
-        "octoprint.${home-ops.homeDomain}" = {
-          upstream = "http://10.8.50.52:5000";
-          acmeHost = home-ops.homeDomain;
-        };
+      virtualHosts."home.${home-ops.homeDomain}" = {
+        upstream = "http://10.9.4.25:8123";
+        acmeHost = home-ops.homeDomain;
+      };
+      virtualHosts."octoprint.${home-ops.homeDomain}" = {
+        upstream = "http://10.8.50.52:5000";
+        acmeHost = home-ops.homeDomain;
       };
     };
     modules.services.caddy.routes = lib.mkIf plainCaddyEnabled (
@@ -473,19 +491,171 @@ in
           requestBodyMaxSize = "10MB";
         };
       })
-    );
-    services.nginx.virtualHosts."octoprint.${home-ops.homeDomain}".locations."/webcam/" =
-      lib.mkIf cfg.ingress.enable
-        {
-          proxyPass = "http://10.8.50.52:8080/";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_buffering off;
-            proxy_request_buffering off;
-            proxy_read_timeout 1d;
-            add_header X-Accel-Buffering no;
+      // (lib.optionalAttrs cfg.apps.authentik.enable {
+        authentik-home = {
+          publicHost = "auth.${home-ops.homeDomain}";
+          upstream = "http://127.0.0.1:${toString config.modules.services.authentik.ports.http}";
+        };
+        authentik-work = {
+          publicHost = "auth.${home-ops.workDomain}";
+          upstream = "http://127.0.0.1:${toString config.modules.services.authentik.ports.http}";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.calibre-web.enable {
+        books-kobo = {
+          publicHost = "books-kobo.${home-ops.homeDomain}";
+          upstream = "http://127.0.0.1:${toString config.modules.services.calibre-web.ports.http}";
+          requestHeaders.X-Scheme = "https";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.calibre.enable {
+        calibre-server = {
+          publicHost = "calibre-server.${home-ops.homeDomain}";
+          upstream = "http://127.0.0.1:${toString config.modules.services.calibre.ports.server}";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.davis.enable {
+        davis = {
+          publicHost = "dav.${home-ops.homeDomain}";
+          handlerConfig = ''
+            @davis_well_known path /.well-known/caldav /.well-known/carddav
+            redir @davis_well_known https://{http.request.host}/dav/ 302
+            @davis_hidden path_regexp davis_hidden /\.ht
+            respond @davis_hidden 404
+            root * ${config.services.davis.package}/public
+            php_fastcgi unix//run/phpfpm/davis.sock {
+              env HTTPS on
+              env HTTP_X_FORWARDED_PROTO https
+              env HTTP_X_FORWARDED_PORT 443
+            }
+            file_server
           '';
         };
+      })
+      // {
+        home-assistant = {
+          publicHost = "home.${home-ops.homeDomain}";
+          upstream = "http://10.9.4.25:8123";
+        };
+        octoprint = {
+          publicHost = "octoprint.${home-ops.homeDomain}";
+          handlerConfig = ''
+            handle_path /webcam/* {
+              reverse_proxy 10.8.50.52:8080 {
+                flush_interval -1
+                transport http {
+                  read_timeout 24h
+                }
+              }
+            }
+            handle {
+              reverse_proxy 10.8.50.52:5000
+            }
+          '';
+        };
+      }
+      // (lib.optionalAttrs cfg.apps.koreader-sync.enable {
+        koreader = {
+          publicHost = "koreader.${home-ops.homeDomain}";
+          upstream = "http://127.0.0.1:${toString config.modules.services.koreader-sync.ports.http}";
+          requestBodyMaxSize = "10MB";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.matrix-synapse.enable {
+        matrix = {
+          publicHost = "matrix.${home-ops.workDomain}";
+          handlerConfig = ''
+            @matrix_server path /.well-known/matrix/server
+            header @matrix_server Content-Type application/json
+            respond @matrix_server ${
+              builtins.toJSON (builtins.toJSON { "m.server" = "matrix.${home-ops.workDomain}:443"; })
+            } 200
+            handle /admin {
+              redir /admin/ 307
+            }
+            handle_path /admin/* {
+              @matrix_admin_assets path_regexp matrix_admin_assets \.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$
+              header @matrix_admin_assets Cache-Control "public, max-age=2592000"
+              root * ${config.modules.services.matrix-synapse.ketesa.package}
+              try_files {path} {path}/ /index.html
+              file_server
+            }
+            @matrix_api path /_matrix/* /_synapse/client/*
+            handle @matrix_api {
+              request_body {
+                max_size 200MB
+              }
+              reverse_proxy 127.0.0.1:${toString config.modules.services.matrix-synapse.ports.http}
+            }
+            handle {
+              reverse_proxy 127.0.0.1:${toString config.modules.services.matrix-synapse.ports.http}
+            }
+          '';
+        };
+      })
+      // (lib.optionalAttrs config.modules.services.ingress-phoniebox.enable {
+        phoniebox = {
+          publicHost = "phoniebox.${home-ops.homeDomain}";
+          handlerConfig = ''
+            handle_path /.fairybox-offline/* {
+              header Cache-Control "public, max-age=3600"
+              root * ${../modules/services/ingress-phoniebox}
+              file_server
+            }
+            route {
+              intercept {
+                @phoniebox_offline status 502 503 504
+                handle_response @phoniebox_offline {
+                  rewrite * /index.html
+                  root * ${../modules/services/ingress-phoniebox}
+                  file_server {
+                    status 503
+                  }
+                }
+              }
+              reverse_proxy 10.9.6.26:80 {
+                flush_interval -1
+                transport http {
+                  dial_timeout 3s
+                  response_header_timeout 1h
+                }
+              }
+            }
+          '';
+          errorHandlerConfig = ''
+            @phoniebox_proxy_error {
+              host phoniebox.${home-ops.homeDomain}
+              expression {http.error.status_code} in [502, 503, 504]
+            }
+            handle @phoniebox_proxy_error {
+              rewrite * /index.html
+              root * ${../modules/services/ingress-phoniebox}
+              file_server {
+                status 503
+              }
+            }
+          '';
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.my-y2r.enable {
+        y2pod = {
+          publicHost = "y2pod.${home-ops.homeDomain}";
+          handlerConfig = ''
+            @y2pod_private path_regexp y2pod_private (^|/)\.
+            respond @y2pod_private 403
+            @y2pod_logs path_regexp y2pod_logs \.log$
+            respond @y2pod_logs 403
+            @y2pod_work path_regexp y2pod_work ^/[^/]+/(inbox|processing|archive)(/|$)
+            respond @y2pod_work 403
+            @y2pod_rss path_regexp y2pod_rss \.rss$
+            header @y2pod_rss Content-Type "application/rss+xml; charset=utf-8"
+            header Accept-Ranges bytes
+            root * /var/lib/y2r
+            file_server browse
+          '';
+        };
+      })
+    );
 
     virtualisation.podman.enable = lib.mkIf cfg.containers.enable true;
     virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };

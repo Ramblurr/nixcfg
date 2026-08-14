@@ -44,6 +44,9 @@ in
         externalDomains = [ cfg.domain ];
       };
     };
+    modules.services.ingress.virtualHosts.${cfg.domain} = {
+      acmeHost = cfg.ingress.domain;
+    };
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/davis"."mountpoint" = config.services.davis.dataDir;
       "rpool/encrypted/safe/svc/davis"."com.sun:auto-snapshot" = "false";
@@ -87,18 +90,10 @@ in
         AUTH_METHOD = "IMAP";
         IMAP_AUTH_USER_AUTOCREATE = false;
       };
-      nginx = {
-        useACMEHost = cfg.ingress.domain;
-        forceSSL = true;
-        kTLS = true;
-        http3 = true;
-        http2 = false;
-        quic = true;
-        locations."/" = {
-          extraConfig = ''
-            add_header Alt-Svc 'h3=":443"; ma=86400';
-          '';
-        };
+      nginx = null;
+      poolConfig = {
+        "listen.owner" = "caddy";
+        "listen.group" = "caddy";
       };
     };
   };

@@ -34,11 +34,6 @@ let
       port = 8080;
       forwardAuth = true;
     };
-    overseerr = {
-      domain = "requests.${cfg.baseDomain}";
-      port = cfg.ports.overseerr;
-      forwardAuth = false;
-    };
   };
   stateDirActual = "/var/lib/private/home-dl";
   stateDirEffective = "/var/lib/home-dl";
@@ -111,11 +106,6 @@ in
     subnet = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ ingresses.overseerr.domain ];
-      };
-    };
 
     fileSystems."${mediaLocalPath}" = {
       device = "${lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR}:/mnt/${cfg.mediaNfsShare}";
@@ -412,11 +402,6 @@ in
         }
       ) ingresses)
       // {
-        "${ingresses.overseerr.domain}" = {
-          acmeHost = cfg.ingress.domain;
-          upstream = "http://127.0.0.1:${toString cfg.ports.overseerr}";
-          forwardAuth = false;
-        };
         "${qbittorrentDomain}" = {
           acmeHost = cfg.ingress.domain;
           upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";

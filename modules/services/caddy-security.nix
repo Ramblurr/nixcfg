@@ -240,26 +240,38 @@ let
     ''
       @plain_${plainId name} host ${route.publicHost}
       handle @plain_${plainId name} {
-        ${lib.optionalString route.webSockets "# WebSocket upgrades are handled by Caddy reverse_proxy."}
-        ${responseHeaders}
-        ${staticResponses}
-        ${lib.optionalString (route.requestBodyMaxSize != null) ''
-          request_body {
-            max_size ${route.requestBodyMaxSize}
-          }
-        ''}
         ${
-          if route.upstream != null then
-            mkPlainProxy route
+          if route.handlerConfig != null then
+            route.handlerConfig
           else
             ''
-              root * ${route.root}
-              file_server
+              ${lib.optionalString (
+                route.upstream != null && route.webSockets
+              ) "# WebSocket upgrades are handled by Caddy reverse_proxy."}
+              ${responseHeaders}
+              ${staticResponses}
+              ${lib.optionalString (route.requestBodyMaxSize != null) ''
+                request_body {
+                  max_size ${route.requestBodyMaxSize}
+                }
+              ''}
+              ${
+                if route.upstream != null then
+                  mkPlainProxy route
+                else
+                  ''
+                    root * ${route.root}
+                    file_server
+                  ''
+              }
             ''
         }
       }
     '';
 
+  plainErrorHandlerConfig = lib.concatMapStringsSep "\n" (
+    route: lib.optionalString (route.errorHandlerConfig != null) route.errorHandlerConfig
+  ) (builtins.attrValues plainRoutes);
   protectedPublicHosts = map (app: app.publicHost) applications;
   plainPublicHosts = map (route: route.publicHost) (builtins.attrValues plainRoutes);
   publicHosts = protectedPublicHosts ++ plainPublicHosts;
@@ -417,6 +429,11 @@ in
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute plainRoutes)}
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute cfg.applications)}
           }
+          ${lib.optionalString (plainErrorHandlerConfig != "") ''
+            handle_errors {
+              ${plainErrorHandlerConfig}
+            }
+          ''}
         }
       '';
     };

@@ -71,32 +71,14 @@ in
       environmentFile = config.sops.secrets."authentik/env".path;
     };
 
-    services.nginx.virtualHosts = {
+    modules.services.ingress.virtualHosts = {
       ${cfg.domain1} = {
-        useACMEHost = cfg.ingress1;
-        forceSSL = true;
-        kTLS = true;
-        http3 = true;
-        http2 = false;
-        quic = true;
-        locations."/" = {
-          proxyPass = "https://127.0.0.1:${toString cfg.ports.https}";
-          recommendedProxySettings = true;
-          proxyWebsockets = true;
-        };
+        acmeHost = cfg.ingress1;
+        upstream = "http://127.0.0.1:${toString cfg.ports.http}";
       };
       ${cfg.domain2} = {
-        useACMEHost = cfg.ingress2;
-        forceSSL = true;
-        kTLS = true;
-        http3 = true;
-        http2 = false;
-        quic = true;
-        locations."/" = {
-          proxyPass = "https://127.0.0.1:${toString cfg.ports.https}";
-          recommendedProxySettings = true;
-          proxyWebsockets = true;
-        };
+        acmeHost = cfg.ingress2;
+        upstream = "http://127.0.0.1:${toString cfg.ports.http}";
       };
     };
   };

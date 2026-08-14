@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -39,27 +40,6 @@ in
       };
     };
 
-    services.nginx.virtualHosts."${cfg.domain}" = {
-      locations."~ /\\." = {
-        extraConfig = "deny all;";
-      };
-
-      locations."~ \\.log$" = {
-        extraConfig = "deny all;";
-      };
-
-      locations."~ ^/[^/]+/(inbox|processing|archive)(/|$)" = {
-        extraConfig = "deny all;";
-      };
-
-      locations."~ \\.rss$" = {
-        extraConfig = ''
-          sub_filter 'http://${cfg.domain}/' 'https://${cfg.domain}/';
-          sub_filter_once off;
-          sub_filter_types application/rss+xml text/xml;
-        '';
-      };
-    };
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       root = dataDir;
@@ -85,10 +65,36 @@ in
     systemd.tmpfiles.rules = [
       "z '${dataDir}' 750 ${user} ${group} - -"
     ];
-    users.users.nginx.extraGroups = [ "y2r" ];
+    users.users.caddy.extraGroups = [ group ];
+
+    systemd.services = {
+      caddy = {
+        requires = [ "y2r-https-enclosures.service" ];
+        after = [ "y2r-https-enclosures.service" ];
+      };
+      y2r-https-enclosures = {
+        description = "Make existing y2pod enclosure URLs use HTTPS";
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.RequiresMountsFor = [ dataDir ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = user;
+          Group = group;
+        };
+        script = ''
+          ${pkgs.findutils}/bin/find ${dataDir} -type f \( \
+            -name feed.body -o -name feed.rss \) \
+            -exec ${pkgs.gnused}/bin/sed -i \
+            's#http://${cfg.domain}/#https://${cfg.domain}/#g' {} +
+        '';
+      };
+    };
 
     modules.services.y2r = {
       enable = true;
+      package = pkgs.youtube-to-rss.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./my-y2r-https-enclosures.patch ];
+      });
       settings = {
         host = cfg.domain;
         documentRoot = dataDir;
