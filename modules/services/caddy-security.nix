@@ -373,6 +373,7 @@ let
       ${siteAddresses} {
         ${tlsConfig}
         ${mkAccessLog}
+        ${lib.optionalString (!allowHttp3) "header -Alt-Svc"}
         ${mkRouteConfig routeAttrs applicationAttrs (!allowHttp3)}
       }
     '';
