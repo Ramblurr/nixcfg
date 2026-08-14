@@ -123,31 +123,21 @@ in
       };
     };
 
-    # The /opds path will bypass SSO/forward auth.
-    services.nginx.virtualHosts.${cfg.domain}.locations = {
-      "/opds" = {
-        proxyPass = upstream;
-        recommendedProxySettings = true;
-        proxyWebsockets = true;
-        extraConfig = ''
-          auth_request off;
-          error_page 401 = @opds_401_passthrough;
-          proxy_set_header Authorization $http_authorization;
-        '';
-      };
-
-      "@opds_401_passthrough" = {
-        extraConfig = ''
-          internal;
-          return 401;
-        '';
-      };
+    services.nginx.virtualHosts.${cfg.domain}.locations."@opds_401_passthrough" = {
+      extraConfig = ''
+        internal;
+        return 401;
+      '';
     };
 
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       inherit upstream;
       forwardAuth = true;
+      forwardAuthBypassPaths."/opds" = ''
+        error_page 401 = @opds_401_passthrough;
+        proxy_set_header Authorization $http_authorization;
+      '';
       extraConfig = ''
         client_max_body_size 0;
       '';

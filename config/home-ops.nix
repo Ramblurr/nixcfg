@@ -82,7 +82,20 @@ in
       hindsight.enable = lib.mkEnableOption "Hindsight agent memory";
       calibre.enable = lib.mkEnableOption "Calibre";
       koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
-      calibre-web.enable = lib.mkEnableOption "Calibre Web";
+      calibre-web = {
+        enable = lib.mkEnableOption "Calibre Web";
+        caddySecurity = {
+          enable = lib.mkEnableOption "Calibre Web through caddy-security";
+          clientID = lib.mkOption {
+            type = lib.types.nonEmptyStr;
+            description = "Private Pocket ID client ID for Calibre Web";
+          };
+          environmentFile = lib.mkOption {
+            type = lib.types.nonEmptyStr;
+            description = "Runtime path to the SOPS-rendered Calibre Web Caddy environment file";
+          };
+        };
+      };
       roon-server.enable = lib.mkEnableOption "Roon Server";
       onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
       archivebox.enable = lib.mkEnableOption "Archivebox";
@@ -118,6 +131,11 @@ in
         assertion =
           !cfg.apps.jellyplex-watched.enable || (cfg.apps.plex.enable && cfg.apps.jellyfin.enable);
         message = "JellyPlex-Watched requires both Plex and Jellyfin to be enabled";
+      }
+      {
+        assertion =
+          !cfg.apps.calibre-web.caddySecurity.enable || (cfg.ingress.enable && cfg.apps.calibre-web.enable);
+        message = "Calibre Web caddy-security requires ingress and Calibre Web";
       }
     ];
 
@@ -256,7 +274,9 @@ in
       enable = true;
       inherit (config.repo.secrets.local) domains;
       oauth2Proxy.host = "id.${home-ops.homeDomain}";
+      caddySecurity.upstream = "http://127.0.0.1:${toString config.modules.services.caddy-security.listenPort}";
       virtualHosts."books.${home-ops.homeDomain}" = lib.mkIf cfg.apps.calibre-web.enable {
+        usesCaddySecurity = cfg.apps.calibre-web.caddySecurity.enable;
         forwardAuthGroups = [ "books" ];
       };
       forwardServices = {
@@ -652,6 +672,43 @@ in
         external = true;
       };
     };
+    modules.services.caddy-security =
+      lib.mkIf (cfg.apps.calibre-web.enable && cfg.apps.calibre-web.caddySecurity.enable)
+        {
+          enable = true;
+          environmentFile = cfg.apps.calibre-web.caddySecurity.environmentFile;
+          applications.calibre-web = {
+            publicHost = "books.${home-ops.homeDomain}";
+            upstream = "127.0.0.1:${toString home-ops.ports.calibre-web}";
+            portalPath = "/auth";
+            oidc = {
+              issuerURL = "https://id.${home-ops.homeDomain}";
+              clientID = cfg.apps.calibre-web.caddySecurity.clientID;
+              clientSecretEnv = "CALIBRE_WEB_OIDC_CLIENT_SECRET";
+              realm = "calibre-pocket-id";
+            };
+            signingKeyEnv = "CALIBRE_WEB_SIGNING_KEY";
+            cookiePrefix = "CALIBRE_WEB";
+            requiredGroups = [ "books" ];
+            bypassPathPrefixes = [ "/opds" ];
+            identityHeaders = {
+              Remote-User = "userinfo|preferred_username";
+              Remote-Name = "userinfo|preferred_username";
+              Remote-Email = "email";
+              Remote-Groups = "roles";
+              X-Auth-Request-User = "sub";
+              X-Auth-Request-Preferred-Username = "userinfo|preferred_username";
+              X-Auth-Request-Email = "email";
+              X-Auth-Request-Groups = "roles";
+              X-authentik-username = "userinfo|preferred_username";
+              X_authentik_username = "userinfo|preferred_username";
+              X-authentik-groups = "roles";
+              X-authentik-email = "email";
+              X-authentik-name = "userinfo|preferred_username";
+              X-authentik-uid = "sub";
+            };
+          };
+        };
 
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
     #  enable = true;

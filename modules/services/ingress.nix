@@ -13,9 +13,24 @@ let
   mkVirtualHost =
     name: service: directWan:
     let
-      useOAuth2Proxy = service.forwardAuth && service.usesPocketId;
-      useAuthentik = service.forwardAuth && !service.usesPocketId;
+      useCaddySecurity = service.forwardAuth && service.usesCaddySecurity;
+      useOAuth2Proxy = service.forwardAuth && service.usesPocketId && !useCaddySecurity;
+      useAuthentik = service.forwardAuth && !service.usesPocketId && !useCaddySecurity;
+      effectiveUpstream = if useCaddySecurity then cfg.caddySecurity.upstream else service.upstream;
       oauth2Groups = lib.concatMapStringsSep "," lib.escapeURL service.forwardAuthGroups;
+      caddyProxyConfig = lib.optionalString useCaddySecurity ''
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Port 443;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Uri $request_uri;
+        proxy_set_header X-Forwarded-Prefix "";
+        proxy_set_header X-Original-URL https://$host$request_uri;
+        proxy_set_header Forwarded "";
+        proxy_set_header Authorization $http_authorization;
+      '';
     in
     {
       useACMEHost = service.acmeHost;
@@ -30,14 +45,15 @@ let
       locations = {
         "/" =
           let
-            hasUpstream = service.upstream != null;
+            hasUpstream = effectiveUpstream != null;
           in
           {
-            proxyPass = if hasUpstream then service.upstream else null;
+            proxyPass = if hasUpstream then effectiveUpstream else null;
             recommendedProxySettings = hasUpstream;
             proxyWebsockets = hasUpstream;
             extraConfig = ''
               ${service.upstreamExtraConfig}
+              ${caddyProxyConfig}
               ${lib.optionalString (!directWan && service.http3.enable) ''
                 add_header Alt-Svc 'h3=":443"; ma=86400';
               ''}
@@ -136,7 +152,17 @@ let
             return 302 https://${cfg.oauth2Proxy.host}/oauth2/start?rd=$scheme://$http_host$request_uri;
           '';
         };
-      };
+      }
+      // lib.mapAttrs (_path: bypassExtraConfig: {
+        proxyPass = effectiveUpstream;
+        recommendedProxySettings = effectiveUpstream != null;
+        proxyWebsockets = effectiveUpstream != null;
+        extraConfig = ''
+          auth_request off;
+          ${bypassExtraConfig}
+          ${caddyProxyConfig}
+        '';
+      }) service.forwardAuthBypassPaths;
     }
     // lib.optionalAttrs directWan {
       serverName = name;
@@ -169,6 +195,11 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Hostname serving oauth2-proxy's /oauth2 endpoints";
+    };
+    caddySecurity.upstream = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Loopback Caddy upstream for selected virtual hosts";
     };
     forwardServices = lib.mkOption {
       default = { };
@@ -229,10 +260,20 @@ in
               default = false;
               description = "Use Pocket ID through oauth2-proxy instead of Authentik";
             };
+            usesCaddySecurity = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Route this virtual host through the internal caddy-security listener";
+            };
             forwardAuthGroups = lib.mkOption {
               type = lib.types.listOf lib.types.str;
               default = [ ];
               description = "Pocket ID groups allowed through forward authentication";
+            };
+            forwardAuthBypassPaths = lib.mkOption {
+              type = lib.types.attrsOf lib.types.lines;
+              default = { };
+              description = "Paths proxied without ingress forward authentication";
             };
             directWan = lib.mkOption {
               type = lib.types.bool;
@@ -283,6 +324,24 @@ in
         {
           assertion = !cfg.directWan.enable || cfg.directWan.listenAddress != null;
           message = "The direct WAN listener requires modules.services.ingress.directWan.listenAddress";
+        }
+        {
+          assertion = lib.all (service: !(service.usesPocketId && service.usesCaddySecurity)) (
+            builtins.attrValues cfg.virtualHosts
+          );
+          message = "An ingress virtual host cannot select oauth2-proxy and caddy-security together";
+        }
+        {
+          assertion = lib.all (service: !service.usesCaddySecurity || service.forwardAuth) (
+            builtins.attrValues cfg.virtualHosts
+          );
+          message = "usesCaddySecurity requires forwardAuth";
+        }
+        {
+          assertion =
+            lib.all (service: !service.usesCaddySecurity) (builtins.attrValues cfg.virtualHosts)
+            || cfg.caddySecurity.upstream != null;
+          message = "caddy-security ingress requires modules.services.ingress.caddySecurity.upstream";
         }
         {
           assertion = lib.all (service: !service.usesPocketId || service.forwardAuth) (

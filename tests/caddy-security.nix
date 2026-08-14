@@ -6,6 +6,19 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       ../modules/services/caddy-security.nix
+      ../modules/services/ingress.nix
+      inputs.impermanence.nixosModules.impermanence
+      inputs.sops-nix.nixosModules.sops
+      ({ lib, ... }: {
+        options.repo.secrets.global.email.acme = lib.mkOption {
+          type = lib.types.str;
+          default = "admin@example.test";
+        };
+        options.modules.services.authentik.ports.http = lib.mkOption {
+          type = lib.types.port;
+          default = 9000;
+        };
+      })
       {
         nixpkgs.pkgs = pkgs;
         system.stateVersion = "26.05";
@@ -14,6 +27,8 @@ let
           device = "none";
           fsType = "tmpfs";
         };
+        repo.secrets.global.email.acme = "admin@example.test";
+        sops.age.keyFile = "/tmp/age-key.txt";
 
         modules.services.caddy-security = {
           enable = true;
@@ -30,11 +45,16 @@ let
               };
               signingKeyEnv = "ALPHA_SIGNING_KEY";
               cookiePrefix = "ALPHA";
-              requiredGroups = [ "readers" ];
-              bypassPathPrefixes = [ "/api" ];
+              requiredGroups = [ "books" ];
+              bypassPathPrefixes = [ "/opds" ];
               identityHeaders = {
                 Remote-User = "userinfo|preferred_username";
+                Remote-Name = "userinfo|preferred_username";
+                Remote-Email = "email";
+                Remote-Groups = "roles";
                 X-authentik-username = "userinfo|preferred_username";
+                X-authentik-email = "email";
+                X-authentik-groups = "roles";
               };
             };
             beta = {
@@ -54,6 +74,37 @@ let
             };
           };
         };
+
+        modules.services.ingress = {
+          enable = true;
+          caddySecurity.upstream = "http://127.0.0.1:18080";
+          domains."example.test" = { };
+          virtualHosts = {
+            "alpha.example.test" = {
+              acmeHost = "example.test";
+              upstream = "http://127.0.0.1:8001";
+              forwardAuth = true;
+              forwardAuthGroups = [ "books" ];
+              usesCaddySecurity = true;
+              extraConfig = "client_max_body_size 0;";
+              forwardAuthBypassPaths."/opds" = ''
+                proxy_set_header Authorization $http_authorization;
+              '';
+            };
+            "rollback.example.test" = {
+              acmeHost = "example.test";
+              upstream = "http://127.0.0.1:8003";
+              forwardAuth = true;
+              forwardAuthBypassPaths."/opds" = ''
+                proxy_set_header Authorization $http_authorization;
+              '';
+            };
+            "alpha-kobo.example.test" = {
+              acmeHost = "example.test";
+              upstream = "http://127.0.0.1:8001/";
+            };
+          };
+        };
       }
     ];
   };
@@ -62,6 +113,9 @@ let
   caddy = cfg.services.caddy;
   caddyService = cfg.systemd.services.caddy;
   generatedConfig = caddy.configFile;
+  alphaNginx = cfg.services.nginx.virtualHosts."alpha.example.test";
+  rollbackNginx = cfg.services.nginx.virtualHosts."rollback.example.test";
+  koboNginx = cfg.services.nginx.virtualHosts."alpha-kobo.example.test";
   failedAssertions = map (entry: entry.message) (lib.filter (entry: !entry.assertion) cfg.assertions);
 in
 assert lib.assertMsg (
@@ -95,20 +149,47 @@ assert lib.hasInfix "set auth url /auth/oauth2/alpha-pocket-id" caddy.globalConf
 assert lib.hasInfix "set auth url /login/oauth2/beta-pocket-id" caddy.globalConfig;
 assert lib.hasInfix ''inject header X-authentik-username from "userinfo|preferred_username"''
   caddy.globalConfig;
-assert lib.hasInfix ''match role "readers"'' caddy.globalConfig;
+assert lib.hasInfix ''match role "books"'' caddy.globalConfig;
 assert lib.hasInfix ''match role "editors"'' caddy.globalConfig;
 assert lib.hasInfix "http://:18080" caddy.extraConfig;
 assert lib.hasInfix "bind 127.0.0.1" caddy.extraConfig;
 assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
 assert lib.hasInfix "handle /auth*" caddy.extraConfig;
 assert lib.hasInfix "handle /login*" caddy.extraConfig;
-assert lib.hasInfix "handle /api*" caddy.extraConfig;
+assert lib.hasInfix "handle /opds*" caddy.extraConfig;
 assert lib.hasInfix "authorize with alpha_policy" caddy.extraConfig;
 assert lib.hasInfix "authorize with beta_policy" caddy.extraConfig;
 assert lib.hasInfix "reverse_proxy 127.0.0.1:8001" caddy.extraConfig;
 assert lib.hasInfix "reverse_proxy 127.0.0.1:8002" caddy.extraConfig;
 assert lib.hasInfix "request_header -Remote-User" caddy.extraConfig;
 assert lib.hasInfix "request_header -X-authentik-*" caddy.extraConfig;
+assert alphaNginx.useACMEHost == "example.test";
+assert alphaNginx.forceSSL;
+assert alphaNginx.locations."/".proxyPass == "http://127.0.0.1:18080";
+assert alphaNginx.locations."/".proxyWebsockets;
+assert lib.hasInfix "client_max_body_size 0;" alphaNginx.extraConfig;
+assert lib.hasInfix "proxy_set_header Host $host;" alphaNginx.locations."/".extraConfig;
+assert lib.hasInfix "proxy_set_header X-Forwarded-Host $host;" alphaNginx.locations."/".extraConfig;
+assert lib.hasInfix "proxy_set_header X-Forwarded-Proto https;"
+  alphaNginx.locations."/".extraConfig;
+assert lib.hasInfix "proxy_set_header X-Forwarded-For $remote_addr;"
+  alphaNginx.locations."/".extraConfig;
+assert lib.hasInfix "proxy_set_header X-Forwarded-Uri $request_uri;"
+  alphaNginx.locations."/".extraConfig;
+assert !lib.hasInfix "auth_request" alphaNginx.locations."/".extraConfig;
+assert alphaNginx.locations."/opds".proxyPass == "http://127.0.0.1:18080";
+assert lib.hasInfix "auth_request off;" alphaNginx.locations."/opds".extraConfig;
+assert lib.hasInfix "proxy_set_header Authorization $http_authorization;"
+  alphaNginx.locations."/opds".extraConfig;
+assert lib.hasInfix "proxy_set_header X-Forwarded-Host $host;"
+  alphaNginx.locations."/opds".extraConfig;
+assert rollbackNginx.locations."/".proxyPass == "http://127.0.0.1:8003";
+assert lib.hasInfix "auth_request        /outpost.goauthentik.io/auth/nginx;"
+  rollbackNginx.locations."/".extraConfig;
+assert rollbackNginx.locations."/opds".proxyPass == "http://127.0.0.1:8003";
+assert lib.hasInfix "auth_request off;" rollbackNginx.locations."/opds".extraConfig;
+assert koboNginx.locations."/".proxyPass == "http://127.0.0.1:8001/";
+assert !lib.hasInfix "auth_request" koboNginx.locations."/".extraConfig;
 pkgs.runCommand "caddy-security-test"
   {
     nativeBuildInputs = [
