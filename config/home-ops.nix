@@ -15,6 +15,8 @@ let
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
+  plainCaddyEnabled =
+    cfg.ingress.enable && cfg.apps.calibre-web.enable && cfg.apps.calibre-web.caddySecurity.enable;
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
     until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
       ${pkgs.coreutils}/bin/sleep 0.5
@@ -274,6 +276,29 @@ in
       enable = true;
       inherit (config.repo.secrets.local) domains;
       caddySecurity.upstream = "http://127.0.0.1:${toString config.modules.services.caddy-security.listenPort}";
+      caddyPlain = {
+        upstream = "http://127.0.0.1:${toString config.modules.services.caddy-security.listenPort}";
+        routes = lib.concatLists [
+          (lib.optional (plainCaddyEnabled && cfg.apps.atuin-sync.enable) "atuin.${home-ops.homeDomain}")
+          (lib.optional (
+            plainCaddyEnabled && cfg.apps.audiobookshelf.enable
+          ) "audiobookshelf.${home-ops.homeDomain}")
+          (lib.optional (
+            plainCaddyEnabled && config.modules.services.ingress-nixbot.enable
+          ) "ci.${home-ops.workDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.invoiceninja.enable) "clients.${home-ops.workDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.ocis-work.enable) "data.${home-ops.workDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.forgejo.enable) "git.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.influxdb.enable) "influxdb.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.jellyfin.enable) "jelly.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.paperless.enable) "paperless.${home-ops.homeDomain}")
+          (lib.optional (
+            plainCaddyEnabled && config.modules.services.ingress-paseo.enable
+          ) "paseo.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.stirling-pdf.enable) "pdf.${home-ops.homeDomain}")
+          (lib.optional (plainCaddyEnabled && cfg.apps.home-dl.enable) "qbittorrent.${home-ops.homeDomain}")
+        ];
+      };
       virtualHosts."books.${home-ops.homeDomain}" = lib.mkIf cfg.apps.calibre-web.enable {
         usesCaddySecurity = cfg.apps.calibre-web.caddySecurity.enable;
       };
@@ -289,6 +314,104 @@ in
         };
       };
     };
+    modules.services.caddy.routes = lib.mkIf plainCaddyEnabled (
+      (lib.optionalAttrs cfg.apps.atuin-sync.enable {
+        atuin = {
+          publicHost = "atuin.${home-ops.homeDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."atuin.${home-ops.homeDomain}".upstream;
+          requestBodyMaxSize = "10MB";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.audiobookshelf.enable {
+        audiobookshelf = {
+          publicHost = "audiobookshelf.${home-ops.homeDomain}";
+          upstream =
+            config.modules.services.ingress.virtualHosts."audiobookshelf.${home-ops.homeDomain}".upstream;
+        };
+      })
+      // (lib.optionalAttrs config.modules.services.ingress-nixbot.enable {
+        ci = {
+          publicHost = "ci.${home-ops.workDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."ci.${home-ops.workDomain}".upstream;
+          requestBodyMaxSize = "25MB";
+          responseHeaders.X-Robots-Tag = "noindex, nofollow, noarchive";
+          dialTimeout = "120s";
+          flushInterval = "-1";
+          staticResponses."/robots.txt" = {
+            body = "User-agent: *\nDisallow: /\n";
+            headers.X-Robots-Tag = "noindex, nofollow, noarchive";
+          };
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.invoiceninja.enable {
+        clients = {
+          publicHost = "clients.${home-ops.workDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."clients.${home-ops.workDomain}".upstream;
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.ocis-work.enable {
+        data = {
+          publicHost = "data.${home-ops.workDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."data.${home-ops.workDomain}".upstream;
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.forgejo.enable {
+        forgejo = {
+          publicHost = "git.${home-ops.homeDomain}";
+          upstream = "unix/${config.services.forgejo.settings.server.HTTP_ADDR}";
+          requestBodyMaxSize = "10MB";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.influxdb.enable {
+        influxdb = {
+          publicHost = "influxdb.${home-ops.homeDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."influxdb.${home-ops.homeDomain}".upstream;
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.jellyfin.enable {
+        jellyfin = {
+          publicHost = "jelly.${home-ops.homeDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."jelly.${home-ops.homeDomain}".upstream;
+          requestBodyMaxSize = "10MB";
+          flushInterval = "-1";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.paperless.enable {
+        paperless = {
+          publicHost = "paperless.${home-ops.homeDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."paperless.${home-ops.homeDomain}".upstream;
+        };
+      })
+      // (lib.optionalAttrs config.modules.services.ingress-paseo.enable {
+        paseo = {
+          publicHost = "paseo.${home-ops.homeDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."paseo.${home-ops.homeDomain}".upstream;
+          requestBodyMaxSize = "100MB";
+          requestHeaders = {
+            Host = "{http.request.host}";
+            X-Forwarded-For = "{http.request.header.X-Forwarded-For}";
+            X-Forwarded-Proto = "https";
+          };
+          dialTimeout = "120s";
+          flushInterval = "-1";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.stirling-pdf.enable {
+        pdf = {
+          publicHost = "pdf.${home-ops.homeDomain}";
+          upstream = config.modules.services.ingress.virtualHosts."pdf.${home-ops.homeDomain}".upstream;
+          requestBodyMaxSize = "10MB";
+        };
+      })
+      // (lib.optionalAttrs cfg.apps.home-dl.enable {
+        qbittorrent = {
+          publicHost = "qbittorrent.${home-ops.homeDomain}";
+          upstream =
+            config.modules.services.ingress.virtualHosts."qbittorrent.${home-ops.homeDomain}".upstream;
+          requestBodyMaxSize = "10MB";
+        };
+      })
+    );
     services.nginx.virtualHosts."octoprint.${home-ops.homeDomain}".locations."/webcam/" =
       lib.mkIf cfg.ingress.enable
         {
