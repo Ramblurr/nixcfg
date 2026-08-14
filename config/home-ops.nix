@@ -454,6 +454,7 @@ in
           upstream = config.modules.services.ingress.virtualHosts."jelly.${home-ops.homeDomain}".upstream;
           requestBodyMaxSize = "10MB";
           flushInterval = "-1";
+          directWan = true;
         };
       })
       // (lib.optionalAttrs cfg.apps.paperless.enable {
@@ -576,6 +577,7 @@ in
       // (lib.optionalAttrs cfg.apps.matrix-synapse.enable {
         matrix = {
           publicHost = "matrix.${home-ops.workDomain}";
+          http3 = false;
           handlerConfig = ''
             @matrix_server path /.well-known/matrix/server
             handle @matrix_server {
