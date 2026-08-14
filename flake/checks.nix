@@ -21,7 +21,6 @@
         linux-voice-assistant-output-only = import ../tests/linux-voice-assistant-output-only.nix {
           inherit inputs pkgs;
         };
-        oauth2-proxy = import ../tests/oauth2-proxy.nix { inherit inputs pkgs; };
       };
     };
 }

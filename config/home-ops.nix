@@ -273,11 +273,9 @@ in
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
       inherit (config.repo.secrets.local) domains;
-      oauth2Proxy.host = "id.${home-ops.homeDomain}";
       caddySecurity.upstream = "http://127.0.0.1:${toString config.modules.services.caddy-security.listenPort}";
       virtualHosts."books.${home-ops.homeDomain}" = lib.mkIf cfg.apps.calibre-web.enable {
         usesCaddySecurity = cfg.apps.calibre-web.caddySecurity.enable;
-        forwardAuthGroups = [ "books" ];
       };
       forwardServices = {
         "home.${home-ops.homeDomain}" = {
