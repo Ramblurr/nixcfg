@@ -578,12 +578,14 @@ in
           publicHost = "matrix.${home-ops.workDomain}";
           handlerConfig = ''
             @matrix_server path /.well-known/matrix/server
-            header @matrix_server Content-Type application/json
-            respond @matrix_server ${
-              builtins.toJSON (builtins.toJSON { "m.server" = "matrix.${home-ops.workDomain}:443"; })
-            } 200
+            handle @matrix_server {
+              header Content-Type application/json
+              respond ${
+                builtins.toJSON (builtins.toJSON { "m.server" = "matrix.${home-ops.workDomain}:443"; })
+              } 200
+            }
             handle /admin {
-              redir /admin/ 307
+              redir * /admin/ 307
             }
             handle_path /admin/* {
               @matrix_admin_assets path_regexp matrix_admin_assets \.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$
