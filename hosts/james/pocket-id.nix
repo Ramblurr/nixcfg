@@ -1,0 +1,50 @@
+{
+  config,
+  lib,
+  ...
+}:
+let
+  homeDomain = config.repo.secrets.global.domain.home;
+  workDomain = config.repo.secrets.global.domain.work;
+  instances = {
+    "id.${homeDomain}" = 1411;
+    "id.${workDomain}" = 1412;
+  };
+  mkVirtualHost = domain: port: {
+    useACMEHost = domain;
+    forceSSL = true;
+    kTLS = true;
+    http3 = false;
+    quic = false;
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:${toString port}";
+      recommendedProxySettings = true;
+      proxyWebsockets = true;
+    };
+  };
+in
+{
+  networking.hosts."127.0.0.1" = lib.attrNames instances;
+
+  modules.services.pocket-id.instances = {
+    home = {
+      containerName = "pocket-id-home";
+      publicDomain = "id.${homeDomain}";
+      port = 1411;
+      dataset = "rpool/encrypted/safe/svc/id.${homeDomain}";
+      hostPath = "/var/lib/pocket-id-containers/id.${homeDomain}";
+      sopsKey = "home-pocket-id-encryption-key";
+    };
+    work = {
+      containerName = "pocket-id-work";
+      publicDomain = "id.${workDomain}";
+      port = 1412;
+      dataset = "rpool/encrypted/safe/svc/id.${workDomain}";
+      hostPath = "/var/lib/pocket-id-containers/id.${workDomain}";
+      sopsKey = "work-pocket-id-encryption-key";
+    };
+  };
+
+  security.acme.certs = lib.mapAttrs (domain: _: { inherit domain; }) instances;
+  services.nginx.virtualHosts = lib.mapAttrs mkVirtualHost instances;
+}

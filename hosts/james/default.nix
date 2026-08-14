@@ -6,8 +6,6 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
-  homeDomain = config.repo.secrets.global.domain.home;
-  pocketIdDomain = "id.${homeDomain}";
 in
 {
   imports = [
@@ -29,6 +27,7 @@ in
     ./goaccess.nix
     ./goatcounter.nix
     ./crowdsec.nix
+    ./pocket-id.nix
   ];
   system.stateVersion = "24.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
@@ -36,7 +35,6 @@ in
   time.timeZone = "Europe/Berlin";
 
   networking.hostId = lib.my.generateHostId hostName;
-  networking.hosts."127.0.0.1" = [ pocketIdDomain ];
   networking.firewall.enable = false;
 
   modules = {
@@ -46,7 +44,6 @@ in
       zsh.enable = true;
     };
     services = {
-      pocket-id.enable = true;
       sshd.enable = true;
     };
     editors = {
@@ -77,20 +74,6 @@ in
   };
 
   hosts.james.ingress.implementation = "haproxy";
-
-  security.acme.certs.${pocketIdDomain}.domain = pocketIdDomain;
-  services.nginx.virtualHosts.${pocketIdDomain} = {
-    useACMEHost = pocketIdDomain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = false;
-    quic = false;
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:1411";
-      recommendedProxySettings = true;
-      proxyWebsockets = true;
-    };
-  };
 
   environment.persistence."/persist" = {
     hideMounts = true;
