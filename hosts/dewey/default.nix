@@ -6,6 +6,7 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
+  inherit (config.repo.secrets) home-ops;
 in
 {
   imports = [
@@ -41,6 +42,23 @@ in
   modules.services.ingress.directWan = {
     enable = true;
     listenAddress = builtins.head config.site.net.mgmt.hosts4.${hostName};
+  };
+  modules.services.caddy-security.edge = {
+    enable = true;
+    certificates = {
+      ${home-ops.homeDomain} = {
+        certificateFile = "/var/lib/acme/${home-ops.homeDomain}/fullchain.pem";
+        keyFile = "/var/lib/acme/${home-ops.homeDomain}/key.pem";
+      };
+      ${home-ops.workDomain} = {
+        certificateFile = "/var/lib/acme/${home-ops.workDomain}/fullchain.pem";
+        keyFile = "/var/lib/acme/${home-ops.workDomain}/key.pem";
+      };
+    };
+    directWan = {
+      enable = true;
+      inherit (config.modules.services.ingress.directWan) listenAddress listenPort;
+    };
   };
   home-ops = {
     enable = true;

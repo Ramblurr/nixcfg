@@ -78,9 +78,28 @@ let
           default = { };
           description = "Upstream identity headers mapped to caddy-security claims";
         };
+
+        http3 = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Allow HTTP/3 for this protected route on the public Caddy listener";
+        };
       };
     }
   );
+
+  certificateType = lib.types.submodule {
+    options = {
+      certificateFile = lib.mkOption {
+        type = lib.types.nonEmptyStr;
+        description = "Runtime PEM certificate chain path";
+      };
+      keyFile = lib.mkOption {
+        type = lib.types.nonEmptyStr;
+        description = "Runtime PEM private key path";
+      };
+    };
+  };
 
   applications = lib.attrValues cfg.applications;
   appNames = builtins.attrNames cfg.applications;
@@ -275,6 +294,154 @@ let
   protectedPublicHosts = map (app: app.publicHost) applications;
   plainPublicHosts = map (route: route.publicHost) (builtins.attrValues plainRoutes);
   publicHosts = protectedPublicHosts ++ plainPublicHosts;
+  hostMatchesDomain = domain: host: host == domain || lib.hasSuffix ".${domain}" host;
+  certificateDomains = builtins.attrNames cfg.edge.certificates;
+  certificateDomainsForHost =
+    host: lib.filter (domain: hostMatchesDomain domain host) certificateDomains;
+  certificateForHost = host: cfg.edge.certificates.${builtins.head (certificateDomainsForHost host)};
+  pathsAreRuntime =
+    certificate:
+    lib.all (path: lib.hasPrefix "/" path && !lib.hasPrefix "/nix/store/" path) [
+      certificate.certificateFile
+      certificate.keyFile
+    ];
+
+  directWanRoutes = lib.filterAttrs (_: route: route.directWan) plainRoutes;
+
+  mkAccessLog = ''
+    log {
+      output file ${cfg.edge.accessLog} {
+        roll_size 100MiB
+        roll_keep 10
+        roll_keep_for 720h
+      }
+      format json
+    }
+  '';
+
+  mkRouteConfig =
+    routeAttrs: applicationAttrs:
+    let
+      errorHandlerConfig = lib.concatMapStringsSep "\n" (
+        route: lib.optionalString (route.errorHandlerConfig != null) route.errorHandlerConfig
+      ) (builtins.attrValues routeAttrs);
+    in
+    ''
+      route {
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute routeAttrs)}
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute applicationAttrs)}
+        respond 421
+      }
+      ${lib.optionalString (errorHandlerConfig != "") ''
+        handle_errors {
+          ${errorHandlerConfig}
+        }
+      ''}
+    '';
+
+  mkPublicSite =
+    domain: allowHttp3:
+    let
+      routeAttrs = lib.filterAttrs (
+        _: route: hostMatchesDomain domain route.publicHost && route.http3 == allowHttp3
+      ) plainRoutes;
+      applicationAttrs = lib.filterAttrs (
+        _: app: hostMatchesDomain domain app.publicHost && app.http3 == allowHttp3
+      ) cfg.applications;
+      hosts =
+        map (route: route.publicHost) (builtins.attrValues routeAttrs)
+        ++ map (app: app.publicHost) (builtins.attrValues applicationAttrs);
+      certificate = cfg.edge.certificates.${domain};
+      siteAddresses = lib.concatMapStringsSep ", " (
+        host: "https://${host}:${toString cfg.edge.httpsPort}"
+      ) hosts;
+      tlsConfig =
+        if allowHttp3 then
+          "tls ${certificate.certificateFile} ${certificate.keyFile}"
+        else
+          ''
+            tls ${certificate.certificateFile} ${certificate.keyFile} {
+              alpn h1 h2
+            }
+          '';
+    in
+    lib.optionalString (hosts != [ ]) ''
+      ${siteAddresses} {
+        ${tlsConfig}
+        ${mkAccessLog}
+        ${mkRouteConfig routeAttrs applicationAttrs}
+      }
+    '';
+
+  publicSiteConfig = lib.concatMapStringsSep "\n" (
+    domain:
+    lib.concatMapStringsSep "\n" (mkPublicSite domain) [
+      true
+      false
+    ]
+  ) certificateDomains;
+
+  unknownPublicSiteConfig = lib.concatMapStringsSep "\n" (
+    domain:
+    let
+      certificate = cfg.edge.certificates.${domain};
+    in
+    ''
+      https://${domain}:${toString cfg.edge.httpsPort}, https://*.${domain}:${toString cfg.edge.httpsPort} {
+        tls ${certificate.certificateFile} ${certificate.keyFile}
+        ${mkAccessLog}
+        respond 421
+      }
+    ''
+  ) certificateDomains;
+
+  publicCatchAllSiteConfig =
+    let
+      certificate = cfg.edge.certificates.${builtins.head certificateDomains};
+    in
+    ''
+      https://:${toString cfg.edge.httpsPort} {
+        tls ${certificate.certificateFile} ${certificate.keyFile}
+        ${mkAccessLog}
+        respond 421
+      }
+    '';
+
+  directWanSiteConfig = lib.optionalString cfg.edge.directWan.enable (
+    let
+      routeName = builtins.head (builtins.attrNames directWanRoutes);
+      route = directWanRoutes.${routeName};
+      domain = builtins.head (certificateDomainsForHost route.publicHost);
+      certificate = cfg.edge.certificates.${domain};
+      port = toString cfg.edge.directWan.listenPort;
+      listener = cfg.edge.directWan.listenAddress;
+      tlsConfig = ''
+        tls ${certificate.certificateFile} ${certificate.keyFile} {
+          alpn h1 h2
+        }
+      '';
+    in
+    ''
+      https://${route.publicHost}:${port} {
+        bind ${listener}
+        ${tlsConfig}
+        ${mkAccessLog}
+        ${mkRouteConfig { ${routeName} = route; } { }}
+      }
+      https://${domain}:${port}, https://*.${domain}:${port} {
+        bind ${listener}
+        ${tlsConfig}
+        ${mkAccessLog}
+        abort
+      }
+      https://:${port} {
+        bind ${listener}
+        ${tlsConfig}
+        ${mkAccessLog}
+        abort
+      }
+    ''
+  );
   clientIDs = map (app: app.oidc.clientID) applications;
   realmNames = map (app: app.oidc.realm) applications;
   cookiePrefixes = map (app: app.cookiePrefix) applications;
@@ -311,6 +478,48 @@ in
       type = lib.types.attrsOf appType;
       default = { };
       description = "Applications protected by distinct Pocket ID clients";
+    };
+
+    edge = {
+      enable = lib.mkEnableOption "public Caddy TLS and redirect listeners";
+
+      httpsPort = lib.mkOption {
+        type = lib.types.port;
+        default = 443;
+        description = "Normal public Caddy HTTPS listener port";
+      };
+
+      redirectPort = lib.mkOption {
+        type = lib.types.port;
+        default = 8081;
+        description = "LAN HTTP-to-HTTPS redirect listener port";
+      };
+
+      accessLog = lib.mkOption {
+        type = lib.types.nonEmptyStr;
+        default = "/var/log/caddy/access.log";
+        description = "Structured public Caddy access log path";
+      };
+
+      certificates = lib.mkOption {
+        type = lib.types.attrsOf certificateType;
+        default = { };
+        description = "Domain suffixes and existing runtime TLS certificate paths";
+      };
+
+      directWan = {
+        enable = lib.mkEnableOption "dedicated direct-WAN Caddy listener";
+        listenAddress = lib.mkOption {
+          type = lib.types.nullOr lib.types.nonEmptyStr;
+          default = null;
+          description = "Address for the direct-WAN Caddy listener";
+        };
+        listenPort = lib.mkOption {
+          type = lib.types.port;
+          default = 8443;
+          description = "Port for the direct-WAN Caddy listener";
+        };
+      };
     };
   };
 
@@ -394,6 +603,36 @@ in
         ) applications;
         message = "caddy-security identity header names contain an unsupported character";
       }
+      {
+        assertion = !cfg.edge.enable || cfg.edge.certificates != { };
+        message = "public Caddy edge requires at least one existing certificate";
+      }
+      {
+        assertion =
+          !cfg.edge.enable
+          || lib.all (host: builtins.length (certificateDomainsForHost host) == 1) publicHosts;
+        message = "every public Caddy hostname must match exactly one configured certificate domain";
+      }
+      {
+        assertion = !cfg.edge.enable || lib.all pathsAreRuntime (builtins.attrValues cfg.edge.certificates);
+        message = "public Caddy certificate and key paths must be absolute runtime paths outside the Nix store";
+      }
+      {
+        assertion = !cfg.edge.enable || lib.hasPrefix "/var/log/caddy/" cfg.edge.accessLog;
+        message = "public Caddy access logs must use the systemd-managed /var/log/caddy directory";
+      }
+      {
+        assertion = !cfg.edge.directWan.enable || cfg.edge.enable;
+        message = "the direct-WAN Caddy listener requires the public Caddy edge";
+      }
+      {
+        assertion = !cfg.edge.directWan.enable || cfg.edge.directWan.listenAddress != null;
+        message = "the direct-WAN Caddy listener requires a listen address";
+      }
+      {
+        assertion = !cfg.edge.directWan.enable || builtins.length (builtins.attrNames directWanRoutes) == 1;
+        message = "the direct-WAN Caddy listener requires exactly one selected plain route";
+      }
     ];
 
     services.caddy = {
@@ -404,10 +643,33 @@ in
       globalConfig = ''
         auto_https off
         admin 127.0.0.1:2019
-        servers {
-          trusted_proxies static 127.0.0.1/32 ::1/128
-          trusted_proxies_strict
-          client_ip_headers X-Forwarded-For
+        ${
+          if cfg.edge.enable then
+            ''
+              servers ${cfg.listenAddress}:${toString cfg.listenPort} {
+                trusted_proxies static 127.0.0.1/32 ::1/128
+                trusted_proxies_strict
+                client_ip_headers X-Forwarded-For
+              }
+              servers :${toString cfg.edge.httpsPort} {
+                protocols h1 h2 h3
+                strict_sni_host on
+              }
+              ${lib.optionalString cfg.edge.directWan.enable ''
+                servers ${cfg.edge.directWan.listenAddress}:${toString cfg.edge.directWan.listenPort} {
+                  protocols h1 h2
+                  strict_sni_host on
+                }
+              ''}
+            ''
+          else
+            ''
+              servers {
+                trusted_proxies static 127.0.0.1/32 ::1/128
+                trusted_proxies_strict
+                client_ip_headers X-Forwarded-For
+              }
+            ''
         }
         security {
           ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkProvider cfg.applications)}
@@ -435,14 +697,34 @@ in
             }
           ''}
         }
+        ${lib.optionalString cfg.edge.enable ''
+          http://:${toString cfg.edge.redirectPort} {
+            redir https://{http.request.host}{http.request.uri} 308
+          }
+          ${publicSiteConfig}
+          ${unknownPublicSiteConfig}
+          ${publicCatchAllSiteConfig}
+          ${directWanSiteConfig}
+        ''}
       '';
     };
 
     systemd.services.caddy = {
       requires = [ "sops-install-secrets.service" ];
-      after = [ "sops-install-secrets.service" ];
+      after = [
+        "sops-install-secrets.service"
+      ]
+      ++ lib.optionals cfg.edge.enable (map (domain: "acme-${domain}.service") certificateDomains);
+      unitConfig = lib.optionalAttrs cfg.edge.enable {
+        RequiresMountsFor = [ "/var/lib/acme" ];
+        ConditionPathExists = lib.concatMap (certificate: [
+          certificate.certificateFile
+          certificate.keyFile
+        ]) (builtins.attrValues cfg.edge.certificates);
+      };
       serviceConfig = {
-        CapabilityBoundingSet = "";
+        CapabilityBoundingSet = lib.optionals cfg.edge.enable [ "CAP_NET_BIND_SERVICE" ];
+        AmbientCapabilities = lib.optionals cfg.edge.enable [ "CAP_NET_BIND_SERVICE" ];
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
         PrivateTmp = true;

@@ -18,6 +18,13 @@ let
     "caddy-security"
     "enable"
   ] false config;
+  caddyEdgeEnabled = lib.attrByPath [
+    "modules"
+    "services"
+    "caddy-security"
+    "edge"
+    "enable"
+  ] false config;
   hasPlainRoute = name: lib.any (route: route.publicHost == name) plainRoutes;
   allUnique = values: builtins.length values == builtins.length (lib.unique values);
   selectedPlainRouteIsValid =
@@ -333,7 +340,7 @@ in
         8081
       ];
       services.nginx = {
-        enable = true;
+        enable = !caddyEdgeEnabled;
         package = pkgs.nginx;
         enableReload = true;
         enableQuicBPF = true;
@@ -450,7 +457,9 @@ in
         #  '';
         #};
       };
-      users.groups.acme.members = [ "nginx" ];
+      users.groups.acme.members = [
+        (if caddyEdgeEnabled then "caddy" else "nginx")
+      ];
       environment.persistence."/persist".directories = [ "/var/lib/acme" ];
       sops.secrets.desec_api_token.sopsFile = ../../configs/home-ops/shared.sops.yml;
       security.acme = {
@@ -478,7 +487,9 @@ in
             "30"
             "--dns.propagation-rns"
           ];
-          reloadServices = [ "nginx.service" ];
+          reloadServices = [
+            (if caddyEdgeEnabled then "caddy.service" else "nginx.service")
+          ];
         };
         certs = lib.mapAttrs' (
           name: domain:

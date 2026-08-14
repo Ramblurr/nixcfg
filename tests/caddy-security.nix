@@ -47,6 +47,17 @@ let
         modules.services.caddy-security = {
           enable = true;
           environmentFile = "/run/secrets/rendered/caddy-security.env";
+          edge = {
+            enable = true;
+            certificates."example.test" = {
+              certificateFile = "/var/lib/acme/example.test/fullchain.pem";
+              keyFile = "/var/lib/acme/example.test/key.pem";
+            };
+            directWan = {
+              enable = true;
+              listenAddress = "192.0.2.1";
+            };
+          };
           applications = {
             alpha = {
               publicHost = "alpha.example.test";
@@ -85,6 +96,7 @@ let
               cookiePrefix = "BETA";
               requiredGroups = [ "editors" ];
               identityHeaders.Remote-User = "userinfo|preferred_username";
+              http3 = false;
             };
           };
         };
@@ -131,6 +143,7 @@ let
             publicHost = "jelly.example.test";
             upstream = "http://127.0.0.1:8096";
             requestBodyMaxSize = "10MB";
+            directWan = true;
           };
           paperless = {
             publicHost = "paperless.example.test";
@@ -308,8 +321,17 @@ assert !(builtins.elem 18080 cfg.networking.firewall.allowedTCPPorts);
 assert builtins.elem "sops-install-secrets.service" caddyService.after;
 assert builtins.elem "sops-install-secrets.service" caddyService.requires;
 assert caddyService.serviceConfig.ProtectSystem == "strict";
+assert !cfg.services.nginx.enable;
+assert cfg.users.groups.acme.members == [ "caddy" ];
+assert cfg.security.acme.defaults.reloadServices == [ "caddy.service" ];
+assert caddyService.serviceConfig.AmbientCapabilities == [ "CAP_NET_BIND_SERVICE" ];
+assert caddyService.serviceConfig.CapabilityBoundingSet == [ "CAP_NET_BIND_SERVICE" ];
+assert caddyService.unitConfig.RequiresMountsFor == [ "/var/lib/acme" ];
 assert lib.hasInfix "auto_https off" caddy.globalConfig;
 assert lib.hasInfix "trusted_proxies static 127.0.0.1/32 ::1/128" caddy.globalConfig;
+assert lib.hasInfix "servers :443" caddy.globalConfig;
+assert lib.hasInfix "strict_sni_host on" caddy.globalConfig;
+assert lib.hasInfix "servers 192.0.2.1:8443" caddy.globalConfig;
 assert lib.hasInfix "oauth identity provider alpha_pocket_id" caddy.globalConfig;
 assert lib.hasInfix "oauth identity provider beta_pocket_id" caddy.globalConfig;
 assert lib.hasInfix "client_id alpha-client-id" caddy.globalConfig;
@@ -332,6 +354,15 @@ assert lib.hasInfix ''match role "books"'' caddy.globalConfig;
 assert lib.hasInfix ''match role "editors"'' caddy.globalConfig;
 assert lib.hasInfix "http://:18080" caddy.extraConfig;
 assert lib.hasInfix "bind 127.0.0.1" caddy.extraConfig;
+assert lib.hasInfix "http://:8081" caddy.extraConfig;
+assert lib.hasInfix "https://alpha.example.test:443" caddy.extraConfig;
+assert lib.hasInfix "https://beta.example.test:443" caddy.extraConfig;
+assert lib.hasInfix "alpn h1 h2" caddy.extraConfig;
+assert lib.hasInfix "https://example.test:443, https://*.example.test:443" caddy.extraConfig;
+assert lib.hasInfix "https://jelly.example.test:8443" caddy.extraConfig;
+assert lib.hasInfix "https://example.test:8443, https://*.example.test:8443" caddy.extraConfig;
+assert lib.hasInfix "abort" caddy.extraConfig;
+assert lib.hasInfix "output file /var/log/caddy/access.log" caddy.extraConfig;
 assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
 assert lib.hasInfix "handle /auth*" caddy.extraConfig;
 assert lib.hasInfix "handle /login*" caddy.extraConfig;
