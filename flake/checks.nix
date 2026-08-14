@@ -4,7 +4,7 @@
     { pkgs, ... }:
     {
       checks = {
-        caddy-security = import ../tests/caddy-security.nix { inherit pkgs; };
+        caddy-security = import ../tests/caddy-security.nix { inherit inputs pkgs; };
         deploy = import ../tests/deploy.nix {
           inherit pkgs;
           inherit (pkgs) deploy;
