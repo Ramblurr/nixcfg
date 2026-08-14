@@ -473,6 +473,23 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
+    sops.secrets.calibre-web-oidc-client-secret = lib.mkIf cfg.apps.calibre-web.caddySecurity.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.calibre-web-caddy-security-signing-key =
+      lib.mkIf cfg.apps.calibre-web.caddySecurity.enable
+        { sopsFile = ../configs/home-ops/shared.sops.yml; };
+    sops.templates.calibre-web-caddy-security-env = lib.mkIf cfg.apps.calibre-web.caddySecurity.enable {
+      owner = "caddy";
+      group = "caddy";
+      mode = "0400";
+      restartUnits = [ "caddy.service" ];
+      content = ''
+        CALIBRE_WEB_OIDC_CLIENT_SECRET=${config.sops.placeholder.calibre-web-oidc-client-secret}
+        CALIBRE_WEB_SIGNING_KEY=${config.sops.placeholder.calibre-web-caddy-security-signing-key}
+      '';
+    };
+
     # Expected SOPS key: jellyplex-watched.env with PLEX_TOKEN and JELLYFIN_TOKEN.
     sops.secrets."jellyplex-watched/env" = lib.mkIf cfg.apps.jellyplex-watched.enable {
       sopsFile = ../configs/home-ops/shared.sops.yml;
