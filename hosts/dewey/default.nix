@@ -63,7 +63,14 @@ in
       jellyfin.enable = true;
       home-dl.enable = true;
       calibre.enable = true;
-      calibre-web.enable = true;
+      calibre-web = {
+        enable = true;
+        caddySecurity = {
+          enable = true;
+          clientID = config.repo.secrets.local.calibreWebPocketIdClientId;
+          environmentFile = config.sops.templates.calibre-web-caddy-security-env.path;
+        };
+      };
       koreader-sync.enable = true;
       #archivebox.enable = true;
       matrix-synapse.enable = true;

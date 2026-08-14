@@ -19,6 +19,8 @@ paperless:
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
 gickup-github-token-info: ENC[AES256_GCM,data:RLzCiie+WkFYycrAeS7b38Y+oDhmBFnV,iv:XlhfF74VZV2JNfLeG63+RoFEKYNIOjtHjwFNfwRJDQk=,tag:J0JgMNHkZA9/0KsZXCeXSA==,type:str]
 gickup.yaml: ENC[AES256_GCM,data:zkc8T48V2gJmcMzyLYO2/K375sBgSiUq6CbZuokscxsYpxokHPOWN0Jb8QQUUKZZJP5c2qMoGbbi1x68lUO6qtGLbCiD0sejSA3j74OhGlLHLNkAfdDvnLA34aXt/p9u2yTNvW9QQ6BK7RRPY783QSwKea0zyVo8d5S4cFVw96l3hlmwsCEiIF+mHA+6Yt/kJzce09yiPQyEvGlNR7/8iwLdL9h9+FDutnKX4/jVWBwGOYoNrnqjxoCvpedJuaE5qpauJdD5jOJGkvBodil2F0ElvizSr1aRnnFPN22Z775h2cecqZHZIszM143iLrOxVHRwMXLM5JNL31CJJ4hPUTiIWTKI8Y+JgiImsNHMCjkirVfONHLoUVw38a2AmQCwHcb6CODU8vIGvnBJPf91e9t9XH7i62pdAR6za1QLNWsnuV84o9IujLOPa8nsu6/xOpJ+oiu6jBVKgfZLJHlW6JQZ0WEJ3gBTWxieCziZBuHyw0KPQDFNQDItlnROFyCFkWqlqqwh1h4CCSPF/CuVYFMaxobNdtQKGTrMbfrVeyTcnVhXnpJJeE1yBZSoAtPsHB+R+qHHdqPHX4iHvrM8vSZPh1W0MoIIsyfgNgAnOkr0cikZaAA6QZMlygYpl3aTbIL2od0oyQAdj1EoiTTGGxSCNbj8CNAiLO4q91g2/Q5Q0Mk3S5fflW7tNWVmfc39HV2GxTFqsRyZND8GZ5quBc195NPqNGDFxc8ZGH449GRAGH9gcGZTCmuR+7qiUfBdazvAowdJ7O/yWpPnTHsh9x4hSO0pHYvI0sqFgIDJ1ViF8EmlIIqrStA6Y0+rVx+/jXqulzEjKH9+U9MnU3btZpgA9tw8nQV8douD0MVK0xnpIfndCI9ZcDOByQv654mnJhaYhqnxbwG0X1Ol1gNBL+W6UVCY17rNJDVpWPN+FKeF,iv:cflcvgpCrfJy07aA6UctFf3a3PpH1e/6BR+H+vMF1k0=,tag:ma40FAHECn/9oB6bSQmiaQ==,type:str]
+calibre-web-oidc-client-secret: ENC[AES256_GCM,data:5Yz7jexfNCRSysFxEuEGTrmLpo3SESltUAtrzPgXNss=,iv:FHSD0Klq6hL8kIyM5T44d5vFiTryAi3zIIqQkXwmEhE=,tag:H3IM3JLZCR4SizPU071cEw==,type:str]
+calibre-web-caddy-security-signing-key: ENC[AES256_GCM,data:veI/Z/b2oeKP7ACjPNnKKlagfyFx8qWASQ96F6Pdgp0FWAGqIzu2QoSqcnlIgYWPjlZxuYfRJp2O1FmS1Q+giw==,iv:Og/OSQjNYM7Z7tkVSop0qwhCf240l3i4ux4RXFs2jw0=,tag:bLzARhCIzv44hJOMJNcTAQ==,type:str]
 sops:
     age:
         - enc: |
@@ -108,7 +110,7 @@ sops:
             vvw3AOcsEZleUlU4td8MQgbIEG8p94WbMAoAG/DPIOprK2+1ItVwMg==
             -----END AGE ENCRYPTED FILE-----
           recipient: age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
-    lastmodified: "2026-06-25T07:02:19Z"
-    mac: ENC[AES256_GCM,data:mJ5JqK/x85330GNx72jddBAWZK9GrZ3Q/ywTxK5+vcWbfKB3zcWizyUxFBXW/KbwXH2wYkCadry7z71iEkf6kOD5HTTHavJVMphC9q/WpF27hD1u8YKm3L6vStLtlQg2LXHMdsLH25cALGSGzXWYaTWxfRiVdke0PmQXiX5eh7A=,iv:J49s61IFEiTWpcOL8phxqjeRCMFYQTzHNHulfLKBkP4=,tag:5a8XY8MZyRcQElrSWrQM+w==,type:str]
+    lastmodified: "2026-08-14T12:56:19Z"
+    mac: ENC[AES256_GCM,data:yQWsiCXv0GZg+3hbWbF8zbXOB9VpwndyigZYE2ce5BIduQVArq2+Q/PeTe7GvOMwPP947JmyjO9TFRmaTfORhgxWJ+EB+kKiBmvBUPlw28KyUKlzt6xiPrtQYXIv+KoWrjvnsFzZguLMqzX7n90NPgLuPDTjteyzMSnuIeEA+qI=,iv:BMICXB9gkDd9mylCHHE6WvcWqN3/vQTDKXuYW2zs7mI=,tag:XyRjzUwlxmMk1wVLeXoXLg==,type:str]
     unencrypted_suffix: _unencrypted
-    version: 3.13.1
+    version: 3.13.2
