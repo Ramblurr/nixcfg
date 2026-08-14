@@ -12,6 +12,11 @@ let
 
   mkVirtualHost =
     name: service: directWan:
+    let
+      useOAuth2Proxy = service.forwardAuth && service.usesPocketId;
+      useAuthentik = service.forwardAuth && !service.usesPocketId;
+      oauth2Groups = lib.concatMapStringsSep "," lib.escapeURL service.forwardAuthGroups;
+    in
     {
       useACMEHost = service.acmeHost;
       forceSSL = !directWan;
@@ -36,7 +41,7 @@ let
               ${lib.optionalString (!directWan && service.http3.enable) ''
                 add_header Alt-Svc 'h3=":443"; ma=86400';
               ''}
-              ${lib.optionalString service.forwardAuth ''
+              ${lib.optionalString useAuthentik ''
                 auth_request        /outpost.goauthentik.io/auth/nginx;
                 error_page          401 = @goauthentik_proxy_signin;
                 auth_request_set $auth_cookie $upstream_http_set_cookie;
@@ -56,9 +61,35 @@ let
                 proxy_set_header X-authentik-name $authentik_name;
                 proxy_set_header X-authentik-uid $authentik_uid;
               ''}
+              ${lib.optionalString useOAuth2Proxy ''
+                auth_request /_oauth2_proxy_auth;
+                error_page 401 = @oauth2_proxy_signin;
+                auth_request_set $oauth2_cookie $upstream_http_set_cookie;
+                add_header Set-Cookie $oauth2_cookie always;
+
+                auth_request_set $oauth2_user $upstream_http_x_auth_request_user;
+                auth_request_set $oauth2_preferred_username $upstream_http_x_auth_request_preferred_username;
+                auth_request_set $oauth2_email $upstream_http_x_auth_request_email;
+                auth_request_set $oauth2_groups $upstream_http_x_auth_request_groups;
+
+                proxy_set_header Remote-User $oauth2_preferred_username;
+                proxy_set_header Remote-Name $oauth2_preferred_username;
+                proxy_set_header Remote-Email $oauth2_email;
+                proxy_set_header Remote-Groups $oauth2_groups;
+                proxy_set_header X-Auth-Request-User $oauth2_user;
+                proxy_set_header X-Auth-Request-Preferred-Username $oauth2_preferred_username;
+                proxy_set_header X-Auth-Request-Email $oauth2_email;
+                proxy_set_header X-Auth-Request-Groups $oauth2_groups;
+                proxy_set_header X-authentik-username $oauth2_preferred_username;
+                proxy_set_header X_authentik_username $oauth2_preferred_username;
+                proxy_set_header X-authentik-groups $oauth2_groups;
+                proxy_set_header X-authentik-email $oauth2_email;
+                proxy_set_header X-authentik-name $oauth2_preferred_username;
+                proxy_set_header X-authentik-uid $oauth2_user;
+              ''}
             '';
           };
-        "/outpost.goauthentik.io" = lib.mkIf service.forwardAuth {
+        "/outpost.goauthentik.io" = lib.mkIf useAuthentik {
           extraConfig = ''
             proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;
             proxy_set_header        Host $host;
@@ -69,7 +100,7 @@ let
             proxy_set_header        Content-Length "";
           '';
         };
-        "@goauthentik_proxy_signin" = lib.mkIf service.forwardAuth {
+        "@goauthentik_proxy_signin" = lib.mkIf useAuthentik {
           extraConfig = ''
             internal;
             auth_request_set $auth_cookie $upstream_http_set_cookie;
@@ -77,6 +108,32 @@ let
             return 302 /outpost.goauthentik.io/start?rd=$request_uri;
             # For domain level, use the below error_page to redirect to your authentik server with the full redirect path
             # return 302 https://auth.${service.acmeHost}/outpost.goauthentik.io/start?rd=$scheme://$http_host$request_uri;
+          '';
+        };
+        "= /_oauth2_proxy_auth" = lib.mkIf useOAuth2Proxy {
+          extraConfig = ''
+            internal;
+            proxy_pass https://${cfg.oauth2Proxy.host}/oauth2/auth?allowed_groups=${oauth2Groups};
+            proxy_pass_request_body off;
+            proxy_set_header Content-Length "";
+            proxy_set_header Host ${cfg.oauth2Proxy.host};
+            proxy_set_header Cookie $http_cookie;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Uri $request_uri;
+            proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+            proxy_ssl_server_name on;
+            proxy_ssl_name ${cfg.oauth2Proxy.host};
+            proxy_ssl_verify on;
+            proxy_ssl_trusted_certificate ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt;
+          '';
+        };
+        "@oauth2_proxy_signin" = lib.mkIf useOAuth2Proxy {
+          extraConfig = ''
+            internal;
+            return 302 https://${cfg.oauth2Proxy.host}/oauth2/start?rd=$scheme://$http_host$request_uri;
           '';
         };
       };
@@ -107,6 +164,11 @@ in
         default = 8443;
         description = "Port for the direct WAN ingress listener";
       };
+    };
+    oauth2Proxy.host = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Hostname serving oauth2-proxy's /oauth2 endpoints";
     };
     forwardServices = lib.mkOption {
       default = { };
@@ -162,6 +224,16 @@ in
               type = lib.types.bool;
               default = false;
             };
+            usesPocketId = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Use Pocket ID through oauth2-proxy instead of Authentik";
+            };
+            forwardAuthGroups = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
+              default = [ ];
+              description = "Pocket ID groups allowed through forward authentication";
+            };
             directWan = lib.mkOption {
               type = lib.types.bool;
               default = false;
@@ -211,6 +283,24 @@ in
         {
           assertion = !cfg.directWan.enable || cfg.directWan.listenAddress != null;
           message = "The direct WAN listener requires modules.services.ingress.directWan.listenAddress";
+        }
+        {
+          assertion = lib.all (service: !service.usesPocketId || service.forwardAuth) (
+            builtins.attrValues cfg.virtualHosts
+          );
+          message = "usesPocketId requires forwardAuth";
+        }
+        {
+          assertion = lib.all (service: !service.usesPocketId || service.forwardAuthGroups != [ ]) (
+            builtins.attrValues cfg.virtualHosts
+          );
+          message = "Pocket ID forward authentication requires at least one allowed group";
+        }
+        {
+          assertion =
+            lib.all (service: !service.usesPocketId) (builtins.attrValues cfg.virtualHosts)
+            || cfg.oauth2Proxy.host != null;
+          message = "Pocket ID forward authentication requires modules.services.ingress.oauth2Proxy.host";
         }
       ];
     }

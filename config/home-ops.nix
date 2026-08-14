@@ -255,6 +255,7 @@ in
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
       inherit (config.repo.secrets.local) domains;
+      oauth2Proxy.host = "id.${home-ops.homeDomain}";
       forwardServices = {
         "home.${home-ops.homeDomain}" = {
           upstream = "http://10.9.4.25:8123";
