@@ -494,11 +494,23 @@ in
       // (lib.optionalAttrs cfg.apps.authentik.enable {
         authentik-home = {
           publicHost = "auth.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.authentik.ports.http}";
+          handlerConfig = ''
+            reverse_proxy https://127.0.0.1:${toString config.modules.services.authentik.ports.https} {
+              transport http {
+                tls_insecure_skip_verify
+              }
+            }
+          '';
         };
         authentik-work = {
           publicHost = "auth.${home-ops.workDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.authentik.ports.http}";
+          handlerConfig = ''
+            reverse_proxy https://127.0.0.1:${toString config.modules.services.authentik.ports.https} {
+              transport http {
+                tls_insecure_skip_verify
+              }
+            }
+          '';
         };
       })
       // (lib.optionalAttrs cfg.apps.calibre-web.enable {
