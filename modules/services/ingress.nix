@@ -9,15 +9,6 @@ let
   cfg = config.modules.services.ingress;
   directWanVirtualHosts = lib.filterAttrs (_: service: service.directWan) cfg.virtualHosts;
   hasDirectWanVirtualHosts = directWanVirtualHosts != { };
-  plainRoutes = builtins.attrValues (
-    lib.attrByPath [ "modules" "services" "caddy" "routes" ] { } config
-  );
-  caddySecurityEnabled = lib.attrByPath [
-    "modules"
-    "services"
-    "caddy-security"
-    "enable"
-  ] false config;
   caddyEdgeEnabled = lib.attrByPath [
     "modules"
     "services"
@@ -25,90 +16,55 @@ let
     "edge"
     "enable"
   ] false config;
-  hasPlainRoute = name: lib.any (route: route.publicHost == name) plainRoutes;
-  allUnique = values: builtins.length values == builtins.length (lib.unique values);
-  selectedPlainRouteIsValid =
-    name:
-    cfg.virtualHosts ? ${name}
-    && hasPlainRoute name
-    && !cfg.virtualHosts.${name}.forwardAuth
-    && !cfg.virtualHosts.${name}.usesCaddySecurity;
 
   mkVirtualHost =
     name: service: directWan:
     let
-      useCaddySecurity = service.forwardAuth && service.usesCaddySecurity;
-      useCaddyPlain = builtins.elem name cfg.caddyPlain.routes;
-      useCaddy = useCaddySecurity || useCaddyPlain;
-      useAuthentik = service.forwardAuth && !useCaddySecurity;
-      effectiveUpstream =
-        if useCaddySecurity then
-          cfg.caddySecurity.upstream
-        else if useCaddyPlain then
-          cfg.caddyPlain.upstream
-        else
-          service.upstream;
-      caddyProxyConfig = lib.optionalString useCaddy ''
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header X-Forwarded-Port 443;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Uri $request_uri;
-        proxy_set_header X-Forwarded-Prefix "";
-        proxy_set_header X-Original-URL https://$host$request_uri;
-        proxy_set_header Forwarded "";
-        proxy_set_header Authorization $http_authorization;
-      '';
+      useAuthentik = service.forwardAuth;
+      hasUpstream = service.upstream != null;
     in
     {
       useACMEHost = service.acmeHost;
       forceSSL = !directWan;
       onlySSL = directWan;
       kTLS = true;
-      extraConfig = lib.optionalString (!useCaddyPlain) service.extraConfig;
+      inherit (service) extraConfig;
       http3 = !directWan && service.http3.enable;
       http2 = false;
       quic = !directWan && service.http3.enable;
       inherit (service) root;
       locations = {
-        "/" =
-          let
-            hasUpstream = effectiveUpstream != null;
-          in
-          {
-            proxyPass = if hasUpstream then effectiveUpstream else null;
-            recommendedProxySettings = hasUpstream && !useCaddy;
-            proxyWebsockets = hasUpstream;
-            extraConfig = ''
-              ${lib.optionalString (!useCaddyPlain) service.upstreamExtraConfig}
-              ${caddyProxyConfig}
-              ${lib.optionalString (!directWan && service.http3.enable) ''
-                add_header Alt-Svc 'h3=":443"; ma=86400';
-              ''}
-              ${lib.optionalString useAuthentik ''
-                auth_request        /outpost.goauthentik.io/auth/nginx;
-                error_page          401 = @goauthentik_proxy_signin;
-                auth_request_set $auth_cookie $upstream_http_set_cookie;
-                add_header Set-Cookie $auth_cookie;
+        "/" = {
+          proxyPass = if hasUpstream then service.upstream else null;
+          recommendedProxySettings = hasUpstream;
+          proxyWebsockets = hasUpstream;
+          extraConfig = ''
+            ${service.upstreamExtraConfig}
+            ${lib.optionalString (!directWan && service.http3.enable) ''
+              add_header Alt-Svc 'h3=":443"; ma=86400';
+            ''}
+            ${lib.optionalString useAuthentik ''
+              auth_request        /outpost.goauthentik.io/auth/nginx;
+              error_page          401 = @goauthentik_proxy_signin;
+              auth_request_set $auth_cookie $upstream_http_set_cookie;
+              add_header Set-Cookie $auth_cookie;
 
-                # translate headers from the outposts back to the actual upstream
-                auth_request_set $authentik_username $upstream_http_x_authentik_username;
-                auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
-                auth_request_set $authentik_email $upstream_http_x_authentik_email;
-                auth_request_set $authentik_name $upstream_http_x_authentik_name;
-                auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
+              # translate headers from the outposts back to the actual upstream
+              auth_request_set $authentik_username $upstream_http_x_authentik_username;
+              auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
+              auth_request_set $authentik_email $upstream_http_x_authentik_email;
+              auth_request_set $authentik_name $upstream_http_x_authentik_name;
+              auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
 
-                proxy_set_header X-authentik-username $authentik_username;
-                proxy_set_header X_authentik_username $authentik_username;
-                proxy_set_header X-authentik-groups $authentik_groups;
-                proxy_set_header X-authentik-email $authentik_email;
-                proxy_set_header X-authentik-name $authentik_name;
-                proxy_set_header X-authentik-uid $authentik_uid;
-              ''}
-            '';
-          };
+              proxy_set_header X-authentik-username $authentik_username;
+              proxy_set_header X_authentik_username $authentik_username;
+              proxy_set_header X-authentik-groups $authentik_groups;
+              proxy_set_header X-authentik-email $authentik_email;
+              proxy_set_header X-authentik-name $authentik_name;
+              proxy_set_header X-authentik-uid $authentik_uid;
+            ''}
+          '';
+        };
         "/outpost.goauthentik.io" = lib.mkIf useAuthentik {
           extraConfig = ''
             proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;
@@ -126,19 +82,16 @@ let
             auth_request_set $auth_cookie $upstream_http_set_cookie;
             add_header Set-Cookie $auth_cookie;
             return 302 /outpost.goauthentik.io/start?rd=$request_uri;
-            # For domain level, use the below error_page to redirect to your authentik server with the full redirect path
-            # return 302 https://auth.${service.acmeHost}/outpost.goauthentik.io/start?rd=$scheme://$http_host$request_uri;
           '';
         };
       }
       // lib.mapAttrs (_path: bypassExtraConfig: {
-        proxyPass = effectiveUpstream;
-        recommendedProxySettings = effectiveUpstream != null && !useCaddySecurity;
-        proxyWebsockets = effectiveUpstream != null;
+        proxyPass = service.upstream;
+        recommendedProxySettings = hasUpstream;
+        proxyWebsockets = hasUpstream;
         extraConfig = ''
           auth_request off;
           ${bypassExtraConfig}
-          ${caddyProxyConfig}
         '';
       }) service.forwardAuthBypassPaths;
     }
@@ -167,23 +120,6 @@ in
         type = lib.types.port;
         default = 8443;
         description = "Port for the direct WAN ingress listener";
-      };
-    };
-    caddySecurity.upstream = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Loopback Caddy upstream for selected virtual hosts";
-    };
-    caddyPlain = {
-      upstream = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = "Loopback Caddy upstream for explicitly selected plain virtual hosts";
-      };
-      routes = lib.mkOption {
-        type = lib.types.listOf lib.types.nonEmptyStr;
-        default = [ ];
-        description = "Plain virtual host names selected for the loopback Caddy route interface";
       };
     };
     forwardServices = lib.mkOption {
@@ -240,11 +176,6 @@ in
               type = lib.types.bool;
               default = false;
             };
-            usesCaddySecurity = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Route this virtual host through the internal caddy-security listener";
-            };
             forwardAuthBypassPaths = lib.mkOption {
               type = lib.types.attrsOf lib.types.lines;
               default = { };
@@ -300,38 +231,6 @@ in
           assertion = !cfg.directWan.enable || cfg.directWan.listenAddress != null;
           message = "The direct WAN listener requires modules.services.ingress.directWan.listenAddress";
         }
-        {
-          assertion = lib.all (service: !service.usesCaddySecurity || service.forwardAuth) (
-            builtins.attrValues cfg.virtualHosts
-          );
-          message = "usesCaddySecurity requires forwardAuth";
-        }
-        {
-          assertion =
-            lib.all (service: !service.usesCaddySecurity) (builtins.attrValues cfg.virtualHosts)
-            || cfg.caddySecurity.upstream != null;
-          message = "caddy-security ingress requires modules.services.ingress.caddySecurity.upstream";
-        }
-        {
-          assertion = cfg.caddyPlain.routes == [ ] || cfg.caddyPlain.upstream != null;
-          message = "plain Caddy ingress requires modules.services.ingress.caddyPlain.upstream";
-        }
-        {
-          assertion = allUnique cfg.caddyPlain.routes;
-          message = "plain Caddy ingress selection must not contain duplicate virtual hosts";
-        }
-        {
-          assertion = lib.all selectedPlainRouteIsValid cfg.caddyPlain.routes;
-          message = "plain Caddy ingress selection requires an unauthenticated virtual host and matching Caddy route";
-        }
-        {
-          assertion = lib.all (route: builtins.elem route.publicHost cfg.caddyPlain.routes) plainRoutes;
-          message = "every plain Caddy route must be selected by ingress";
-        }
-        {
-          assertion = cfg.caddyPlain.routes == [ ] || caddySecurityEnabled;
-          message = "plain Caddy ingress requires the loopback Caddy listener";
-        }
       ];
     }
     (lib.mkIf cfg.enable {
@@ -339,8 +238,8 @@ in
         443
         8081
       ];
-      services.nginx = {
-        enable = !caddyEdgeEnabled;
+      services.nginx = lib.mkIf (!caddyEdgeEnabled) {
+        enable = true;
         package = pkgs.nginx;
         enableReload = true;
         enableQuicBPF = true;
@@ -447,15 +346,6 @@ in
             }
           );
 
-        # This is selected when no matching host is found for a request.
-        #virtualHosts."\"\"" = {
-        #  useACMEHost = cfg.ingress.domain;
-        #  onlySSL = true;
-        #  kTLS = true;
-        #  extraConfig = ''
-        #    return 404;
-        #  '';
-        #};
       };
       users.groups.acme.members = [
         (if caddyEdgeEnabled then "caddy" else "nginx")

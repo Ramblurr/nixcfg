@@ -9,6 +9,13 @@ let
   cfg = config.modules.services.calibre-web;
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+  caddyEdgeEnabled = lib.attrByPath [
+    "modules"
+    "services"
+    "caddy-security"
+    "edge"
+    "enable"
+  ] false config;
 in
 {
   options.modules.services.calibre-web = {
@@ -123,8 +130,8 @@ in
       };
     };
 
-    services.nginx.virtualHosts.${cfg.domain}.locations."@opds_401_passthrough" = {
-      extraConfig = ''
+    services.nginx.virtualHosts = lib.mkIf (!caddyEdgeEnabled) {
+      ${cfg.domain}.locations."@opds_401_passthrough".extraConfig = ''
         internal;
         return 401;
       '';
