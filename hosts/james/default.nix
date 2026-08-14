@@ -50,6 +50,7 @@ in
   time.timeZone = "Europe/Berlin";
 
   networking.hostId = lib.my.generateHostId hostName;
+  networking.hosts."127.0.0.1" = [ pocketIdDomain ];
   networking.firewall.enable = false;
 
   modules = {
