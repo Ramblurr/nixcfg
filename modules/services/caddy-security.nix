@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.modules.services.caddy-security;
+  plainRoutes = config.modules.services.caddy.routes;
 
   appType = lib.types.submodule (
     { name, ... }:
@@ -188,7 +189,80 @@ let
     }
   '';
 
-  publicHosts = map (app: app.publicHost) applications;
+  quote = value: builtins.toJSON value;
+  plainId = name: lib.replaceStrings [ "-" ] [ "_" ] name;
+  responseId = path: builtins.substring 0 12 (builtins.hashString "sha256" path);
+
+  mkPlainStaticResponse =
+    name: path: response:
+    let
+      matcher = "@plain_${plainId name}_${responseId path}";
+      headers = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (header: value: "header ${matcher} ${header} ${quote value}") response.headers
+      );
+    in
+    ''
+      ${matcher} path ${path}
+      ${headers}
+      respond ${matcher} ${quote response.body} ${toString response.status}
+    '';
+
+  mkPlainProxy =
+    route:
+    let
+      headers = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (header: value: "header_up ${header} ${quote value}") route.requestHeaders
+      );
+      transport = lib.optionalString (route.dialTimeout != null) ''
+        transport http {
+          dial_timeout ${route.dialTimeout}
+        }
+      '';
+    in
+    ''
+      reverse_proxy ${route.upstream} {
+        ${headers}
+        ${lib.optionalString (route.flushInterval != null) "flush_interval ${route.flushInterval}"}
+        ${transport}
+      }
+    '';
+
+  mkPlainRoute =
+    name: route:
+    let
+      responseHeaders = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (header: value: "header ${header} ${quote value}") route.responseHeaders
+      );
+      staticResponses = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (mkPlainStaticResponse name) route.staticResponses
+      );
+    in
+    ''
+      @plain_${plainId name} host ${route.publicHost}
+      handle @plain_${plainId name} {
+        ${lib.optionalString route.webSockets "# WebSocket upgrades are handled by Caddy reverse_proxy."}
+        ${responseHeaders}
+        ${staticResponses}
+        ${lib.optionalString (route.requestBodyMaxSize != null) ''
+          request_body {
+            max_size ${route.requestBodyMaxSize}
+          }
+        ''}
+        ${
+          if route.upstream != null then
+            mkPlainProxy route
+          else
+            ''
+              root * ${route.root}
+              file_server
+            ''
+        }
+      }
+    '';
+
+  protectedPublicHosts = map (app: app.publicHost) applications;
+  plainPublicHosts = map (route: route.publicHost) (builtins.attrValues plainRoutes);
+  publicHosts = protectedPublicHosts ++ plainPublicHosts;
   clientIDs = map (app: app.oidc.clientID) applications;
   realmNames = map (app: app.oidc.realm) applications;
   cookiePrefixes = map (app: app.cookiePrefix) applications;
@@ -340,6 +414,7 @@ in
             respond @health "ok" 200
             @unknown_host not host ${lib.concatStringsSep " " publicHosts}
             respond @unknown_host 421
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute plainRoutes)}
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute cfg.applications)}
           }
         }
