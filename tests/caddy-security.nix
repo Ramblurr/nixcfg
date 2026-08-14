@@ -84,7 +84,6 @@ let
               acmeHost = "example.test";
               upstream = "http://127.0.0.1:8001";
               forwardAuth = true;
-              forwardAuthGroups = [ "books" ];
               usesCaddySecurity = true;
               extraConfig = "client_max_body_size 0;";
               forwardAuthBypassPaths."/opds" = ''

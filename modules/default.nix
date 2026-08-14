@@ -129,7 +129,6 @@
     ./services/sshd.nix
     ./services/pocket-id.nix
     ./services/stirling-pdf.nix
-    ./services/oauth2-proxy.nix
     ./services/tautulli.nix
     ./services/tubearchivist.nix
     ./services/udpbroadcastrelay.nix
