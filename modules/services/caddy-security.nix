@@ -320,7 +320,7 @@ let
   '';
 
   mkRouteConfig =
-    routeAttrs: applicationAttrs:
+    routeAttrs: applicationAttrs: rejectHttp3:
     let
       errorHandlerConfig = lib.concatMapStringsSep "\n" (
         route: lib.optionalString (route.errorHandlerConfig != null) route.errorHandlerConfig
@@ -328,6 +328,10 @@ let
     in
     ''
       route {
+        ${lib.optionalString rejectHttp3 ''
+          @http3 protocol http/3
+          respond @http3 421
+        ''}
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute routeAttrs)}
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute applicationAttrs)}
         respond 421
@@ -369,7 +373,7 @@ let
       ${siteAddresses} {
         ${tlsConfig}
         ${mkAccessLog}
-        ${mkRouteConfig routeAttrs applicationAttrs}
+        ${mkRouteConfig routeAttrs applicationAttrs (!allowHttp3)}
       }
     '';
 
@@ -426,7 +430,7 @@ let
         bind ${listener}
         ${tlsConfig}
         ${mkAccessLog}
-        ${mkRouteConfig { ${routeName} = route; } { }}
+        ${mkRouteConfig { ${routeName} = route; } { } false}
       }
       https://${domain}:${port}, https://*.${domain}:${port} {
         bind ${listener}
