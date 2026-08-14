@@ -191,7 +191,7 @@ in
     modules.services.ingress.virtualHosts.${cfg.domain} = {
       acmeHost = cfg.ingress.domain;
       inherit upstream;
-      inherit (cfg.ingress) forwardAuth;
+      inherit (cfg.ingress) forwardAuth usesCaddySecurity;
       extraConfig = ''
         client_max_body_size 0;
       '';

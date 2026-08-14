@@ -91,6 +91,7 @@ in
       acmeHost = cfg.ingress.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.gui}";
       forwardAuth = true;
+      inherit (cfg.ingress) usesCaddySecurity;
       extraConfig = ''
         client_max_body_size 0;
       '';

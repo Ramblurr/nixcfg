@@ -408,6 +408,7 @@ in
           acmeHost = cfg.ingress.domain;
           upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
           inherit (ingress) forwardAuth;
+          inherit (cfg.ingress) usesCaddySecurity;
         }
       ) ingresses)
       // {
