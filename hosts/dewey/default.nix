@@ -68,7 +68,6 @@ in
         caddySecurity = {
           enable = true;
           clientID = config.repo.secrets.local.calibreWebPocketIdClientId;
-          environmentFile = config.sops.templates.calibre-web-caddy-security-env.path;
         };
       };
       koreader-sync.enable = true;

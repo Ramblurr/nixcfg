@@ -17,6 +17,72 @@ let
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
   plainCaddyEnabled =
     cfg.ingress.enable && cfg.apps.calibre-web.enable && cfg.apps.calibre-web.caddySecurity.enable;
+  protectedCaddySecurityApplications =
+    (lib.optionalAttrs cfg.apps.calibre.enable {
+      "calibre-gui" = {
+        publicHost = "calibre.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."calibre.${home-ops.homeDomain}".upstream;
+      };
+    })
+    // (lib.optionalAttrs cfg.apps.filebrowser-quantum.enable {
+      files = {
+        publicHost = "files.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."files.${home-ops.homeDomain}".upstream;
+        identityHeaders.X-authentik-username = "userinfo|preferred_username";
+      };
+    })
+    // (lib.optionalAttrs cfg.apps.home-dl.enable {
+      prowlarr = {
+        publicHost = "prowlarr.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."prowlarr.${home-ops.homeDomain}".upstream;
+      };
+      radarr = {
+        publicHost = "radarr.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."radarr.${home-ops.homeDomain}".upstream;
+      };
+      sabnzbd = {
+        publicHost = "sabnzbd.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."sabnzbd.${home-ops.homeDomain}".upstream;
+      };
+      sonarr = {
+        publicHost = "sonarr.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."sonarr.${home-ops.homeDomain}".upstream;
+      };
+    })
+    // (lib.optionalAttrs cfg.apps.tubearchivist.enable {
+      tube = {
+        publicHost = "tube.${home-ops.homeDomain}";
+        upstream = config.modules.services.ingress.virtualHosts."tube.${home-ops.homeDomain}".upstream;
+      };
+    });
+  caddySecurityEnvPrefix = name: lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name);
+  caddySecurityEnvironmentLines =
+    (lib.optionals cfg.apps.calibre-web.caddySecurity.enable [
+      "CALIBRE_WEB_OIDC_CLIENT_SECRET=${config.sops.placeholder.calibre-web-oidc-client-secret}"
+      "CALIBRE_WEB_SIGNING_KEY=${config.sops.placeholder.calibre-web-caddy-security-signing-key}"
+    ])
+    ++ lib.concatMap (name: [
+      "${caddySecurityEnvPrefix name}_OIDC_CLIENT_SECRET=${
+        config.sops.placeholder."${name}-oidc-client-secret"
+      }"
+      "${caddySecurityEnvPrefix name}_SIGNING_KEY=${
+        config.sops.placeholder."${name}-caddy-security-signing-key"
+      }"
+    ]) (builtins.attrNames protectedCaddySecurityApplications);
+  mkProtectedCaddySecurityApplication =
+    name: application:
+    application
+    // {
+      oidc = {
+        issuerURL = "https://id.${home-ops.homeDomain}";
+        clientID = name;
+        clientSecretEnv = "${caddySecurityEnvPrefix name}_OIDC_CLIENT_SECRET";
+        realm = "${name}-pocket-id";
+      };
+      signingKeyEnv = "${caddySecurityEnvPrefix name}_SIGNING_KEY";
+      cookiePrefix = caddySecurityEnvPrefix name;
+      requiredGroups = [ "admins" ];
+    };
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
     until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
       ${pkgs.coreutils}/bin/sleep 0.5
@@ -91,10 +157,6 @@ in
           clientID = lib.mkOption {
             type = lib.types.nonEmptyStr;
             description = "Private Pocket ID client ID for Calibre Web";
-          };
-          environmentFile = lib.mkOption {
-            type = lib.types.nonEmptyStr;
-            description = "Runtime path to the SOPS-rendered Calibre Web Caddy environment file";
           };
         };
       };
@@ -594,21 +656,60 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
-    sops.secrets.calibre-web-oidc-client-secret = lib.mkIf cfg.apps.calibre-web.caddySecurity.enable {
+    sops.secrets.calibre-web-oidc-client-secret = lib.mkIf plainCaddyEnabled {
       sopsFile = ../configs/home-ops/shared.sops.yml;
     };
-    sops.secrets.calibre-web-caddy-security-signing-key =
-      lib.mkIf cfg.apps.calibre-web.caddySecurity.enable
-        { sopsFile = ../configs/home-ops/shared.sops.yml; };
-    sops.templates.calibre-web-caddy-security-env = lib.mkIf cfg.apps.calibre-web.caddySecurity.enable {
+    sops.secrets.calibre-web-caddy-security-signing-key = lib.mkIf plainCaddyEnabled {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.calibre-gui-oidc-client-secret = lib.mkIf cfg.apps.calibre.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.calibre-gui-caddy-security-signing-key = lib.mkIf cfg.apps.calibre.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.files-oidc-client-secret = lib.mkIf cfg.apps.filebrowser-quantum.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.files-caddy-security-signing-key = lib.mkIf cfg.apps.filebrowser-quantum.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.prowlarr-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.prowlarr-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.radarr-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.radarr-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.sabnzbd-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.sabnzbd-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.sonarr-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.sonarr-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.tube-oidc-client-secret = lib.mkIf cfg.apps.tubearchivist.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.secrets.tube-caddy-security-signing-key = lib.mkIf cfg.apps.tubearchivist.enable {
+      sopsFile = ../configs/home-ops/shared.sops.yml;
+    };
+    sops.templates.caddy-security-env = lib.mkIf plainCaddyEnabled {
       owner = "caddy";
       group = "caddy";
       mode = "0400";
       restartUnits = [ "caddy.service" ];
-      content = ''
-        CALIBRE_WEB_OIDC_CLIENT_SECRET=${config.sops.placeholder.calibre-web-oidc-client-secret}
-        CALIBRE_WEB_SIGNING_KEY=${config.sops.placeholder.calibre-web-caddy-security-signing-key}
-      '';
+      content = lib.concatStringsSep "\n" caddySecurityEnvironmentLines;
     };
 
     # Expected SOPS key: jellyplex-watched.env with PLEX_TOKEN and JELLYFIN_TOKEN.
@@ -743,6 +844,7 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         forwardAuth = true;
+        usesCaddySecurity = plainCaddyEnabled;
       };
     };
 
@@ -765,6 +867,7 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         forwardAuth = true;
+        usesCaddySecurity = plainCaddyEnabled;
       };
     };
 
@@ -783,6 +886,7 @@ in
       mediaNfsShare = "tank2/media";
       ingress = {
         domain = home-ops.homeDomain;
+        usesCaddySecurity = plainCaddyEnabled;
       };
     };
 
@@ -814,38 +918,41 @@ in
       lib.mkIf (cfg.apps.calibre-web.enable && cfg.apps.calibre-web.caddySecurity.enable)
         {
           enable = true;
-          environmentFile = cfg.apps.calibre-web.caddySecurity.environmentFile;
-          applications.calibre-web = {
-            publicHost = "books.${home-ops.homeDomain}";
-            upstream = "127.0.0.1:${toString home-ops.ports.calibre-web}";
-            portalPath = "/auth";
-            oidc = {
-              issuerURL = "https://id.${home-ops.homeDomain}";
-              clientID = cfg.apps.calibre-web.caddySecurity.clientID;
-              clientSecretEnv = "CALIBRE_WEB_OIDC_CLIENT_SECRET";
-              realm = "calibre-pocket-id";
+          environmentFile = config.sops.templates.caddy-security-env.path;
+          applications = {
+            calibre-web = {
+              publicHost = "books.${home-ops.homeDomain}";
+              upstream = "127.0.0.1:${toString home-ops.ports.calibre-web}";
+              portalPath = "/auth";
+              oidc = {
+                issuerURL = "https://id.${home-ops.homeDomain}";
+                clientID = cfg.apps.calibre-web.caddySecurity.clientID;
+                clientSecretEnv = "CALIBRE_WEB_OIDC_CLIENT_SECRET";
+                realm = "calibre-pocket-id";
+              };
+              signingKeyEnv = "CALIBRE_WEB_SIGNING_KEY";
+              cookiePrefix = "CALIBRE_WEB";
+              requiredGroups = [ "books" ];
+              bypassPathPrefixes = [ "/opds" ];
+              identityHeaders = {
+                Remote-User = "userinfo|preferred_username";
+                Remote-Name = "userinfo|preferred_username";
+                Remote-Email = "email";
+                Remote-Groups = "roles";
+                X-Auth-Request-User = "sub";
+                X-Auth-Request-Preferred-Username = "userinfo|preferred_username";
+                X-Auth-Request-Email = "email";
+                X-Auth-Request-Groups = "roles";
+                X-authentik-username = "userinfo|preferred_username";
+                X_authentik_username = "userinfo|preferred_username";
+                X-authentik-groups = "roles";
+                X-authentik-email = "email";
+                X-authentik-name = "userinfo|preferred_username";
+                X-authentik-uid = "sub";
+              };
             };
-            signingKeyEnv = "CALIBRE_WEB_SIGNING_KEY";
-            cookiePrefix = "CALIBRE_WEB";
-            requiredGroups = [ "books" ];
-            bypassPathPrefixes = [ "/opds" ];
-            identityHeaders = {
-              Remote-User = "userinfo|preferred_username";
-              Remote-Name = "userinfo|preferred_username";
-              Remote-Email = "email";
-              Remote-Groups = "roles";
-              X-Auth-Request-User = "sub";
-              X-Auth-Request-Preferred-Username = "userinfo|preferred_username";
-              X-Auth-Request-Email = "email";
-              X-Auth-Request-Groups = "roles";
-              X-authentik-username = "userinfo|preferred_username";
-              X_authentik_username = "userinfo|preferred_username";
-              X-authentik-groups = "roles";
-              X-authentik-email = "email";
-              X-authentik-name = "userinfo|preferred_username";
-              X-authentik-uid = "sub";
-            };
-          };
+          }
+          // lib.mapAttrs mkProtectedCaddySecurityApplication protectedCaddySecurityApplications;
         };
 
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
@@ -989,6 +1096,7 @@ in
       group = home-ops.groups.tubearchivist;
       ingress = {
         domain = home-ops.homeDomain;
+        usesCaddySecurity = plainCaddyEnabled;
       };
     };
   };
