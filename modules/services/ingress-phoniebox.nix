@@ -25,21 +25,5 @@ in
         error_page 502 503 504 =503 /.fairybox-offline.html;
       '';
     };
-
-    services.nginx.virtualHosts.${phonieboxDomain}.locations = {
-      "= /.fairybox-offline.html" = {
-        alias = "${./ingress-phoniebox}/index.html";
-        extraConfig = ''
-          internal;
-        '';
-      };
-      "^~ /.fairybox-offline/" = {
-        alias = "${./ingress-phoniebox}/";
-        extraConfig = ''
-          access_log off;
-          expires 1h;
-        '';
-      };
-    };
   };
 }

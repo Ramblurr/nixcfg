@@ -81,41 +81,6 @@ in
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
       http3.enable = false;
     };
-    services.nginx.virtualHosts.${cfg.domain}.locations = {
-      "~ ^(/_matrix|/_synapse/client)" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
-        extraConfig = ''
-          client_max_body_size 200M;
-        '';
-      };
-      "/.well-known/matrix/server".extraConfig =
-        let
-          server = {
-            "m.server" = "${cfg.domain}:443";
-          };
-        in
-        ''
-          add_header Content-Type application/json;
-          return 200 '${builtins.toJSON server}';
-        '';
-    }
-    // lib.optionalAttrs cfg.ketesa.enable {
-      "= /admin".return = "307 /admin/";
-      "/admin/" = {
-        alias = "${cfg.ketesa.package}/";
-        priority = 500;
-        tryFiles = "$uri $uri/ /admin/index.html";
-      };
-      "~ ^/admin/.*\\.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$" = {
-        priority = 400;
-        root = cfg.ketesa.package;
-        extraConfig = ''
-          rewrite ^/admin/(.*)$ /$1 break;
-          expires 30d;
-          add_header Cache-Control "public";
-        '';
-      };
-    };
 
     # the nixos module hardcodes the user matrix-synapse
     users.users.matrix-synapse = {
