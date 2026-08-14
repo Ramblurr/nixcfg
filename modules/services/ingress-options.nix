@@ -22,10 +22,5 @@
       default = true;
       description = "Whether to use forward authentication";
     };
-    usesCaddySecurity = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Whether to route forward-authenticated ingress through caddy-security";
-    };
   };
 }
