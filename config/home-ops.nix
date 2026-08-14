@@ -15,44 +15,46 @@ let
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
-  plainCaddyEnabled =
+  caddyIngressEnabled =
     cfg.ingress.enable && cfg.apps.calibre-web.enable && cfg.apps.calibre-web.caddySecurity.enable;
+  homeDlUpstream =
+    port: "http://${lib.my.cidrToIp config.modules.services.home-dl.subnet.nsAddr}:${toString port}";
   protectedCaddySecurityApplications =
     (lib.optionalAttrs cfg.apps.calibre.enable {
       "calibre-gui" = {
         publicHost = "calibre.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."calibre.${home-ops.homeDomain}".upstream;
+        upstream = "http://127.0.0.1:${toString config.modules.services.calibre.ports.gui}";
       };
     })
     // (lib.optionalAttrs cfg.apps.filebrowser-quantum.enable {
       files = {
         publicHost = "files.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."files.${home-ops.homeDomain}".upstream;
+        upstream = "http://127.0.0.1:${toString config.modules.services.filebrowser-quantum.ports.http}";
         identityHeaders.X-authentik-username = "userinfo|preferred_username";
       };
     })
     // (lib.optionalAttrs cfg.apps.home-dl.enable {
       prowlarr = {
         publicHost = "prowlarr.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."prowlarr.${home-ops.homeDomain}".upstream;
+        upstream = homeDlUpstream 9696;
       };
       radarr = {
         publicHost = "radarr.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."radarr.${home-ops.homeDomain}".upstream;
+        upstream = homeDlUpstream 7878;
       };
       sabnzbd = {
         publicHost = "sabnzbd.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."sabnzbd.${home-ops.homeDomain}".upstream;
+        upstream = homeDlUpstream 8080;
       };
       sonarr = {
         publicHost = "sonarr.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."sonarr.${home-ops.homeDomain}".upstream;
+        upstream = homeDlUpstream 8989;
       };
     })
     // (lib.optionalAttrs cfg.apps.tubearchivist.enable {
       tube = {
         publicHost = "tube.${home-ops.homeDomain}";
-        upstream = config.modules.services.ingress.virtualHosts."tube.${home-ops.homeDomain}".upstream;
+        upstream = "http://127.0.0.1:${toString config.modules.services.tubearchivist.port}";
       };
     });
   caddySecurityEnvPrefix = name: lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name);
@@ -337,82 +339,33 @@ in
     modules.services.ingress = lib.mkIf cfg.ingress.enable {
       enable = true;
       inherit (config.repo.secrets.local) domains;
-      caddySecurity.upstream = "http://127.0.0.1:${toString config.modules.services.caddy-security.listenPort}";
-      caddyPlain = {
-        upstream = "http://127.0.0.1:${toString config.modules.services.caddy-security.listenPort}";
-        routes = lib.concatLists [
-          (lib.optional (plainCaddyEnabled && cfg.apps.atuin-sync.enable) "atuin.${home-ops.homeDomain}")
-          (lib.optional (
-            plainCaddyEnabled && cfg.apps.audiobookshelf.enable
-          ) "audiobookshelf.${home-ops.homeDomain}")
-          (lib.optional (
-            plainCaddyEnabled && config.modules.services.ingress-nixbot.enable
-          ) "ci.${home-ops.workDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.invoiceninja.enable) "clients.${home-ops.workDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.ocis-work.enable) "data.${home-ops.workDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.forgejo.enable) "git.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.influxdb.enable) "influxdb.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.jellyfin.enable) "jelly.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.paperless.enable) "paperless.${home-ops.homeDomain}")
-          (lib.optional (
-            plainCaddyEnabled && config.modules.services.ingress-paseo.enable
-          ) "paseo.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.stirling-pdf.enable) "pdf.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.home-dl.enable) "qbittorrent.${home-ops.homeDomain}")
-          (lib.optionals (plainCaddyEnabled && cfg.apps.authentik.enable) [
-            "auth.${home-ops.homeDomain}"
-            "auth.${home-ops.workDomain}"
-          ])
-          (lib.optional (
-            plainCaddyEnabled && cfg.apps.calibre-web.enable
-          ) "books-kobo.${home-ops.homeDomain}")
-          (lib.optional (
-            plainCaddyEnabled && cfg.apps.calibre.enable
-          ) "calibre-server.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.davis.enable) "dav.${home-ops.homeDomain}")
-          (lib.optional plainCaddyEnabled "home.${home-ops.homeDomain}")
-          (lib.optional (
-            plainCaddyEnabled && cfg.apps.koreader-sync.enable
-          ) "koreader.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.matrix-synapse.enable) "matrix.${home-ops.workDomain}")
-          (lib.optional plainCaddyEnabled "octoprint.${home-ops.homeDomain}")
-          (lib.optional (
-            plainCaddyEnabled && config.modules.services.ingress-phoniebox.enable
-          ) "phoniebox.${home-ops.homeDomain}")
-          (lib.optional (plainCaddyEnabled && cfg.apps.my-y2r.enable) "y2pod.${home-ops.homeDomain}")
-        ];
-      };
-      virtualHosts."books.${home-ops.homeDomain}" = lib.mkIf cfg.apps.calibre-web.enable {
-        usesCaddySecurity = cfg.apps.calibre-web.caddySecurity.enable;
-      };
-      virtualHosts."home.${home-ops.homeDomain}" = {
+      virtualHosts."home.${home-ops.homeDomain}" = lib.mkIf (!caddyIngressEnabled) {
         upstream = "http://10.9.4.25:8123";
         acmeHost = home-ops.homeDomain;
       };
-      virtualHosts."octoprint.${home-ops.homeDomain}" = {
+      virtualHosts."octoprint.${home-ops.homeDomain}" = lib.mkIf (!caddyIngressEnabled) {
         upstream = "http://10.8.50.52:5000";
         acmeHost = home-ops.homeDomain;
       };
     };
-    modules.services.caddy.routes = lib.mkIf plainCaddyEnabled (
+    modules.services.caddy.routes = lib.mkIf caddyIngressEnabled (
       (lib.optionalAttrs cfg.apps.atuin-sync.enable {
         atuin = {
           publicHost = "atuin.${home-ops.homeDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."atuin.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.atuin-sync.ports.http}";
           requestBodyMaxSize = "10MB";
         };
       })
       // (lib.optionalAttrs cfg.apps.audiobookshelf.enable {
         audiobookshelf = {
           publicHost = "audiobookshelf.${home-ops.homeDomain}";
-          upstream =
-            config.modules.services.ingress.virtualHosts."audiobookshelf.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.audiobookshelf.ports.http}";
         };
       })
       // (lib.optionalAttrs config.modules.services.ingress-nixbot.enable {
         ci = {
           publicHost = "ci.${home-ops.workDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."ci.${home-ops.workDomain}".upstream;
+          upstream = "http://debord.prim.${home-ops.homeDomain}:${toString home-ops.ports.nixbot}";
           requestBodyMaxSize = "25MB";
           responseHeaders.X-Robots-Tag = "noindex, nofollow, noarchive";
           dialTimeout = "120s";
@@ -426,13 +379,13 @@ in
       // (lib.optionalAttrs cfg.apps.invoiceninja.enable {
         clients = {
           publicHost = "clients.${home-ops.workDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."clients.${home-ops.workDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.invoiceninja.ports.http}";
         };
       })
       // (lib.optionalAttrs cfg.apps.ocis-work.enable {
         data = {
           publicHost = "data.${home-ops.workDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."data.${home-ops.workDomain}".upstream;
+          upstream = "http://${lib.my.cidrToIp config.modules.services.ocis.subnet.nsAddr}:${toString config.modules.services.ocis.ports.http}";
         };
       })
       // (lib.optionalAttrs cfg.apps.forgejo.enable {
@@ -445,13 +398,13 @@ in
       // (lib.optionalAttrs cfg.apps.influxdb.enable {
         influxdb = {
           publicHost = "influxdb.${home-ops.homeDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."influxdb.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.influxdb.ports.http}";
         };
       })
       // (lib.optionalAttrs cfg.apps.jellyfin.enable {
         jellyfin = {
           publicHost = "jelly.${home-ops.homeDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."jelly.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:8096";
           requestBodyMaxSize = "10MB";
           flushInterval = "-1";
           directWan = true;
@@ -460,13 +413,13 @@ in
       // (lib.optionalAttrs cfg.apps.paperless.enable {
         paperless = {
           publicHost = "paperless.${home-ops.homeDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."paperless.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.paperless.ports.http}";
         };
       })
       // (lib.optionalAttrs config.modules.services.ingress-paseo.enable {
         paseo = {
           publicHost = "paseo.${home-ops.homeDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."paseo.${home-ops.homeDomain}".upstream;
+          upstream = "http://quine.prim.${home-ops.homeDomain}:6767";
           requestBodyMaxSize = "100MB";
           requestHeaders = {
             Host = "{http.request.host}";
@@ -480,15 +433,14 @@ in
       // (lib.optionalAttrs cfg.apps.stirling-pdf.enable {
         pdf = {
           publicHost = "pdf.${home-ops.homeDomain}";
-          upstream = config.modules.services.ingress.virtualHosts."pdf.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.stirling-pdf.ports.http}";
           requestBodyMaxSize = "10MB";
         };
       })
       // (lib.optionalAttrs cfg.apps.home-dl.enable {
         qbittorrent = {
           publicHost = "qbittorrent.${home-ops.homeDomain}";
-          upstream =
-            config.modules.services.ingress.virtualHosts."qbittorrent.${home-ops.homeDomain}".upstream;
+          upstream = "http://127.0.0.1:${toString config.modules.services.home-dl.ports.qbittorrent}";
           requestBodyMaxSize = "10MB";
         };
       })
@@ -842,10 +794,10 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
-    sops.secrets.calibre-web-oidc-client-secret = lib.mkIf plainCaddyEnabled {
+    sops.secrets.calibre-web-oidc-client-secret = lib.mkIf caddyIngressEnabled {
       sopsFile = ../configs/home-ops/shared.sops.yml;
     };
-    sops.secrets.calibre-web-caddy-security-signing-key = lib.mkIf plainCaddyEnabled {
+    sops.secrets.calibre-web-caddy-security-signing-key = lib.mkIf caddyIngressEnabled {
       sopsFile = ../configs/home-ops/shared.sops.yml;
     };
     sops.secrets.calibre-gui-oidc-client-secret = lib.mkIf cfg.apps.calibre.enable {
@@ -890,7 +842,7 @@ in
     sops.secrets.tube-caddy-security-signing-key = lib.mkIf cfg.apps.tubearchivist.enable {
       sopsFile = ../configs/home-ops/shared.sops.yml;
     };
-    sops.templates.caddy-security-env = lib.mkIf plainCaddyEnabled {
+    sops.templates.caddy-security-env = lib.mkIf caddyIngressEnabled {
       owner = "caddy";
       group = "caddy";
       mode = "0400";
@@ -1030,7 +982,6 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         forwardAuth = true;
-        usesCaddySecurity = plainCaddyEnabled;
       };
     };
 
@@ -1053,7 +1004,6 @@ in
       ingress = {
         domain = home-ops.homeDomain;
         forwardAuth = true;
-        usesCaddySecurity = plainCaddyEnabled;
       };
     };
 
@@ -1072,7 +1022,6 @@ in
       mediaNfsShare = "tank2/media";
       ingress = {
         domain = home-ops.homeDomain;
-        usesCaddySecurity = plainCaddyEnabled;
       };
     };
 
@@ -1282,7 +1231,6 @@ in
       group = home-ops.groups.tubearchivist;
       ingress = {
         domain = home-ops.homeDomain;
-        usesCaddySecurity = plainCaddyEnabled;
       };
     };
   };
