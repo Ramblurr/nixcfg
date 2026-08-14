@@ -256,6 +256,10 @@ in
       enable = true;
       inherit (config.repo.secrets.local) domains;
       oauth2Proxy.host = "id.${home-ops.homeDomain}";
+      virtualHosts."books.${home-ops.homeDomain}" = lib.mkIf cfg.apps.calibre-web.enable {
+        usesPocketId = true;
+        forwardAuthGroups = [ "books" ];
+      };
       forwardServices = {
         "home.${home-ops.homeDomain}" = {
           upstream = "http://10.9.4.25:8123";

@@ -18,7 +18,7 @@ in
       };
     };
 
-    sops.secrets.pocket-id-encryption-key = { };
+    sops.secrets.home-pocket-id-encryption-key = { };
 
     sops.templates.pocket-id-env = {
       owner = config.services.pocket-id.user;
@@ -26,7 +26,7 @@ in
       mode = "0400";
       restartUnits = [ "pocket-id.service" ];
       content = ''
-        ENCRYPTION_KEY=${config.sops.placeholder.pocket-id-encryption-key}
+        ENCRYPTION_KEY=${config.sops.placeholder.home-pocket-id-encryption-key}
       '';
     };
 
