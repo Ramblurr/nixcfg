@@ -8,8 +8,16 @@
 let
   cfg = config.modules.services.paperless;
   localPath = "/mnt/mali/${cfg.nfsShare}";
-
+  oidcSecretName = "paperless/oidcProvider";
+  paperlessServices = [
+    "paperless-consumer"
+    "paperless-copy-password"
+    "paperless-scheduler"
+    "paperless-task-queue"
+    "paperless-web"
+  ];
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
+  oidcDeps = lib.optional cfg.oidc.enable "sops-install-secrets.service";
 in
 {
   options.modules.services.paperless = {
@@ -24,6 +32,18 @@ in
       type = lib.types.submodule (
         lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
       );
+    };
+
+    oidc = {
+      enable = lib.mkEnableOption "native OpenID Connect authentication";
+      mode = lib.mkOption {
+        type = lib.types.enum [
+          "compatibility"
+          "enforced"
+        ];
+        default = "compatibility";
+        description = "Whether to retain regular frontend login or redirect all frontend logins to OIDC";
+      };
     };
 
     ports = {
@@ -56,6 +76,23 @@ in
       mode = "400";
     };
 
+    sops.secrets.${oidcSecretName} = lib.mkIf cfg.oidc.enable {
+      sopsFile = ../../configs/home-ops/shared.sops.yml;
+      owner = config.services.paperless.user;
+      group = cfg.group.name;
+      mode = "0400";
+    };
+
+    sops.templates."paperless-oidc.env" = lib.mkIf cfg.oidc.enable {
+      owner = config.services.paperless.user;
+      group = cfg.group.name;
+      mode = "0400";
+      restartUnits = [ "paperless-web.service" ];
+      content = ''
+        PAPERLESS_SOCIALACCOUNT_PROVIDERS='${config.sops.placeholder.${oidcSecretName}}'
+      '';
+    };
+
     services.postgresql = {
       ensureDatabases = [ "paperless" ];
       ensureUsers = [
@@ -83,16 +120,11 @@ in
       fsType = "nfs";
     };
 
-    systemd.services.paperless-scheduler.after = serviceDeps;
-    systemd.services.paperless-copy-password.after = serviceDeps;
-    systemd.services.paperless-consumer.after = serviceDeps;
-    systemd.services.paperless-task-queue.after = serviceDeps;
-    systemd.services.paperless-web.after = serviceDeps;
-    systemd.services.paperless-scheduler.bindsTo = serviceDeps;
-    systemd.services.paperless-copy-password.bindsTo = serviceDeps;
-    systemd.services.paperless-consumer.bindsTo = serviceDeps;
-    systemd.services.paperless-task-queue.bindsTo = serviceDeps;
-    systemd.services.paperless-web.bindsTo = serviceDeps;
+    systemd.services = lib.genAttrs paperlessServices (_: {
+      after = serviceDeps ++ oidcDeps;
+      bindsTo = serviceDeps;
+      requires = oidcDeps;
+    });
 
     systemd.tmpfiles.rules =
       let
@@ -110,6 +142,7 @@ in
       passwordFile = config.sops.secrets."paperless/adminPassword".path;
       port = cfg.ports.http;
       user = cfg.user.name;
+      environmentFile = lib.mkIf cfg.oidc.enable config.sops.templates."paperless-oidc.env".path;
       settings = {
         PAPERLESS_EXPORT_DIR = "${localPath}/export";
         PAPERLESS_DBENGINE = "postgresql";
@@ -129,10 +162,16 @@ in
         PAPERLESS_FILENAME_DATE_ORDER = "YMD";
         PAPERLESS_URL = "https://${cfg.domain}";
         PAPERLESS_OCR_MAX_IMAGE_PIXELS = 956000000;
-        PAPERLESS_ENABLE_HTTP_REMOTE_USER = true;
-        PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME = "X-authentik-username";
-        #PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
         PAPERLESS_ACCOUNT_ALLOW_SIGNUPS = "false";
+      }
+      // lib.optionalAttrs cfg.oidc.enable {
+        PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+        PAPERLESS_ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https";
+        PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS = false;
+        PAPERLESS_SOCIAL_AUTO_SIGNUP = false;
+        PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS = false;
+        PAPERLESS_DISABLE_REGULAR_LOGIN = cfg.oidc.mode == "enforced";
+        PAPERLESS_REDIRECT_LOGIN_TO_SSO = cfg.oidc.mode == "enforced";
       };
     };
 

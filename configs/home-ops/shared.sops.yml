@@ -16,6 +16,7 @@ jellyplex-watched:
     env: ENC[AES256_GCM,data:6dAu800yLoEKkuRX6BvhQCAyhU3+XKXvC+KTv0RRn7Ql3vzGv5cHEWWfgQpKdJE5TdceeIbAPYbXD8wq1efXa8Jh/mBsALUh8d3Z1NUzHXE=,iv:TzfcUBgoiPpRCNxMfs0oYT/boHHReOxwNrxpobRlgSI=,tag:cU3mUQwNOAwi7bo1CD/kqQ==,type:str]
 paperless:
     adminPassword: ENC[AES256_GCM,data:l2LBGcEGJrY7utZlFZwb31+8syU=,iv:ptypm68YwYRcCKmBUXfVlfWTbYY0xGGF66QqZ5z3iFI=,tag:79hilJKk++0WwL7Hfuf92A==,type:str]
+    oidcProvider: ENC[AES256_GCM,data:+p64esJhwtOI9tsZygw01F3kixtIT8BalSGkQ3TyX5rYT3aZmRhiHS8p6nlTqMX0LTQQTBAzAjf+RPo6zIrc4vB0WK/JkqTu1+35FhamoXdE12Gik0Kwn19bvJiAL9pinTCQCZbtNyoS3ptYIqHCjWiK39kwx2QyPfYynBW7zKj0MEP1hdPgB4UXiFGJ7jPBtO4OTTKBitiMEMdovcrE7D6mwYMnlobKEsGAsZCtAO4xoddSzmPNqsMmU4kFcZV3+QWNWbQYC7Np81U2rm74fvgbeR1XuPFM6x5S7J52GpqGTI0ocTVL5yuItJMi6a0p8LDbNDGyynkYSvjHFrUIPfzXYb2EtKsNjRqleNhYoDO+pFk4lWb2vg/rqFIiYRU16rCv5VZ34pgetY9SW+hgbND+Jf4apsDmaH2sjI6gmlGyzN/Sc+Bkndr8scqh7OGr7Jv1FnYERR7maIJkE7b6iI4Vek58Yk/+zCCk0ZlbHjIJT5uWdhikA6yYisuJfA==,iv:qT+T80ZmtmjJHuFSnXu9Nn78yT9FAxLFoZBxI+tSsx8=,tag:LyYzMQq3jNZEqf4OjUGoDA==,type:str]
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
 gickup-github-token-info: ENC[AES256_GCM,data:RLzCiie+WkFYycrAeS7b38Y+oDhmBFnV,iv:XlhfF74VZV2JNfLeG63+RoFEKYNIOjtHjwFNfwRJDQk=,tag:J0JgMNHkZA9/0KsZXCeXSA==,type:str]
 gickup.yaml: ENC[AES256_GCM,data:zkc8T48V2gJmcMzyLYO2/K375sBgSiUq6CbZuokscxsYpxokHPOWN0Jb8QQUUKZZJP5c2qMoGbbi1x68lUO6qtGLbCiD0sejSA3j74OhGlLHLNkAfdDvnLA34aXt/p9u2yTNvW9QQ6BK7RRPY783QSwKea0zyVo8d5S4cFVw96l3hlmwsCEiIF+mHA+6Yt/kJzce09yiPQyEvGlNR7/8iwLdL9h9+FDutnKX4/jVWBwGOYoNrnqjxoCvpedJuaE5qpauJdD5jOJGkvBodil2F0ElvizSr1aRnnFPN22Z775h2cecqZHZIszM143iLrOxVHRwMXLM5JNL31CJJ4hPUTiIWTKI8Y+JgiImsNHMCjkirVfONHLoUVw38a2AmQCwHcb6CODU8vIGvnBJPf91e9t9XH7i62pdAR6za1QLNWsnuV84o9IujLOPa8nsu6/xOpJ+oiu6jBVKgfZLJHlW6JQZ0WEJ3gBTWxieCziZBuHyw0KPQDFNQDItlnROFyCFkWqlqqwh1h4CCSPF/CuVYFMaxobNdtQKGTrMbfrVeyTcnVhXnpJJeE1yBZSoAtPsHB+R+qHHdqPHX4iHvrM8vSZPh1W0MoIIsyfgNgAnOkr0cikZaAA6QZMlygYpl3aTbIL2od0oyQAdj1EoiTTGGxSCNbj8CNAiLO4q91g2/Q5Q0Mk3S5fflW7tNWVmfc39HV2GxTFqsRyZND8GZ5quBc195NPqNGDFxc8ZGH449GRAGH9gcGZTCmuR+7qiUfBdazvAowdJ7O/yWpPnTHsh9x4hSO0pHYvI0sqFgIDJ1ViF8EmlIIqrStA6Y0+rVx+/jXqulzEjKH9+U9MnU3btZpgA9tw8nQV8douD0MVK0xnpIfndCI9ZcDOByQv654mnJhaYhqnxbwG0X1Ol1gNBL+W6UVCY17rNJDVpWPN+FKeF,iv:cflcvgpCrfJy07aA6UctFf3a3PpH1e/6BR+H+vMF1k0=,tag:ma40FAHECn/9oB6bSQmiaQ==,type:str]
@@ -124,7 +125,7 @@ sops:
             vvw3AOcsEZleUlU4td8MQgbIEG8p94WbMAoAG/DPIOprK2+1ItVwMg==
             -----END AGE ENCRYPTED FILE-----
           recipient: age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
-    lastmodified: "2026-08-14T17:58:32Z"
-    mac: ENC[AES256_GCM,data:7yoUNEe2BSQrvUTN2rBa0aliSL8FymgZe5aH2GQwXiFT/ZAmY2362nOiKZ+JhY2VXrVMq3AbBfrR9kKNBSMky36ue8MPn7tQZHtxT+UWrBLDzRO5EKggIVAwz6So3BlwCLjq7R6tedVJiAtdopp01pHb8tDmQfU0y0pKIV06ENY=,iv:9U63xDNxQKtq7tI6NjRHyj87s+cuTBZP8rNxJS4HzU0=,tag:ajH79zlvXty3p5sG0bpYFQ==,type:str]
+    lastmodified: "2026-08-14T20:13:07Z"
+    mac: ENC[AES256_GCM,data:hCpSl5vjmr4GuiyNDTXugPKNxF1QpJDHhaH32RO7Mhxzt9PBX6UoR0T3yQJEc3XPoAM14+14BHHMYITrVfKuxAt2TKvT8ls1H1RjhEjot8KyfRQKjfpEQJsmkJXYCVEKZIk2Y8YAd5UIKCh4oGG2QhhtUsV6jDRiuHwQc8f14f0=,iv:pmyQrpJQWMZMEghqi9gnYUoaB3+/qg1b6y40PdFG68w=,tag:zR4i0ajRjtS6psbxF0C10w==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.13.2
