@@ -40,6 +40,18 @@ let
         description = "Absolute static file root served by Caddy";
       };
 
+      handlerConfig = lib.mkOption {
+        type = lib.types.nullOr lib.types.lines;
+        default = null;
+        description = "Caddyfile handlers for routes that need more than one proxy or static-file handler";
+      };
+
+      errorHandlerConfig = lib.mkOption {
+        type = lib.types.nullOr lib.types.lines;
+        default = null;
+        description = "Caddyfile error handlers for this route";
+      };
+
       webSockets = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -89,7 +101,15 @@ let
   routes = builtins.attrValues cfg.routes;
   allUnique = values: builtins.length values == builtins.length (lib.unique values);
   validHeader = header: builtins.match "[A-Za-z0-9_-]+" header != null;
-  isRouteTarget = route: (route.upstream != null) != (route.root != null);
+  isRouteTarget =
+    route:
+    builtins.length (
+      lib.filter (target: target != null) [
+        route.upstream
+        route.root
+        route.handlerConfig
+      ]
+    ) == 1;
   hasAbsoluteRoot = route: route.root == null || lib.hasPrefix "/" route.root;
   hasAbsoluteResponsePaths =
     route: lib.all (path: lib.hasPrefix "/" path) (builtins.attrNames route.staticResponses);
@@ -111,7 +131,7 @@ in
   config.assertions = [
     {
       assertion = lib.all isRouteTarget routes;
-      message = "Each plain Caddy route requires exactly one of upstream or root";
+      message = "Each plain Caddy route requires exactly one of upstream, root, or handlerConfig";
     }
     {
       assertion = lib.all hasAbsoluteRoot routes;

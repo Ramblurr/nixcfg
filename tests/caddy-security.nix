@@ -162,6 +162,19 @@ let
             root = "/srv/plain-static";
             webSockets = false;
           };
+          special = {
+            publicHost = "special.example.test";
+            handlerConfig = ''
+              respond /special "special" 200
+            '';
+            errorHandlerConfig = ''
+              @special_error {
+                host special.example.test
+                expression {http.error.status_code} == 502
+              }
+              respond @special_error "special unavailable" 503
+            '';
+          };
         };
 
         modules.services.ingress = {
@@ -176,6 +189,7 @@ let
             routes = builtins.attrNames plainUpstreams ++ [
               "jelly.example.test"
               "static.example.test"
+              "special.example.test"
             ];
           };
           domains."example.test" = { };
@@ -217,6 +231,10 @@ let
             "static.example.test" = {
               acmeHost = "example.test";
               root = "/srv/plain-static";
+            };
+            "special.example.test" = {
+              acmeHost = "example.test";
+              upstream = "http://127.0.0.1:10030";
             };
           };
         };
@@ -338,6 +356,10 @@ assert lib.hasInfix "flush_interval -1" caddy.extraConfig;
 assert lib.hasInfix "dial_timeout 120s" caddy.extraConfig;
 assert lib.hasInfix "root * /srv/plain-static" caddy.extraConfig;
 assert lib.hasInfix "respond @plain_ci_" caddy.extraConfig;
+assert lib.hasInfix "@plain_special host special.example.test" caddy.extraConfig;
+assert lib.hasInfix ''respond /special "special" 200'' caddy.extraConfig;
+assert lib.hasInfix "handle_errors {" caddy.extraConfig;
+assert lib.hasInfix ''respond @special_error "special unavailable" 503'' caddy.extraConfig;
 assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
 assert lib.hasInfix "atuin.example.test" caddy.extraConfig;
 assert !lib.hasInfix "PLAIN_OIDC" caddy.extraConfig;
@@ -346,6 +368,7 @@ assert
   ++ [
     "jelly.example.test"
     "static.example.test"
+    "special.example.test"
   ];
 assert lib.all (
   vhost:

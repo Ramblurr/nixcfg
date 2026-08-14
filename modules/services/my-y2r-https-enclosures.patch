@@ -1,0 +1,13 @@
+diff --git a/youtube_to_rss/update_rss.py b/youtube_to_rss/update_rss.py
+index 74de6c1..dd6846f 100644
+--- a/youtube_to_rss/update_rss.py
++++ b/youtube_to_rss/update_rss.py
+@@ -258,7 +258,7 @@ def update_rss_for_feed(cfg: AppConfig, feed: FeedConfig, *, max_items: int | N
+                 f"    <title>{title_x}</title>\n"
+                 f"    <pubdate>{pub_x}</pubdate>\n"
+                 f'    <guid isPermaLink="false">{guid_x}</guid>\n'
+-                f'    <enclosure url="http://{escape(cfg.host)}/{escape(feed.id)}/{fname_x}" type="audio/mpeg" length="{length}"></enclosure>\n'
++                f'    <enclosure url="https://{escape(cfg.host)}/{escape(feed.id)}/{fname_x}" type="audio/mpeg" length="{length}"></enclosure>\n'
+                 "    <description>\n"
+                 f"    {title_x}\n\n"
+                 f"    Filename: {fname_x}\n"
