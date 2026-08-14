@@ -5,6 +5,7 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
+      ../modules/services/caddy.nix
       ../modules/services/caddy-security.nix
       ../modules/services/ingress.nix
       inputs.impermanence.nixosModules.impermanence
@@ -72,6 +73,81 @@ let
               requiredGroups = [ "editors" ];
               identityHeaders.Remote-User = "userinfo|preferred_username";
             };
+          };
+        };
+
+        modules.services.caddy.routes = {
+          atuin = {
+            publicHost = "atuin.example.test";
+            upstream = "http://127.0.0.1:10011";
+            requestBodyMaxSize = "10MB";
+          };
+          audiobookshelf = {
+            publicHost = "audiobookshelf.example.test";
+            upstream = "http://127.0.0.1:10012";
+          };
+          ci = {
+            publicHost = "ci.example.test";
+            upstream = "http://debord.example.test:10021";
+            requestBodyMaxSize = "25MB";
+            responseHeaders.X-Robots-Tag = "noindex, nofollow, noarchive";
+            dialTimeout = "120s";
+            flushInterval = "-1";
+            staticResponses."/robots.txt" = {
+              body = "User-agent: *\nDisallow: /\n";
+            };
+          };
+          clients = {
+            publicHost = "clients.example.test";
+            upstream = "http://127.0.0.1:10013";
+          };
+          data = {
+            publicHost = "data.example.test";
+            upstream = "http://192.0.2.2:9996";
+          };
+          forgejo = {
+            publicHost = "git.example.test";
+            upstream = "unix//run/forgejo/forgejo.sock";
+            requestBodyMaxSize = "10MB";
+          };
+          influxdb = {
+            publicHost = "influxdb.example.test";
+            upstream = "http://127.0.0.1:10009";
+          };
+          jellyfin = {
+            publicHost = "jelly.example.test";
+            upstream = "http://127.0.0.1:8096";
+            requestBodyMaxSize = "10MB";
+          };
+          paperless = {
+            publicHost = "paperless.example.test";
+            upstream = "http://127.0.0.1:9995";
+          };
+          paseo = {
+            publicHost = "paseo.example.test";
+            upstream = "http://quine.example.test:6767";
+            requestBodyMaxSize = "100MB";
+            requestHeaders = {
+              Host = "{http.request.host}";
+              X-Forwarded-Proto = "https";
+            };
+            dialTimeout = "120s";
+            flushInterval = "-1";
+          };
+          pdf = {
+            publicHost = "pdf.example.test";
+            upstream = "http://127.0.0.1:10016";
+            requestBodyMaxSize = "10MB";
+          };
+          qbittorrent = {
+            publicHost = "qbittorrent.example.test";
+            upstream = "http://127.0.0.1:10019";
+            requestBodyMaxSize = "10MB";
+          };
+          static-root = {
+            publicHost = "static.example.test";
+            root = "/srv/plain-static";
+            webSockets = false;
           };
         };
 
@@ -162,6 +238,23 @@ assert lib.hasInfix "reverse_proxy 127.0.0.1:8001" caddy.extraConfig;
 assert lib.hasInfix "reverse_proxy 127.0.0.1:8002" caddy.extraConfig;
 assert lib.hasInfix "request_header -Remote-User" caddy.extraConfig;
 assert lib.hasInfix "request_header -X-authentik-*" caddy.extraConfig;
+assert cfg.modules.services.caddy.routes.paseo.requestHeaders.Host == "{http.request.host}";
+assert cfg.modules.services.caddy.routes.jellyfin.webSockets;
+assert lib.hasInfix "@plain_atuin host atuin.example.test" caddy.extraConfig;
+assert lib.hasInfix "@plain_static_root host static.example.test" caddy.extraConfig;
+assert lib.hasInfix "reverse_proxy unix//run/forgejo/forgejo.sock" caddy.extraConfig;
+assert lib.hasInfix "# WebSocket upgrades are handled by Caddy reverse_proxy." caddy.extraConfig;
+assert lib.hasInfix "request_body {" caddy.extraConfig;
+assert lib.hasInfix "max_size 25MB" caddy.extraConfig;
+assert lib.hasInfix "header_up Host \"{http.request.host}\"" caddy.extraConfig;
+assert lib.hasInfix "header X-Robots-Tag \"noindex, nofollow, noarchive\"" caddy.extraConfig;
+assert lib.hasInfix "flush_interval -1" caddy.extraConfig;
+assert lib.hasInfix "dial_timeout 120s" caddy.extraConfig;
+assert lib.hasInfix "root * /srv/plain-static" caddy.extraConfig;
+assert lib.hasInfix "respond @plain_ci_" caddy.extraConfig;
+assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
+assert lib.hasInfix "atuin.example.test" caddy.extraConfig;
+assert !lib.hasInfix "PLAIN_OIDC" caddy.extraConfig;
 assert alphaNginx.useACMEHost == "example.test";
 assert alphaNginx.forceSSL;
 assert alphaNginx.locations."/".proxyPass == "http://127.0.0.1:18080";

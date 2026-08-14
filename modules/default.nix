@@ -90,6 +90,7 @@
     ./services/calibre.nix
     ./services/koreader-sync.nix
     ./services/calibre-web.nix
+    ./services/caddy.nix
     ./services/caddy-security.nix
     ./services/davis.nix
     ./services/docker.nix
