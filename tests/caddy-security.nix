@@ -2,6 +2,19 @@
 
 let
   inherit (pkgs) lib;
+  plainUpstreams = {
+    "atuin.example.test" = "http://127.0.0.1:10011";
+    "audiobookshelf.example.test" = "http://127.0.0.1:10012";
+    "ci.example.test" = "http://debord.example.test:10021";
+    "clients.example.test" = "http://127.0.0.1:10013";
+    "data.example.test" = "http://192.0.2.2:9996";
+    "git.example.test" = "http://unix:/run/forgejo/forgejo.sock:/";
+    "influxdb.example.test" = "http://127.0.0.1:10009";
+    "paperless.example.test" = "http://127.0.0.1:9995";
+    "paseo.example.test" = "http://quine.example.test:6767";
+    "pdf.example.test" = "http://127.0.0.1:10016";
+    "qbittorrent.example.test" = "http://127.0.0.1:10019";
+  };
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
@@ -153,7 +166,18 @@ let
 
         modules.services.ingress = {
           enable = true;
+          directWan = {
+            enable = true;
+            listenAddress = "192.0.2.1";
+          };
           caddySecurity.upstream = "http://127.0.0.1:18080";
+          caddyPlain = {
+            upstream = "http://127.0.0.1:18080";
+            routes = builtins.attrNames plainUpstreams ++ [
+              "jelly.example.test"
+              "static.example.test"
+            ];
+          };
           domains."example.test" = { };
           virtualHosts = {
             "alpha.example.test" = {
@@ -178,24 +202,86 @@ let
               acmeHost = "example.test";
               upstream = "http://127.0.0.1:8001/";
             };
+          }
+          // lib.mapAttrs (name: upstream: {
+            acmeHost = "example.test";
+            inherit upstream;
+          }) plainUpstreams
+          // {
+            "jelly.example.test" = {
+              acmeHost = "example.test";
+              upstream = "http://127.0.0.1:8096";
+              directWan = true;
+              upstreamExtraConfig = "proxy_buffering off;";
+            };
+            "static.example.test" = {
+              acmeHost = "example.test";
+              root = "/srv/plain-static";
+            };
           };
+        };
+      }
+    ];
+  };
+  invalidSelection = inputs.nixpkgs.lib.nixosSystem {
+    system = pkgs.stdenv.hostPlatform.system;
+    modules = [
+      ../modules/services/caddy.nix
+      ../modules/services/caddy-security.nix
+      ../modules/services/ingress.nix
+      inputs.impermanence.nixosModules.impermanence
+      inputs.sops-nix.nixosModules.sops
+      ({ lib, ... }: {
+        options.repo.secrets.global.email.acme = lib.mkOption {
+          type = lib.types.str;
+          default = "admin@example.test";
+        };
+      })
+      {
+        nixpkgs.pkgs = pkgs;
+        system.stateVersion = "26.05";
+        boot.loader.grub.devices = [ "nodev" ];
+        fileSystems."/" = {
+          device = "none";
+          fsType = "tmpfs";
+        };
+        repo.secrets.global.email.acme = "admin@example.test";
+        sops.age.keyFile = "/tmp/age-key.txt";
+        modules.services.ingress = {
+          enable = true;
+          caddyPlain = {
+            upstream = "http://127.0.0.1:18080";
+            routes = [ "missing.example.test" ];
+          };
+          domains."example.test" = { };
         };
       }
     ];
   };
 
   cfg = evaluated.config;
+  invalidFailedAssertions = map (entry: entry.message) (
+    lib.filter (entry: !entry.assertion) invalidSelection.config.assertions
+  );
+
   caddy = cfg.services.caddy;
   caddyService = cfg.systemd.services.caddy;
   generatedConfig = caddy.configFile;
   alphaNginx = cfg.services.nginx.virtualHosts."alpha.example.test";
   rollbackNginx = cfg.services.nginx.virtualHosts."rollback.example.test";
   koboNginx = cfg.services.nginx.virtualHosts."alpha-kobo.example.test";
+  plainNginx = map (
+    name: cfg.services.nginx.virtualHosts.${name}
+  ) cfg.modules.services.ingress.caddyPlain.routes;
+  jellyDirectWanNginx = cfg.services.nginx.virtualHosts."direct-wan:jelly.example.test";
   failedAssertions = map (entry: entry.message) (lib.filter (entry: !entry.assertion) cfg.assertions);
 in
 assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
+assert builtins.elem
+  "plain Caddy ingress selection requires an unauthenticated virtual host and matching Caddy route"
+  invalidFailedAssertions;
 assert caddy.enable;
 assert caddy.package == pkgs.caddy-with-security;
 assert !caddy.openFirewall;
@@ -255,6 +341,32 @@ assert lib.hasInfix "respond @plain_ci_" caddy.extraConfig;
 assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
 assert lib.hasInfix "atuin.example.test" caddy.extraConfig;
 assert !lib.hasInfix "PLAIN_OIDC" caddy.extraConfig;
+assert
+  cfg.modules.services.ingress.caddyPlain.routes == builtins.attrNames plainUpstreams
+  ++ [
+    "jelly.example.test"
+    "static.example.test"
+  ];
+assert lib.all (
+  vhost:
+  vhost.locations."/".proxyPass == "http://127.0.0.1:18080"
+  && !vhost.locations."/".recommendedProxySettings
+  &&
+    builtins.length (
+      lib.filter (line: line == "proxy_set_header Host $host;") (
+        lib.splitString "\n" vhost.locations."/".extraConfig
+      )
+    ) == 1
+  && lib.hasInfix "proxy_set_header X-Forwarded-Host $host;" vhost.locations."/".extraConfig
+  && !lib.hasInfix "auth_request" vhost.locations."/".extraConfig
+  && !lib.hasInfix "proxy_buffering off;" vhost.locations."/".extraConfig
+  && !lib.hasInfix "location = /robots.txt" vhost.extraConfig
+) plainNginx;
+assert jellyDirectWanNginx.locations."/".proxyPass == "http://127.0.0.1:18080";
+assert (builtins.head jellyDirectWanNginx.listen).addr == "192.0.2.1";
+assert (builtins.head jellyDirectWanNginx.listen).port == 8443;
+assert (builtins.head jellyDirectWanNginx.listen).ssl;
+assert koboNginx.locations."/".proxyPass == "http://127.0.0.1:8001/";
 assert alphaNginx.useACMEHost == "example.test";
 assert alphaNginx.forceSSL;
 assert alphaNginx.locations."/".proxyPass == "http://127.0.0.1:18080";
