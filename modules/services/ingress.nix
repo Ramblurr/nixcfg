@@ -49,7 +49,7 @@ let
           in
           {
             proxyPass = if hasUpstream then effectiveUpstream else null;
-            recommendedProxySettings = hasUpstream;
+            recommendedProxySettings = hasUpstream && !useCaddySecurity;
             proxyWebsockets = hasUpstream;
             extraConfig = ''
               ${service.upstreamExtraConfig}
@@ -155,7 +155,7 @@ let
       }
       // lib.mapAttrs (_path: bypassExtraConfig: {
         proxyPass = effectiveUpstream;
-        recommendedProxySettings = effectiveUpstream != null;
+        recommendedProxySettings = effectiveUpstream != null && !useCaddySecurity;
         proxyWebsockets = effectiveUpstream != null;
         extraConfig = ''
           auth_request off;
