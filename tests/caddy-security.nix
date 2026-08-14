@@ -358,6 +358,8 @@ assert lib.hasInfix "http://:8081" caddy.extraConfig;
 assert lib.hasInfix "https://alpha.example.test:443" caddy.extraConfig;
 assert lib.hasInfix "https://beta.example.test:443" caddy.extraConfig;
 assert lib.hasInfix "alpn h1 h2" caddy.extraConfig;
+assert lib.hasInfix "@http3 protocol http/3" caddy.extraConfig;
+assert lib.hasInfix "respond @http3 421" caddy.extraConfig;
 assert lib.hasInfix "https://example.test:443, https://*.example.test:443" caddy.extraConfig;
 assert lib.hasInfix "https://jelly.example.test:8443" caddy.extraConfig;
 assert lib.hasInfix "https://example.test:8443, https://*.example.test:8443" caddy.extraConfig;
