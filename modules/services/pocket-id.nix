@@ -42,6 +42,7 @@ let
             TRUST_PROXY = true;
             HOST = "127.0.0.1";
             PORT = instance.port;
+            ACTORS_PORT = instance.actorPort;
           };
         };
       };
@@ -63,6 +64,10 @@ in
           port = lib.mkOption {
             type = lib.types.port;
             description = "Loopback port shared with the host.";
+          };
+          actorPort = lib.mkOption {
+            type = lib.types.port;
+            description = "Pocket ID actor WebTransport port.";
           };
           dataset = lib.mkOption {
             type = lib.types.str;

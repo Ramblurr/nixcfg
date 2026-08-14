@@ -31,6 +31,7 @@ in
       containerName = "pocket-id-home";
       publicDomain = "id.${homeDomain}";
       port = 1411;
+      actorPort = 1414;
       dataset = "rpool/encrypted/safe/svc/id.${homeDomain}";
       hostPath = "/var/lib/pocket-id-containers/id.${homeDomain}";
       sopsKey = "home-pocket-id-encryption-key";
@@ -39,6 +40,7 @@ in
       containerName = "pocket-id-work";
       publicDomain = "id.${workDomain}";
       port = 1412;
+      actorPort = 1415;
       dataset = "rpool/encrypted/safe/svc/id.${workDomain}";
       hostPath = "/var/lib/pocket-id-containers/id.${workDomain}";
       sopsKey = "work-pocket-id-encryption-key";
