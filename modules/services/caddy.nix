@@ -58,6 +58,18 @@ let
         description = "Require Caddy reverse_proxy WebSocket upgrade support";
       };
 
+      http3 = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Allow HTTP/3 for this route on the public Caddy listener";
+      };
+
+      directWan = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Also expose this route on the dedicated direct-WAN Caddy listener";
+      };
+
       requestBodyMaxSize = lib.mkOption {
         type = lib.types.nullOr lib.types.nonEmptyStr;
         default = null;
