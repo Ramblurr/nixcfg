@@ -9,14 +9,39 @@ let
   cfg = config.modules.services.ingress;
   directWanVirtualHosts = lib.filterAttrs (_: service: service.directWan) cfg.virtualHosts;
   hasDirectWanVirtualHosts = directWanVirtualHosts != { };
+  plainRoutes = builtins.attrValues (
+    lib.attrByPath [ "modules" "services" "caddy" "routes" ] { } config
+  );
+  caddySecurityEnabled = lib.attrByPath [
+    "modules"
+    "services"
+    "caddy-security"
+    "enable"
+  ] false config;
+  hasPlainRoute = name: lib.any (route: route.publicHost == name) plainRoutes;
+  allUnique = values: builtins.length values == builtins.length (lib.unique values);
+  selectedPlainRouteIsValid =
+    name:
+    cfg.virtualHosts ? ${name}
+    && hasPlainRoute name
+    && !cfg.virtualHosts.${name}.forwardAuth
+    && !cfg.virtualHosts.${name}.usesCaddySecurity;
 
   mkVirtualHost =
     name: service: directWan:
     let
       useCaddySecurity = service.forwardAuth && service.usesCaddySecurity;
+      useCaddyPlain = builtins.elem name cfg.caddyPlain.routes;
+      useCaddy = useCaddySecurity || useCaddyPlain;
       useAuthentik = service.forwardAuth && !useCaddySecurity;
-      effectiveUpstream = if useCaddySecurity then cfg.caddySecurity.upstream else service.upstream;
-      caddyProxyConfig = lib.optionalString useCaddySecurity ''
+      effectiveUpstream =
+        if useCaddySecurity then
+          cfg.caddySecurity.upstream
+        else if useCaddyPlain then
+          cfg.caddyPlain.upstream
+        else
+          service.upstream;
+      caddyProxyConfig = lib.optionalString useCaddy ''
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto https;
@@ -35,7 +60,7 @@ let
       forceSSL = !directWan;
       onlySSL = directWan;
       kTLS = true;
-      inherit (service) extraConfig;
+      extraConfig = lib.optionalString (!useCaddyPlain) service.extraConfig;
       http3 = !directWan && service.http3.enable;
       http2 = false;
       quic = !directWan && service.http3.enable;
@@ -47,10 +72,10 @@ let
           in
           {
             proxyPass = if hasUpstream then effectiveUpstream else null;
-            recommendedProxySettings = hasUpstream && !useCaddySecurity;
+            recommendedProxySettings = hasUpstream && !useCaddy;
             proxyWebsockets = hasUpstream;
             extraConfig = ''
-              ${service.upstreamExtraConfig}
+              ${lib.optionalString (!useCaddyPlain) service.upstreamExtraConfig}
               ${caddyProxyConfig}
               ${lib.optionalString (!directWan && service.http3.enable) ''
                 add_header Alt-Svc 'h3=":443"; ma=86400';
@@ -141,6 +166,18 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Loopback Caddy upstream for selected virtual hosts";
+    };
+    caddyPlain = {
+      upstream = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Loopback Caddy upstream for explicitly selected plain virtual hosts";
+      };
+      routes = lib.mkOption {
+        type = lib.types.listOf lib.types.nonEmptyStr;
+        default = [ ];
+        description = "Plain virtual host names selected for the loopback Caddy route interface";
+      };
     };
     forwardServices = lib.mkOption {
       default = { };
@@ -267,6 +304,26 @@ in
             lib.all (service: !service.usesCaddySecurity) (builtins.attrValues cfg.virtualHosts)
             || cfg.caddySecurity.upstream != null;
           message = "caddy-security ingress requires modules.services.ingress.caddySecurity.upstream";
+        }
+        {
+          assertion = cfg.caddyPlain.routes == [ ] || cfg.caddyPlain.upstream != null;
+          message = "plain Caddy ingress requires modules.services.ingress.caddyPlain.upstream";
+        }
+        {
+          assertion = allUnique cfg.caddyPlain.routes;
+          message = "plain Caddy ingress selection must not contain duplicate virtual hosts";
+        }
+        {
+          assertion = lib.all selectedPlainRouteIsValid cfg.caddyPlain.routes;
+          message = "plain Caddy ingress selection requires an unauthenticated virtual host and matching Caddy route";
+        }
+        {
+          assertion = lib.all (route: builtins.elem route.publicHost cfg.caddyPlain.routes) plainRoutes;
+          message = "every plain Caddy route must be selected by ingress";
+        }
+        {
+          assertion = cfg.caddyPlain.routes == [ ] || caddySecurityEnabled;
+          message = "plain Caddy ingress requires the loopback Caddy listener";
         }
       ];
     }
