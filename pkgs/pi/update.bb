@@ -15,7 +15,7 @@
     :source      {:kind :github
                   :owner "noctuid"
                   :repo  "epimetheus"
-                  :mode  :release}}
+                  :mode  :head}}
    "pi-hashline-edit"
    {:nix-name    "pi-hashline-edit"
     :package-file "pkgs/pi/pi-hashline-edit/package.nix"
@@ -38,7 +38,7 @@
     :source      {:kind :github
                   :owner "ramblurr"
                   :repo  "pi-nrepl"
-                  :mode  :release}}
+                  :mode  :head}}
    "plannotator"
    {:nix-name    "plannotator-pi-extension"
     :package-file "pkgs/pi/plannotator/package.nix"
@@ -101,7 +101,7 @@
 
 (defn package-version
   [source-dir]
-  (-> (slurp (fs/path source-dir "package.json"))
+  (-> (slurp (str (fs/path source-dir "package.json")))
       (json/parse-string true)
       :version))
 
