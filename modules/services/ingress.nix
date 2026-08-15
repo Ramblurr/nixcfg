@@ -44,7 +44,6 @@ let
   mkVirtualHost =
     name: service: directWan:
     let
-      useAuthentik = service.forwardAuth;
       hasUpstream = service.upstream != null;
     in
     {
@@ -67,45 +66,6 @@ let
             ${lib.optionalString (!directWan && service.http3.enable) ''
               add_header Alt-Svc 'h3=":443"; ma=86400';
             ''}
-            ${lib.optionalString useAuthentik ''
-              auth_request        /outpost.goauthentik.io/auth/nginx;
-              error_page          401 = @goauthentik_proxy_signin;
-              auth_request_set $auth_cookie $upstream_http_set_cookie;
-              add_header Set-Cookie $auth_cookie;
-
-              # translate headers from the outposts back to the actual upstream
-              auth_request_set $authentik_username $upstream_http_x_authentik_username;
-              auth_request_set $authentik_groups $upstream_http_x_authentik_groups;
-              auth_request_set $authentik_email $upstream_http_x_authentik_email;
-              auth_request_set $authentik_name $upstream_http_x_authentik_name;
-              auth_request_set $authentik_uid $upstream_http_x_authentik_uid;
-
-              proxy_set_header X-authentik-username $authentik_username;
-              proxy_set_header X_authentik_username $authentik_username;
-              proxy_set_header X-authentik-groups $authentik_groups;
-              proxy_set_header X-authentik-email $authentik_email;
-              proxy_set_header X-authentik-name $authentik_name;
-              proxy_set_header X-authentik-uid $authentik_uid;
-            ''}
-          '';
-        };
-        "/outpost.goauthentik.io" = lib.mkIf useAuthentik {
-          extraConfig = ''
-            proxy_pass              http://127.0.0.1:${toString config.modules.services.authentik.ports.http}/outpost.goauthentik.io;
-            proxy_set_header        Host $host;
-            proxy_set_header        X-Original-URL $scheme://$http_host$request_uri;
-            auth_request_set        $auth_cookie $upstream_http_set_cookie;
-            add_header              Set-Cookie $auth_cookie;
-            proxy_pass_request_body off;
-            proxy_set_header        Content-Length "";
-          '';
-        };
-        "@goauthentik_proxy_signin" = lib.mkIf useAuthentik {
-          extraConfig = ''
-            internal;
-            auth_request_set $auth_cookie $upstream_http_set_cookie;
-            add_header Set-Cookie $auth_cookie;
-            return 302 /outpost.goauthentik.io/start?rd=$request_uri;
           '';
         };
       }

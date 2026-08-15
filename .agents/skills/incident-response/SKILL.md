@@ -20,7 +20,7 @@ Keep incident records in the private repo only.
    - If the incident is ongoing or already logged, update the existing file instead of creating a new one.
 2. Choose the incident path.
    - Use the incident start date when known.
-   - Use a short ASCII symptom-first title such as `04-20 ocis auth fails after authentik change.md`.
+   - Use a short ASCII symptom-first title such as `04-20 ocis authentication failure.md`.
 3. Read and follow [references/incident-template.md](references/incident-template.md).
 4. Fill each section with the correct kind of information.
    - `Summary`: short problem statement plus final root cause when known.

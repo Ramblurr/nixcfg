@@ -23,7 +23,7 @@ in
     #forwardAuth = true;
   };
   systemd.services.nginx.serviceConfig.SupplementaryGroups = [ "grafana" ];
-  modules.services.grafana.enable = true;
+  modules.services.grafana.enable = false;
   modules.services.grafana.domain = grafanaDomain;
   services.grafana.provision = {
     enable = true;

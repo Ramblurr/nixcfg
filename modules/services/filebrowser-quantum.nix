@@ -76,7 +76,7 @@ in
 
     authProxyHeader = lib.mkOption {
       type = lib.types.str;
-      default = "X-authentik-username";
+      default = "Remote-User";
       description = "Header FileBrowser Quantum should trust for proxy authentication.";
     };
 

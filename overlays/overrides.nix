@@ -23,15 +23,4 @@ _final: prev: {
   #                       'args+=(-nic bridge,br=''${network},helper=/run/wrappers/bin/qemu-bridge-helper,model=virtio-net-pci''${MAC})'
   #    '';
   #});
-
-  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-    (pyFinal: pyPrev: {
-      django-tenants = pyPrev.django-tenants.overridePythonAttrs (old: {
-        # ref: https://github.com/NixOS/nixpkgs/issues/516785
-        postInstall = (old.postInstall or "") + ''
-          rm -rf "$out/${pyFinal.python.sitePackages}/docs"
-        '';
-      });
-    })
-  ];
 }
