@@ -192,19 +192,32 @@ let
     ${lib.concatMapStringsSep "\n" mkAntoraPrefixRedirect antoraPrefixRedirects}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkAntoraExactRedirect antoraExactRedirects)}
 
+    root * ${docsRoot}
+    @docs_add_trailing_slash {
+      path_regexp docs_add_trailing_slash ^.+[^/]$
+      file {http.request.uri.path}/index.html
+    }
+    redir @docs_add_trailing_slash {http.request.uri.path}/ 301
+    @docs_strip_trailing_slash {
+      path_regexp docs_strip_trailing_slash ^(.+)/$
+      not file {http.request.uri.path}index.html
+    }
+    redir @docs_strip_trailing_slash {re.docs_strip_trailing_slash.1} 301
+
     handle /.etc/nginx/rewrite.conf {
       respond 404
     }
     handle /_deploy* {
       reverse_proxy ${docsHookSocket}
     }
-    @docs_text path *.html *.css *.js *.json *.xml *.txt *.md
-    header @docs_text Cache-Control "public, no-transform, max-age=1800, must-revalidate"
-    @docs_assets path *.png *.jpg *.jpeg *.gif *.svg *.ico *.webp *.avif *.woff *.woff2 *.ttf *.otf *.eot
-    header @docs_assets Cache-Control "public, no-transform, max-age=2592000, must-revalidate"
-    root * ${docsRoot}
-    try_files {http.request.uri.path} {http.request.uri.path}.html {http.request.uri.path}/index.html
-    file_server
+    handle {
+      @docs_short_cache not path *.png *.jpg *.jpeg *.gif *.svg *.ico *.webp *.avif *.woff *.woff2 *.ttf *.otf *.eot
+      header @docs_short_cache Cache-Control "public, no-transform, max-age=1800, must-revalidate"
+      @docs_assets path *.png *.jpg *.jpeg *.gif *.svg *.ico *.webp *.avif *.woff *.woff2 *.ttf *.otf *.eot
+      header @docs_assets Cache-Control "public, no-transform, max-age=2592000, must-revalidate"
+      try_files {http.request.uri.path} {http.request.uri.path}.html {http.request.uri.path}/index.html
+      file_server
+    }
   '';
   docsErrorHandler = ''
     @docs_not_found expression {http.error.status_code} == 404
