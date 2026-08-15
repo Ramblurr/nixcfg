@@ -60,6 +60,18 @@ in
     };
     apps.hindsight.enable = true;
   };
+  modules.services.ingress.legacyAcme.enable = true;
+  modules.services.caddy-security.edge = {
+    enable = true;
+    certificateHosts = map (host: "${host}.${config.repo.secrets.global.domain.home}") [
+      "hindsight"
+      "home"
+      "nad"
+      "octoprint"
+    ];
+    acmeEmail = config.repo.secrets.global.email.acme;
+    redirectStatus = 301;
+  };
   modules.services.hindsight = {
     llm = {
       retain.profile = "openai-codex-gpt-5.4-mini";
