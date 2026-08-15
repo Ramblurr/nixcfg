@@ -35,7 +35,6 @@ inputs: [
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       pi-web = prev.callPackage ./pi-web/package.nix { };
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
-      pi-hashline-edit = prev.callPackage ./pi/pi-hashline-edit/package.nix { };
       plannotator-pi-extension = prev.callPackage ./pi/plannotator/package.nix { };
       epimetheus = prev.callPackage ./pi/epimetheus/package.nix { };
       pi-mcp-adapter = prev.callPackage ./pi/pi-mcp-adapter/package.nix { };
