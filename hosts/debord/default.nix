@@ -54,7 +54,10 @@ in
     enable = true;
     containers.enable = false;
     hypervisor.enable = true;
-    ingress.enable = true;
+    ingress = {
+      enable = true;
+      caddy.enable = true;
+    };
     apps.hindsight.enable = true;
   };
   modules.services.hindsight = {
@@ -166,6 +169,10 @@ in
   };
   modules.services.ingress.virtualHosts."nad.${config.repo.secrets.global.domain.home}" = {
     acmeHost = config.repo.secrets.global.domain.home;
+    upstream = "http://127.0.0.1:${toString nadApiPort}";
+  };
+  modules.services.caddy.routes.nad = {
+    publicHost = "nad.${config.repo.secrets.global.domain.home}";
     upstream = "http://127.0.0.1:${toString nadApiPort}";
   };
 }

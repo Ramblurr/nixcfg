@@ -193,6 +193,47 @@ let
         { modules.services.caddy-security.edge.enable = lib.mkForce false; }
       ];
     }).config;
+  exactHostEvaluated = evaluated.extendModules {
+    modules = [
+      {
+        modules.services.caddy-security = {
+          applications = lib.mkForce { };
+          edge = {
+            certificateDomains = lib.mkForce [ ];
+            certificateHosts = [
+              "home.example.test"
+              "hindsight.example.test"
+            ];
+            redirectStatus = 301;
+            directWan.enable = lib.mkForce false;
+          };
+        };
+        modules.services.caddy.routes = lib.mkForce {
+          home-assistant = {
+            publicHost = "home.example.test";
+            upstream = "http://192.0.2.25:8123";
+          };
+          hindsight = {
+            publicHost = "hindsight.example.test";
+            upstream = "http://127.0.0.1:9999";
+          };
+        };
+        modules.services.ingress.directWan.enable = lib.mkForce false;
+      }
+    ];
+  };
+  exactHostCfg = exactHostEvaluated.config;
+  transitionalExactHostCfg =
+    (exactHostEvaluated.extendModules {
+      modules = [
+        { modules.services.ingress.legacyAcme.enable = true; }
+      ];
+    }).config;
+  exactHostCaddy = exactHostCfg.services.caddy;
+  exactHostGeneratedConfig = exactHostCaddy.configFile;
+  exactHostFailedAssertions = map (entry: entry.message) (
+    lib.filter (entry: !entry.assertion) exactHostCfg.assertions
+  );
   cfg = evaluated.config;
   caddy = cfg.services.caddy;
   caddyService = cfg.systemd.services.caddy;
@@ -202,6 +243,9 @@ in
 assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
+assert lib.assertMsg (
+  exactHostFailedAssertions == [ ]
+) "failed exact-host NixOS assertions: ${lib.concatStringsSep "; " exactHostFailedAssertions}";
 assert caddy.enable;
 assert caddy.package == pkgs.caddy-with-security;
 assert !caddy.openFirewall;
@@ -226,6 +270,31 @@ assert legacyCfg.security.acme.defaults.reloadServices == [ "nginx.service" ];
 assert builtins.elem "/var/lib/acme" (
   map (entry: entry.directory) legacyCfg.environment.persistence."/persist".directories
 );
+assert exactHostCaddy.enable;
+assert !exactHostCfg.services.nginx.enable;
+assert exactHostCfg.modules.services.ingress.legacyAcme.enable == false;
+assert exactHostCfg.users.groups.acme.members == [ ];
+assert exactHostCfg.security.acme.certs == { };
+assert
+  !builtins.elem "/var/lib/acme" (
+    map (entry: entry.directory) exactHostCfg.environment.persistence."/persist".directories
+  );
+assert transitionalExactHostCfg.modules.services.ingress.legacyAcme.enable;
+assert !transitionalExactHostCfg.services.nginx.enable;
+assert transitionalExactHostCfg.users.groups.acme.members == [ "caddy" ];
+assert transitionalExactHostCfg.security.acme.certs ? "example.test";
+assert builtins.elem "/var/lib/acme" (
+  map (entry: entry.directory) transitionalExactHostCfg.environment.persistence."/persist".directories
+);
+assert lib.hasInfix "https://home.example.test:443" exactHostCaddy.extraConfig;
+assert lib.hasInfix "https://hindsight.example.test:443" exactHostCaddy.extraConfig;
+assert !lib.hasInfix "https://*.example.test:443" exactHostCaddy.extraConfig;
+assert lib.hasInfix "redir https://{http.request.host}{http.request.uri} 301"
+  exactHostCaddy.extraConfig;
+assert !lib.hasInfix "security {" exactHostCaddy.globalConfig;
+assert lib.hasInfix "@plain_home_assistant host home.example.test" exactHostCaddy.extraConfig;
+assert lib.hasInfix "@plain_hindsight host hindsight.example.test" exactHostCaddy.extraConfig;
+assert lib.hasInfix "respond @unknown_host 421" exactHostCaddy.extraConfig;
 assert caddyService.serviceConfig.AmbientCapabilities == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.unitConfig.RequiresMountsFor == [ "/var/lib/caddy" ];
@@ -351,6 +420,12 @@ pkgs.runCommand "caddy-security-test"
     caddy adapt --adapter caddyfile --config ${generatedConfig} > "$TMPDIR/caddy.json"
     grep -Fq '"name":"desec"' "$TMPDIR/caddy.json"
     grep -Fq '"token":"{env.DESEC_API_TOKEN}"' "$TMPDIR/caddy.json"
+
+    caddy adapt --adapter caddyfile --config ${exactHostGeneratedConfig} > "$TMPDIR/exact-host-caddy.json"
+    grep -Fq '"home.example.test"' "$TMPDIR/exact-host-caddy.json"
+    grep -Fq '"hindsight.example.test"' "$TMPDIR/exact-host-caddy.json"
+    grep -Fq '"name":"desec"' "$TMPDIR/exact-host-caddy.json"
+    grep -Fq '"token":"{env.DESEC_API_TOKEN}"' "$TMPDIR/exact-host-caddy.json"
 
     touch "$out"
   ''
