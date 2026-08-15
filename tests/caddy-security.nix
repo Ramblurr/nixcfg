@@ -262,10 +262,10 @@ let
         { modules.services.caddy-security.edge.enable = lib.mkForce false; }
       ];
     }).config;
-  retiredMaliCfg =
+  maliCutoverCfg =
     (maliEvaluated.extendModules {
       modules = [
-        { modules.services.ingress.legacyAcme.enable = lib.mkForce false; }
+        { modules.services.ingress.legacyAcme.enable = lib.mkForce true; }
       ];
     }).config;
   maliCaddy = maliCfg.services.caddy;
@@ -290,14 +290,15 @@ assert lib.assertMsg (
   maliFailedAssertions == [ ]
 ) "failed Mali NixOS assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
 assert !maliCfg.services.nginx.enable;
-assert maliCfg.modules.services.ingress.legacyAcme.enable;
-assert builtins.length (builtins.attrNames maliCfg.security.acme.certs) == 2;
+assert !maliCfg.modules.services.ingress.legacyAcme.enable;
+assert maliCfg.security.acme.certs == { };
 assert builtins.elem 443 maliCfg.networking.firewall.allowedUDPPorts;
 assert maliPreparationCfg.services.nginx.enable;
 assert builtins.length (builtins.attrNames maliPreparationCfg.security.acme.certs) == 2;
 assert !(builtins.elem 443 maliPreparationCfg.networking.firewall.allowedUDPPorts);
-assert retiredMaliCfg.services.nginx.enable == false;
-assert retiredMaliCfg.security.acme.certs == { };
+assert maliCutoverCfg.services.nginx.enable == false;
+assert maliCutoverCfg.modules.services.ingress.legacyAcme.enable;
+assert builtins.length (builtins.attrNames maliCutoverCfg.security.acme.certs) == 2;
 assert
   maliCfg.modules.services.caddy-security.edge.protocols == [
     "h1"
