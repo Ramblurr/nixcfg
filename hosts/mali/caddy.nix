@@ -35,8 +35,6 @@ in
     content = "DESEC_API_TOKEN=${config.sops.placeholder.desec_api_token}";
   };
 
-  modules.services.ingress.legacyAcme.enable = true;
-
   modules.services.caddy-security = {
     enable = true;
     environmentFile = config.sops.templates.caddy-security-env.path;
