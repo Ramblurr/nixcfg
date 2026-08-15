@@ -25,7 +25,6 @@ in
     ./web/personals.nix
     ./web/partner.nix
     ./goaccess.nix
-    ./goatcounter.nix
     ./crowdsec.nix
     ./pocket-id.nix
   ];
