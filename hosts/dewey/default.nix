@@ -75,13 +75,7 @@ in
       jellyfin.enable = true;
       home-dl.enable = true;
       calibre.enable = true;
-      calibre-web = {
-        enable = true;
-        caddySecurity = {
-          enable = true;
-          clientID = config.repo.secrets.local.calibreWebPocketIdClientId;
-        };
-      };
+      calibre-web.enable = true;
       koreader-sync.enable = true;
       #archivebox.enable = true;
       matrix-synapse.enable = true;
@@ -91,8 +85,8 @@ in
       #actual-server.enable = true;
       atuin-sync.enable = true;
       snowflake-proxy.enable = true;
-      my-y2r.enable = true;
-      tubearchivist.enable = true;
+      #my-y2r.enable = true;
+      #tubearchivist.enable = true;
       invoiceninja.enable = true;
       stirling-pdf.enable = true;
     };
