@@ -1179,6 +1179,22 @@ in
           user = home-ops.users.ocis-work;
           group = home-ops.groups.ocis-work;
           cspYaml = home-ops.ocis-work-csp;
+          oidc = {
+            issuer = "https://id.${home-ops.workDomain}";
+            clientId = "work-ocis";
+            scopes = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            autoProvisionAccounts = false;
+            userOidcClaim = "preferred_username";
+            userCs3Claim = "username";
+            roleAssignmentDriver = "default";
+            rewriteWellKnown = true;
+            accessTokenVerifyMethod = "jwt";
+          };
           nfsShare = "tank2/services/work-ocis2";
           subnet = home-ops.subnets.ocis-work;
           ingress = {
@@ -1193,6 +1209,10 @@ in
           ports.http = home-ops.ports.ocis-http;
           user = home-ops.users.ocis-home;
           group = home-ops.groups.ocis-home;
+          oidc = {
+            issuer = "https://id.${home-ops.homeDomain}";
+            clientId = "home-ocis";
+          };
           nfsShare = "tank2/services/home-ocis2";
           subnet = home-ops.subnets.ocis-home;
           ingress = {
