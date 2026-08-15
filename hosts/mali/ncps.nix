@@ -81,4 +81,8 @@ in
       config.repo.secrets.global.nixCachePublicKey
     ];
   };
+  modules.services.caddy.routes.ncps = {
+    publicHost = hostName;
+    upstream = "http://${config.services.ncps.server.addr}";
+  };
 }
