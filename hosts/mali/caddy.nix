@@ -23,9 +23,12 @@ let
   '';
 in
 {
-  networking.firewall.allowedUDPPorts =
-    lib.optionals (config.modules.services.caddy-security.edge.enable)
-      [ 443 ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
+
+  networking.firewall.allowedUDPPorts = [ 443 ];
 
   sops.secrets.desec_api_token = {
     sopsFile = ../../configs/home-ops/shared.sops.yml;

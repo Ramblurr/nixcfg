@@ -274,6 +274,9 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   maliFailedAssertions == [ ]
 ) "failed Mali NixOS assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
+assert builtins.elem 80 maliCfg.networking.firewall.allowedTCPPorts;
+assert builtins.elem 443 maliCfg.networking.firewall.allowedTCPPorts;
+assert builtins.elem 443 maliCfg.networking.firewall.allowedUDPPorts;
 assert
   maliCfg.modules.services.caddy-security.edge.protocols == [
     "h1"
