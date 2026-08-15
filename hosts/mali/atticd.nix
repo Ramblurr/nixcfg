@@ -8,6 +8,7 @@ let
   inherit (config.repo.secrets.global) domain;
   atticDomain1 = "attic.mgmt.${domain.home}";
   atticDomain2 = "attic.int.${domain.home}";
+  caddyEdgeEnabled = config.modules.services.caddy-security.edge.enable;
 in
 {
   #=====================================================
@@ -88,7 +89,7 @@ in
       };
     };
   };
-  services.nginx.virtualHosts.${atticDomain1} = {
+  services.nginx.virtualHosts.${atticDomain1} = lib.mkIf (!caddyEdgeEnabled) {
     useACMEHost = atticDomain1;
     serverAliases = [ atticDomain2 ];
     forceSSL = true;

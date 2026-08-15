@@ -5,13 +5,14 @@
 }:
 let
   inherit (config.repo.secrets.global) domain;
+  caddyEdgeEnabled = config.modules.services.caddy-security.edge.enable;
 in
 {
   networking.firewall.allowedTCPPorts = [
     80
     443
   ];
-  services.nginx = {
+  services.nginx = lib.mkIf (!caddyEdgeEnabled) {
     enable = true;
     recommendedGzipSettings = true;
     recommendedOptimisation = true;
