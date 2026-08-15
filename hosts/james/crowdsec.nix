@@ -17,17 +17,13 @@ let
       "::1/128"
     ]
     ++ crowdsecSecret.trustedSourceCidrs;
-  webCollections =
-    lib.optionals config.services.nginx.enable [ "crowdsecurity/nginx" ]
-    ++ lib.optionals config.services.caddy.enable [ "crowdsecurity/caddy" ]
-    ++ lib.optional (
-      config.services.nginx.enable || config.services.caddy.enable
-    ) "crowdsecurity/http-dos";
+  webCollections = [
+    "crowdsecurity/caddy"
+    "crowdsecurity/http-dos"
+  ];
 in
 {
-  users.users.crowdsec.extraGroups =
-    lib.optional config.services.nginx.enable config.services.nginx.group
-    ++ lib.optional config.services.caddy.enable config.services.caddy.group;
+  users.users.crowdsec.extraGroups = [ config.services.caddy.group ];
 
   services.crowdsec = {
     enable = true;
@@ -53,14 +49,7 @@ in
           labels.type = "kernel";
         }
       ]
-      ++ lib.optionals config.services.nginx.enable [
-        {
-          source = "file";
-          filenames = [ "/var/log/nginx/crowdsec.log" ];
-          labels.type = "nginx";
-        }
-      ]
-      ++ lib.optionals config.services.caddy.enable [
+      ++ [
         {
           source = "file";
           filenames = [ "/var/log/caddy/access.log" ];
