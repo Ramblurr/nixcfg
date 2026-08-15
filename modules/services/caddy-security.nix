@@ -298,44 +298,19 @@ let
   hostMatchesDomain = domain: host: host == domain || lib.hasSuffix ".${domain}" host;
   certificateDomains = cfg.edge.certificateDomains;
   certificateHosts = cfg.edge.certificateHosts;
-  certificateSets = cfg.edge.certificateSets;
-  certificateSetSubjects = lib.concatLists (builtins.attrValues certificateSets);
   certificateSubjectsForDomain = domain: [
     domain
     "*.${domain}"
     "*.int.${domain}"
   ];
   certificateSubjects =
-    lib.concatMap certificateSubjectsForDomain certificateDomains
-    ++ certificateHosts
-    ++ certificateSetSubjects;
-  certificateSubjectMatchesHost =
-    subject: host:
-    subject == host
-    || (
-      lib.hasPrefix "*." subject
-      && (
-        let
-          suffix = lib.removePrefix "*." subject;
-          prefix = lib.removeSuffix ".${suffix}" host;
-        in
-        lib.hasSuffix ".${suffix}" host && prefix != host && !lib.hasInfix "." prefix
-      )
-    );
+    lib.concatMap certificateSubjectsForDomain certificateDomains ++ certificateHosts;
   certificateDomainsForHost =
     host: lib.filter (domain: hostMatchesDomain domain host) certificateDomains;
-  certificateSetsForHost =
-    host:
-    builtins.attrNames (
-      lib.filterAttrs (
-        _: subjects: lib.any (subject: certificateSubjectMatchesHost subject host) subjects
-      ) certificateSets
-    );
   certificateSourcesForHost =
     host:
     map (domain: "domain:${domain}") (certificateDomainsForHost host)
-    ++ lib.optional (builtins.elem host certificateHosts) "host:${host}"
-    ++ map (name: "set:${name}") (certificateSetsForHost host);
+    ++ lib.optional (builtins.elem host certificateHosts) "host:${host}";
 
   directWanRoutes = lib.filterAttrs (_: route: route.directWan) plainRoutes;
 
@@ -409,12 +384,6 @@ let
     ++ map (
       host: mkPublicSite "https://${host}:${toString cfg.edge.httpsPort}" (candidate: candidate == host)
     ) certificateHosts
-    ++ lib.mapAttrsToList (
-      _: subjects:
-      mkPublicSite (managedSiteAddresses subjects cfg.edge.httpsPort) (
-        host: lib.any (subject: certificateSubjectMatchesHost subject host) subjects
-      )
-    ) certificateSets
   );
 
   directWanSiteConfig = lib.optionalString cfg.edge.directWan.enable (
@@ -422,14 +391,11 @@ let
       routeName = builtins.head (builtins.attrNames directWanRoutes);
       route = directWanRoutes.${routeName};
       matchingDomains = certificateDomainsForHost route.publicHost;
-      matchingSets = certificateSetsForHost route.publicHost;
       address =
         if builtins.elem route.publicHost certificateHosts then
           "https://${route.publicHost}:${toString cfg.edge.directWan.listenPort}"
-        else if matchingDomains != [ ] then
-          managedSiteAddresses (certificateSubjectsForDomain (builtins.head matchingDomains)) cfg.edge.directWan.listenPort
         else
-          managedSiteAddresses certificateSets.${builtins.head matchingSets} cfg.edge.directWan.listenPort;
+          managedSiteAddresses (certificateSubjectsForDomain (builtins.head matchingDomains)) cfg.edge.directWan.listenPort;
       listener = cfg.edge.directWan.listenAddress;
     in
     ''
@@ -508,13 +474,7 @@ in
       certificateHosts = lib.mkOption {
         type = lib.types.listOf lib.types.nonEmptyStr;
         default = [ ];
-        description = "Exact hostnames with Caddy-managed certificates";
-      };
-
-      certificateSets = lib.mkOption {
-        type = lib.types.attrsOf (lib.types.nonEmptyListOf lib.types.nonEmptyStr);
-        default = { };
-        description = "Named certificate subject sets managed as separate certificates";
+        description = "Explicit host or wildcard subjects with separate Caddy-managed certificates";
       };
 
       protocols = lib.mkOption {
@@ -644,9 +604,8 @@ in
         message = "caddy-security identity header names contain an unsupported character";
       }
       {
-        assertion =
-          !cfg.edge.enable || certificateDomains != [ ] || certificateHosts != [ ] || certificateSets != { };
-        message = "public Caddy edge requires at least one managed certificate source";
+        assertion = !cfg.edge.enable || certificateDomains != [ ] || certificateHosts != [ ];
+        message = "public Caddy edge requires at least one managed certificate domain or subject";
       }
       {
         assertion = allUnique certificateDomains;
