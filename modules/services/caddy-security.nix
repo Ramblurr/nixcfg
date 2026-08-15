@@ -640,6 +640,8 @@ in
       }
     ];
 
+    environment.persistence."/persist".directories = lib.optional cfg.edge.enable "/var/lib/caddy";
+
     services.caddy = {
       enable = true;
       package = pkgs.caddy-with-security;

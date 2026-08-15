@@ -213,6 +213,9 @@ assert cfg.security.acme.defaults.reloadServices == [ "caddy.service" ];
 assert caddyService.serviceConfig.AmbientCapabilities == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.unitConfig.RequiresMountsFor == [ "/var/lib/acme" ];
+assert builtins.elem "/var/lib/caddy" (
+  map (entry: entry.directory) cfg.environment.persistence."/persist".directories
+);
 assert lib.hasInfix "auto_https off" caddy.globalConfig;
 assert lib.hasInfix "trusted_proxies static 127.0.0.1/32 ::1/128" caddy.globalConfig;
 assert lib.hasInfix "servers :443" caddy.globalConfig;
