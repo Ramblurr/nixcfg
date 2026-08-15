@@ -10,18 +10,6 @@ let
     "id.${homeDomain}" = 1411;
     "id.${workDomain}" = 1412;
   };
-  mkVirtualHost = domain: port: {
-    useACMEHost = domain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = false;
-    quic = false;
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:${toString port}";
-      recommendedProxySettings = true;
-      proxyWebsockets = true;
-    };
-  };
 in
 {
   networking.hosts."127.0.0.1" = lib.attrNames instances;
@@ -46,7 +34,4 @@ in
       sopsKey = "work-pocket-id-encryption-key";
     };
   };
-
-  security.acme.certs = lib.mapAttrs (domain: _: { inherit domain; }) instances;
-  services.nginx.virtualHosts = lib.mapAttrs mkVirtualHost instances;
 }

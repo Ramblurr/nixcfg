@@ -15,7 +15,6 @@ in
     ./users.nix
     ../../config/offsite.nix
     ../../config/hetzner-cloud-ccx.nix
-    ./ingress.nix
     ./ingress-haproxy.nix
     ../../modules/services/caddy-security-routes.nix
     ../../modules/services/caddy-security.nix
@@ -24,10 +23,6 @@ in
     ./web/hook.nix
     ./web/work.nix
     ./web/work-docs.nix
-    ./web/personal.nix
-    ./web/personal-site.nix
-    ./web/personals.nix
-    ./web/partner.nix
     ./goaccess.nix
     ./crowdsec.nix
     ./pocket-id.nix
@@ -74,11 +69,6 @@ in
     users.primaryUser.extraGroups = [
       "wheel"
     ];
-  };
-
-  hosts.james.ingress = {
-    implementation = "haproxy";
-    localBackend = "caddy";
   };
 
   environment.persistence."/persist" = {

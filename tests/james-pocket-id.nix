@@ -45,11 +45,6 @@ let
       {
         nixpkgs.pkgs = pkgs;
         system.stateVersion = "24.11";
-        services.nginx.enable = true;
-        security.acme = {
-          acceptTerms = true;
-          defaults.email = "admin@example.test";
-        };
         repo.secrets.global.domain = {
           home = homeDomain;
           work = workDomain;
@@ -129,14 +124,6 @@ assert builtins.elem "/run/secrets/home-pocket-id-encryption-key"
 assert builtins.elem workDataPath workService.unitConfig.RequiresMountsFor;
 assert builtins.elem "/run/secrets/work-pocket-id-encryption-key"
   workService.unitConfig.RequiresMountsFor;
-assert cfg.security.acme.certs."id.${homeDomain}".domain == "id.${homeDomain}";
-assert cfg.security.acme.certs."id.${workDomain}".domain == "id.${workDomain}";
-assert
-  cfg.services.nginx.virtualHosts."id.${homeDomain}".locations."/".proxyPass
-  == "http://127.0.0.1:1411";
-assert
-  cfg.services.nginx.virtualHosts."id.${workDomain}".locations."/".proxyPass
-  == "http://127.0.0.1:1412";
 pkgs.runCommand "james-pocket-id-module-test" { } ''
   touch "$out"
 ''
