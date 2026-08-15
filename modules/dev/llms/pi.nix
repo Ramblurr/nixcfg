@@ -27,6 +27,7 @@ let
       pkgs.brepl-balance
       pkgs.pi-sexp-edit
       pkgs.pi-nrepl
+      pkgs.pi-hashline-edit-pro
       pkgs.plannotator-pi-extension
       pkgs.epimetheus
       pkgs.pi-mcp-adapter
