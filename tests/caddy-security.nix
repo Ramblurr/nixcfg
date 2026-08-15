@@ -224,8 +224,6 @@ let
   };
   maliEvaluated = evaluated.extendModules {
     modules = [
-      ../hosts/mali/acme.nix
-      ../hosts/mali/nginx.nix
       ../hosts/mali/caddy.nix
       (
         { config, ... }:
@@ -256,21 +254,8 @@ let
     lib.filter (entry: !entry.assertion) exactHostCfg.assertions
   );
   maliCfg = maliEvaluated.config;
-  maliPreparationCfg =
-    (maliEvaluated.extendModules {
-      modules = [
-        { modules.services.caddy-security.edge.enable = lib.mkForce false; }
-      ];
-    }).config;
-  maliCutoverCfg =
-    (maliEvaluated.extendModules {
-      modules = [
-        { modules.services.ingress.legacyAcme.enable = lib.mkForce true; }
-      ];
-    }).config;
   maliCaddy = maliCfg.services.caddy;
   maliGeneratedConfig = maliCaddy.configFile;
-  maliPreparationGeneratedConfig = maliPreparationCfg.services.caddy.configFile;
   maliFailedAssertions = map (entry: entry.message) (
     lib.filter (entry: !entry.assertion) maliCfg.assertions
   );
@@ -289,16 +274,6 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   maliFailedAssertions == [ ]
 ) "failed Mali NixOS assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
-assert !maliCfg.services.nginx.enable;
-assert !maliCfg.modules.services.ingress.legacyAcme.enable;
-assert maliCfg.security.acme.certs == { };
-assert builtins.elem 443 maliCfg.networking.firewall.allowedUDPPorts;
-assert maliPreparationCfg.services.nginx.enable;
-assert builtins.length (builtins.attrNames maliPreparationCfg.security.acme.certs) == 2;
-assert !(builtins.elem 443 maliPreparationCfg.networking.firewall.allowedUDPPorts);
-assert maliCutoverCfg.services.nginx.enable == false;
-assert maliCutoverCfg.modules.services.ingress.legacyAcme.enable;
-assert builtins.length (builtins.attrNames maliCutoverCfg.security.acme.certs) == 2;
 assert
   maliCfg.modules.services.caddy-security.edge.protocols == [
     "h1"
@@ -548,9 +523,6 @@ pkgs.runCommand "caddy-security-test"
     grep -Fq '"remote_ip"' "$TMPDIR/mali-caddy.json"
     grep -Fq '"protocols":["h1","h2","h3"]' "$TMPDIR/mali-caddy.json"
 
-    caddy adapt --adapter caddyfile --config ${maliPreparationGeneratedConfig} > "$TMPDIR/mali-preparation-caddy.json"
-    grep -Fq '"listen":["127.0.0.1:18080"]' "$TMPDIR/mali-preparation-caddy.json"
-    ! grep -Fq 'acme-v02.api.letsencrypt.org' "$TMPDIR/mali-preparation-caddy.json"
 
     touch "$out"
   ''

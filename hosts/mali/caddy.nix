@@ -27,6 +27,11 @@ in
     lib.optionals (config.modules.services.caddy-security.edge.enable)
       [ 443 ];
 
+  sops.secrets.desec_api_token = {
+    sopsFile = ../../configs/home-ops/shared.sops.yml;
+    restartUnits = [ ];
+  };
+
   sops.templates.caddy-security-env = {
     owner = "caddy";
     group = "caddy";
