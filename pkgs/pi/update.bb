@@ -16,6 +16,14 @@
                   :owner "noctuid"
                   :repo  "epimetheus"
                   :mode  :head}}
+   "pi-hashline-edit-pro"
+   {:nix-name    "pi-hashline-edit-pro"
+    :package-file "pkgs/pi/pi-hashline-edit-pro/package.nix"
+    :lock-file   "pkgs/pi/pi-hashline-edit-pro/package-lock.json"
+    :source      {:kind :github
+                  :owner "YuGiMob"
+                  :repo  "pi-hashline-edit-pro"
+                  :mode  :head}}
    "pi-mcp-adapter"
    {:nix-name    "pi-mcp-adapter"
     :package-file "pkgs/pi/pi-mcp-adapter/package.nix"
