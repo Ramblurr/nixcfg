@@ -18,7 +18,6 @@ let
     mkOption
     mkPackageOption
     optionalAttrs
-    recursiveUpdate
     types
     ;
 
@@ -177,19 +176,9 @@ in
       description = "Optional ingress virtual host domain for PI WEB.";
     };
 
-    ingress = mkOption {
-      type = types.submodule (recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { });
-      description = "Ingress settings used when domain is set.";
-    };
   };
 
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.domain != null -> cfg.ingress.domain != "";
-        message = "modules.services.pi-web.ingress.domain must be set when domain is set.";
-      }
-    ];
 
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.ports.http ];
 
@@ -244,16 +233,10 @@ in
       };
     };
 
-    modules.services.caddy.routes.pi-web = mkIf (cfg.domain != null && !cfg.ingress.forwardAuth) {
+    modules.services.caddy.protectedRoutes.pi-web = mkIf (cfg.domain != null) {
       publicHost = cfg.domain;
       upstream = "http://${upstreamHost}:${toString cfg.ports.http}";
     };
-    modules.services.caddy.protectedRoutes.pi-web =
-      mkIf (cfg.domain != null && cfg.ingress.forwardAuth)
-        {
-          publicHost = cfg.domain;
-          upstream = "http://${upstreamHost}:${toString cfg.ports.http}";
-        };
 
     ## pi-web tailscale proxy
     #systemd.sockets.pi-web-tailscale-proxy = {

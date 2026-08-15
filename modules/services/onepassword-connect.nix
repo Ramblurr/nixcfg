@@ -17,11 +17,6 @@ in
       description = "The domain to use for the onepassword-connect";
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       api = lib.mkOption { type = lib.types.port; };
       sync = lib.mkOption { type = lib.types.port; };
@@ -53,11 +48,6 @@ in
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/onepassword-connect"."mountpoint" = "${dataDir}";
       "rpool/encrypted/safe/svc/onepassword-connect"."com.sun:auto-snapshot" = "false";
-    };
-
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.api}";
     };
 
     systemd.services."podman-create-op-connect" =

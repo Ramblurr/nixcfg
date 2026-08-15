@@ -22,11 +22,6 @@ in
         description = "The irc port to use for soju";
       };
     };
-    #ingress = lib.mkOption {
-    #  type = lib.types.submodule (
-    #    lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-    #  );
-    #};
   };
 
   config = lib.mkIf cfg.enable {
