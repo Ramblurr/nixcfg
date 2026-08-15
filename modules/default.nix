@@ -84,8 +84,6 @@
     ./services/invoiceninja.nix
     #./services/archivebox.nix
     ./services/atuin-sync.nix
-    ./services/authentik-module.nix
-    ./services/authentik.nix
     ./services/borgmatic.nix
     ./services/calibre.nix
     ./services/koreader-sync.nix

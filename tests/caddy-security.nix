@@ -19,10 +19,6 @@ let
           type = lib.types.str;
           default = "home.test";
         };
-        options.modules.services.authentik.ports.http = lib.mkOption {
-          type = lib.types.port;
-          default = 9000;
-        };
       })
       {
         nixpkgs.pkgs = pkgs;
@@ -68,9 +64,7 @@ let
                 Remote-Name = "userinfo|preferred_username";
                 Remote-Email = "email";
                 Remote-Groups = "roles";
-                X-authentik-username = "userinfo|preferred_username";
-                X-authentik-email = "email";
-                X-authentik-groups = "roles";
+                X-Upstream-User = "userinfo|preferred_username";
               };
             };
             beta = {
@@ -438,8 +432,7 @@ assert lib.hasInfix "set cookie name prefix ALPHA" caddy.globalConfig;
 assert lib.hasInfix "set cookie name prefix BETA" caddy.globalConfig;
 assert lib.hasInfix "set auth url /auth/oauth2/alpha-pocket-id" caddy.globalConfig;
 assert lib.hasInfix "set auth url /login/oauth2/beta-pocket-id" caddy.globalConfig;
-assert lib.hasInfix ''inject header X-authentik-username from "userinfo|preferred_username"''
-  caddy.globalConfig;
+assert lib.hasInfix ''inject header X-Upstream-User from "userinfo|preferred_username"'' caddy.globalConfig;
 assert lib.hasInfix ''match role "books"'' caddy.globalConfig;
 assert lib.hasInfix ''match role "editors"'' caddy.globalConfig;
 assert lib.hasInfix "http://:18080" caddy.extraConfig;
@@ -477,7 +470,7 @@ assert lib.hasInfix "authorize with beta_policy" caddy.extraConfig;
 assert lib.hasInfix "reverse_proxy 127.0.0.1:8001" caddy.extraConfig;
 assert lib.hasInfix "reverse_proxy 127.0.0.1:8002" caddy.extraConfig;
 assert lib.hasInfix "request_header -Remote-User" caddy.extraConfig;
-assert lib.hasInfix "request_header -X-authentik-*" caddy.extraConfig;
+assert lib.hasInfix "request_header -X-Upstream-User" caddy.extraConfig;
 assert cfg.modules.services.caddy.routes.paseo.requestHeaders.Host == "{http.request.host}";
 assert cfg.modules.services.caddy.routes.jellyfin.webSockets;
 assert lib.hasInfix "@plain_atuin host atuin.example.test" caddy.extraConfig;
