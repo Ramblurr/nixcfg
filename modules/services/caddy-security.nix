@@ -764,5 +764,7 @@ in
         RestrictSUIDSGID = true;
       };
     };
+    boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 7500000;
+    boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 7500000;
   };
 }
