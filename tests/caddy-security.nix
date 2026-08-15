@@ -187,6 +187,12 @@ let
     ];
   };
 
+  legacyCfg =
+    (evaluated.extendModules {
+      modules = [
+        { modules.services.caddy-security.edge.enable = lib.mkForce false; }
+      ];
+    }).config;
   cfg = evaluated.config;
   caddy = cfg.services.caddy;
   caddyService = cfg.systemd.services.caddy;
@@ -206,8 +212,20 @@ assert builtins.elem "sops-install-secrets.service" caddyService.requires;
 assert caddyService.serviceConfig.ProtectSystem == "strict";
 assert !cfg.services.nginx.enable;
 assert builtins.attrNames cfg.services.nginx.virtualHosts == [ "localhost" ];
-assert cfg.users.groups.acme.members == [ "caddy" ];
-assert cfg.security.acme.defaults.reloadServices == [ "caddy.service" ];
+assert cfg.users.groups.acme.members == [ ];
+assert cfg.security.acme.certs == { };
+assert cfg.security.acme.defaults.reloadServices == [ ];
+assert
+  !(builtins.elem "/var/lib/acme" (
+    map (entry: entry.directory) cfg.environment.persistence."/persist".directories
+  ));
+assert cfg.sops.secrets ? desec_api_token;
+assert legacyCfg.services.nginx.enable;
+assert legacyCfg.users.groups.acme.members == [ "nginx" ];
+assert legacyCfg.security.acme.defaults.reloadServices == [ "nginx.service" ];
+assert builtins.elem "/var/lib/acme" (
+  map (entry: entry.directory) legacyCfg.environment.persistence."/persist".directories
+);
 assert caddyService.serviceConfig.AmbientCapabilities == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.unitConfig.RequiresMountsFor == [ "/var/lib/caddy" ];
@@ -242,26 +260,26 @@ assert lib.hasInfix ''match role "editors"'' caddy.globalConfig;
 assert lib.hasInfix "http://:18080" caddy.extraConfig;
 assert lib.hasInfix "bind 127.0.0.1" caddy.extraConfig;
 assert lib.hasInfix "http://:8081" caddy.extraConfig;
-assert lib.hasInfix (
+assert lib.hasInfix
   "https://example.test:443, https://*.example.test:443, https://*.int.example.test:443"
-) caddy.extraConfig;
+  caddy.extraConfig;
 assert lib.hasInfix "@reject_http3" caddy.extraConfig;
 assert lib.hasInfix "protocol http/3" caddy.extraConfig;
 assert lib.hasInfix "host beta.example.test" caddy.extraConfig;
 assert lib.hasInfix "respond @reject_http3 421" caddy.extraConfig;
 assert lib.hasInfix "header @without_http3 -Alt-Svc" caddy.extraConfig;
-assert lib.hasInfix (
+assert lib.hasInfix
   "https://example.test:8443, https://*.example.test:8443, https://*.int.example.test:8443"
-) caddy.extraConfig;
+  caddy.extraConfig;
 assert lib.hasInfix "cert_issuer acme" caddy.globalConfig;
 assert lib.hasInfix "dir https://acme-v02.api.letsencrypt.org/directory" caddy.globalConfig;
 assert lib.hasInfix "email admin@example.test" caddy.globalConfig;
 assert lib.hasInfix "token {env.DESEC_API_TOKEN}" caddy.globalConfig;
 assert lib.hasInfix "propagation_delay 5m" caddy.globalConfig;
 assert lib.hasInfix "propagation_timeout 12m" caddy.globalConfig;
-assert lib.hasInfix (
+assert lib.hasInfix
   "resolvers ns.desec.ch:53 ns.desec.cz:53 ns.desec.li:53 ns1.desec.io:53 ns2.desec.org:53"
-) caddy.globalConfig;
+  caddy.globalConfig;
 assert !lib.hasInfix "/var/lib/acme" caddy.extraConfig;
 assert lib.hasInfix "abort" caddy.extraConfig;
 assert lib.hasInfix "output file /var/log/caddy/access.log" caddy.extraConfig;

@@ -16,6 +16,18 @@ let
     "edge"
     "enable"
   ] false config;
+  caddyCertificateDomains =
+    lib.attrByPath
+      [
+        "modules"
+        "services"
+        "caddy-security"
+        "edge"
+        "certificateDomains"
+      ]
+      [ ]
+      config;
+  caddyManagesCertificates = caddyEdgeEnabled && caddyCertificateDomains != [ ];
 
   mkVirtualHost =
     name: service: directWan:
@@ -347,12 +359,14 @@ in
           );
 
       };
-      users.groups.acme.members = [
+      users.groups.acme.members = lib.mkIf (!caddyManagesCertificates) [
         (if caddyEdgeEnabled then "caddy" else "nginx")
       ];
-      environment.persistence."/persist".directories = [ "/var/lib/acme" ];
+      environment.persistence."/persist".directories = lib.mkIf (!caddyManagesCertificates) [
+        "/var/lib/acme"
+      ];
       sops.secrets.desec_api_token.sopsFile = ../../configs/home-ops/shared.sops.yml;
-      security.acme = {
+      security.acme = lib.mkIf (!caddyManagesCertificates) {
         acceptTerms = true;
         defaults = {
           email = config.repo.secrets.global.email.acme;
