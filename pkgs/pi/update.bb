@@ -16,14 +16,6 @@
                   :owner "noctuid"
                   :repo  "epimetheus"
                   :mode  :head}}
-   "pi-hashline-edit"
-   {:nix-name    "pi-hashline-edit"
-    :package-file "pkgs/pi/pi-hashline-edit/package.nix"
-    :lock-file   "pkgs/pi/pi-hashline-edit/package-lock.json"
-    :source      {:kind :github
-                  :owner "RimuruW"
-                  :repo  "pi-hashline-edit"
-                  :mode  :head}}
    "pi-mcp-adapter"
    {:nix-name    "pi-mcp-adapter"
     :package-file "pkgs/pi/pi-mcp-adapter/package.nix"
