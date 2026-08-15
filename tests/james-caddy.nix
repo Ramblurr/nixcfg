@@ -161,6 +161,16 @@ assert lib.hasInfix "path_regexp client_ip_latest" caddy.extraConfig;
 assert lib.hasInfix "redir @client_ip_latest /ol.client-ip/0.1/{re.client_ip_latest.1} 302"
   caddy.extraConfig;
 assert lib.hasInfix "redir /ol.client-ip/ /ol.client-ip/0.1/ 301" caddy.extraConfig;
+assert lib.hasInfix "path_regexp docs_add_trailing_slash ^.+[^/]$" caddy.extraConfig;
+assert lib.hasInfix "file {http.request.uri.path}/index.html" caddy.extraConfig;
+assert lib.hasInfix "redir @docs_add_trailing_slash {http.request.uri.path}/ 301" caddy.extraConfig;
+assert lib.hasInfix "path_regexp docs_strip_trailing_slash ^(.+)/$" caddy.extraConfig;
+assert lib.hasInfix "not file {http.request.uri.path}index.html" caddy.extraConfig;
+assert lib.hasInfix "redir @docs_strip_trailing_slash {re.docs_strip_trailing_slash.1} 301"
+  caddy.extraConfig;
+assert lib.hasInfix
+  ''header @docs_short_cache Cache-Control "public, no-transform, max-age=1800, must-revalidate"''
+  caddy.extraConfig;
 assert lib.hasInfix "respond 421" caddy.extraConfig;
 assert cfg.sops.templates.james-caddy-env.owner == "caddy";
 assert cfg.sops.templates.james-caddy-env.group == "caddy";
