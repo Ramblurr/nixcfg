@@ -90,10 +90,55 @@ let
       }
     ];
   };
+  maliEvaluated = inputs.nixpkgs.lib.nixosSystem {
+    system = pkgs.stdenv.hostPlatform.system;
+    modules = [
+      inputs.impermanence.nixosModules.impermanence
+      inputs.sops-nix.nixosModules.sops
+      ../modules/services/caddy.nix
+      ../hosts/mali/caddy.nix
+      ../hosts/mali/minio.nix
+      ../hosts/mali/atticd.nix
+      ../hosts/mali/ncps.nix
+      {
+        options.repo.secrets = lib.mkOption {
+          type = lib.types.attrs;
+          default = { };
+        };
+      }
+      {
+        nixpkgs.pkgs = pkgs;
+        system.stateVersion = "26.05";
+        boot.loader.grub.devices = [ "nodev" ];
+        fileSystems."/" = {
+          device = "none";
+          fsType = "tmpfs";
+        };
+        sops.defaultSopsFile = secretFile;
+        sops.age.keyFile = "/tmp/age-key.txt";
+        repo.secrets.global = {
+          domain.home = "example.test";
+          email.acme = "admin@example.test";
+        };
+        _module.args.unstable = pkgs;
+        _module.args.inputs = inputs;
+        repo.secrets.global.localAtticSubstituter = "https://attic.example.test";
+        repo.secrets.global.localAtticPublicKey = "attic-public-key";
+        repo.secrets.global.nixCacheSubstituter = "https://cache.example.test";
+        repo.secrets.global.nixCachePublicKey = "cache-public-key";
+        repo.secrets.home-ops.ports.ncps = 3400;
+      }
+    ];
+  };
+  maliCfg = maliEvaluated.config;
+  maliCaddy = maliCfg.services.caddy;
   cfg = evaluated.config;
   caddy = cfg.services.caddy;
   generatedConfig = caddy.configFile;
   failedAssertions = map (entry: entry.message) (lib.filter (entry: !entry.assertion) cfg.assertions);
+  maliFailedAssertions = map (entry: entry.message) (
+    lib.filter (entry: !entry.assertion) maliCfg.assertions
+  );
   expectedEnvironment = ''
     DESEC_API_TOKEN=${cfg.sops.placeholder.desec_api_token}
     ALPHA_OIDC_CLIENT_SECRET=${cfg.sops.placeholder."alpha-oidc-client-secret"}
@@ -105,6 +150,9 @@ in
 assert
   failedAssertions == [ ]
   || throw "failed Caddy assertions: ${lib.concatStringsSep "; " failedAssertions}";
+assert
+  maliFailedAssertions == [ ]
+  || throw "failed Mali Caddy assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
 assert cfg.modules.services.caddy.routes.home-assistant.publicHost == "home.example.test";
 assert cfg.modules.services.caddy.routes.octoprint.publicHost == "octoprint.example.test";
 assert caddy.enable;
@@ -131,6 +179,34 @@ assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
 assert !lib.hasInfix "18080" caddy.globalConfig;
 assert !lib.hasInfix "18080" caddy.extraConfig;
 assert !lib.hasInfix "/healthz" caddy.extraConfig;
+assert maliCaddy.enable;
+assert
+  maliCfg.modules.services.caddy.edge.certificateHosts == [
+    "attic.mgmt.example.test"
+    "attic.int.example.test"
+    "nix-cache.int.example.test"
+    "s3.data.example.test"
+    "*.s3.data.example.test"
+    "minio.data.example.test"
+    "*.s3.mgmt.example.test"
+    "minio.mgmt.example.test"
+    "s3.mgmt.example.test"
+  ];
+assert maliCfg.modules.services.caddy.routes.attic.aliases == [ "attic.int.example.test" ];
+assert
+  maliCfg.modules.services.caddy.routes.minio-console.allowedRemoteIPs == [
+    "10.9.8.0/23"
+    "10.9.10.0/23"
+  ];
+assert lib.hasInfix "handle_path /minio/ui/*"
+  maliCfg.modules.services.caddy.routes.minio-console.handlerConfig;
+assert
+  maliCfg.modules.services.caddy.routes.s3.requestHeaders.X-Real-IP == "{http.request.remote.host}";
+assert maliCfg.modules.services.caddy.routes.s3.dialTimeout == "300s";
+assert maliCfg.modules.services.caddy.routes.s3.flushInterval == "-1";
+assert lib.hasInfix "remote_ip 10.9.8.0/23 10.9.10.0/23" maliCaddy.extraConfig;
+assert !lib.hasInfix "18080" maliCaddy.globalConfig;
+assert maliCaddy.configFile != null;
 pkgs.runCommand "caddy-security-test"
   {
     nativeBuildInputs = [
@@ -151,6 +227,10 @@ pkgs.runCommand "caddy-security-test"
     grep -Fxq dns.providers.desec "$TMPDIR/modules"
     ! grep -Fqi frankenphp "$TMPDIR/modules"
     caddy adapt --adapter caddyfile --config ${generatedConfig} > "$TMPDIR/caddy.json"
+    caddy adapt --adapter caddyfile --config ${maliCaddy.configFile} > "$TMPDIR/mali-caddy.json"
+    grep -Fq 'attic.mgmt.example.test' "$TMPDIR/mali-caddy.json"
+    grep -Fq 'minio.data.example.test' "$TMPDIR/mali-caddy.json"
+    grep -Fq 'nix-cache.int.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq '"jelly.example.test"' "$TMPDIR/caddy.json"
     grep -Fq '"media.example.test"' "$TMPDIR/caddy.json"
     grep -Fq '"alpha.example.test"' "$TMPDIR/caddy.json"
