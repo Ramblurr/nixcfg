@@ -38,16 +38,8 @@ let
       ]
       [ ]
       config;
-  caddyCertificateSets = lib.attrByPath [
-    "modules"
-    "services"
-    "caddy-security"
-    "edge"
-    "certificateSets"
-  ] { } config;
   caddyManagesCertificates =
-    caddyEdgeEnabled
-    && (caddyCertificateDomains != [ ] || caddyCertificateHosts != [ ] || caddyCertificateSets != { });
+    caddyEdgeEnabled && (caddyCertificateDomains != [ ] || caddyCertificateHosts != [ ]);
 
   mkVirtualHost =
     name: service: directWan:

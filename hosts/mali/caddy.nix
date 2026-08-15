@@ -40,21 +40,17 @@ in
     environmentFile = config.sops.templates.caddy-security-env.path;
     edge = {
       enable = false;
-      certificateSets = {
-        attic = [
-          "attic.mgmt.${homeDomain}"
-          "attic.int.${homeDomain}"
-        ];
-        ncps = [ "nix-cache.int.${homeDomain}" ];
-        s3 = [
-          "s3.data.${homeDomain}"
-          "*.s3.data.${homeDomain}"
-          "minio.data.${homeDomain}"
-          "*.s3.mgmt.${homeDomain}"
-          "minio.mgmt.${homeDomain}"
-          "s3.mgmt.${homeDomain}"
-        ];
-      };
+      certificateHosts = [
+        "attic.mgmt.${homeDomain}"
+        "attic.int.${homeDomain}"
+        "nix-cache.int.${homeDomain}"
+        "s3.data.${homeDomain}"
+        "*.s3.data.${homeDomain}"
+        "minio.data.${homeDomain}"
+        "*.s3.mgmt.${homeDomain}"
+        "minio.mgmt.${homeDomain}"
+        "s3.mgmt.${homeDomain}"
+      ];
       protocols = [
         "h1"
         "h2"
