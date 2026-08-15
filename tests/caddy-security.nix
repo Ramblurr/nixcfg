@@ -297,9 +297,12 @@ pkgs.runCommand "caddy-security-test"
 
     grep -Eq '^dep[[:space:]]+github\.com/greenpau/caddy-security[[:space:]]+v1\.1\.64([[:space:]]|$)' \
       "$TMPDIR/build-info"
+    grep -Eq '^dep[[:space:]]+github\.com/caddy-dns/desec[[:space:]]+v1\.1\.0([[:space:]]|$)' \
+      "$TMPDIR/build-info"
     grep -Fxq security "$TMPDIR/modules"
     grep -Fxq http.handlers.authenticator "$TMPDIR/modules"
     grep -Fxq http.authentication.providers.authorizer "$TMPDIR/modules"
+    grep -Fxq dns.providers.desec "$TMPDIR/modules"
     ! grep -Fqi frankenphp "$TMPDIR/modules"
 
     grep -Fq '{env.ALPHA_OIDC_SECRET}' ${generatedConfig}
@@ -312,6 +315,21 @@ pkgs.runCommand "caddy-security-test"
     export BETA_OIDC_SECRET=test-beta-secret
     export BETA_SIGNING_KEY=test-beta-signing-key
     caddy adapt --adapter caddyfile --config ${generatedConfig} > "$TMPDIR/caddy.json"
+
+    cat > "$TMPDIR/desec.Caddyfile" <<'EOF'
+    {
+      auto_https off
+      acme_dns desec {
+        token {env.DESEC_TOKEN}
+      }
+    }
+    http://localhost:9876 {
+      respond "ok"
+    }
+    EOF
+    caddy adapt --adapter caddyfile --config "$TMPDIR/desec.Caddyfile" > "$TMPDIR/desec.json"
+    grep -Fq '"name":"desec"' "$TMPDIR/desec.json"
+    grep -Fq '"token":"{env.DESEC_TOKEN}"' "$TMPDIR/desec.json"
 
     touch "$out"
   ''

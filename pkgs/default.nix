@@ -6,10 +6,13 @@ inputs: [
       pkgs-lib = prev.callPackage ../lib/pkgs.nix { flake-inputs = inputs; };
     in
     {
-      # caddy-security v1.1.64, commit b96087fc696ada2ed80f4ca81e031878a47d43ac
+      # caddy-security v1.1.64 and caddy-dns/desec v1.1.0
       caddy-with-security = prev.caddy.withPlugins {
-        plugins = [ "github.com/greenpau/caddy-security@v1.1.64" ];
-        hash = "sha256-QoLRkDSZky2nqwq04EdWVe6pnUBuVnVj9xNaG7z3QxY=";
+        plugins = [
+          "github.com/caddy-dns/desec@v1.1.0"
+          "github.com/greenpau/caddy-security@v1.1.64"
+        ];
+        hash = "sha256-LNSaxNXR+LzxRhGAhNTcX1eQ5XhbaVYlrQZ9XnLjsks=";
       };
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
         kernelPackages = prev.linuxPackages;
