@@ -788,6 +788,7 @@ in
       serviceConfig = {
         CapabilityBoundingSet = lib.optionals needsBindCapability [ "CAP_NET_BIND_SERVICE" ];
         AmbientCapabilities = lib.optionals needsBindCapability [ "CAP_NET_BIND_SERVICE" ];
+        RuntimeDirectory = "caddy";
         RuntimeDirectoryMode = "0750";
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
