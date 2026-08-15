@@ -15,8 +15,7 @@ let
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
-  calibreWebCaddySecurityEnabled =
-    cfg.apps.calibre-web.enable && cfg.apps.calibre-web.caddySecurity.enable;
+  calibreWebCaddySecurityEnabled = cfg.apps.calibre-web.enable;
   caddyIngressEnabled =
     cfg.ingress.enable && (cfg.ingress.caddy.enable || calibreWebCaddySecurityEnabled);
   caddyEdgeEnabled = lib.attrByPath [
@@ -167,16 +166,7 @@ in
       hindsight.enable = lib.mkEnableOption "Hindsight agent memory";
       calibre.enable = lib.mkEnableOption "Calibre";
       koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
-      calibre-web = {
-        enable = lib.mkEnableOption "Calibre Web";
-        caddySecurity = {
-          enable = lib.mkEnableOption "Calibre Web through caddy-security";
-          clientID = lib.mkOption {
-            type = lib.types.nonEmptyStr;
-            description = "Private Pocket ID client ID for Calibre Web";
-          };
-        };
-      };
+      calibre-web.enable = lib.mkEnableOption "Calibre Web";
       roon-server.enable = lib.mkEnableOption "Roon Server";
       onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
       archivebox.enable = lib.mkEnableOption "Archivebox";
@@ -214,9 +204,8 @@ in
         message = "JellyPlex-Watched requires both Plex and Jellyfin to be enabled";
       }
       {
-        assertion =
-          !cfg.apps.calibre-web.caddySecurity.enable || (cfg.ingress.enable && cfg.apps.calibre-web.enable);
-        message = "Calibre Web caddy-security requires ingress and Calibre Web";
+        assertion = !cfg.apps.calibre-web.enable || cfg.ingress.enable;
+        message = "Calibre Web requires ingress";
       }
       {
         assertion =
@@ -1056,14 +1045,14 @@ in
       enable = true;
       environmentFile = config.sops.templates.caddy-security-env.path;
       applications =
-        (lib.optionalAttrs calibreWebCaddySecurityEnabled {
+        (lib.optionalAttrs cfg.apps.calibre-web.enable {
           calibre-web = {
             publicHost = "books.${home-ops.homeDomain}";
             upstream = "127.0.0.1:${toString home-ops.ports.calibre-web}";
             portalPath = "/auth";
             oidc = {
               issuerURL = "https://id.${home-ops.homeDomain}";
-              clientID = cfg.apps.calibre-web.caddySecurity.clientID;
+              clientID = home-ops.calibreWebPocketIdClientId;
               clientSecretEnv = "CALIBRE_WEB_OIDC_CLIENT_SECRET";
               realm = "calibre-pocket-id";
             };
