@@ -69,7 +69,6 @@ in
       audiobookshelf.enable = true;
       filebrowser-quantum.enable = true;
       roon-server.enable = true;
-      authentik.enable = true;
       davis.enable = true;
       paperless.enable = true;
       ocis-work.enable = true;
