@@ -16,8 +16,6 @@ in
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
-    ./acme.nix
-    ./nginx.nix
     ./caddy.nix
     ./minio.nix
     ./syncthing.nix
