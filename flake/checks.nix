@@ -15,6 +15,7 @@
         james-haproxy-caddy-proxy-protocol = import ../tests/james-haproxy-caddy-proxy-protocol.nix {
           inherit pkgs;
         };
+        james-caddy = import ../tests/james-caddy.nix { inherit inputs pkgs; };
         james-crowdsec = import ../tests/james-crowdsec.nix { inherit inputs pkgs; };
         james-pocket-id = import ../tests/james-pocket-id.nix { inherit inputs pkgs; };
         james-webhook = import ../tests/james-webhook.nix { inherit inputs pkgs; };

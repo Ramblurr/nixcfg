@@ -232,6 +232,15 @@ in
       default = "gost";
       description = "Public ingress implementation used on james.";
     };
+
+    localBackend = lib.mkOption {
+      type = lib.types.enum [
+        "nginx"
+        "caddy"
+      ];
+      default = "nginx";
+      description = "James-local TLS backend selected by HAProxy.";
+    };
   };
 
   config = lib.mkIf (cfg.implementation == "gost") {

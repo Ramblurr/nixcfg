@@ -8,6 +8,7 @@ let
   inherit (config.modules.users.primaryUser) username;
 in
 {
+  disabledModules = [ ../../modules/services/caddy.nix ];
   imports = [
     ./disk-config.nix
     ./hardware.nix
@@ -16,6 +17,9 @@ in
     ../../config/hetzner-cloud-ccx.nix
     ./ingress.nix
     ./ingress-haproxy.nix
+    ../../modules/services/caddy-security-routes.nix
+    ../../modules/services/caddy-security.nix
+    ./caddy.nix
     ./web.nix
     ./web/hook.nix
     ./web/work.nix
@@ -72,7 +76,10 @@ in
     ];
   };
 
-  hosts.james.ingress.implementation = "haproxy";
+  hosts.james.ingress = {
+    implementation = "haproxy";
+    localBackend = "nginx";
+  };
 
   environment.persistence."/persist" = {
     hideMounts = true;

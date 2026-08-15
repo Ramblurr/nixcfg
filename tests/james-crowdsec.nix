@@ -59,6 +59,7 @@ let
             networking.hostName = "james";
             system.stateVersion = "25.11";
             services.openssh.enable = true;
+            services.caddy.enable = true;
             services.nginx.enable = true;
             services.tailscale.enable = true;
             repo.secrets = {
@@ -92,12 +93,27 @@ let
       filenames = [ "/var/log/nginx/crowdsec.log" ];
       labels.type = "nginx";
     }
+    {
+      source = "file";
+      filenames = [ "/var/log/caddy/access.log" ];
+      labels.type = "caddy";
+    }
   ];
 in
 assert cfg.services.crowdsec.settings.general.api.server.enable == false;
 assert
   cfg.services.crowdsec.settings.lapi.credentialsFile == "/run/secrets/crowdsec/lapiCredentials";
 assert cfg.services.crowdsec.localConfig.acquisitions == expectedAcquisitions;
+assert
+  cfg.services.crowdsec.hub.collections == [
+    "crowdsecurity/linux"
+    "crowdsecurity/sshd"
+    "crowdsecurity/nginx"
+    "crowdsecurity/caddy"
+    "crowdsecurity/http-dos"
+  ];
+assert builtins.elem "nginx" cfg.users.users.crowdsec.extraGroups;
+assert builtins.elem "caddy" cfg.users.users.crowdsec.extraGroups;
 assert cfg.services.crowdsec-firewall-bouncer.settings.api_url == "http://addams.example.test:6001";
 assert cfg.services.crowdsec-firewall-bouncer.settings.mode == "iptables";
 assert cfg.services.crowdsec-firewall-bouncer.registerBouncer.enable == false;
@@ -125,6 +141,19 @@ assert !(builtins.elem "firewall.service" bouncer.after);
 assert !(builtins.elem "firewall.service" bouncer.wants);
 assert !(builtins.elem "firewall.service" bouncer.partOf);
 assert parserCleanup.type == "r";
-pkgs.runCommand "james-crowdsec-module-test" { } ''
+pkgs.runCommand "james-crowdsec-module-test" { nativeBuildInputs = [ pkgs.jq ]; } ''
+  cat > "$TMPDIR/caddy-access.json" <<'JSON'
+  {"level":"info","ts":1786816800.0,"logger":"http.log.access","msg":"handled request","request":{"remote_ip":"198.51.100.25","remote_port":"4242","client_ip":"198.51.100.25","proto":"HTTP/2.0","method":"GET","host":"work.example.test","uri":"/login","headers":{"User-Agent":["representative-agent"]}},"bytes_read":0,"duration":0.001,"size":123,"status":404}
+  JSON
+  jq -e '
+    .logger == "http.log.access" and
+    .request.client_ip == "198.51.100.25" and
+    .request.proto == "HTTP/2.0" and
+    .request.method == "GET" and
+    .request.host == "work.example.test" and
+    .request.uri == "/login" and
+    .request.headers["User-Agent"][0] == "representative-agent" and
+    .status == 404
+  ' "$TMPDIR/caddy-access.json"
   touch "$out"
 ''
