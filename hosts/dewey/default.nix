@@ -45,16 +45,11 @@ in
   };
   modules.services.caddy-security.edge = {
     enable = true;
-    certificates = {
-      ${home-ops.homeDomain} = {
-        certificateFile = "/var/lib/acme/${home-ops.homeDomain}/fullchain.pem";
-        keyFile = "/var/lib/acme/${home-ops.homeDomain}/key.pem";
-      };
-      ${home-ops.workDomain} = {
-        certificateFile = "/var/lib/acme/${home-ops.workDomain}/fullchain.pem";
-        keyFile = "/var/lib/acme/${home-ops.workDomain}/key.pem";
-      };
-    };
+    certificateDomains = [
+      home-ops.homeDomain
+      home-ops.workDomain
+    ];
+    acmeEmail = config.repo.secrets.global.email.acme;
     directWan = {
       enable = true;
       inherit (config.modules.services.ingress.directWan) listenAddress listenPort;

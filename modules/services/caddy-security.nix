@@ -88,19 +88,6 @@ let
     }
   );
 
-  certificateType = lib.types.submodule {
-    options = {
-      certificateFile = lib.mkOption {
-        type = lib.types.nonEmptyStr;
-        description = "Runtime PEM certificate chain path";
-      };
-      keyFile = lib.mkOption {
-        type = lib.types.nonEmptyStr;
-        description = "Runtime PEM private key path";
-      };
-    };
-  };
-
   applications = lib.attrValues cfg.applications;
   appNames = builtins.attrNames cfg.applications;
   appId = name: lib.replaceStrings [ "-" ] [ "_" ] name;
@@ -295,16 +282,9 @@ let
   plainPublicHosts = map (route: route.publicHost) (builtins.attrValues plainRoutes);
   publicHosts = protectedPublicHosts ++ plainPublicHosts;
   hostMatchesDomain = domain: host: host == domain || lib.hasSuffix ".${domain}" host;
-  certificateDomains = builtins.attrNames cfg.edge.certificates;
+  certificateDomains = cfg.edge.certificateDomains;
   certificateDomainsForHost =
     host: lib.filter (domain: hostMatchesDomain domain host) certificateDomains;
-  certificateForHost = host: cfg.edge.certificates.${builtins.head (certificateDomainsForHost host)};
-  pathsAreRuntime =
-    certificate:
-    lib.all (path: lib.hasPrefix "/" path && !lib.hasPrefix "/nix/store/" path) [
-      certificate.certificateFile
-      certificate.keyFile
-    ];
 
   directWanRoutes = lib.filterAttrs (_: route: route.directWan) plainRoutes;
 
@@ -319,22 +299,37 @@ let
     }
   '';
 
+  managedSiteAddresses =
+    domain: port:
+    lib.concatStringsSep ", " (
+      map (subject: "https://${subject}:${toString port}") [
+        domain
+        "*.${domain}"
+        "*.int.${domain}"
+      ]
+    );
+
   mkRouteConfig =
-    routeAttrs: applicationAttrs: rejectHttp3:
+    routeAttrs: applicationAttrs: rejectHttp3Hosts: fallback:
     let
       errorHandlerConfig = lib.concatMapStringsSep "\n" (
         route: lib.optionalString (route.errorHandlerConfig != null) route.errorHandlerConfig
       ) (builtins.attrValues routeAttrs);
     in
     ''
+      ${lib.optionalString (rejectHttp3Hosts != [ ]) ''
+        @reject_http3 {
+          protocol http/3
+          host ${lib.concatStringsSep " " rejectHttp3Hosts}
+        }
+        respond @reject_http3 421
+        @without_http3 host ${lib.concatStringsSep " " rejectHttp3Hosts}
+        header @without_http3 -Alt-Svc
+      ''}
       route {
-        ${lib.optionalString rejectHttp3 ''
-          @http3 protocol http/3
-          respond @http3 421
-        ''}
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute routeAttrs)}
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute applicationAttrs)}
-        respond 421
+        ${fallback}
       }
       ${lib.optionalString (errorHandlerConfig != "") ''
         handle_errors {
@@ -344,106 +339,38 @@ let
     '';
 
   mkPublicSite =
-    domain: allowHttp3:
+    domain:
     let
-      routeAttrs = lib.filterAttrs (
-        _: route: hostMatchesDomain domain route.publicHost && route.http3 == allowHttp3
-      ) plainRoutes;
+      routeAttrs = lib.filterAttrs (_: route: hostMatchesDomain domain route.publicHost) plainRoutes;
       applicationAttrs = lib.filterAttrs (
-        _: app: hostMatchesDomain domain app.publicHost && app.http3 == allowHttp3
+        _: app: hostMatchesDomain domain app.publicHost
       ) cfg.applications;
-      hosts =
-        map (route: route.publicHost) (builtins.attrValues routeAttrs)
-        ++ map (app: app.publicHost) (builtins.attrValues applicationAttrs);
-      certificate = cfg.edge.certificates.${domain};
-      siteAddresses = lib.concatMapStringsSep ", " (
-        host: "https://${host}:${toString cfg.edge.httpsPort}"
-      ) hosts;
-      tlsConfig =
-        if allowHttp3 then
-          "tls ${certificate.certificateFile} ${certificate.keyFile}"
-        else
-          ''
-            tls ${certificate.certificateFile} ${certificate.keyFile} {
-              alpn h1 h2
-            }
-          '';
+      rejectHttp3Hosts =
+        map (route: route.publicHost) (lib.filter (route: !route.http3) (builtins.attrValues routeAttrs))
+        ++ map (app: app.publicHost) (lib.filter (app: !app.http3) (builtins.attrValues applicationAttrs));
     in
-    lib.optionalString (hosts != [ ]) ''
-      ${siteAddresses} {
-        ${tlsConfig}
+    ''
+      ${managedSiteAddresses domain cfg.edge.httpsPort} {
         ${mkAccessLog}
-        ${lib.optionalString (!allowHttp3) "header -Alt-Svc"}
-        ${mkRouteConfig routeAttrs applicationAttrs (!allowHttp3)}
+        ${mkRouteConfig routeAttrs applicationAttrs rejectHttp3Hosts "respond 421"}
       }
     '';
 
-  publicSiteConfig = lib.concatMapStringsSep "\n" (
-    domain:
-    lib.concatMapStringsSep "\n" (mkPublicSite domain) [
-      true
-      false
-    ]
-  ) certificateDomains;
-
-  unknownPublicSiteConfig = lib.concatMapStringsSep "\n" (
-    domain:
-    let
-      certificate = cfg.edge.certificates.${domain};
-    in
-    ''
-      https://${domain}:${toString cfg.edge.httpsPort}, https://*.${domain}:${toString cfg.edge.httpsPort} {
-        tls ${certificate.certificateFile} ${certificate.keyFile}
-        ${mkAccessLog}
-        respond 421
-      }
-    ''
-  ) certificateDomains;
-
-  publicCatchAllSiteConfig =
-    let
-      certificate = cfg.edge.certificates.${builtins.head certificateDomains};
-    in
-    ''
-      https://:${toString cfg.edge.httpsPort} {
-        tls ${certificate.certificateFile} ${certificate.keyFile}
-        ${mkAccessLog}
-        respond 421
-      }
-    '';
+  publicSiteConfig = lib.concatMapStringsSep "\n" mkPublicSite certificateDomains;
 
   directWanSiteConfig = lib.optionalString cfg.edge.directWan.enable (
     let
       routeName = builtins.head (builtins.attrNames directWanRoutes);
       route = directWanRoutes.${routeName};
       domain = builtins.head (certificateDomainsForHost route.publicHost);
-      certificate = cfg.edge.certificates.${domain};
-      port = toString cfg.edge.directWan.listenPort;
+      port = cfg.edge.directWan.listenPort;
       listener = cfg.edge.directWan.listenAddress;
-      tlsConfig = ''
-        tls ${certificate.certificateFile} ${certificate.keyFile} {
-          alpn h1 h2
-        }
-      '';
     in
     ''
-      https://${route.publicHost}:${port} {
+      ${managedSiteAddresses domain port} {
         bind ${listener}
-        ${tlsConfig}
         ${mkAccessLog}
-        ${mkRouteConfig { ${routeName} = route; } { } false}
-      }
-      https://${domain}:${port}, https://*.${domain}:${port} {
-        bind ${listener}
-        ${tlsConfig}
-        ${mkAccessLog}
-        abort
-      }
-      https://:${port} {
-        bind ${listener}
-        ${tlsConfig}
-        ${mkAccessLog}
-        abort
+        ${mkRouteConfig { ${routeName} = route; } { } [ ] "abort"}
       }
     ''
   );
@@ -506,10 +433,15 @@ in
         description = "Structured public Caddy access log path";
       };
 
-      certificates = lib.mkOption {
-        type = lib.types.attrsOf certificateType;
-        default = { };
-        description = "Domain suffixes and existing runtime TLS certificate paths";
+      certificateDomains = lib.mkOption {
+        type = lib.types.listOf lib.types.nonEmptyStr;
+        default = [ ];
+        description = "Domain suffixes for Caddy-managed apex and wildcard certificates";
+      };
+
+      acmeEmail = lib.mkOption {
+        type = lib.types.nonEmptyStr;
+        description = "Contact email for Caddy's ACME account";
       };
 
       directWan = {
@@ -609,18 +541,18 @@ in
         message = "caddy-security identity header names contain an unsupported character";
       }
       {
-        assertion = !cfg.edge.enable || cfg.edge.certificates != { };
-        message = "public Caddy edge requires at least one existing certificate";
+        assertion = !cfg.edge.enable || certificateDomains != [ ];
+        message = "public Caddy edge requires at least one managed certificate domain";
+      }
+      {
+        assertion = allUnique certificateDomains;
+        message = "public Caddy managed certificate domains must be unique";
       }
       {
         assertion =
           !cfg.edge.enable
           || lib.all (host: builtins.length (certificateDomainsForHost host) == 1) publicHosts;
-        message = "every public Caddy hostname must match exactly one configured certificate domain";
-      }
-      {
-        assertion = !cfg.edge.enable || lib.all pathsAreRuntime (builtins.attrValues cfg.edge.certificates);
-        message = "public Caddy certificate and key paths must be absolute runtime paths outside the Nix store";
+        message = "every public Caddy hostname must match exactly one managed certificate domain";
       }
       {
         assertion = !cfg.edge.enable || lib.hasPrefix "/var/log/caddy/" cfg.edge.accessLog;
@@ -648,7 +580,20 @@ in
       inherit (cfg) environmentFile;
       openFirewall = false;
       globalConfig = ''
-        auto_https off
+        ${if cfg.edge.enable then "auto_https disable_redirects" else "auto_https off"}
+        ${lib.optionalString cfg.edge.enable ''
+          email ${cfg.edge.acmeEmail}
+          cert_issuer acme {
+            dir https://acme-v02.api.letsencrypt.org/directory
+            email ${cfg.edge.acmeEmail}
+            dns desec {
+              token {env.DESEC_API_TOKEN}
+            }
+            propagation_delay 5m
+            propagation_timeout 12m
+            resolvers ns.desec.ch:53 ns.desec.cz:53 ns.desec.li:53 ns1.desec.io:53 ns2.desec.org:53
+          }
+        ''}
         admin 127.0.0.1:2019
         ${
           if cfg.edge.enable then
@@ -709,8 +654,6 @@ in
             redir https://{http.request.host}{http.request.uri} 308
           }
           ${publicSiteConfig}
-          ${unknownPublicSiteConfig}
-          ${publicCatchAllSiteConfig}
           ${directWanSiteConfig}
         ''}
       '';
@@ -718,16 +661,9 @@ in
 
     systemd.services.caddy = {
       requires = [ "sops-install-secrets.service" ];
-      after = [
-        "sops-install-secrets.service"
-      ]
-      ++ lib.optionals cfg.edge.enable (map (domain: "acme-${domain}.service") certificateDomains);
+      after = [ "sops-install-secrets.service" ];
       unitConfig = lib.optionalAttrs cfg.edge.enable {
-        RequiresMountsFor = [ "/var/lib/acme" ];
-        ConditionPathExists = lib.concatMap (certificate: [
-          certificate.certificateFile
-          certificate.keyFile
-        ]) (builtins.attrValues cfg.edge.certificates);
+        RequiresMountsFor = [ "/var/lib/caddy" ];
       };
       serviceConfig = {
         CapabilityBoundingSet = lib.optionals cfg.edge.enable [ "CAP_NET_BIND_SERVICE" ];

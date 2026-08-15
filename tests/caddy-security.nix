@@ -36,10 +36,8 @@ let
           environmentFile = "/run/secrets/rendered/caddy-security.env";
           edge = {
             enable = true;
-            certificates."example.test" = {
-              certificateFile = "/var/lib/acme/example.test/fullchain.pem";
-              keyFile = "/var/lib/acme/example.test/key.pem";
-            };
+            certificateDomains = [ "example.test" ];
+            acmeEmail = "admin@example.test";
             directWan = {
               enable = true;
               listenAddress = "192.0.2.1";
@@ -212,11 +210,11 @@ assert cfg.users.groups.acme.members == [ "caddy" ];
 assert cfg.security.acme.defaults.reloadServices == [ "caddy.service" ];
 assert caddyService.serviceConfig.AmbientCapabilities == [ "CAP_NET_BIND_SERVICE" ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ "CAP_NET_BIND_SERVICE" ];
-assert caddyService.unitConfig.RequiresMountsFor == [ "/var/lib/acme" ];
+assert caddyService.unitConfig.RequiresMountsFor == [ "/var/lib/caddy" ];
 assert builtins.elem "/var/lib/caddy" (
   map (entry: entry.directory) cfg.environment.persistence."/persist".directories
 );
-assert lib.hasInfix "auto_https off" caddy.globalConfig;
+assert lib.hasInfix "auto_https disable_redirects" caddy.globalConfig;
 assert lib.hasInfix "trusted_proxies static 127.0.0.1/32 ::1/128" caddy.globalConfig;
 assert lib.hasInfix "servers :443" caddy.globalConfig;
 assert lib.hasInfix "strict_sni_host on" caddy.globalConfig;
@@ -244,15 +242,27 @@ assert lib.hasInfix ''match role "editors"'' caddy.globalConfig;
 assert lib.hasInfix "http://:18080" caddy.extraConfig;
 assert lib.hasInfix "bind 127.0.0.1" caddy.extraConfig;
 assert lib.hasInfix "http://:8081" caddy.extraConfig;
-assert lib.hasInfix "https://alpha.example.test:443" caddy.extraConfig;
-assert lib.hasInfix "https://beta.example.test:443" caddy.extraConfig;
-assert lib.hasInfix "alpn h1 h2" caddy.extraConfig;
-assert lib.hasInfix "@http3 protocol http/3" caddy.extraConfig;
-assert lib.hasInfix "respond @http3 421" caddy.extraConfig;
-assert lib.hasInfix "header -Alt-Svc" caddy.extraConfig;
-assert lib.hasInfix "https://example.test:443, https://*.example.test:443" caddy.extraConfig;
-assert lib.hasInfix "https://jelly.example.test:8443" caddy.extraConfig;
-assert lib.hasInfix "https://example.test:8443, https://*.example.test:8443" caddy.extraConfig;
+assert lib.hasInfix (
+  "https://example.test:443, https://*.example.test:443, https://*.int.example.test:443"
+) caddy.extraConfig;
+assert lib.hasInfix "@reject_http3" caddy.extraConfig;
+assert lib.hasInfix "protocol http/3" caddy.extraConfig;
+assert lib.hasInfix "host beta.example.test" caddy.extraConfig;
+assert lib.hasInfix "respond @reject_http3 421" caddy.extraConfig;
+assert lib.hasInfix "header @without_http3 -Alt-Svc" caddy.extraConfig;
+assert lib.hasInfix (
+  "https://example.test:8443, https://*.example.test:8443, https://*.int.example.test:8443"
+) caddy.extraConfig;
+assert lib.hasInfix "cert_issuer acme" caddy.globalConfig;
+assert lib.hasInfix "dir https://acme-v02.api.letsencrypt.org/directory" caddy.globalConfig;
+assert lib.hasInfix "email admin@example.test" caddy.globalConfig;
+assert lib.hasInfix "token {env.DESEC_API_TOKEN}" caddy.globalConfig;
+assert lib.hasInfix "propagation_delay 5m" caddy.globalConfig;
+assert lib.hasInfix "propagation_timeout 12m" caddy.globalConfig;
+assert lib.hasInfix (
+  "resolvers ns.desec.ch:53 ns.desec.cz:53 ns.desec.li:53 ns1.desec.io:53 ns2.desec.org:53"
+) caddy.globalConfig;
+assert !lib.hasInfix "/var/lib/acme" caddy.extraConfig;
 assert lib.hasInfix "abort" caddy.extraConfig;
 assert lib.hasInfix "output file /var/log/caddy/access.log" caddy.extraConfig;
 assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
@@ -310,29 +320,19 @@ pkgs.runCommand "caddy-security-test"
 
     grep -Fq '{env.ALPHA_OIDC_SECRET}' ${generatedConfig}
     grep -Fq '{env.BETA_OIDC_SECRET}' ${generatedConfig}
+    grep -Fq '{env.DESEC_API_TOKEN}' ${generatedConfig}
     ! grep -Fq 'test-alpha-secret' ${generatedConfig}
     ! grep -Fq 'test-beta-secret' ${generatedConfig}
+    ! grep -Fq 'test-desec-token' ${generatedConfig}
 
     export ALPHA_OIDC_SECRET=test-alpha-secret
     export ALPHA_SIGNING_KEY=test-alpha-signing-key
     export BETA_OIDC_SECRET=test-beta-secret
     export BETA_SIGNING_KEY=test-beta-signing-key
+    export DESEC_API_TOKEN=test-desec-token
     caddy adapt --adapter caddyfile --config ${generatedConfig} > "$TMPDIR/caddy.json"
-
-    cat > "$TMPDIR/desec.Caddyfile" <<'EOF'
-    {
-      auto_https off
-      acme_dns desec {
-        token {env.DESEC_TOKEN}
-      }
-    }
-    http://localhost:9876 {
-      respond "ok"
-    }
-    EOF
-    caddy adapt --adapter caddyfile --config "$TMPDIR/desec.Caddyfile" > "$TMPDIR/desec.json"
-    grep -Fq '"name":"desec"' "$TMPDIR/desec.json"
-    grep -Fq '"token":"{env.DESEC_TOKEN}"' "$TMPDIR/desec.json"
+    grep -Fq '"name":"desec"' "$TMPDIR/caddy.json"
+    grep -Fq '"token":"{env.DESEC_API_TOKEN}"' "$TMPDIR/caddy.json"
 
     touch "$out"
   ''
