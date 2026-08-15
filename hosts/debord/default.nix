@@ -60,7 +60,6 @@ in
     };
     apps.hindsight.enable = true;
   };
-  modules.services.ingress.legacyAcme.enable = true;
   modules.services.caddy-security.edge = {
     enable = true;
     certificateHosts = map (host: "${host}.${config.repo.secrets.global.domain.home}") [
@@ -178,10 +177,6 @@ in
     ];
     http.ip = "127.0.0.1";
     http.port = nadApiPort;
-  };
-  modules.services.ingress.virtualHosts."nad.${config.repo.secrets.global.domain.home}" = {
-    acmeHost = config.repo.secrets.global.domain.home;
-    upstream = "http://127.0.0.1:${toString nadApiPort}";
   };
   modules.services.caddy.routes.nad = {
     publicHost = "nad.${config.repo.secrets.global.domain.home}";
