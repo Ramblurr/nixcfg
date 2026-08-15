@@ -18,11 +18,6 @@ in
       example = "plex.example.com";
       description = "The domain to use for the plex";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     nfsShare = lib.mkOption { type = lib.types.str; };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };

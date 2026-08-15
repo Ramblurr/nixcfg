@@ -15,11 +15,6 @@ in
       example = "tautulli.example.com";
       description = "The domain to use for the tautulli";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       http = lib.mkOption {
         type = lib.types.port;

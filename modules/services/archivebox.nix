@@ -24,11 +24,6 @@ in
         description = "The HTTP port to use";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
   };
@@ -59,17 +54,6 @@ in
       "d '${dataDir}/chrome-profile' 750 ${cfg.user.name} ${cfg.group.name} - -"
       "d ${homeDir} 750 ${cfg.user.name} ${cfg.group.name} - -"
     ];
-
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = true;
-    };
 
     home-manager.users.${cfg.user.name} =
       { pkgs, config, ... }:
