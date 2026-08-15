@@ -59,7 +59,10 @@ let
     });
   caddySecurityEnvPrefix = name: lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name);
   caddySecurityEnvironmentLines =
-    (lib.optionals cfg.apps.calibre-web.caddySecurity.enable [
+    (lib.optionals caddyIngressEnabled [
+      "DESEC_API_TOKEN=${config.sops.placeholder.desec_api_token}"
+    ])
+    ++ (lib.optionals cfg.apps.calibre-web.caddySecurity.enable [
       "CALIBRE_WEB_OIDC_CLIENT_SECRET=${config.sops.placeholder.calibre-web-oidc-client-secret}"
       "CALIBRE_WEB_SIGNING_KEY=${config.sops.placeholder.calibre-web-caddy-security-signing-key}"
     ])
