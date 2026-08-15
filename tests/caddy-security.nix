@@ -224,6 +224,8 @@ let
   };
   maliEvaluated = evaluated.extendModules {
     modules = [
+      ../hosts/mali/acme.nix
+      ../hosts/mali/nginx.nix
       ../hosts/mali/caddy.nix
       (
         { config, ... }:
@@ -236,6 +238,7 @@ let
             };
           };
           modules.services.ingress.directWan.enable = lib.mkForce false;
+          modules.services.ingress.enable = lib.mkForce false;
         }
       )
     ];
@@ -259,10 +262,10 @@ let
         { modules.services.caddy-security.edge.enable = lib.mkForce false; }
       ];
     }).config;
-  transitionalMaliCfg =
+  retiredMaliCfg =
     (maliEvaluated.extendModules {
       modules = [
-        { modules.services.ingress.legacyAcme.enable = true; }
+        { modules.services.ingress.legacyAcme.enable = lib.mkForce false; }
       ];
     }).config;
   maliCaddy = maliCfg.services.caddy;
@@ -287,13 +290,14 @@ assert lib.assertMsg (
   maliFailedAssertions == [ ]
 ) "failed Mali NixOS assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
 assert !maliCfg.services.nginx.enable;
-assert maliCfg.security.acme.certs == { };
+assert maliCfg.modules.services.ingress.legacyAcme.enable;
+assert builtins.length (builtins.attrNames maliCfg.security.acme.certs) == 2;
 assert builtins.elem 443 maliCfg.networking.firewall.allowedUDPPorts;
 assert maliPreparationCfg.services.nginx.enable;
-assert maliPreparationCfg.security.acme.certs ? "example.test";
+assert builtins.length (builtins.attrNames maliPreparationCfg.security.acme.certs) == 2;
 assert !(builtins.elem 443 maliPreparationCfg.networking.firewall.allowedUDPPorts);
-assert transitionalMaliCfg.services.nginx.enable == false;
-assert transitionalMaliCfg.security.acme.certs ? "example.test";
+assert retiredMaliCfg.services.nginx.enable == false;
+assert retiredMaliCfg.security.acme.certs == { };
 assert
   maliCfg.modules.services.caddy-security.edge.protocols == [
     "h1"
@@ -432,7 +436,8 @@ assert lib.hasInfix "set cookie name prefix ALPHA" caddy.globalConfig;
 assert lib.hasInfix "set cookie name prefix BETA" caddy.globalConfig;
 assert lib.hasInfix "set auth url /auth/oauth2/alpha-pocket-id" caddy.globalConfig;
 assert lib.hasInfix "set auth url /login/oauth2/beta-pocket-id" caddy.globalConfig;
-assert lib.hasInfix ''inject header X-Upstream-User from "userinfo|preferred_username"'' caddy.globalConfig;
+assert lib.hasInfix ''inject header X-Upstream-User from "userinfo|preferred_username"''
+  caddy.globalConfig;
 assert lib.hasInfix ''match role "books"'' caddy.globalConfig;
 assert lib.hasInfix ''match role "editors"'' caddy.globalConfig;
 assert lib.hasInfix "http://:18080" caddy.extraConfig;
