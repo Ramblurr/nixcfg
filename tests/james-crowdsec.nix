@@ -60,7 +60,6 @@ let
             system.stateVersion = "25.11";
             services.openssh.enable = true;
             services.caddy.enable = true;
-            services.nginx.enable = true;
             services.tailscale.enable = true;
             repo.secrets = {
               global.domain.tailnet = "example.test";
@@ -90,11 +89,6 @@ let
     }
     {
       source = "file";
-      filenames = [ "/var/log/nginx/crowdsec.log" ];
-      labels.type = "nginx";
-    }
-    {
-      source = "file";
       filenames = [ "/var/log/caddy/access.log" ];
       labels.type = "caddy";
     }
@@ -108,11 +102,9 @@ assert
   cfg.services.crowdsec.hub.collections == [
     "crowdsecurity/linux"
     "crowdsecurity/sshd"
-    "crowdsecurity/nginx"
     "crowdsecurity/caddy"
     "crowdsecurity/http-dos"
   ];
-assert builtins.elem "nginx" cfg.users.users.crowdsec.extraGroups;
 assert builtins.elem "caddy" cfg.users.users.crowdsec.extraGroups;
 assert cfg.services.crowdsec-firewall-bouncer.settings.api_url == "http://addams.example.test:6001";
 assert cfg.services.crowdsec-firewall-bouncer.settings.mode == "iptables";

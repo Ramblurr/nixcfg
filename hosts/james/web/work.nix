@@ -5,105 +5,23 @@
 }:
 
 let
-  inherit (config.repo.secrets.global)
-    codeWork
-    git
-    ;
-  inherit (config.repo.secrets.global.domain) home work work2;
+  inherit (config.repo.secrets.global) git;
+  inherit (config.repo.secrets.global.domain) work;
   domain = work;
   hookId = "deploy-${domain}";
-  hookSocketPath = config.hosts.james.webhooks.hookSocketPaths.${hookId};
   sitePath = "/var/lib/static-web/${domain}";
   hookSocketDirectory = "${sitePath}/.run";
-  hookUser = config.hosts.james.webhooks.user;
-  hookGroup = config.hosts.james.webhooks.group;
   rootPath = "${sitePath}/www";
   webhookService = config.hosts.james.webhooks.hookServiceNames.${hookId};
+  caddyUser = config.services.caddy.user;
+  caddyGroup = config.services.caddy.group;
 in
 {
   systemd.tmpfiles.rules = [
-    "d '${hookSocketDirectory}' 0750 ${hookUser} ${hookGroup} - -"
+    "d '${sitePath}' 0750 ${caddyUser} ${caddyGroup} - -"
+    "d '${hookSocketDirectory}' 0750 ${caddyUser} ${caddyGroup} - -"
+    "Z '${sitePath}/www*' - ${caddyUser} ${caddyGroup} - -"
   ];
-
-  security.acme.certs.${domain} = {
-    domain = "${domain}";
-    extraDomainNames = [
-      "www.${domain}"
-      "${work2}"
-      "www.${work2}"
-      "code.${domain}"
-    ];
-  };
-
-  services.nginx.virtualHosts.${work2} = {
-    serverAliases = [
-      "www.${work2}"
-    ];
-    useACMEHost = domain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = true;
-    quic = false;
-    globalRedirect = domain;
-  };
-
-  services.nginx.virtualHosts."code.${domain}" = {
-    useACMEHost = domain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = true;
-    quic = false;
-    locations."/" = {
-      return = "302 ${codeWork}";
-    };
-  };
-
-  services.nginx.virtualHosts.${domain} = {
-    serverAliases = [
-      "www.${domain}"
-    ];
-    useACMEHost = domain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = true;
-    quic = false;
-    root = rootPath;
-    extraConfig = ''
-      add_header Alt-Svc 'h3=":443"; ma=86400';
-    '';
-    locations."/_deploy" = {
-      proxyPass = "http://unix:${hookSocketPath}";
-    };
-    locations."= /.well-known/carddav".extraConfig = ''
-      return 301 https://dav.${home}/dav/;
-    '';
-    locations."= /.well-known/caldav".extraConfig = ''
-      return 301 https://dav.${home}/dav/;
-    '';
-    locations."= /.well-known/matrix/server".extraConfig =
-      let
-        server = {
-          "m.server" = "matrix.${domain}:443";
-        };
-      in
-      ''
-        add_header Content-Type application/json;
-        return 200 '${builtins.toJSON server}';
-      '';
-    locations."= /.well-known/matrix/client".extraConfig =
-      let
-        client = {
-          "m.homeserver" = {
-            "base_url" = "https://matrix.${domain}";
-          };
-        };
-      in
-      ''
-        add_header Content-Type application/json;
-        add_header Access-Control-Allow-Origin *;
-        return 200 '${builtins.toJSON client}';
-      '';
-  };
 
   sops.secrets.webhook-github-work-secret = {
     restartUnits = [ webhookService ];
@@ -114,6 +32,8 @@ in
     serviceName = "work-site";
     urlPrefix = "_deploy";
     socketDirectory = hookSocketDirectory;
+    user = caddyUser;
+    group = caddyGroup;
     secretsFile = config.sops.secrets.webhook-github-work-secret.path;
     hooks = {
       ${hookId} = {
@@ -145,5 +65,4 @@ in
       };
     };
   };
-
 }

@@ -11,13 +11,12 @@ let
   docsDomain = "docs.${domain}";
   deployUser = docsDomain;
   deployUserCfg = config.modules.users.deploy-users.${deployUser};
-  nginxGroup = config.services.nginx.group;
+  caddyGroup = config.services.caddy.group;
   sitePath = "/var/lib/static-web/${domain}/docs";
   bootstrapPath = "${sitePath}/bootstrap";
   rootPath = "${sitePath}/current";
   docsHookSocketDir = "${sitePath}/.run";
   docsHookSocketPath = "${docsHookSocketDir}/github-docs-hook.sock";
-  hookSocketPath = config.hosts.james.webhooks.hookSocketPaths.${hookId};
   docsWebhookSecretFile = config.sops.secrets.webhook-github-docs-secret.path;
   docsDispatchTokenFile = config.sops.secrets.github_token_docs_trigger_pat.path;
   webhookService = config.hosts.james.webhooks.hookServiceNames.${hookId};
@@ -65,28 +64,23 @@ in
     restartUnits = [ webhookService ];
   };
 
-  security.acme.certs.${docsDomain} = {
-    domain = docsDomain;
-  };
-
   systemd.tmpfiles.rules = [
-    "d '${sitePath}' 0750 ${deployUserCfg.username} ${nginxGroup} - -"
-    "d '${docsHookSocketDir}' 0750 ${deployUserCfg.username} ${nginxGroup} - -"
-    "d '${bootstrapPath}' 0750 ${deployUserCfg.username} ${nginxGroup} - -"
-    "d '${bootstrapPath}/.etc' 0750 ${deployUserCfg.username} ${nginxGroup} - -"
-    "d '${bootstrapPath}/.etc/nginx' 0750 ${deployUserCfg.username} ${nginxGroup} - -"
-    "f '${bootstrapPath}/.etc/nginx/rewrite.conf' 0640 ${deployUserCfg.username} ${nginxGroup} - -"
-    "L '${rootPath}' - - - - ${bootstrapPath}"
+    "d '${sitePath}' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
+    "d '${docsHookSocketDir}' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
+    "d '${bootstrapPath}' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
+    "d '${bootstrapPath}/.etc' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
+    "d '${bootstrapPath}/.etc/nginx' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
+    "f '${bootstrapPath}/.etc/nginx/rewrite.conf' 0640 ${deployUserCfg.username} ${caddyGroup} - -"
   ];
-  system.activationScripts.docsSiteNginxBootstrap.text = ''
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${nginxGroup} '${sitePath}'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${nginxGroup} '${docsHookSocketDir}'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${nginxGroup} '${bootstrapPath}'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${nginxGroup} '${bootstrapPath}/.etc'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${nginxGroup} '${bootstrapPath}/.etc/nginx'
+  system.activationScripts.docsSiteBootstrap.text = ''
+    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${sitePath}'
+    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${docsHookSocketDir}'
+    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${bootstrapPath}'
+    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${bootstrapPath}/.etc'
+    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${bootstrapPath}/.etc/nginx'
 
     if [ ! -e '${bootstrapPath}/.etc/nginx/rewrite.conf' ]; then
-      install -m 0640 -o ${deployUserCfg.username} -g ${nginxGroup} /dev/null '${bootstrapPath}/.etc/nginx/rewrite.conf'
+      install -m 0640 -o ${deployUserCfg.username} -g ${caddyGroup} /dev/null '${bootstrapPath}/.etc/nginx/rewrite.conf'
     fi
 
     if [ ! -e '${rootPath}' ]; then
@@ -94,78 +88,11 @@ in
     fi
   '';
 
-  services.nginx.virtualHosts.${docsDomain} = {
-    useACMEHost = docsDomain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = true;
-    quic = false;
-    root = rootPath;
-    extraConfig = ''
-      add_header Alt-Svc 'h3=":443"; ma=86400';
-      absolute_redirect off;
-      etag on;
-      if_modified_since exact;
-      error_page 404 /404.html;
-      include ${rootPath}/.etc/nginx/rewrite.conf;
-    '';
-    locations."= /.etc/nginx/rewrite.conf" = {
-      extraConfig = ''
-        deny all;
-        return 404;
-      '';
-    };
-    locations."~ ^(?<slashless>.+)/$" = {
-      extraConfig = ''
-        try_files $slashless/index.html @strip_trailing_slash;
-        expires 30m;
-        add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
-      '';
-    };
-    locations."@strip_trailing_slash" = {
-      extraConfig = ''
-        rewrite ^(.+)/$ $1 permanent;
-      '';
-    };
-    locations."= /" = {
-      extraConfig = ''
-        try_files /index.html =404;
-        expires 30m;
-        add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
-      '';
-    };
-    locations."/" = {
-      extraConfig = ''
-        if (-d $request_filename) {
-          rewrite ^(.+[^/])$ $1/ permanent;
-        }
-        try_files $uri $uri.html $uri/index.html $uri/ =404;
-        expires 30m;
-        add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
-      '';
-    };
-    locations."/_deploy" = {
-      proxyPass = "http://unix:${hookSocketPath}";
-    };
-    locations."~* \\.(?:html|css|js|json|xml|txt|md)$" = {
-      extraConfig = ''
-        expires 30m;
-        add_header Cache-Control "public, no-transform, max-age=1800, must-revalidate" always;
-      '';
-    };
-    locations."~* \\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff|woff2|ttf|otf|eot)$" = {
-      extraConfig = ''
-        expires 30d;
-        add_header Cache-Control "public, no-transform, max-age=2592000, must-revalidate" always;
-      '';
-    };
-  };
-
   hosts.james.webhooks.hooks = {
     ${hookId} = {
       secretsFile = docsWebhookSecretFile;
       user = deployUserCfg.username;
-      group = nginxGroup;
+      group = caddyGroup;
       socketPath = docsHookSocketPath;
       execute-command = docsHookScript;
       command-working-directory = sitePath;

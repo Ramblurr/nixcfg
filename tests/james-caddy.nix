@@ -22,26 +22,13 @@ let
       ../modules/services/caddy-security.nix
       ../hosts/james/caddy.nix
       ../hosts/james/ingress-haproxy.nix
+      ../hosts/james/goaccess.nix
       inputs.impermanence.nixosModules.impermanence
       inputs.sops-nix.nixosModules.sops
       (
         { lib, ... }:
         {
-          options = {
-            hosts.james.ingress = {
-              implementation = lib.mkOption {
-                type = lib.types.enum [ "haproxy" ];
-                default = "haproxy";
-              };
-              localBackend = lib.mkOption {
-                type = lib.types.enum [
-                  "nginx"
-                  "caddy"
-                ];
-              };
-            };
-            repo.secrets = lib.mkOption { type = lib.types.attrs; };
-          };
+          options.repo.secrets = lib.mkOption { type = lib.types.attrs; };
         }
       )
       {
@@ -53,11 +40,6 @@ let
           fsType = "tmpfs";
         };
         networking.hostName = "james";
-        services.nginx.enable = true;
-        hosts.james.ingress = {
-          implementation = "haproxy";
-          localBackend = "caddy";
-        };
         repo.secrets = {
           global = {
             code = "https://code.example.test/personal";
@@ -77,15 +59,11 @@ let
     ];
   };
   cfg = evaluated.config;
-  nginxBackendCfg =
-    (evaluated.extendModules {
-      modules = [
-        { hosts.james.ingress.localBackend = lib.mkForce "nginx"; }
-      ];
-    }).config;
   caddy = cfg.services.caddy;
   caddyService = cfg.systemd.services.caddy;
   caddyConfig = caddy.configFile;
+  goaccessService = cfg.systemd.services.goaccess-report;
+  goaccessTimer = cfg.systemd.timers.goaccess-report;
   expectedCertificateHosts = [
     domains.be
     "www.${domains.be}"
@@ -193,7 +171,7 @@ assert caddyService.serviceConfig.RuntimeDirectoryMode == "0750";
 assert caddyService.serviceConfig.AmbientCapabilities == [ ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ ];
 assert cfg.users.users.haproxy.extraGroups == [ "caddy" ];
-assert builtins.elem "nginx" cfg.users.users.caddy.extraGroups;
+assert cfg.users.users.caddy.extraGroups == [ "casey.example.test" ];
 assert builtins.elem "casey.example.test" cfg.users.users.caddy.extraGroups;
 assert lib.hasInfix "server james-local /run/caddy/james-ingress.sock send-proxy"
   cfg.services.haproxy.config;
@@ -202,16 +180,18 @@ assert lib.hasInfix "server thingstead thingstead.moot.home.example.test:443"
   cfg.services.haproxy.config;
 assert builtins.elem "caddy.service" cfg.systemd.services.haproxy.after;
 assert builtins.elem "caddy.service" cfg.systemd.services.haproxy.wants;
-assert !nginxBackendCfg.services.caddy.enable;
-assert lib.hasInfix "server james-local /run/nginx/james-ingress.sock send-proxy"
-  nginxBackendCfg.services.haproxy.config;
-assert nginxBackendCfg.users.users.haproxy.extraGroups == [ "nginx" ];
-assert builtins.elem "nginx.service" nginxBackendCfg.systemd.services.haproxy.after;
+assert builtins.elem "caddy.service" goaccessService.after;
+assert goaccessService.unitConfig.ConditionPathExists == "/var/log/caddy/access.log";
+assert goaccessService.serviceConfig.User == "caddy";
+assert goaccessService.serviceConfig.Group == "caddy";
+assert lib.hasInfix "--log-format=CADDY" goaccessService.serviceConfig.ExecStart;
+assert goaccessTimer.wantedBy == [ "timers.target" ];
 pkgs.runCommand "james-caddy-source-test"
   {
     nativeBuildInputs = [
       pkgs.caddy-with-security
       pkgs.jq
+      pkgs.goaccess
     ];
   }
   ''
@@ -248,6 +228,10 @@ pkgs.runCommand "james-caddy-source-test"
       .request.headers["User-Agent"][0] == "representative-agent" and
       .status == 404
     ' "$TMPDIR/caddy-access.json"
+    goaccess --no-global-config --log-format=CADDY --output="$TMPDIR/goaccess.json" \
+      --json-pretty-print --no-progress "$TMPDIR/caddy-access.json"
+    jq -e '.general.valid_requests == 1 and .general.failed_requests == 0' \
+      "$TMPDIR/goaccess.json"
 
     touch "$out"
   ''

@@ -21,7 +21,7 @@ let
       inherit authorizedKeys;
       uid = 1994;
       gid = 1992;
-      extraGroups = [ "nginx" ];
+      extraGroups = [ "caddy" ];
       homeManager.enable = false;
     };
   };

@@ -4,7 +4,6 @@
   ...
 }:
 let
-  cfg = config.hosts.james.ingress;
   inherit (config.repo.secrets.global) code codeWork email;
   inherit (config.repo.secrets.global.domain)
     be
@@ -251,7 +250,7 @@ let
   '';
 in
 {
-  config = lib.mkIf (cfg.localBackend == "caddy") {
+  config = {
     sops.secrets.desec_api_token = { };
     sops.templates.james-caddy-env = {
       owner = "caddy";
@@ -363,10 +362,7 @@ in
       };
     };
 
-    users.users.caddy.extraGroups = [
-      config.services.nginx.group
-      caseyLink
-    ];
+    users.users.caddy.extraGroups = [ caseyLink ];
 
     systemd.services.caddy.unitConfig.RequiresMountsFor = [
       "/var/lib/goaccess"
