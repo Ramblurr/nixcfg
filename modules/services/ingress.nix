@@ -27,7 +27,19 @@ let
       ]
       [ ]
       config;
-  caddyManagesCertificates = caddyEdgeEnabled && caddyCertificateDomains != [ ];
+  caddyCertificateHosts =
+    lib.attrByPath
+      [
+        "modules"
+        "services"
+        "caddy-security"
+        "edge"
+        "certificateHosts"
+      ]
+      [ ]
+      config;
+  caddyManagesCertificates =
+    caddyEdgeEnabled && (caddyCertificateDomains != [ ] || caddyCertificateHosts != [ ]);
 
   mkVirtualHost =
     name: service: directWan:
@@ -121,6 +133,11 @@ in
 {
   options.modules.services.ingress = {
     enable = lib.mkEnableOption "node ingress";
+    legacyAcme.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = !caddyManagesCertificates;
+      description = "Temporarily retain NixOS ACME while migrating an active Caddy edge";
+    };
     directWan = {
       enable = lib.mkEnableOption "direct WAN ingress listener";
       listenAddress = lib.mkOption {
@@ -359,14 +376,14 @@ in
           );
 
       };
-      users.groups.acme.members = lib.mkIf (!caddyManagesCertificates) [
+      users.groups.acme.members = lib.mkIf cfg.legacyAcme.enable [
         (if caddyEdgeEnabled then "caddy" else "nginx")
       ];
-      environment.persistence."/persist".directories = lib.mkIf (!caddyManagesCertificates) [
+      environment.persistence."/persist".directories = lib.mkIf cfg.legacyAcme.enable [
         "/var/lib/acme"
       ];
       sops.secrets.desec_api_token.sopsFile = ../../configs/home-ops/shared.sops.yml;
-      security.acme = lib.mkIf (!caddyManagesCertificates) {
+      security.acme = lib.mkIf cfg.legacyAcme.enable {
         acceptTerms = true;
         defaults = {
           email = config.repo.secrets.global.email.acme;

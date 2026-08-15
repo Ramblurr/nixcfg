@@ -281,10 +281,15 @@ let
   protectedPublicHosts = map (app: app.publicHost) applications;
   plainPublicHosts = map (route: route.publicHost) (builtins.attrValues plainRoutes);
   publicHosts = protectedPublicHosts ++ plainPublicHosts;
+  hasApplications = cfg.applications != { };
+  hasPlainRoutes = plainRoutes != { };
   hostMatchesDomain = domain: host: host == domain || lib.hasSuffix ".${domain}" host;
   certificateDomains = cfg.edge.certificateDomains;
+  certificateHosts = cfg.edge.certificateHosts;
   certificateDomainsForHost =
     host: lib.filter (domain: hostMatchesDomain domain host) certificateDomains;
+  certificateSourcesForHost =
+    host: certificateDomainsForHost host ++ lib.optional (builtins.elem host certificateHosts) host;
 
   directWanRoutes = lib.filterAttrs (_: route: route.directWan) plainRoutes;
 
@@ -339,35 +344,44 @@ let
     '';
 
   mkPublicSite =
-    domain:
+    address: hostMatches:
     let
-      routeAttrs = lib.filterAttrs (_: route: hostMatchesDomain domain route.publicHost) plainRoutes;
-      applicationAttrs = lib.filterAttrs (
-        _: app: hostMatchesDomain domain app.publicHost
-      ) cfg.applications;
+      routeAttrs = lib.filterAttrs (_: route: hostMatches route.publicHost) plainRoutes;
+      applicationAttrs = lib.filterAttrs (_: app: hostMatches app.publicHost) cfg.applications;
       rejectHttp3Hosts =
         map (route: route.publicHost) (lib.filter (route: !route.http3) (builtins.attrValues routeAttrs))
         ++ map (app: app.publicHost) (lib.filter (app: !app.http3) (builtins.attrValues applicationAttrs));
     in
     ''
-      ${managedSiteAddresses domain cfg.edge.httpsPort} {
+      ${address} {
         ${mkAccessLog}
         ${mkRouteConfig routeAttrs applicationAttrs rejectHttp3Hosts "respond 421"}
       }
     '';
 
-  publicSiteConfig = lib.concatMapStringsSep "\n" mkPublicSite certificateDomains;
+  publicSiteConfig = lib.concatStringsSep "\n" (
+    map (
+      domain: mkPublicSite (managedSiteAddresses domain cfg.edge.httpsPort) (hostMatchesDomain domain)
+    ) certificateDomains
+    ++ map (
+      host: mkPublicSite "https://${host}:${toString cfg.edge.httpsPort}" (candidate: candidate == host)
+    ) certificateHosts
+  );
 
   directWanSiteConfig = lib.optionalString cfg.edge.directWan.enable (
     let
       routeName = builtins.head (builtins.attrNames directWanRoutes);
       route = directWanRoutes.${routeName};
-      domain = builtins.head (certificateDomainsForHost route.publicHost);
-      port = cfg.edge.directWan.listenPort;
+      matchingDomains = certificateDomainsForHost route.publicHost;
+      address =
+        if builtins.elem route.publicHost certificateHosts then
+          "https://${route.publicHost}:${toString cfg.edge.directWan.listenPort}"
+        else
+          managedSiteAddresses (builtins.head matchingDomains) cfg.edge.directWan.listenPort;
       listener = cfg.edge.directWan.listenAddress;
     in
     ''
-      ${managedSiteAddresses domain port} {
+      ${address} {
         bind ${listener}
         ${mkAccessLog}
         ${mkRouteConfig { ${routeName} = route; } { } [ ] "abort"}
@@ -439,9 +453,24 @@ in
         description = "Domain suffixes for Caddy-managed apex and wildcard certificates";
       };
 
+      certificateHosts = lib.mkOption {
+        type = lib.types.listOf lib.types.nonEmptyStr;
+        default = [ ];
+        description = "Exact hostnames with Caddy-managed certificates";
+      };
+
       acmeEmail = lib.mkOption {
         type = lib.types.nonEmptyStr;
         description = "Contact email for Caddy's ACME account";
+      };
+
+      redirectStatus = lib.mkOption {
+        type = lib.types.enum [
+          301
+          308
+        ];
+        default = 308;
+        description = "HTTP status used by the public HTTPS redirect listener";
       };
 
       directWan = {
@@ -463,8 +492,8 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.applications != { };
-        message = "caddy-security requires at least one application";
+        assertion = hasApplications || hasPlainRoutes;
+        message = "Caddy ingress requires at least one authenticated application or plain route";
       }
       {
         assertion =
@@ -541,18 +570,22 @@ in
         message = "caddy-security identity header names contain an unsupported character";
       }
       {
-        assertion = !cfg.edge.enable || certificateDomains != [ ];
-        message = "public Caddy edge requires at least one managed certificate domain";
+        assertion = !cfg.edge.enable || certificateDomains != [ ] || certificateHosts != [ ];
+        message = "public Caddy edge requires at least one managed certificate domain or exact host";
       }
       {
         assertion = allUnique certificateDomains;
         message = "public Caddy managed certificate domains must be unique";
       }
       {
+        assertion = allUnique certificateHosts;
+        message = "public Caddy managed certificate hosts must be unique";
+      }
+      {
         assertion =
           !cfg.edge.enable
-          || lib.all (host: builtins.length (certificateDomainsForHost host) == 1) publicHosts;
-        message = "every public Caddy hostname must match exactly one managed certificate domain";
+          || lib.all (host: builtins.length (certificateSourcesForHost host) == 1) publicHosts;
+        message = "every public Caddy hostname must match exactly one managed certificate source";
       }
       {
         assertion = !cfg.edge.enable || lib.hasPrefix "/var/log/caddy/" cfg.edge.accessLog;
@@ -572,7 +605,7 @@ in
       }
     ];
 
-    environment.persistence."/persist".directories = lib.optional cfg.edge.enable "/var/lib/caddy";
+    environment.persistence."/persist".directories = [ "/var/lib/caddy" ];
 
     services.caddy = {
       enable = true;
@@ -623,11 +656,13 @@ in
               }
             ''
         }
-        security {
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkProvider cfg.applications)}
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPortal cfg.applications)}
-          ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPolicy cfg.applications)}
-        }
+        ${lib.optionalString hasApplications ''
+          security {
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkProvider cfg.applications)}
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPortal cfg.applications)}
+            ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPolicy cfg.applications)}
+          }
+        ''}
       '';
       extraConfig = ''
         http://:${toString cfg.listenPort} {
@@ -651,7 +686,7 @@ in
         }
         ${lib.optionalString cfg.edge.enable ''
           http://:${toString cfg.edge.redirectPort} {
-            redir https://{http.request.host}{http.request.uri} 308
+            redir https://{http.request.host}{http.request.uri} ${toString cfg.edge.redirectStatus}
           }
           ${publicSiteConfig}
           ${directWanSiteConfig}
