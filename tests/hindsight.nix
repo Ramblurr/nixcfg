@@ -36,7 +36,16 @@ let
     name = "hindsight-test-server";
     runtimeInputs = [ pkgs.busybox ];
     text = ''
-      mkdir -p /tmp/hindsight-test/api/v1/default /tmp/hindsight-test/control-plane/api
+      mkdir -p \
+        /tmp/hindsight-test/api/cgi-bin \
+        /tmp/hindsight-test/api/v1/default \
+        /tmp/hindsight-test/control-plane/api
+      cat > /tmp/hindsight-test/api/cgi-bin/consume <<'EOF'
+      #!/bin/sh
+      dd of=/dev/null bs=65536 2>/dev/null
+      printf 'Content-Type: text/plain\r\n\r\nconsumed\n'
+      EOF
+      chmod +x /tmp/hindsight-test/api/cgi-bin/consume
       printf '%s\n' healthy > /tmp/hindsight-test/api/health
       printf '%s\n' '{"api_version":"test"}' > /tmp/hindsight-test/api/version
       printf '%s\n' '{"banks":[]}' > /tmp/hindsight-test/api/v1/default/banks
@@ -130,8 +139,10 @@ let
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
+        ../modules/services/caddy.nix
         ../modules/services/ingress.nix
         ../modules/services/hindsight.nix
+        ../modules/services/caddy-security.nix
         {
           networking.hostName = "debord";
           system.stateVersion = "26.05";
@@ -210,6 +221,7 @@ pkgs.testers.runNixOSTest {
       network = config.virtualisation.quadlet.networks.hindsight;
       volume = config.virtualisation.quadlet.volumes.hindsight-db-data;
       ingress = config.modules.services.ingress.virtualHosts."hindsight.example.test";
+      caddyRoute = config.modules.services.caddy.routes.hindsight;
       hindsightDataset = config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/hindsight";
       appTemplate = config.sops.templates."hindsight-app.env";
       dbTemplate = config.sops.templates."hindsight-db.env";
@@ -227,8 +239,10 @@ pkgs.testers.runNixOSTest {
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
+        ../modules/services/caddy.nix
         ../modules/services/ingress.nix
         ../modules/services/hindsight.nix
+        ../modules/services/caddy-security.nix
       ];
 
       networking.hostName = "debord";
@@ -254,6 +268,11 @@ pkgs.testers.runNixOSTest {
         extraEnvironment = latencyEnvironment;
       };
 
+      modules.services.caddy-security = {
+        enable = true;
+        environmentFile = "/run/caddy-test.env";
+      };
+
       services.nginx = {
         enable = true;
         virtualHosts."hindsight.example.test".locations."/" = {
@@ -265,6 +284,17 @@ pkgs.testers.runNixOSTest {
       sops = {
         defaultSopsFile = testSecrets;
         age.keyFile = "/etc/sops/age/keys.txt";
+      };
+      systemd.services.sops-install-secrets = {
+        wantedBy = [ "multi-user.target" ];
+        before = [ "caddy.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          install -o caddy -g caddy -m 0400 /dev/null /run/caddy-test.env
+        '';
       };
 
       # This deliberately committed test-only key is split so secret scanning still
@@ -322,6 +352,16 @@ pkgs.testers.runNixOSTest {
             config.services.nginx.virtualHosts."hindsight.example.test".locations."^~ /hindsight-api/".proxyPass
             == "http://127.0.0.1:8888/";
           message = "The prefixed Hindsight API route must strip its prefix and target the loopback API port.";
+        }
+        {
+          assertion =
+            caddyRoute.publicHost == "hindsight.example.test"
+            && caddyRoute.handlerConfig != null
+            && lib.hasInfix "handle_path /hindsight-api/*" caddyRoute.handlerConfig
+            && lib.hasInfix "max_size 100MiB" caddyRoute.handlerConfig
+            && lib.hasInfix "reverse_proxy 127.0.0.1:8888" caddyRoute.handlerConfig
+            && lib.hasInfix "reverse_proxy 127.0.0.1:9999" caddyRoute.handlerConfig;
+          message = "Hindsight must expose equivalent control-plane and prefix-stripping API handlers through Caddy.";
         }
         {
           assertion = lib.elem "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension" app.containerConfig.Environment;
@@ -549,6 +589,9 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_open_port(9999)
     machine.wait_for_unit("nginx.service")
     machine.wait_for_open_port(80)
+    machine.succeed("systemctl start caddy.service")
+    machine.wait_for_unit("caddy.service")
+    machine.wait_for_open_port(18080)
 
     assert "healthy" in machine.succeed("curl -fsS http://127.0.0.1:8888/health")
     assert "hindsight-control-plane" in machine.succeed("curl -fsS http://127.0.0.1:9999/")
@@ -558,6 +601,29 @@ pkgs.testers.runNixOSTest {
     assert "healthy" in machine.succeed(f"{nginx_curl}/hindsight-api/health")
     assert '"api_version":"test"' in machine.succeed(f"{nginx_curl}/hindsight-api/version")
     assert '"banks":[]' in machine.succeed(f"{nginx_curl}/hindsight-api/v1/default/banks")
+
+    caddy_curl = "curl -fsS -H 'Host: hindsight.example.test' http://127.0.0.1:18080"
+    assert "hindsight-control-plane" in machine.succeed(f"{caddy_curl}/")
+    assert "control-plane-api" in machine.succeed(f"{caddy_curl}/api/health")
+    assert "healthy" in machine.succeed(f"{caddy_curl}/hindsight-api/health")
+    assert '"api_version":"test"' in machine.succeed(f"{caddy_curl}/hindsight-api/version")
+    assert '"banks":[]' in machine.succeed(f"{caddy_curl}/hindsight-api/v1/default/banks")
+
+    machine.succeed("truncate -s 1M /tmp/hindsight-below-limit")
+    below_limit_status = machine.succeed(
+        "curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "
+        "-H 'Host: hindsight.example.test' --data-binary @/tmp/hindsight-below-limit "
+        "http://127.0.0.1:18080/hindsight-api/cgi-bin/consume"
+    ).strip()
+    assert below_limit_status == "200", below_limit_status
+
+    machine.succeed("truncate -s 104857601 /tmp/hindsight-over-limit")
+    over_limit_status = machine.succeed(
+        "curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "
+        "-H 'Host: hindsight.example.test' --data-binary @/tmp/hindsight-over-limit "
+        "http://127.0.0.1:18080/hindsight-api/cgi-bin/consume"
+    ).strip()
+    assert over_limit_status == "413", over_limit_status
 
     machine.succeed("ss -ltn | grep -q '127.0.0.1:8888'")
     machine.succeed("ss -ltn | grep -q '127.0.0.1:9999'")
