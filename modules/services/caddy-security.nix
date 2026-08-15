@@ -159,8 +159,6 @@ let
     "Remote-Email"
     "Remote-Groups"
     "X-Auth-Request-*"
-    "X-authentik-*"
-    "X_authentik_*"
   ];
 
   mkHeaderScrub =

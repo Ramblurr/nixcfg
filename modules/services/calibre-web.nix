@@ -125,7 +125,7 @@ in
         enableKepubify = true;
         reverseProxyAuth = {
           enable = true;
-          header = "X-authentik-username";
+          header = "Remote-User";
         };
       };
     };

@@ -341,7 +341,7 @@ pkgs.testers.runNixOSTest {
         }
         {
           assertion = ingress.forwardAuth == false;
-          message = "Hindsight must use its native authentication, not Authentik forward auth.";
+          message = "Hindsight must use its native authentication, not proxy authentication.";
         }
         {
           assertion = config.modules.services.ingress.domains == { };

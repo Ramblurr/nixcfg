@@ -39,7 +39,7 @@ let
       files = {
         publicHost = "files.${home-ops.homeDomain}";
         upstream = "http://127.0.0.1:${toString config.modules.services.filebrowser-quantum.ports.http}";
-        identityHeaders.X-authentik-username = "userinfo|preferred_username";
+        identityHeaders.Remote-User = "userinfo|preferred_username";
       };
     })
     // (lib.optionalAttrs cfg.apps.home-dl.enable {
@@ -64,6 +64,7 @@ let
       tube = {
         publicHost = "tube.${home-ops.homeDomain}";
         upstream = "http://127.0.0.1:${toString config.modules.services.tubearchivist.port}";
+        identityHeaders.Remote-User = "userinfo|preferred_username";
       };
     });
   hasAuthenticatedCaddyApplications =
@@ -143,7 +144,6 @@ in
     apps = {
       davis.enable = lib.mkEnableOption "Davis, carddav and caldav server";
       invoiceninja.enable = lib.mkEnableOption "Invoice Ninja";
-      authentik.enable = lib.mkEnableOption "Authentik";
       paperless.enable = lib.mkEnableOption "Paperless";
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
@@ -476,28 +476,6 @@ in
           publicHost = "qbittorrent.${home-ops.homeDomain}";
           upstream = "http://127.0.0.1:${toString config.modules.services.home-dl.ports.qbittorrent}";
           requestBodyMaxSize = "10MB";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.authentik.enable {
-        authentik-home = {
-          publicHost = "auth.${home-ops.homeDomain}";
-          handlerConfig = ''
-            reverse_proxy https://127.0.0.1:${toString config.modules.services.authentik.ports.https} {
-              transport http {
-                tls_insecure_skip_verify
-              }
-            }
-          '';
-        };
-        authentik-work = {
-          publicHost = "auth.${home-ops.workDomain}";
-          handlerConfig = ''
-            reverse_proxy https://127.0.0.1:${toString config.modules.services.authentik.ports.https} {
-              transport http {
-                tls_insecure_skip_verify
-              }
-            }
-          '';
         };
       })
       // (lib.optionalAttrs cfg.apps.calibre-web.enable {
@@ -905,16 +883,6 @@ in
       };
     };
 
-    modules.services.authentik = lib.mkIf cfg.apps.authentik.enable {
-      enable = true;
-      domain1 = "auth.${home-ops.homeDomain}";
-      domain2 = "auth.${home-ops.workDomain}";
-      ingress1 = home-ops.homeDomain;
-      ingress2 = home-ops.workDomain;
-      ports.http = home-ops.ports.authentik-http;
-      ports.https = home-ops.ports.authentik-https;
-    };
-
     modules.services.invoiceninja = lib.mkIf cfg.apps.invoiceninja.enable {
       enable = true;
       domain = "clients.${home-ops.workDomain}";
@@ -1112,12 +1080,6 @@ in
               X-Auth-Request-Preferred-Username = "userinfo|preferred_username";
               X-Auth-Request-Email = "email";
               X-Auth-Request-Groups = "roles";
-              X-authentik-username = "userinfo|preferred_username";
-              X_authentik_username = "userinfo|preferred_username";
-              X-authentik-groups = "roles";
-              X-authentik-email = "email";
-              X-authentik-name = "userinfo|preferred_username";
-              X-authentik-uid = "sub";
             };
           };
         })

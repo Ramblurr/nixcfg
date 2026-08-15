@@ -148,7 +148,6 @@ assert environment.PROXY_USER_OIDC_CLAIM == "preferred_username";
 assert environment.PROXY_USER_CS3_CLAIM == "username";
 assert environment.PROXY_ROLE_ASSIGNMENT_DRIVER == "default";
 assert environment.WEB_OIDC_SCOPE == "openid profile email groups";
-assert !lib.hasInfix "authentik" (builtins.toJSON environment);
 assert !lib.hasInfix "application/o" (builtins.toJSON environment);
 assert workOcis.oidc.issuer == "https://id.work.example.test";
 assert workOcis.oidc.clientId == "work-ocis";
@@ -165,7 +164,6 @@ assert workOcis.oidc.userCs3Claim == "username";
 assert workOcis.oidc.roleAssignmentDriver == "default";
 assert workOcis.oidc.rewriteWellKnown;
 assert workOcis.oidc.accessTokenVerifyMethod == "jwt";
-assert !lib.hasInfix "authentik" (builtins.toJSON workOcis.oidc);
 assert !lib.hasInfix "application/o" (builtins.toJSON workOcis.oidc);
 pkgs.runCommand "ocis-oidc-module-test" { } ''
   touch "$out"
