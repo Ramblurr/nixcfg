@@ -83,4 +83,9 @@
       };
     };
   };
+  modules.services.caddy.routes.attic = {
+    publicHost = "attic.mgmt.${config.repo.secrets.global.domain.home}";
+    aliases = [ "attic.int.${config.repo.secrets.global.domain.home}" ];
+    upstream = "http://127.0.0.1:57000";
+  };
 }
