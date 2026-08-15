@@ -78,7 +78,7 @@ in
 
   hosts.james.ingress = {
     implementation = "haproxy";
-    localBackend = "nginx";
+    localBackend = "caddy";
   };
 
   environment.persistence."/persist" = {
