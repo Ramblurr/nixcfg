@@ -98,7 +98,10 @@ in
       stirling-pdf.enable = true;
     };
   };
-  modules.services.paperless.oidc.enable = true;
+  modules.services.paperless.oidc = {
+    enable = true;
+    mode = "enforced";
+  };
 
   environment.persistence."/persist".users.${username}.directories = [ "work" ];
 
