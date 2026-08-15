@@ -177,6 +177,7 @@ assert
     "/var/lib/static-web"
     "/var/lib/casey.example.test"
   ];
+assert caddyService.serviceConfig.RuntimeDirectory == "caddy";
 assert caddyService.serviceConfig.RuntimeDirectoryMode == "0750";
 assert caddyService.serviceConfig.AmbientCapabilities == [ ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ ];
