@@ -6,7 +6,7 @@
 
 stdenvNoCC.mkDerivation (_finalAttrs: {
   pname = "pi-nrepl";
-  version = "0.1.0";
+  version = "d173f0427bb64d54160f12d5e0aad67403bf1f05";
 
   src = fetchFromGitHub {
     owner = "ramblurr";
