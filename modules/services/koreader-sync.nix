@@ -14,11 +14,6 @@ in
       type = lib.types.str;
       description = "The domain to use for the calibre-web";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       http = lib.mkOption { type = lib.types.port; };
     };
@@ -71,9 +66,10 @@ in
       ];
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.koreader = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+      requestBodyMaxSize = "10MB";
     };
   };
 }

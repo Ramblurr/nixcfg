@@ -92,15 +92,9 @@ in
       };
     };
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.actual-budget = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${httpPort}";
-      forwardAuth = false;
     };
   };
 }

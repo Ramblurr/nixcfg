@@ -5,6 +5,7 @@
 let
   lib = inputs.nixpkgs.lib;
 
+  secretFile = pkgs.writeText "ocis-caddy-secrets.yaml" "{}\n";
   testOptions =
     { lib, ... }:
     {
@@ -14,26 +15,31 @@ let
           type = lib.types.attrs;
           default = { };
         };
-        modules.services.ingress = {
-          domains = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-          };
-          virtualHosts = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-          };
-        };
       };
     };
 
   evaluated = lib.nixosSystem {
     specialArgs = { inherit inputs; };
     modules = [
+      inputs.sops-nix.nixosModules.sops
+      inputs.impermanence.nixosModules.impermanence
+      ../modules/services/caddy.nix
       ../modules/services/ocis.nix
       testOptions
       {
         nixpkgs.pkgs = pkgs;
+        sops.defaultSopsFile = secretFile;
+        sops.age.keyFile = "/tmp/age-key.txt";
+        boot.loader.grub.devices = [ "nodev" ];
+        fileSystems."/" = {
+          device = "none";
+          fsType = "tmpfs";
+        };
+        modules.services.caddy.edge = {
+          certificateDomains = [ "example.test" ];
+          acmeEmail = "admin@example.test";
+          sopsFile = secretFile;
+        };
         system.stateVersion = "26.05";
         repo.secrets = {
           global.nodes.mali.dataCIDR = "192.0.2.1/24";
@@ -60,10 +66,6 @@ let
           subnet = {
             hostAddr = "192.0.2.1/30";
             nsAddr = "192.0.2.2/30";
-          };
-          ingress = {
-            domain = "example.test";
-            external = true;
           };
           oidc = {
             issuer = "https://id.example.test";
@@ -149,6 +151,8 @@ assert environment.PROXY_USER_CS3_CLAIM == "username";
 assert environment.PROXY_ROLE_ASSIGNMENT_DRIVER == "default";
 assert environment.WEB_OIDC_SCOPE == "openid profile email groups";
 assert !lib.hasInfix "application/o" (builtins.toJSON environment);
+assert evaluated.config.services.caddy.enable;
+assert evaluated.config.modules.services.caddy.routes.data.publicHost == "data.example.test";
 assert workOcis.oidc.issuer == "https://id.work.example.test";
 assert workOcis.oidc.clientId == "work-ocis";
 assert

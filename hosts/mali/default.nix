@@ -10,12 +10,15 @@ let
   inherit (config.repo.secrets) home-ops;
 in
 {
+  disabledModules = [ ../../modules/services/caddy.nix ];
   imports = [
     ./hardware-configuration.nix
     ./networking.nix
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
+    ../../modules/services/caddy-security-routes.nix
+    ../../modules/services/caddy-security.nix
     ./caddy.nix
     ./minio.nix
     ./syncthing.nix

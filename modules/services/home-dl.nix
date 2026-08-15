@@ -93,11 +93,6 @@ in
       example = "example.com";
       description = "The base domaint to use for all services";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       overseerr = lib.mkOption { type = lib.types.port; };
       qbittorrent = lib.mkOption { type = lib.types.port; };
@@ -391,21 +386,14 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts =
-      (lib.mapAttrs' (
-        _name: ingress:
-        lib.nameValuePair ingress.domain {
-          acmeHost = cfg.ingress.domain;
-          upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
-          inherit (ingress) forwardAuth;
-        }
-      ) ingresses)
-      // {
-        "${qbittorrentDomain}" = {
-          acmeHost = cfg.ingress.domain;
-          upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";
-          forwardAuth = false;
-        };
-      };
+    modules.services.caddy.protectedRoutes = lib.mapAttrs (_name: ingress: {
+      publicHost = ingress.domain;
+      upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
+    }) ingresses;
+    modules.services.caddy.routes.qbittorrent = {
+      publicHost = qbittorrentDomain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";
+      requestBodyMaxSize = "10MB";
+    };
   };
 }

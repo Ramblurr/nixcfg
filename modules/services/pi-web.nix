@@ -244,19 +244,16 @@ in
       };
     };
 
-    modules.services.ingress.domains = mkIf (cfg.domain != null && cfg.ingress.external) {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
+    modules.services.caddy.routes.pi-web = mkIf (cfg.domain != null && !cfg.ingress.forwardAuth) {
+      publicHost = cfg.domain;
+      upstream = "http://${upstreamHost}:${toString cfg.ports.http}";
     };
-
-    modules.services.ingress.virtualHosts = mkIf (cfg.domain != null) {
-      "${cfg.domain}" = {
-        acmeHost = cfg.ingress.domain;
-        upstream = "http://${upstreamHost}:${toString cfg.ports.http}";
-        inherit (cfg.ingress) forwardAuth;
-      };
-    };
+    modules.services.caddy.protectedRoutes.pi-web =
+      mkIf (cfg.domain != null && cfg.ingress.forwardAuth)
+        {
+          publicHost = cfg.domain;
+          upstream = "http://${upstreamHost}:${toString cfg.ports.http}";
+        };
 
     ## pi-web tailscale proxy
     #systemd.sockets.pi-web-tailscale-proxy = {

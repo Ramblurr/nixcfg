@@ -1,6 +1,5 @@
 {
   config,
-  lib,
   ...
 }:
 let
@@ -70,7 +69,7 @@ in
     };
   };
 
-  modules.services.caddy.routes = {
+  modules.services.caddy.legacyRoutes = {
     attic = {
       publicHost = "attic.mgmt.${homeDomain}";
       aliases = [ "attic.int.${homeDomain}" ];

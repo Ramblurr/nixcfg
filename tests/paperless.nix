@@ -5,6 +5,7 @@
 let
   lib = inputs.nixpkgs.lib;
 
+  secretFile = pkgs.writeText "paperless-caddy-secrets.yaml" "{}\n";
   testOptions =
     { lib, ... }:
     {
@@ -14,16 +15,6 @@ let
           type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           default = { };
         };
-        modules.services.ingress = {
-          domains = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-          };
-          virtualHosts = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-          };
-        };
       };
     };
 
@@ -32,10 +23,24 @@ let
     lib.nixosSystem {
       modules = [
         inputs.sops-nix.nixosModules.sops
+        inputs.impermanence.nixosModules.impermanence
+        ../modules/services/caddy.nix
         ../modules/services/paperless.nix
         testOptions
         {
           nixpkgs.pkgs = pkgs;
+          sops.defaultSopsFile = secretFile;
+          sops.age.keyFile = "/tmp/age-key.txt";
+          boot.loader.grub.devices = [ "nodev" ];
+          fileSystems."/" = {
+            device = "none";
+            fsType = "tmpfs";
+          };
+          modules.services.caddy.edge = {
+            certificateDomains = [ "example.test" ];
+            acmeEmail = "admin@example.test";
+            sopsFile = secretFile;
+          };
           system.stateVersion = "26.05";
           repo.secrets.global.nodes.mali.dataCIDR = "192.0.2.1";
           modules.services.paperless = {
@@ -51,7 +56,6 @@ let
               name = "paperless";
               gid = 991;
             };
-            ingress.domain = "example.test";
             inherit oidc;
           };
         }
@@ -106,7 +110,8 @@ assert builtins.elem "sops-install-secrets.service" webService.requires;
 assert builtins.elem "sops-install-secrets.service" webService.after;
 assert webService.serviceConfig.EnvironmentFile == oidcTemplate.path;
 assert lib.hasInfix "/var/lib/paperless/nixos-paperless-secret-key" webService.script;
-assert !compatibility.modules.services.ingress.virtualHosts."paperless.example.test".forwardAuth;
+assert compatibility.services.caddy.enable;
+assert compatibility.modules.services.caddy.routes.paperless.publicHost == "paperless.example.test";
 pkgs.runCommand "paperless-oidc-module-test" { } ''
   touch "$out"
 ''

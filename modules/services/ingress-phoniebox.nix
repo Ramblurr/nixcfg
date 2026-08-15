@@ -13,16 +13,46 @@ in
   options.modules.services.ingress-phoniebox.enable = lib.mkEnableOption "Phoniebox ingress";
 
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.virtualHosts.${phonieboxDomain} = {
-      acmeHost = homeDomain;
-      upstream = "http://10.9.6.26:80";
-      upstreamExtraConfig = ''
-        proxy_connect_timeout 3s;
-        proxy_intercept_errors on;
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_read_timeout 1h;
-        error_page 502 503 504 =503 /.fairybox-offline.html;
+    modules.services.caddy.routes.phoniebox = {
+      publicHost = phonieboxDomain;
+      handlerConfig = ''
+        handle_path /.fairybox-offline/* {
+          header Cache-Control "public, max-age=3600"
+          root * ${./ingress-phoniebox}
+          file_server
+        }
+        route {
+          intercept {
+            @phoniebox_offline status 502 503 504
+            handle_response @phoniebox_offline {
+              rewrite * /index.html
+              root * ${./ingress-phoniebox}
+              file_server {
+                status 503
+              }
+            }
+          }
+          reverse_proxy 10.9.6.26:80 {
+            flush_interval -1
+            transport http {
+              dial_timeout 3s
+              response_header_timeout 1h
+            }
+          }
+        }
+      '';
+      errorHandlerConfig = ''
+        @phoniebox_proxy_error {
+          host ${phonieboxDomain}
+          expression {http.error.status_code} in [502, 503, 504]
+        }
+        handle @phoniebox_proxy_error {
+          rewrite * /index.html
+          root * ${./ingress-phoniebox}
+          file_server {
+            status 503
+          }
+        }
       '';
     };
   };
