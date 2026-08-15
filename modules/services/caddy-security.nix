@@ -318,6 +318,7 @@ let
   mkAccessLog = ''
     log {
       output file ${cfg.edge.accessLog} {
+        mode 0660
         roll_size 100MiB
         roll_keep 10
         roll_keep_for 720h

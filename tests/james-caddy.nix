@@ -147,6 +147,7 @@ assert !lib.hasInfix "http://:18080" caddy.extraConfig;
 assert !lib.hasInfix "http://:8081" caddy.extraConfig;
 assert lib.hasInfix "bind unix//run/caddy/james-ingress.sock|0660" caddy.extraConfig;
 assert lib.hasInfix "output file /var/log/caddy/access.log" caddy.extraConfig;
+assert lib.hasInfix "mode 0660" caddy.extraConfig;
 assert lib.hasInfix "format json" caddy.extraConfig;
 assert lib.hasInfix "respond 403" caddy.extraConfig;
 assert lib.hasInfix "@plain_goaccess_allowed remote_ip 100.64.0.0/10" caddy.extraConfig;
