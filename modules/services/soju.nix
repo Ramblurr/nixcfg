@@ -33,16 +33,6 @@ in
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/soju"."mountpoint" = stateDirActual;
     };
-    #modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-    #  "${cfg.ingress.domain}" = {
-    #    externalDomains = [ cfg.domain ];
-    #  };
-    #};
-    #modules.services.ingress.virtualHosts.${cfg.domain} = {
-    #  acmeHost = cfg.ingress.domain;
-    #  upstream = "http://127.0.0.1:${httpPort}";
-    #  forwardAuth = false;
-    #};
     services.soju = {
       enable = true;
       hostName = cfg.domain;

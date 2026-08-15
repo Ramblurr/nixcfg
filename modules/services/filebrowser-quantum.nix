@@ -62,12 +62,6 @@ in
       description = "The domain to use for FileBrowser Quantum.";
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
-
     adminUsername = lib.mkOption {
       type = lib.types.str;
       default = "casey";
@@ -188,19 +182,11 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.protectedRoutes.files = {
+      publicHost = cfg.domain;
       inherit upstream;
-      inherit (cfg.ingress) forwardAuth;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
+      identityHeaders.Remote-User = "userinfo|preferred_username";
     };
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
   };
 }

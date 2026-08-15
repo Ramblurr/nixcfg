@@ -60,28 +60,15 @@ in
       };
     };
     subnet = lib.mkOption { type = lib.types.unspecified; };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
   };
 
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
-    modules.services.ingress.virtualHosts."${cfg.domain}" = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.clients = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/invoiceninja2"."mountpoint" = rootDir;

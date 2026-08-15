@@ -15,11 +15,6 @@ in
       example = "code.example.com";
       description = "The domain to use for the forgejo";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
   };
@@ -66,15 +61,10 @@ in
       };
     };
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://unix:${config.services.forgejo.settings.server.HTTP_ADDR}:/";
-      #forwardAuth = true;
+    modules.services.caddy.routes.forgejo = {
+      publicHost = cfg.domain;
+      upstream = "unix/${config.services.forgejo.settings.server.HTTP_ADDR}";
+      requestBodyMaxSize = "10MB";
     };
   };
 }

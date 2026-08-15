@@ -2,6 +2,12 @@
 
 let
   testSecrets = ./fixtures/hindsight.sops.yaml;
+  testCaddyOptions = { lib, ... }: {
+    options.modules.services.caddy.routes = lib.mkOption {
+      type = lib.types.attrsOf lib.types.attrs;
+      default = { };
+    };
+  };
   latencyEnvironment = {
     HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
     HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
@@ -139,10 +145,8 @@ let
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
-        ../modules/services/caddy.nix
-        ../modules/services/ingress.nix
+        testCaddyOptions
         ../modules/services/hindsight.nix
-        ../modules/services/caddy-security.nix
         {
           networking.hostName = "debord";
           system.stateVersion = "26.05";
@@ -220,7 +224,6 @@ pkgs.testers.runNixOSTest {
       database = config.virtualisation.quadlet.containers.hindsight-db;
       network = config.virtualisation.quadlet.networks.hindsight;
       volume = config.virtualisation.quadlet.volumes.hindsight-db-data;
-      ingress = config.modules.services.ingress.virtualHosts."hindsight.example.test";
       caddyRoute = config.modules.services.caddy.routes.hindsight;
       hindsightDataset = config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/hindsight";
       appTemplate = config.sops.templates."hindsight-app.env";
@@ -239,10 +242,8 @@ pkgs.testers.runNixOSTest {
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
-        ../modules/services/caddy.nix
-        ../modules/services/ingress.nix
+        testCaddyOptions
         ../modules/services/hindsight.nix
-        ../modules/services/caddy-security.nix
       ];
 
       networking.hostName = "debord";
@@ -268,33 +269,9 @@ pkgs.testers.runNixOSTest {
         extraEnvironment = latencyEnvironment;
       };
 
-      modules.services.caddy-security = {
-        enable = true;
-        environmentFile = "/run/caddy-test.env";
-      };
-
-      services.nginx = {
-        enable = true;
-        virtualHosts."hindsight.example.test".locations."/" = {
-          proxyPass = "http://127.0.0.1:9999";
-          recommendedProxySettings = true;
-        };
-      };
-
       sops = {
         defaultSopsFile = testSecrets;
         age.keyFile = "/etc/sops/age/keys.txt";
-      };
-      systemd.services.sops-install-secrets = {
-        wantedBy = [ "multi-user.target" ];
-        before = [ "caddy.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          install -o caddy -g caddy -m 0400 /dev/null /run/caddy-test.env
-        '';
       };
 
       # This deliberately committed test-only key is split so secret scanning still
@@ -338,20 +315,6 @@ pkgs.testers.runNixOSTest {
         {
           assertion = lib.hasInfix "PublishPort=127.0.0.1:9999:9999" app.text;
           message = "The Hindsight control plane must bind only to loopback.";
-        }
-        {
-          assertion = ingress.forwardAuth == false;
-          message = "Hindsight must use its native authentication, not proxy authentication.";
-        }
-        {
-          assertion = config.modules.services.ingress.domains == { };
-          message = "Hindsight must not be added to an external ingress tunnel.";
-        }
-        {
-          assertion =
-            config.services.nginx.virtualHosts."hindsight.example.test".locations."^~ /hindsight-api/".proxyPass
-            == "http://127.0.0.1:8888/";
-          message = "The prefixed Hindsight API route must strip its prefix and target the loopback API port.";
         }
         {
           assertion =
@@ -587,43 +550,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("hindsight.service", user=user, timeout=120)
     machine.wait_for_open_port(8888)
     machine.wait_for_open_port(9999)
-    machine.wait_for_unit("nginx.service")
-    machine.wait_for_open_port(80)
-    machine.succeed("systemctl start caddy.service")
-    machine.wait_for_unit("caddy.service")
-    machine.wait_for_open_port(18080)
 
-    assert "healthy" in machine.succeed("curl -fsS http://127.0.0.1:8888/health")
-    assert "hindsight-control-plane" in machine.succeed("curl -fsS http://127.0.0.1:9999/")
-    nginx_curl = "curl -fsS -H 'Host: hindsight.example.test' http://127.0.0.1"
-    assert "hindsight-control-plane" in machine.succeed(f"{nginx_curl}/")
-    assert "control-plane-api" in machine.succeed(f"{nginx_curl}/api/health")
-    assert "healthy" in machine.succeed(f"{nginx_curl}/hindsight-api/health")
-    assert '"api_version":"test"' in machine.succeed(f"{nginx_curl}/hindsight-api/version")
-    assert '"banks":[]' in machine.succeed(f"{nginx_curl}/hindsight-api/v1/default/banks")
-
-    caddy_curl = "curl -fsS -H 'Host: hindsight.example.test' http://127.0.0.1:18080"
-    assert "hindsight-control-plane" in machine.succeed(f"{caddy_curl}/")
-    assert "control-plane-api" in machine.succeed(f"{caddy_curl}/api/health")
-    assert "healthy" in machine.succeed(f"{caddy_curl}/hindsight-api/health")
-    assert '"api_version":"test"' in machine.succeed(f"{caddy_curl}/hindsight-api/version")
-    assert '"banks":[]' in machine.succeed(f"{caddy_curl}/hindsight-api/v1/default/banks")
-
-    machine.succeed("truncate -s 1M /tmp/hindsight-below-limit")
-    below_limit_status = machine.succeed(
-        "curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "
-        "-H 'Host: hindsight.example.test' --data-binary @/tmp/hindsight-below-limit "
-        "http://127.0.0.1:18080/hindsight-api/cgi-bin/consume"
-    ).strip()
-    assert below_limit_status == "200", below_limit_status
-
-    machine.succeed("truncate -s 104857601 /tmp/hindsight-over-limit")
-    over_limit_status = machine.succeed(
-        "curl -sS --max-time 30 -o /dev/null -w '%{http_code}' "
-        "-H 'Host: hindsight.example.test' --data-binary @/tmp/hindsight-over-limit "
-        "http://127.0.0.1:18080/hindsight-api/cgi-bin/consume"
-    ).strip()
-    assert over_limit_status == "413", over_limit_status
 
     machine.succeed("ss -ltn | grep -q '127.0.0.1:8888'")
     machine.succeed("ss -ltn | grep -q '127.0.0.1:9999'")

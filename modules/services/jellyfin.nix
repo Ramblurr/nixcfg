@@ -19,11 +19,6 @@ in
       example = "jelly.example.com";
       description = "The domain to use for Jellyfin";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     nfsShare = lib.mkOption { type = lib.types.str; };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
@@ -92,20 +87,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.jellyfin = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:8096";
-      forwardAuth = cfg.ingress.forwardAuth;
-      directWan = cfg.ingress.directWan;
-      upstreamExtraConfig = ''
-        proxy_buffering off;
-      '';
+      requestBodyMaxSize = "10MB";
+      flushInterval = "-1";
+      directWan = true;
     };
 
     modules.services.jellyplex-watched = lib.mkIf jpwCfg.enable {

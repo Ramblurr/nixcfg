@@ -17,18 +17,6 @@ in
       example = "dav.example.com";
       description = "The domain to use for the davis";
     };
-    ingress = {
-      external = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to expose the service externally";
-      };
-      domain = lib.mkOption {
-        type = lib.types.str;
-        example = "example.com";
-        description = "The ingress domain to use";
-      };
-    };
   };
 
   disabledModules = [
@@ -39,13 +27,21 @@ in
     "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/davis.nix"
   ];
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.davis = {
+      publicHost = cfg.domain;
+      handlerConfig = ''
+        @davis_well_known path /.well-known/caldav /.well-known/carddav
+        redir @davis_well_known https://{http.request.host}/dav/ 302
+        @davis_hidden path_regexp davis_hidden \\.ht
+        respond @davis_hidden 404
+        root * ${config.services.davis.package}/public
+        php_fastcgi unix//run/phpfpm/davis.sock {
+          env HTTPS on
+          env HTTP_X_FORWARDED_PROTO https
+          env HTTP_X_FORWARDED_PORT 443
+        }
+        file_server
+      '';
     };
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/davis"."mountpoint" = config.services.davis.dataDir;

@@ -89,7 +89,6 @@
     ./services/koreader-sync.nix
     ./services/calibre-web.nix
     ./services/caddy.nix
-    ./services/caddy-security.nix
     ./services/davis.nix
     ./services/docker.nix
     ./services/filebrowser-quantum.nix
@@ -103,11 +102,11 @@
     ./services/influxdb.nix
     ./services/jellyfin.nix
     ./services/jellyplex-watched.nix
-    ./services/ingress.nix
+    ./services/ingress-home-assistant.nix
+    ./services/ingress-octoprint.nix
     ./services/ingress-nixbot.nix
     ./services/ingress-paseo.nix
     ./services/ingress-phoniebox.nix
-    ./services/ingress-options.nix
     ./services/linux-voice-assistant.nix
     ./services/mariadb.nix
     ./services/matrix-discord.nix

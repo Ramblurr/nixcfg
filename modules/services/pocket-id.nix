@@ -13,7 +13,7 @@ let
     privateNetwork = false;
     bindMounts = {
       ${dataDir} = {
-        hostPath = instance.hostPath;
+        inherit (instance) hostPath;
         isReadOnly = false;
       };
       "/run/secrets/pocket-id-encryption-key" = {
@@ -21,31 +21,29 @@ let
         isReadOnly = true;
       };
     };
-    config =
-      { ... }:
-      {
-        nixpkgs.pkgs = pkgs;
-        system.stateVersion = config.system.stateVersion;
-        networking.firewall.enable = false;
-        users.users.pocket-id = {
-          isSystemUser = true;
-          uid = 988;
-          group = "pocket-id";
-          createHome = false;
-        };
-        users.groups.pocket-id.gid = 987;
-        services.pocket-id = {
-          enable = true;
-          credentials.ENCRYPTION_KEY = "/run/secrets/pocket-id-encryption-key";
-          settings = {
-            APP_URL = "https://${instance.publicDomain}";
-            TRUST_PROXY = true;
-            HOST = "127.0.0.1";
-            PORT = instance.port;
-            ACTORS_PORT = instance.actorPort;
-          };
+    config = _: {
+      nixpkgs.pkgs = pkgs;
+      system.stateVersion = config.system.stateVersion;
+      networking.firewall.enable = false;
+      users.users.pocket-id = {
+        isSystemUser = true;
+        uid = 988;
+        group = "pocket-id";
+        createHome = false;
+      };
+      users.groups.pocket-id.gid = 987;
+      services.pocket-id = {
+        enable = true;
+        credentials.ENCRYPTION_KEY = "/run/secrets/pocket-id-encryption-key";
+        settings = {
+          APP_URL = "https://${instance.publicDomain}";
+          TRUST_PROXY = true;
+          HOST = "127.0.0.1";
+          PORT = instance.port;
+          ACTORS_PORT = instance.actorPort;
         };
       };
+    };
   };
 in
 {

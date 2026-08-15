@@ -36,28 +36,22 @@ in
     3306
   ];
   networking.firewall.interfaces.mgmt.allowedTCPPorts = [
-    config.modules.services.ingress.directWan.listenPort
+    config.modules.services.caddy.edge.directWan.listenPort
   ];
   networking.firewall.interfaces.prim.allowedTCPPorts = [ 8096 ];
-  modules.services.ingress.directWan = {
+  modules.services.caddy.edge.directWan = {
     enable = true;
     listenAddress = builtins.head config.site.net.mgmt.hosts4.${hostName};
   };
-  modules.services.caddy-security.edge = {
-    enable = true;
+  modules.services.caddy.edge = {
     certificateDomains = [
       home-ops.homeDomain
       home-ops.workDomain
     ];
     acmeEmail = config.repo.secrets.global.email.acme;
-    directWan = {
-      enable = true;
-      inherit (config.modules.services.ingress.directWan) listenAddress listenPort;
-    };
   };
   home-ops = {
     enable = true;
-    ingress.enable = true;
     postgresql = {
       enable = true;
       onsiteBackup.enable = false;

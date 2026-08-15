@@ -38,11 +38,6 @@ in
         description = "The HTTP port to use";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
     bridgesGroup = lib.mkOption { type = lib.types.unspecified; };
@@ -71,15 +66,36 @@ in
         assertion = cfg.user.name == "matrix-synapse" && cfg.group.name == "matrix-synapse";
       }
     ];
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      http3.enable = false;
+    modules.services.caddy.routes.matrix = {
+      publicHost = cfg.domain;
+      http3 = false;
+      handlerConfig = ''
+        @matrix_server path /.well-known/matrix/server
+        handle @matrix_server {
+          header Content-Type application/json
+          respond ${builtins.toJSON (builtins.toJSON { "m.server" = "${cfg.domain}:443"; })} 200
+        }
+        handle /admin {
+          redir * /admin/ 307
+        }
+        handle_path /admin/* {
+          @matrix_admin_assets path_regexp matrix_admin_assets \\.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$
+          header @matrix_admin_assets Cache-Control "public, max-age=2592000"
+          root * ${cfg.ketesa.package}
+          try_files {path} {path}/ /index.html
+          file_server
+        }
+        @matrix_api path /_matrix/* /_synapse/client/*
+        handle @matrix_api {
+          request_body {
+            max_size 200MB
+          }
+          reverse_proxy 127.0.0.1:${toString cfg.ports.http}
+        }
+        handle {
+          reverse_proxy 127.0.0.1:${toString cfg.ports.http}
+        }
+      '';
     };
 
     # the nixos module hardcodes the user matrix-synapse

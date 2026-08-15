@@ -6,13 +6,6 @@
 }:
 
 let
-  caddyEdgeEnabled = lib.attrByPath [
-    "modules"
-    "services"
-    "caddy-security"
-    "edge"
-    "enable"
-  ] false config;
   cerebrasBaseUrl = "https://api.cerebras.ai/v1";
   llmProfiles = {
     openai-gpt-5-mini = {
@@ -536,19 +529,5 @@ in
       '';
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = lib.mkIf (!caddyEdgeEnabled) {
-      inherit (cfg) acmeHost;
-      upstream = "http://127.0.0.1:${toString cfg.ports.controlPlane}";
-      forwardAuth = false;
-    };
-
-    services.nginx.virtualHosts.${cfg.domain}.locations."^~ /hindsight-api/" =
-      lib.mkIf (!caddyEdgeEnabled)
-        {
-          # The trailing slash strips the public prefix before proxying to Hindsight.
-          proxyPass = "http://127.0.0.1:${toString cfg.ports.api}/";
-          recommendedProxySettings = true;
-          extraConfig = "client_max_body_size 100m;";
-        };
   };
 }

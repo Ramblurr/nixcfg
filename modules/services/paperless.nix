@@ -28,12 +28,6 @@ in
       description = "The domain to use for the paperless";
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
-
     oidc = {
       enable = lib.mkEnableOption "native OpenID Connect authentication";
       mode = lib.mkOption {
@@ -58,12 +52,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/paperless"."mountpoint" = config.services.paperless.dataDir;
@@ -175,13 +163,9 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.paperless = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = false;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
   };
 }
