@@ -27,11 +27,6 @@ in
         description = "The domain to use for the calibre content server";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       gui = lib.mkOption { type = lib.types.port; };
       server = lib.mkOption { type = lib.types.port; };
@@ -87,25 +82,15 @@ in
       extraOptions = [ ];
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain.gui} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.protectedRoutes.calibre-gui = {
+      publicHost = cfg.domain.gui;
       upstream = "http://127.0.0.1:${toString cfg.ports.gui}";
-      forwardAuth = true;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
+    };
+    modules.services.caddy.routes.calibre-server = {
+      publicHost = cfg.domain.server;
+      upstream = "http://127.0.0.1:${toString cfg.ports.server}";
+      requestHeaders.Authorization = "{http.request.header.Authorization}";
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain.server} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.server}";
-      upstreamExtraConfig = ''
-        proxy_set_header Authorization $http_authorization;
-        proxy_pass_header Authorization;
-      '';
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
-    };
   };
 }

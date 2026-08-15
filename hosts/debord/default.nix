@@ -54,14 +54,9 @@ in
     enable = true;
     containers.enable = false;
     hypervisor.enable = true;
-    ingress = {
-      enable = true;
-      caddy.enable = true;
-    };
     apps.hindsight.enable = true;
   };
-  modules.services.caddy-security.edge = {
-    enable = true;
+  modules.services.caddy.edge = {
     certificateHosts = map (host: "${host}.${config.repo.secrets.global.domain.home}") [
       "hindsight"
       "home"

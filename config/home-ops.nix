@@ -15,90 +15,6 @@ let
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
-  calibreWebCaddySecurityEnabled = cfg.apps.calibre-web.enable;
-  caddyIngressEnabled =
-    cfg.ingress.enable && (cfg.ingress.caddy.enable || calibreWebCaddySecurityEnabled);
-  caddyEdgeEnabled = lib.attrByPath [
-    "modules"
-    "services"
-    "caddy-security"
-    "edge"
-    "enable"
-  ] false config;
-  homeDlUpstream =
-    port: "http://${lib.my.cidrToIp config.modules.services.home-dl.subnet.nsAddr}:${toString port}";
-  protectedCaddySecurityApplications =
-    (lib.optionalAttrs cfg.apps.calibre.enable {
-      "calibre-gui" = {
-        publicHost = "calibre.${home-ops.homeDomain}";
-        upstream = "http://127.0.0.1:${toString config.modules.services.calibre.ports.gui}";
-      };
-    })
-    // (lib.optionalAttrs cfg.apps.filebrowser-quantum.enable {
-      files = {
-        publicHost = "files.${home-ops.homeDomain}";
-        upstream = "http://127.0.0.1:${toString config.modules.services.filebrowser-quantum.ports.http}";
-        identityHeaders.Remote-User = "userinfo|preferred_username";
-      };
-    })
-    // (lib.optionalAttrs cfg.apps.home-dl.enable {
-      prowlarr = {
-        publicHost = "prowlarr.${home-ops.homeDomain}";
-        upstream = homeDlUpstream 9696;
-      };
-      radarr = {
-        publicHost = "radarr.${home-ops.homeDomain}";
-        upstream = homeDlUpstream 7878;
-      };
-      sabnzbd = {
-        publicHost = "sabnzbd.${home-ops.homeDomain}";
-        upstream = homeDlUpstream 8080;
-      };
-      sonarr = {
-        publicHost = "sonarr.${home-ops.homeDomain}";
-        upstream = homeDlUpstream 8989;
-      };
-    })
-    // (lib.optionalAttrs cfg.apps.tubearchivist.enable {
-      tube = {
-        publicHost = "tube.${home-ops.homeDomain}";
-        upstream = "http://127.0.0.1:${toString config.modules.services.tubearchivist.port}";
-        identityHeaders.Remote-User = "userinfo|preferred_username";
-      };
-    });
-  hasAuthenticatedCaddyApplications =
-    calibreWebCaddySecurityEnabled || protectedCaddySecurityApplications != { };
-  caddySecurityEnvPrefix = name: lib.toUpper (lib.replaceStrings [ "-" ] [ "_" ] name);
-  caddySecurityEnvironmentLines =
-    (lib.optionals caddyIngressEnabled [
-      "DESEC_API_TOKEN=${config.sops.placeholder.desec_api_token}"
-    ])
-    ++ (lib.optionals calibreWebCaddySecurityEnabled [
-      "CALIBRE_WEB_OIDC_CLIENT_SECRET=${config.sops.placeholder.calibre-web-oidc-client-secret}"
-      "CALIBRE_WEB_SIGNING_KEY=${config.sops.placeholder.calibre-web-caddy-security-signing-key}"
-    ])
-    ++ lib.concatMap (name: [
-      "${caddySecurityEnvPrefix name}_OIDC_CLIENT_SECRET=${
-        config.sops.placeholder."${name}-oidc-client-secret"
-      }"
-      "${caddySecurityEnvPrefix name}_SIGNING_KEY=${
-        config.sops.placeholder."${name}-caddy-security-signing-key"
-      }"
-    ]) (builtins.attrNames protectedCaddySecurityApplications);
-  mkProtectedCaddySecurityApplication =
-    name: application:
-    application
-    // {
-      oidc = {
-        issuerURL = "https://id.${home-ops.homeDomain}";
-        clientID = name;
-        clientSecretEnv = "${caddySecurityEnvPrefix name}_OIDC_CLIENT_SECRET";
-        realm = "${name}-pocket-id";
-      };
-      signingKeyEnv = "${caddySecurityEnvPrefix name}_SIGNING_KEY";
-      cookiePrefix = caddySecurityEnvPrefix name;
-      requiredGroups = [ "admins" ];
-    };
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
     until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
       ${pkgs.coreutils}/bin/sleep 0.5
@@ -131,10 +47,6 @@ in
     };
     hypervisor = {
       enable = lib.mkEnableOption "libvirt Hypervisor";
-    };
-    ingress = {
-      enable = lib.mkEnableOption "NGINX Ingress";
-      caddy.enable = lib.mkEnableOption "Caddy ingress routes and runtime preparation";
     };
     containers = {
       enable = lib.mkEnableOption "OCI containers";
@@ -197,34 +109,6 @@ in
       {
         assertion = !(cfg.apps.ocis-work.enable && cfg.apps.ocis-home.enable);
         message = "OCIS Work and OCIS Home cannot be enabled at the same time on the same host";
-      }
-      {
-        assertion =
-          !cfg.apps.jellyplex-watched.enable || (cfg.apps.plex.enable && cfg.apps.jellyfin.enable);
-        message = "JellyPlex-Watched requires both Plex and Jellyfin to be enabled";
-      }
-      {
-        assertion = !cfg.apps.calibre-web.enable || cfg.ingress.enable;
-        message = "Calibre Web requires ingress";
-      }
-      {
-        assertion =
-          !caddyIngressEnabled
-          || (
-            config.sops.templates.caddy-security-env.owner == "caddy"
-            && config.sops.templates.caddy-security-env.group == "caddy"
-            && config.sops.templates.caddy-security-env.mode == "0400"
-          );
-        message = "Caddy ingress runtime environment must remain private to the caddy service account";
-      }
-      {
-        assertion =
-          !caddyIngressEnabled
-          || hasAuthenticatedCaddyApplications
-          ||
-            config.sops.templates.caddy-security-env.content
-            == "DESEC_API_TOKEN=${config.sops.placeholder.desec_api_token}";
-        message = "Unauthenticated Caddy ingress must render only the deSEC token placeholder";
       }
     ];
 
@@ -321,7 +205,6 @@ in
     };
 
     networking.firewall.allowedUDPPorts = [
-      443 # http3
       53 # dns
       67 # dhcp for microvms
     ];
@@ -359,273 +242,12 @@ in
       enable = true;
       package = pkgs.mariadb_114;
     };
-    modules.services.ingress = lib.mkIf cfg.ingress.enable {
-      enable = true;
-      inherit (config.repo.secrets.local) domains;
-      virtualHosts."home.${home-ops.homeDomain}" = lib.mkIf (!caddyEdgeEnabled) {
-        upstream = "http://10.9.4.25:8123";
-        acmeHost = home-ops.homeDomain;
-      };
-      virtualHosts."octoprint.${home-ops.homeDomain}" = lib.mkIf (!caddyEdgeEnabled) {
-        upstream = "http://10.8.50.52:5000";
-        acmeHost = home-ops.homeDomain;
-      };
+    modules.services.caddy = {
+      auth.issuerURL = "https://id.${home-ops.homeDomain}";
+      edge.sopsFile = ../configs/home-ops/shared.sops.yml;
     };
-    modules.services.caddy.routes = lib.mkIf caddyIngressEnabled (
-      (lib.optionalAttrs cfg.apps.atuin-sync.enable {
-        atuin = {
-          publicHost = "atuin.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.atuin-sync.ports.http}";
-          requestBodyMaxSize = "10MB";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.audiobookshelf.enable {
-        audiobookshelf = {
-          publicHost = "audiobookshelf.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.audiobookshelf.ports.http}";
-        };
-      })
-      // (lib.optionalAttrs config.modules.services.ingress-nixbot.enable {
-        ci = {
-          publicHost = "ci.${home-ops.workDomain}";
-          upstream = "http://debord.prim.${home-ops.homeDomain}:${toString home-ops.ports.nixbot}";
-          requestBodyMaxSize = "25MB";
-          responseHeaders.X-Robots-Tag = "noindex, nofollow, noarchive";
-          dialTimeout = "120s";
-          flushInterval = "-1";
-          staticResponses."/robots.txt" = {
-            body = "User-agent: *\nDisallow: /\n";
-            headers.X-Robots-Tag = "noindex, nofollow, noarchive";
-          };
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.invoiceninja.enable {
-        clients = {
-          publicHost = "clients.${home-ops.workDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.invoiceninja.ports.http}";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.ocis-work.enable {
-        data = {
-          publicHost = "data.${home-ops.workDomain}";
-          upstream = "http://${lib.my.cidrToIp config.modules.services.ocis.subnet.nsAddr}:${toString config.modules.services.ocis.ports.http}";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.forgejo.enable {
-        forgejo = {
-          publicHost = "git.${home-ops.homeDomain}";
-          upstream = "unix/${config.services.forgejo.settings.server.HTTP_ADDR}";
-          requestBodyMaxSize = "10MB";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.influxdb.enable {
-        influxdb = {
-          publicHost = "influxdb.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.influxdb.ports.http}";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.jellyfin.enable {
-        jellyfin = {
-          publicHost = "jelly.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:8096";
-          requestBodyMaxSize = "10MB";
-          flushInterval = "-1";
-          directWan = true;
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.paperless.enable {
-        paperless = {
-          publicHost = "paperless.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.paperless.ports.http}";
-        };
-      })
-      // (lib.optionalAttrs config.modules.services.ingress-paseo.enable {
-        paseo = {
-          publicHost = "paseo.${home-ops.homeDomain}";
-          upstream = "http://quine.prim.${home-ops.homeDomain}:6767";
-          requestBodyMaxSize = "100MB";
-          requestHeaders = {
-            Host = "{http.request.host}";
-            X-Forwarded-For = "{http.request.header.X-Forwarded-For}";
-            X-Forwarded-Proto = "https";
-          };
-          dialTimeout = "120s";
-          flushInterval = "-1";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.stirling-pdf.enable {
-        pdf = {
-          publicHost = "pdf.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.stirling-pdf.ports.http}";
-          requestBodyMaxSize = "10MB";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.home-dl.enable {
-        qbittorrent = {
-          publicHost = "qbittorrent.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.home-dl.ports.qbittorrent}";
-          requestBodyMaxSize = "10MB";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.calibre-web.enable {
-        books-kobo = {
-          publicHost = "books-kobo.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.calibre-web.ports.http}";
-          requestHeaders.X-Scheme = "https";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.calibre.enable {
-        calibre-server = {
-          publicHost = "calibre-server.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.calibre.ports.server}";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.davis.enable {
-        davis = {
-          publicHost = "dav.${home-ops.homeDomain}";
-          handlerConfig = ''
-            @davis_well_known path /.well-known/caldav /.well-known/carddav
-            redir @davis_well_known https://{http.request.host}/dav/ 302
-            @davis_hidden path_regexp davis_hidden /\.ht
-            respond @davis_hidden 404
-            root * ${config.services.davis.package}/public
-            php_fastcgi unix//run/phpfpm/davis.sock {
-              env HTTPS on
-              env HTTP_X_FORWARDED_PROTO https
-              env HTTP_X_FORWARDED_PORT 443
-            }
-            file_server
-          '';
-        };
-      })
-      // {
-        home-assistant = {
-          publicHost = "home.${home-ops.homeDomain}";
-          upstream = "http://10.9.4.25:8123";
-        };
-        octoprint = {
-          publicHost = "octoprint.${home-ops.homeDomain}";
-          handlerConfig = ''
-            handle_path /webcam/* {
-              reverse_proxy 10.8.50.52:8080 {
-                flush_interval -1
-                header_down X-Accel-Buffering "no"
-                transport http {
-                  read_timeout 24h
-                }
-              }
-            }
-            handle {
-              reverse_proxy 10.8.50.52:5000
-            }
-          '';
-        };
-      }
-      // (lib.optionalAttrs cfg.apps.koreader-sync.enable {
-        koreader = {
-          publicHost = "koreader.${home-ops.homeDomain}";
-          upstream = "http://127.0.0.1:${toString config.modules.services.koreader-sync.ports.http}";
-          requestBodyMaxSize = "10MB";
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.matrix-synapse.enable {
-        matrix = {
-          publicHost = "matrix.${home-ops.workDomain}";
-          http3 = false;
-          handlerConfig = ''
-            @matrix_server path /.well-known/matrix/server
-            handle @matrix_server {
-              header Content-Type application/json
-              respond ${
-                builtins.toJSON (builtins.toJSON { "m.server" = "matrix.${home-ops.workDomain}:443"; })
-              } 200
-            }
-            handle /admin {
-              redir * /admin/ 307
-            }
-            handle_path /admin/* {
-              @matrix_admin_assets path_regexp matrix_admin_assets \.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$
-              header @matrix_admin_assets Cache-Control "public, max-age=2592000"
-              root * ${config.modules.services.matrix-synapse.ketesa.package}
-              try_files {path} {path}/ /index.html
-              file_server
-            }
-            @matrix_api path /_matrix/* /_synapse/client/*
-            handle @matrix_api {
-              request_body {
-                max_size 200MB
-              }
-              reverse_proxy 127.0.0.1:${toString config.modules.services.matrix-synapse.ports.http}
-            }
-            handle {
-              reverse_proxy 127.0.0.1:${toString config.modules.services.matrix-synapse.ports.http}
-            }
-          '';
-        };
-      })
-      // (lib.optionalAttrs config.modules.services.ingress-phoniebox.enable {
-        phoniebox = {
-          publicHost = "phoniebox.${home-ops.homeDomain}";
-          handlerConfig = ''
-            handle_path /.fairybox-offline/* {
-              header Cache-Control "public, max-age=3600"
-              root * ${../modules/services/ingress-phoniebox}
-              file_server
-            }
-            route {
-              intercept {
-                @phoniebox_offline status 502 503 504
-                handle_response @phoniebox_offline {
-                  rewrite * /index.html
-                  root * ${../modules/services/ingress-phoniebox}
-                  file_server {
-                    status 503
-                  }
-                }
-              }
-              reverse_proxy 10.9.6.26:80 {
-                flush_interval -1
-                transport http {
-                  dial_timeout 3s
-                  response_header_timeout 1h
-                }
-              }
-            }
-          '';
-          errorHandlerConfig = ''
-            @phoniebox_proxy_error {
-              host phoniebox.${home-ops.homeDomain}
-              expression {http.error.status_code} in [502, 503, 504]
-            }
-            handle @phoniebox_proxy_error {
-              rewrite * /index.html
-              root * ${../modules/services/ingress-phoniebox}
-              file_server {
-                status 503
-              }
-            }
-          '';
-        };
-      })
-      // (lib.optionalAttrs cfg.apps.my-y2r.enable {
-        y2pod = {
-          publicHost = "y2pod.${home-ops.homeDomain}";
-          handlerConfig = ''
-            @y2pod_private path_regexp y2pod_private (^|/)\.
-            respond @y2pod_private 403
-            @y2pod_logs path_regexp y2pod_logs \.log$
-            respond @y2pod_logs 403
-            @y2pod_work path_regexp y2pod_work ^/[^/]+/(inbox|processing|archive)(/|$)
-            respond @y2pod_work 403
-            @y2pod_rss path_regexp y2pod_rss \.rss$
-            header @y2pod_rss Content-Type "application/rss+xml; charset=utf-8"
-            header Accept-Ranges bytes
-            root * /var/lib/y2r
-            file_server browse
-          '';
-        };
-      })
-    );
+    modules.services.ingress-home-assistant.enable = true;
+    modules.services.ingress-octoprint.enable = true;
 
     virtualisation.podman.enable = lib.mkIf cfg.containers.enable true;
     virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
@@ -796,62 +418,6 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
-    sops.secrets.calibre-web-oidc-client-secret = lib.mkIf calibreWebCaddySecurityEnabled {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.calibre-web-caddy-security-signing-key = lib.mkIf calibreWebCaddySecurityEnabled {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.calibre-gui-oidc-client-secret = lib.mkIf cfg.apps.calibre.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.calibre-gui-caddy-security-signing-key = lib.mkIf cfg.apps.calibre.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.files-oidc-client-secret = lib.mkIf cfg.apps.filebrowser-quantum.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.files-caddy-security-signing-key = lib.mkIf cfg.apps.filebrowser-quantum.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.prowlarr-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.prowlarr-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.radarr-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.radarr-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.sabnzbd-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.sabnzbd-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.sonarr-oidc-client-secret = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.sonarr-caddy-security-signing-key = lib.mkIf cfg.apps.home-dl.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.tube-oidc-client-secret = lib.mkIf cfg.apps.tubearchivist.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.secrets.tube-caddy-security-signing-key = lib.mkIf cfg.apps.tubearchivist.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-    };
-    sops.templates.caddy-security-env = lib.mkIf caddyIngressEnabled {
-      owner = "caddy";
-      group = "caddy";
-      mode = "0400";
-      restartUnits = [ "caddy.service" ];
-      content = lib.concatStringsSep "\n" caddySecurityEnvironmentLines;
-    };
-
     # Expected SOPS key: jellyplex-watched.env with PLEX_TOKEN and JELLYFIN_TOKEN.
     sops.secrets."jellyplex-watched/env" = lib.mkIf cfg.apps.jellyplex-watched.enable {
       sopsFile = ../configs/home-ops/shared.sops.yml;
@@ -866,10 +432,6 @@ in
     modules.services.davis = lib.mkIf cfg.apps.davis.enable {
       enable = true;
       domain = "dav.${home-ops.homeDomain}";
-      ingress = {
-        external = true;
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.invoiceninja = lib.mkIf cfg.apps.invoiceninja.enable {
@@ -879,10 +441,6 @@ in
       group = home-ops.groups.invoiceninja2;
       ports.http = home-ops.ports.invoiceninja;
       subnet = home-ops.subnets.invoiceninja2;
-      ingress = {
-        external = true;
-        domain = home-ops.workDomain;
-      };
     };
 
     #modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
@@ -892,10 +450,6 @@ in
     #  ports.sync = home-ops.ports.onepassword-connect-sync;
     #  user = home-ops.users.onepassword-connect;
     #  group = home-ops.groups.onepassword-connect;
-    #  ingress = {
-    #    domain = home-ops.homeDomain;
-    #  };
-    #};
 
     modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
       enable = true;
@@ -904,9 +458,6 @@ in
       user = home-ops.users.paperless;
       group = home-ops.groups.paperless;
       nfsShare = "tank2/services/paperless";
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.plex = lib.mkIf cfg.apps.plex.enable {
@@ -915,9 +466,6 @@ in
       user = home-ops.users.plex;
       group = home-ops.groups.plex;
       nfsShare = "tank2/media";
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.jellyfin = lib.mkIf cfg.apps.jellyfin.enable {
@@ -926,11 +474,6 @@ in
       user = home-ops.users.jellyfin;
       group = home-ops.groups.jellyfin;
       nfsShare = "tank2/media";
-      ingress = {
-        domain = home-ops.homeDomain;
-        forwardAuth = false;
-        directWan = true;
-      };
       "jellyplex-watched" = lib.mkIf cfg.apps.jellyplex-watched.enable {
         enable = true;
         environmentFile = config.sops.secrets."jellyplex-watched/env".path;
@@ -950,9 +493,6 @@ in
       group = home-ops.groups.audiobookshelf;
       nfsShare = "tank2/media";
       ports.http = home-ops.ports.audiobookshelf;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.filebrowser-quantum = lib.mkIf cfg.apps.filebrowser-quantum.enable {
@@ -971,10 +511,6 @@ in
           path = "/mnt/mali/tank2/media";
         }
       ];
-      ingress = {
-        domain = home-ops.homeDomain;
-        forwardAuth = true;
-      };
     };
 
     modules.services.tautulli = lib.mkIf cfg.apps.tautulli.enable {
@@ -982,9 +518,6 @@ in
       domain = "tautulli.${home-ops.homeDomain}";
       user = home-ops.users.tautulli;
       ports.http = home-ops.ports.tautulli-http;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.home-dl = lib.mkIf cfg.apps.home-dl.enable {
@@ -993,10 +526,6 @@ in
       ports = home-ops.ports.home-dl;
       mediaNfsShare = "tank2/media";
       subnet = home-ops.subnets.home-dl;
-      ingress = {
-        domain = home-ops.homeDomain;
-        forwardAuth = true;
-      };
     };
 
     modules.services.hindsight = lib.mkIf cfg.apps.hindsight.enable {
@@ -1012,19 +541,12 @@ in
       ports.gui = home-ops.ports.calibre-gui;
       ports.server = home-ops.ports.calibre-server;
       mediaNfsShare = "tank2/media";
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.koreader-sync = lib.mkIf cfg.apps.koreader-sync.enable {
       enable = true;
       domain = "koreader.${home-ops.homeDomain}";
       ports.http = home-ops.ports.koreader-sync;
-      ingress = {
-        domain = home-ops.homeDomain;
-        external = true;
-      };
       user = home-ops.users.koreader-sync;
       group = home-ops.groups.koreader-sync;
     };
@@ -1036,43 +558,6 @@ in
       mediaNfsShare = "tank2/media";
       user = home-ops.users.books;
       group = home-ops.groups.books;
-      ingress = {
-        domain = home-ops.homeDomain;
-        external = true;
-      };
-    };
-    modules.services.caddy-security = lib.mkIf caddyIngressEnabled {
-      enable = true;
-      environmentFile = config.sops.templates.caddy-security-env.path;
-      applications =
-        (lib.optionalAttrs cfg.apps.calibre-web.enable {
-          calibre-web = {
-            publicHost = "books.${home-ops.homeDomain}";
-            upstream = "127.0.0.1:${toString home-ops.ports.calibre-web}";
-            portalPath = "/auth";
-            oidc = {
-              issuerURL = "https://id.${home-ops.homeDomain}";
-              clientID = home-ops.calibreWebPocketIdClientId;
-              clientSecretEnv = "CALIBRE_WEB_OIDC_CLIENT_SECRET";
-              realm = "calibre-pocket-id";
-            };
-            signingKeyEnv = "CALIBRE_WEB_SIGNING_KEY";
-            cookiePrefix = "CALIBRE_WEB";
-            requiredGroups = [ "books" ];
-            bypassPathPrefixes = [ "/opds" ];
-            identityHeaders = {
-              Remote-User = "userinfo|preferred_username";
-              Remote-Name = "userinfo|preferred_username";
-              Remote-Email = "email";
-              Remote-Groups = "roles";
-              X-Auth-Request-User = "sub";
-              X-Auth-Request-Preferred-Username = "userinfo|preferred_username";
-              X-Auth-Request-Email = "email";
-              X-Auth-Request-Groups = "roles";
-            };
-          };
-        })
-        // lib.mapAttrs mkProtectedCaddySecurityApplication protectedCaddySecurityApplications;
     };
 
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
@@ -1081,18 +566,11 @@ in
     #  ports.http = home-ops.ports.archivebox;
     #  user = home-ops.users.archivebox;
     #  group = home-ops.groups.archivebox;
-    #  ingress = {
-    #    domain = home-ops.homeDomain;
-    #  };
-    #};
 
     modules.services.influxdb = lib.mkIf cfg.apps.influxdb.enable {
       enable = true;
       domain = "influxdb.${home-ops.homeDomain}";
       ports.http = home-ops.ports.influxdb;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.matrix-synapse = lib.mkIf cfg.apps.matrix-synapse.enable {
@@ -1103,10 +581,6 @@ in
       user = home-ops.users.matrix-synapse;
       group = home-ops.groups.matrix-synapse;
       bridgesGroup = home-ops.groups.matrix-bridges;
-      ingress = {
-        domain = home-ops.workDomain;
-        external = true;
-      };
       ketesa.enable = true;
       bridges.discord = {
         enable = true;
@@ -1148,10 +622,6 @@ in
           };
           nfsShare = "tank2/services/work-ocis2";
           subnet = home-ops.subnets.ocis-work;
-          ingress = {
-            domain = home-ops.workDomain;
-            external = true;
-          };
         }
       else if cfg.apps.ocis-home.enable then
         {
@@ -1166,10 +636,6 @@ in
           };
           nfsShare = "tank2/services/home-ocis2";
           subnet = home-ops.subnets.ocis-home;
-          ingress = {
-            domain = home-ops.homeDomain;
-            external = true;
-          };
         }
       else
         { };
@@ -1179,26 +645,17 @@ in
       domain = "git.${home-ops.homeDomain}";
       user = home-ops.users.forgejo;
       group = home-ops.groups.forgejo;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.actual-server = lib.mkIf cfg.apps.actual-server.enable {
       enable = true;
       domain = "budget.${home-ops.homeDomain}";
       ports.http = home-ops.ports.actual-server;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
     modules.services.atuin-sync = lib.mkIf cfg.apps.atuin-sync.enable {
       enable = true;
       domain = "atuin.${home-ops.homeDomain}";
       ports.http = home-ops.ports.atuin-sync;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
     modules.services.soju = lib.mkIf cfg.apps.soju.enable {
       enable = true;
@@ -1212,19 +669,12 @@ in
     modules.services.my-y2r = lib.mkIf cfg.apps.my-y2r.enable {
       enable = true;
       domain = "y2pod.${home-ops.homeDomain}";
-      ingress = {
-        domain = home-ops.homeDomain;
-        external = true;
-      };
     };
 
     modules.services.stirling-pdf = lib.mkIf cfg.apps.stirling-pdf.enable {
       enable = true;
       domain = "pdf.${home-ops.homeDomain}";
       ports.http = home-ops.ports.stirling-pdf;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.tubearchivist = lib.mkIf cfg.apps.tubearchivist.enable {
@@ -1234,9 +684,6 @@ in
       mediaNfsShare = "tank2/media/youtube";
       user = home-ops.users.tubearchivist;
       group = home-ops.groups.tubearchivist;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
   };
 }

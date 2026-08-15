@@ -96,12 +96,6 @@ in
       };
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
-
     ports = {
       http = lib.mkOption {
         type = lib.types.port;
@@ -116,12 +110,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
@@ -190,12 +178,9 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.data = {
+      publicHost = cfg.domain;
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
   };
 }

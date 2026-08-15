@@ -19,42 +19,24 @@ in
       example = "podcasts.example.com";
       description = "The domain to use for the podcast feed";
     };
-    ingress = {
-      external = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to expose the service externally";
-      };
-      domain = lib.mkOption {
-        type = lib.types.str;
-        example = "example.com";
-        description = "The ingress domain to use";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      root = dataDir;
-      extraConfig = ''
-        types {
-          application/rss+xml rss xml;
-          audio/mpeg mp3;
-          audio/mp4 m4a;
-          video/mp4 mp4;
-        }
-        add_header Accept-Ranges bytes;
-      '';
-      upstreamExtraConfig = ''
-        autoindex on;
-        charset utf-8;
+    modules.services.caddy.routes.y2pod = {
+      publicHost = cfg.domain;
+      handlerConfig = ''
+        @y2pod_private path_regexp y2pod_private (^|/)\\.
+        respond @y2pod_private 403
+        @y2pod_logs path_regexp y2pod_logs \\.log$
+        respond @y2pod_logs 403
+        @y2pod_work path_regexp y2pod_work ^/[^/]+/(inbox|processing|archive)(/|$)
+        respond @y2pod_work 403
+        @y2pod_rss path_regexp y2pod_rss \\.rss$
+        header @y2pod_rss Content-Type "application/rss+xml; charset=utf-8"
+        header Accept-Ranges bytes
+        root * ${dataDir}
+        file_server browse
       '';
     };
 
