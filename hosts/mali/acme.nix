@@ -1,13 +1,16 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
 let
   inherit (config.repo.secrets.global) domain email;
+  caddyEdgeEnabled = config.modules.services.caddy-security.edge.enable;
+  legacyAcmeEnabled = config.modules.services.ingress.legacyAcme.enable;
 in
 {
-  security.acme = {
+  security.acme = lib.mkIf legacyAcmeEnabled {
     acceptTerms = true;
     defaults = {
       email = email.acme;
@@ -32,7 +35,27 @@ in
         "30"
         "--dns.propagation-rns"
       ];
-      reloadServices = [ "nginx.service" ];
+      reloadServices = [ (if caddyEdgeEnabled then "caddy.service" else "nginx.service") ];
+    };
+    certs = {
+      "s3.data.${domain.home}" = {
+        domain = "s3.data.${domain.home}";
+        extraDomainNames = [
+          "*.s3.data.${domain.home}"
+          "minio.data.${domain.home}"
+          "*.s3.mgmt.${domain.home}"
+          "minio.mgmt.${domain.home}"
+          "s3.mgmt.${domain.home}"
+        ];
+        group = "nginx";
+      };
+      "attic.mgmt.${domain.home}" = {
+        domain = "attic.mgmt.${domain.home}";
+        group = "nginx";
+        extraDomainNames = [
+          "attic.int.${domain.home}"
+        ];
+      };
     };
   };
 
@@ -40,36 +63,8 @@ in
     sopsFile = ../../configs/home-ops/shared.sops.yml;
     restartUnits = [ ];
   };
-  security.acme.certs = {
-    #"mali" = {
-    #  domain = "mali.int.${domain.home}";
-    #  extraDomainNames = [];
-    #  group = "nginx";
-    #  directory = "/persist/var/lib/acme/mali";
-    #};
-    "s3.data.${domain.home}" = {
-      domain = "s3.data.${domain.home}";
-      extraDomainNames = [
-        "*.s3.data.${domain.home}"
-        "minio.data.${domain.home}"
-        "*.s3.mgmt.${domain.home}"
-        "minio.mgmt.${domain.home}"
-        "s3.mgmt.${domain.home}"
-      ];
-      group = "nginx";
-    };
-    "attic.mgmt.${domain.home}" = {
-      domain = "attic.mgmt.${domain.home}";
-      group = "nginx";
-      extraDomainNames = [
-        "attic.int.${domain.home}"
-      ];
-    };
-  };
 
-  environment.persistence = {
-    "/persist" = {
-      directories = [ "/var/lib/acme" ];
-    };
-  };
+  environment.persistence."/persist".directories = lib.mkIf legacyAcmeEnabled [
+    "/var/lib/acme"
+  ];
 }

@@ -10,6 +10,8 @@ let
   inherit (config.repo.secrets.global) domain;
   cfg = config.services.ncps;
   hostName = "nix-cache.int.${domain.home}";
+  caddyEdgeEnabled = config.modules.services.caddy-security.edge.enable;
+  legacyAcmeEnabled = config.modules.services.ingress.legacyAcme.enable;
 in
 {
   sops.secrets.ncps_private_key = {
@@ -65,7 +67,7 @@ in
     "z /mnt/fast/ncps 770 ncps ncps"
   ];
   environment.persistence."/persist".directories = [ "/var/lib/ncps" ];
-  services.nginx.virtualHosts.${hostName} = {
+  services.nginx.virtualHosts.${hostName} = lib.mkIf (!caddyEdgeEnabled) {
     useACMEHost = hostName;
     forceSSL = true;
     http3 = false;
@@ -80,7 +82,7 @@ in
       recommendedProxySettings = true;
     };
   };
-  security.acme.certs.${hostName} = {
+  security.acme.certs.${hostName} = lib.mkIf legacyAcmeEnabled {
     domain = hostName;
     group = "nginx";
   };

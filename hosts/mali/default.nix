@@ -18,6 +18,7 @@ in
     ./zrepl.nix
     ./acme.nix
     ./nginx.nix
+    ./caddy.nix
     ./minio.nix
     ./syncthing.nix
     ./borgbackup-server.nix

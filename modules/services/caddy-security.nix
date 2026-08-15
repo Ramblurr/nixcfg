@@ -242,54 +242,100 @@ let
       staticResponses = lib.concatStringsSep "\n" (
         lib.mapAttrsToList (mkPlainStaticResponse name) route.staticResponses
       );
+      handlers =
+        if route.handlerConfig != null then
+          route.handlerConfig
+        else
+          ''
+            ${lib.optionalString (
+              route.upstream != null && route.webSockets
+            ) "# WebSocket upgrades are handled by Caddy reverse_proxy."}
+            ${responseHeaders}
+            ${staticResponses}
+            ${lib.optionalString (route.requestBodyMaxSize != null) ''
+              request_body {
+                max_size ${route.requestBodyMaxSize}
+              }
+            ''}
+            ${
+              if route.upstream != null then
+                mkPlainProxy route
+              else
+                ''
+                  root * ${route.root}
+                  file_server
+                ''
+            }
+          '';
+      accessControlledHandlers =
+        if route.allowedRemoteIPs == [ ] then
+          handlers
+        else
+          ''
+            @plain_${plainId name}_allowed remote_ip ${lib.concatStringsSep " " route.allowedRemoteIPs}
+            handle @plain_${plainId name}_allowed {
+              ${handlers}
+            }
+            respond 403
+          '';
     in
     ''
-      @plain_${plainId name} host ${route.publicHost}
+      @plain_${plainId name} host ${lib.concatStringsSep " " (routeHosts route)}
       handle @plain_${plainId name} {
-        ${
-          if route.handlerConfig != null then
-            route.handlerConfig
-          else
-            ''
-              ${lib.optionalString (
-                route.upstream != null && route.webSockets
-              ) "# WebSocket upgrades are handled by Caddy reverse_proxy."}
-              ${responseHeaders}
-              ${staticResponses}
-              ${lib.optionalString (route.requestBodyMaxSize != null) ''
-                request_body {
-                  max_size ${route.requestBodyMaxSize}
-                }
-              ''}
-              ${
-                if route.upstream != null then
-                  mkPlainProxy route
-                else
-                  ''
-                    root * ${route.root}
-                    file_server
-                  ''
-              }
-            ''
-        }
+        ${accessControlledHandlers}
       }
     '';
 
   plainErrorHandlerConfig = lib.concatMapStringsSep "\n" (
     route: lib.optionalString (route.errorHandlerConfig != null) route.errorHandlerConfig
   ) (builtins.attrValues plainRoutes);
+  routeHosts = route: [ route.publicHost ] ++ route.aliases;
   protectedPublicHosts = map (app: app.publicHost) applications;
-  plainPublicHosts = map (route: route.publicHost) (builtins.attrValues plainRoutes);
+  plainPublicHosts = lib.concatMap routeHosts (builtins.attrValues plainRoutes);
   publicHosts = protectedPublicHosts ++ plainPublicHosts;
   hasApplications = cfg.applications != { };
   hasPlainRoutes = plainRoutes != { };
   hostMatchesDomain = domain: host: host == domain || lib.hasSuffix ".${domain}" host;
   certificateDomains = cfg.edge.certificateDomains;
   certificateHosts = cfg.edge.certificateHosts;
+  certificateSets = cfg.edge.certificateSets;
+  certificateSetSubjects = lib.concatLists (builtins.attrValues certificateSets);
+  certificateSubjectsForDomain = domain: [
+    domain
+    "*.${domain}"
+    "*.int.${domain}"
+  ];
+  certificateSubjects =
+    lib.concatMap certificateSubjectsForDomain certificateDomains
+    ++ certificateHosts
+    ++ certificateSetSubjects;
+  certificateSubjectMatchesHost =
+    subject: host:
+    subject == host
+    || (
+      lib.hasPrefix "*." subject
+      && (
+        let
+          suffix = lib.removePrefix "*." subject;
+          prefix = lib.removeSuffix ".${suffix}" host;
+        in
+        lib.hasSuffix ".${suffix}" host && prefix != host && !lib.hasInfix "." prefix
+      )
+    );
   certificateDomainsForHost =
     host: lib.filter (domain: hostMatchesDomain domain host) certificateDomains;
+  certificateSetsForHost =
+    host:
+    builtins.attrNames (
+      lib.filterAttrs (
+        _: subjects: lib.any (subject: certificateSubjectMatchesHost subject host) subjects
+      ) certificateSets
+    );
   certificateSourcesForHost =
-    host: certificateDomainsForHost host ++ lib.optional (builtins.elem host certificateHosts) host;
+    host:
+    map (domain: "domain:${domain}") (certificateDomainsForHost host)
+    ++ lib.optional (builtins.elem host certificateHosts) "host:${host}"
+    ++ map (name: "set:${name}") (certificateSetsForHost host);
 
   directWanRoutes = lib.filterAttrs (_: route: route.directWan) plainRoutes;
 
@@ -305,14 +351,8 @@ let
   '';
 
   managedSiteAddresses =
-    domain: port:
-    lib.concatStringsSep ", " (
-      map (subject: "https://${subject}:${toString port}") [
-        domain
-        "*.${domain}"
-        "*.int.${domain}"
-      ]
-    );
+    subjects: port:
+    lib.concatStringsSep ", " (map (subject: "https://${subject}:${toString port}") subjects);
 
   mkRouteConfig =
     routeAttrs: applicationAttrs: rejectHttp3Hosts: fallback:
@@ -346,10 +386,10 @@ let
   mkPublicSite =
     address: hostMatches:
     let
-      routeAttrs = lib.filterAttrs (_: route: hostMatches route.publicHost) plainRoutes;
+      routeAttrs = lib.filterAttrs (_: route: lib.any hostMatches (routeHosts route)) plainRoutes;
       applicationAttrs = lib.filterAttrs (_: app: hostMatches app.publicHost) cfg.applications;
       rejectHttp3Hosts =
-        map (route: route.publicHost) (lib.filter (route: !route.http3) (builtins.attrValues routeAttrs))
+        lib.concatMap routeHosts (lib.filter (route: !route.http3) (builtins.attrValues routeAttrs))
         ++ map (app: app.publicHost) (lib.filter (app: !app.http3) (builtins.attrValues applicationAttrs));
     in
     ''
@@ -361,11 +401,20 @@ let
 
   publicSiteConfig = lib.concatStringsSep "\n" (
     map (
-      domain: mkPublicSite (managedSiteAddresses domain cfg.edge.httpsPort) (hostMatchesDomain domain)
+      domain:
+      mkPublicSite (managedSiteAddresses (certificateSubjectsForDomain domain) cfg.edge.httpsPort) (
+        hostMatchesDomain domain
+      )
     ) certificateDomains
     ++ map (
       host: mkPublicSite "https://${host}:${toString cfg.edge.httpsPort}" (candidate: candidate == host)
     ) certificateHosts
+    ++ lib.mapAttrsToList (
+      _: subjects:
+      mkPublicSite (managedSiteAddresses subjects cfg.edge.httpsPort) (
+        host: lib.any (subject: certificateSubjectMatchesHost subject host) subjects
+      )
+    ) certificateSets
   );
 
   directWanSiteConfig = lib.optionalString cfg.edge.directWan.enable (
@@ -373,11 +422,14 @@ let
       routeName = builtins.head (builtins.attrNames directWanRoutes);
       route = directWanRoutes.${routeName};
       matchingDomains = certificateDomainsForHost route.publicHost;
+      matchingSets = certificateSetsForHost route.publicHost;
       address =
         if builtins.elem route.publicHost certificateHosts then
           "https://${route.publicHost}:${toString cfg.edge.directWan.listenPort}"
+        else if matchingDomains != [ ] then
+          managedSiteAddresses (certificateSubjectsForDomain (builtins.head matchingDomains)) cfg.edge.directWan.listenPort
         else
-          managedSiteAddresses (builtins.head matchingDomains) cfg.edge.directWan.listenPort;
+          managedSiteAddresses certificateSets.${builtins.head matchingSets} cfg.edge.directWan.listenPort;
       listener = cfg.edge.directWan.listenAddress;
     in
     ''
@@ -457,6 +509,28 @@ in
         type = lib.types.listOf lib.types.nonEmptyStr;
         default = [ ];
         description = "Exact hostnames with Caddy-managed certificates";
+      };
+
+      certificateSets = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.nonEmptyListOf lib.types.nonEmptyStr);
+        default = { };
+        description = "Named certificate subject sets managed as separate certificates";
+      };
+
+      protocols = lib.mkOption {
+        type = lib.types.nonEmptyListOf (
+          lib.types.enum [
+            "h1"
+            "h2"
+            "h3"
+          ]
+        );
+        default = [
+          "h1"
+          "h2"
+          "h3"
+        ];
+        description = "HTTP protocols accepted by the public HTTPS listener";
       };
 
       acmeEmail = lib.mkOption {
@@ -570,8 +644,9 @@ in
         message = "caddy-security identity header names contain an unsupported character";
       }
       {
-        assertion = !cfg.edge.enable || certificateDomains != [ ] || certificateHosts != [ ];
-        message = "public Caddy edge requires at least one managed certificate domain or exact host";
+        assertion =
+          !cfg.edge.enable || certificateDomains != [ ] || certificateHosts != [ ] || certificateSets != { };
+        message = "public Caddy edge requires at least one managed certificate source";
       }
       {
         assertion = allUnique certificateDomains;
@@ -580,6 +655,14 @@ in
       {
         assertion = allUnique certificateHosts;
         message = "public Caddy managed certificate hosts must be unique";
+      }
+      {
+        assertion = allUnique certificateSubjects;
+        message = "public Caddy certificate subjects must belong to exactly one source";
+      }
+      {
+        assertion = allUnique cfg.edge.protocols;
+        message = "public Caddy listener protocols must be unique";
       }
       {
         assertion =
@@ -637,7 +720,7 @@ in
                 client_ip_headers X-Forwarded-For
               }
               servers :${toString cfg.edge.httpsPort} {
-                protocols h1 h2 h3
+                protocols ${lib.concatStringsSep " " cfg.edge.protocols}
                 strict_sni_host on
               }
               ${lib.optionalString cfg.edge.directWan.enable ''

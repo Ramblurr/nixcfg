@@ -222,6 +222,71 @@ let
       }
     ];
   };
+  maliEvaluated = evaluated.extendModules {
+    modules = [
+      {
+        modules.services.caddy-security = {
+          applications = lib.mkForce { };
+          edge = {
+            certificateDomains = lib.mkForce [ ];
+            certificateHosts = lib.mkForce [ ];
+            certificateSets = {
+              attic = [
+                "attic.mgmt.example.test"
+                "attic.int.example.test"
+              ];
+              ncps = [ "nix-cache.int.example.test" ];
+              s3 = [
+                "s3.data.example.test"
+                "*.s3.data.example.test"
+                "minio.data.example.test"
+                "*.s3.mgmt.example.test"
+                "minio.mgmt.example.test"
+                "s3.mgmt.example.test"
+              ];
+            };
+            protocols = [
+              "h1"
+              "h2"
+            ];
+            redirectPort = 80;
+            redirectStatus = 301;
+            directWan.enable = lib.mkForce false;
+          };
+        };
+        modules.services.caddy.routes = lib.mkForce {
+          attic = {
+            publicHost = "attic.mgmt.example.test";
+            aliases = [ "attic.int.example.test" ];
+            upstream = "http://127.0.0.1:57000";
+          };
+          minio-console = {
+            publicHost = "minio.data.example.test";
+            aliases = [ "minio.mgmt.example.test" ];
+            upstream = "http://127.0.0.1:8999";
+            allowedRemoteIPs = [
+              "10.9.8.0/23"
+              "10.9.10.0/23"
+            ];
+          };
+          ncps = {
+            publicHost = "nix-cache.int.example.test";
+            upstream = "http://127.0.0.1:3400";
+          };
+          s3 = {
+            publicHost = "s3.data.example.test";
+            aliases = [ "s3.mgmt.example.test" ];
+            upstream = "http://127.0.0.1:9000";
+            allowedRemoteIPs = [
+              "10.9.8.0/23"
+              "10.9.10.0/23"
+            ];
+          };
+        };
+        modules.services.ingress.directWan.enable = lib.mkForce false;
+      }
+    ];
+  };
   exactHostCfg = exactHostEvaluated.config;
   transitionalExactHostCfg =
     (exactHostEvaluated.extendModules {
@@ -233,6 +298,18 @@ let
   exactHostGeneratedConfig = exactHostCaddy.configFile;
   exactHostFailedAssertions = map (entry: entry.message) (
     lib.filter (entry: !entry.assertion) exactHostCfg.assertions
+  );
+  maliCfg = maliEvaluated.config;
+  transitionalMaliCfg =
+    (maliEvaluated.extendModules {
+      modules = [
+        { modules.services.ingress.legacyAcme.enable = true; }
+      ];
+    }).config;
+  maliCaddy = maliCfg.services.caddy;
+  maliGeneratedConfig = maliCaddy.configFile;
+  maliFailedAssertions = map (entry: entry.message) (
+    lib.filter (entry: !entry.assertion) maliCfg.assertions
   );
   cfg = evaluated.config;
   caddy = cfg.services.caddy;
@@ -246,6 +323,35 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   exactHostFailedAssertions == [ ]
 ) "failed exact-host NixOS assertions: ${lib.concatStringsSep "; " exactHostFailedAssertions}";
+assert lib.assertMsg (
+  maliFailedAssertions == [ ]
+) "failed Mali NixOS assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
+assert !maliCfg.services.nginx.enable;
+assert maliCfg.security.acme.certs == { };
+assert transitionalMaliCfg.services.nginx.enable == false;
+assert transitionalMaliCfg.security.acme.certs ? "example.test";
+assert
+  maliCfg.modules.services.caddy-security.edge.protocols == [
+    "h1"
+    "h2"
+  ];
+assert lib.hasInfix "servers :443 {" maliCaddy.globalConfig;
+assert lib.hasInfix "protocols h1 h2" maliCaddy.globalConfig;
+assert !lib.hasInfix "protocols h1 h2 h3" maliCaddy.globalConfig;
+assert lib.hasInfix "http://:80" maliCaddy.extraConfig;
+assert lib.hasInfix "https://attic.mgmt.example.test:443, https://attic.int.example.test:443"
+  maliCaddy.extraConfig;
+assert lib.hasInfix
+  "https://s3.data.example.test:443, https://*.s3.data.example.test:443, https://minio.data.example.test:443, https://*.s3.mgmt.example.test:443, https://minio.mgmt.example.test:443, https://s3.mgmt.example.test:443"
+  maliCaddy.extraConfig;
+assert !lib.hasInfix "*.int.s3.data.example.test" maliCaddy.extraConfig;
+assert lib.hasInfix "@plain_minio_console host minio.data.example.test minio.mgmt.example.test"
+  maliCaddy.extraConfig;
+assert lib.hasInfix "@plain_minio_console_allowed remote_ip 10.9.8.0/23 10.9.10.0/23"
+  maliCaddy.extraConfig;
+assert lib.hasInfix "respond 403" maliCaddy.extraConfig;
+assert lib.hasInfix "@plain_s3 host s3.data.example.test s3.mgmt.example.test"
+  maliCaddy.extraConfig;
 assert caddy.enable;
 assert caddy.package == pkgs.caddy-with-security;
 assert !caddy.openFirewall;
@@ -426,6 +532,11 @@ pkgs.runCommand "caddy-security-test"
     grep -Fq '"hindsight.example.test"' "$TMPDIR/exact-host-caddy.json"
     grep -Fq '"name":"desec"' "$TMPDIR/exact-host-caddy.json"
     grep -Fq '"token":"{env.DESEC_API_TOKEN}"' "$TMPDIR/exact-host-caddy.json"
+
+    caddy adapt --adapter caddyfile --config ${maliGeneratedConfig} > "$TMPDIR/mali-caddy.json"
+    grep -Fq '"attic.mgmt.example.test"' "$TMPDIR/mali-caddy.json"
+    grep -Fq '"*.s3.data.example.test"' "$TMPDIR/mali-caddy.json"
+    grep -Fq '"remote_ip"' "$TMPDIR/mali-caddy.json"
 
     touch "$out"
   ''

@@ -25,7 +25,19 @@ let
     options = {
       publicHost = lib.mkOption {
         type = lib.types.nonEmptyStr;
-        description = "Public hostname passed from nginx to loopback Caddy";
+        description = "Primary public hostname routed by Caddy";
+      };
+
+      aliases = lib.mkOption {
+        type = lib.types.listOf lib.types.nonEmptyStr;
+        default = [ ];
+        description = "Additional public hostnames handled by the same route";
+      };
+
+      allowedRemoteIPs = lib.mkOption {
+        type = lib.types.listOf lib.types.nonEmptyStr;
+        default = [ ];
+        description = "Peer IP addresses or CIDRs admitted to this route";
       };
 
       upstream = lib.mkOption {
