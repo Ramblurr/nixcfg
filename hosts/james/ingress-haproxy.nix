@@ -7,6 +7,20 @@
 let
   cfg = config.hosts.james.ingress;
   routes = import ./ingress-routes.nix { inherit config; };
+  localBackend =
+    {
+      nginx = {
+        group = config.services.nginx.group;
+        socket = "/run/nginx/james-ingress.sock";
+        unit = "nginx.service";
+      };
+      caddy = {
+        group = config.services.caddy.group;
+        socket = "/run/caddy/james-ingress.sock";
+        unit = "caddy.service";
+      };
+    }
+    .${cfg.localBackend};
 
   splitServices = domains: {
     exact = builtins.filter (domain: !(lib.hasPrefix "." domain)) domains;
@@ -39,7 +53,7 @@ in
       443
     ];
 
-    users.users.haproxy.extraGroups = [ config.services.nginx.group ];
+    users.users.haproxy.extraGroups = [ localBackend.group ];
 
     services.haproxy = {
       enable = true;
@@ -89,8 +103,13 @@ in
 
         backend bk_james_local
           mode tcp
-          server james-local /run/nginx/james-ingress.sock send-proxy
+          server james-local ${localBackend.socket} send-proxy
       '';
+    };
+
+    systemd.services.haproxy = {
+      after = [ localBackend.unit ];
+      wants = [ localBackend.unit ];
     };
 
     systemd.services.haproxy.serviceConfig = {

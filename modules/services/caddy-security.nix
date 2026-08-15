@@ -311,6 +311,9 @@ let
     ++ lib.optional (builtins.elem host certificateHosts) "host:${host}";
 
   directWanRoutes = lib.filterAttrs (_: route: route.directWan) plainRoutes;
+  socketEdge = cfg.edge.bindAddress != null;
+  edgeServerAddress = if socketEdge then cfg.edge.bindAddress else ":${toString cfg.edge.httpsPort}";
+  needsBindCapability = cfg.edge.enable && !socketEdge;
 
   mkAccessLog = ''
     log {
@@ -367,6 +370,7 @@ let
     in
     ''
       ${address} {
+        ${lib.optionalString socketEdge "bind ${cfg.edge.bindAddress}"}
         ${mkAccessLog}
         ${mkRouteConfig routeAttrs applicationAttrs rejectHttp3Hosts "respond 421"}
       }
@@ -416,6 +420,12 @@ in
   options.modules.services.caddy-security = {
     enable = lib.mkEnableOption "loopback caddy-security authentication behind nginx";
 
+    loopbackListener = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the internal loopback HTTP listener";
+    };
+
     listenAddress = lib.mkOption {
       type = lib.types.enum [
         "127.0.0.1"
@@ -444,6 +454,18 @@ in
 
     edge = {
       enable = lib.mkEnableOption "public Caddy TLS and redirect listeners";
+
+      bindAddress = lib.mkOption {
+        type = lib.types.nullOr lib.types.nonEmptyStr;
+        default = null;
+        description = "Optional Caddy bind address for every managed TLS site";
+      };
+
+      proxyProtocol = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Require PROXY protocol before TLS on the managed edge listener";
+      };
 
       httpsPort = lib.mkOption {
         type = lib.types.port;
@@ -632,6 +654,18 @@ in
         message = "public Caddy access logs must use the systemd-managed /var/log/caddy directory";
       }
       {
+        assertion = !cfg.edge.proxyProtocol || socketEdge;
+        message = "PROXY protocol requires an explicit Caddy edge bind address";
+      }
+      {
+        assertion = !socketEdge || lib.hasPrefix "unix//" cfg.edge.bindAddress;
+        message = "the Caddy edge bind address must be a Unix socket";
+      }
+      {
+        assertion = !socketEdge || !cfg.edge.directWan.enable;
+        message = "a Unix-socket Caddy edge cannot also use the direct-WAN listener";
+      }
+      {
         assertion = !cfg.edge.directWan.enable || cfg.edge.enable;
         message = "the direct-WAN Caddy listener requires the public Caddy edge";
       }
@@ -668,34 +702,41 @@ in
           }
         ''}
         admin 127.0.0.1:2019
-        ${
-          if cfg.edge.enable then
-            ''
-              servers ${cfg.listenAddress}:${toString cfg.listenPort} {
-                trusted_proxies static 127.0.0.1/32 ::1/128
-                trusted_proxies_strict
-                client_ip_headers X-Forwarded-For
-              }
-              servers :${toString cfg.edge.httpsPort} {
-                protocols ${lib.concatStringsSep " " cfg.edge.protocols}
-                strict_sni_host on
-              }
-              ${lib.optionalString cfg.edge.directWan.enable ''
-                servers ${cfg.edge.directWan.listenAddress}:${toString cfg.edge.directWan.listenPort} {
-                  protocols h1 h2
-                  strict_sni_host on
+        ${lib.optionalString (cfg.edge.enable && cfg.loopbackListener) ''
+          servers ${cfg.listenAddress}:${toString cfg.listenPort} {
+            trusted_proxies static 127.0.0.1/32 ::1/128
+            trusted_proxies_strict
+            client_ip_headers X-Forwarded-For
+          }
+        ''}
+        ${lib.optionalString cfg.edge.enable ''
+          servers ${edgeServerAddress} {
+            protocols ${lib.concatStringsSep " " cfg.edge.protocols}
+            strict_sni_host on
+            ${lib.optionalString cfg.edge.proxyProtocol ''
+              listener_wrappers {
+                proxy_protocol {
+                  timeout 5s
+                  fallback_policy require
                 }
-              ''}
-            ''
-          else
-            ''
-              servers {
-                trusted_proxies static 127.0.0.1/32 ::1/128
-                trusted_proxies_strict
-                client_ip_headers X-Forwarded-For
+                tls
               }
-            ''
-        }
+            ''}
+          }
+          ${lib.optionalString cfg.edge.directWan.enable ''
+            servers ${cfg.edge.directWan.listenAddress}:${toString cfg.edge.directWan.listenPort} {
+              protocols h1 h2
+              strict_sni_host on
+            }
+          ''}
+        ''}
+        ${lib.optionalString (!cfg.edge.enable) ''
+          servers {
+            trusted_proxies static 127.0.0.1/32 ::1/128
+            trusted_proxies_strict
+            client_ip_headers X-Forwarded-For
+          }
+        ''}
         ${lib.optionalString hasApplications ''
           security {
             ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkProvider cfg.applications)}
@@ -705,29 +746,33 @@ in
         ''}
       '';
       extraConfig = ''
-        http://:${toString cfg.listenPort} {
-          bind ${cfg.listenAddress}
-          route {
-            @health {
-              host caddy-health.invalid
-              path /healthz
+        ${lib.optionalString cfg.loopbackListener ''
+          http://:${toString cfg.listenPort} {
+            bind ${cfg.listenAddress}
+            route {
+              @health {
+                host caddy-health.invalid
+                path /healthz
+              }
+              respond @health "ok" 200
+              @unknown_host not host ${lib.concatStringsSep " " publicHosts}
+              respond @unknown_host 421
+              ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute plainRoutes)}
+              ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute cfg.applications)}
             }
-            respond @health "ok" 200
-            @unknown_host not host ${lib.concatStringsSep " " publicHosts}
-            respond @unknown_host 421
-            ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkPlainRoute plainRoutes)}
-            ${lib.concatStringsSep "\n" (lib.mapAttrsToList mkApplicationRoute cfg.applications)}
+            ${lib.optionalString (plainErrorHandlerConfig != "") ''
+              handle_errors {
+                ${plainErrorHandlerConfig}
+              }
+            ''}
           }
-          ${lib.optionalString (plainErrorHandlerConfig != "") ''
-            handle_errors {
-              ${plainErrorHandlerConfig}
+        ''}
+        ${lib.optionalString cfg.edge.enable ''
+          ${lib.optionalString (!socketEdge) ''
+            http://:${toString cfg.edge.redirectPort} {
+              redir https://{http.request.host}{http.request.uri} ${toString cfg.edge.redirectStatus}
             }
           ''}
-        }
-        ${lib.optionalString cfg.edge.enable ''
-          http://:${toString cfg.edge.redirectPort} {
-            redir https://{http.request.host}{http.request.uri} ${toString cfg.edge.redirectStatus}
-          }
           ${publicSiteConfig}
           ${directWanSiteConfig}
         ''}
@@ -741,8 +786,9 @@ in
         RequiresMountsFor = [ "/var/lib/caddy" ];
       };
       serviceConfig = {
-        CapabilityBoundingSet = lib.optionals cfg.edge.enable [ "CAP_NET_BIND_SERVICE" ];
-        AmbientCapabilities = lib.optionals cfg.edge.enable [ "CAP_NET_BIND_SERVICE" ];
+        CapabilityBoundingSet = lib.optionals needsBindCapability [ "CAP_NET_BIND_SERVICE" ];
+        AmbientCapabilities = lib.optionals needsBindCapability [ "CAP_NET_BIND_SERVICE" ];
+        RuntimeDirectoryMode = "0750";
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
         PrivateTmp = true;
