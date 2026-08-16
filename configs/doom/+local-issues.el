@@ -19,6 +19,7 @@
     "READY-FOR-HUMAN"
     "IN-PROGRESS"
     "CLAIMED"
+    "DEFERRED"
     "|"
     "RESOLVED"
     "WONTFIX")
@@ -57,6 +58,165 @@
         (push entry work-items)))
     (sort work-items #'string>)))
 
+(defun my/project-scratch-agenda-files ()
+  "Return saved Org files that belong in the project agenda."
+  (let (files)
+    (dolist (work-item (my/project-scratch-work-item-directories))
+      (dolist (basename '("spec.org" "map.org"))
+        (let ((file (expand-file-name basename work-item)))
+          (when (file-regular-p file)
+            (push file files))))
+      (let ((issues (expand-file-name "issues" work-item)))
+        (when (file-directory-p issues)
+          (dolist (file (directory-files issues t "\\.org\\'"))
+            (when (file-regular-p file)
+              (push file files))))))
+    (sort files #'string<)))
+
+(defun my/project-scratch-prepare-agenda-files ()
+  "Return agenda files after replacing matching buffers from disk."
+  (let ((files (my/project-scratch-agenda-files)))
+    (dolist (file files)
+      (let ((buffer (find-buffer-visiting file)))
+        (when buffer
+          (with-current-buffer buffer
+            (revert-buffer t t t)))))
+    files))
+
+(defconst my/project-scratch-agenda-sections
+  '(("Triage" "NEEDS-TRIAGE" "NEEDS-INFO")
+    ("Ready" "READY-FOR-AGENT" "READY-FOR-HUMAN")
+    ("Active" "IN-PROGRESS" "CLAIMED")
+    ("Deferred" "DEFERRED")
+    ("Closed" "RESOLVED" "WONTFIX"))
+  "Ordered TODO states displayed in the project scratch agenda.")
+
+(defun my/project-scratch--scan-agenda-file (file scratch-buffer)
+  "Return agenda entries read from FILE once using SCRATCH-BUFFER."
+  (let* ((visited (find-buffer-visiting file))
+         (buffer (or visited scratch-buffer))
+         entries)
+    (with-current-buffer buffer
+      (unless visited
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (insert-file-contents file)
+          (setq-local buffer-file-name file)))
+      (org-with-wide-buffer
+       (org-map-entries
+        (lambda ()
+          (let ((todo (org-get-todo-state)))
+            (when todo
+              (push
+               (list :todo todo
+                     :title (org-get-heading t t t t)
+                     :id (my/org-agenda-item-id)
+                     :scheduled (org-entry-get nil "SCHEDULED")
+                     :deadline (org-entry-get nil "DEADLINE")
+                     :file file
+                     :position (line-beginning-position))
+               entries))))
+        nil
+        'file)))
+    (nreverse entries)))
+
+(defun my/project-scratch--planning-time (timestamp)
+  "Return the time represented by Org TIMESTAMP, or nil."
+  (and timestamp (ignore-errors (org-time-string-to-time timestamp))))
+
+(defun my/project-scratch--deferred-entry-less-p (left right)
+  "Return non-nil when deferred entry LEFT is scheduled before RIGHT."
+  (let ((left-time
+         (my/project-scratch--planning-time (plist-get left :scheduled)))
+        (right-time
+         (my/project-scratch--planning-time (plist-get right :scheduled))))
+    (cond
+     ((and left-time right-time)
+      (if (equal left-time right-time)
+          (string< (plist-get left :id) (plist-get right :id))
+        (time-less-p left-time right-time)))
+     (left-time t)
+     (t nil))))
+
+(defun my/project-scratch--schedule-status (entry)
+  "Return a visible due status for deferred ENTRY, or nil."
+  (let* ((scheduled (plist-get entry :scheduled))
+         (time (my/project-scratch--planning-time scheduled))
+         (now (current-time)))
+    (when (and (equal (plist-get entry :todo) "DEFERRED")
+               time
+               (not (time-less-p now time)))
+      (if (equal (format-time-string "%F" time)
+                 (format-time-string "%F" now))
+          "[DUE]"
+        "[OVERDUE]"))))
+
+(defun my/project-scratch--planning-label (entry)
+  "Return visible scheduling and deadline text for ENTRY."
+  (mapconcat
+   #'identity
+   (delq nil
+         (list
+          (my/project-scratch--schedule-status entry)
+          (and (plist-get entry :scheduled)
+               (concat "SCHEDULED: " (plist-get entry :scheduled)))
+          (and (plist-get entry :deadline)
+               (concat "DEADLINE: " (plist-get entry :deadline)))))
+   " "))
+
+(defun my/project-scratch--insert-agenda-entry (entry)
+  "Insert one rendered project agenda ENTRY."
+  (let ((start (point))
+        (planning (my/project-scratch--planning-label entry)))
+    (insert
+     (format " %-16s %-16s %s%s\n"
+             (plist-get entry :id)
+             (plist-get entry :todo)
+             (if (equal planning "") "" (concat planning " "))
+             (plist-get entry :title)))
+    (add-text-properties
+     start
+     (point)
+     `(my/agenda-source-file ,(plist-get entry :file)
+                             my/agenda-source-position ,(plist-get entry :position)
+                             mouse-face highlight))))
+
+(defun my/project-scratch-agenda-view (&optional _match)
+  "Build the project agenda from each saved source file once."
+  (let* ((files (my/project-scratch-prepare-agenda-files))
+         (entries
+          (with-temp-buffer
+            (delay-mode-hooks (org-mode))
+            (mapcan
+             (lambda (file)
+               (my/project-scratch--scan-agenda-file file (current-buffer)))
+             files))))
+    (org-agenda-prepare "Project issues")
+    (setq-local org-agenda-files files)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (dolist (section my/project-scratch-agenda-sections)
+        (insert
+         (propertize (concat (car section) "\n")
+                     'face 'org-agenda-structure))
+        (let ((section-entries
+               (seq-filter
+                (lambda (entry)
+                  (member (plist-get entry :todo) (cdr section)))
+                entries)))
+          (when (equal (car section) "Deferred")
+            (setq section-entries
+                  (sort section-entries
+                        #'my/project-scratch--deferred-entry-less-p)))
+          (dolist (entry section-entries)
+            (my/project-scratch--insert-agenda-entry entry)))
+        (insert "\n"))
+      (goto-char (point-min)))
+    (my/org-agenda-source-mode-line)
+    (my/org-agenda-insert-work-items)
+    (setq buffer-read-only t)
+    (current-buffer)))
+
 (defun my/org-agenda-open-work-item-button (button)
   "Open BUTTON's work-item directory in Dired."
   (dired (button-get button 'my/work-item-directory)))
@@ -73,6 +233,30 @@
   "Toggle the work-item index from a text button."
   (my/org-agenda-toggle-work-items))
 
+(defun my/org-agenda--visit-source (&optional other-window)
+  "Visit the project agenda source at point in OTHER-WINDOW when non-nil."
+  (let ((file
+         (get-text-property
+          (line-beginning-position)
+          'my/agenda-source-file))
+        (position
+         (get-text-property
+          (line-beginning-position)
+          'my/agenda-source-position)))
+    (unless (and file position)
+      (user-error "No project issue at point"))
+    (if other-window
+        (find-file-other-window file)
+      (find-file file))
+    (goto-char position)
+    (org-show-context)))
+
+(defun my/org-agenda-preview-at-point ()
+  "Preview the project agenda source at point in another window."
+  (interactive)
+  (save-selected-window
+    (my/org-agenda--visit-source t)))
+
 (defun my/org-agenda-open-at-point ()
   "Open the work item or Org entry at point in another window."
   (interactive)
@@ -82,7 +266,7 @@
           'my/work-item-directory)))
     (if directory
         (dired-other-window directory)
-      (org-agenda-goto))))
+      (my/org-agenda--visit-source t))))
 
 (defun my/org-agenda-insert-work-items ()
   "Insert a directory-derived work-item index into the project agenda."
@@ -221,9 +405,13 @@ Other work-item documents use the work-item number and basename, such as
           (or (org-get-at-bol 'org-hd-marker)
               (org-get-at-bol 'org-marker)))
          (file
-          (and (markerp marker)
-               (buffer-live-p (marker-buffer marker))
-               (buffer-file-name (marker-buffer marker))))
+          (or
+           (get-text-property
+            (line-beginning-position)
+            'my/agenda-source-file)
+           (and (markerp marker)
+                (buffer-live-p (marker-buffer marker))
+                (buffer-file-name (marker-buffer marker)))))
          (directory-pattern
           (concat "/"
                   (regexp-quote my/project-scratch-org-directory-name)
@@ -259,6 +447,13 @@ Other work-item documents use the work-item number and basename, such as
   (interactive)
   (org-agenda nil "S"))
 
+(defun my/project-scratch-agenda-refresh ()
+  "Refresh the current project scratch agenda from saved files."
+  (interactive)
+  (unless (equal org-agenda-name "Project issues")
+    (user-error "Current buffer is not the project issues agenda"))
+  (my/project-scratch-agenda-view))
+
 (defun my/project-scratch-find ()
   "Find an Org file beneath the current project's issue directory."
   (interactive)
@@ -277,28 +472,7 @@ Other work-item documents use the work-item number and basename, such as
 
 
 (defconst my/project-scratch-agenda-command
-  '("S" "Project issues"
-    ((todo "NEEDS-TRIAGE|NEEDS-INFO"
-           ((org-agenda-overriding-header "Triage")
-            (org-agenda-prefix-format
-             " %(my/org-agenda-item-prefix)")
-            (org-agenda-todo-keyword-format "%-16s")))
-     (todo "READY-FOR-AGENT|READY-FOR-HUMAN"
-           ((org-agenda-overriding-header "Ready")
-            (org-agenda-prefix-format
-             " %(my/org-agenda-item-prefix)")
-            (org-agenda-todo-keyword-format "%-16s")))
-     (todo "IN-PROGRESS|CLAIMED"
-           ((org-agenda-overriding-header "Active")
-            (org-agenda-prefix-format
-             " %(my/org-agenda-item-prefix)")
-            (org-agenda-todo-keyword-format "%-16s")))
-     (todo "RESOLVED|WONTFIX"
-           ((org-agenda-overriding-header "Closed")
-            (org-agenda-prefix-format
-             " %(my/org-agenda-item-prefix)")
-            (org-agenda-todo-keyword-format "%-16s"))))
-    ((org-agenda-files (my/project-scratch-org-files))))
+  '("S" "Project issues" my/project-scratch-agenda-view "")
   "Custom agenda command for project-local issues.")
 
 (after! org
@@ -321,12 +495,12 @@ Other work-item documents use the work-item number and basename, such as
 
   (map! :map org-agenda-mode-map
         :localleader
-        :desc "Preview item"             "p" #'org-agenda-show-and-scroll-up
+        :desc "Preview item"             "p" #'my/org-agenda-preview-at-point
         :desc "Open item"                "o" #'my/org-agenda-open-at-point
         :desc "Toggle all work items"    "w" #'my/org-agenda-toggle-work-items
         :desc "Toggle follow mode"       "f" #'org-agenda-follow-mode
         :desc "Close preview windows"    "c" #'delete-other-windows
-        :desc "Refresh agenda"           "r" #'org-agenda-redo
+        :desc "Refresh agenda"           "r" #'my/project-scratch-agenda-refresh
         :desc "Quit agenda"              "q" #'org-agenda-quit)
 
   ;; Update an already-open project agenda when this file is re-evaluated.
