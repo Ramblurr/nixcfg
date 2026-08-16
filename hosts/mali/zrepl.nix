@@ -107,24 +107,11 @@ in
                   regex = "^zrepl_.*";
                 }
               ];
+              # Received snapshots are the durable offsite queue until pull_mali copies them.
               keep_receiver = [
                 {
-                  type = "grid";
-                  # of the last 24 hours keep all snapshots
-                  # of the last 7 days keep 1 snapshot each day
-                  # of the last 30 days keep 1 snapshot each day
-                  # of the last 6 months keep 1 snapshot each month
-                  # of the last 1 year keep 1 snapshot each year
-                  # discard the rest
-                  # details see: https://zrepl.github.io/configuration/prune.html#policy-grid
-                  grid = "1x24h(keep=all) | 7x1d(keep=1) | 30x1d(keep=1) | 6x30d(keep=1) | 1x365d(keep=1)";
-                  regex = "^zrepl_.*";
-                }
-                # keep snapshots not created by zrepl
-                {
                   type = "regex";
-                  negate = true;
-                  regex = "^zrepl_.*";
+                  regex = ".*";
                 }
               ];
             };
@@ -161,30 +148,12 @@ in
               interval = "6h";
             };
             pruning = {
+              # pull_mali is the sole deleting authority for exported Mali snapshots.
               keep = [
                 {
-                  # keep snapshots not created by zrepl
                   type = "regex";
-                  negate = true;
-                  regex = "^zrepl_.*";
+                  regex = ".*";
                 }
-                {
-                  type = "last_n";
-                  count = 1;
-                }
-                {
-                  # of the last 24 hours keep all snapshots
-                  # of the last 7 days keep 1 snapshot each day
-                  # of the last 30 days keep 1 snapshot each day
-                  # of the last 6 months keep 1 snapshot each month
-                  # DEACT of the last 1 year keep 1 snapshot each year
-                  # discard the rest
-                  # details see: https://zrepl.github.io/configuration/prune.html#policy-grid
-                  type = "grid";
-                  grid = "1x24h(keep=all) | 7x1d(keep=1) | 30x1d(keep=1) | 6x30d(keep=1)";
-                  regex = "^zrepl_.*";
-                }
-
               ];
             };
           }
