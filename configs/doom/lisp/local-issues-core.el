@@ -1,11 +1,12 @@
 ;;; local-issues-core.el --- Read project-local Org issue metadata -*- lexical-binding: t; -*-
 
+(require 'calendar)
 (require 'cl-lib)
 (require 'json)
 (require 'org)
 (require 'subr-x)
 
-(defconst local-issues-protocol-version "2"
+(defconst local-issues-protocol-version "3"
   "Protocol version shared by the daemon request and launcher.")
 
 (defconst local-issues--todo-states
@@ -13,6 +14,7 @@
     "NEEDS-INFO"
     "READY-FOR-AGENT"
     "READY-FOR-HUMAN"
+    "DEFERRED"
     "IN-PROGRESS"
     "CLAIMED"
     "RESOLVED"
@@ -21,7 +23,7 @@
 (defconst local-issues--closed-states '("RESOLVED" "WONTFIX"))
 
 (defconst local-issues--record-header
-  "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
+  "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tSCHEDULED\tDEADLINE\tTITLE\tDIAGNOSTICS\n")
 
 (defconst local-issues--help
   "Usage: local-issues [--root PATH] COMMAND\n\nCommands:\n  list       List canonical tickets\n  suggest    Suggest unassigned agent-ready tickets\n  why        Explain one ticket's dependency chain\n  doctor     Diagnose tracker integrity\n\nOptions:\n  --root PATH  Use PATH instead of discovering the tracker root\n  --help       Show this help\n")
@@ -30,7 +32,7 @@
   "Usage: local-issues [--root PATH] list [OPTIONS]\n\nOptions:\n  --all             Include closed tickets\n  --work-item NNN   Restrict output to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
 
 (defconst local-issues--suggest-help
-  "Usage: local-issues [--root PATH] suggest [OPTIONS]\n\nEligibility:\n  Unassigned READY-FOR-AGENT tickets with READY dependencies.\n\nRanking:\n  Most valid open tickets directly requiring the candidate first, then canonical ID. Tags do not affect ranking.\n\nOptions:\n  --limit N         Return at most N suggestions (default: 1)\n  --work-item NNN   Restrict candidate selection to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
+  "Usage: local-issues [--root PATH] suggest [OPTIONS]\n\nEligibility:\n  Unassigned dependency-ready READY-FOR-AGENT tickets and due DEFERRED tickets.\n\nRanking:\n  Most valid open tickets directly requiring the candidate first, then canonical ID. Tags do not affect ranking.\n\nOptions:\n  --limit N         Return at most N suggestions (default: 1)\n  --work-item NNN   Restrict candidate selection to one work item\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n")
 
 (defconst local-issues--why-help
   "Usage: local-issues [--root PATH] why TICKET_ID [OPTIONS]\n\nArguments:\n  TICKET_ID         Canonical ticket ID to explain\n\nOptions:\n  --all             Include resolved dependency nodes\n  --format FORMAT   Use table or json output (default: table)\n  --help            Show this help\n\nFailures:\n  Missing, ambiguous, or invalid requested tickets exit nonzero without partial output.\n")
@@ -102,6 +104,22 @@
   (when invalid
     (setf (plist-get record :invalid) t)))
 
+(defun local-issues--valid-planning-timestamp-p (value)
+  "Return non-nil when VALUE is a valid active Org timestamp."
+  (and (not (string-empty-p value))
+       (eq (aref value 0) ?<)
+       (condition-case nil
+           (let* ((parts (org-parse-time-string value))
+                  (minute (nth 1 parts))
+                  (hour (nth 2 parts))
+                  (day (nth 3 parts))
+                  (month (nth 4 parts))
+                  (year (nth 5 parts)))
+             (and (calendar-date-is-valid-p (list month day year))
+                  (<= 0 hour 23)
+                  (<= 0 minute 59)))
+         (error nil))))
+
 (defun local-issues--parse-ticket (path)
   "Read PATH from disk and return its first top-level heading metadata."
   (let* ((expected-id (local-issues--expected-id path))
@@ -113,6 +131,9 @@
                        :title ""
                        :todo ""
                        :assignee ""
+                       :scheduled ""
+                       :scheduled-time nil
+                       :deadline ""
                        :blockers nil
                        :unresolved-blockers nil
                        :dependency nil
@@ -129,6 +150,15 @@
         (let* ((raw-heading
                 (buffer-substring-no-properties
                  (line-beginning-position) (line-end-position)))
+               (planning-line
+                (save-excursion
+                  (forward-line 1)
+                  (buffer-substring-no-properties
+                   (line-beginning-position) (line-end-position))))
+               (scheduled-present
+                (string-match-p "\\_<SCHEDULED:" planning-line))
+               (deadline-present
+                (string-match-p "\\_<DEADLINE:" planning-line))
                (heading-parts
                 (split-string (string-trim (substring raw-heading 2))
                               "[[:space:]]+" t))
@@ -139,6 +169,18 @@
                (id (org-entry-get nil "TICKET_ID"))
                (blocker-value (org-entry-get nil "BLOCKED_BY"))
                (assignee-value (org-entry-get nil "ASSIGNEE"))
+               (scheduled (or (org-entry-get nil "SCHEDULED") ""))
+               (scheduled-valid
+                (local-issues--valid-planning-timestamp-p scheduled))
+               (scheduled-time
+                (when scheduled-valid
+                  (org-time-string-to-time scheduled)))
+               (deadline (or (org-entry-get nil "DEADLINE") ""))
+               (deadline-valid
+                (local-issues--valid-planning-timestamp-p deadline))
+               (deadline-time
+                (when deadline-valid
+                  (org-time-string-to-time deadline)))
                (blockers (split-string (or blocker-value "") "[[:space:]]+" t)))
           (setf (plist-get record :id) (or id expected-id)
                 (plist-get record :declared-id) id
@@ -147,6 +189,9 @@
                 (plist-get record :title) title
                 (plist-get record :todo) state
                 (plist-get record :assignee) (string-trim (or assignee-value ""))
+                (plist-get record :scheduled) scheduled
+                (plist-get record :scheduled-time) scheduled-time
+                (plist-get record :deadline) deadline
                 (plist-get record :blockers) blockers)
           (unless (member state local-issues--todo-states)
             (local-issues--add-diagnostic
@@ -170,6 +215,35 @@
                record "malformed-blocker"
                (format "malformed blocker %s" blocker)
                t)))
+          (cond
+           ((and scheduled-present (not scheduled-valid))
+            (local-issues--add-diagnostic
+             record "malformed-scheduled" "malformed SCHEDULED metadata" t))
+           ((and (equal state "DEFERRED") (string-empty-p scheduled))
+            (local-issues--add-diagnostic
+             record "missing-scheduled" "DEFERRED requires SCHEDULED metadata" t)))
+          (when (and deadline-present (not deadline-valid))
+            (local-issues--add-diagnostic
+             record "malformed-deadline" "malformed DEADLINE metadata" t))
+          (when (and (equal state "DEFERRED")
+                     (not (string-empty-p (plist-get record :assignee))))
+            (local-issues--add-diagnostic
+             record "assigned-deferred" "DEFERRED must not have an assignee" t))
+          (when (and (equal state "CLAIMED")
+                     (string-empty-p (plist-get record :assignee)))
+            (local-issues--add-diagnostic
+             record "unassigned-claimed" "CLAIMED requires an assignee" t))
+          (when (and scheduled-time deadline-time
+                     (time-less-p deadline-time scheduled-time))
+            (local-issues--add-diagnostic
+             record "scheduled-after-deadline"
+             "SCHEDULED must not be later than DEADLINE" t))
+          (when (and scheduled-time
+                     (member state '("READY-FOR-AGENT" "READY-FOR-HUMAN"))
+                     (time-less-p (current-time) scheduled-time))
+            (local-issues--add-diagnostic
+             record "future-scheduled-ready"
+             (format "%s with future SCHEDULED must be DEFERRED" state) t))
           (when (null blocker-value)
             (local-issues--add-diagnostic
              record "missing-blocked-by" "missing BLOCKED_BY property"))
@@ -304,7 +378,11 @@
 (defun local-issues--suggestible-p (record)
   "Return non-nil when RECORD is eligible for agent suggestion."
   (and (not (plist-get record :invalid))
-       (equal "READY-FOR-AGENT" (plist-get record :todo))
+       (or (equal "READY-FOR-AGENT" (plist-get record :todo))
+           (and (equal "DEFERRED" (plist-get record :todo))
+                (plist-get record :scheduled-time)
+                (not (time-less-p (current-time)
+                                  (plist-get record :scheduled-time)))))
        (equal "READY" (plist-get record :dependency))
        (string-empty-p (plist-get record :assignee))))
 
@@ -353,6 +431,8 @@
     (dependency . ,(plist-get record :dependency))
     (blocked_by . ,(vconcat (plist-get record :unresolved-blockers)))
     (assignee . ,(plist-get record :assignee))
+    (scheduled . ,(plist-get record :scheduled))
+    (deadline . ,(plist-get record :deadline))
     (title . ,(plist-get record :title))
     (diagnostics . ,(vconcat
                      (mapcar #'local-issues--diagnostic-alist
@@ -376,6 +456,12 @@
         (if (string-empty-p (plist-get record :assignee))
             "-"
           (plist-get record :assignee))
+        (if (string-empty-p (plist-get record :scheduled))
+            "-"
+          (plist-get record :scheduled))
+        (if (string-empty-p (plist-get record :deadline))
+            "-"
+          (plist-get record :deadline))
         (plist-get record :title)
         (local-issues--diagnostic-codes-string record)))
 
@@ -496,6 +582,14 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
   "Return the stable ranking reason for IMPACT."
   (format "required by %d open ticket%s" impact (if (= impact 1) "" "s")))
 
+(defun local-issues--suggestion-reason (record impact)
+  "Return the selection reason for RECORD with IMPACT."
+  (let ((impact-reason (local-issues--impact-reason impact)))
+    (if (equal "DEFERRED" (plist-get record :todo))
+        (format "scheduled %s has arrived; %s"
+                (plist-get record :scheduled) impact-reason)
+      impact-reason)))
+
 (defun local-issues--suggestions (records work-item limit)
   "Return up to LIMIT ranked candidates from RECORDS in WORK-ITEM."
   (let (suggestions)
@@ -524,7 +618,7 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
     (list (plist-get record :id)
           (plist-get record :todo)
           (plist-get record :title)
-          (local-issues--impact-reason impact)
+          (local-issues--suggestion-reason record impact)
           (number-to-string impact)
           (expand-file-name (plist-get record :path)))))
 
@@ -535,7 +629,7 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
     `((id . ,(plist-get record :id))
       (todo . ,(plist-get record :todo))
       (title . ,(plist-get record :title))
-      (reason . ,(local-issues--impact-reason impact))
+      (reason . ,(local-issues--suggestion-reason record impact))
       (impact . ,impact)
       (path . ,(expand-file-name (plist-get record :path))))))
 
@@ -608,7 +702,7 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
   (princ local-issues--record-header)
   (princ (mapconcat #'identity (local-issues--record-fields root) "\t"))
   (princ "\nDEPENDENCIES\n")
-  (princ "FROM\tTO\tDEPTH\tEXPANSION\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n")
+  (princ "FROM\tTO\tDEPTH\tEXPANSION\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tSCHEDULED\tDEADLINE\tTITLE\tDIAGNOSTICS\n")
   (dolist (edge edges)
     (let ((record (plist-get edge :record)))
       (princ
@@ -621,7 +715,7 @@ When INCLUDE-RESOLVED is non-nil, traverse every declared blocker."
                (if (plist-get edge :reference) "REFERENCE" "EXPANDED"))
          (if record
              (cdr (local-issues--record-fields record))
-           '("-" "-" "-" "-" "-" "-")))
+           '("-" "-" "-" "-" "-" "-" "-" "-")))
         "\t"))
       (princ "\n"))))
 
