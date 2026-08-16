@@ -207,7 +207,7 @@ assert maliCfg.modules.services.caddy.routes.s3.flushInterval == "-1";
 assert lib.hasInfix "remote_ip 10.9.8.0/23 10.9.10.0/23" maliCaddy.extraConfig;
 assert !lib.hasInfix "18080" maliCaddy.globalConfig;
 assert maliCaddy.configFile != null;
-pkgs.runCommand "caddy-security-test"
+pkgs.runCommand "home-ops-caddy-test"
   {
     nativeBuildInputs = [
       pkgs.caddy-with-security
