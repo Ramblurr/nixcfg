@@ -105,10 +105,13 @@ let
         };
       }).config.services.zrepl.settings.jobs;
   expectedMaliSnapFilesystems = {
+    "fast<" = false;
+    "fast/services/garage/metadata" = true;
     "rpool<" = false;
     "rpool2<" = false;
     "tank/backup<" = false;
     "tank2<" = true;
+    "tank2/services/garage<" = true;
     "tank2/iocage<" = false;
     "tank2/media<" = false;
     "tank2/media/music/mine" = true;
@@ -117,10 +120,13 @@ let
     "tank2/backups/gamsjaegers<" = false;
   };
   expectedOffsiteFilesystems = {
+    "fast<" = false;
+    "fast/services/garage/metadata" = true;
     "rpool<" = false;
     "rpool2<" = false;
     "tank/backup<" = false;
     "tank2<" = true;
+    "tank2/services/garage<" = true;
     "tank2/media<" = false;
     "tank2/media/music/mine" = true;
     "tank2/replication<" = true;
@@ -226,6 +232,9 @@ assert jobs.mali_rsyncnet.filesystems == expectedOffsiteFilesystems;
 assert !(jobs.mali_rsyncnet ? pruning);
 assert jobs.mali_source.type == "source";
 assert jobs.mali_source.snapshotting == { type = "manual"; };
+assert jobs.mali_source.filesystems."fast<" == false;
+assert jobs.mali_source.filesystems."fast/services/garage/metadata" == true;
+assert jobs.mali_source.filesystems."tank2/services/garage<" == true;
 assert !(jobs.mali_source ? pruning);
 pkgs.runCommand "mali-zrepl-retention-test" { } ''
   touch "$out"
