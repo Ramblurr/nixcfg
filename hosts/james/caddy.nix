@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -26,32 +27,6 @@ let
   docsHookSocket = "unix//var/lib/static-web/${work}/docs/.run/github-docs-hook.sock";
   workHookSocket = "unix//var/lib/static-web/${work}/.run/github-work-site-deploy-${work}.sock";
   caseyLinkSocket = "unix//var/lib/${caseyLink}/.run/site.sock";
-
-  certificateHosts = [
-    be
-    "www.${be}"
-    caseyLink
-    "www.${caseyLink}"
-    "code.${caseyLink}"
-    caseylink
-    "www.${caseylink}"
-    "code.${caseylink}"
-    "code.${work}"
-    "docs.${work}"
-    et
-    "www.${et}"
-    "id.${work}"
-    "id.${home}"
-    "logs.${work}"
-    ov
-    "www.${ov}"
-    work2
-    "www.${work2}"
-    work
-    "www.${work}"
-    partner
-    "www.${partner}"
-  ];
 
   canonicalRedirect = ''
     redir https://${work}{http.request.uri} 301
@@ -248,9 +223,184 @@ let
     root * ${workRoot}
     file_server
   '';
+  routes = {
+    binary-elysium = {
+      hosts = [
+        be
+        "www.${be}"
+      ];
+      handler = canonicalRedirect;
+    };
+    casey-link = {
+      hosts = [
+        caseyLink
+        "www.${caseyLink}"
+      ];
+      handler = ''
+        ${davRedirects}
+        ${atprotoResponse}
+        reverse_proxy ${caseyLinkSocket}
+      '';
+    };
+    casey-link-code = {
+      hosts = [ "code.${caseyLink}" ];
+      handler = "redir ${code} 302";
+    };
+    caseylink = {
+      hosts = [
+        caseylink
+        "www.${caseylink}"
+      ];
+      handler = ''
+        ${davRedirects}
+        ${canonicalRedirect}
+      '';
+    };
+    caseylink-code = {
+      hosts = [ "code.${caseylink}" ];
+      handler = "redir ${code} 302";
+    };
+    work-code = {
+      hosts = [ "code.${work}" ];
+      handler = "redir ${codeWork} 302";
+    };
+    work-docs = {
+      hosts = [ "docs.${work}" ];
+      handler = docsHandler;
+      errorHandler = docsErrorHandler;
+    };
+    elusive-truth = {
+      hosts = [
+        et
+        "www.${et}"
+      ];
+      handler = canonicalRedirect;
+    };
+    pocket-id-work = {
+      hosts = [ "id.${work}" ];
+      handler = "reverse_proxy http://127.0.0.1:1412";
+    };
+    pocket-id-home = {
+      hosts = [ "id.${home}" ];
+      handler = "reverse_proxy http://127.0.0.1:1411";
+    };
+    goaccess = {
+      hosts = [ "logs.${work}" ];
+      handler = ''
+        @plain_goaccess_allowed remote_ip 100.64.0.0/10
+        handle @plain_goaccess_allowed {
+          root * ${reportDir}
+          file_server
+        }
+        respond 403
+      '';
+    };
+    on-vagrancy = {
+      hosts = [
+        ov
+        "www.${ov}"
+      ];
+      handler = canonicalRedirect;
+    };
+    work-legacy = {
+      hosts = [
+        work2
+        "www.${work2}"
+      ];
+      handler = canonicalRedirect;
+    };
+    work = {
+      hosts = [
+        work
+        "www.${work}"
+      ];
+      handler = workHandler;
+    };
+    partner = {
+      hosts = [
+        partner
+        "www.${partner}"
+      ];
+      handler = ''
+        ${davRedirects}
+        root * /var/lib/static-web/${partner}
+        file_server
+      '';
+    };
+  };
+
+  routeId = name: lib.replaceStrings [ "-" ] [ "_" ] name;
+  certificateHosts = lib.concatMap (route: route.hosts) (builtins.attrValues routes);
+  mkAccessLog = ''
+    log {
+      output file ${accessLog} {
+        mode 0660
+        roll_size 100MiB
+        roll_keep 10
+        roll_keep_for 720h
+      }
+      format json
+    }
+  '';
+  mkSite =
+    name: route:
+    let
+      matcher = "@plain_${routeId name}";
+      addresses = lib.concatStringsSep ", " (map (host: "https://${host}") route.hosts);
+    in
+    ''
+      ${addresses} {
+        bind ${socketAddress}
+        ${mkAccessLog}
+        route {
+          ${matcher} host ${lib.concatStringsSep " " route.hosts}
+          handle ${matcher} {
+            ${route.handler}
+          }
+          respond 421
+        }
+        ${lib.optionalString (route ? errorHandler) ''
+          handle_errors {
+            ${route.errorHandler}
+          }
+        ''}
+      }
+    '';
 in
 {
+  options.modules.services.caddy = {
+    routes = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      description = "Ignored shared route registrations on James";
+    };
+    protectedRoutes = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      description = "Ignored shared protected-route registrations on James";
+    };
+  };
+
   config = {
+    assertions = [
+      {
+        assertion = builtins.length certificateHosts == 23;
+        message = "James Caddy must preserve its 23 exact certificate hosts";
+      }
+      {
+        assertion = builtins.length (lib.unique certificateHosts) == builtins.length certificateHosts;
+        message = "James Caddy certificate hosts must be unique";
+      }
+      {
+        assertion = config.modules.services.caddy.routes == { };
+        message = "James direct Caddy configuration does not consume shared route registrations";
+      }
+      {
+        assertion = config.modules.services.caddy.protectedRoutes == { };
+        message = "James direct Caddy configuration does not consume protected route registrations";
+      }
+    ];
+
     sops.secrets.desec_api_token = { };
     sops.templates.james-caddy-env = {
       owner = "caddy";
@@ -260,114 +410,78 @@ in
       content = "DESEC_API_TOKEN=${config.sops.placeholder.desec_api_token}";
     };
 
-    modules.services.caddy-security = {
-      enable = true;
-      loopbackListener = false;
-      environmentFile = config.sops.templates.james-caddy-env.path;
-      edge = {
-        enable = true;
-        inherit accessLog certificateHosts;
-        bindAddress = socketAddress;
-        proxyProtocol = true;
-        protocols = [
-          "h1"
-          "h2"
-        ];
-        acmeEmail = email.acme;
-      };
-    };
+    environment.persistence."/persist".directories = [ "/var/lib/caddy" ];
 
-    modules.services.caddy.legacyRoutes = {
-      binary-elysium = {
-        publicHost = be;
-        aliases = [ "www.${be}" ];
-        handlerConfig = canonicalRedirect;
-      };
-      casey-link = {
-        publicHost = caseyLink;
-        aliases = [ "www.${caseyLink}" ];
-        handlerConfig = ''
-          ${davRedirects}
-          ${atprotoResponse}
-          reverse_proxy ${caseyLinkSocket}
-        '';
-      };
-      casey-link-code = {
-        publicHost = "code.${caseyLink}";
-        handlerConfig = "redir ${code} 302";
-      };
-      caseylink = {
-        publicHost = caseylink;
-        aliases = [ "www.${caseylink}" ];
-        handlerConfig = ''
-          ${davRedirects}
-          ${canonicalRedirect}
-        '';
-      };
-      caseylink-code = {
-        publicHost = "code.${caseylink}";
-        handlerConfig = "redir ${code} 302";
-      };
-      work-code = {
-        publicHost = "code.${work}";
-        handlerConfig = "redir ${codeWork} 302";
-      };
-      work-docs = {
-        publicHost = "docs.${work}";
-        handlerConfig = docsHandler;
-        errorHandlerConfig = docsErrorHandler;
-      };
-      elusive-truth = {
-        publicHost = et;
-        aliases = [ "www.${et}" ];
-        handlerConfig = canonicalRedirect;
-      };
-      pocket-id-work = {
-        publicHost = "id.${work}";
-        upstream = "http://127.0.0.1:1412";
-      };
-      pocket-id-home = {
-        publicHost = "id.${home}";
-        upstream = "http://127.0.0.1:1411";
-      };
-      goaccess = {
-        publicHost = "logs.${work}";
-        root = reportDir;
-        allowedRemoteIPs = [ "100.64.0.0/10" ];
-        webSockets = false;
-      };
-      on-vagrancy = {
-        publicHost = ov;
-        aliases = [ "www.${ov}" ];
-        handlerConfig = canonicalRedirect;
-      };
-      work-legacy = {
-        publicHost = work2;
-        aliases = [ "www.${work2}" ];
-        handlerConfig = canonicalRedirect;
-      };
-      work = {
-        publicHost = work;
-        aliases = [ "www.${work}" ];
-        handlerConfig = workHandler;
-      };
-      partner = {
-        publicHost = partner;
-        aliases = [ "www.${partner}" ];
-        handlerConfig = ''
-          ${davRedirects}
-          root * /var/lib/static-web/${partner}
-          file_server
-        '';
-      };
+    services.caddy = {
+      enable = true;
+      package = pkgs.caddy-with-security;
+      environmentFile = config.sops.templates.james-caddy-env.path;
+      openFirewall = false;
+      globalConfig = ''
+        auto_https disable_redirects
+        email ${email.acme}
+        cert_issuer acme {
+          dir https://acme-v02.api.letsencrypt.org/directory
+          email ${email.acme}
+          dns desec {
+            token {env.DESEC_API_TOKEN}
+          }
+          propagation_delay 5m
+          propagation_timeout 12m
+          resolvers ns.desec.ch:53 ns.desec.cz:53 ns.desec.li:53 ns1.desec.io:53 ns2.desec.org:53
+        }
+        admin 127.0.0.1:2019
+        servers ${socketAddress} {
+          protocols h1 h2
+          strict_sni_host on
+          listener_wrappers {
+            proxy_protocol {
+              timeout 5s
+              fallback_policy require
+            }
+            tls
+          }
+        }
+      '';
+      extraConfig = lib.concatStringsSep "\n" (lib.mapAttrsToList mkSite routes);
     };
 
     users.users.caddy.extraGroups = [ caseyLink ];
 
-    systemd.services.caddy.unitConfig.RequiresMountsFor = [
-      "/var/lib/goaccess"
-      "/var/lib/static-web"
-      "/var/lib/${caseyLink}"
-    ];
+    systemd.services.caddy = {
+      requires = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+      unitConfig.RequiresMountsFor = [
+        "/var/lib/caddy"
+        "/var/lib/goaccess"
+        "/var/lib/static-web"
+        "/var/lib/${caseyLink}"
+      ];
+      serviceConfig = {
+        CapabilityBoundingSet = [ ];
+        AmbientCapabilities = [ ];
+        RuntimeDirectory = "caddy";
+        RuntimeDirectoryMode = "0750";
+        LockPersonality = true;
+        MemoryDenyWriteExecute = true;
+        PrivateTmp = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectSystem = "strict";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+          "AF_NETLINK"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+      };
+    };
   };
 }
