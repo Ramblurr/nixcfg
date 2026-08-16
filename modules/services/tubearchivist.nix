@@ -132,7 +132,7 @@ in
       tubearchivist-redis = {
         autoStart = true;
         # renovate: docker-image
-        image = "docker.io/library/redis:8.8.0@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b";
+        image = "docker.io/library/redis:8.10.0@sha256:344e3945a0b431c8ff1eecd58c5573538126bd756f02fc7e218ddf1fc2546366";
         volumes = [ "${stateDir}/redis:/data" ];
         extraOptions = [ "--network=${networkName}" ];
       };
