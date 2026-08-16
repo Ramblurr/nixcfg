@@ -81,7 +81,6 @@ in
 
     virtualisation.quadlet = {
       enable = true;
-      autoEscape = true;
       containers = {
         op-connect-api = {
           autoStart = true;
@@ -96,18 +95,16 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "docker.io/1password/connect-api:1.8.2@sha256:e915c0c843972f02b0e7e2de502bda8bd4a092288b3f1866098a857bd715a281";
-            environments = {
-              XDG_DATA_HOME = "/config";
-              OP_BUS_PORT = "11220";
-              OP_BUS_PEERS = "localhost:11221";
-              OP_SESSION = "/config/1password-credentials.json";
-            };
-            podmanArgs = [
-              "--user ${toString cfg.user.uid}"
-              "--pod op-connect"
+            Image = "docker.io/1password/connect-api:1.8.2@sha256:e915c0c843972f02b0e7e2de502bda8bd4a092288b3f1866098a857bd715a281";
+            Environment = [
+              "XDG_DATA_HOME=/config"
+              "OP_BUS_PORT=11220"
+              "OP_BUS_PEERS=localhost:11221"
+              "OP_SESSION=/config/1password-credentials.json"
             ];
-            volumes = [ "${dataDir}:/config:rw" ];
+            User = toString cfg.user.uid;
+            PodmanArgs = [ "--pod=op-connect" ];
+            Volume = [ "${dataDir}:/config:rw" ];
           };
         };
         op-connect-sync = {
@@ -123,19 +120,17 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            image = "docker.io/1password/connect-sync:1.8.2@sha256:6297ca6136c0f0fb096bc64c49e1bc8df2aab35282ebff8c7bb60745ef176d0d";
-            environments = {
-              XDG_DATA_HOME = "/config";
-              OP_BUS_PORT = "11221";
-              OP_HTTP_PORT = "8081";
-              OP_BUS_PEERS = "localhost:11220";
-              OP_SESSION = "/config/1password-credentials.json";
-            };
-            podmanArgs = [
-              "--user ${toString cfg.user.uid}"
-              "--pod op-connect"
+            Image = "docker.io/1password/connect-sync:1.8.2@sha256:6297ca6136c0f0fb096bc64c49e1bc8df2aab35282ebff8c7bb60745ef176d0d";
+            Environment = [
+              "XDG_DATA_HOME=/config"
+              "OP_BUS_PORT=11221"
+              "OP_HTTP_PORT=8081"
+              "OP_BUS_PEERS=localhost:11220"
+              "OP_SESSION=/config/1password-credentials.json"
             ];
-            volumes = [ "${dataDir}:/config:rw" ];
+            User = toString cfg.user.uid;
+            PodmanArgs = [ "--pod=op-connect" ];
+            Volume = [ "${dataDir}:/config:rw" ];
           };
         };
       };
