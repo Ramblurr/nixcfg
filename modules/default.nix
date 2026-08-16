@@ -154,7 +154,6 @@
     ./users/deploy-user.nix
     ./vpn/mullvad.nix
     ./vpn/tailscale.nix
-    ./distributed-config.nix
     ./meta.nix
     ./nix.nix
     ./nix-prune-aged-gcroots.nix
