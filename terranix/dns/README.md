@@ -125,8 +125,8 @@ An exit code of `0` means the files and DNS providers agree. An exit code of
 `2` means OpenTofu proposes changes.
 
 Credentials are loaded automatically from SOPS. OpenTofu's encrypted tracking
-data is stored in the private S3 backend; do not create or commit local state
-files.
+data is stored in the private Git-backed state repository; do not create or
+commit local state or backend files.
 
 ## Removing records or networks
 
