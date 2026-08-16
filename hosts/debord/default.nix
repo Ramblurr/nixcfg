@@ -54,7 +54,10 @@ in
     enable = true;
     containers.enable = false;
     hypervisor.enable = true;
-    apps.hindsight.enable = true;
+    apps = {
+      hindsight.enable = true;
+      onepassword-connect.enable = true;
+    };
   };
   modules.services.caddy.edge = {
     certificateHosts = map (host: "${host}.${config.repo.secrets.global.domain.home}") [
@@ -62,6 +65,7 @@ in
       "home"
       "nad"
       "octoprint"
+      "op"
     ];
     acmeEmail = config.repo.secrets.global.email.acme;
     redirectStatus = 301;

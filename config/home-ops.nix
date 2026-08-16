@@ -443,13 +443,14 @@ in
       subnet = home-ops.subnets.invoiceninja2;
     };
 
-    #modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
-    #  enable = true;
-    #  domain = "op.${home-ops.homeDomain}";
-    #  ports.api = home-ops.ports.onepassword-connect-api;
-    #  ports.sync = home-ops.ports.onepassword-connect-sync;
-    #  user = home-ops.users.onepassword-connect;
-    #  group = home-ops.groups.onepassword-connect;
+    modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
+      enable = true;
+      domain = "op.${home-ops.homeDomain}";
+      ports.api = home-ops.ports.onepassword-connect-api;
+      ports.sync = home-ops.ports.onepassword-connect-sync;
+      user = home-ops.users.onepassword-connect;
+      group = home-ops.groups.onepassword-connect;
+    };
 
     modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
       enable = true;

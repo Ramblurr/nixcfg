@@ -74,7 +74,13 @@ in
           ExecStop = "podman pod rm -i -f ${podName}";
         };
       };
+    modules.services.caddy.routes.onepassword-connect = {
+      publicHost = cfg.domain;
+      upstream = "http://127.0.0.1:${toString cfg.ports.api}";
+    };
+
     virtualisation.quadlet = {
+      enable = true;
       autoEscape = true;
       containers = {
         op-connect-api = {
@@ -108,6 +114,8 @@ in
           autoStart = true;
           unitConfig = {
             RequiresMountsFor = [ dataDir ];
+            After = [ "podman-create-op-connect.service" ];
+            Requires = [ "podman-create-op-connect.service" ];
           };
           serviceConfig = {
             RestartSec = "2";
