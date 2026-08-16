@@ -13,9 +13,9 @@ in
   options.modules.services.ingress-nixbot.enable = lib.mkEnableOption "Nixbot ingress";
 
   config = lib.mkIf cfg.enable {
-    # Nixbot runs on debord. Dewey terminates TLS for internal clients and for
-    # the james gost tunnel, then proxies over the prim VLAN to debord.
-    # See hosts/debord/nixbot.nix.
+    # Nixbot runs on Debord. Dewey Caddy terminates TLS and proxies over the
+    # prim VLAN. James HAProxy selects this hostname for James public exposure.
+    # See the Debord Nixbot configuration.
     modules.services.caddy.routes.ci = {
       publicHost = "ci.${workDomain}";
       upstream = "http://debord.prim.${homeDomain}:${toString config.repo.secrets.home-ops.ports.nixbot}";
