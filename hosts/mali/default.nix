@@ -27,6 +27,7 @@ in
     ./atticd.nix
     ./ncps.nix
     ./rclone.nix
+    ./tofu-state.nix
     ../../config
     ../../modules/site-net
   ];
