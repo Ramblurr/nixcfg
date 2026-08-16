@@ -118,6 +118,7 @@
             (when todo
               (push
                (list :todo todo
+                     :todo-face (org-get-todo-face todo)
                      :title (org-get-heading t t t t)
                      :id (my/org-agenda-item-id)
                      :scheduled (org-entry-get nil "SCHEDULED")
@@ -184,7 +185,10 @@
     (insert
      (format " %-16s %-16s %s%s\n"
              (plist-get entry :id)
-             (plist-get entry :todo)
+             (propertize
+              (plist-get entry :todo)
+              'face
+              (plist-get entry :todo-face))
              (if (equal planning "") "" (concat planning " "))
              (plist-get entry :title)))
     (add-text-properties
@@ -196,22 +200,21 @@
 
 (defun my/project-scratch--insert-load-more-closed (remaining)
   "Insert a button revealing another page from REMAINING closed entries."
-  (let ((next-count
+  (let ((start (point))
+        (next-count
          (min my/project-scratch-closed-page-size remaining)))
-    (insert "      ")
-    (let ((start (point)))
-      (insert
-       (format "%d older closed tickets remain — show next %d"
-               remaining
-               next-count))
-      (make-text-button
-       start
-       (point)
-       'action #'my/project-scratch-load-more-closed-button
-       'follow-link t
-       'face 'shadow
-       'mouse-face 'highlight
-       'help-echo "Reveal older closed tickets"))
+    (insert
+     (format "      %d older closed tickets remain — show next %d"
+             remaining
+             next-count))
+    (make-text-button
+     start
+     (point)
+     'action #'my/project-scratch-load-more-closed-button
+     'follow-link t
+     'face 'shadow
+     'mouse-face 'highlight
+     'help-echo "Reveal older closed tickets")
     (insert "\n")))
 
 (defun my/project-scratch--render-agenda ()
