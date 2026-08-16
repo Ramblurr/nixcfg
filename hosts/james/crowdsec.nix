@@ -92,7 +92,7 @@ in
     };
 
     crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
-      "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
+      "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service"
     ];
 
     crowdsec-firewall-bouncer = {
