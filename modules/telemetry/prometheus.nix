@@ -46,15 +46,7 @@ in
     ];
 
     services.borgmatic.configurations.system.exclude_patterns = [ "${stateDir}/data/wal" ];
-    systemd.services.thanos-query = {
-      requires = serviceDeps;
-      after = serviceDeps;
-    };
-    systemd.services.thanos-store = {
-      requires = serviceDeps;
-      after = serviceDeps;
-    };
-    systemd.services.thanos-compact = {
+    systemd.services.prometheus = {
       requires = serviceDeps;
       after = serviceDeps;
     };

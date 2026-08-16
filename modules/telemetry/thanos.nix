@@ -12,11 +12,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    users.groups.thanos-objstore = { };
     sops.secrets = {
       thanos_sidecar_object_storage_configuration = {
         format = "yaml";
-        mode = "0777";
-        owner = "prometheus";
+        mode = "0440";
+        owner = "root";
+        group = "thanos-objstore";
       };
     };
 
@@ -49,7 +51,23 @@ in
         enable = true;
         objstore.config-file = config.sops.secrets.thanos_sidecar_object_storage_configuration.path;
         http-address = "127.0.0.1:10907";
+        retention = {
+          resolution-raw = "30d";
+          resolution-5m = "1y";
+          resolution-1h = "2y";
+        };
       };
     };
+
+    systemd.services =
+      lib.genAttrs
+        [
+          "thanos-sidecar"
+          "thanos-store"
+          "thanos-compact"
+        ]
+        (_: {
+          serviceConfig.SupplementaryGroups = [ "thanos-objstore" ];
+        });
   };
 }

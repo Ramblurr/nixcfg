@@ -6,6 +6,7 @@
       checks = {
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
         common-server = import ../tests/common-server.nix { inherit inputs pkgs; };
+        debord-monitoring = import ../tests/debord-monitoring.nix { inherit inputs pkgs; };
         deploy = import ../tests/deploy.nix {
           inherit pkgs;
           inherit (pkgs) deploy;
