@@ -524,6 +524,40 @@ Other work-item documents use the work-item number and basename, such as
     (user-error "Current buffer is not the project issues agenda"))
   (my/project-scratch-agenda-view))
 
+(defun my/project-scratch--finder-completion-table (files work-items)
+  "Return a completion table for relative FILES and WORK-ITEMS."
+  (lambda (input predicate action)
+    (let* ((scope-prefix
+            (and (string-match "\\`[0-9]\\{3\\} " input)
+                 (match-string 0 input)))
+           (scope-id (and scope-prefix (substring scope-prefix 0 3)))
+           (work-item
+            (and scope-id
+                 (seq-find
+                  (lambda (directory)
+                    (string-prefix-p
+                     (concat scope-id "-")
+                     (file-name-nondirectory
+                      (directory-file-name directory))))
+                  work-items))))
+      (if (not work-item)
+          (complete-with-action action files input predicate)
+        (let* ((directory-prefix
+                (concat
+                 (file-name-nondirectory
+                  (directory-file-name work-item))
+                 "/"))
+               (scoped-files
+                (seq-filter
+                 (lambda (file)
+                   (string-prefix-p directory-prefix file))
+                 files)))
+          (funcall
+           (completion-table-subvert scoped-files scope-prefix "")
+           input
+           predicate
+           action))))))
+
 (defun my/project-scratch-find ()
   "Find an Org file beneath the current project's issue directory."
   (interactive)
@@ -537,7 +571,13 @@ Other work-item documents use the work-item number and basename, such as
       (user-error "No Org issue files found"))
     (find-file
      (expand-file-name
-      (completing-read "Project issue: " files nil t)
+      (completing-read
+       "Project issue: "
+       (my/project-scratch--finder-completion-table
+        files
+        (my/project-scratch-work-item-directories))
+       nil
+       t)
       root))))
 
 

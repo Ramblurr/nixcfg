@@ -42,6 +42,15 @@
     (when (re-search-forward "older closed tickets remain" nil t)
       (button-at (match-beginning 0)))))
 
+(defun project-scratch-test--completions (input collection)
+  (let ((completion-styles '(substring)))
+    (let ((completions
+           (completion-all-completions input collection nil (length input)))
+          result)
+      (while (consp completions)
+        (push (substring-no-properties (pop completions)) result))
+      (nreverse result))))
+
 (cl-defmacro project-scratch-test--with-project ((root) &rest body)
   (declare (indent 1))
   `(let* ((,root (file-name-as-directory
@@ -91,13 +100,53 @@
        "Not Org\n")
       (cl-letf (((symbol-function 'completing-read)
                  (lambda (_prompt collection &rest _arguments)
-                   (setq offered collection)
+                   (setq offered (all-completions "" collection))
                    "001-alpha/research/evidence.org")))
         (my/project-scratch-find))
       (should (equal
                '("001-alpha/issues/01-ready.org"
                  "001-alpha/research/evidence.org")
                (sort offered #'string<)))
+      (should (file-equal-p (buffer-file-name) selected)))))
+
+(ert-deftest my-project-scratch-find-supports-work-item-scopes ()
+  (project-scratch-test--with-project (root)
+    (let ((selected
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/research/evidence.org"
+            "Evidence\n"))
+          completions)
+      (dolist (fixture
+               '((".scratch-org/001-alpha/issues/01-ready.org" . "Alpha\n")
+                 (".scratch-org/002-beta/issues/01-ready.org" . "Beta\n")
+                 (".scratch-org/misc/999 notes.org" . "Unknown scope\n")
+                 (".scratch-org/misc/x01 notes.org" . "Noncanonical scope\n")))
+        (project-scratch-test--write root (car fixture) (cdr fixture)))
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (_prompt collection &rest _arguments)
+                   (setq completions
+                         (mapcar
+                          (lambda (query)
+                            (sort
+                             (project-scratch-test--completions
+                              query collection)
+                             #'string<))
+                            '("001 "
+                              "001 evidence"
+                              "002 "
+                              "999 notes"
+                              "x01 notes")))
+                   "001-alpha/research/evidence.org")))
+        (my/project-scratch-find))
+      (should
+       (equal
+        '(("001-alpha/issues/01-ready.org"
+           "001-alpha/research/evidence.org")
+          ("001-alpha/research/evidence.org")
+          ("002-beta/issues/01-ready.org")
+          ("misc/999 notes.org")
+          ("misc/x01 notes.org"))
+        completions))
       (should (file-equal-p (buffer-file-name) selected)))))
 
 (ert-deftest my-project-scratch-agenda-selects-only-tracker-sources ()
