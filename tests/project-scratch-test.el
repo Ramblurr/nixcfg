@@ -368,6 +368,25 @@
          (buffer-file-name)
          (org-get-heading t t t t)))))))
 
+(ert-deftest my-project-scratch-agenda-opens-source-in-split-with-return ()
+  (project-scratch-test--with-project (root)
+    (let ((source
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/issues/01-ready.org"
+            "* READY-FOR-AGENT Open this source with Enter\n")))
+      (my/project-scratch-agenda)
+      (goto-char (point-min))
+      (search-forward "Open this source with Enter")
+      (let ((agenda-window (selected-window))
+            (command (key-binding (kbd "<return>"))))
+        (should (eq 'my/org-agenda-open-at-point command))
+        (call-interactively command)
+        (should (equal source (buffer-file-name)))
+        (should (not (eq agenda-window (selected-window))))
+        (should
+         (eq (get-buffer org-agenda-buffer-name)
+             (window-buffer agenda-window)))))))
+
 (ert-deftest my-project-scratch-agenda-does-not-page-ten-or-fewer-closed-entries ()
   (project-scratch-test--with-project (root)
     (project-scratch-test--write

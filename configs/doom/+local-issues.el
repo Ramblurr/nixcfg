@@ -19,6 +19,13 @@
     map)
   "Keymap for activating the closed-ticket paging row.")
 
+(defvar my/project-scratch-agenda-entry-map
+  (let ((map (make-sparse-keymap)))
+    (dolist (key '("RET" "<return>" "<kp-enter>"))
+      (define-key map (kbd key) #'my/org-agenda-open-at-point))
+    map)
+  "Keymap for opening a rendered project agenda entry.")
+
 (defvar-local my/project-scratch-agenda-entries nil
   "Entries from the most recent project agenda scan.")
 
@@ -204,6 +211,7 @@
      (point)
      `(my/agenda-source-file ,(plist-get entry :file)
                              my/agenda-source-position ,(plist-get entry :position)
+                             keymap ,my/project-scratch-agenda-entry-map
                              mouse-face highlight))))
 
 (defun my/project-scratch--insert-load-more-closed (remaining)
