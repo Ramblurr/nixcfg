@@ -1,0 +1,220 @@
+groups:
+  - name: debord-monitoring-targets
+    rules:
+      - alert: PrometheusTargetDown
+        expr: up == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Prometheus target {{ $labels.job }} is unavailable
+          description: Prometheus has failed to scrape {{ $labels.instance }} for ten minutes. A total Prometheus outage cannot be detected by this Prometheus instance.
+
+  - name: debord-thanos
+    rules:
+      - alert: ThanosSidecarPrometheusUnavailable
+        expr: thanos_sidecar_prometheus_up{job="thanos-sidecar"} == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: Thanos sidecar cannot reach Prometheus
+          description: The sidecar at {{ $labels.instance }} has been unable to reach Prometheus for ten minutes.
+
+      - alert: ThanosSidecarUploadFailing
+        expr: increase(thanos_shipper_upload_failures_total{job="thanos-sidecar"}[1h]) >= 2 or increase(thanos_shipper_dir_sync_failures_total{job="thanos-sidecar"}[1h]) >= 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Thanos sidecar uploads are repeatedly failing
+          description: The sidecar at {{ $labels.instance }} has recorded at least two upload or directory-sync failures in one hour.
+
+      - alert: ThanosSidecarUploadStale
+        expr: time() - thanos_objstore_bucket_last_successful_upload_time{job="thanos-sidecar"} > 6 * 60 * 60
+        for: 2h
+        labels:
+          severity: critical
+        annotations:
+          summary: Thanos sidecar upload success is stale
+          description: No successful object-store upload has been recorded for more than eight hours including the sustained alert period.
+
+      - alert: ThanosSidecarUploadMetricMissing
+        expr: up{job="thanos-sidecar"} == 1 unless on(job, instance) thanos_objstore_bucket_last_successful_upload_time{job="thanos-sidecar"}
+        for: 6h
+        labels:
+          severity: warning
+        annotations:
+          summary: Thanos sidecar has no successful-upload metric
+          description: The sidecar is scrapeable but has not exposed a successful object-store upload timestamp for six hours.
+
+      - alert: ThanosObjectStoreOperationsFailing
+        expr: increase(thanos_objstore_bucket_operation_failures_total{job=~"thanos-sidecar|thanos-store|thanos-compact"}[1h]) >= 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Thanos object-store operations are repeatedly failing
+          description: Thanos {{ $labels.job }} at {{ $labels.instance }} has recorded at least two object-store failures in one hour.
+
+      - alert: ThanosCompactHalted
+        expr: thanos_compact_halted{job="thanos-compact"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Thanos compactor halted
+          description: Thanos compact has halted after an unsafe or unexpected error.
+
+      - alert: ThanosCompactMaintenanceFailing
+        expr: increase(thanos_compact_downsample_failures_total{job="thanos-compact"}[1h]) >= 2 or increase(thanos_compact_block_cleanup_failures_total{job="thanos-compact"}[1h]) >= 2
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Thanos compactor maintenance is repeatedly failing
+          description: Thanos compact has recorded at least two downsample or cleanup failures in one hour.
+
+  - name: debord-zfs
+    rules:
+      - alert: ZfsPoolCollectorFailed
+        expr: zfs_scrape_collector_success{job="zfs", collector="pool"} == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: ZFS pool metric collection failed
+          description: The ZFS exporter at {{ $labels.instance }} has failed to collect pool metrics for ten minutes.
+
+      - alert: ZfsPoolMetricsMissing
+        expr: (up{job="zfs"} == 1 unless on(job, instance) zfs_scrape_collector_success{job="zfs", collector="pool"}) or (zfs_scrape_collector_success{job="zfs", collector="pool"} == 1 unless on(job, instance) zfs_pool_health{job="zfs"}) or (zfs_pool_health{job="zfs"} unless on(job, instance, pool) zfs_pool_allocated_bytes{job="zfs"}) or (zfs_pool_health{job="zfs"} unless on(job, instance, pool) zfs_pool_size_bytes{job="zfs"})
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Expected ZFS pool metrics are missing
+          description: The exporter at {{ $labels.instance }} is scrapeable but an expected pool collector, health, allocated-byte, or size-byte series is absent.
+
+      - alert: ZfsPoolUnhealthy
+        expr: zfs_pool_health{job="zfs"} != 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: ZFS pool {{ $labels.pool }} is unhealthy
+          description: Pool {{ $labels.pool }} at {{ $labels.instance }} has reported a non-ONLINE health code for ten minutes.
+
+      - alert: ZfsPoolCapacityWarning
+        expr: (zfs_pool_allocated_bytes{job="zfs"} / on(job, instance, pool) zfs_pool_size_bytes{job="zfs"} > 0.80) and on(job, instance, pool) (zfs_pool_allocated_bytes{job="zfs"} / on(job, instance, pool) zfs_pool_size_bytes{job="zfs"} <= 0.90) and on(job, instance, pool) (zfs_pool_size_bytes{job="zfs"} > 0)
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: ZFS pool {{ $labels.pool }} is more than 80% allocated
+          description: Pool {{ $labels.pool }} at {{ $labels.instance }} has remained between 80% and 90% allocated for one hour.
+
+      - alert: ZfsPoolCapacityCritical
+        expr: (zfs_pool_allocated_bytes{job="zfs"} / on(job, instance, pool) zfs_pool_size_bytes{job="zfs"} > 0.90) and on(job, instance, pool) (zfs_pool_size_bytes{job="zfs"} > 0)
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: ZFS pool {{ $labels.pool }} is more than 90% allocated
+          description: Pool {{ $labels.pool }} at {{ $labels.instance }} has remained above 90% allocated for thirty minutes.
+
+  - name: debord-zrepl-local
+    rules:
+      - alert: ZreplReplicationFilesystemErrors
+        expr: zrepl_replication_filesystem_errors{job="zrepl_mali", zrepl_job=~"debord|dewey"} != 0
+        for: 2h
+        labels:
+          severity: critical
+        annotations:
+          summary: zrepl job {{ $labels.zrepl_job }} has persistent filesystem errors
+          description: Mali's latest completed {{ $labels.zrepl_job }} pull has reported filesystem errors for two hours.
+
+      - alert: ZreplReplicationMetricsMissing
+        expr: absent(zrepl_replication_filesystem_errors{job="zrepl_mali", zrepl_job="debord"}) or absent(zrepl_replication_last_successful{job="zrepl_mali", zrepl_job="debord"}) or absent(zrepl_replication_filesystem_errors{job="zrepl_mali", zrepl_job="dewey"}) or absent(zrepl_replication_last_successful{job="zrepl_mali", zrepl_job="dewey"})
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: Expected Mali zrepl active-job metrics are missing
+          description: Mali has not exposed both latest-attempt and last-successful metrics for an expected Debord or Dewey pull job for two hours.
+
+      - alert: ZreplReplicationStaleWarning
+        expr: (zrepl_replication_last_successful{job="zrepl_mali", zrepl_job=~"debord|dewey"} > 0 and time() - zrepl_replication_last_successful{job="zrepl_mali", zrepl_job=~"debord|dewey"} > 12 * 60 * 60) and time() - zrepl_replication_last_successful{job="zrepl_mali", zrepl_job=~"debord|dewey"} <= 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: zrepl job {{ $labels.zrepl_job }} success is stale
+          description: Mali's last completely successful pull is between twelve and twenty-four hours old.
+
+      - alert: ZreplReplicationStaleCritical
+        expr: zrepl_replication_last_successful{job="zrepl_mali", zrepl_job=~"debord|dewey"} == 0 or time() - zrepl_replication_last_successful{job="zrepl_mali", zrepl_job=~"debord|dewey"} > 24 * 60 * 60
+        for: 2h
+        labels:
+          severity: critical
+        annotations:
+          summary: zrepl job {{ $labels.zrepl_job }} has no recent success
+          description: Mali's active pull has never completed successfully or its last success is more than twenty-four hours old.
+
+  - name: debord-zrepl-offsite
+    rules:
+      # These rules remain dormant until work item 035 securely relays receiver-side
+      # pull_mali metrics through Mali. They intentionally do not infer offsite health
+      # from Mali's passive mali_rsyncnet source job.
+      - alert: OffsiteReceiverProbeFailed
+        expr: zrepl_receiver_probe_success{receiver="rsyncnet"} == 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: The secure rsync.net receiver probe is failing
+          description: Three or more expected ten-minute receiver probes have failed.
+
+      - alert: OffsiteReceiverMetricsMissing
+        expr: (zrepl_receiver_probe_success{receiver="rsyncnet"} unless on(job, instance) zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"}) or (zrepl_receiver_probe_success{receiver="rsyncnet"} unless on(job, instance) zrepl_replication_filesystem_errors{zrepl_job="pull_mali", origin="rsyncnet"}) or (zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"} unless on(job, instance) zrepl_receiver_probe_success{receiver="rsyncnet"}) or (zrepl_replication_filesystem_errors{zrepl_job="pull_mali", origin="rsyncnet"} unless on(job, instance) zrepl_receiver_probe_success{receiver="rsyncnet"})
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: The secure rsync.net receiver relay is incomplete
+          description: The deployed receiver relay is missing its probe, latest-attempt, or last-successful series.
+
+      - alert: OffsiteReplicationFilesystemErrors
+        expr: zrepl_replication_filesystem_errors{zrepl_job="pull_mali", origin="rsyncnet"} != 0
+        for: 6h
+        labels:
+          severity: warning
+        annotations:
+          summary: The rsync.net pull has persistent filesystem errors
+          description: The receiver's latest completed pull has reported filesystem errors for six hours; long catch-up runs are allowed before alerting.
+
+      - alert: OffsiteReplicationStaleWarning
+        expr: zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"} == 0 or time() - zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"} > 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: The rsync.net pull has no recent success
+          description: Receiver-side pull success is absent or more than one day old.
+
+      - alert: OffsiteReplicationNeverSucceeded
+        expr: zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"} == 0
+        for: 7d
+        labels:
+          severity: critical
+        annotations:
+          summary: The rsync.net pull has never succeeded
+          description: The receiver relay has reported no completely successful pull for seven days.
+
+      - alert: OffsiteReplicationStaleCritical
+        expr: zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"} > 0 and time() - zrepl_replication_last_successful{zrepl_job="pull_mali", origin="rsyncnet"} > 7 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: The rsync.net pull is more than one week stale
+          description: Receiver-side pull success has not advanced for more than one week.

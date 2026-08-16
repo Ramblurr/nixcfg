@@ -14,7 +14,7 @@ in
     ./disk-config.nix
     ./networking.nix
     ./nixbot.nix
-    #./prometheus.nix
+    ./prometheus.nix
     #./grafana
     ../../config
     ../../config/home-ops.nix
