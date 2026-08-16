@@ -7,6 +7,7 @@
 let
   inherit (config.modules.users.primaryUser) username;
   defaultSopsFile = ./secrets.sops.yaml;
+  retiredCrucialDisk = "/dev/disk/by-id/ata-Crucial_CT525MX300SSD1_171816E66F09";
   inherit (config.repo.secrets) home-ops;
 in
 {
@@ -85,6 +86,27 @@ in
       "wheel"
       "k8s-nfs"
     ];
+  };
+
+  services.smartd.devices = [
+    {
+      device = retiredCrucialDisk;
+      options = "-d ignore";
+    }
+  ];
+
+  systemd.services.standby-retired-crucial-disk = {
+    description = "Put the retired Crucial SSD into standby";
+    wantedBy = [ "multi-user.target" ];
+    before = [
+      "smartd.service"
+      "prometheus-smartctl-exporter.service"
+    ];
+    unitConfig.ConditionPathExists = retiredCrucialDisk;
+    serviceConfig.Type = "oneshot";
+    script = ''
+      ${pkgs.smartmontools}/bin/smartctl --set=standby,now ${retiredCrucialDisk}
+    '';
   };
 
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
