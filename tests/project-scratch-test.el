@@ -85,4 +85,196 @@
                (sort offered #'string<)))
       (should (file-equal-p (buffer-file-name) selected)))))
 
+(ert-deftest my-project-scratch-agenda-selects-only-tracker-sources ()
+  (project-scratch-test--with-project (root)
+    (dolist (fixture
+             '((".scratch-org/001-alpha/spec.org" . "* READY-FOR-HUMAN Included spec\n")
+               (".scratch-org/001-alpha/map.org" . "* IN-PROGRESS Included map\n")
+               (".scratch-org/001-alpha/issues/01-ready.org" . "* READY-FOR-AGENT Included issue\n")
+               (".scratch-org/001-alpha/issues/nested/02.org" . "* NEEDS-TRIAGE Excluded nested issue\n")
+               (".scratch-org/001-alpha/research/evidence.org" . "* NEEDS-TRIAGE Excluded evidence\n")
+               (".scratch-org/001-alpha/deployment.org" . "* NEEDS-TRIAGE Excluded deployment\n")
+               (".scratch-org/unnumbered/issues/01.org" . "* NEEDS-TRIAGE Excluded unnumbered\n")))
+      (project-scratch-test--write root (car fixture) (cdr fixture)))
+    (my/project-scratch-agenda)
+    (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
+      (should
+       (equal
+        '(t t t nil nil nil nil)
+        (mapcar
+         (lambda (title) (and (string-match-p title agenda) t))
+         '("Included spec"
+           "Included map"
+           "Included issue"
+           "Excluded nested issue"
+           "Excluded evidence"
+           "Excluded deployment"
+           "Excluded unnumbered")))))))
+
+(ert-deftest my-project-scratch-agenda-refreshes-selected-buffers-from-disk ()
+  (project-scratch-test--with-project (root)
+    (let* ((selected-file
+            (project-scratch-test--write
+             root ".scratch-org/001-alpha/issues/01-ready.org"
+             "* READY-FOR-AGENT Disk selected\n"))
+           (unrelated-file
+            (project-scratch-test--write
+             root ".scratch-org/001-alpha/research/evidence.org"
+             "* Unsaved evidence base\n"))
+           (selected-buffer (find-file-noselect selected-file))
+           (unrelated-buffer (find-file-noselect unrelated-file)))
+      (with-current-buffer selected-buffer
+        (erase-buffer)
+        (insert "* READY-FOR-AGENT Unsaved selected\n"))
+      (with-current-buffer unrelated-buffer
+        (erase-buffer)
+        (insert "* Unsaved unrelated\n"))
+      (my/project-scratch-agenda)
+      (should
+       (equal
+        '("* READY-FOR-AGENT Disk selected\n" nil
+          "* Unsaved unrelated\n" t
+          t nil)
+        (list
+         (with-current-buffer selected-buffer (buffer-string))
+         (buffer-modified-p selected-buffer)
+         (with-current-buffer unrelated-buffer (buffer-string))
+         (buffer-modified-p unrelated-buffer)
+         (and
+          (string-match-p
+           "Disk selected"
+           (buffer-substring-no-properties (point-min) (point-max)))
+          t)
+         (and
+          (string-match-p
+           "Unsaved selected"
+           (buffer-substring-no-properties (point-min) (point-max)))
+          t))))
+      (with-current-buffer selected-buffer
+        (erase-buffer)
+        (insert "* READY-FOR-AGENT Second unsaved selected\n"))
+      (project-scratch-test--write
+       root ".scratch-org/001-alpha/issues/01-ready.org"
+       "* READY-FOR-AGENT Refreshed disk selected\n")
+      (my/project-scratch-agenda-refresh)
+      (should
+       (equal
+        '("* READY-FOR-AGENT Refreshed disk selected\n" nil t nil)
+        (list
+         (with-current-buffer selected-buffer (buffer-string))
+         (buffer-modified-p selected-buffer)
+         (and
+          (string-match-p
+           "Refreshed disk selected"
+           (buffer-substring-no-properties (point-min) (point-max)))
+          t)
+         (and
+          (string-match-p
+           "Second unsaved selected"
+           (buffer-substring-no-properties (point-min) (point-max)))
+          t)))))))
+
+(ert-deftest my-project-scratch-agenda-scans-each-source-once ()
+  (project-scratch-test--with-project (root)
+    (dolist (fixture
+             '((".scratch-org/001-alpha/spec.org" . "* READY-FOR-HUMAN Spec\n")
+               (".scratch-org/001-alpha/map.org" . "* IN-PROGRESS Map\n")
+               (".scratch-org/001-alpha/issues/01.org" . "* READY-FOR-AGENT Issue\n")))
+      (project-scratch-test--write root (car fixture) (cdr fixture)))
+    (let ((original (symbol-function 'org-map-entries))
+          counts)
+      (cl-letf (((symbol-function 'org-map-entries)
+                 (lambda (&rest arguments)
+                   (when (and buffer-file-name
+                              (file-in-directory-p buffer-file-name root))
+                     (let ((path
+                            (file-relative-name buffer-file-name root)))
+                       (setf (alist-get path counts nil nil #'equal)
+                             (1+ (or (alist-get path counts nil nil #'equal)
+                                     0)))))
+                   (apply original arguments))))
+        (my/project-scratch-agenda)
+        (let ((opening-counts (copy-tree counts)))
+          (my/project-scratch-agenda-refresh)
+          (should
+           (equal
+            '(((".scratch-org/001-alpha/issues/01.org" . 1)
+               (".scratch-org/001-alpha/map.org" . 1)
+               (".scratch-org/001-alpha/spec.org" . 1))
+              ((".scratch-org/001-alpha/issues/01.org" . 2)
+               (".scratch-org/001-alpha/map.org" . 2)
+               (".scratch-org/001-alpha/spec.org" . 2)))
+            (list
+             (sort opening-counts
+                   (lambda (left right) (string< (car left) (car right))))
+             (sort counts
+                   (lambda (left right) (string< (car left) (car right))))))))))))
+
+(ert-deftest my-project-scratch-agenda-renders-ordered-deferred-dates ()
+  (project-scratch-test--with-project (root)
+    (let ((today (format-time-string "<%Y-%m-%d %a>")))
+      (dolist (fixture
+               `(("01-triage.org" . "* NEEDS-TRIAGE Triage row\n")
+                 ("02-ready.org" . "* READY-FOR-AGENT Ready row\n")
+                 ("03-active.org" . "* CLAIMED Active row\n")
+                 ("04-overdue.org" . "* DEFERRED Overdue deferred\nSCHEDULED: <2000-01-01 Sat> DEADLINE: <2000-01-02 Sun>\n")
+                 ("05-due.org" . ,(format "* DEFERRED Due deferred\nSCHEDULED: %s\n" today))
+                 ("06-future.org" . "* DEFERRED Future deferred\nSCHEDULED: <2099-01-01 Thu>\n")
+                 ("07-closed.org" . "* RESOLVED Closed row\n")))
+        (project-scratch-test--write
+         root
+         (concat ".scratch-org/001-alpha/issues/" (car fixture))
+         (cdr fixture)))
+      (my/project-scratch-agenda)
+      (let* ((agenda
+              (buffer-substring-no-properties (point-min) (point-max)))
+             (sections
+              (mapcar
+               (lambda (header)
+                 (string-match (concat "^" header "$") agenda))
+               '("Triage" "Ready" "Active" "Deferred" "Closed")))
+             (deferred
+              (mapcar
+               (lambda (title) (string-match title agenda))
+               '("Overdue deferred" "Due deferred" "Future deferred"))))
+        (should
+         (equal
+          '(t t
+            "[OVERDUE] SCHEDULED: <2000-01-01 Sat> DEADLINE: <2000-01-02 Sun>"
+            "[DUE]"
+            "SCHEDULED: <2099-01-01 Thu>")
+          (list
+           (and (cl-every #'integerp sections)
+                (apply #'< sections))
+           (and (cl-every #'integerp deferred)
+                (apply #'< deferred))
+           (and
+            (string-match-p
+             (regexp-quote
+              "[OVERDUE] SCHEDULED: <2000-01-01 Sat> DEADLINE: <2000-01-02 Sun>")
+             agenda)
+            "[OVERDUE] SCHEDULED: <2000-01-01 Sat> DEADLINE: <2000-01-02 Sun>")
+           (and (string-match-p (regexp-quote "[DUE]") agenda) "[DUE]")
+           (and
+            (string-match-p
+             (regexp-quote "SCHEDULED: <2099-01-01 Thu>") agenda)
+            "SCHEDULED: <2099-01-01 Thu>"))))))))
+
+(ert-deftest my-project-scratch-agenda-opens-source-at-point ()
+  (project-scratch-test--with-project (root)
+    (let ((source
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/issues/01-ready.org"
+            "* READY-FOR-AGENT Open this source\n")))
+      (my/project-scratch-agenda)
+      (goto-char (point-min))
+      (search-forward "Open this source")
+      (my/org-agenda-open-at-point)
+      (should
+       (equal
+        (list source "Open this source")
+        (list
+         (buffer-file-name)
+         (org-get-heading t t t t)))))))
+
 ;;; project-scratch-test.el ends here
