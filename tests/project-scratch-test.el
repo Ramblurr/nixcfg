@@ -5,6 +5,7 @@
 (require 'org)
 (require 'org-agenda)
 (require 'project)
+(require 'subr-x)
 
 (unless (fboundp 'after!)
   (defmacro after! (_feature &rest body)
@@ -324,6 +325,32 @@
              (regexp-quote "SCHEDULED: <2099-01-01 Thu>") agenda)
             "SCHEDULED: <2099-01-01 Thu>"))))))))
 
+(ert-deftest my-project-scratch-agenda-retains-org-faces ()
+  (project-scratch-test--with-project (root)
+    (dolist (fixture
+             '(("01-ready.org" . "* READY-FOR-AGENT Ready face\n")
+               ("02-resolved.org" . "* RESOLVED Resolved face\n")
+               ("03-wontfix.org" . "* WONTFIX Wontfix face\n")))
+      (project-scratch-test--write
+       root
+       (concat ".scratch-org/001-alpha/issues/" (car fixture))
+       (cdr fixture)))
+    (my/project-scratch-agenda)
+    (cl-labels ((face-at
+                 (text)
+                 (save-excursion
+                   (goto-char (point-min))
+                   (re-search-forward text)
+                   (get-text-property (match-beginning 0) 'face))))
+      (should
+       (equal
+        '(org-agenda-structure org-todo org-done org-done)
+        (mapcar #'face-at
+                '("^Ready$"
+                  "READY-FOR-AGENT"
+                  "RESOLVED"
+                  "WONTFIX")))))))
+
 (ert-deftest my-project-scratch-agenda-opens-source-at-point ()
   (project-scratch-test--with-project (root)
     (let ((source
@@ -369,6 +396,27 @@
        (project-scratch-test--closed-ids)
        (project-scratch-test--load-more-closed-button))))))
 
+(ert-deftest my-project-scratch-agenda-paging-row-activates-with-return ()
+  (project-scratch-test--with-project (root)
+    (dotimes (index 21)
+      (let ((number (1+ index)))
+        (project-scratch-test--write
+         root
+         (format ".scratch-org/001-alpha/issues/%02d-closed.org" number)
+         (format "* RESOLVED Closed %02d\n" number))))
+    (my/project-scratch-agenda)
+    (goto-char (point-min))
+    (re-search-forward "older closed tickets remain")
+    (goto-char (line-beginning-position))
+    (call-interactively (key-binding (kbd "RET")))
+    (should (= 20 (length (project-scratch-test--closed-ids))))
+    (my/project-scratch-agenda-refresh)
+    (goto-char (point-min))
+    (re-search-forward "older closed tickets remain")
+    (goto-char (match-beginning 0))
+    (call-interactively (key-binding (kbd "RET")))
+    (should (= 20 (length (project-scratch-test--closed-ids))))))
+
 (ert-deftest my-project-scratch-agenda-pages-closed-entries-without-rescanning ()
   (project-scratch-test--with-project (root)
     (dotimes (index 23)
@@ -385,7 +433,7 @@
       (project-scratch-test--closed-ids)))
     (let ((button (project-scratch-test--load-more-closed-button)))
       (should (equal "13 older closed tickets remain — show next 10"
-                     (button-label button)))
+                     (string-trim (button-label button))))
       (project-scratch-test--write
        root ".scratch-org/001-alpha/issues/23-closed.org"
        "* RESOLVED Changed 23\n")
@@ -400,7 +448,7 @@
              (buffer-substring-no-properties (point-min) (point-max))))
     (let ((button (project-scratch-test--load-more-closed-button)))
       (should (equal "3 older closed tickets remain — show next 3"
-                     (button-label button)))
+                     (string-trim (button-label button))))
       (button-activate button))
     (should
      (equal
@@ -422,7 +470,8 @@
              "Changed 23"
              (buffer-substring-no-properties (point-min) (point-max)))
             t)
-       (button-label
-        (project-scratch-test--load-more-closed-button)))))))
+       (string-trim
+        (button-label
+         (project-scratch-test--load-more-closed-button))))))))
 
 ;;; project-scratch-test.el ends here
