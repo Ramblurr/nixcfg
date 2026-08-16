@@ -19,6 +19,7 @@ in
     ./zrepl.nix
     ./caddy.nix
     ./minio.nix
+    ./garage.nix
     ./syncthing.nix
     ./borgbackup-server.nix
     ./ups.nix

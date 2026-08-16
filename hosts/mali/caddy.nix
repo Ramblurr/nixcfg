@@ -12,6 +12,8 @@ in
       "attic.mgmt.${homeDomain}"
       "attic.int.${homeDomain}"
       "nix-cache.int.${homeDomain}"
+      "garage.data.${homeDomain}"
+      "garage.mgmt.${homeDomain}"
       "s3.data.${homeDomain}"
       "*.s3.data.${homeDomain}"
       "minio.data.${homeDomain}"
