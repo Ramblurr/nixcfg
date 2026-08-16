@@ -11,6 +11,14 @@
 (defconst my/project-scratch-closed-page-size 10
   "Number of closed entries revealed per agenda page.")
 
+(defvar my/project-scratch-load-more-button-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map button-map)
+    (dolist (key '("RET" "<return>" "<kp-enter>" "SPC"))
+      (define-key map (kbd key) #'push-button))
+    map)
+  "Keymap for activating the closed-ticket paging row.")
+
 (defvar-local my/project-scratch-agenda-entries nil
   "Entries from the most recent project agenda scan.")
 
@@ -211,6 +219,7 @@
      start
      (point)
      'action #'my/project-scratch-load-more-closed-button
+     'keymap my/project-scratch-load-more-button-map
      'follow-link t
      'face 'shadow
      'mouse-face 'highlight
