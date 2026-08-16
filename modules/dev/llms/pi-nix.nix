@@ -8,6 +8,8 @@
 
 let
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
+  # pi-hashline-edit-pro imports node:sqlite, which Bun's standalone runtime does not provide.
+  piPackage = llmAgents.pi.override { useBun = false; };
 in
 {
   config = lib.mkIf cfg.enable {
@@ -46,12 +48,12 @@ in
         pi = pkgs.writeShellScriptBin "pi" ''
           case "''${1-}" in
             install|remove|uninstall|update|list|config)
-              exec ${lib.getExe llmAgents.pi} "$@"
+              exec ${lib.getExe piPackage} "$@"
               ;;
           esac
 
           ${syncSettings}
-          exec ${lib.getExe llmAgents.pi} "$@"
+          exec ${lib.getExe piPackage} "$@"
         '';
       in
       {
