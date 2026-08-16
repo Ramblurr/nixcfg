@@ -18,8 +18,6 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
-      ../modules/services/caddy-security-routes.nix
-      ../modules/services/caddy-security.nix
       ../hosts/james/caddy.nix
       ../hosts/james/ingress-haproxy.nix
       ../hosts/james/goaccess.nix
@@ -97,18 +95,20 @@ in
 assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
-assert cfg.modules.services.caddy-security.enable;
-assert !cfg.modules.services.caddy-security.loopbackListener;
 assert
-  cfg.modules.services.caddy-security.edge.bindAddress == "unix//run/caddy/james-ingress.sock|0660";
-assert cfg.modules.services.caddy-security.edge.proxyProtocol;
+  !(lib.hasAttrByPath [
+    "modules"
+    "services"
+    "caddy-security"
+  ] evaluated.options);
 assert
-  cfg.modules.services.caddy-security.edge.protocols == [
-    "h1"
-    "h2"
-  ];
-assert cfg.modules.services.caddy-security.edge.certificateDomains == [ ];
-assert cfg.modules.services.caddy-security.edge.certificateHosts == expectedCertificateHosts;
+  !(lib.hasAttrByPath [
+    "modules"
+    "services"
+    "caddy"
+    "legacyRoutes"
+  ] evaluated.options);
+assert lib.all (host: lib.hasInfix "https://${host}" caddy.extraConfig) expectedCertificateHosts;
 assert builtins.length expectedCertificateHosts == 23;
 assert builtins.length (lib.unique expectedCertificateHosts) == 23;
 assert caddy.enable;
@@ -118,6 +118,11 @@ assert lib.hasInfix "admin 127.0.0.1:2019" caddy.globalConfig;
 assert lib.hasInfix "servers unix//run/caddy/james-ingress.sock|0660" caddy.globalConfig;
 assert lib.hasInfix "listener_wrappers" caddy.globalConfig;
 assert lib.hasInfix "proxy_protocol" caddy.globalConfig;
+assert lib.hasInfix "protocols h1 h2" caddy.globalConfig;
+assert !lib.hasInfix "protocols h1 h2 h3" caddy.globalConfig;
+assert !lib.hasInfix "security {" caddy.globalConfig;
+assert !lib.hasInfix "trusted_proxies" caddy.globalConfig;
+assert !lib.hasInfix ":8443" caddy.globalConfig;
 assert lib.hasInfix "fallback_policy require" caddy.globalConfig;
 assert lib.hasInfix "strict_sni_host on" caddy.globalConfig;
 assert !lib.hasInfix "servers :443" caddy.globalConfig;

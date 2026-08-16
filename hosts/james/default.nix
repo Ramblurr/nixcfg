@@ -16,8 +16,6 @@ in
     ../../config/offsite.nix
     ../../config/hetzner-cloud-ccx.nix
     ./ingress-haproxy.nix
-    ../../modules/services/caddy-security-routes.nix
-    ../../modules/services/caddy-security.nix
     ./caddy.nix
     ./web.nix
     ./web/hook.nix

@@ -6,7 +6,10 @@ let
     import sys
 
     port = int(sys.argv[1])
-    raw = socket.create_connection(("127.0.0.1", port), timeout=5)
+    raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    raw.settimeout(5)
+    raw.bind(("127.0.0.2", 0))
+    raw.connect(("127.0.0.1", port))
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
@@ -21,7 +24,7 @@ let
 
     headers, body = response.split(b"\r\n\r\n", 1)
     assert headers.startswith(b"HTTP/1.1 200"), headers
-    assert body == b"james.example.test|127.0.0.1", body
+    assert body == b"james.example.test|127.0.0.2", body
     print(body.decode())
   '';
 in
