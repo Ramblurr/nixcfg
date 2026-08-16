@@ -24,7 +24,11 @@ inputs: [
       terraform-provider-desec = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./terraform-providers/desec.nix { };
+      terraform-provider-garage = prev.lib.callPackageWith (
+        prev // { inherit pkgs-lib; }
+      ) ./terraform-providers/garage.nix { };
       opentofu-powerdns = prev.opentofu.withPlugins (_plugins: [ _final.terraform-provider-powerdns ]);
+      opentofu-garage = prev.opentofu.withPlugins (_plugins: [ _final.terraform-provider-garage ]);
       opentofu-dns = prev.opentofu.withPlugins (_plugins: [
         _final.terraform-provider-desec
         _final.terraform-provider-powerdns
