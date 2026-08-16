@@ -419,7 +419,13 @@
       (let ((command (key-binding (kbd (car binding)))))
         (should (eq 'push-button command))
         (call-interactively command))
-      (should (= 20 (length (project-scratch-test--closed-ids)))))))
+      (should (= 20 (length (project-scratch-test--closed-ids))))
+      (should
+       (string-match-p
+        "older closed tickets remain"
+        (buffer-substring-no-properties
+         (line-beginning-position)
+         (line-end-position)))))))
 
 (ert-deftest my-project-scratch-agenda-pages-closed-entries-without-rescanning ()
   (project-scratch-test--with-project (root)
@@ -460,6 +466,12 @@
               (number-sequence 23 1 -1))
       (project-scratch-test--closed-ids)))
     (should-not (project-scratch-test--load-more-closed-button))
+    (should
+     (string-match-p
+      "001-01"
+      (buffer-substring-no-properties
+       (line-beginning-position)
+       (line-end-position))))
     (my/project-scratch-agenda-refresh)
     (should
      (equal
