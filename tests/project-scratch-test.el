@@ -27,6 +27,21 @@
       (insert contents))
     path))
 
+(defun project-scratch-test--closed-ids ()
+  (let (ids)
+    (save-excursion
+      (goto-char (point-min))
+      (re-search-forward "^Closed$")
+      (while (re-search-forward "^ \\([0-9]\\{3\\}-[0-9]\\{2\\}\\)" nil t)
+        (push (match-string 1) ids)))
+    (nreverse ids)))
+
+(defun project-scratch-test--load-more-closed-button ()
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "older closed tickets remain" nil t)
+      (button-at (match-beginning 0)))))
+
 (cl-defmacro project-scratch-test--with-project ((root) &rest body)
   (declare (indent 1))
   `(let* ((,root (file-name-as-directory
@@ -276,5 +291,89 @@
         (list
          (buffer-file-name)
          (org-get-heading t t t t)))))))
+
+(ert-deftest my-project-scratch-agenda-does-not-page-ten-or-fewer-closed-entries ()
+  (project-scratch-test--with-project (root)
+    (project-scratch-test--write
+     root ".scratch-org/001-alpha/issues/01-ready.org"
+     "* READY-FOR-AGENT Ready\n")
+    (my/project-scratch-agenda)
+    (should
+     (equal '(() nil)
+            (list
+             (project-scratch-test--closed-ids)
+             (project-scratch-test--load-more-closed-button))))
+    (dotimes (index 10)
+      (let ((number (+ index 10)))
+        (project-scratch-test--write
+         root
+         (format ".scratch-org/001-alpha/issues/%02d-closed.org" number)
+         (format "* RESOLVED Closed %02d\n" number))))
+    (my/project-scratch-agenda-refresh)
+    (should
+     (equal
+      (list
+       (mapcar (lambda (number) (format "001-%02d" number))
+               (number-sequence 19 10 -1))
+       nil)
+      (list
+       (project-scratch-test--closed-ids)
+       (project-scratch-test--load-more-closed-button))))))
+
+(ert-deftest my-project-scratch-agenda-pages-closed-entries-without-rescanning ()
+  (project-scratch-test--with-project (root)
+    (dotimes (index 23)
+      (let ((number (1+ index)))
+        (project-scratch-test--write
+         root
+         (format ".scratch-org/001-alpha/issues/%02d-closed.org" number)
+         (format "* RESOLVED Closed %02d\n" number))))
+    (my/project-scratch-agenda)
+    (should
+     (equal
+      (mapcar (lambda (number) (format "001-%02d" number))
+              (number-sequence 23 14 -1))
+      (project-scratch-test--closed-ids)))
+    (let ((button (project-scratch-test--load-more-closed-button)))
+      (should (equal "13 older closed tickets remain — show next 10"
+                     (button-label button)))
+      (project-scratch-test--write
+       root ".scratch-org/001-alpha/issues/23-closed.org"
+       "* RESOLVED Changed 23\n")
+      (button-activate button))
+    (should
+     (equal
+      (mapcar (lambda (number) (format "001-%02d" number))
+              (number-sequence 23 4 -1))
+      (project-scratch-test--closed-ids)))
+    (should (string-match-p
+             "Closed 23"
+             (buffer-substring-no-properties (point-min) (point-max))))
+    (let ((button (project-scratch-test--load-more-closed-button)))
+      (should (equal "3 older closed tickets remain — show next 3"
+                     (button-label button)))
+      (button-activate button))
+    (should
+     (equal
+      (mapcar (lambda (number) (format "001-%02d" number))
+              (number-sequence 23 1 -1))
+      (project-scratch-test--closed-ids)))
+    (should-not (project-scratch-test--load-more-closed-button))
+    (my/project-scratch-agenda-refresh)
+    (should
+     (equal
+      (list
+       (mapcar (lambda (number) (format "001-%02d" number))
+               (number-sequence 23 14 -1))
+       t
+       "13 older closed tickets remain — show next 10")
+      (list
+       (project-scratch-test--closed-ids)
+       (and (string-match-p
+             "Changed 23"
+             (buffer-substring-no-properties (point-min) (point-max)))
+            t)
+       (button-label
+        (project-scratch-test--load-more-closed-button)))))))
 
 ;;; project-scratch-test.el ends here

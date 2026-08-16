@@ -8,6 +8,15 @@
 (defvar my/project-scratch-work-item-limit 10
   "Number of recent work items shown before the index is collapsed.")
 
+(defconst my/project-scratch-closed-page-size 10
+  "Number of closed entries revealed per agenda page.")
+
+(defvar-local my/project-scratch-agenda-entries nil
+  "Entries from the most recent project agenda scan.")
+
+(defvar-local my/project-scratch-visible-closed-count
+    my/project-scratch-closed-page-size
+  "Number of closed entries currently visible in this agenda buffer.")
 (defvar-local my/project-scratch-show-all-work-items nil
   "Non-nil means show every work item in this agenda buffer.")
 
@@ -138,6 +147,10 @@
      (left-time t)
      (t nil))))
 
+(defun my/project-scratch--closed-entry-less-p (left right)
+  "Return non-nil when closed entry LEFT has a later identifier than RIGHT."
+  (string> (plist-get left :id) (plist-get right :id)))
+
 (defun my/project-scratch--schedule-status (entry)
   "Return a visible due status for deferred ENTRY, or nil."
   (let* ((scheduled (plist-get entry :scheduled))
@@ -181,6 +194,82 @@
                              my/agenda-source-position ,(plist-get entry :position)
                              mouse-face highlight))))
 
+(defun my/project-scratch--insert-load-more-closed (remaining)
+  "Insert a button revealing another page from REMAINING closed entries."
+  (let ((next-count
+         (min my/project-scratch-closed-page-size remaining)))
+    (insert "      ")
+    (let ((start (point)))
+      (insert
+       (format "%d older closed tickets remain — show next %d"
+               remaining
+               next-count))
+      (make-text-button
+       start
+       (point)
+       'action #'my/project-scratch-load-more-closed-button
+       'follow-link t
+       'face 'shadow
+       'mouse-face 'highlight
+       'help-echo "Reveal older closed tickets"))
+    (insert "\n")))
+
+(defun my/project-scratch--render-agenda ()
+  "Render the current project agenda without scanning its sources."
+  (let ((inhibit-read-only t))
+    (erase-buffer)
+    (dolist (section my/project-scratch-agenda-sections)
+      (let* ((name (car section))
+             (section-entries
+              (seq-filter
+               (lambda (entry)
+                 (member (plist-get entry :todo) (cdr section)))
+               my/project-scratch-agenda-entries)))
+        (insert
+         (propertize (concat name "\n") 'face 'org-agenda-structure))
+        (cond
+         ((equal name "Deferred")
+          (setq section-entries
+                (sort section-entries
+                      #'my/project-scratch--deferred-entry-less-p)))
+         ((equal name "Closed")
+          (setq section-entries
+                (sort section-entries
+                      #'my/project-scratch--closed-entry-less-p))))
+        (let* ((closed-p (equal name "Closed"))
+               (visible-entries
+                (if closed-p
+                    (seq-take
+                     section-entries
+                     my/project-scratch-visible-closed-count)
+                  section-entries))
+               (remaining (- (length section-entries)
+                             (length visible-entries))))
+          (dolist (entry visible-entries)
+            (my/project-scratch--insert-agenda-entry entry))
+          (when (> remaining 0)
+            (my/project-scratch--insert-load-more-closed remaining)))
+        (insert "\n")))
+    (goto-char (point-min)))
+  (my/org-agenda-source-mode-line)
+  (my/org-agenda-insert-work-items)
+  (setq buffer-read-only t)
+  (current-buffer))
+
+(defun my/project-scratch-load-more-closed-button (_button)
+  "Reveal the next page of closed entries without rescanning source files."
+  (let ((closed-total
+         (seq-count
+          (lambda (entry)
+            (member (plist-get entry :todo) '("RESOLVED" "WONTFIX")))
+          my/project-scratch-agenda-entries)))
+    (setq-local
+     my/project-scratch-visible-closed-count
+     (min closed-total
+          (+ my/project-scratch-visible-closed-count
+             my/project-scratch-closed-page-size)))
+    (my/project-scratch--render-agenda)))
+
 (defun my/project-scratch-agenda-view (&optional _match)
   "Build the project agenda from each saved source file once."
   (let* ((files (my/project-scratch-prepare-agenda-files))
@@ -193,29 +282,10 @@
              files))))
     (org-agenda-prepare "Project issues")
     (setq-local org-agenda-files files)
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (dolist (section my/project-scratch-agenda-sections)
-        (insert
-         (propertize (concat (car section) "\n")
-                     'face 'org-agenda-structure))
-        (let ((section-entries
-               (seq-filter
-                (lambda (entry)
-                  (member (plist-get entry :todo) (cdr section)))
-                entries)))
-          (when (equal (car section) "Deferred")
-            (setq section-entries
-                  (sort section-entries
-                        #'my/project-scratch--deferred-entry-less-p)))
-          (dolist (entry section-entries)
-            (my/project-scratch--insert-agenda-entry entry)))
-        (insert "\n"))
-      (goto-char (point-min)))
-    (my/org-agenda-source-mode-line)
-    (my/org-agenda-insert-work-items)
-    (setq buffer-read-only t)
-    (current-buffer)))
+    (setq-local my/project-scratch-agenda-entries entries)
+    (setq-local my/project-scratch-visible-closed-count
+                my/project-scratch-closed-page-size)
+    (my/project-scratch--render-agenda)))
 
 (defun my/org-agenda-open-work-item-button (button)
   "Open BUTTON's work-item directory in Dired."
