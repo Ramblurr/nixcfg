@@ -268,7 +268,7 @@
   (setq buffer-read-only t)
   (current-buffer))
 
-(defun my/project-scratch-load-more-closed-button (_button)
+(defun my/project-scratch-load-more-closed-button (button)
   "Reveal the next page of closed entries without rescanning source files."
   (let ((closed-total
          (seq-count
@@ -280,7 +280,20 @@
      (min closed-total
           (+ my/project-scratch-visible-closed-count
              my/project-scratch-closed-page-size)))
-    (my/project-scratch--render-agenda)))
+    (my/project-scratch--render-agenda)
+    (let ((destination
+           (or
+            (text-property-any
+             (point-min)
+             (point-max)
+             'keymap
+             my/project-scratch-load-more-button-map)
+            (save-excursion
+              (goto-char (point-max))
+              (skip-chars-backward "\n")
+              (line-beginning-position)))))
+      (set-marker button destination)
+      (goto-char destination))))
 
 (defun my/project-scratch-agenda-view (&optional _match)
   "Build the project agenda from each saved source file once."
