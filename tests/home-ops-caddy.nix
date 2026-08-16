@@ -185,6 +185,8 @@ assert
     "attic.mgmt.example.test"
     "attic.int.example.test"
     "nix-cache.int.example.test"
+    "garage.data.example.test"
+    "garage.mgmt.example.test"
     "s3.data.example.test"
     "*.s3.data.example.test"
     "minio.data.example.test"
