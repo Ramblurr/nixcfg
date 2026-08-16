@@ -18,6 +18,7 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
+      ../modules/services/caddy.nix
       ../hosts/james/caddy.nix
       ../hosts/james/ingress-haproxy.nix
       ../hosts/james/goaccess.nix
@@ -95,19 +96,6 @@ in
 assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
-assert
-  !(lib.hasAttrByPath [
-    "modules"
-    "services"
-    "caddy-security"
-  ] evaluated.options);
-assert
-  !(lib.hasAttrByPath [
-    "modules"
-    "services"
-    "caddy"
-    "legacyRoutes"
-  ] evaluated.options);
 assert lib.all (host: lib.hasInfix "https://${host}" caddy.extraConfig) expectedCertificateHosts;
 assert builtins.length expectedCertificateHosts == 23;
 assert builtins.length (lib.unique expectedCertificateHosts) == 23;

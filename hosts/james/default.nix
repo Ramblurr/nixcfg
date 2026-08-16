@@ -8,7 +8,6 @@ let
   inherit (config.modules.users.primaryUser) username;
 in
 {
-  disabledModules = [ ../../modules/services/caddy.nix ];
   imports = [
     ./disk-config.nix
     ./hardware.nix

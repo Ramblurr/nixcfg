@@ -368,19 +368,6 @@ let
     '';
 in
 {
-  options.modules.services.caddy = {
-    routes = lib.mkOption {
-      type = lib.types.attrs;
-      default = { };
-      description = "Ignored shared route registrations on James";
-    };
-    protectedRoutes = lib.mkOption {
-      type = lib.types.attrs;
-      default = { };
-      description = "Ignored shared protected-route registrations on James";
-    };
-  };
-
   config = {
     assertions = [
       {
