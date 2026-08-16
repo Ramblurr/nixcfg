@@ -2,7 +2,7 @@
 set -eu
 
 launcher_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-protocol=2
+protocol=3
 
 run_batch() {
   exec emacs --batch -Q \
