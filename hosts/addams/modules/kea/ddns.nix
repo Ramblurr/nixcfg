@@ -19,7 +19,7 @@ in
     groups.${keaddnsUser} = { };
   };
 
-  sops.secrets."kea/tsig-key" = {
+  sops.secrets.pdns-kea-tsig-key = {
     owner = keaddnsUser;
     group = keaddnsUser;
   };
@@ -39,7 +39,7 @@ in
           {
             name = "kea";
             algorithm = "hmac-sha512";
-            secret-file = "${config.sops.secrets."kea/tsig-key".path}";
+            secret-file = "${config.sops.secrets.pdns-kea-tsig-key.path}";
           }
         ];
         forward-ddns = {
