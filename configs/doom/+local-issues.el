@@ -121,28 +121,32 @@
          (buffer (or visited scratch-buffer))
          entries)
     (with-current-buffer buffer
-      (unless visited
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (insert-file-contents file)
-          (setq-local buffer-file-name file)))
-      (org-with-wide-buffer
-       (org-map-entries
-        (lambda ()
-          (let ((todo (org-get-todo-state)))
-            (when todo
-              (push
-               (list :todo todo
-                     :todo-face (org-get-todo-face todo)
-                     :title (org-get-heading t t t t)
-                     :id (my/org-agenda-item-id)
-                     :scheduled (org-entry-get nil "SCHEDULED")
-                     :deadline (org-entry-get nil "DEADLINE")
-                     :file file
-                     :position (line-beginning-position))
-               entries))))
-        nil
-        'file)))
+      (let ((buffer-file-name (if visited buffer-file-name file)))
+        (unwind-protect
+            (progn
+              (unless visited
+                (let ((inhibit-read-only t))
+                  (erase-buffer)
+                  (insert-file-contents file)))
+              (org-with-wide-buffer
+               (org-map-entries
+                (lambda ()
+                  (let ((todo (org-get-todo-state)))
+                    (when todo
+                      (push
+                       (list :todo todo
+                             :todo-face (org-get-todo-face todo)
+                             :title (org-get-heading t t t t)
+                             :id (my/org-agenda-item-id)
+                             :scheduled (org-entry-get nil "SCHEDULED")
+                             :deadline (org-entry-get nil "DEADLINE")
+                             :file file
+                             :position (line-beginning-position))
+                       entries))))
+                nil
+                'file)))
+          (unless visited
+            (set-buffer-modified-p nil)))))
     (nreverse entries)))
 
 (defun my/project-scratch--planning-time (timestamp)
