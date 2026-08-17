@@ -14,7 +14,6 @@ let
   inherit (config.repo.secrets) home-ops;
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
-  jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
     until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
       ${pkgs.coreutils}/bin/sleep 0.5
@@ -58,21 +57,7 @@ in
       paperless.enable = lib.mkEnableOption "Paperless";
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
-      plex.enable = lib.mkEnableOption "Plex";
       jellyfin.enable = lib.mkEnableOption "Jellyfin";
-      jellyplex-watched = {
-        enable = lib.mkEnableOption "JellyPlex-Watched";
-        dryRun = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Log changes without marking shows or movies as played.";
-        };
-        interval = lib.mkOption {
-          type = lib.types.ints.positive;
-          default = 3600;
-          description = "Seconds between JellyPlex-Watched sync passes.";
-        };
-      };
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
       hindsight.enable = lib.mkEnableOption "Hindsight agent memory";
@@ -418,15 +403,6 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
-    # Expected SOPS key: jellyplex-watched.env with PLEX_TOKEN and JELLYFIN_TOKEN.
-    sops.secrets."jellyplex-watched/env" = lib.mkIf cfg.apps.jellyplex-watched.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-      mode = "400";
-    };
-    systemd.services.jellyplex-watched = lib.mkIf cfg.apps.jellyplex-watched.enable {
-      wants = [ "sops-install-secrets.service" ];
-      after = [ "sops-install-secrets.service" ];
-    };
     modules.services.git-archive = lib.mkIf cfg.apps.git-archive.enable { enable = true; };
 
     modules.services.davis = lib.mkIf cfg.apps.davis.enable {
@@ -461,30 +437,12 @@ in
       nfsShare = "tank2/services/paperless";
     };
 
-    modules.services.plex = lib.mkIf cfg.apps.plex.enable {
-      enable = true;
-      domain = "plex.${home-ops.homeDomain}";
-      user = home-ops.users.plex;
-      group = home-ops.groups.plex;
-      nfsShare = "tank2/media";
-    };
-
     modules.services.jellyfin = lib.mkIf cfg.apps.jellyfin.enable {
       enable = true;
       domain = "jelly.${home-ops.homeDomain}";
       user = home-ops.users.jellyfin;
       group = home-ops.groups.jellyfin;
       nfsShare = "tank2/media";
-      "jellyplex-watched" = lib.mkIf cfg.apps.jellyplex-watched.enable {
-        enable = true;
-        environmentFile = config.sops.secrets."jellyplex-watched/env".path;
-        dryRun = cfg.apps.jellyplex-watched.dryRun;
-        interval = cfg.apps.jellyplex-watched.interval;
-        mappings = {
-          users = jellyplexWatchedMappings.users or { };
-          libraries = jellyplexWatchedMappings.libraries or { };
-        };
-      };
     };
 
     modules.services.audiobookshelf = lib.mkIf cfg.apps.audiobookshelf.enable {

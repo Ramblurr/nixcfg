@@ -101,7 +101,6 @@
     ./services/hindsight.nix
     ./services/influxdb.nix
     ./services/jellyfin.nix
-    ./services/jellyplex-watched.nix
     ./services/ingress-home-assistant.nix
     ./services/ingress-octoprint.nix
     ./services/ingress-nixbot.nix
@@ -118,7 +117,6 @@
     ./services/onepassword-connect.nix
     ./services/pi-web.nix
     ./services/paperless.nix
-    ./services/plex.nix
     ./services/podman.nix
     ./services/text-embeddings-inference.nix
     ./services/postgresql.nix

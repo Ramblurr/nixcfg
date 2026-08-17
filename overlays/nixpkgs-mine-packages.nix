@@ -18,7 +18,6 @@ in
   #inherit (nixpkgs-mine) llm;
   inherit (nixpkgs-mine) clojure-lsp;
   inherit (nixpkgs-mine) davis;
-  #inherit (nixpkgs-mine) plex;
   inherit (nixpkgs-mine) emacs-pgtk;
   #inherit (nixpkgs-mine) gost;
   inherit (nixpkgs-mine) ocis;
