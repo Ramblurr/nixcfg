@@ -40,7 +40,6 @@ let
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
   gluetunStateDir = "${stateDirActual}/gluetun";
-  overseerrStateDir = "${stateDirActual}/overseerr";
   qbittorrentStateDir = "${stateDirActual}/qbittorrent";
   qbittorrentConfigDir = "${qbittorrentStateDir}/qBittorrent";
   qbittorrentConfigFile = "${qbittorrentConfigDir}/qBittorrent.conf";
@@ -94,7 +93,6 @@ in
       description = "The base domaint to use for all services";
     };
     ports = {
-      overseerr = lib.mkOption { type = lib.types.port; };
       qbittorrent = lib.mkOption { type = lib.types.port; };
     };
     mediaNfsShare = lib.mkOption { type = lib.types.str; };
@@ -118,7 +116,6 @@ in
       "d ${dlLocalPath} 0770 ${mediaUser} ${mediaGroup}"
       "A ${dlLocalPath} - - - - d:group:${mediaGroup}:rwx"
       "d ${gluetunStateDir} 0700 root root"
-      "d ${overseerrStateDir} 0770 ${mediaUser} ${mediaGroup}"
       "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
     ];
 
@@ -320,33 +317,6 @@ in
             HealthStartPeriod = "30s";
             HealthOnFailure = "kill";
             Notify = "healthy";
-          };
-        };
-
-        home-dl-overseerr = {
-          # Intentionally uses Podman's default networking, not the Gluetun/qBittorrent VPN network.
-          autoStart = true;
-          serviceConfig = {
-            RestartSec = "30";
-            Restart = "always";
-          };
-          unitConfig = {
-            RequiresMountsFor = [ stateDirActual ];
-          };
-          containerConfig = {
-            # renovate: docker-image
-            Image = "lscr.io/linuxserver/overseerr:1.35.0@sha256:6108ed066d4a919c05251d9dab041c1e55e67ff7247e7b31be97b65ffcbaeeb1";
-            ContainerName = "home-dl-overseerr";
-            PublishPort = [ "127.0.0.1:${toString cfg.ports.overseerr}:5055" ];
-            User = toString mediaUid;
-            Group = toString mediaGid;
-            Environment = [
-              "PUID=${toString mediaUid}"
-              "PGID=${toString mediaGid}"
-              "TZ=Europe/Berlin"
-              "UMASK=007"
-            ];
-            Volume = [ "${overseerrStateDir}:/config:rw" ];
           };
         };
 
