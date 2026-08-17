@@ -14,12 +14,6 @@ in
       "nix-cache.int.${homeDomain}"
       "garage.data.${homeDomain}"
       "garage.mgmt.${homeDomain}"
-      "s3.data.${homeDomain}"
-      "*.s3.data.${homeDomain}"
-      "minio.data.${homeDomain}"
-      "*.s3.mgmt.${homeDomain}"
-      "minio.mgmt.${homeDomain}"
-      "s3.mgmt.${homeDomain}"
     ];
     protocols = [
       "h1"

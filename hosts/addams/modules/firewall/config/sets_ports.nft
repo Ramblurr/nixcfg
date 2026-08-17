@@ -93,10 +93,6 @@ set roon_proxy_ports {
   }
 }
 
-set minio_ports {
-  type inet_service
-  elements = { 9100 }
-}
 
 set wireguard_ports {
   type inet_service

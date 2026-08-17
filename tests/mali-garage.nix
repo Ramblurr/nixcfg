@@ -10,7 +10,6 @@ let
       ../modules/services/caddy.nix
       ../modules/zfs-attrs.nix
       ../hosts/mali/caddy.nix
-      ../hosts/mali/minio.nix
       ../hosts/mali/garage.nix
       {
         options.repo.secrets = lib.mkOption {
@@ -159,15 +158,19 @@ assert lib.hasInfix "@plain_garage_data host garage.data.example.test" caddy.ext
 assert lib.hasInfix "remote_ip 198.51.100.0/24" caddy.extraConfig;
 assert lib.hasInfix "@plain_garage_management host garage.mgmt.example.test" caddy.extraConfig;
 assert lib.hasInfix "remote_ip 192.0.2.0/24" caddy.extraConfig;
-assert cfg.services.minio.enable;
-assert cfg.services.minio.dataDir == [ "/mnt/tank2/services/minio" ];
-assert cfg.services.minio.rootCredentialsFile == "/run/secrets/minio-root-credentials";
-assert cfg.services.minio.listenAddress == "127.0.0.1:9000";
-assert cfg.services.minio.consoleAddress == "127.0.0.1:8999";
-assert cfg.modules.services.caddy.routes.s3.publicHost == "s3.data.example.test";
-assert cfg.modules.services.caddy.routes.s3.aliases == [ "s3.mgmt.example.test" ];
-assert cfg.modules.services.caddy.routes.minio-console.publicHost == "minio.data.example.test";
-assert cfg.modules.services.caddy.routes.minio-console.aliases == [ "minio.mgmt.example.test" ];
+assert !cfg.services.minio.enable;
+assert !(builtins.hasAttr "minio" cfg.systemd.services);
+assert !(builtins.hasAttr "minio-root-credentials" cfg.sops.secrets);
+assert !(builtins.elem "/var/lib/minio/" cfg.environment.persistence."/persist".directories);
+assert lib.all (
+  package: !(lib.hasPrefix "minio" (lib.getName package))
+) cfg.environment.systemPackages;
+assert !(builtins.elem "minio-2025-10-15T17-29-55Z" (pkgs.config.permittedInsecurePackages or [ ]));
+assert !(cfg.modules.services.caddy.routes ? s3);
+assert !(cfg.modules.services.caddy.routes ? minio-console);
+assert lib.all (
+  host: !(lib.hasInfix "minio" host) && !(lib.hasInfix "s3." host)
+) cfg.modules.services.caddy.edge.certificateHosts;
 pkgs.runCommand "mali-garage-test"
   {
     nativeBuildInputs = [ pkgs.caddy-with-security ];
@@ -179,7 +182,7 @@ pkgs.runCommand "mali-garage-test"
     caddy adapt --adapter caddyfile --config ${caddy.configFile} > "$TMPDIR/caddy.json"
     grep -Fq 'garage.data.example.test' "$TMPDIR/caddy.json"
     grep -Fq 'garage.mgmt.example.test' "$TMPDIR/caddy.json"
-    grep -Fq 'minio.data.example.test' "$TMPDIR/caddy.json"
-    grep -Fq 's3.data.example.test' "$TMPDIR/caddy.json"
+    ! grep -Fq 'minio.data.example.test' "$TMPDIR/caddy.json"
+    ! grep -Fq 's3.data.example.test' "$TMPDIR/caddy.json"
     touch "$out"
   ''
