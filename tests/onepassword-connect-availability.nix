@@ -133,10 +133,15 @@ let
         "${credentials.path}:/config/1password-credentials.json:ro"
       ]
     && sync.containerConfig.Volume == api.containerConfig.Volume
+    && !(builtins.elem "sops-install-secrets.service" (api.unitConfig.Requires or [ ]))
+    && !(builtins.elem "sops-install-secrets.service" (api.unitConfig.After or [ ]))
+    && !(builtins.elem "sops-install-secrets.service" (sync.unitConfig.Requires or [ ]))
+    && !(builtins.elem "sops-install-secrets.service" (sync.unitConfig.After or [ ]))
     && credentials.sopsFile == credentialsFile
     && credentials.owner == user.name
     && credentials.group == group.name
     && credentials.mode == "0400"
+    && credentials.restartUnits == [ ]
     &&
       service.cacheDataset == (
         if name == "mali" then

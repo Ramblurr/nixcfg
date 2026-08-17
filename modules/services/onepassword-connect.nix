@@ -110,10 +110,6 @@ in
       owner = cfg.user.name;
       group = cfg.group.name;
       mode = "0400";
-      restartUnits = [
-        "op-connect-api.service"
-        "op-connect-sync.service"
-      ];
     };
 
     systemd.tmpfiles.rules = [ "d ${dataDir} 0770 ${cfg.user.name} ${cfg.group.name}" ];
@@ -174,10 +170,6 @@ in
         op-connect-api = {
           inherit (cfg.user) uid;
           autoStart = true;
-          unitConfig = {
-            Requires = [ "sops-install-secrets.service" ];
-            After = [ "sops-install-secrets.service" ];
-          };
           serviceConfig = {
             ExecStartPre = [ "${pkgs.coreutils}/bin/test -r ${credentials.path}" ];
             RestartSec = "10";
@@ -202,10 +194,6 @@ in
         op-connect-sync = {
           inherit (cfg.user) uid;
           autoStart = true;
-          unitConfig = {
-            Requires = [ "sops-install-secrets.service" ];
-            After = [ "sops-install-secrets.service" ];
-          };
           serviceConfig = {
             ExecStartPre = [ "${pkgs.coreutils}/bin/test -r ${credentials.path}" ];
             RestartSec = "2";
