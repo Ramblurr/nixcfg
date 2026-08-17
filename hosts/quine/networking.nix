@@ -56,6 +56,18 @@
           ]
       ))
       // {
+        "30-data" = {
+          dhcpV4Config = {
+            UseRoutes = lib.mkForce false;
+            UseDNS = lib.mkForce false;
+          };
+          dhcpV6Config.UseDNS = lib.mkForce false;
+          networkConfig = {
+            IPv6AcceptRA = lib.mkForce false;
+            LinkLocalAddressing = lib.mkForce false;
+            MulticastDNS = lib.mkForce false;
+          };
+        };
         "30-prim" = {
           dhcpV4Config = {
             UseRoutes = lib.mkForce true;
