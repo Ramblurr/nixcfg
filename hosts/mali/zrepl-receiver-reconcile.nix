@@ -1,0 +1,165 @@
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.services.rsyncnet-zrepl-reconcile;
+  serviceName = "rsyncnet-zrepl-reconcile";
+  expectedBundleId = "v1-ccc29d6eb3b5a463-initial";
+  validRuntimeSource =
+    path:
+    let
+      segments = lib.drop 2 (lib.splitString "/" path);
+    in
+    lib.hasPrefix "/run/" path
+    && path != "/run/"
+    && !lib.hasInfix "//" path
+    && !lib.hasInfix "/nix/store/" path
+    && lib.all (
+      segment:
+      segment != ""
+      && segment != "."
+      && segment != ".."
+      && builtins.match "[A-Za-z0-9._+-]+" segment != null
+    ) segments;
+  expectedDatasets = pkgs.writeText "rsyncnet-zrepl-validation-datasets" (
+    builtins.readFile ../../scripts/rsyncnet-zrepl-bootstrap/validation-datasets
+  );
+  reconciler = pkgs.writeShellApplication {
+    name = serviceName;
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gawk
+      pkgs.gnugrep
+      pkgs.openssh
+    ];
+    text = builtins.readFile ../../scripts/rsyncnet-zrepl-reconcile/reconcile.sh;
+  };
+in
+{
+  options.services.rsyncnet-zrepl-reconcile = {
+    enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the Mali-originated rsync.net zrepl receiver reconciliation timer.";
+    };
+
+    receiverHost = lib.mkOption {
+      type = lib.types.strMatching "[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*";
+      description = "Receiver hostname from account-specific private wiring.";
+    };
+
+    receiverAlias = lib.mkOption {
+      type = lib.types.strMatching "[A-Za-z0-9._-]+";
+      default = "rsyncnet";
+      description = "Non-secret bounded receiver label used in operational evidence.";
+    };
+
+    identityFile = lib.mkOption {
+      type = lib.types.str;
+      description = "Canonical /run source for Mali's dedicated SSH identity; deployment must prove its target remains under /run.";
+    };
+
+    knownHostsFile = lib.mkOption {
+      type = lib.types.str;
+      description = "Canonical /run source for the pinned host-key file; deployment must prove its target remains under /run.";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = validRuntimeSource cfg.identityFile;
+        message = "rsyncnet-zrepl-reconcile identityFile must be a canonical /run path outside the Nix store";
+      }
+      {
+        assertion = validRuntimeSource cfg.knownHostsFile;
+        message = "rsyncnet-zrepl-reconcile knownHostsFile must be a canonical /run path outside the Nix store";
+      }
+    ];
+
+    users.groups.${serviceName} = { };
+    users.users.${serviceName} = {
+      isSystemUser = true;
+      group = serviceName;
+    };
+
+    environment.persistence."/persist".directories = [
+      {
+        directory = "/var/lib/${serviceName}";
+        user = serviceName;
+        group = serviceName;
+        mode = "0700";
+      }
+    ];
+
+    systemd.services.${serviceName} = {
+      description = "Reconcile the persistent rsync.net zrepl receiver bundle";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      environment = {
+        EXPECTED_BUNDLE_ID = expectedBundleId;
+        EXPECTED_DATASETS_FILE = expectedDatasets;
+        RECEIVER_ALIAS = cfg.receiverAlias;
+        RECEIVER_HOST = cfg.receiverHost;
+        SSH_DEADLINE_SECONDS = "900";
+        STATE_DIRECTORY = "/var/lib/${serviceName}";
+        RUNTIME_DIRECTORY = "/run/${serviceName}";
+      };
+      serviceConfig = {
+        Type = "oneshot";
+        User = serviceName;
+        Group = serviceName;
+        ExecStart = lib.getExe reconciler;
+        LoadCredential = [
+          "identity:${cfg.identityFile}"
+          "known-hosts:${cfg.knownHostsFile}"
+        ];
+        TimeoutStartSec = "20min";
+        StateDirectory = serviceName;
+        StateDirectoryMode = "0700";
+        RuntimeDirectory = serviceName;
+        RuntimeDirectoryMode = "0700";
+        UMask = "0077";
+
+        CapabilityBoundingSet = "";
+        LockPersonality = true;
+        MemoryDenyWriteExecute = true;
+        NoNewPrivileges = true;
+        PrivateDevices = true;
+        PrivateTmp = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHome = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectProc = "invisible";
+        ProtectSystem = "strict";
+        RemoveIPC = true;
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+      };
+    };
+
+    systemd.timers.${serviceName} = {
+      description = "Run rsync.net zrepl receiver reconciliation every 15 minutes";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "*:0/15";
+        RandomizedDelaySec = "2min";
+        Persistent = true;
+        Unit = "${serviceName}.service";
+      };
+    };
+  };
+}
