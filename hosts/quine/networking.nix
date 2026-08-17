@@ -28,6 +28,11 @@
       };
     };
     netdevs = {
+      "20-vlan-data".netdevConfig = lib.mkForce {
+        Kind = "vlan";
+        Name = "vlan-data";
+        MTUBytes = 1500;
+      };
       "30-brwork" = {
         netdevConfig = {
           Name = "brwork";
