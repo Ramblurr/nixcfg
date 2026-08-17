@@ -30,9 +30,10 @@ in
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
-      isSystemUser = true;
+      isNormalUser = true;
       group = lib.mkForce cfg.group.name;
-      home = "/var/lib/onepassword-connect";
+      home = dataDir;
+      shell = pkgs.shadow;
       linger = true;
       createHome = false;
       autoSubUidGidRange = true;
@@ -50,30 +51,6 @@ in
       "rpool/encrypted/safe/svc/onepassword-connect"."com.sun:auto-snapshot" = "false";
     };
 
-    systemd.services."podman-create-op-connect" =
-      let
-        podName = "op-connect";
-        ports = [
-          "127.0.0.1:${toString cfg.ports.api}:8080"
-          "127.0.0.1:${toString cfg.ports.sync}:8081"
-        ];
-        portsMapping = lib.concatMapStrings (port: " -p " + port) ports;
-      in
-      {
-        path = [
-          pkgs.coreutils
-          config.virtualisation.podman.package
-        ];
-        script = ''
-          podman pod exists ${podName} || podman pod create -n ${podName} ${portsMapping} --dns ${builtins.head config.repo.secrets.global.nameservers}
-        '';
-
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = "yes";
-          ExecStop = "podman pod rm -i -f ${podName}";
-        };
-      };
     modules.services.caddy.routes.onepassword-connect = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.api}";
@@ -81,14 +58,23 @@ in
 
     virtualisation.quadlet = {
       enable = true;
+      pods.op-connect = {
+        inherit (cfg.user) uid;
+        autoStart = true;
+        podConfig = {
+          PodName = "op-connect";
+          PublishPort = [
+            "127.0.0.1:${toString cfg.ports.api}:8080"
+            "127.0.0.1:${toString cfg.ports.sync}:8081"
+          ];
+          DNS = [ (builtins.head config.repo.secrets.global.nameservers) ];
+          UserNS = "keep-id:uid=999,gid=999";
+        };
+      };
       containers = {
         op-connect-api = {
+          inherit (cfg.user) uid;
           autoStart = true;
-          unitConfig = {
-            RequiresMountsFor = [ dataDir ];
-            After = [ "podman-create-op-connect.service" ];
-            Requires = [ "podman-create-op-connect.service" ];
-          };
           serviceConfig = {
             RestartSec = "10";
             Restart = "always";
@@ -102,18 +88,13 @@ in
               "OP_BUS_PEERS=localhost:11221"
               "OP_SESSION=/config/1password-credentials.json"
             ];
-            User = toString cfg.user.uid;
-            PodmanArgs = [ "--pod=op-connect" ];
+            Pod = "op-connect.pod";
             Volume = [ "${dataDir}:/config:rw" ];
           };
         };
         op-connect-sync = {
+          inherit (cfg.user) uid;
           autoStart = true;
-          unitConfig = {
-            RequiresMountsFor = [ dataDir ];
-            After = [ "podman-create-op-connect.service" ];
-            Requires = [ "podman-create-op-connect.service" ];
-          };
           serviceConfig = {
             RestartSec = "2";
             Restart = "always";
@@ -128,8 +109,7 @@ in
               "OP_BUS_PEERS=localhost:11220"
               "OP_SESSION=/config/1password-credentials.json"
             ];
-            User = toString cfg.user.uid;
-            PodmanArgs = [ "--pod=op-connect" ];
+            Pod = "op-connect.pod";
             Volume = [ "${dataDir}:/config:rw" ];
           };
         };
