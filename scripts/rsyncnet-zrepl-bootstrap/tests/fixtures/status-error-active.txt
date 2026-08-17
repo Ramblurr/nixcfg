@@ -1,0 +1,5 @@
+Job: pull_mali
+Type: pull
+Replication:
+  tank2/services/books STEPPING step 1
+  tank2/replication/debord PLANNING-ERROR sender filesystem is placeholder

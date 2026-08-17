@@ -1,0 +1,5 @@
+zrepl.yml|/usr/local/etc/zrepl/zrepl.yml|600
+tls/mali.crt|/usr/local/etc/zrepl/mali.crt|644
+tls/rsyncnet.crt|/usr/local/etc/zrepl/rsyncnet.crt|644
+tls/rsyncnet.key|/usr/local/etc/zrepl/rsyncnet.key|600
+rc.conf.d-zrepl|/etc/rc.conf.d/zrepl|644

@@ -1,0 +1,4 @@
+Installed packages to be UPGRADED:
+        pkg: 2.6.2_1 -> 2.7.5
+
+Number of packages to be upgraded: 1
