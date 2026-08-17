@@ -8,8 +8,8 @@ let
   cfg = config.modules.services.matrix-synapse.bridges.discord;
   rootCfg = config.modules.services.matrix-synapse;
   dataDir = "${rootCfg.dataDir}/mautrix-discord";
-  registrationFile = config.sops.secrets."mautrix-discord/registration.yaml".path;
-  doublepuppetFile = config.sops.secrets."doublepuppet.yaml".path;
+  registrationFile = config.sops.templates."mautrix-discord-registration.yaml".path;
+  doublepuppetFile = config.sops.templates."doublepuppet.yaml".path;
   settingsFormat = pkgs.formats.yaml { };
   settingsFileUnsubstituted = settingsFormat.generate "mautrix-discord-config-unsubstituted.yaml" {
     homeserver = {
@@ -117,11 +117,32 @@ in
       gid = lib.mkForce cfg.group.gid;
     };
 
-    sops.secrets."mautrix-discord/registration.yaml" = {
-      sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+    sops.secrets = {
+      mautrix-discord-as-token.sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+      mautrix-discord-hs-token.sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+    };
+
+    sops.templates."mautrix-discord-registration.yaml" = {
+      path = "/run/secrets/mautrix-discord/registration.yaml";
       owner = cfg.user.name;
       group = rootCfg.bridgesGroup.name;
       mode = "0440";
+      content = ''
+        id: discord
+        url: http://127.0.0.1:10008
+        as_token: ${config.sops.placeholder.mautrix-discord-as-token}
+        hs_token: ${config.sops.placeholder.mautrix-discord-hs-token}
+        sender_localpart: y6QKpho5nfjXGtfiN1sk7theWAS2q2nw
+        rate_limited: false
+        namespaces:
+          users:
+            - regex: ^@discordbot:outskirtslabs\.com$
+              exclusive: true
+            - regex: ^@discord_.*:outskirtslabs\.com$
+              exclusive: true
+        de.sorunome.msc2409.push_ephemeral: true
+        push_ephemeral: true
+      '';
     };
 
     systemd.tmpfiles.rules = [
@@ -130,7 +151,7 @@ in
     ];
 
     services.matrix-synapse.settings.app_service_config_files = [
-      config.sops.secrets."mautrix-discord/registration.yaml".path
+      registrationFile
     ];
 
     systemd.services.mautrix-discord-genregistration = {
