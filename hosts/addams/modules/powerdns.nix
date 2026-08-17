@@ -45,7 +45,7 @@ in
       views=yes
       proxy-protocol-from=127.0.0.1
     '';
-    secretFile = config.sops.secrets."powerdns/env".path;
+    secretFile = config.sops.templates."powerdns.env".path;
   };
 
   modules.zfs.datasets.properties = {
@@ -54,11 +54,16 @@ in
   };
   systemd.tmpfiles.rules = [ "d ${directory} 0750 ${user} ${group}" ];
 
-  sops.secrets."powerdns/env" = {
+  sops.secrets.pdns-api-key-hash = { };
+  sops.templates."powerdns.env" = {
     owner = user;
     inherit group;
+    mode = "0400";
+    content = ''
+      KEA_TSIG_KEY=${config.sops.placeholder.pdns-kea-tsig-key}
+      API_KEY_HASH=${config.sops.placeholder.pdns-api-key-hash}
+    '';
   };
-
   systemd.services.pdns.serviceConfig = {
     ExecStartPost = pkgs.writeScript "pdns-ddns-setup.sh" ''
       #!${pkgs.bash}/bin/bash
