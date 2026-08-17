@@ -17,6 +17,7 @@ in
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
+    ./zrepl-receiver-reconcile.nix
     ./caddy.nix
     ./minio.nix
     ./garage.nix

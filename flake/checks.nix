@@ -7,6 +7,7 @@
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
         mali-garage = import ../tests/mali-garage.nix { inherit inputs pkgs; };
         mali-zrepl-retention = import ../tests/mali-zrepl-retention.nix { inherit inputs pkgs; };
+        mali-zrepl-reconcile = import ../tests/mali-zrepl-reconcile.nix { inherit inputs pkgs; };
         zrepl-outage-continuity = import ../tests/zrepl-outage-continuity.nix { inherit pkgs; };
         common-server = import ../tests/common-server.nix { inherit inputs pkgs; };
         debord-monitoring = import ../tests/debord-monitoring.nix { inherit inputs pkgs; };
