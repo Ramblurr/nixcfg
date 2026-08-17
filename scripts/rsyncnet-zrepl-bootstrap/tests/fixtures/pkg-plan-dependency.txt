@@ -1,0 +1,5 @@
+New packages to be INSTALLED:
+        libfoo: 1.0
+        zrepl: 0.7.0_5
+
+Number of packages to be installed: 2

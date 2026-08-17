@@ -1,0 +1,4 @@
+Job: pull_mali
+Type: pull
+Replication:
+  tank2/services/books STEPPING step 1

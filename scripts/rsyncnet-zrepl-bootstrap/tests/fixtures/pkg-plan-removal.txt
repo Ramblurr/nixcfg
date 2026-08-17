@@ -1,0 +1,8 @@
+New packages to be INSTALLED:
+        zrepl: 0.7.0_5
+
+Installed packages to be REMOVED:
+        other-backup: 2.0
+
+Number of packages to be installed: 1
+Number of packages to be removed: 1

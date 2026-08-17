@@ -1,0 +1,17 @@
+format_version=1
+bundle_id=@BUNDLE_ID@
+receiver_hostname=fm2124b.rsync.net
+freebsd_arch=amd64
+freebsd_release_pattern=14.*
+package_name=zrepl
+package_version=0.7.0_5
+package_origin=sysutils/zrepl
+package_arch=FreeBSD:14:amd64
+pruning_mode=keep-all
+live_config=/usr/local/etc/zrepl/zrepl.yml
+live_rc=/etc/rc.conf.d/zrepl
+pool_name=data1
+persistent_dataset=data1/local
+receiver_root=data1/replication/mali
+minimum_pool_free_bytes=107374182400
+minimum_pool_free_percent=10
