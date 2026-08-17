@@ -16,11 +16,6 @@ set tailscale_dest_ports {
 set blocked_discovery_ports {
   type inet_service
   elements = {
-    # plex
-    32410,
-    32412,
-    32413,
-    32414,
     # bluesound
     137,
     11430,
@@ -95,23 +90,6 @@ set roon_proxy_ports {
   elements = {
     8510,
     443
-  }
-}
-
-set plex_server_ports {
-  type inet_service
-  elements = {
-    32400
-  }
-}
-
-set plex_ports {
-  type inet_service
-  elements = {
-    32414,
-    32413,
-    32412,
-    32410
   }
 }
 
