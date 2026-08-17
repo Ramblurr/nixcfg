@@ -8,6 +8,12 @@
         onepassword-connect-availability = import ../tests/onepassword-connect-availability.nix {
           inherit inputs pkgs;
         };
+        onepassword-systemd-credentials = import ../tests/onepassword-systemd-credentials.nix {
+          inherit inputs pkgs;
+        };
+        onepassword-systemd-credentials-vm = import ../tests/onepassword-systemd-credentials-vm.nix {
+          inherit inputs pkgs;
+        };
         mali-garage = import ../tests/mali-garage.nix { inherit inputs pkgs; };
         mali-zrepl-retention = import ../tests/mali-zrepl-retention.nix { inherit inputs pkgs; };
         postgresql-backup-secrets = import ../tests/postgresql-backup-secrets.nix { inherit inputs pkgs; };
