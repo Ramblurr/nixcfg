@@ -134,11 +134,28 @@ in
       };
     };
 
-    sops.secrets."doublepuppet.yaml" = {
-      sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+    sops.secrets = {
+      doublepuppet-as-token.sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+      doublepuppet-hs-token.sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+    };
+
+    sops.templates."doublepuppet.yaml" = {
+      path = "/run/secrets/doublepuppet.yaml";
       owner = cfg.user.name;
       group = cfg.bridgesGroup.name;
-      mode = "440";
+      mode = "0440";
+      content = ''
+        id: doublepuppet
+        url:
+        as_token: ${config.sops.placeholder.doublepuppet-as-token}
+        hs_token: ${config.sops.placeholder.doublepuppet-hs-token}
+        sender_localpart: XKuzraQqsXp6OXZ
+        rate_limited: false
+        namespaces:
+          users:
+            - regex: '@.*:outskirtslabs\.com'
+              exclusive: false
+      '';
     };
 
     sops.secrets."signingKey" = {
@@ -162,7 +179,7 @@ in
       enable = true;
       dataDir = synapseDataDir;
       settings = {
-        app_service_config_files = [ config.sops.secrets."doublepuppet.yaml".path ];
+        app_service_config_files = [ config.sops.templates."doublepuppet.yaml".path ];
 
         public_baseurl = "https://${cfg.domain}";
         report_stats = true;
