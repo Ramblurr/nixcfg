@@ -849,12 +849,14 @@
                 :data-init (when additions? "if (!el.open) el.showModal()")}
        [:h2 "Add record"]
        (when additions? (editor-fields draft (visible-errors session)))]
-      [:dialog {:id "delete-dialog"
-                :data-preserve-attr "open"}
+      [:dialog {:id "delete-dialog"}
        [:h2 "Delete record?"]
        [:p "This stages deletion from the working copy. Disk is unchanged until Commit changes."]
        [:div {:class "actions"}
-        [:button {:class "danger" :data-on:click (action-js confirm-delete)} "Delete"]
+        [:button {:class "danger"
+                  :data-on:click (str "el.closest('dialog').close(); "
+                                      (action-js confirm-delete))}
+         "Delete"]
         [:button {:data-on:click "document.getElementById('delete-dialog').close()"} "Cancel"]]]])))
 
 (defn update-session! [{:keys [sessions_ sid]} f]
@@ -1162,6 +1164,17 @@
       (post! "a" select-zone-fn {:zone "home"})
       (post! "a" begin-edit-fn {:recordid "home-text-txt"})
       (post! "a" confirm-delete-fn {})
+      (let [forms (tree-seq coll? seq
+                            (page {:sid "a" :sessions_ sessions_ :zones zones}))]
+        (test/is (= {:dialog {:id "delete-dialog"}
+                     :confirm-action (str "el.closest('dialog').close(); "
+                                          (action-js confirm-delete))}
+                    {:dialog (some #(when (= "delete-dialog" (get-in % [1 :id]))
+                                      (second %))
+                                   forms)
+                     :confirm-action (some #(when (= "danger" (get-in % [1 :class]))
+                                              (get-in % [1 :data-on:click]))
+                                           forms)})))
       (spit home-path "{external}\n")
       (post! "a" commit-changes-fn {})
       (test/is (= {:message "Source changed externally: home"
@@ -1180,8 +1193,8 @@
                    :disk (slurp home-path)
                    :error? (str/starts-with? (get-in @sessions_ ["a" :message])
                                              "Reset failed:")}))
-      (println "dns-admin-ui: 20 fixture assertions passed")
-      {:test 20 :pass 20 :fail 0 :error 0})))
+      (println "dns-admin-ui: 21 fixture assertions passed")
+      {:test 21 :pass 21 :fail 0 :error 0})))
 
 (defn parse-args [args]
   (loop [options {:port 8083
