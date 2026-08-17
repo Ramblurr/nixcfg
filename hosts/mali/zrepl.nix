@@ -130,13 +130,10 @@ in
             name = "mali_snap";
             type = "snap";
             filesystems = {
-              "fast<" = false;
-              "fast/services/garage/metadata" = true;
               "rpool<" = false;
               "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
-              "tank2/services/garage<" = true;
               "tank2/iocage<" = false;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
@@ -172,15 +169,12 @@ in
               client_cns = [ "ludwig" ];
             };
             filesystems = {
-              "fast<" = false;
-              "fast/services/garage/metadata" = true;
               "rpool<" = false;
               "rpool2<" = false;
               "rpool/encrypted/safe<" = true;
               "rpool2/encrypted/safe<" = true;
               "tank/backup<" = false;
               "tank2<" = true;
-              "tank2/services/garage<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
               "tank2/replication/dewey/rpool/encrypted/safe<" = true;
@@ -204,13 +198,10 @@ in
               client_cns = [ "rsyncnet" ];
             };
             filesystems = {
-              "fast<" = false;
-              "fast/services/garage/metadata" = true;
               "rpool<" = false;
               "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
-              "tank2/services/garage<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
               "tank2/replication<" = true;
