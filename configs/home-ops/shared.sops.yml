@@ -17,7 +17,9 @@ paperless:
     oidcProvider: ENC[AES256_GCM,data:+p64esJhwtOI9tsZygw01F3kixtIT8BalSGkQ3TyX5rYT3aZmRhiHS8p6nlTqMX0LTQQTBAzAjf+RPo6zIrc4vB0WK/JkqTu1+35FhamoXdE12Gik0Kwn19bvJiAL9pinTCQCZbtNyoS3ptYIqHCjWiK39kwx2QyPfYynBW7zKj0MEP1hdPgB4UXiFGJ7jPBtO4OTTKBitiMEMdovcrE7D6mwYMnlobKEsGAsZCtAO4xoddSzmPNqsMmU4kFcZV3+QWNWbQYC7Np81U2rm74fvgbeR1XuPFM6x5S7J52GpqGTI0ocTVL5yuItJMi6a0p8LDbNDGyynkYSvjHFrUIPfzXYb2EtKsNjRqleNhYoDO+pFk4lWb2vg/rqFIiYRU16rCv5VZ34pgetY9SW+hgbND+Jf4apsDmaH2sjI6gmlGyzN/Sc+Bkndr8scqh7OGr7Jv1FnYERR7maIJkE7b6iI4Vek58Yk/+zCCk0ZlbHjIJT5uWdhikA6yYisuJfA==,iv:qT+T80ZmtmjJHuFSnXu9Nn78yT9FAxLFoZBxI+tSsx8=,tag:LyYzMQq3jNZEqf4OjUGoDA==,type:str]
 gickup-github-token-label: ENC[AES256_GCM,data:p1e5zrakOWF8hsGzyotoB5UrR+Y=,iv:KbiKBljIJNSNHKdyjXHzmHqNpl2SLtKyqxVGI333Lts=,tag:W2bbWKzVLQgq3lEMDQ9jyg==,type:str]
 gickup-github-token-info: ENC[AES256_GCM,data:RLzCiie+WkFYycrAeS7b38Y+oDhmBFnV,iv:XlhfF74VZV2JNfLeG63+RoFEKYNIOjtHjwFNfwRJDQk=,tag:J0JgMNHkZA9/0KsZXCeXSA==,type:str]
-gickup.yaml: ENC[AES256_GCM,data:zkc8T48V2gJmcMzyLYO2/K375sBgSiUq6CbZuokscxsYpxokHPOWN0Jb8QQUUKZZJP5c2qMoGbbi1x68lUO6qtGLbCiD0sejSA3j74OhGlLHLNkAfdDvnLA34aXt/p9u2yTNvW9QQ6BK7RRPY783QSwKea0zyVo8d5S4cFVw96l3hlmwsCEiIF+mHA+6Yt/kJzce09yiPQyEvGlNR7/8iwLdL9h9+FDutnKX4/jVWBwGOYoNrnqjxoCvpedJuaE5qpauJdD5jOJGkvBodil2F0ElvizSr1aRnnFPN22Z775h2cecqZHZIszM143iLrOxVHRwMXLM5JNL31CJJ4hPUTiIWTKI8Y+JgiImsNHMCjkirVfONHLoUVw38a2AmQCwHcb6CODU8vIGvnBJPf91e9t9XH7i62pdAR6za1QLNWsnuV84o9IujLOPa8nsu6/xOpJ+oiu6jBVKgfZLJHlW6JQZ0WEJ3gBTWxieCziZBuHyw0KPQDFNQDItlnROFyCFkWqlqqwh1h4CCSPF/CuVYFMaxobNdtQKGTrMbfrVeyTcnVhXnpJJeE1yBZSoAtPsHB+R+qHHdqPHX4iHvrM8vSZPh1W0MoIIsyfgNgAnOkr0cikZaAA6QZMlygYpl3aTbIL2od0oyQAdj1EoiTTGGxSCNbj8CNAiLO4q91g2/Q5Q0Mk3S5fflW7tNWVmfc39HV2GxTFqsRyZND8GZ5quBc195NPqNGDFxc8ZGH449GRAGH9gcGZTCmuR+7qiUfBdazvAowdJ7O/yWpPnTHsh9x4hSO0pHYvI0sqFgIDJ1ViF8EmlIIqrStA6Y0+rVx+/jXqulzEjKH9+U9MnU3btZpgA9tw8nQV8douD0MVK0xnpIfndCI9ZcDOByQv654mnJhaYhqnxbwG0X1Ol1gNBL+W6UVCY17rNJDVpWPN+FKeF,iv:cflcvgpCrfJy07aA6UctFf3a3PpH1e/6BR+H+vMF1k0=,tag:ma40FAHECn/9oB6bSQmiaQ==,type:str]
+gickup:
+    github-token-ramblurr: ENC[AES256_GCM,data:CI0RokXlCAW9cfzm2ieGxzH5LqrCOQTArUTc2NPeDXMHEbl0xn5sYygZMj87pYe/PtaFoRzBext+FTzv8JK6IDi3XH4wrggPsEm5jlBCCCQxTCqsGCy/BdqnpbK6,iv:r+O+cqymjjXr9c5UWa42gYicFl09A5ZoZsN52bL096A=,tag:I/3CZm+M0093vxWiBw5j8A==,type:str]
+    github-token-ol: ENC[AES256_GCM,data:aAlkdhaFbY3VOVEmavkk6NrE6rNJylcgyrQ18eBV410Om6ZyfQWhM/H6ufS7TXSy+LcWaTg83a1+4o4KxC581cV2avyLWWqERc+BONzilFwgMxw9tFl7UQETDh/M,iv:SigUkqapPucXR4BDToscxlz851Aw0R9aYEZykv6xbyQ=,tag:Z+N3hLKiUBE+HM3mi2FLXg==,type:str]
 calibre-web-oidc-client-secret: ENC[AES256_GCM,data:5Yz7jexfNCRSysFxEuEGTrmLpo3SESltUAtrzPgXNss=,iv:FHSD0Klq6hL8kIyM5T44d5vFiTryAi3zIIqQkXwmEhE=,tag:H3IM3JLZCR4SizPU071cEw==,type:str]
 calibre-web-caddy-security-signing-key: ENC[AES256_GCM,data:veI/Z/b2oeKP7ACjPNnKKlagfyFx8qWASQ96F6Pdgp0FWAGqIzu2QoSqcnlIgYWPjlZxuYfRJp2O1FmS1Q+giw==,iv:Og/OSQjNYM7Z7tkVSop0qwhCf240l3i4ux4RXFs2jw0=,tag:bLzARhCIzv44hJOMJNcTAQ==,type:str]
 calibre-gui-oidc-client-secret: ENC[AES256_GCM,data:gif9nAb5ht9t0QB239H/13PKnaNEXvreXSnayPK7wDI=,iv:/XeYD/T/BIgyiT62STQH1Eo3iYTkjbal3R1+3ZM6OCI=,tag:aX3gfxZRZv0wxn/hEG/bzA==,type:str]
@@ -123,7 +125,7 @@ sops:
             vvw3AOcsEZleUlU4td8MQgbIEG8p94WbMAoAG/DPIOprK2+1ItVwMg==
             -----END AGE ENCRYPTED FILE-----
           recipient: age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
-    lastmodified: "2026-08-17T13:12:55Z"
-    mac: ENC[AES256_GCM,data:ZLAe08ChyaKHNlM8d1Fvw72QpwXunfoErUnv7GQx8kuvVdrNoR701m2w7s72aBtisOuHe8/jBTV6xuQI7I8XJgwL5PbM02y9LwRvI4hEbkXeGEAAdPvxxi3fR+Nbu062FOf5nOQaK1+90lAMAlCOo6RR3zpOJG3lpNVtmlW9ZCo=,iv:Mha6FQbzB/N/h0rbR4llsv3QECOOwYpaAh4Z6VnoDtk=,tag:rFKFAUE7z+B1EdrXKbgM9w==,type:str]
+    lastmodified: "2026-08-17T16:31:27Z"
+    mac: ENC[AES256_GCM,data:ZGmMDL9/M5AbJA90g5S+wmKgexcqQuR54NmrnLlGkzjpw0tZyGFZaWD6zfBC5HpGo3PPpylUQXmtMoM5Xccjg55GmntJM+JXQS8QQt+4xFOeF22FP4rk0ZiyRrHianSRmJD1idXuF6tRb2UY7wOhvx7cADVaIHX2D9xxa6moKoQ=,iv:ys8WilCOUAYNxUg3rT0C/49JOguBTK+EHiGa1C9Cv6g=,tag:YPwy5iqGBq9KD8wWEdem2Q==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.13.2
