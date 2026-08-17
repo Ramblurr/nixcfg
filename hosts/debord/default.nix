@@ -56,7 +56,6 @@ in
     hypervisor.enable = true;
     apps = {
       hindsight.enable = true;
-      onepassword-connect.enable = true;
     };
   };
   modules.services.caddy.edge = {
@@ -65,7 +64,6 @@ in
       "home"
       "nad"
       "octoprint"
-      "op"
     ];
     acmeEmail = config.repo.secrets.global.email.acme;
     redirectStatus = 301;
