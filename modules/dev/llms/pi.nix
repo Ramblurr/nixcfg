@@ -21,6 +21,7 @@ let
     ];
     packages = [
       pkgs.pi-reload
+      pkgs.pi-heartbeat
       pkgs.pi-ghost
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
