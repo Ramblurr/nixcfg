@@ -1,0 +1,4 @@
+name = "zrepl";
+version = "0.7.0_5";
+origin = "sysutils/zrepl";
+arch = "FreeBSD:14:amd64";

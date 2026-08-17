@@ -1,0 +1,10 @@
+bootstrap.sh
+lib.sh
+zrepl.yml
+rc.conf.d-zrepl
+managed-files
+validation-datasets
+bundle.meta
+public-paths
+certificate-paths
+private-paths
