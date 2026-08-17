@@ -5,14 +5,34 @@
 }:
 {
 
-  sops.secrets."maddy-smtp-relay" = { };
+  sops.secrets = {
+    maddy-smtp-password-home = { };
+    maddy-smtp-username-home = { };
+    maddy-smtp-password-work = { };
+    maddy-smtp-username-work = { };
+  };
+  sops.templates.maddy-smtp-relay = {
+    mode = "0400";
+    content = ''
+      SMTP_DOMAIN=${config.repo.secrets.global.domain.home}
+      SMTP_PASSWORD=${config.sops.placeholder.maddy-smtp-password-home}
+      SMTP_PORT=465
+      SMTP_SERVER=smtp.eu.mailgun.org
+      SMTP_USERNAME=${config.sops.placeholder.maddy-smtp-username-home}
+      SMTP_DOMAIN_WORK=${config.repo.secrets.global.domain.work}
+      SMTP_PASSWORD_WORK=${config.sops.placeholder.maddy-smtp-password-work}
+      SMTP_PORT_WORK=465
+      SMTP_SERVER_WORK=smtp.eu.mailgun.org
+      SMTP_USERNAME_WORK=${config.sops.placeholder.maddy-smtp-username-work}
+    '';
+  };
   containers.maddy = {
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
     hostAddress = "10.5.0.1";
     localAddress = config.repo.secrets.global.email.siteRelay;
-    bindMounts."/var/run/secrets/maddy-env".hostPath = config.sops.secrets."maddy-smtp-relay".path;
+    bindMounts."/var/run/secrets/maddy-env".hostPath = config.sops.templates.maddy-smtp-relay.path;
     config = _: {
       system.stateVersion = "24.11";
       networking = {
