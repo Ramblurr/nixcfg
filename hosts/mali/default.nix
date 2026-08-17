@@ -148,50 +148,60 @@ in
     source = config.sops.secrets.fastKey.path;
   };
 
-  users.groups = (removeAttrs home-ops.groups [ "media" ]) // {
-    k8s-nfs.gid = 2000;
-    proxmox.gid = 1004;
-    zigbee2mqtt.gid = 1006;
-    roon.gid = 1017;
-    hassos.gid = 1018;
-    photo-backup.gid = 3000;
-    atticd.gid = 1019;
-  };
-  users.users = (removeAttrs home-ops.users [ "media" ]) // {
-    k8s-nfs = {
-      group = "k8s-nfs";
-      uid = 2000;
-      isSystemUser = true;
+  users.groups =
+    (removeAttrs home-ops.groups [
+      "media"
+      "onepassword-connect"
+    ])
+    // {
+      k8s-nfs.gid = 2000;
+      proxmox.gid = 1004;
+      zigbee2mqtt.gid = 1006;
+      roon.gid = 1017;
+      hassos.gid = 1018;
+      photo-backup.gid = 3000;
+      atticd.gid = 1019;
     };
-    zigbee2mqtt = {
-      group = "zigbee2mqtt";
-      uid = 1006;
-      isNormalUser = true;
-      openssh.authorizedKeys.keys = [
-        ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
-      ];
+  users.users =
+    (removeAttrs home-ops.users [
+      "media"
+      "onepassword-connect"
+    ])
+    // {
+      k8s-nfs = {
+        group = "k8s-nfs";
+        uid = 2000;
+        isSystemUser = true;
+      };
+      zigbee2mqtt = {
+        group = "zigbee2mqtt";
+        uid = 1006;
+        isNormalUser = true;
+        openssh.authorizedKeys.keys = [
+          ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
+        ];
+      };
+      proxmox = {
+        group = "proxmox";
+        uid = 1004;
+        isSystemUser = true;
+      };
+      roon = {
+        group = "roon";
+        isSystemUser = true;
+        uid = 1007;
+      };
+      hassos = {
+        group = "hassos";
+        isSystemUser = true;
+        uid = 1008;
+      };
+      atticd = {
+        group = "atticd";
+        isSystemUser = true;
+        uid = 1009;
+      };
     };
-    proxmox = {
-      group = "proxmox";
-      uid = 1004;
-      isSystemUser = true;
-    };
-    roon = {
-      group = "roon";
-      isSystemUser = true;
-      uid = 1007;
-    };
-    hassos = {
-      group = "hassos";
-      isSystemUser = true;
-      uid = 1008;
-    };
-    atticd = {
-      group = "atticd";
-      isSystemUser = true;
-      uid = 1009;
-    };
-  };
   environment.systemPackages = with pkgs; [
 
     ipmitool
