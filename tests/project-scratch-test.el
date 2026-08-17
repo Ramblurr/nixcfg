@@ -275,6 +275,28 @@
              (sort counts
                    (lambda (left right) (string< (car left) (car right))))))))))))
 
+(ert-deftest my-project-scratch-agenda-cleans-up-temporary-scan-buffer ()
+  (project-scratch-test--with-project (root)
+    (let ((source
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/issues/01.org"
+            "* READY-FOR-AGENT Disposable scan buffer\n")))
+      (with-temp-buffer
+        (delay-mode-hooks (org-mode))
+        (should
+         (my/project-scratch--scan-agenda-file source (current-buffer)))
+        (should-not buffer-file-name)
+        (should-not (buffer-modified-p)))
+      (with-temp-buffer
+        (delay-mode-hooks (org-mode))
+        (cl-letf (((symbol-function 'org-map-entries)
+                   (lambda (&rest _arguments)
+                     (error "Forced scan failure"))))
+          (should-error
+           (my/project-scratch--scan-agenda-file source (current-buffer))))
+        (should-not buffer-file-name)
+        (should-not (buffer-modified-p))))))
+
 (ert-deftest my-project-scratch-agenda-renders-ordered-deferred-dates ()
   (project-scratch-test--with-project (root)
     (let ((today (format-time-string "<%Y-%m-%d %a>")))
