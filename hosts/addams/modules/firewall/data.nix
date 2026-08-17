@@ -320,6 +320,16 @@ let
       ];
     };
 
+    unifi_controller = {
+      from = [ zones.lan0 ];
+      to = [ local_zone ];
+      allowedTCPPorts = [ 8080 ];
+      allowedUDPPorts = [
+        3478
+        10001
+      ];
+    };
+
     powerdns_api = {
       from = [ zones.mgmt ];
       to = [ local_zone ];

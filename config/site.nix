@@ -44,6 +44,8 @@ in
     hosts4 = {
       addams = [
         "192.168.1.1"
+        # UniFi migration: activate only after disconnecting the Cloud Key.
+        "192.168.1.2"
         "192.168.1.3"
       ];
     };
