@@ -73,6 +73,7 @@ set admin_ports {
   type inet_service
   elements = {
     3000, # ntopng
+    8443, # UniFi Network web UI
   }
 }
 set ssh_ports {
