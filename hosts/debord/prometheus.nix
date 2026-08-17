@@ -29,6 +29,27 @@ in
     }
   ];
 
+  modules.services.caddy.edge.certificateHosts = map (host: "${host}.${domain.home}") [
+    "alertmanager"
+    "prom"
+    "thanos"
+  ];
+
+  modules.services.caddy.routes = {
+    prom = {
+      publicHost = "prom.${domain.home}";
+      upstream = "http://127.0.0.1:${toString config.services.prometheus.port}";
+    };
+    thanos = {
+      publicHost = "thanos.${domain.home}";
+      upstream = "http://${config.services.thanos.query.http-address}";
+    };
+    alertmanager = {
+      publicHost = "alertmanager.${domain.home}";
+      upstream = "http://127.0.0.1:${toString config.services.prometheus.alertmanager.port}";
+    };
+  };
+
   services.prometheus.alertmanager = {
     enable = true;
     checkConfig = true;
