@@ -191,9 +191,6 @@ in
       isSystemUser = true;
       uid = 1009;
     };
-    plex = home-ops.users.plex // {
-      extraGroups = [ "k8s-nfs" ];
-    };
   };
   environment.systemPackages = with pkgs; [
 
