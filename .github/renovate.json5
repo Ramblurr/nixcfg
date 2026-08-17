@@ -17,7 +17,7 @@
   "vulnerabilityAlerts": {
     "assignees": ["Ramblurr"]
   },
-  "ignorePaths": ["**/archive/**", "pkgs/overseerr/"],
+  "ignorePaths": ["**/archive/**"],
   "rebaseWhen": "conflicted",
   "dependencyDashboardTitle": "Renovate Dashboard",
   "suppressNotifications": ["prIgnoreNotification"],
