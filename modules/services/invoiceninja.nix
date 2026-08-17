@@ -8,9 +8,12 @@ let
   cfg = config.modules.services.invoiceninja;
   # as invoiceninja2 user: podman unshare cat /proc/self/uid_map
   rootDir = "/var/lib/invoiceninja2";
+  sopsFile = ../../configs/home-ops/shared.sops.yml;
+  appEnvironmentFile = config.sops.templates."invoiceninja-app.env".path;
   containerPort = "8000";
   inEnv = [
     "APP_ENV=production"
+    "APP_URL=https://${cfg.domain}"
     "APP_DEBUG=false"
     "REQUIRE_HTTPS=false"
     "PHANTOMJS_PDF_GENERATION=false"
@@ -33,9 +36,7 @@ let
   ];
   inShared = {
     Network = "app.network";
-    EnvironmentFile = [
-      config.sops.secrets."invoiceninja/app_env".path
-    ];
+    EnvironmentFile = [ appEnvironmentFile ];
     Environment = inEnv;
     Volume = [
       # ran as invoiceninja2 user: podman unshare chown -R 3015:3015 /var/lib/invoiceninja2/<VOL>
@@ -88,10 +89,23 @@ in
       inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
-    sops.secrets."invoiceninja/app_env" = {
-      sopsFile = ../../configs/home-ops/shared.sops.yml;
+    sops.secrets = {
+      "invoiceninja/in-user-email" = { inherit sopsFile; };
+      "invoiceninja/in-password" = { inherit sopsFile; };
+      "invoiceninja/app-key" = { inherit sopsFile; };
+      "invoiceninja/db-password" = { inherit sopsFile; };
+    };
+
+    sops.templates."invoiceninja-app.env" = {
       owner = cfg.user.name;
+      group = cfg.group.name;
       mode = "0400";
+      content = ''
+        IN_USER_EMAIL=${config.sops.placeholder."invoiceninja/in-user-email"}
+        IN_PASSWORD=${config.sops.placeholder."invoiceninja/in-password"}
+        APP_KEY=${config.sops.placeholder."invoiceninja/app-key"}
+        DB_PASSWORD=${config.sops.placeholder."invoiceninja/db-password"}
+      '';
     };
     services.mysql = {
       ensureDatabases = [ "invoiceninja" ];
