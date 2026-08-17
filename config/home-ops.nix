@@ -66,7 +66,6 @@ in
       koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
       roon-server.enable = lib.mkEnableOption "Roon Server";
-      onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
       archivebox.enable = lib.mkEnableOption "Archivebox";
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
       influxdb.enable = lib.mkEnableOption "Influxdb";
@@ -418,15 +417,6 @@ in
       group = home-ops.groups.invoiceninja2;
       ports.http = home-ops.ports.invoiceninja;
       subnet = home-ops.subnets.invoiceninja2;
-    };
-
-    modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
-      enable = true;
-      domain = "op.${home-ops.homeDomain}";
-      ports.api = home-ops.ports.onepassword-connect-api;
-      ports.sync = home-ops.ports.onepassword-connect-sync;
-      user = home-ops.users.onepassword-connect;
-      group = home-ops.groups.onepassword-connect;
     };
 
     modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
