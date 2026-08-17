@@ -115,6 +115,7 @@
     ./services/ocis.nix
     ./services/powerdns.nix
     ./services/onepassword-connect.nix
+    ./services/onepassword-systemd-credentials.nix
     ./services/pi-web.nix
     ./services/paperless.nix
     ./services/podman.nix
