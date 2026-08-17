@@ -19,7 +19,6 @@ in
     ./zrepl.nix
     ./zrepl-receiver-reconcile.nix
     ./caddy.nix
-    ./minio.nix
     ./garage.nix
     ./syncthing.nix
     ./borgbackup-server.nix

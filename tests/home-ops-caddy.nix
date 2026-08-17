@@ -97,7 +97,6 @@ let
       inputs.sops-nix.nixosModules.sops
       ../modules/services/caddy.nix
       ../hosts/mali/caddy.nix
-      ../hosts/mali/minio.nix
       ../hosts/mali/atticd.nix
       ../hosts/mali/ncps.nix
       {
@@ -187,26 +186,11 @@ assert
     "nix-cache.int.example.test"
     "garage.data.example.test"
     "garage.mgmt.example.test"
-    "s3.data.example.test"
-    "*.s3.data.example.test"
-    "minio.data.example.test"
-    "*.s3.mgmt.example.test"
-    "minio.mgmt.example.test"
-    "s3.mgmt.example.test"
   ];
 assert maliCfg.modules.services.caddy.routes.attic.aliases == [ "attic.int.example.test" ];
-assert
-  maliCfg.modules.services.caddy.routes.minio-console.allowedRemoteIPs == [
-    "10.9.8.0/23"
-    "10.9.10.0/23"
-  ];
-assert lib.hasInfix "handle_path /minio/ui/*"
-  maliCfg.modules.services.caddy.routes.minio-console.handlerConfig;
-assert
-  maliCfg.modules.services.caddy.routes.s3.requestHeaders.X-Real-IP == "{http.request.remote.host}";
-assert maliCfg.modules.services.caddy.routes.s3.dialTimeout == "300s";
-assert maliCfg.modules.services.caddy.routes.s3.flushInterval == "-1";
-assert lib.hasInfix "remote_ip 10.9.8.0/23 10.9.10.0/23" maliCaddy.extraConfig;
+assert !(maliCfg.modules.services.caddy.routes ? minio-console);
+assert !(maliCfg.modules.services.caddy.routes ? s3);
+assert !lib.hasInfix "remote_ip 10.9.8.0/23 10.9.10.0/23" maliCaddy.extraConfig;
 assert !lib.hasInfix "18080" maliCaddy.globalConfig;
 assert maliCaddy.configFile != null;
 pkgs.runCommand "home-ops-caddy-test"
@@ -231,7 +215,8 @@ pkgs.runCommand "home-ops-caddy-test"
     caddy adapt --adapter caddyfile --config ${generatedConfig} > "$TMPDIR/caddy.json"
     caddy adapt --adapter caddyfile --config ${maliCaddy.configFile} > "$TMPDIR/mali-caddy.json"
     grep -Fq 'attic.mgmt.example.test' "$TMPDIR/mali-caddy.json"
-    grep -Fq 'minio.data.example.test' "$TMPDIR/mali-caddy.json"
+    ! grep -Fq 'minio.data.example.test' "$TMPDIR/mali-caddy.json"
+    ! grep -Fq 's3.data.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq 'nix-cache.int.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq '"jelly.example.test"' "$TMPDIR/caddy.json"
     grep -Fq '"media.example.test"' "$TMPDIR/caddy.json"

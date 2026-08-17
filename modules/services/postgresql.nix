@@ -6,9 +6,10 @@
 }:
 with lib;
 let
-  # PostgreSQL nixos module with mandatory S3 PITR backup with pgbackrest
+  # PostgreSQL NixOS module with optional S3 PITR backup through pgBackRest.
   cfg = config.modules.services.postgresql;
   stanza = "db";
+  backupEnabled = cfg.repo1.enable || cfg.repo2.enable;
 
   withImpermanence = config.modules.impermanence.enable;
 
@@ -128,9 +129,10 @@ in
       default = [ ];
     };
     secretsFile = mkOption {
-      type = types.path;
+      type = types.nullOr types.path;
+      default = null;
       example = "/run/secrets/pgbackrest.conf";
-      description = "Path to a pgbackrest configuration file snippet, it should contain repo1-s3-key, repo1-cipher-pass, etc.";
+      description = "Optional pgBackRest configuration snippet; required when an S3 backup repository is enabled.";
     };
     repo1 = {
       enable = mkOption {
@@ -264,6 +266,10 @@ in
         assertion = lib.hasPrefix "/var/lib/postgresql" cfg.pgDataDir;
         message = "The PostgreSQL data directory must be under /var/lib/postgresql";
       }
+      {
+        assertion = !backupEnabled || cfg.secretsFile != null;
+        message = "A pgBackRest secrets file is required when an S3 backup repository is enabled";
+      }
     ];
     environment.etc."pgbackrest/pgbackrest.conf" = {
       user = "postgres";
@@ -273,7 +279,7 @@ in
         [main]
       '';
     };
-    environment.etc."pgbackrest/conf.d/secrets.conf" = {
+    environment.etc."pgbackrest/conf.d/secrets.conf" = mkIf backupEnabled {
       user = "postgres";
       group = "postgres";
       mode = "0600";
@@ -425,7 +431,7 @@ in
       timerBase cfg.repo2.timers.incr "Incr"
     );
 
-    systemd.services.pgbackrest-init = lib.mkIf (cfg.repo1.enable || cfg.repo2.enable) {
+    systemd.services.pgbackrest-init = lib.mkIf backupEnabled {
       enable = true;
       after = [ "postgresql.service" ];
       description = "pgBackRest initialization";
