@@ -13,6 +13,7 @@ let
   inherit (config.modules.users.primaryUser) username;
   inherit (config.repo.secrets) home-ops;
   cfg = config.home-ops;
+  postgresqlBackupEnabled = cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
     until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
@@ -202,14 +203,14 @@ in
       storage.zfs.enable = true;
       net.prim.enable = true;
     };
-    sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable {
+    sops.secrets.pgbackrestSecrets = lib.mkIf (cfg.postgresql.enable && postgresqlBackupEnabled) {
       sopsFile = ../configs/home-ops/shared.sops.yml;
       mode = "400";
     };
     modules.services.postgresql = lib.mkIf cfg.postgresql.enable {
       enable = true;
       package = pkgs.postgresql_15;
-      secretsFile = config.sops.secrets.pgbackrestSecrets.path;
+      secretsFile = lib.mkIf postgresqlBackupEnabled config.sops.secrets.pgbackrestSecrets.path;
       repo1 = {
         inherit (cfg.postgresql.onsiteBackup) enable;
         inherit (cfg.postgresql.onsiteBackup) path;
