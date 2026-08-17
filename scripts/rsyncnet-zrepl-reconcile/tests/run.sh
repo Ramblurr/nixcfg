@@ -115,6 +115,7 @@ case $SCENARIO in
     ;;
   hung)
     : >"$HUNG_STARTED"
+    printf '%s\n' "$$" >"$HUNG_PID"
     sleep 30
     ;;
   host-key)
@@ -138,6 +139,7 @@ export STATE_DIRECTORY=$work/state
 export RUNTIME_DIRECTORY=$work/runtime
 export SSH_ARGS_LOG=$work/ssh-args
 export HUNG_STARTED=$work/hung-started
+export HUNG_PID=$work/hung-pid
 export SSH_DEADLINE_SECONDS=1
 export PATH=$work/bin:$PATH
 
@@ -224,12 +226,13 @@ check_true 'three consecutive failures raise bounded threshold' grep -Fq 'thresh
 run_failure timeout
 check_true 'SSH deadline is classified as bounded retryable failure' grep -Eq 'ssh=timeout state=ERROR .* reason=timeout .* action=retry' "$work/output"
 check_eq 'SSH timeout failure is persisted' "$(tail -n 1 "$work/output")" "$(cat "$STATE_DIRECTORY/last-result")"
-rm -f "$HUNG_STARTED"
+rm -f "$HUNG_STARTED" "$HUNG_PID"
 run_failure hung
 check_true 'hung SSH is ended by the real command deadline' grep -Eq 'ssh=timeout state=ERROR .* reason=timeout .* action=retry' "$work/output"
 check_eq 'hung SSH deadline result is persisted' "$(tail -n 1 "$work/output")" "$(cat "$STATE_DIRECTORY/last-result")"
 
-rm -f "$HUNG_STARTED"
+failures_before_termination=$(cat "$STATE_DIRECTORY/failures")
+rm -f "$HUNG_STARTED" "$HUNG_PID"
 export SCENARIO=hung SSH_DEADLINE_SECONDS=10
 bash "$source_dir/reconcile.sh" >"$work/output" 2>&1 &
 reconcile_pid=$!
@@ -243,7 +246,10 @@ termination_status=0
 wait "$reconcile_pid" || termination_status=$?
 export SSH_DEADLINE_SECONDS=1
 check_eq 'termination preserves the conventional exit status' 143 "$termination_status"
-check_true 'termination emits exact bounded retry evidence' grep -Eq 'ssh=terminated state=ERROR changed=0 bundle=unknown reason=terminated validation=fail advancement=none .* action=retry' "$work/output"
+check_false 'termination reaps the active SSH process' test -e "/proc/$(cat "$HUNG_PID")/status"
+expected_termination_failures=$((failures_before_termination + 1))
+check_eq 'termination increments the persisted failure counter once' "$expected_termination_failures" "$(cat "$STATE_DIRECTORY/failures")"
+check_true 'termination emits exact bounded retry and threshold evidence' grep -Eq "ssh=terminated state=ERROR changed=0 bundle=unknown reason=terminated validation=fail advancement=none failures=$expected_termination_failures threshold=1 action=retry" "$work/output"
 check_eq 'termination result is persisted' "$(tail -n 1 "$work/output")" "$(cat "$STATE_DIRECTORY/last-result")"
 run_failure host-key
 check_true 'host-key mismatch has bounded classification' grep -Fq 'ssh=host-key' "$work/output"
@@ -263,6 +269,8 @@ check_false 'Mali reconciler never names receiver TLS key material' grep -Fq 'rs
 check_false 'reconciler contains no destructive or wakeup command' grep -Eq \
   'zfs[[:space:]]+(destroy|rollback|receive)|zrepl[[:space:]]+signal|service[[:space:]]+zrepl|pkg[[:space:]]+(install|upgrade)' \
   "$source_dir/reconcile.sh"
+# Assert the literal production variable reference.
+# shellcheck disable=SC2016
 check_true 'SSH command has deadline below systemd timeout' grep -Fq \
   'timeout --signal=TERM --kill-after=5s "${ssh_deadline_seconds}s" ssh' "$source_dir/reconcile.sh"
 
