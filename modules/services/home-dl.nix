@@ -119,13 +119,25 @@ in
       "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
     ];
 
-    sops.secrets."home-dl/gluetun-protonvpn.env" = {
-      sopsFile = ../../configs/home-ops/shared.sops.yml;
-      owner = "root";
-      mode = "0400";
-      restartUnits = [ "home-dl-gluetun.service" ];
+    sops.secrets = {
+      "home-dl-gluetun-protonvpn-wg-priv-key" = {
+        sopsFile = ../../configs/home-ops/shared.sops.yml;
+        restartUnits = [ "home-dl-gluetun.service" ];
+      };
+      "home-dl-gluetun-protonvpn-server-countries" = {
+        sopsFile = ../../configs/home-ops/shared.sops.yml;
+        restartUnits = [ "home-dl-gluetun.service" ];
+      };
     };
 
+    sops.templates."home-dl-gluetun-protonvpn.env" = {
+      owner = "root";
+      mode = "0400";
+      content = ''
+        WIREGUARD_PRIVATE_KEY=${config.sops.placeholder."home-dl-gluetun-protonvpn-wg-priv-key"}
+        SERVER_COUNTRIES=${config.sops.placeholder."home-dl-gluetun-protonvpn-server-countries"}
+      '';
+    };
     systemd.services.home-dl-qbittorrent-config = {
       description = "Prepare qBittorrent config for Gluetun port forwarding";
       before = [ "home-dl-qbittorrent.service" ];
@@ -298,7 +310,7 @@ in
             AddCapability = [ "NET_ADMIN" ];
             AddDevice = [ "/dev/net/tun:/dev/net/tun" ];
             PublishPort = [ "127.0.0.1:${toString cfg.ports.qbittorrent}:${toString cfg.ports.qbittorrent}" ];
-            EnvironmentFile = [ config.sops.secrets."home-dl/gluetun-protonvpn.env".path ];
+            EnvironmentFile = [ config.sops.templates."home-dl-gluetun-protonvpn.env".path ];
             Environment = [
               "VPN_SERVICE_PROVIDER=protonvpn"
               "VPN_TYPE=wireguard"
