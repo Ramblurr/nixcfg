@@ -124,9 +124,9 @@ nix run .#dns -- plan -detailed-exitcode
 An exit code of `0` means the files and DNS providers agree. An exit code of
 `2` means OpenTofu proposes changes.
 
-Credentials are loaded automatically from SOPS. OpenTofu's encrypted tracking
-data is stored in the private Git-backed state repository; do not create or
-commit local state or backend files.
+Credentials are loaded automatically from 1Password. OpenTofu's encrypted
+tracking data is stored in the private Git-backed state repository; do not create
+or commit local state or backend files.
 
 ## Removing records or networks
 
@@ -142,27 +142,6 @@ Always inspect the plan before applying a deletion.
 
 Use all three surfaces only when the zone needs all three. Public-only zones
 create no PowerDNS resources.
-
-For a new zone with existing records, create review artifacts before accepting
-the authoritative zone document:
-
-```bash
-nix run .#dns-dump -- example OUTPUT-DIR=terranix/dns-staging/example
-```
-
-Review `zone.json`, `imports.nix`, and `report.json`. Copy the accepted
-`zone.json` to `terranix/dns/zones/example.json`, then create and apply one
-encrypted, configuration-driven import plan:
-
-```bash
-nix run .#dns-import -- plan example terranix/dns-staging/example example.tfplan
-nix run .#dns-import -- apply example terranix/dns-staging/example example.tfplan
-```
-
-The importer rejects record mutations, destructive actions, unrelated module
-addresses, and topology changes absent from the reviewed report. Confirm the
-result with a zone plan and then a full plan.
-
 ## Files in this folder
 
 The public files in this directory validate records and turn them into deSEC
