@@ -28,16 +28,16 @@ let
     knownHostsFile = "/run/secrets/rsyncnet-reconcile-known-hosts";
   };
   evaluated = mkEvaluated validConfig;
-  invalidHostEvaluation = builtins.tryEval (
-    (mkEvaluated (validConfig // { receiverHost = "bad host"; })).config.system.build.toplevel.drvPath
-  );
-  invalidPathEvaluation = builtins.tryEval (
-    (mkEvaluated (validConfig // { identityFile = "/run/../nix/store/credential"; }))
-    .config.system.build.toplevel.drvPath
-  );
+  invalidHostEvaluation =
+    builtins.tryEval
+      (mkEvaluated (validConfig // { receiverHost = "bad host"; })).config.system.build.toplevel.drvPath;
+  invalidPathEvaluation =
+    builtins.tryEval
+      (mkEvaluated (validConfig // { identityFile = "/run/../nix/store/credential"; }))
+      .config.system.build.toplevel.drvPath;
   service = evaluated.config.systemd.services.rsyncnet-zrepl-reconcile;
   timer = evaluated.config.systemd.timers.rsyncnet-zrepl-reconcile;
-  serviceConfig = service.serviceConfig;
+  inherit (service) serviceConfig;
   persistedState = lib.findFirst (
     entry: !builtins.isString entry && entry.directory == "/var/lib/rsyncnet-zrepl-reconcile"
   ) null evaluated.config.environment.persistence."/persist".directories;
