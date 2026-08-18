@@ -6,7 +6,7 @@ final: prev: {
       urlVersion = builtins.replaceStrings [ "." ] [ "0" ] version;
     in
     {
-      version = version;
+      inherit version;
       src = final.fetchurl {
         url = "https://download.roonlabs.com/updates/production/RoonServer_linuxx64_${urlVersion}.tar.bz2";
         hash = "sha256-z/8rORTsDUhgh2hfep62jMVeAvX/c5HW4vBkVnvhcQc=";
