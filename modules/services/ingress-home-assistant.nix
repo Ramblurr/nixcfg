@@ -11,7 +11,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Home Assistant";
-        group = "Home & Personal";
+        group = config.site.gatus.groups.home;
         url = "https://home.${homeDomain}/";
       }
     ];

@@ -30,7 +30,7 @@ in
     site.gatus.endpoints = [
       {
         name = "InfluxDB";
-        group = "Infrastructure & Operations";
+        group = config.site.gatus.groups.infrastructure;
         url = "https://${cfg.domain}/health";
       }
     ];

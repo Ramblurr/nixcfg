@@ -185,7 +185,7 @@ in
     site.gatus.endpoints = [
       {
         name = "FileBrowser Quantum";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain}/_health/gatus";
       }
     ];

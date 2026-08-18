@@ -86,7 +86,7 @@
   site.gatus.endpoints = [
     {
       name = "Attic";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://attic.mgmt.${config.repo.secrets.global.domain.home}/";
     }
   ];

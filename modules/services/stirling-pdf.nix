@@ -34,7 +34,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Stirling PDF";
-        group = "Home & Personal";
+        group = config.site.gatus.groups.home;
         url = "https://${cfg.domain}/";
       }
     ];

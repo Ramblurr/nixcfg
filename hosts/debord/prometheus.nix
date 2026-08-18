@@ -38,17 +38,17 @@ in
   site.gatus.endpoints = [
     {
       name = "Alertmanager";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://alertmanager.${domain.home}/-/healthy";
     }
     {
       name = "Prometheus";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://prom.${domain.home}/-/healthy";
     }
     {
       name = "Thanos Query";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://thanos.${domain.home}/-/healthy";
     }
   ];

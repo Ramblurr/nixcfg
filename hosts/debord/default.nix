@@ -81,7 +81,7 @@ in
   services.gatus.settings.endpoints = [
     {
       name = "Gatus";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "http://127.0.0.1:${toString config.modules.services.gatus.port}/";
       interval = "1m";
       conditions = [ "[STATUS] == 200" ];
@@ -129,7 +129,7 @@ in
     gatus.endpoints = [
       {
         name = "NAD API";
-        group = "Home & Personal";
+        group = config.site.gatus.groups.home;
         url = "https://nad.${config.repo.secrets.global.domain.home}/api";
       }
     ];

@@ -8,7 +8,7 @@ with lib;
 let
   cfg = config.modules.services.borgmatic;
   hostName = config.networking.hostName;
-  gatusGroup = "Infrastructure & Operations";
+  gatusGroup = config.site.gatus.groups.infrastructure;
   gatusEndpointName = "Borgmatic Backup (${hostName})";
   heartbeatPackage = pkgs.callPackage ../../pkgs/gatus-heartbeat.nix { };
   gatusUrl = "https://status.${config.repo.secrets.global.domain.home}";

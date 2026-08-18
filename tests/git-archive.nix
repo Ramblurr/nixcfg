@@ -1,6 +1,7 @@
 { inputs, pkgs }:
 let
   lib = inputs.nixpkgs.lib;
+  groups = import ../modules/site/gatus-groups.nix;
   secretFile = pkgs.writeText "git-archive-test-secrets.yaml" "{}\n";
   cfg =
     (lib.nixosSystem {
@@ -58,7 +59,7 @@ assert
   cfg.site.gatus.externalEndpoints == [
     {
       name = "Git Archive (dewey)";
-      group = "Work & Collaboration";
+      group = groups.work;
       token = "$GATUS_EXTERNAL_TOKEN";
       heartbeat.interval = "30h";
       alerts = [ { type = "pushover"; } ];

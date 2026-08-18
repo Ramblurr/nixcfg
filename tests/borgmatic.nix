@@ -1,6 +1,7 @@
 { inputs, pkgs }:
 let
   lib = inputs.nixpkgs.lib;
+  groups = import ../modules/site/gatus-groups.nix;
   secretFile = pkgs.writeText "borgmatic-test-secrets.yaml" "{}\n";
   hostName = "quine";
   gatusUrl = "https://status.example.test";
@@ -58,14 +59,14 @@ let
       when = [ "create" ];
       states = [ "finish" ];
       run = [
-        ''${heartbeat} report --url "${gatusUrl}" --group "Infrastructure & Operations" --name "Borgmatic Backup (${hostName})" --success true --duration "$(( $(${date} +%s) - $(cat ${startFile}) ))s"''
+        ''${heartbeat} report --url "${gatusUrl}" --group "${groups.infrastructure}" --name "Borgmatic Backup (${hostName})" --success true --duration "$(( $(${date} +%s) - $(cat ${startFile}) ))s"''
       ];
     }
     {
       after = "error";
       when = [ "create" ];
       run = [
-        ''${heartbeat} report --url "${gatusUrl}" --group "Infrastructure & Operations" --name "Borgmatic Backup (${hostName})" --success false --error "{error}"''
+        ''${heartbeat} report --url "${gatusUrl}" --group "${groups.infrastructure}" --name "Borgmatic Backup (${hostName})" --success false --error "{error}"''
       ];
     }
   ];
@@ -77,7 +78,7 @@ assert
   enabled.site.gatus.externalEndpoints == [
     {
       name = "Borgmatic Backup (${hostName})";
-      group = "Infrastructure & Operations";
+      group = groups.infrastructure;
       token = "$GATUS_EXTERNAL_TOKEN";
       heartbeat.interval = "30h";
       alerts = [ { type = "pushover"; } ];

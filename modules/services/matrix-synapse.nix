@@ -69,7 +69,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Matrix Synapse";
-        group = "Work & Collaboration";
+        group = config.site.gatus.groups.work;
         url = "https://${cfg.domain}/_matrix/client/versions";
       }
     ];
