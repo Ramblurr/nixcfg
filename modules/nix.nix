@@ -9,7 +9,6 @@
 
 let
   inherit (config.repo.secrets.global) ciSigningPublicKey;
-  myNix = inputs.determinate.inputs.nix.packages.${pkgs.stdenv.hostPlatform.system}.nix;
 in
 with lib;
 {
@@ -94,7 +93,7 @@ with lib;
           pkgs.nix
         ]
       }
-      nvd --nix-bin-dir=${myNix}/bin diff $(ls -dv /nix/var/nix/profiles/system-*-link | tail -2) || true
+      nvd --nix-bin-dir=${config.nix.package}/bin diff $(ls -dv /nix/var/nix/profiles/system-*-link | tail -2) || true
     '';
   };
 
