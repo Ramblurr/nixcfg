@@ -94,6 +94,8 @@ let
       environment = os.environ.copy()
       environment.update(
           {
+              "HOME": "/tmp",
+              "XDG_CONFIG_HOME": "/tmp/op-config",
               "OP_CACHE": "false",
               "OP_CONNECT_HOST": ${builtins.toJSON cfg.connectHost},
               "OP_CONNECT_TOKEN": token,
