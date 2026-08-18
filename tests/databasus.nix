@@ -31,6 +31,7 @@ let
           domain = "databasus.example.test";
           allowedRemoteIPs = [
             "192.0.2.0/24"
+            "198.51.100.0/24"
             "100.64.0.0/10"
           ];
         };
@@ -73,6 +74,7 @@ assert
     upstream = "http://127.0.0.1:4005";
     allowedRemoteIPs = [
       "192.0.2.0/24"
+      "198.51.100.0/24"
       "100.64.0.0/10"
     ];
   };
