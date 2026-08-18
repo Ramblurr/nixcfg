@@ -39,6 +39,7 @@ let
           site.net.mgmt.hosts4.onepassword-connect = [ "192.0.2.22" ];
           repo.secrets.global.domain.home = "example.test";
           site.gatus.heartbeatToken.environmentFile = environmentFile;
+          modules.services.onepassword-systemd-credentials.enable = environmentFile == null;
           systemd.services.example-job.serviceConfig.Type = "oneshot";
           site.gatus.heartbeats.git-archive = lib.mkIf enable {
             service = "example-job";
@@ -61,6 +62,9 @@ let
 in
 assert !invalidInterval.success;
 assert enabled.site.gatus.groups == groups;
+assert enabled.site.gatus.heartbeatToken.available;
+assert environmentFileEnabled.site.gatus.heartbeatToken.available;
+assert environmentFileEnabled.modules.services.onepassword-systemd-credentials.consumers == { };
 assert
   enabled.site.gatus.externalEndpoints == [
     {

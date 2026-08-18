@@ -60,6 +60,12 @@ in
       description = "Recurring jobs reported to Gatus external endpoints";
     };
     heartbeatToken = {
+      available = lib.mkOption {
+        type = lib.types.bool;
+        default = cfg.heartbeatToken.environmentFile != null;
+        internal = true;
+        description = "Whether this host has a configured recurring-job heartbeat token source";
+      };
       onepasswordReference = lib.mkOption {
         type = lib.types.strMatching "^op://.+";
         default = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
