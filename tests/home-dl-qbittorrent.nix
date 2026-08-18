@@ -183,7 +183,7 @@ assert !config.systemd.services.qui.vpnConfinement.enable;
 assert
   qui.settings == {
     host = "127.0.0.1";
-    oidcClientId = "qui";
+    oidcClientId = "eaff8d42-7b05-48b3-9471-df0b2a0165ab";
     oidcDisableBuiltInLogin = false;
     oidcEnabled = true;
     oidcIssuer = "https://id.example.test";
