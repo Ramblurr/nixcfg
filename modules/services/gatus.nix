@@ -60,11 +60,18 @@ in
       inherit environmentFile;
       settings = {
         alerting.pushover = {
-          "application-token" = "$PUSHOVER_API_TOKEN";
-          "user-key" = "$PUSHOVER_USER_KEY";
+          application-token = "$PUSHOVER_API_TOKEN";
+          user-key = "$PUSHOVER_USER_KEY";
+          default-alert = {
+            description = "health-check failed";
+            failure-threshold = 3;
+            minimum-reminder-interval = "1h";
+            send-on-resolved = true;
+            success-threshold = 2;
+          };
         };
         endpoints = collectEndpoints "endpoints";
-        "external-endpoints" = collectEndpoints "externalEndpoints";
+        external-endpoints = collectEndpoints "externalEndpoints";
         web.port = cfg.port;
         storage = {
           type = "sqlite";
