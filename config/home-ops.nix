@@ -178,7 +178,9 @@ in
 
     modules.services.postgresql = lib.mkIf cfg.postgresql.enable {
       enable = true;
-      package = pkgs.postgresql_15;
+      package = pkgs.postgresql_18;
+      pgDataDir = "/var/lib/postgresql/18";
+      physicalBackup.enable = true;
     };
     modules.services.mariadb = lib.mkIf cfg.mariadb.enable {
       enable = true;

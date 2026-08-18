@@ -13,7 +13,6 @@ let
   paperlessOidcEnvironmentFile = "/run/paperless-secrets/oidc.env";
   paperlessServices = [
     "paperless-consumer"
-    "paperless-copy-password"
     "paperless-scheduler"
     "paperless-task-queue"
     "paperless-web"
@@ -98,9 +97,9 @@ in
         };
       }
       (lib.genAttrs paperlessServices (_: {
-        after = serviceDeps ++ oidcDeps;
+        after = serviceDeps ++ oidcDeps ++ [ "postgresql.service" ];
         bindsTo = serviceDeps;
-        requires = oidcDeps;
+        requires = oidcDeps ++ [ "postgresql.service" ];
       }))
     ];
 

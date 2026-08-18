@@ -88,6 +88,12 @@ let
   provider = compatibility.modules.services.onepassword-systemd-credentials;
   setupService = compatibility.systemd.services.paperless-secrets-setup;
   webService = compatibility.systemd.services.paperless-web;
+  postgresDependentServices = map (name: compatibility.systemd.services.${name}) [
+    "paperless-consumer"
+    "paperless-scheduler"
+    "paperless-task-queue"
+    "paperless-web"
+  ];
 in
 assert !(builtins.hasAttr "PAPERLESS_APPS" disabled.services.paperless.settings);
 assert
@@ -116,6 +122,13 @@ assert builtins.elem "paperless-web.service" setupService.requiredBy;
 assert builtins.elem "onepassword-credential-provider.socket" setupService.requires;
 assert builtins.elem "paperless-secrets-setup.service" webService.requires;
 assert builtins.elem "paperless-secrets-setup.service" webService.after;
+assert lib.all (
+  service: builtins.elem "postgresql.service" service.requires
+) postgresDependentServices;
+assert lib.all (
+  service: builtins.elem "postgresql.service" service.after
+) postgresDependentServices;
+assert !(builtins.hasAttr "paperless-copy-password" compatibility.systemd.services);
 assert webService.serviceConfig.EnvironmentFile == "/run/paperless-secrets/oidc.env";
 assert !(builtins.hasAttr "paperless/adminPassword" compatibility.sops.secrets);
 assert !(builtins.hasAttr "paperless/oidcProvider" compatibility.sops.secrets);
