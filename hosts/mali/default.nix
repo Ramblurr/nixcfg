@@ -60,6 +60,11 @@ in
       zsh.starship.enable = false;
     };
     services = {
+      databasus = {
+        enable = true;
+        domain = "databasus.mgmt.${config.repo.secrets.global.domain.home}";
+        allowedRemoteIPs = [ config.site.net.mgmt.subnet4 ];
+      };
       sshd.enable = true;
     };
     editors = {
