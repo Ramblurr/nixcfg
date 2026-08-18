@@ -6,7 +6,7 @@ let
     inputs.nixpkgs.lib.nixosSystem {
       system = pkgs.stdenv.hostPlatform.system;
       modules = [
-        inputs.impermanence.nixosModules.impermanence
+        ../modules/zfs-attrs.nix
         inputs.sops-nix.nixosModules.sops
         ../modules/services/onepassword-systemd-credentials.nix
         ../hosts/mali/zrepl-receiver-reconcile.nix
@@ -18,7 +18,7 @@ let
             device = "none";
             fsType = "tmpfs";
           };
-          environment.persistence."/persist".directories = [ "/var/lib/nixos" ];
+          modules.zfs.datasets.enable = true;
           modules.services.onepassword-systemd-credentials = {
             enable = true;
             bootstrapTokenFile = "/run/onepassword-connect-token";
@@ -51,24 +51,30 @@ let
     (mkEvaluated (validConfig // { timer.enable = false; }))
     .config.systemd.timers.rsyncnet-zrepl-reconcile;
   inherit (service) serviceConfig;
-  persistedState = lib.findFirst (
-    entry: !builtins.isString entry && entry.directory == "/var/lib/rsyncnet-zrepl-reconcile"
-  ) null evaluated.config.environment.persistence."/persist".directories;
+  stateDataset =
+    evaluated.config.modules.zfs.datasets.properties."rpool2/encrypted/safe/svc/zrepl-reconcile";
 in
 assert !invalidHostEvaluation.success;
 assert !invalidReferenceEvaluation.success;
 assert serviceConfig.Type == "oneshot";
-assert serviceConfig.User == "rsyncnet-zrepl-reconcile";
+assert serviceConfig.DynamicUser;
+assert !(builtins.hasAttr "rsyncnet-zrepl-reconcile" evaluated.config.users.users);
 assert serviceConfig.NoNewPrivileges;
 assert serviceConfig.ProtectSystem == "strict";
+assert serviceConfig.StateDirectory == "rsyncnet-zrepl-reconcile";
 assert serviceConfig.StateDirectoryMode == "0700";
-assert persistedState != null;
-assert persistedState.user == "root";
-assert persistedState.group == "root";
-assert persistedState.mode == "0700";
+assert serviceConfig.RuntimeDirectory == "rsyncnet-zrepl-reconcile";
+assert service.unitConfig.RequiresMountsFor == [ "/var/lib/private/rsyncnet-zrepl-reconcile" ];
+assert
+  stateDataset == {
+    atime = "off";
+    compression = "zstd";
+    mountpoint = "/var/lib/private/rsyncnet-zrepl-reconcile";
+  };
 assert service.environment.EXPECTED_BUNDLE_ID == "v1-ccc29d6eb3b5a463-initial";
 assert service.environment.SSH_DEADLINE_SECONDS == "900";
-assert service.environment.STATE_DIRECTORY == "/var/lib/rsyncnet-zrepl-reconcile";
+assert !(service.environment ? STATE_DIRECTORY);
+assert !(service.environment ? RUNTIME_DIRECTORY);
 assert
   provider.consumers.rsyncnet-zrepl-reconcile == {
     identity = "op://test/mali-rsyncnet-reconciler/private key";

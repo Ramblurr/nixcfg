@@ -7,6 +7,8 @@
 let
   cfg = config.services.rsyncnet-zrepl-reconcile;
   serviceName = "rsyncnet-zrepl-reconcile";
+  stateDataset = "rpool2/encrypted/safe/svc/zrepl-reconcile";
+  stateDirActual = "/var/lib/private/${serviceName}";
   expectedBundleId = "v1-ccc29d6eb3b5a463-initial";
   onepassword = config.modules.services.onepassword-systemd-credentials;
   expectedDatasets = pkgs.writeText "rsyncnet-zrepl-validation-datasets" (
@@ -72,38 +74,27 @@ in
       known-hosts = cfg.knownHostsReference;
     };
 
-    users.groups.${serviceName} = { };
-    users.users.${serviceName} = {
-      isSystemUser = true;
-      group = serviceName;
+    modules.zfs.datasets.properties.${stateDataset} = {
+      atime = "off";
+      compression = "zstd";
+      mountpoint = stateDirActual;
     };
-
-    environment.persistence."/persist".directories = [
-      {
-        directory = "/var/lib/${serviceName}";
-        # userborn has not created this service user when persistence activation runs.
-        # systemd applies StateDirectory ownership before starting the service.
-        mode = "0700";
-      }
-    ];
 
     systemd.services.${serviceName} = {
       description = "Reconcile the persistent rsync.net zrepl receiver bundle";
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
+      unitConfig.RequiresMountsFor = [ stateDirActual ];
       environment = {
         EXPECTED_BUNDLE_ID = expectedBundleId;
         EXPECTED_DATASETS_FILE = expectedDatasets;
         RECEIVER_ALIAS = cfg.receiverAlias;
         RECEIVER_HOST = cfg.receiverHost;
         SSH_DEADLINE_SECONDS = "900";
-        STATE_DIRECTORY = "/var/lib/${serviceName}";
-        RUNTIME_DIRECTORY = "/run/${serviceName}";
       };
       serviceConfig = {
         Type = "oneshot";
-        User = serviceName;
-        Group = serviceName;
+        DynamicUser = true;
         ExecStart = lib.getExe reconciler;
         TimeoutStartSec = "20min";
         StateDirectory = serviceName;
