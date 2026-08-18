@@ -40,8 +40,8 @@ let
         description = "Domain-oriented Gatus group";
       };
       interval = lib.mkOption {
-        type = lib.types.nonEmptyStr;
-        description = "Maximum expected interval between successful job runs";
+        type = lib.types.strMatching "^([0-9]+(ms|s|m|h))+$";
+        description = "Maximum expected interval using Go duration units (h, m, s, or ms)";
       };
     };
   };

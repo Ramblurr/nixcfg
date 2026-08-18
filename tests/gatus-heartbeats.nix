@@ -5,7 +5,7 @@ let
   secretFile = pkgs.writeText "gatus-heartbeats-test-secrets.yaml" "{}\n";
   heartbeatPackage = pkgs.callPackage ../pkgs/gatus-heartbeat.nix { };
   evaluate =
-    enable:
+    enable: interval:
     (lib.nixosSystem {
       modules = [
         inputs.sops-nix.nixosModules.sops
@@ -43,15 +43,19 @@ let
             service = "example-job";
             name = "Git Archive";
             group = groups.work;
-            interval = "30h";
+            inherit interval;
           };
         }
       ];
     }).config;
-  enabled = evaluate true;
-  disabled = evaluate false;
+  enabled = evaluate true "30h";
+  disabled = evaluate false "30h";
+  invalidInterval = builtins.tryEval (
+    builtins.deepSeq (evaluate true "8d").site.gatus.externalEndpoints true
+  );
   reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStopPost;
 in
+assert !invalidInterval.success;
 assert enabled.site.gatus.groups == groups;
 assert
   enabled.site.gatus.externalEndpoints == [

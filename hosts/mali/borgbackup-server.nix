@@ -55,7 +55,7 @@ in
       service = "borgbackup-compact-${repo}";
       name = "Borg Repository Compaction: ${repo}";
       group = config.site.gatus.groups.infrastructure;
-      interval = "8d";
+      interval = "192h";
     }
   ) config.services.borgbackup.repos;
 }
