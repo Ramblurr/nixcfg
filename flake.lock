@@ -3859,7 +3859,8 @@
         "smolvm": "smolvm",
         "sops-nix": "sops-nix",
         "tmux-buddy": "tmux-buddy",
-        "treefmt-nix": "treefmt-nix_7"
+        "treefmt-nix": "treefmt-nix_7",
+        "vpn-confinement": "vpn-confinement"
       }
     },
     "rust-analyzer-src": {
@@ -4524,6 +4525,22 @@
         "owner": "TriliumNext",
         "ref": "v0.102.2",
         "repo": "Trilium",
+        "type": "github"
+      }
+    },
+    "vpn-confinement": {
+      "locked": {
+        "lastModified": 1785142579,
+        "narHash": "sha256-WEPxDMiKt3uGVVu/aorHnIgYYW62mEq2Q+rlN3qH6bg=",
+        "owner": "Maroka-chan",
+        "repo": "VPN-Confinement",
+        "rev": "b3aa71a7edfe6af748c23729d1bdec3b499741ff",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Maroka-chan",
+        "repo": "VPN-Confinement",
+        "rev": "b3aa71a7edfe6af748c23729d1bdec3b499741ff",
         "type": "github"
       }
     },

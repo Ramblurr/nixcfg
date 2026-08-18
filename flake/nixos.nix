@@ -14,6 +14,7 @@ let
     inputs.sops-nix.nixosModules.sops
     inputs.microvm.nixosModules.host
     inputs.determinate.nixosModules.default
+    inputs.vpn-confinement.nixosModules.default
   ];
   unstableDefaultModules = [
     inputs.disko-unstable.nixosModules.disko
