@@ -68,23 +68,60 @@
              (kill-buffer buffer))))
        (delete-directory ,root t))))
 
-(ert-deftest my-project-scratch-agenda-opens-current-project ()
+(ert-deftest my-project-scratch-agenda-opens-work-item-spec-with-button ()
   (project-scratch-test--with-project (root)
-    (let ((work-item
-           (expand-file-name ".scratch-org/001-alpha" root)))
+    (let ((spec
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/spec.org"
+            "* READY-FOR-HUMAN Alpha spec\n")))
       (project-scratch-test--write
        root ".scratch-org/001-alpha/issues/01-ready.org"
        "* READY-FOR-AGENT Public agenda ticket\n")
       (my/project-scratch-agenda)
-      (should (derived-mode-p 'org-agenda-mode))
-      (should (string-match-p
-               "Ready.*Public agenda ticket"
-               (buffer-substring-no-properties (point-min) (point-max))))
       (goto-char (point-min))
       (search-forward "001  Alpha")
-      (button-activate (button-at (line-beginning-position)))
-      (should (derived-mode-p 'dired-mode))
-      (should (file-equal-p default-directory work-item)))))
+      (let ((agenda-window (selected-window)))
+        (button-activate (button-at (line-beginning-position)))
+        (should (file-equal-p spec (buffer-file-name)))
+        (should (not (eq agenda-window (selected-window))))
+        (should
+         (eq (get-buffer org-agenda-buffer-name)
+             (window-buffer agenda-window)))))))
+
+(ert-deftest my-project-scratch-agenda-opens-work-item-spec-with-return ()
+  (project-scratch-test--with-project (root)
+    (let ((spec
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/spec.org"
+            "* READY-FOR-HUMAN Alpha spec\n")))
+      (my/project-scratch-agenda)
+      (goto-char (point-min))
+      (search-forward "001  Alpha")
+      (goto-char (line-beginning-position))
+      (let ((agenda-window (selected-window))
+            (command (key-binding (kbd "<return>"))))
+        (should (eq 'my/org-agenda-open-at-point command))
+        (call-interactively command)
+        (should (file-equal-p spec (buffer-file-name)))
+        (should (not (eq agenda-window (selected-window))))
+        (should
+         (eq (get-buffer org-agenda-buffer-name)
+             (window-buffer agenda-window)))))))
+
+(ert-deftest my-project-scratch-agenda-reports-missing-work-item-spec ()
+  (project-scratch-test--with-project (root)
+    (project-scratch-test--write
+     root ".scratch-org/001-alpha/issues/01-ready.org"
+     "* READY-FOR-AGENT Ticket without spec\n")
+    (my/project-scratch-agenda)
+    (goto-char (point-min))
+    (search-forward "001  Alpha")
+    (let ((error (should-error
+                  (my/org-agenda-open-at-point)
+                  :type 'user-error)))
+      (should
+       (string-match-p "Work item has no spec.org"
+                       (error-message-string error))))))
 
 (ert-deftest my-project-scratch-find-offers-recursive-org-files ()
   (project-scratch-test--with-project (root)

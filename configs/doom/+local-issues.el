@@ -324,9 +324,19 @@
                 my/project-scratch-closed-page-size)
     (my/project-scratch--render-agenda)))
 
+(defun my/org-agenda--open-work-item-spec (directory)
+  "Open DIRECTORY's spec file in another window."
+  (let ((spec (expand-file-name "spec.org" directory)))
+    (unless (file-regular-p spec)
+      (user-error "Work item has no spec.org: %s" directory))
+    (find-file-other-window spec)
+    (goto-char (point-min))
+    (org-show-context)))
+
 (defun my/org-agenda-open-work-item-button (button)
-  "Open BUTTON's work-item directory in Dired."
-  (dired (button-get button 'my/work-item-directory)))
+  "Open BUTTON's work-item specification in another window."
+  (my/org-agenda--open-work-item-spec
+   (button-get button 'my/work-item-directory)))
 
 (defun my/org-agenda-toggle-work-items ()
   "Toggle between recent and all work items in the current agenda."
@@ -372,7 +382,7 @@
           (line-beginning-position)
           'my/work-item-directory)))
     (if directory
-        (dired-other-window directory)
+        (my/org-agenda--open-work-item-spec directory)
       (my/org-agenda--visit-source t))))
 
 (defun my/org-agenda-insert-work-items ()
@@ -440,6 +450,7 @@
              line-start
              (point)
              'action #'my/org-agenda-open-work-item-button
+             'keymap my/project-scratch-agenda-entry-map
              'follow-link t
              'face 'default
              'mouse-face 'highlight
