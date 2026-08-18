@@ -13,14 +13,6 @@ in
   options.modules.services.ingress-phoniebox.enable = lib.mkEnableOption "Phoniebox ingress";
 
   config = lib.mkIf cfg.enable {
-    site.gatus.endpoints = [
-      {
-        name = "Phoniebox";
-        group = "Media & Library";
-        url = "https://${phonieboxDomain}/";
-        conditions = [ "[STATUS] == any(200, 406)" ];
-      }
-    ];
 
     modules.services.caddy.routes.phoniebox = {
       publicHost = phonieboxDomain;

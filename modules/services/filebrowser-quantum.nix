@@ -186,14 +186,14 @@ in
       {
         name = "FileBrowser Quantum";
         group = "Media & Library";
-        url = "https://${cfg.domain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${cfg.domain}/_health/gatus";
       }
     ];
 
     modules.services.caddy.protectedRoutes.files = {
       publicHost = cfg.domain;
       inherit upstream;
+      healthCheckPath = "/health";
       identityHeaders.Remote-User = "userinfo|preferred_username";
     };
 

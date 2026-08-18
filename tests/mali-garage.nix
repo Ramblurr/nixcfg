@@ -67,6 +67,7 @@ in
 assert
   failedAssertions == [ ]
   || throw "failed Mali Garage assertions: ${lib.concatStringsSep "; " failedAssertions}";
+assert map (check: check.name) cfg.site.gatus.endpoints == [ "Garage Management API" ];
 assert cfg.services.garage.enable;
 assert cfg.services.garage.package == pkgs.garage_2;
 assert cfg.services.garage.package.version == "2.3.0";
