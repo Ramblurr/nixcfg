@@ -11,6 +11,8 @@ let
     ;
 in
 {
+  imports = [ ./gatus.nix ];
+
   options.site = {
     data = {
       contact = mkOption {
