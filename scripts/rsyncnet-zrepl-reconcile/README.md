@@ -14,14 +14,13 @@ A successful repair records the three bounded snapshot markers and waits up to 4
 
 ## Private wiring and enablement gate
 
-`services.rsyncnet-zrepl-reconcile.enable` must remain `false` until private configuration supplies all of the following under runtime-only `/run/` paths and the provider prerequisites have been independently accepted:
+`services.rsyncnet-zrepl-reconcile.enable` may install the operator-gated one-shot only after private configuration supplies all of the following and the provider prerequisites have been independently accepted. `services.rsyncnet-zrepl-reconcile.timer.enable` must remain `false` through deployment and the approved first execution:
 
 - `receiverHost`;
-- `identityFile`, owned/readable only by the dedicated Mali reconciler user;
-- `knownHostsFile`, populated from an authenticated receiver host-key channel;
+- `identityReference`, pointing to Mali's dedicated SSH private key in 1Password;
+- `knownHostsReference`, pointing to an authenticated receiver `known_hosts` line in 1Password;
 - provider-managed installation of the matching public key with the exact forced-command and source-address restrictions.
-
-Both credential source strings must be canonical absolute paths below `/run`: no empty, `.` or `..` segments and no Nix-store path. Deployment preflight must resolve each source, prove the resolved regular file remains below `/run`, and verify its expected owner and restrictive mode before enabling the timer.
+The 1Password systemd credential provider owns `LoadCredential` injection for credential IDs `identity` and `known-hosts`. The reconciler reads only `$CREDENTIALS_DIRECTORY/identity` and `$CREDENTIALS_DIRECTORY/known-hosts`; it does not resolve `op://` references or configure a second credential source.
 The dedicated SSH identity and known-host entry are Mali-owned. They are not the receiver TLS identity. Mali must never receive, materialize, read, transmit, or install `rsyncnet.key`. If the persistent receiver bundle or its receiver-local key is absent, the bounded result requests human restoration from 1Password and fails closed.
 
 Repository implementation is not deployment authorization. Enabling the timer, materializing its Mali credentials, provisioning the provider key, or invoking the receiver requires independent review and a separate approved OCP ledger.

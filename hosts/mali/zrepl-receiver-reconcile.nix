@@ -8,22 +8,7 @@ let
   cfg = config.services.rsyncnet-zrepl-reconcile;
   serviceName = "rsyncnet-zrepl-reconcile";
   expectedBundleId = "v1-ccc29d6eb3b5a463-initial";
-  validRuntimeSource =
-    path:
-    let
-      segments = lib.drop 2 (lib.splitString "/" path);
-    in
-    lib.hasPrefix "/run/" path
-    && path != "/run/"
-    && !lib.hasInfix "//" path
-    && !lib.hasInfix "/nix/store/" path
-    && lib.all (
-      segment:
-      segment != ""
-      && segment != "."
-      && segment != ".."
-      && builtins.match "[A-Za-z0-9._+-]+" segment != null
-    ) segments;
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   expectedDatasets = pkgs.writeText "rsyncnet-zrepl-validation-datasets" (
     builtins.readFile ../../scripts/rsyncnet-zrepl-bootstrap/validation-datasets
   );
@@ -43,7 +28,13 @@ in
     enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Enable the Mali-originated rsync.net zrepl receiver reconciliation timer.";
+      description = "Enable the Mali-originated rsync.net zrepl receiver reconciliation service.";
+    };
+
+    timer.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Schedule automatic receiver reconciliation every 15 minutes.";
     };
 
     receiverHost = lib.mkOption {
@@ -57,28 +48,29 @@ in
       description = "Non-secret bounded receiver label used in operational evidence.";
     };
 
-    identityFile = lib.mkOption {
-      type = lib.types.str;
-      description = "Canonical /run source for Mali's dedicated SSH identity; deployment must prove its target remains under /run.";
+    identityReference = lib.mkOption {
+      type = lib.types.strMatching "^op://.+";
+      description = "1Password reference for Mali's dedicated SSH private key.";
     };
 
-    knownHostsFile = lib.mkOption {
-      type = lib.types.str;
-      description = "Canonical /run source for the pinned host-key file; deployment must prove its target remains under /run.";
+    knownHostsReference = lib.mkOption {
+      type = lib.types.strMatching "^op://.+";
+      description = "1Password reference for the authenticated receiver known_hosts line.";
     };
   };
 
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = validRuntimeSource cfg.identityFile;
-        message = "rsyncnet-zrepl-reconcile identityFile must be a canonical /run path outside the Nix store";
-      }
-      {
-        assertion = validRuntimeSource cfg.knownHostsFile;
-        message = "rsyncnet-zrepl-reconcile knownHostsFile must be a canonical /run path outside the Nix store";
+        assertion = onepassword.enable;
+        message = "rsyncnet-zrepl-reconcile credentials require the 1Password systemd credential provider";
       }
     ];
+
+    modules.services.onepassword-systemd-credentials.consumers.${serviceName} = {
+      identity = cfg.identityReference;
+      known-hosts = cfg.knownHostsReference;
+    };
 
     users.groups.${serviceName} = { };
     users.users.${serviceName} = {
@@ -113,10 +105,6 @@ in
         User = serviceName;
         Group = serviceName;
         ExecStart = lib.getExe reconciler;
-        LoadCredential = [
-          "identity:${cfg.identityFile}"
-          "known-hosts:${cfg.knownHostsFile}"
-        ];
         TimeoutStartSec = "20min";
         StateDirectory = serviceName;
         StateDirectoryMode = "0700";
@@ -153,7 +141,7 @@ in
 
     systemd.timers.${serviceName} = {
       description = "Run rsync.net zrepl receiver reconciliation every 15 minutes";
-      wantedBy = [ "timers.target" ];
+      wantedBy = lib.optionals cfg.timer.enable [ "timers.target" ];
       timerConfig = {
         OnCalendar = "*:0/15";
         RandomizedDelaySec = "2min";
