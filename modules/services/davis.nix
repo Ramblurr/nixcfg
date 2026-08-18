@@ -9,6 +9,10 @@ let
   cfg = config.modules.services.davis;
   onepassword = config.modules.services.onepassword-systemd-credentials;
   inherit (config.repo.secrets) home-ops;
+  backupRole = "databasus_davis";
+  databaseName = "davis";
+  maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
+  deweyMgmtAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
 in
 {
   options.modules.services.davis = {
@@ -33,11 +37,78 @@ in
         assertion = onepassword.enable;
         message = "Davis 1Password credentials require the systemd credential provider.";
       }
+      {
+        assertion = !(builtins.elem 5432 config.networking.firewall.allowedTCPPorts);
+        message = "Davis PostgreSQL must not be exposed through globally allowed TCP port 5432.";
+      }
     ];
 
     modules.services.onepassword-systemd-credentials.consumers.davis-env-setup = {
       APP_SECRET = "op://home-ops-prod/davis/APP_SECRET";
       ADMIN_PASSWORD = "op://home-ops-prod/davis/ADMIN_PASSWORD";
+    };
+    modules.services.onepassword-systemd-credentials.consumers.databasus-davis-role = {
+      POSTGRES_PASSWORD = "op://home-ops-prod/databasus-davis/password";
+    };
+
+    modules.services.postgresql.extraAuthentication = [
+      "host ${databaseName} ${backupRole} ${maliMgmtAddress}/32 scram-sha-256"
+      "host all ${backupRole} ${maliMgmtAddress}/32 reject"
+    ];
+
+    networking.firewall.extraInputRules = ''
+      iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${deweyMgmtAddress} tcp dport 5432 accept comment "Databasus Davis backup"
+    '';
+
+    systemd.services.databasus-davis-role = {
+      description = "Provision the Databasus read-only role for Davis";
+      wantedBy = [ "multi-user.target" ];
+      requires = [ "postgresql.service" ];
+      after = [ "postgresql.service" ];
+      script = ''
+        ${config.services.postgresql.package}/bin/psql \
+          --no-psqlrc \
+          --quiet \
+          --set ON_ERROR_STOP=1 \
+          --dbname postgres <<'SQL'
+        \set password `cat "$CREDENTIALS_DIRECTORY/POSTGRES_PASSWORD"`
+        SELECT 'CREATE ROLE ${backupRole} LOGIN'
+        WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${backupRole}') \gexec
+        ALTER ROLE ${backupRole}
+          WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+        SELECT format('ALTER ROLE %I PASSWORD %L', '${backupRole}', :'password') \gexec
+        REVOKE ALL PRIVILEGES ON DATABASE ${databaseName} FROM ${backupRole};
+        REVOKE TEMP ON DATABASE ${databaseName} FROM PUBLIC;
+        GRANT CONNECT ON DATABASE ${databaseName} TO ${backupRole};
+        SQL
+
+        ${config.services.postgresql.package}/bin/psql \
+          --no-psqlrc \
+          --quiet \
+          --set ON_ERROR_STOP=1 \
+          --dbname ${databaseName} <<'SQL'
+        REVOKE ALL PRIVILEGES ON SCHEMA public FROM ${backupRole};
+        GRANT USAGE ON SCHEMA public TO ${backupRole};
+        REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM ${backupRole};
+        GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${backupRole};
+        REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM ${backupRole};
+        GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${backupRole};
+        ALTER DEFAULT PRIVILEGES FOR ROLE davis IN SCHEMA public
+          REVOKE ALL PRIVILEGES ON TABLES FROM ${backupRole};
+        ALTER DEFAULT PRIVILEGES FOR ROLE davis IN SCHEMA public
+          GRANT SELECT ON TABLES TO ${backupRole};
+        ALTER DEFAULT PRIVILEGES FOR ROLE davis IN SCHEMA public
+          REVOKE ALL PRIVILEGES ON SEQUENCES FROM ${backupRole};
+        ALTER DEFAULT PRIVILEGES FOR ROLE davis IN SCHEMA public
+          GRANT SELECT ON SEQUENCES TO ${backupRole};
+        SQL
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        User = "postgres";
+        Group = "postgres";
+        RemainAfterExit = true;
+      };
     };
     site.gatus.endpoints = [
       {
