@@ -57,21 +57,21 @@ in
         TimeoutStartSec = "180s";
       };
     };
-    systemd.user.services.podman-image-prune = {
-      Unit.Description = "Prune unused rootless podman images";
-      Service = {
+    systemd.user.services.podman-image-prune = lib.mkIf config.virtualisation.quadlet.enable {
+      description = "Prune unused rootless podman images";
+      serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.podman}/bin/podman image prune --all --force";
       };
     };
-    systemd.user.timers.podman-image-prune = {
-      Unit.Description = "Weekly rootless podman image prune";
-      Timer = {
+    systemd.user.timers.podman-image-prune = lib.mkIf config.virtualisation.quadlet.enable {
+      description = "Weekly rootless podman image prune";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
         OnCalendar = "weekly";
         Persistent = true; # run after missed time
         RandomizedDelaySec = "2h";
       };
-      Install.WantedBy = [ "timers.target" ];
     };
   };
 }
