@@ -23,6 +23,5 @@ in
     redirectPort = 80;
     redirectStatus = 301;
     acmeEmail = email.acme;
-    sopsFile = ../../configs/home-ops/shared.sops.yml;
   };
 }

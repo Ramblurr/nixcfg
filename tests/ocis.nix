@@ -24,12 +24,17 @@ let
       inputs.sops-nix.nixosModules.sops
       inputs.impermanence.nixosModules.impermanence
       ../modules/services/caddy.nix
+      ../modules/services/onepassword-systemd-credentials.nix
       ../modules/services/ocis.nix
       testOptions
       {
         nixpkgs.pkgs = pkgs;
         sops.defaultSopsFile = secretFile;
         sops.age.keyFile = "/tmp/age-key.txt";
+        modules.services.onepassword-systemd-credentials = {
+          enable = true;
+          connectHost = "http://127.0.0.1:8080";
+        };
         boot.loader.grub.devices = [ "nodev" ];
         fileSystems."/" = {
           device = "none";
@@ -38,7 +43,6 @@ let
         modules.services.caddy.edge = {
           certificateDomains = [ "example.test" ];
           acmeEmail = "admin@example.test";
-          sopsFile = secretFile;
         };
         system.stateVersion = "26.05";
         repo.secrets = {

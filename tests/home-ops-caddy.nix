@@ -11,6 +11,7 @@ let
       ../modules/services/ingress-octoprint.nix
       ../modules/services/calibre-web.nix
       ../modules/services/caddy.nix
+      ../modules/services/onepassword-systemd-credentials.nix
       {
         options.repo.secrets = lib.mkOption {
           type = lib.types.attrs;
@@ -50,11 +51,14 @@ let
         };
         sops.defaultSopsFile = secretFile;
         sops.age.keyFile = "/tmp/age-key.txt";
+        modules.services.onepassword-systemd-credentials = {
+          enable = true;
+          connectHost = "http://127.0.0.1:8080";
+        };
         modules.services.caddy = {
           edge = {
             certificateDomains = [ "example.test" ];
             acmeEmail = "admin@example.test";
-            sopsFile = secretFile;
             directWan = {
               enable = true;
               listenAddress = "192.0.2.1";
@@ -96,6 +100,7 @@ let
       inputs.impermanence.nixosModules.impermanence
       inputs.sops-nix.nixosModules.sops
       ../modules/services/caddy.nix
+      ../modules/services/onepassword-systemd-credentials.nix
       ../hosts/mali/caddy.nix
       ../hosts/mali/atticd.nix
       ../hosts/mali/ncps.nix
@@ -115,6 +120,10 @@ let
         };
         sops.defaultSopsFile = secretFile;
         sops.age.keyFile = "/tmp/age-key.txt";
+        modules.services.onepassword-systemd-credentials = {
+          enable = true;
+          connectHost = "http://127.0.0.1:8080";
+        };
         repo.secrets.global = {
           domain.home = "example.test";
           email.acme = "admin@example.test";
@@ -138,13 +147,15 @@ let
   maliFailedAssertions = map (entry: entry.message) (
     lib.filter (entry: !entry.assertion) maliCfg.assertions
   );
-  expectedEnvironment = ''
-    DESEC_API_TOKEN=${cfg.sops.placeholder.desec_api_token}
-    ALPHA_OIDC_CLIENT_SECRET=${cfg.sops.placeholder."alpha-oidc-client-secret"}
-    ALPHA_SIGNING_KEY=${cfg.sops.placeholder."alpha-caddy-security-signing-key"}
-    CALIBRE_WEB_OIDC_CLIENT_SECRET=${cfg.sops.placeholder."calibre-web-oidc-client-secret"}
-    CALIBRE_WEB_SIGNING_KEY=${cfg.sops.placeholder."calibre-web-caddy-security-signing-key"}
-  '';
+  expectedCredentials = {
+    ALPHA_OIDC_CLIENT_SECRET = "op://home-ops-prod/alpha/oidc-client-secret";
+    ALPHA_SIGNING_KEY = "op://home-ops-prod/alpha/caddy-security-signing-key";
+    CALIBRE_WEB_OIDC_CLIENT_SECRET = "op://home-ops-prod/calibre-web/oidc-client-secret";
+    CALIBRE_WEB_SIGNING_KEY = "op://home-ops-prod/calibre-web/caddy-security-signing-key";
+    DESEC_API_TOKEN = "op://home-ops-prod/desec/api-token";
+  };
+  provider = cfg.modules.services.onepassword-systemd-credentials;
+  setupService = cfg.systemd.services.caddy-env-setup;
 in
 assert
   failedAssertions == [ ]
@@ -155,11 +166,12 @@ assert
 assert cfg.modules.services.caddy.routes.home-assistant.publicHost == "home.example.test";
 assert cfg.modules.services.caddy.routes.octoprint.publicHost == "octoprint.example.test";
 assert caddy.enable;
-assert caddy.environmentFile == "/run/secrets/rendered/caddy-env";
-assert cfg.sops.templates.caddy-env.owner == "caddy";
-assert cfg.sops.templates.caddy-env.group == "caddy";
-assert cfg.sops.templates.caddy-env.mode == "0400";
-assert cfg.sops.templates.caddy-env.content == lib.removeSuffix "\n" expectedEnvironment;
+assert caddy.environmentFile == "/run/caddy-env/caddy.env";
+assert provider.consumers.caddy-env-setup == expectedCredentials;
+assert setupService.requiredBy == [ "caddy.service" ];
+assert builtins.elem "onepassword-credential-provider.socket" setupService.requires;
+assert !(cfg.sops.secrets ? desec_api_token);
+assert cfg.sops.templates == { };
 assert builtins.elem 443 cfg.networking.firewall.allowedTCPPorts;
 assert builtins.elem 8081 cfg.networking.firewall.allowedTCPPorts;
 assert !builtins.elem 8443 cfg.networking.firewall.allowedTCPPorts;
