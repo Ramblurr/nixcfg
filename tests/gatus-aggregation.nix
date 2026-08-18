@@ -78,7 +78,6 @@ let
               name = "dewey";
               group = "hosts";
               url = "https://dewey.example.test";
-              conditions = [ "[STATUS] == 200" ];
             }
           ];
           site.gatus.externalEndpoints = [
@@ -117,21 +116,17 @@ assert
       name = "dewey";
       group = "hosts";
       url = "https://dewey.example.test";
+      interval = "5m";
       conditions = [ "[STATUS] == 200" ];
+      alerts = [ { type = "pushover"; } ];
     }
     {
-      name = "paperless";
+      name = "Paperless";
       group = "webapps";
       url = "https://paperless.example.test/api/schema/";
       interval = "5m";
       conditions = [ "[STATUS] == 200" ];
-      alerts = [
-        {
-          type = "testing";
-          "failure-threshold" = 3;
-          description = "healthcheck failed";
-        }
-      ];
+      alerts = [ { type = "pushover"; } ];
     }
   ];
 assert
@@ -145,6 +140,13 @@ assert
   pushover == {
     "application-token" = "$PUSHOVER_API_TOKEN";
     "user-key" = "$PUSHOVER_USER_KEY";
+    default-alert = {
+      description = "health-check failed";
+      failure-threshold = 3;
+      minimum-reminder-interval = "1h";
+      send-on-resolved = true;
+      success-threshold = 2;
+    };
   };
 assert
   credentialConsumer == {
