@@ -20,6 +20,7 @@ in
     ../../config/home-ops.nix
     ../../modules/site-net
   ];
+  determinate.enable = false;
   system.stateVersion = "24.05";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
