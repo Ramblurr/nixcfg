@@ -14,25 +14,38 @@ in
   config = lib.mkIf cfg.enable {
     users.groups.thanos-objstore = { };
     sops.secrets = {
-      thanos_sidecar_object_storage_configuration = {
-        format = "yaml";
-        mode = "0440";
-        owner = "root";
-        group = "thanos-objstore";
-      };
+      "thanos-object-storage-access-key" = { };
+      "thanos-object-storage-secret-key" = { };
+    };
+    sops.templates."thanos-object-storage.yaml" = {
+      owner = "root";
+      group = "thanos-objstore";
+      mode = "0440";
+      content = ''
+        type: S3
+        config:
+          bucket: debord-thanos
+          endpoint: garage.mgmt.${config.repo.secrets.global.domain.home}
+          region: us-east-1
+          access_key: ${config.sops.placeholder."thanos-object-storage-access-key"}
+          secret_key: ${config.sops.placeholder."thanos-object-storage-secret-key"}
+          insecure: false
+          signature_version2: false
+          bucket_lookup_type: path
+      '';
     };
 
     services.thanos = {
       sidecar = {
         enable = true;
-        objstore.config-file = config.sops.secrets.thanos_sidecar_object_storage_configuration.path;
+        objstore.config-file = config.sops.templates."thanos-object-storage.yaml".path;
         grpc-address = "127.0.0.1:10901";
         http-address = "127.0.0.1:10902";
       };
 
       store = {
         enable = true;
-        objstore.config-file = config.sops.secrets.thanos_sidecar_object_storage_configuration.path;
+        objstore.config-file = config.sops.templates."thanos-object-storage.yaml".path;
         grpc-address = "127.0.0.1:10903";
         http-address = "127.0.0.1:10904";
       };
@@ -49,7 +62,7 @@ in
 
       compact = {
         enable = true;
-        objstore.config-file = config.sops.secrets.thanos_sidecar_object_storage_configuration.path;
+        objstore.config-file = config.sops.templates."thanos-object-storage.yaml".path;
         http-address = "127.0.0.1:10907";
         retention = {
           resolution-raw = "30d";
