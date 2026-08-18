@@ -14,6 +14,9 @@
         davis-onepassword-credentials = import ../tests/davis-onepassword-credentials.nix {
           inherit inputs pkgs;
         };
+        matrix-postgres-incremental = import ../tests/matrix-postgres-incremental.nix {
+          inherit inputs pkgs;
+        };
         onepassword-connect-availability = import ../tests/onepassword-connect-availability.nix {
           inherit inputs pkgs;
         };
