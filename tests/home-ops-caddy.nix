@@ -32,6 +32,7 @@ let
         modules.services.calibre-web = {
           enable = true;
           domain = "books.example.test";
+          domainKobo = "kobo.example.test";
           ports.http = 8083;
           mediaNfsShare = "books";
           user = {
@@ -146,6 +147,9 @@ let
   cfg = evaluated.config;
   caddy = cfg.services.caddy;
   generatedConfig = caddy.configFile;
+  findCheck = name: lib.findFirst (check: check.name == name) null cfg.site.gatus.endpoints;
+  calibreWebCheck = findCheck "Calibre Web";
+  koboCheck = findCheck "Calibre Web Kobo";
   failedAssertions = map (entry: entry.message) (lib.filter (entry: !entry.assertion) cfg.assertions);
   maliFailedAssertions = map (entry: entry.message) (
     lib.filter (entry: !entry.assertion) maliCfg.assertions
@@ -186,6 +190,11 @@ assert lib.hasInfix "@plain_home_assistant host home.example.test" caddy.extraCo
 assert lib.hasInfix "@plain_octoprint host octoprint.example.test" caddy.extraConfig;
 assert lib.hasInfix "@plain_jellyfin host jelly.example.test media.example.test" caddy.extraConfig;
 assert lib.hasInfix "@protected_calibre_web host books.example.test" caddy.extraConfig;
+assert cfg.modules.services.caddy.protectedRoutes.calibre-web.healthCheckPath == "/login";
+assert calibreWebCheck.url == "https://books.example.test/_health/gatus";
+assert calibreWebCheck.conditions == [ "[STATUS] == 200" ];
+assert koboCheck.url == "https://kobo.example.test/login";
+assert koboCheck.conditions == [ "[STATUS] == 200" ];
 assert lib.hasInfix "realm calibre-pocket-id" caddy.globalConfig;
 assert lib.hasInfix "/oauth2/calibre-pocket-id" caddy.globalConfig;
 assert lib.hasInfix "@protected_alpha host alpha.example.test" caddy.extraConfig;
