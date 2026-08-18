@@ -75,20 +75,15 @@ in
             gid = lib.mkForce cfg.bridgesGroup.gid;
           };
 
-          environment.systemPackages =
-            with pkgs;
+          environment.systemPackages = map (x: x.terminfo) (
+            with pkgs.pkgsBuildBuild;
             [
-              pgbackrest
+              ghostty
+              kitty
+              tmux
+              wezterm
             ]
-            ++ (map (x: x.terminfo) (
-              with pkgs.pkgsBuildBuild;
-              [
-                ghostty
-                kitty
-                tmux
-                wezterm
-              ]
-            ));
+          );
 
           services.postgresql = {
             enable = true;
@@ -113,11 +108,6 @@ in
             settings = {
               unix_socket_directories = "/tmp,${mounts.host-socket.mountPoint}";
               port = 5432;
-
-              #archive_mode = "on";
-              #archive_command = "${pkgs.pgbackrest}/bin/pgbackrest --stanza=${stanza} archive-push %p";
-              #max_wal_senders = 3;
-              #wal_level = "replica";
             };
           };
         };

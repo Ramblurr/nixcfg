@@ -20,7 +20,6 @@
         };
         mali-garage = import ../tests/mali-garage.nix { inherit inputs pkgs; };
         mali-zrepl-retention = import ../tests/mali-zrepl-retention.nix { inherit inputs pkgs; };
-        postgresql-backup-secrets = import ../tests/postgresql-backup-secrets.nix { inherit inputs pkgs; };
         mali-zrepl-reconcile = import ../tests/mali-zrepl-reconcile.nix { inherit inputs pkgs; };
         zrepl-outage-continuity = import ../tests/zrepl-outage-continuity.nix { inherit pkgs; };
         common-server = import ../tests/common-server.nix { inherit inputs pkgs; };
