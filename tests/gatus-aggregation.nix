@@ -40,6 +40,7 @@ let
         {
           networking.hostName = "debord";
           system.stateVersion = "26.05";
+          modules.services.onepassword-systemd-credentials.enable = true;
           modules.services.gatus = {
             enable = true;
             domain = "status.example.test";
@@ -105,6 +106,10 @@ let
 
   endpoints = hosts.debord.config.services.gatus.settings.endpoints;
   externalEndpoints = hosts.debord.config.services.gatus.settings."external-endpoints";
+  pushover = hosts.debord.config.services.gatus.settings.alerting.pushover;
+  credentialConsumer =
+    hosts.debord.config.modules.services.onepassword-systemd-credentials.consumers.gatus-env-setup;
+  gatusEnvSetup = hosts.debord.config.systemd.services.gatus-env-setup;
 in
 assert
   endpoints == [
@@ -136,6 +141,18 @@ assert
       token = "test-token";
     }
   ];
+assert
+  pushover == {
+    "application-token" = "$PUSHOVER_API_TOKEN";
+    "user-key" = "$PUSHOVER_USER_KEY";
+  };
+assert
+  credentialConsumer == {
+    pushover-api-token = "op://home-ops-prod/pushover/pushover_api_token";
+    pushover-user-key = "op://home-ops-prod/pushover/pushover_user_key";
+  };
+assert gatusEnvSetup.before == [ "gatus.service" ];
+assert gatusEnvSetup.requiredBy == [ "gatus.service" ];
 pkgs.runCommand "gatus-aggregation-test" { } ''
   touch "$out"
 ''
