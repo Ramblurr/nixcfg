@@ -89,6 +89,7 @@
     ./services/koreader-sync.nix
     ./services/calibre-web.nix
     ./services/caddy.nix
+    ./services/databasus
     ./services/davis.nix
     ./services/docker.nix
     ./services/filebrowser-quantum.nix
