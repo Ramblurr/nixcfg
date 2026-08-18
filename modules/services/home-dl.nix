@@ -380,6 +380,38 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Prowlarr";
+        group = "Media & Library";
+        url = "https://${ingresses.prowlarr.domain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+      {
+        name = "Radarr";
+        group = "Media & Library";
+        url = "https://${ingresses.radarr.domain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+      {
+        name = "SABnzbd";
+        group = "Media & Library";
+        url = "https://${ingresses.sabnzbd.domain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+      {
+        name = "Sonarr";
+        group = "Media & Library";
+        url = "https://${ingresses.sonarr.domain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+      {
+        name = "qBittorrent";
+        group = "Media & Library";
+        url = "https://${qbittorrentDomain}/";
+      }
+    ];
+
     modules.services.caddy.protectedRoutes = lib.mapAttrs (_name: ingress: {
       publicHost = ingress.domain;
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";

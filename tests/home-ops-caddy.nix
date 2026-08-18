@@ -7,6 +7,7 @@ let
     modules = [
       inputs.impermanence.nixosModules.impermanence
       inputs.sops-nix.nixosModules.sops
+      ../modules/site/gatus.nix
       ../modules/services/ingress-home-assistant.nix
       ../modules/services/ingress-octoprint.nix
       ../modules/services/calibre-web.nix
@@ -101,6 +102,7 @@ let
       inputs.sops-nix.nixosModules.sops
       ../modules/services/caddy.nix
       ../modules/services/onepassword-systemd-credentials.nix
+      ../modules/site/gatus.nix
       ../hosts/mali/caddy.nix
       ../hosts/mali/atticd.nix
       ../hosts/mali/ncps.nix

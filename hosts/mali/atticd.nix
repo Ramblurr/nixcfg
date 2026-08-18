@@ -83,6 +83,14 @@
       };
     };
   };
+  site.gatus.endpoints = [
+    {
+      name = "Attic";
+      group = "Infrastructure & Operations";
+      url = "https://attic.mgmt.${config.repo.secrets.global.domain.home}/";
+    }
+  ];
+
   modules.services.caddy.routes.attic = {
     publicHost = "attic.mgmt.${config.repo.secrets.global.domain.home}";
     aliases = [ "attic.int.${config.repo.secrets.global.domain.home}" ];

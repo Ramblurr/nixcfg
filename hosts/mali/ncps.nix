@@ -81,6 +81,14 @@ in
       config.repo.secrets.global.nixCachePublicKey
     ];
   };
+  site.gatus.endpoints = [
+    {
+      name = "NCPS";
+      group = "Infrastructure & Operations";
+      url = "https://${hostName}/";
+    }
+  ];
+
   modules.services.caddy.routes.ncps = {
     publicHost = hostName;
     upstream = "http://${config.services.ncps.server.addr}";

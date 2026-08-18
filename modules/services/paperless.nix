@@ -183,7 +183,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Paperless";
-        group = "webapps";
+        group = "Home & Personal";
         url = "https://${cfg.domain}/api/schema/";
       }
     ];

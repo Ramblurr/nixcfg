@@ -178,6 +178,14 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "oCIS";
+        group = "Work & Collaboration";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.data = {
       publicHost = cfg.domain;
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";

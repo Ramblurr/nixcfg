@@ -141,6 +141,21 @@ in
     garagePorts.admin
   ];
 
+  site.gatus.endpoints = [
+    {
+      name = "Garage Data API";
+      group = "Infrastructure & Operations";
+      url = "https://garage.data.${homeDomain}/";
+      conditions = [ "[STATUS] == 403" ];
+    }
+    {
+      name = "Garage Management API";
+      group = "Infrastructure & Operations";
+      url = "https://garage.mgmt.${homeDomain}/";
+      conditions = [ "[STATUS] == 403" ];
+    }
+  ];
+
   modules.services.caddy.routes = {
     garage-data = {
       publicHost = "garage.data.${homeDomain}";

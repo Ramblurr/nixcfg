@@ -87,6 +87,14 @@ in
       ];
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Databasus";
+        group = "Infrastructure & Operations";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.databasus = {
       publicHost = cfg.domain;
       inherit upstream;

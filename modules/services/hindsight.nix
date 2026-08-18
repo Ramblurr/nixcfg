@@ -514,6 +514,14 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Hindsight";
+        group = "Home & Personal";
+        url = "https://${cfg.domain}/hindsight-api/health";
+      }
+    ];
+
     modules.services.caddy.routes.hindsight = {
       publicHost = cfg.domain;
       handlerConfig = ''

@@ -44,6 +44,14 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "KOReader Sync";
+        group = "Media & Library";
+        url = "https://${cfg.domain}/healthcheck";
+      }
+    ];
+
     modules.services.caddy.routes.koreader = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";

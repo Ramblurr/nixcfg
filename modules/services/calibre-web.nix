@@ -118,6 +118,21 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Calibre Web";
+        group = "Media & Library";
+        url = "https://${cfg.domain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+      {
+        name = "Calibre Web Kobo";
+        group = "Media & Library";
+        url = "https://${cfg.domainKobo}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+    ];
+
     modules.services.caddy.protectedRoutes.calibre-web = {
       publicHost = cfg.domain;
       inherit upstream;

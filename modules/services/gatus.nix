@@ -14,7 +14,8 @@ let
       configs = map (node: node.config) (builtins.attrValues nodes);
     in
     if configs == [ ] then [ config ] else configs;
-  collectEndpoints = name: lib.concatMap (nodeConfig: nodeConfig.site.gatus.${name}) nodeConfigs;
+  collectEndpoints =
+    name: lib.unique (lib.concatMap (nodeConfig: nodeConfig.site.gatus.${name}) nodeConfigs);
   stateDirActual = "/var/lib/private/gatus";
   stateDirEffective = "/var/lib/gatus";
 in

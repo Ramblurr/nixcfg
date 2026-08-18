@@ -67,6 +67,14 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    site.gatus.endpoints = [
+      {
+        name = "Invoice Ninja";
+        group = "Work & Collaboration";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.clients = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";

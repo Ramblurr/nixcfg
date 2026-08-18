@@ -6,6 +6,7 @@ let
     modules = [
       inputs.quadlet-nix2.nixosModules.default
       inputs.sops-nix.nixosModules.sops
+      ../modules/site/gatus.nix
       ../modules/services/invoiceninja.nix
       ../modules/services/onepassword-systemd-credentials.nix
       {

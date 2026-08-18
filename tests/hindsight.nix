@@ -146,6 +146,7 @@ let
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
         testCaddyOptions
+        ../modules/site/gatus.nix
         ../modules/services/hindsight.nix
         {
           networking.hostName = "debord";
@@ -243,6 +244,7 @@ pkgs.testers.runNixOSTest {
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
         testCaddyOptions
+        ../modules/site/gatus.nix
         ../modules/services/hindsight.nix
       ];
 

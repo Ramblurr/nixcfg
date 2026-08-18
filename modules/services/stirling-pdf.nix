@@ -31,6 +31,14 @@ in
         INSTALL_BOOK_AND_ADVANCED_HTML_OPS = "true";
       };
     };
+    site.gatus.endpoints = [
+      {
+        name = "Stirling PDF";
+        group = "Home & Personal";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.pdf = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";

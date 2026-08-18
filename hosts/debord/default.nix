@@ -80,7 +80,7 @@ in
   services.gatus.settings.endpoints = [
     {
       name = "Gatus";
-      group = "internal";
+      group = "Infrastructure & Operations";
       url = "http://127.0.0.1:${toString config.modules.services.gatus.port}/";
       interval = "1m";
       conditions = [ "[STATUS] == 200" ];
@@ -124,7 +124,15 @@ in
   };
 
   # Merge in the site secrets
-  inherit (config.repo.secrets.site) site;
+  site = config.repo.secrets.site.site // {
+    gatus.endpoints = [
+      {
+        name = "NAD API";
+        group = "Home & Personal";
+        url = "https://nad.${config.repo.secrets.global.domain.home}/api";
+      }
+    ];
+  };
   systemd.network = {
     links = {
       "10-lan0" = {

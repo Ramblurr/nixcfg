@@ -12,6 +12,14 @@ in
   options.modules.services.ingress-paseo.enable = lib.mkEnableOption "Paseo ingress";
 
   config = lib.mkIf cfg.enable {
+    site.gatus.endpoints = [
+      {
+        name = "Paseo";
+        group = "Work & Collaboration";
+        url = "https://paseo.${homeDomain}/";
+      }
+    ];
+
     modules.services.caddy.routes.paseo = {
       publicHost = "paseo.${homeDomain}";
       upstream = "http://quine.prim.${homeDomain}:6767";

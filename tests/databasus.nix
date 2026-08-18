@@ -4,6 +4,7 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
+      ../modules/site/gatus.nix
       ../modules/services/databasus
       ../modules/services/podman.nix
       ../modules/zfs-attrs.nix

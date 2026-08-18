@@ -66,6 +66,14 @@ in
         assertion = cfg.user.name == "matrix-synapse" && cfg.group.name == "matrix-synapse";
       }
     ];
+    site.gatus.endpoints = [
+      {
+        name = "Matrix Synapse";
+        group = "Work & Collaboration";
+        url = "https://${cfg.domain}/_matrix/client/versions";
+      }
+    ];
+
     modules.services.caddy.routes.matrix = {
       publicHost = cfg.domain;
       http3 = false;
