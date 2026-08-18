@@ -14,6 +14,9 @@ let
   stateDir = "/var/lib/private/home-dl";
   downloadsDir = "/mnt/downloads";
   qbittorrentDownloadsDir = "${downloadsDir}/torrents/qbit";
+  qbittorrentBlackholeDir = "${qbittorrentDownloadsDir}/blackhole";
+  qbittorrentTorrentFilesDir = "${qbittorrentDownloadsDir}/torrents";
+  qbittorrentFinishedTorrentFilesDir = "${qbittorrentDownloadsDir}/torrents-complete";
   qbittorrentStateDir = "${stateDir}/qbittorrent";
   qbittorrentProfileDir = "/var/lib/qbittorrent";
   quiStateDir = "${stateDir}/qui";
@@ -27,6 +30,18 @@ let
   wireguardConfigFile = "/run/${namespace}/wireguard.conf";
   qbittorrentApiPort = 8085;
 
+  qbittorrentWatchedFolders = pkgs.writeText "qbittorrent-watched-folders.json" (
+    builtins.toJSON {
+      ${qbittorrentBlackholeDir} = {
+        add_torrent_params = {
+          content_layout = "Subfolder";
+          save_path = "${qbittorrentDownloadsDir}/complete";
+          use_auto_tmm = false;
+        };
+        recursive = false;
+      };
+    }
+  );
   portForwardScript = pkgs.writeShellScript "proton-qbittorrent-port-forward" ''
     set -u
 
@@ -270,8 +285,10 @@ in
         LegalNotice.Accepted = true;
         BitTorrent.Session = {
           DHTEnabled = false;
+          FinishedTorrentExportDirectory = qbittorrentFinishedTorrentFilesDir;
           LSDEnabled = false;
           PeXEnabled = false;
+          TorrentExportDirectory = qbittorrentTorrentFilesDir;
           TorrentContentLayout = "Subfolder";
         };
         Preferences = {
@@ -317,6 +334,9 @@ in
       ];
       serviceConfig = {
         BindPaths = [ "${qbittorrentStateDir}:${qbittorrentProfileDir}" ];
+        BindReadOnlyPaths = [
+          "${qbittorrentWatchedFolders}:${qbittorrentProfileDir}/qBittorrent/config/watched_folders.json"
+        ];
         ReadWritePaths = [
           qbittorrentProfileDir
           downloadsDir
@@ -355,8 +375,11 @@ in
 
     systemd.tmpfiles.rules = [
       "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
+      "d ${qbittorrentBlackholeDir} 0770 ${mediaUser} ${mediaGroup}"
       "d ${qbittorrentDownloadsDir}/complete 0770 ${mediaUser} ${mediaGroup}"
       "d ${qbittorrentDownloadsDir}/incomplete 0770 ${mediaUser} ${mediaGroup}"
+      "d ${qbittorrentTorrentFilesDir} 0770 ${mediaUser} ${mediaGroup}"
+      "d ${qbittorrentFinishedTorrentFilesDir} 0770 ${mediaUser} ${mediaGroup}"
       "d ${quiStateDir} 0750 qui qui"
     ];
 

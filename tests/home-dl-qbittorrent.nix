@@ -67,6 +67,11 @@ let
   inherit (evaluated) config;
   namespace = config.vpnNamespaces.qbtvpn;
   qbittorrent = config.services.qbittorrent;
+  qbittorrentReadOnlyBinds = config.systemd.services.qbittorrent.serviceConfig.BindReadOnlyPaths;
+  watchedFoldersBind =
+    lib.findFirst (lib.hasSuffix ":/var/lib/qbittorrent/qBittorrent/config/watched_folders.json") null
+      qbittorrentReadOnlyBinds;
+  watchedFoldersConfig = lib.head (lib.splitString ":" watchedFoldersBind);
   qui = config.services.qui;
   portForward = config.systemd.services.proton-qbittorrent-port-forward;
   credentialProvider = config.modules.services.onepassword-systemd-credentials;
@@ -157,6 +162,7 @@ assert
   config.systemd.services.qbittorrent.serviceConfig.BindPaths == [
     "/var/lib/private/home-dl/qbittorrent:/var/lib/qbittorrent"
   ];
+assert watchedFoldersBind != null;
 assert
   config.systemd.services.qbittorrent.serviceConfig.ReadWritePaths == [
     "/var/lib/qbittorrent"
@@ -175,8 +181,10 @@ assert
 assert
   qbittorrent.serverConfig.BitTorrent.Session == {
     DHTEnabled = false;
+    FinishedTorrentExportDirectory = "/mnt/downloads/torrents/qbit/torrents-complete";
     LSDEnabled = false;
     PeXEnabled = false;
+    TorrentExportDirectory = "/mnt/downloads/torrents/qbit/torrents";
     TorrentContentLayout = "Subfolder";
   };
 assert
@@ -254,6 +262,16 @@ assert config.modules.services.caddy.routes.qbittorrent.upstream == "http://127.
 assert !(lib.hasInfix "qbittorrent" (lib.toLower parentWithoutImport));
 assert !(lib.hasInfix "gluetun" (lib.toLower parentWithoutImport));
 pkgs.runCommand "home-dl-qbittorrent" { } ''
+  ${pkgs.jq}/bin/jq -e '
+    .["/mnt/downloads/torrents/qbit/blackhole"] == {
+      "add_torrent_params": {
+        "content_layout": "Subfolder",
+        "save_path": "/mnt/downloads/torrents/qbit/complete",
+        "use_auto_tmm": false
+      },
+      "recursive": false
+    }
+  ' ${watchedFoldersConfig} >/dev/null
   ${runScenario} success success 1
   grep -F 'natpmpc -g 10.2.0.1 -a 1 0 udp 60' success/events
   grep -F 'natpmpc -g 10.2.0.1 -a 45678 0 tcp 60' success/events
