@@ -14,6 +14,16 @@ let
           type = lib.types.attrs;
           default = { };
         };
+        options.modules.services.caddy = {
+          edge.certificateHosts = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+          };
+          routes = lib.mkOption {
+            type = lib.types.attrs;
+            default = { };
+          };
+        };
         options.modules.zfs.datasets.properties = lib.mkOption {
           type = lib.types.attrs;
           default = { };
