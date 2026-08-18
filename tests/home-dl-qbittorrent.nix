@@ -37,6 +37,7 @@ let
       {
         nixpkgs.pkgs = hostPkgs;
         networking.hostName = "dewey";
+        boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = true;
         system.stateVersion = "26.05";
         modules.services.home-dl = {
           enable = true;
@@ -149,6 +150,7 @@ let
       ${portForward.serviceConfig.ExecStart}
   '';
 in
+assert config.boot.kernel.sysctl."net.ipv6.conf.all.forwarding" == 1;
 assert lib.versionAtLeast qbittorrent.package.version "5.2.3";
 assert qbittorrent.profileDir == "/var/lib/private/home-dl/qbittorrent";
 assert qbittorrent.webuiPort == 8085;
@@ -179,7 +181,10 @@ assert
   config.systemd.services.qui.serviceConfig.LoadCredential == [
     "sessionSecret:${credentialProvider.socketPath}"
   ];
-assert namespace.wireguardConfigFile == "/run/credentials/qbtvpn.service/wireguardConfig";
+assert namespace.wireguardConfigFile == "/run/qbtvpn/wireguard.conf";
+assert lib.hasInfix "Address = 10.2.0.2/32" config.systemd.services.qbtvpn.preStart;
+assert lib.hasInfix "DNS = 10.2.0.1" config.systemd.services.qbtvpn.preStart;
+assert lib.hasInfix "AllowedIPs = 0.0.0.0/0" config.systemd.services.qbtvpn.preStart;
 assert namespace.accessibleFrom == [ "192.168.15.5" ];
 assert
   namespace.portMappings == [
@@ -198,8 +203,12 @@ assert lib.elem "qbtvpn.service" portForward.bindsTo;
 assert lib.elem "qbittorrent.service" portForward.after;
 assert
   config.modules.services.onepassword-systemd-credentials.consumers == {
-    qbtvpn.wireguardConfig = "op://home-ops-prod/home-dl-qbittorrent/proton-wireguard-config";
-    qui.sessionSecret = "op://home-ops-prod/home-dl-qbittorrent/qui-session-secret";
+    qbtvpn = {
+      privateKey = "op://home-ops-prod/protonvpn-dewey/PrivateKey";
+      peerPublicKey = "op://home-ops-prod/protonvpn-dewey/PeerPublicKey";
+      peerEndpoint = "op://home-ops-prod/protonvpn-dewey/PeerEndpoint";
+    };
+    qui.sessionSecret = "op://home-ops-prod/qbittorrent/qui-session-secret";
   };
 assert config.modules.services.caddy.routes.qbittorrent.upstream == "http://127.0.0.1:10019";
 assert !(lib.hasInfix "qbittorrent" (lib.toLower parentWithoutImport));
