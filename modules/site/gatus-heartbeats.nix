@@ -14,16 +14,22 @@ let
   endpointName = heartbeat: "${heartbeat.name} (${hostName})";
   reporterCommand =
     heartbeat:
-    lib.concatStringsSep " " [
-      (lib.getExe heartbeatPackage)
-      "systemd"
-      "--url"
-      (lib.escapeShellArg gatusUrl)
-      "--group"
-      (lib.escapeShellArg heartbeat.group)
-      "--name"
-      (lib.escapeShellArg (endpointName heartbeat))
-    ];
+    lib.concatStringsSep " " (
+      [
+        (lib.getExe heartbeatPackage)
+        "systemd"
+        "--url"
+        (lib.escapeShellArg gatusUrl)
+        "--group"
+        (lib.escapeShellArg heartbeat.group)
+        "--name"
+        (lib.escapeShellArg (endpointName heartbeat))
+      ]
+      ++ lib.optionals (cfg.heartbeatToken.environmentFile == null) [
+        "--token-file"
+        "%d/gatus-token"
+      ]
+    );
   heartbeatType = lib.types.submodule {
     options = {
       service = lib.mkOption {
