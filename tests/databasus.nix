@@ -5,6 +5,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       ../modules/site/gatus.nix
+      ../modules/site/gatus-heartbeats.nix
       ../modules/services/databasus
       ../modules/services/podman.nix
       ../modules/zfs-attrs.nix

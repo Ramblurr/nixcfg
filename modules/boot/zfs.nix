@@ -7,6 +7,7 @@
 with lib;
 let
   cfg = config.modules.boot.zfs;
+  heartbeatAvailable = config.site.gatus.heartbeatToken.available;
 in
 {
   options = {
@@ -150,6 +151,15 @@ in
           monthly = 1; # keep only one monthly snapshot (instead of twelve)
         };
       };
+      site.gatus.heartbeats = lib.mkIf heartbeatAvailable {
+        zfs-scrub = {
+          service = "zfs-scrub";
+          name = "ZFS Scrub";
+          group = config.site.gatus.groups.infrastructure;
+          interval = "840h";
+        };
+      };
+
       services.zfs.zed = mkIf (cfg.zed.enable && config.modules.server.smtp-external-relay.enable) {
         enableMail = true;
         settings = {

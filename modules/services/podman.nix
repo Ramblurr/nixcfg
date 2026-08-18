@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.modules.services.podman;
+  heartbeatAvailable = config.site.gatus.heartbeatToken.available;
 
   podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
     until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
@@ -71,6 +72,20 @@ in
         OnCalendar = "weekly";
         Persistent = true; # run after missed time
         RandomizedDelaySec = "2h";
+      };
+    };
+    site.gatus.heartbeats = lib.mkIf heartbeatAvailable {
+      podman-auto-update = {
+        service = "podman-auto-update";
+        name = "Podman Automatic Image Update";
+        group = config.site.gatus.groups.infrastructure;
+        interval = "30h";
+      };
+      podman-prune = {
+        service = "podman-prune";
+        name = "Podman Image Prune";
+        group = config.site.gatus.groups.infrastructure;
+        interval = "192h";
       };
     };
   };

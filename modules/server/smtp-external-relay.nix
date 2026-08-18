@@ -7,6 +7,7 @@
 with lib;
 let
   cfg = config.modules.server.smtp-external-relay;
+  heartbeatAvailable = config.site.gatus.heartbeatToken.available;
   inherit (config.networking) hostName;
 in
 {
@@ -103,6 +104,12 @@ in
         timerConfig.OnCalendar = "weekly";
       };
 
+      site.gatus.heartbeats.weekly-mail-alert = lib.mkIf heartbeatAvailable {
+        service = "weekly-mail-alert";
+        name = "Weekly Host Mail Alert";
+        group = config.site.gatus.groups.infrastructure;
+        interval = "192h";
+      };
       services.smartd.notifications.mail.enable = true;
       services.smartd.notifications.mail.sender = cfg.emailFrom;
       services.smartd.notifications.mail.recipient = cfg.emailTo;
