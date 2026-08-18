@@ -16,13 +16,6 @@ let
   dataDir = "/var/lib/onepassword-connect";
   credentials = config.sops.secrets."onepassword-connect/credentials";
   heartbeat = "${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 2 http://127.0.0.1:8080/heartbeat";
-  opConnectctl = pkgs.writeShellScriptBin "op-connectctl" ''
-    exec ${pkgs.sudo}/bin/sudo --user ${lib.escapeShellArg cfg.user.name} \
-      ${pkgs.coreutils}/bin/env \
-      XDG_RUNTIME_DIR=/run/user/${toString cfg.user.uid} \
-      DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${toString cfg.user.uid}/bus \
-      ${pkgs.systemd}/bin/systemctl --user "$@"
-  '';
   peerSet = lib.concatStringsSep ", " cfg.availability.peerAddresses;
 in
 {
@@ -94,8 +87,6 @@ in
         message = "The Connect availability endpoint must not be a permanent replica address.";
       }
     ];
-
-    environment.systemPackages = [ opConnectctl ];
 
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
