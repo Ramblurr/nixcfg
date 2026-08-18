@@ -62,8 +62,11 @@ in
     services = {
       databasus = {
         enable = true;
-        domain = "databasus.mgmt.${config.repo.secrets.global.domain.home}";
-        allowedRemoteIPs = [ config.site.net.mgmt.subnet4 ];
+        domain = "databasus.${config.repo.secrets.global.domain.home}";
+        allowedRemoteIPs = [
+          config.site.net.prim.subnet4
+          "100.64.0.0/10"
+        ];
       };
       sshd.enable = true;
     };
