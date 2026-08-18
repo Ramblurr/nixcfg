@@ -19,6 +19,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       ../modules/services/caddy.nix
+      ../modules/services/onepassword-systemd-credentials.nix
       ../hosts/james/caddy.nix
       ../hosts/james/ingress-haproxy.nix
       ../hosts/james/goaccess.nix
