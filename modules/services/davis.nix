@@ -8,6 +8,10 @@
 let
   cfg = config.modules.services.davis;
   inherit (config.repo.secrets) home-ops;
+  credentialService = "davis-env-setup";
+  credentialDirectory = "/run/credentials/${credentialService}.service";
+  appSecretCredential = "APP_SECRET";
+  adminPasswordCredential = "ADMIN_PASSWORD";
 in
 {
   options.modules.services.davis = {
@@ -27,6 +31,17 @@ in
     "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/davis.nix"
   ];
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = config.modules.services.onepassword-systemd-credentials.enable;
+        message = "Davis 1Password credentials require the systemd credential provider.";
+      }
+    ];
+
+    modules.services.onepassword-systemd-credentials.consumers.${credentialService} = {
+      ${appSecretCredential} = "op://home-ops-prod/davis/APP_SECRET";
+      ${adminPasswordCredential} = "op://home-ops-prod/davis/ADMIN_PASSWORD";
+    };
     modules.services.caddy.routes.davis = {
       publicHost = cfg.domain;
       handlerConfig = ''
@@ -60,11 +75,6 @@ in
       mode = "400";
     };
 
-    systemd.services.davis-env-setup = {
-      requires = [ "sops-install-secrets.service" ];
-      after = [ "sops-install-secrets.service" ];
-    };
-
     services.davis = {
       enable = true;
       hostname = cfg.domain;
@@ -77,8 +87,8 @@ in
         inviteFromAddress = home-ops.mail.notificationsFromAddress;
       };
       adminLogin = "admin";
-      adminPasswordFile = config.sops.secrets."davis/ADMIN_PASSWORD".path;
-      appSecretFile = config.sops.secrets."davis/APP_SECRET".path;
+      adminPasswordFile = "${credentialDirectory}/${adminPasswordCredential}";
+      appSecretFile = "${credentialDirectory}/${appSecretCredential}";
       config = {
         IMAP_AUTH_URL = home-ops.mail.imapAuthUrlNew;
         IMAP_ENCRYPTION_METHOD = "ssl";

@@ -5,6 +5,9 @@
     {
       checks = {
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
+        davis-onepassword-credentials = import ../tests/davis-onepassword-credentials.nix {
+          inherit inputs pkgs;
+        };
         onepassword-connect-availability = import ../tests/onepassword-connect-availability.nix {
           inherit inputs pkgs;
         };
