@@ -48,7 +48,8 @@ in
       {
         name = "KOReader Sync";
         group = "Media & Library";
-        url = "https://${cfg.domain}/healthcheck";
+        url = "https://${cfg.domain}/users/auth";
+        conditions = [ "[STATUS] == 401" ];
       }
     ];
 
