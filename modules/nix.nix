@@ -9,6 +9,7 @@
 
 let
   inherit (config.repo.secrets.global) ciSigningPublicKey;
+  heartbeatAvailable = config.site.gatus.heartbeatToken.available;
 in
 with lib;
 {
@@ -119,4 +120,10 @@ with lib;
     };
   };
 
+  site.gatus.heartbeats.nix-gc = lib.mkIf (heartbeatAvailable && config.nix.gc.automatic) {
+    service = "nix-gc";
+    name = "Nix Garbage Collection";
+    group = config.site.gatus.groups.infrastructure;
+    interval = "30h";
+  };
 }
