@@ -7,6 +7,8 @@
 
 let
   cfg = config.modules.services.gatus;
+  environmentFile = "/run/gatus-env/gatus.env";
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   nodeConfigs =
     let
       configs = map (node: node.config) (builtins.attrValues nodes);
@@ -37,13 +39,30 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = onepassword.enable;
+        message = "Gatus Pushover credentials require the 1Password systemd credential provider.";
+      }
+    ];
+
+    modules.services.onepassword-systemd-credentials.consumers.gatus-env-setup = {
+      pushover-api-token = "op://home-ops-prod/pushover/pushover_api_token";
+      pushover-user-key = "op://home-ops-prod/pushover/pushover_user_key";
+    };
+
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/gatus".mountpoint = stateDirActual;
     };
 
     services.gatus = {
       enable = true;
+      inherit environmentFile;
       settings = {
+        alerting.pushover = {
+          "application-token" = "$PUSHOVER_API_TOKEN";
+          "user-key" = "$PUSHOVER_USER_KEY";
+        };
         endpoints = collectEndpoints "endpoints";
         "external-endpoints" = collectEndpoints "externalEndpoints";
         web.port = cfg.port;
@@ -52,6 +71,24 @@ in
           path = "${stateDirEffective}/data.db";
         };
       };
+    };
+
+    systemd.services.gatus-env-setup = {
+      description = "Prepare Gatus environment from 1Password credentials";
+      before = [ "gatus.service" ];
+      requiredBy = [ "gatus.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        RuntimeDirectory = "gatus-env";
+        UMask = "0077";
+      };
+      script = ''
+        {
+          printf 'PUSHOVER_API_TOKEN=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/pushover-api-token")"
+          printf 'PUSHOVER_USER_KEY=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/pushover-user-key")"
+        } > ${environmentFile}
+      '';
     };
 
     systemd.services.gatus.unitConfig.RequiresMountsFor = [ stateDirActual ];
