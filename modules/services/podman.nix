@@ -18,6 +18,7 @@ in
     enable = lib.mkEnableOption "";
   };
   config = lib.mkIf cfg.enable {
+    environment.persistence."/persist".directories = [ "/var/lib/containers" ];
     virtualisation = {
       containers.enable = true;
       oci-containers.backend = "podman";
