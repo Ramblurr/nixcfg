@@ -1,0 +1,5 @@
+Job: pull_mali
+Type: pull
+Replication: DONE
+Pruning Sender: DONE
+Pruning Receiver: DONE

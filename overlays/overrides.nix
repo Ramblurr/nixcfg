@@ -1,18 +1,69 @@
-_final: prev: {
-  #roon-server = prev.roon-server.overrideAttrs (
-  #  old:
-  #  let
-  #    version = "2.50.1528";
-  #    urlVersion = builtins.replaceStrings [ "." ] [ "0" ] version;
-  #  in
-  #  {
-  #    version = version;
-  #    src = prev.fetchurl {
-  #      url = "https://download.roonlabs.com/updates/production/RoonServer_linuxx64_${urlVersion}.tar.bz2";
-  #      hash = "sha256-8Dxxjj/5JSuXeTxTV2l37ZAmf6BDdhykPSinmgZeEVY=";
-  #    };
-  #  }
-  #);
+final: prev: {
+  roon-server = prev.roon-server.overrideAttrs (
+    _old:
+    let
+      version = "2.71.1683";
+      urlVersion = builtins.replaceStrings [ "." ] [ "0" ] version;
+    in
+    {
+      inherit version;
+      src = final.fetchurl {
+        url = "https://download.roonlabs.com/updates/production/RoonServer_linuxx64_${urlVersion}.tar.bz2";
+        hash = "sha256-z/8rORTsDUhgh2hfep62jMVeAvX/c5HW4vBkVnvhcQc=";
+      };
+
+      # Roon now ships self-contained binaries instead of a shared .NET runtime.
+      # See https://github.com/NixOS/nixpkgs/issues/552889.
+      installPhase =
+        let
+          wrapBin = binPath: ''
+            (
+              binDir="$(dirname "${binPath}")"
+              binName="$(basename "${binPath}")"
+              actualBin="$binDir/$binName.exe"
+
+              rm "${binPath}"
+              makeWrapper "$actualBin" "${binPath}" \
+                --argv0 "$binName" \
+                --prefix LD_LIBRARY_PATH : "${
+                  final.lib.makeLibraryPath [
+                    final.alsa-lib
+                    final.icu66
+                    final.ffmpeg
+                    final.openssl
+                  ]
+                }" \
+                --prefix PATH : "$binDir" \
+                --prefix PATH : "${
+                  final.lib.makeBinPath [
+                    final.alsa-utils
+                    final.cifs-utils
+                    final.ffmpeg
+                  ]
+                }" \
+                --chdir "$binDir"
+            )
+          '';
+        in
+        ''
+          runHook preInstall
+          mkdir -p $out
+          mv * $out
+          rm $out/check.sh
+          rm $out/start.sh
+          rm $out/VERSION
+
+          ${wrapBin "$out/Appliance/RAATServer"}
+          ${wrapBin "$out/Appliance/RoonAppliance"}
+          ${wrapBin "$out/Server/RoonServer"}
+
+          mkdir -p $out/bin
+          makeWrapper "$out/Server/RoonServer" "$out/bin/RoonServer" --chdir "$out"
+
+          runHook postInstall
+        '';
+    }
+  );
 
   #quickemu = prev.quickemu.overrideAttrs (oldAttrs: {
   #  postPatch =
@@ -23,15 +74,4 @@ _final: prev: {
   #                       'args+=(-nic bridge,br=''${network},helper=/run/wrappers/bin/qemu-bridge-helper,model=virtio-net-pci''${MAC})'
   #    '';
   #});
-
-  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-    (pyFinal: pyPrev: {
-      django-tenants = pyPrev.django-tenants.overridePythonAttrs (old: {
-        # ref: https://github.com/NixOS/nixpkgs/issues/516785
-        postInstall = (old.postInstall or "") + ''
-          rm -rf "$out/${pyFinal.python.sitePackages}/docs"
-        '';
-      });
-    })
-  ];
 }

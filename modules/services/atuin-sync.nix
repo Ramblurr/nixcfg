@@ -20,11 +20,6 @@ in
         description = "The HTTP port to use for the atuin-sync";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -33,15 +28,18 @@ in
       openRegistration = false;
       port = cfg.ports.http;
     };
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "Atuin Sync";
+        group = config.site.gatus.groups.home;
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
+    modules.services.caddy.routes.atuin = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = false;
+      requestBodyMaxSize = "10MB";
     };
   };
 }

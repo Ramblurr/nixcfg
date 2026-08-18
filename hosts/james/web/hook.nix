@@ -174,7 +174,7 @@ in
 
     socketDirectory = lib.mkOption {
       type = lib.types.str;
-      default = "/var/run/nginx";
+      default = "/run/caddy";
       description = "Directory used for generated per-hook Unix sockets.";
     };
 
@@ -186,13 +186,13 @@ in
 
     user = lib.mkOption {
       type = lib.types.str;
-      default = "nginx";
+      default = "caddy";
       description = "User that runs the webhook service.";
     };
 
     group = lib.mkOption {
       type = lib.types.str;
-      default = "nginx";
+      default = "caddy";
       description = "Group that runs the webhook service.";
     };
 

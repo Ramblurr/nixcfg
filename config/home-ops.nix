@@ -14,42 +14,16 @@ let
   inherit (config.repo.secrets) home-ops;
   cfg = config.home-ops;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
-  jellyplexWatchedMappings = home-ops.jellyplexWatched.mappings;
-  podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
-    until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
-      ${pkgs.coreutils}/bin/sleep 0.5
-    done
-  '';
 in
 {
   options.home-ops = {
     enable = lib.mkEnableOption "My modular multi-host Home Ops setup";
-    postgresql = {
-      enable = lib.mkEnableOption "Postgresql";
-      onsiteBackup = {
-        enable = lib.mkEnableOption "Onsite Backup";
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = "/${config.networking.hostName}/repo1";
-        };
-      };
-
-      offsiteBackup = {
-        enable = lib.mkEnableOption "Offsite Backup";
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = "/${config.networking.hostName}/repo2";
-        };
-      };
-    };
+    postgresql.enable = lib.mkEnableOption "Postgresql";
     mariadb = {
       enable = lib.mkEnableOption "MariaDB";
     };
     hypervisor = {
       enable = lib.mkEnableOption "libvirt Hypervisor";
-    };
-    ingress = {
-      enable = lib.mkEnableOption "NGINX Ingress";
     };
     containers = {
       enable = lib.mkEnableOption "OCI containers";
@@ -58,25 +32,10 @@ in
     apps = {
       davis.enable = lib.mkEnableOption "Davis, carddav and caldav server";
       invoiceninja.enable = lib.mkEnableOption "Invoice Ninja";
-      authentik.enable = lib.mkEnableOption "Authentik";
       paperless.enable = lib.mkEnableOption "Paperless";
       ocis-work.enable = lib.mkEnableOption "oCIS Work";
       ocis-home.enable = lib.mkEnableOption "oCIS Home";
-      plex.enable = lib.mkEnableOption "Plex";
       jellyfin.enable = lib.mkEnableOption "Jellyfin";
-      jellyplex-watched = {
-        enable = lib.mkEnableOption "JellyPlex-Watched";
-        dryRun = lib.mkOption {
-          type = lib.types.bool;
-          default = false;
-          description = "Log changes without marking shows or movies as played.";
-        };
-        interval = lib.mkOption {
-          type = lib.types.ints.positive;
-          default = 3600;
-          description = "Seconds between JellyPlex-Watched sync passes.";
-        };
-      };
       tautulli.enable = lib.mkEnableOption "Tautulli";
       home-dl.enable = lib.mkEnableOption "Home *arr";
       hindsight.enable = lib.mkEnableOption "Hindsight agent memory";
@@ -84,7 +43,6 @@ in
       koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
       roon-server.enable = lib.mkEnableOption "Roon Server";
-      onepassword-connect.enable = lib.mkEnableOption "1Password Connect";
       archivebox.enable = lib.mkEnableOption "Archivebox";
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
       influxdb.enable = lib.mkEnableOption "Influxdb";
@@ -105,19 +63,9 @@ in
   imports = [ ./zrepl.nix ];
   config = lib.mkIf cfg.enable {
     assertions = [
-      #{
-      #  assertion =
-      #    cfg.postgresql.enable -> cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
-      #  message = "Postgresql must be configured with backup repositories";
-      #}
       {
         assertion = !(cfg.apps.ocis-work.enable && cfg.apps.ocis-home.enable);
         message = "OCIS Work and OCIS Home cannot be enabled at the same time on the same host";
-      }
-      {
-        assertion =
-          !cfg.apps.jellyplex-watched.enable || (cfg.apps.plex.enable && cfg.apps.jellyfin.enable);
-        message = "JellyPlex-Watched requires both Plex and Jellyfin to be enabled";
       }
     ];
 
@@ -214,7 +162,6 @@ in
     };
 
     networking.firewall.allowedUDPPorts = [
-      443 # http3
       53 # dns
       67 # dhcp for microvms
     ];
@@ -227,61 +174,21 @@ in
       storage.zfs.enable = true;
       net.prim.enable = true;
     };
-    sops.secrets.pgbackrestSecrets = lib.mkIf cfg.postgresql.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-      mode = "400";
-    };
+    modules.services.podman.enable = cfg.containers.enable;
+
     modules.services.postgresql = lib.mkIf cfg.postgresql.enable {
       enable = true;
       package = pkgs.postgresql_15;
-      secretsFile = config.sops.secrets.pgbackrestSecrets.path;
-      repo1 = {
-        inherit (cfg.postgresql.onsiteBackup) enable;
-        inherit (cfg.postgresql.onsiteBackup) path;
-        inherit (home-ops.pgBackup.onsite) bucket;
-        inherit (home-ops.pgBackup.onsite) endpoint;
-      };
-      repo2 = {
-        inherit (cfg.postgresql.offsiteBackup) enable;
-        inherit (cfg.postgresql.offsiteBackup) path;
-        inherit (home-ops.pgBackup.offsite) bucket;
-        inherit (home-ops.pgBackup.offsite) endpoint;
-      };
     };
     modules.services.mariadb = lib.mkIf cfg.mariadb.enable {
       enable = true;
       package = pkgs.mariadb_114;
     };
-    modules.services.ingress = lib.mkIf cfg.ingress.enable {
-      enable = true;
-      inherit (config.repo.secrets.local) domains;
-      forwardServices = {
-        "home.${home-ops.homeDomain}" = {
-          upstream = "http://10.9.4.25:8123";
-          external = true;
-          acmeHost = home-ops.homeDomain;
-        };
-        "octoprint.${home-ops.homeDomain}" = {
-          upstream = "http://10.8.50.52:5000";
-          acmeHost = home-ops.homeDomain;
-        };
-      };
+    modules.services.caddy = {
+      auth.issuerURL = "https://id.${home-ops.homeDomain}";
     };
-    services.nginx.virtualHosts."octoprint.${home-ops.homeDomain}".locations."/webcam/" =
-      lib.mkIf cfg.ingress.enable
-        {
-          proxyPass = "http://10.8.50.52:8080/";
-          recommendedProxySettings = true;
-          extraConfig = ''
-            proxy_buffering off;
-            proxy_request_buffering off;
-            proxy_read_timeout 1d;
-            add_header X-Accel-Buffering no;
-          '';
-        };
-
-    virtualisation.podman.enable = lib.mkIf cfg.containers.enable true;
-    virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
+    modules.services.ingress-home-assistant.enable = true;
+    modules.services.ingress-octoprint.enable = true;
 
     ######################
     # Impermanence Setup #
@@ -420,20 +327,6 @@ in
       RestartSec = "5s";
     };
 
-    # Podman's rootless Quadlets already wait for this user unit to observe the
-    # system network-online target. On these hosts, DNS is provided by the local
-    # dnsdist instance and can remain unavailable while its upstream health
-    # checks recover. Keep the unit activating until external DNS works so
-    # containers do not exhaust their image-pull retries during boot.
-    systemd.user.services.podman-user-wait-network-online =
-      lib.mkIf config.virtualisation.podman.enable
-        {
-          serviceConfig = {
-            ExecStartPost = podmanWaitForDns;
-            TimeoutStartSec = "180s";
-          };
-        };
-
     ########################
     # Application Services #
     ########################
@@ -449,34 +342,11 @@ in
       inherit (home-ops.groups.media) gid;
     };
 
-    # Expected SOPS key: jellyplex-watched.env with PLEX_TOKEN and JELLYFIN_TOKEN.
-    sops.secrets."jellyplex-watched/env" = lib.mkIf cfg.apps.jellyplex-watched.enable {
-      sopsFile = ../configs/home-ops/shared.sops.yml;
-      mode = "400";
-    };
-    systemd.services.jellyplex-watched = lib.mkIf cfg.apps.jellyplex-watched.enable {
-      wants = [ "sops-install-secrets.service" ];
-      after = [ "sops-install-secrets.service" ];
-    };
     modules.services.git-archive = lib.mkIf cfg.apps.git-archive.enable { enable = true; };
 
     modules.services.davis = lib.mkIf cfg.apps.davis.enable {
       enable = true;
       domain = "dav.${home-ops.homeDomain}";
-      ingress = {
-        external = true;
-        domain = home-ops.homeDomain;
-      };
-    };
-
-    modules.services.authentik = lib.mkIf cfg.apps.authentik.enable {
-      enable = true;
-      domain1 = "auth.${home-ops.homeDomain}";
-      domain2 = "auth.${home-ops.workDomain}";
-      ingress1 = home-ops.homeDomain;
-      ingress2 = home-ops.workDomain;
-      ports.http = home-ops.ports.authentik-http;
-      ports.https = home-ops.ports.authentik-https;
     };
 
     modules.services.invoiceninja = lib.mkIf cfg.apps.invoiceninja.enable {
@@ -486,23 +356,7 @@ in
       group = home-ops.groups.invoiceninja2;
       ports.http = home-ops.ports.invoiceninja;
       subnet = home-ops.subnets.invoiceninja2;
-      ingress = {
-        external = true;
-        domain = home-ops.workDomain;
-      };
     };
-
-    #modules.services.onepassword-connect = lib.mkIf cfg.apps.onepassword-connect.enable {
-    #  enable = true;
-    #  domain = "op.${home-ops.homeDomain}";
-    #  ports.api = home-ops.ports.onepassword-connect-api;
-    #  ports.sync = home-ops.ports.onepassword-connect-sync;
-    #  user = home-ops.users.onepassword-connect;
-    #  group = home-ops.groups.onepassword-connect;
-    #  ingress = {
-    #    domain = home-ops.homeDomain;
-    #  };
-    #};
 
     modules.services.paperless = lib.mkIf cfg.apps.paperless.enable {
       enable = true;
@@ -511,20 +365,6 @@ in
       user = home-ops.users.paperless;
       group = home-ops.groups.paperless;
       nfsShare = "tank2/services/paperless";
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
-    };
-
-    modules.services.plex = lib.mkIf cfg.apps.plex.enable {
-      enable = true;
-      domain = "plex.${home-ops.homeDomain}";
-      user = home-ops.users.plex;
-      group = home-ops.groups.plex;
-      nfsShare = "tank2/media";
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.jellyfin = lib.mkIf cfg.apps.jellyfin.enable {
@@ -533,21 +373,6 @@ in
       user = home-ops.users.jellyfin;
       group = home-ops.groups.jellyfin;
       nfsShare = "tank2/media";
-      ingress = {
-        domain = home-ops.homeDomain;
-        forwardAuth = false;
-        directWan = true;
-      };
-      "jellyplex-watched" = lib.mkIf cfg.apps.jellyplex-watched.enable {
-        enable = true;
-        environmentFile = config.sops.secrets."jellyplex-watched/env".path;
-        dryRun = cfg.apps.jellyplex-watched.dryRun;
-        interval = cfg.apps.jellyplex-watched.interval;
-        mappings = {
-          users = jellyplexWatchedMappings.users or { };
-          libraries = jellyplexWatchedMappings.libraries or { };
-        };
-      };
     };
 
     modules.services.audiobookshelf = lib.mkIf cfg.apps.audiobookshelf.enable {
@@ -557,9 +382,6 @@ in
       group = home-ops.groups.audiobookshelf;
       nfsShare = "tank2/media";
       ports.http = home-ops.ports.audiobookshelf;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.filebrowser-quantum = lib.mkIf cfg.apps.filebrowser-quantum.enable {
@@ -578,10 +400,6 @@ in
           path = "/mnt/mali/tank2/media";
         }
       ];
-      ingress = {
-        domain = home-ops.homeDomain;
-        forwardAuth = true;
-      };
     };
 
     modules.services.tautulli = lib.mkIf cfg.apps.tautulli.enable {
@@ -589,9 +407,6 @@ in
       domain = "tautulli.${home-ops.homeDomain}";
       user = home-ops.users.tautulli;
       ports.http = home-ops.ports.tautulli-http;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.home-dl = lib.mkIf cfg.apps.home-dl.enable {
@@ -600,10 +415,6 @@ in
       ports = home-ops.ports.home-dl;
       mediaNfsShare = "tank2/media";
       subnet = home-ops.subnets.home-dl;
-      ingress = {
-        domain = home-ops.homeDomain;
-        forwardAuth = true;
-      };
     };
 
     modules.services.hindsight = lib.mkIf cfg.apps.hindsight.enable {
@@ -619,21 +430,12 @@ in
       ports.gui = home-ops.ports.calibre-gui;
       ports.server = home-ops.ports.calibre-server;
       mediaNfsShare = "tank2/media";
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.koreader-sync = lib.mkIf cfg.apps.koreader-sync.enable {
       enable = true;
       domain = "koreader.${home-ops.homeDomain}";
       ports.http = home-ops.ports.koreader-sync;
-      ingress = {
-        domain = home-ops.homeDomain;
-        external = true;
-      };
-      user = home-ops.users.koreader-sync;
-      group = home-ops.groups.koreader-sync;
     };
     modules.services.calibre-web = lib.mkIf cfg.apps.calibre-web.enable {
       enable = true;
@@ -643,10 +445,6 @@ in
       mediaNfsShare = "tank2/media";
       user = home-ops.users.books;
       group = home-ops.groups.books;
-      ingress = {
-        domain = home-ops.homeDomain;
-        external = true;
-      };
     };
 
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
@@ -655,18 +453,11 @@ in
     #  ports.http = home-ops.ports.archivebox;
     #  user = home-ops.users.archivebox;
     #  group = home-ops.groups.archivebox;
-    #  ingress = {
-    #    domain = home-ops.homeDomain;
-    #  };
-    #};
 
     modules.services.influxdb = lib.mkIf cfg.apps.influxdb.enable {
       enable = true;
       domain = "influxdb.${home-ops.homeDomain}";
       ports.http = home-ops.ports.influxdb;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.matrix-synapse = lib.mkIf cfg.apps.matrix-synapse.enable {
@@ -677,10 +468,6 @@ in
       user = home-ops.users.matrix-synapse;
       group = home-ops.groups.matrix-synapse;
       bridgesGroup = home-ops.groups.matrix-bridges;
-      ingress = {
-        domain = home-ops.workDomain;
-        external = true;
-      };
       ketesa.enable = true;
       bridges.discord = {
         enable = true;
@@ -704,12 +491,24 @@ in
           user = home-ops.users.ocis-work;
           group = home-ops.groups.ocis-work;
           cspYaml = home-ops.ocis-work-csp;
+          oidc = {
+            issuer = "https://id.${home-ops.workDomain}";
+            clientId = "work-ocis";
+            scopes = [
+              "openid"
+              "profile"
+              "email"
+              "groups"
+            ];
+            autoProvisionAccounts = false;
+            userOidcClaim = "preferred_username";
+            userCs3Claim = "username";
+            roleAssignmentDriver = "default";
+            rewriteWellKnown = true;
+            accessTokenVerifyMethod = "jwt";
+          };
           nfsShare = "tank2/services/work-ocis2";
           subnet = home-ops.subnets.ocis-work;
-          ingress = {
-            domain = home-ops.workDomain;
-            external = true;
-          };
         }
       else if cfg.apps.ocis-home.enable then
         {
@@ -718,12 +517,12 @@ in
           ports.http = home-ops.ports.ocis-http;
           user = home-ops.users.ocis-home;
           group = home-ops.groups.ocis-home;
+          oidc = {
+            issuer = "https://id.${home-ops.homeDomain}";
+            clientId = "home-ocis";
+          };
           nfsShare = "tank2/services/home-ocis2";
           subnet = home-ops.subnets.ocis-home;
-          ingress = {
-            domain = home-ops.homeDomain;
-            external = true;
-          };
         }
       else
         { };
@@ -733,26 +532,17 @@ in
       domain = "git.${home-ops.homeDomain}";
       user = home-ops.users.forgejo;
       group = home-ops.groups.forgejo;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.actual-server = lib.mkIf cfg.apps.actual-server.enable {
       enable = true;
       domain = "budget.${home-ops.homeDomain}";
       ports.http = home-ops.ports.actual-server;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
     modules.services.atuin-sync = lib.mkIf cfg.apps.atuin-sync.enable {
       enable = true;
       domain = "atuin.${home-ops.homeDomain}";
       ports.http = home-ops.ports.atuin-sync;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
     modules.services.soju = lib.mkIf cfg.apps.soju.enable {
       enable = true;
@@ -766,19 +556,12 @@ in
     modules.services.my-y2r = lib.mkIf cfg.apps.my-y2r.enable {
       enable = true;
       domain = "y2pod.${home-ops.homeDomain}";
-      ingress = {
-        domain = home-ops.homeDomain;
-        external = true;
-      };
     };
 
     modules.services.stirling-pdf = lib.mkIf cfg.apps.stirling-pdf.enable {
       enable = true;
       domain = "pdf.${home-ops.homeDomain}";
       ports.http = home-ops.ports.stirling-pdf;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
 
     modules.services.tubearchivist = lib.mkIf cfg.apps.tubearchivist.enable {
@@ -788,9 +571,6 @@ in
       mediaNfsShare = "tank2/media/youtube";
       user = home-ops.users.tubearchivist;
       group = home-ops.groups.tubearchivist;
-      ingress = {
-        domain = home-ops.homeDomain;
-      };
     };
   };
 }

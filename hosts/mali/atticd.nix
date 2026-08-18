@@ -4,11 +4,6 @@
   unstable,
   ...
 }:
-let
-  inherit (config.repo.secrets.global) domain;
-  atticDomain1 = "attic.mgmt.${domain.home}";
-  atticDomain2 = "attic.int.${domain.home}";
-in
 {
   #=====================================================
   #
@@ -88,20 +83,17 @@ in
       };
     };
   };
-  services.nginx.virtualHosts.${atticDomain1} = {
-    useACMEHost = atticDomain1;
-    serverAliases = [ atticDomain2 ];
-    forceSSL = true;
-    http3 = false;
-    http2 = false;
-    kTLS = true;
-    extraConfig = ''
-      client_max_body_size 0;
-      access_log /var/log/nginx/access-attic.log;
-    '';
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:57000";
-      recommendedProxySettings = true;
-    };
+  site.gatus.endpoints = [
+    {
+      name = "Attic";
+      group = config.site.gatus.groups.infrastructure;
+      url = "https://attic.mgmt.${config.repo.secrets.global.domain.home}/";
+    }
+  ];
+
+  modules.services.caddy.routes.attic = {
+    publicHost = "attic.mgmt.${config.repo.secrets.global.domain.home}";
+    aliases = [ "attic.int.${config.repo.secrets.global.domain.home}" ];
+    upstream = "http://127.0.0.1:57000";
   };
 }

@@ -37,6 +37,7 @@ in
   sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
+  environment.persistence."/persist".directories = [ "/var/lib/containers" ];
   networking.hostId = lib.my.generateHostId config.networking.hostName;
 
   time.timeZone = "Europe/Berlin";

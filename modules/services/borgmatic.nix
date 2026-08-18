@@ -7,6 +7,12 @@
 with lib;
 let
   cfg = config.modules.services.borgmatic;
+  hostName = config.networking.hostName;
+  gatusGroup = config.site.gatus.groups.infrastructure;
+  gatusEndpointName = "Borgmatic Backup (${hostName})";
+  heartbeatPackage = pkgs.callPackage ../../pkgs/gatus-heartbeat.nix { };
+  gatusUrl = "https://status.${config.repo.secrets.global.domain.home}";
+  gatusStartFile = "/run/borgmatic/gatus-start";
   repository =
     with types;
     submodule {
@@ -57,7 +63,7 @@ in
         ..the ssh private key for the repos here..
       borgmatic-env:
         PASSPHRASE=ssh key passphrase here
-        HEALTHCHECK_URL=https://
+        BORGMATIC_GATUS_TOKEN=matching Gatus external endpoint token
     */
     environment.systemPackages = with pkgs; [
       borgbackup
@@ -66,7 +72,10 @@ in
     ];
     sops.secrets.borgmatic-ssh-key = { };
     sops.secrets.borgmatic-env = { };
-    systemd.services.borgmatic.serviceConfig.EnvironmentFile = "/run/secrets/borgmatic-env";
+    systemd.services.borgmatic.serviceConfig = {
+      EnvironmentFile = "/run/secrets/borgmatic-env";
+      RuntimeDirectory = "borgmatic";
+    };
     systemd.timers.borgmatic = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
@@ -74,6 +83,12 @@ in
         Persistent = true;
         RandomizedDelaySec = "2h";
       };
+    };
+
+    site.gatus.heartbeats.borgmatic = {
+      name = "Borgmatic Backup";
+      group = gatusGroup;
+      interval = "30h";
     };
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
@@ -104,9 +119,28 @@ in
             frequency = "6 weeks";
           }
         ];
-        healthchecks = {
-          ping_url = "\${HEALTHCHECK_URL}";
-        };
+        commands = [
+          {
+            before = "action";
+            when = [ "create" ];
+            run = [ "${lib.getExe' pkgs.coreutils "date"} +%s > ${gatusStartFile}" ];
+          }
+          {
+            after = "action";
+            when = [ "create" ];
+            states = [ "finish" ];
+            run = [
+              ''${lib.getExe heartbeatPackage} report --url "${gatusUrl}" --group "${gatusGroup}" --name "${gatusEndpointName}" --success true --duration "$(( $(${lib.getExe' pkgs.coreutils "date"} +%s) - $(cat ${gatusStartFile}) ))s"''
+            ];
+          }
+          {
+            after = "error";
+            when = [ "create" ];
+            run = [
+              ''${lib.getExe heartbeatPackage} report --url "${gatusUrl}" --group "${gatusGroup}" --name "${gatusEndpointName}" --success false --error "{error}"''
+            ];
+          }
+        ];
       };
     };
   };

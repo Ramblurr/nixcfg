@@ -6,7 +6,6 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
-  pocketIdDomain = "id.${config.repo.secrets.global.domain.home}";
 in
 {
   imports = [
@@ -15,19 +14,15 @@ in
     ./users.nix
     ../../config/offsite.nix
     ../../config/hetzner-cloud-ccx.nix
-    ./ingress.nix
     ./ingress-haproxy.nix
+    ./caddy.nix
     ./web.nix
     ./web/hook.nix
     ./web/work.nix
     ./web/work-docs.nix
-    ./web/personal.nix
-    ./web/personal-site.nix
-    ./web/personals.nix
-    ./web/partner.nix
     ./goaccess.nix
-    ./goatcounter.nix
     ./crowdsec.nix
+    ./pocket-id.nix
   ];
   system.stateVersion = "24.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
@@ -44,7 +39,6 @@ in
       zsh.enable = true;
     };
     services = {
-      pocket-id.enable = true;
       sshd.enable = true;
     };
     editors = {
@@ -72,22 +66,6 @@ in
     users.primaryUser.extraGroups = [
       "wheel"
     ];
-  };
-
-  hosts.james.ingress.implementation = "haproxy";
-
-  security.acme.certs.${pocketIdDomain}.domain = pocketIdDomain;
-  services.nginx.virtualHosts.${pocketIdDomain} = {
-    useACMEHost = pocketIdDomain;
-    forceSSL = true;
-    kTLS = true;
-    http3 = false;
-    quic = false;
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:1411";
-      recommendedProxySettings = true;
-      proxyWebsockets = true;
-    };
   };
 
   environment.persistence."/persist" = {

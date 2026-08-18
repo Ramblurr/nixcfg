@@ -27,11 +27,14 @@
       (insert content))
     path))
 
-(defun local-issues-test--ticket (root relative state id title &optional blockers assignee body)
+(defun local-issues-test--ticket
+    (root relative state id title &optional blockers assignee body planning)
   (local-issues-test--write
    root relative
-   (format "* %s %s :enhancement:\n:PROPERTIES:\n:TICKET_ID: %s\n:BLOCKED_BY: %s\n:ASSIGNEE: %s\n:END:\n\n%s\n"
-           state title id (or blockers "") (or assignee "") (or body "** What to build\nBody"))))
+   (format "* %s %s :enhancement:\n%s:PROPERTIES:\n:TICKET_ID: %s\n:BLOCKED_BY: %s\n:ASSIGNEE: %s\n:END:\n\n%s\n"
+           state title (if planning (concat planning "\n") "")
+           id (or blockers "") (or assignee "")
+           (or body "** What to build\nBody"))))
 
 (defun local-issues-test--run (directory &rest arguments)
   (let ((default-directory (file-name-as-directory directory))
@@ -76,7 +79,7 @@
 
 (defun local-issues-test--why-table-edges (result)
   (let* ((lines (split-string (plist-get result :stdout) "\n" t))
-         (header "FROM\tTO\tDEPTH\tEXPANSION\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS"))
+         (header "FROM\tTO\tDEPTH\tEXPANSION\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tSCHEDULED\tDEADLINE\tTITLE\tDIAGNOSTICS"))
     (mapcar
      (lambda (line) (seq-take (split-string line "\t") 4))
      (cdr (member header lines)))))
@@ -245,7 +248,7 @@
      "RESOLVED" "001-01" "Resolved")
     (local-issues-test--write
      root ".scratch-org/001-alpha/issues/02-candidate.org"
-     "* READY-FOR-AGENT Candidate\n:PROPERTIES:\n:TICKET_ID: 001-02\n:BLOCKED_BY: 001-01\n:END:\n")
+     "* DEFERRED Candidate\nSCHEDULED: <2000-01-01 Sat> DEADLINE: <2099-01-01 Thu>\n:PROPERTIES:\n:TICKET_ID: 001-02\n:BLOCKED_BY: 001-01\n:END:\n")
     (local-issues-test--ticket
      root ".scratch-org/001-alpha/issues/03-dependent.org"
      "READY-FOR-AGENT" "001-03" "Dependent" "001-02")
@@ -263,7 +266,7 @@
          (= 0
             (local-issues-test--server-eval
              socket
-             "(progn (setq org-todo-keywords '((sequence \"NEEDS-TRIAGE\" \"NEEDS-INFO\" \"READY-FOR-AGENT\" \"READY-FOR-HUMAN\" \"IN-PROGRESS\" \"CLAIMED\" \"|\" \"RESOLVED\" \"WONTFIX\"))) (org-set-regexps-and-options))")))
+             "(progn (setq org-todo-keywords '((sequence \"NEEDS-TRIAGE\" \"NEEDS-INFO\" \"READY-FOR-AGENT\" \"READY-FOR-HUMAN\" \"DEFERRED\" \"IN-PROGRESS\" \"CLAIMED\" \"|\" \"RESOLVED\" \"WONTFIX\"))) (org-set-regexps-and-options))")))
         (dolist (arguments commands)
           (let ((batch (apply #'local-issues-test--run root arguments))
                 (daemon
@@ -406,8 +409,8 @@
      root ".scratch-org/002-beta/issues/02-blocked.org"
      "READY-FOR-AGENT" "002-02" "Wontfix blocked" "001-02")
     (let ((output (plist-get (local-issues-test--run root "list") :stdout)))
-      (should (string-match-p "002-01\tREADY-FOR-AGENT\tREADY\t-\t-\tCross-item ready" output))
-      (should (string-match-p "002-02\tREADY-FOR-AGENT\tBLOCKED\t001-02\t-\tWontfix blocked" output))
+      (should (string-match-p "002-01\tREADY-FOR-AGENT\tREADY\t-\t-\t-\t-\tCross-item ready" output))
+      (should (string-match-p "002-02\tREADY-FOR-AGENT\tBLOCKED\t001-02\t-\t-\t-\tWontfix blocked" output))
       (should-not (string-match-p "001-01\tRESOLVED\|001-02\tWONTFIX" output)))))
 
 (ert-deftest local-issues-list-rows-are-complete-and-sorted ()
@@ -422,7 +425,7 @@
       (should (= 0 (plist-get result :status)))
       (should
        (equal
-        "SUMMARY\topen=2\tready=0\tblocked=0\tactive=1\tinvalid=0\nID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tTITLE\tDIAGNOSTICS\n002-01\tREADY-FOR-HUMAN\tREADY\t-\t-\tFirst\t-\n010-02\tCLAIMED\tREADY\t-\tworker\tSecond\t-\n"
+        "SUMMARY\topen=2\tready=0\tblocked=0\tactive=1\tinvalid=0\nID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tSCHEDULED\tDEADLINE\tTITLE\tDIAGNOSTICS\n002-01\tREADY-FOR-HUMAN\tREADY\t-\t-\t-\t-\tFirst\t-\n010-02\tCLAIMED\tREADY\t-\tworker\t-\t-\tSecond\t-\n"
         (plist-get result :stdout))))))
 
 (ert-deftest local-issues-list-supports-all-and-work-item-scoping ()
@@ -464,6 +467,60 @@
       (should (string-match-p "unknown work item 999"
                               (plist-get unknown :stderr))))))
 
+(ert-deftest local-issues-native-planning-appears-in-list-and-why ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-deferred.org"
+     "DEFERRED" "001-01" "Deferred"
+     "" nil nil
+     "SCHEDULED: <2000-01-01 Sat> DEADLINE: <2000-01-02 Sun>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-dependent.org"
+     "READY-FOR-HUMAN" "001-02" "Dependent" "001-01" nil nil
+     "SCHEDULED: <2001-01-01 Mon> DEADLINE: <2001-01-02 Tue>")
+    (let* ((table (local-issues-test--run root "list"))
+           (json-result (local-issues-test--run root "list" "--format" "json"))
+           (document (local-issues-test--json json-result))
+           (deferred (local-issues-test--json-ticket document "001-01"))
+           (why-table (local-issues-test--run root "why" "001-02"))
+           (why-json-result
+            (local-issues-test--run root "why" "001-02" "--format" "json"))
+           (why-document (local-issues-test--json why-json-result)))
+      (dolist (result (list table json-result why-table why-json-result))
+        (should (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr))))
+      (should
+       (equal '((id . "001-01")
+                (todo . "DEFERRED")
+                (scheduled . "<2000-01-01 Sat>")
+                (deadline . "<2000-01-02 Sun>"))
+              (mapcar (lambda (key) (assq key deferred))
+                      '(id todo scheduled deadline))))
+      (should (string-match-p
+               "ID\tTODO\tDEPENDENCY\tBLOCKED_BY\tASSIGNEE\tSCHEDULED\tDEADLINE\tTITLE\tDIAGNOSTICS"
+               (plist-get table :stdout)))
+      (should (string-match-p
+               "001-01\tDEFERRED\tREADY\t-\t-\t<2000-01-01 Sat>\t<2000-01-02 Sun>\tDeferred"
+               (plist-get table :stdout)))
+      (should
+       (equal '((scheduled . "<2001-01-01 Mon>")
+                (deadline . "<2001-01-02 Tue>"))
+              (mapcar (lambda (key)
+                        (assq key (alist-get 'root why-document)))
+                      '(scheduled deadline))))
+      (should
+       (equal '((scheduled . "<2000-01-01 Sat>")
+                (deadline . "<2000-01-02 Sun>"))
+              (mapcar
+               (lambda (key)
+                 (assq key
+                       (alist-get 'ticket
+                                  (car (alist-get 'dependencies why-document)))))
+               '(scheduled deadline))))
+      (should (string-match-p
+               "001-01\t1\tEXPANDED\tDEFERRED\tREADY\t-\t-\t<2000-01-01 Sat>\t<2000-01-02 Sun>\tDeferred"
+               (plist-get why-table :stdout))))))
+
 (ert-deftest local-issues-json-is-semantic-and-matches-table ()
   (local-issues-test--with-repository (root)
     (local-issues-test--write
@@ -485,12 +542,12 @@
       (should (equal '("missing-assignee")
                      (local-issues-test--diagnostic-codes (car tickets))))
       (should (string-match-p
-               "001-01\tREADY-FOR-AGENT\tREADY\t-\t-\tReady\tmissing-assignee"
+               "001-01\tREADY-FOR-AGENT\tREADY\t-\t-\t-\t-\tReady\tmissing-assignee"
                (plist-get table :stdout)))
       (should (equal '("001-01") (alist-get 'blocked_by (cadr tickets))))
       (should (equal "BLOCKED" (alist-get 'dependency (cadr tickets))))
       (should (string-match-p
-               "001-02\tREADY-FOR-HUMAN\tBLOCKED\t001-01\tworker\tBlocked"
+               "001-02\tREADY-FOR-HUMAN\tBLOCKED\t001-01\tworker\t-\t-\tBlocked"
                (plist-get table :stdout)))
       (should-not (string-match-p "\\(?:\\e\\|\\033\\)\\["
                                   (plist-get json-result :stdout))))))
@@ -554,7 +611,7 @@
                "001-01\tREADY-FOR-AGENT\tINVALID\t999-99.*unknown-blocker"
                (plist-get table :stdout)))
       (should (string-match-p
-               "002-01\tREADY-FOR-AGENT\tREADY\t-\t-\tValid\t-"
+               "002-01\tREADY-FOR-AGENT\tREADY\t-\t-\t-\t-\tValid\t-"
                (plist-get table :stdout)))
       (dolist (case '(("001-01" "unknown-blocker")
                       ("001-02" "malformed-blocker")
@@ -717,6 +774,57 @@
         (should (string-empty-p (plist-get result :stdout)))
         (should (string-match-p (car case) (plist-get result :stderr)))))))
 
+(ert-deftest local-issues-suggests-due-deferred-tickets ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-due.org"
+     "DEFERRED" "001-01" "Due deferred" "" nil nil
+     "SCHEDULED: <2000-01-01 Sat> DEADLINE: <2099-01-01 Thu>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-future.org"
+     "DEFERRED" "001-02" "Future deferred" "" nil nil
+     "SCHEDULED: <2099-01-01 Thu> DEADLINE: <2100-01-01 Fri>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-blocked.org"
+     "DEFERRED" "001-03" "Blocked deferred" "001-02" nil nil
+     "SCHEDULED: <2000-01-01 Sat>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/04-assigned.org"
+     "DEFERRED" "001-04" "Assigned deferred" "" "worker" nil
+     "SCHEDULED: <2000-01-01 Sat>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/05-ready.org"
+     "READY-FOR-AGENT" "001-05" "Ordinary ready")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/10-needs-due.org"
+     "READY-FOR-HUMAN" "001-10" "Needs due" "001-01")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/11-needs-ready.org"
+     "READY-FOR-HUMAN" "001-11" "Needs ready" "001-05")
+    (let* ((list-result (local-issues-test--run root "list" "--format" "json"))
+           (summary (alist-get 'summary (local-issues-test--json list-result)))
+           (table-result (local-issues-test--run root "suggest" "--limit" "99"))
+           (json-result
+            (local-issues-test--run root "suggest" "--limit" "99" "--format" "json"))
+           (suggestions (alist-get 'suggestions
+                                   (local-issues-test--json json-result))))
+      (dolist (result (list list-result table-result json-result))
+        (should (= 0 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr))))
+      (should (equal 2 (alist-get 'ready summary)))
+      (should (equal '("001-01" "001-05")
+                     (mapcar (lambda (suggestion) (alist-get 'id suggestion))
+                             suggestions)))
+      (should
+       (string-match-p
+        "001-01\tDEFERRED\tDue deferred\tscheduled <2000-01-01 Sat> has arrived; required by 1 open ticket\t1\t"
+        (plist-get table-result :stdout)))
+      (should
+       (equal '("scheduled <2000-01-01 Sat> has arrived; required by 1 open ticket"
+                "required by 1 open ticket")
+              (mapcar (lambda (suggestion) (alist-get 'reason suggestion))
+                      suggestions))))))
+
 (ert-deftest local-issues-suggest-ranks-eligible-tickets-and-matches-json ()
   (local-issues-test--with-repository (root)
     (local-issues-test--write
@@ -820,6 +928,99 @@
       (should (equal '((suggestions))
                      (local-issues-test--json empty-result))))))
 
+(ert-deftest local-issues-doctor-validates-planning-and-assignment ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-missing-scheduled.org"
+     "DEFERRED" "001-01" "Missing scheduled")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-assigned-deferred.org"
+     "DEFERRED" "001-02" "Assigned deferred" "" "worker" nil
+     "SCHEDULED: <2000-01-01 Sat>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/03-unassigned-claimed.org"
+     "CLAIMED" "001-03" "Unassigned claimed")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/04-reversed-dates.org"
+     "DEFERRED" "001-04" "Reversed dates" "" nil nil
+     "SCHEDULED: <2099-01-02 Fri> DEADLINE: <2099-01-01 Thu>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/05-future-agent-ready.org"
+     "READY-FOR-AGENT" "001-05" "Future agent ready" "" nil nil
+     "SCHEDULED: <2099-01-01 Thu>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/06-future-human-ready.org"
+     "READY-FOR-HUMAN" "001-06" "Future human ready" "" nil nil
+     "SCHEDULED: <2099-01-01 Thu>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/07-malformed-scheduled.org"
+     "DEFERRED" "001-07" "Malformed scheduled" "" nil nil
+     "SCHEDULED: not-a-timestamp")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/08-malformed-deadline.org"
+     "READY-FOR-HUMAN" "001-08" "Malformed deadline" "" nil nil
+     "DEADLINE: not-a-timestamp")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/09-due-blocked.org"
+     "DEFERRED" "001-09" "Due blocked" "001-10" nil nil
+     "SCHEDULED: <2000-01-01 Sat>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/10-valid-blocker.org"
+     "READY-FOR-HUMAN" "001-10" "Valid blocker")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/11-overdue-valid.org"
+     "DEFERRED" "001-11" "Overdue valid" "" nil nil
+     "SCHEDULED: <2000-01-01 Sat> DEADLINE: <2001-01-01 Mon>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/12-invalid-calendar-date.org"
+     "DEFERRED" "001-12" "Invalid calendar date" "" nil nil
+     "SCHEDULED: <2099-02-31 Mon>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/13-inactive-scheduled.org"
+     "DEFERRED" "001-13" "Inactive scheduled" "" nil nil
+     "SCHEDULED: [2099-01-01 Thu]")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/14-invalid-clock.org"
+     "DEFERRED" "001-14" "Invalid clock" "" nil nil
+     "SCHEDULED: <2099-01-01 Thu 25:70>")
+    (local-issues-test--write
+     root ".scratch-org/001-alpha/issues/15-property-scheduled.org"
+     "* DEFERRED Property scheduled\n:PROPERTIES:\n:TICKET_ID: 001-15\n:BLOCKED_BY:\n:ASSIGNEE:\n:SCHEDULED: <2000-01-01 Sat>\n:END:\n")
+    (let* ((table (local-issues-test--run root "doctor"))
+           (json-result (local-issues-test--run root "doctor" "--format" "json"))
+           (document (local-issues-test--json json-result))
+           (rows (local-issues-test--doctor-json-rows document))
+           (codes (mapcar #'cadr rows))
+           (listing (local-issues-test--json
+                     (local-issues-test--run root "list" "--format" "json")))
+           (blocked (local-issues-test--json-ticket listing "001-09"))
+           (overdue (local-issues-test--json-ticket listing "001-11")))
+      (dolist (result (list table json-result))
+        (should (= 1 (plist-get result :status)))
+        (should (string-empty-p (plist-get result :stderr))))
+      (should (equal rows (local-issues-test--doctor-table-rows table)))
+      (should
+       (equal '("assigned-deferred"
+                "future-scheduled-ready"
+                "malformed-deadline"
+                "malformed-scheduled"
+                "missing-scheduled"
+                "scheduled-after-deadline"
+                "unassigned-claimed")
+              (sort (delete-dups (copy-sequence codes)) #'string<)))
+      (should (equal '("future-scheduled-ready" "future-scheduled-ready")
+                     (cl-remove-if-not
+                      (lambda (code) (equal code "future-scheduled-ready"))
+                      codes)))
+      (should (= 4 (cl-count "malformed-scheduled" codes :test #'equal)))
+      (should (= 2 (cl-count "missing-scheduled" codes :test #'equal)))
+      (should
+       (equal '((dependency . "BLOCKED") (diagnostics))
+              (list (assq 'dependency blocked) (assq 'diagnostics blocked))))
+      (should
+       (equal '((dependency . "READY") (diagnostics))
+              (list (assq 'dependency overdue) (assq 'diagnostics overdue)))))))
+
 (ert-deftest local-issues-doctor-reports-every-finding-deterministically ()
   (local-issues-test--with-repository (root)
     (local-issues-test--ticket
@@ -920,6 +1121,29 @@
                      (plist-get table :stdout)))
       (should (equal '((diagnostics))
                      (local-issues-test--json json-result))))))
+
+(ert-deftest local-issues-commands-never-change-ticket-files ()
+  (local-issues-test--with-repository (root)
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/01-deferred.org"
+     "DEFERRED" "001-01" "Deferred" "" nil nil
+     "SCHEDULED: <2000-01-01 Sat> DEADLINE: <2099-01-01 Thu>")
+    (local-issues-test--ticket
+     root ".scratch-org/001-alpha/issues/02-dependent.org"
+     "READY-FOR-HUMAN" "001-02" "Dependent" "001-01")
+    (let ((before (local-issues-test--file-snapshot root)))
+      (dolist (arguments '(("list")
+                           ("list" "--format" "json")
+                           ("suggest")
+                           ("suggest" "--format" "json")
+                           ("why" "001-02")
+                           ("why" "001-02" "--format" "json")
+                           ("doctor")
+                           ("doctor" "--format" "json")))
+        (let ((result (apply #'local-issues-test--run root arguments)))
+          (should (= 0 (plist-get result :status)))
+          (should (string-empty-p (plist-get result :stderr)))
+          (should (equal before (local-issues-test--file-snapshot root))))))))
 
 (ert-deftest local-issues-large-unusual-bodies-stay-out-of-metadata ()
   (local-issues-test--with-repository (root)

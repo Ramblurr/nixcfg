@@ -14,12 +14,13 @@ in
     ./disk-config.nix
     ./networking.nix
     ./nixbot.nix
-    #./prometheus.nix
+    ./prometheus.nix
     #./grafana
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
   ];
+  determinate.enable = false;
   system.stateVersion = "24.05";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
@@ -54,9 +55,38 @@ in
     enable = true;
     containers.enable = false;
     hypervisor.enable = true;
-    ingress.enable = true;
-    apps.hindsight.enable = true;
+    apps = {
+      hindsight.enable = true;
+    };
   };
+  modules.services.caddy.edge = {
+    certificateHosts = map (host: "${host}.${config.repo.secrets.global.domain.home}") [
+      "hindsight"
+      "home"
+      "nad"
+      "octoprint"
+      "status"
+    ];
+    acmeEmail = config.repo.secrets.global.email.acme;
+    redirectStatus = 301;
+  };
+  modules.services.gatus = {
+    enable = true;
+    domain = "status.${config.repo.secrets.global.domain.home}";
+    allowedRemoteIPs = [
+      config.site.net.prim.subnet4
+      "100.64.0.0/10"
+    ];
+  };
+  services.gatus.settings.endpoints = [
+    {
+      name = "Gatus";
+      group = config.site.gatus.groups.infrastructure;
+      url = "http://127.0.0.1:${toString config.modules.services.gatus.port}/";
+      interval = "1m";
+      conditions = [ "[STATUS] == 200" ];
+    }
+  ];
   modules.services.hindsight = {
     llm = {
       retain.profile = "openai-codex-gpt-5.4-mini";
@@ -95,7 +125,15 @@ in
   };
 
   # Merge in the site secrets
-  inherit (config.repo.secrets.site) site;
+  site = config.repo.secrets.site.site // {
+    gatus.endpoints = [
+      {
+        name = "NAD API";
+        group = config.site.gatus.groups.home;
+        url = "https://nad.${config.repo.secrets.global.domain.home}/api";
+      }
+    ];
+  };
   systemd.network = {
     links = {
       "10-lan0" = {
@@ -164,8 +202,8 @@ in
     http.ip = "127.0.0.1";
     http.port = nadApiPort;
   };
-  modules.services.ingress.virtualHosts."nad.${config.repo.secrets.global.domain.home}" = {
-    acmeHost = config.repo.secrets.global.domain.home;
+  modules.services.caddy.routes.nad = {
+    publicHost = "nad.${config.repo.secrets.global.domain.home}";
     upstream = "http://127.0.0.1:${toString nadApiPort}";
   };
 }

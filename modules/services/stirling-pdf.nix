@@ -20,11 +20,6 @@ in
         description = "The HTTP port to use for stirling-pdf";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -36,10 +31,18 @@ in
         INSTALL_BOOK_AND_ADVANCED_HTML_OPS = "true";
       };
     };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "Stirling PDF";
+        group = config.site.gatus.groups.home;
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
+    modules.services.caddy.routes.pdf = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = false;
+      requestBodyMaxSize = "10MB";
     };
   };
 }

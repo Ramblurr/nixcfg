@@ -175,16 +175,6 @@
 
   modules.services.sshd.enable = true;
 
-  security.acme = {
-    acceptTerms = true;
-    defaults = {
-      email = config.site.data.contact;
-      # letsencrypt staging server with way higher rate limits
-      server = "https://acme-staging-v02.api.letsencrypt.org/directory";
-      reloadServices = lib.optional config.services.nginx.enable "nginx";
-    };
-  };
-
   system.activationScripts.deleteOldSystemProfiles = lib.mkIf config.nix.gc.automatic ''
     echo "Deleting old system profiles..."
     ${config.nix.package}/bin/nix-env --profile /nix/var/nix/profiles/system --delete-generations +10 || true
@@ -193,7 +183,6 @@
   systemd = {
     enableEmergencyMode = false;
     services = {
-      nginx.serviceConfig.OOMScoreAdjust = "-100";
       nix-daemon.serviceConfig = {
         KillMode = "control-group"; # kill all worker thread when restarting
         Restart = "on-failure"; # restart if killed eg oom killed

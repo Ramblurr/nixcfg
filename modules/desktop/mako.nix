@@ -27,6 +27,11 @@ in
           border-size = 3;
           border-radius = 6;
           width = 600;
+          "app-name=Paseo" = {
+            # invisible = true;
+            default-timeout = 2000;
+            ignore-timeout = true;
+          };
         };
       };
     };

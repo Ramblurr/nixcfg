@@ -87,19 +87,6 @@ let
       };
     };
 
-    plex = {
-      priority = 102;
-      interfaces = wan_interfaces;
-      protocols = [
-        "tcp"
-        "udp"
-      ];
-      destination.port = 32400;
-      translation.address = "10.9.8.14";
-      translation.port = 32400;
-      comment = "port forward for plex";
-    };
-
     roonArc = {
       priority = 103;
       interfaces = wan_interfaces;
@@ -184,11 +171,6 @@ let
           destAddr = "mali_all";
         }
         {
-          comment = "allow plex";
-          destPort = "plex_server_ports";
-          destAddr = "home_ops_ingress";
-        }
-        {
           destPort = "wireguard_ports";
           comment = "allow wireguard";
           extra = [ "counter" ];
@@ -205,10 +187,6 @@ let
         local_zone
       ];
       extraLines = mkRules [
-        {
-          comment = "allow plex";
-          destPort = "plex_server_ports";
-        }
         {
           destPort = "wireguard_ports";
           comment = "allow wireguard2";
@@ -317,6 +295,16 @@ let
           comment = "allow dns";
           destPort = "dns_ports";
         }
+      ];
+    };
+
+    unifi_controller = {
+      from = [ zones.lan0 ];
+      to = [ local_zone ];
+      allowedTCPPorts = [ 8080 ];
+      allowedUDPPorts = [
+        3478
+        10001
       ];
     };
 

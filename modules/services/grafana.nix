@@ -22,11 +22,6 @@ in
       example = "code.example.com";
       description = "The domain to use for the forgejo";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
   };
 
   config = lib.mkIf cfg.enable {

@@ -7,9 +7,19 @@
 }:
 let
   cfg = config.modules.services.paperless;
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   localPath = "/mnt/mali/${cfg.nfsShare}";
-
+  paperlessPasswordFile = "/run/paperless-secrets/admin-password";
+  paperlessOidcEnvironmentFile = "/run/paperless-secrets/oidc.env";
+  paperlessServices = [
+    "paperless-consumer"
+    "paperless-copy-password"
+    "paperless-scheduler"
+    "paperless-task-queue"
+    "paperless-web"
+  ];
   serviceDeps = [ "${utils.escapeSystemdPath localPath}.mount" ];
+  oidcDeps = [ "paperless-secrets-setup.service" ];
 in
 {
   options.modules.services.paperless = {
@@ -20,10 +30,16 @@ in
       description = "The domain to use for the paperless";
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
+    oidc = {
+      enable = lib.mkEnableOption "native OpenID Connect authentication";
+      mode = lib.mkOption {
+        type = lib.types.enum [
+          "compatibility"
+          "enforced"
+        ];
+        default = "compatibility";
+        description = "Whether to retain regular frontend login or redirect all frontend logins to OIDC";
+      };
     };
 
     ports = {
@@ -39,22 +55,54 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/paperless"."mountpoint" = config.services.paperless.dataDir;
       "rpool/encrypted/safe/svc/paperless"."com.sun:auto-snapshot" = "false";
     };
 
-    sops.secrets."paperless/adminPassword" = {
-      sopsFile = ../../configs/home-ops/shared.sops.yml;
-      owner = config.services.paperless.user;
-      mode = "400";
+    assertions = [
+      {
+        assertion = onepassword.enable;
+        message = "Paperless credentials require the 1Password systemd credential provider.";
+      }
+    ];
+
+    modules.services.onepassword-systemd-credentials.consumers.paperless-secrets-setup = {
+      admin-password = "op://home-ops-prod/paperless/admin-password";
+    }
+    // lib.optionalAttrs cfg.oidc.enable {
+      oidc-provider = "op://home-ops-prod/paperless/oidc-provider";
     };
+
+    systemd.services = lib.mkMerge [
+      {
+        paperless-secrets-setup = {
+          description = "Prepare Paperless files from 1Password credentials";
+          before = map (service: "${service}.service") paperlessServices;
+          requiredBy = map (service: "${service}.service") paperlessServices;
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            RuntimeDirectory = "paperless-secrets";
+            UMask = "0077";
+          };
+          script = ''
+            install -m0400 -o ${config.services.paperless.user} -g ${cfg.group.name} \
+              "$CREDENTIALS_DIRECTORY/admin-password" ${paperlessPasswordFile}
+            ${lib.optionalString cfg.oidc.enable ''
+              printf "PAPERLESS_SOCIALACCOUNT_PROVIDERS='%s'\n" \
+                "$(cat "$CREDENTIALS_DIRECTORY/oidc-provider")" > ${paperlessOidcEnvironmentFile}
+              chown ${config.services.paperless.user}:${cfg.group.name} ${paperlessOidcEnvironmentFile}
+            ''}
+          '';
+        };
+      }
+      (lib.genAttrs paperlessServices (_: {
+        after = serviceDeps ++ oidcDeps;
+        bindsTo = serviceDeps;
+        requires = oidcDeps;
+      }))
+    ];
 
     services.postgresql = {
       ensureDatabases = [ "paperless" ];
@@ -83,17 +131,6 @@ in
       fsType = "nfs";
     };
 
-    systemd.services.paperless-scheduler.after = serviceDeps;
-    systemd.services.paperless-copy-password.after = serviceDeps;
-    systemd.services.paperless-consumer.after = serviceDeps;
-    systemd.services.paperless-task-queue.after = serviceDeps;
-    systemd.services.paperless-web.after = serviceDeps;
-    systemd.services.paperless-scheduler.bindsTo = serviceDeps;
-    systemd.services.paperless-copy-password.bindsTo = serviceDeps;
-    systemd.services.paperless-consumer.bindsTo = serviceDeps;
-    systemd.services.paperless-task-queue.bindsTo = serviceDeps;
-    systemd.services.paperless-web.bindsTo = serviceDeps;
-
     systemd.tmpfiles.rules =
       let
         inherit (config.services) paperless;
@@ -107,9 +144,10 @@ in
       package = pkgs.paperless-ngx;
       mediaDir = "${localPath}/media";
       consumptionDir = "${localPath}/consume";
-      passwordFile = config.sops.secrets."paperless/adminPassword".path;
+      passwordFile = paperlessPasswordFile;
       port = cfg.ports.http;
       user = cfg.user.name;
+      environmentFile = lib.mkIf cfg.oidc.enable paperlessOidcEnvironmentFile;
       settings = {
         PAPERLESS_EXPORT_DIR = "${localPath}/export";
         PAPERLESS_DBENGINE = "postgresql";
@@ -129,20 +167,30 @@ in
         PAPERLESS_FILENAME_DATE_ORDER = "YMD";
         PAPERLESS_URL = "https://${cfg.domain}";
         PAPERLESS_OCR_MAX_IMAGE_PIXELS = 956000000;
-        PAPERLESS_ENABLE_HTTP_REMOTE_USER = true;
-        PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME = "X-authentik-username";
-        #PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
         PAPERLESS_ACCOUNT_ALLOW_SIGNUPS = "false";
+      }
+      // lib.optionalAttrs cfg.oidc.enable {
+        PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";
+        PAPERLESS_ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https";
+        PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS = false;
+        PAPERLESS_SOCIAL_AUTO_SIGNUP = false;
+        PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS = false;
+        PAPERLESS_DISABLE_REGULAR_LOGIN = cfg.oidc.mode == "enforced";
+        PAPERLESS_REDIRECT_LOGIN_TO_SSO = cfg.oidc.mode == "enforced";
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "Paperless";
+        group = config.site.gatus.groups.home;
+        url = "https://${cfg.domain}/api/schema/";
+      }
+    ];
+
+    modules.services.caddy.routes.paperless = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = false;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
   };
 }

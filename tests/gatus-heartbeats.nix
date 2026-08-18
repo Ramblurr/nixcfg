@@ -1,0 +1,126 @@
+{ inputs, pkgs }:
+let
+  lib = inputs.nixpkgs.lib;
+  groups = import ../modules/site/gatus-groups.nix;
+  secretFile = pkgs.writeText "gatus-heartbeats-test-secrets.yaml" "{}\n";
+  heartbeatPackage = pkgs.callPackage ../pkgs/gatus-heartbeat.nix { };
+  evaluate =
+    enable:
+    (lib.nixosSystem {
+      modules = [
+        inputs.sops-nix.nixosModules.sops
+        ../modules/services/onepassword-systemd-credentials.nix
+        ../modules/site/gatus.nix
+        ../modules/site/gatus-heartbeats.nix
+        ../modules/site/gatus-heartbeats-onepassword.nix
+        {
+          options = {
+            repo.secrets = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+            site.net = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+          };
+        }
+        {
+          nixpkgs.pkgs = pkgs;
+          networking.hostName = "dewey";
+          system.stateVersion = "26.05";
+          boot.loader.grub.devices = [ "nodev" ];
+          fileSystems."/" = {
+            device = "none";
+            fsType = "tmpfs";
+          };
+          sops.defaultSopsFile = secretFile;
+          sops.age.keyFile = "/tmp/age-key.txt";
+          site.net.mgmt.hosts4.onepassword-connect = [ "192.0.2.22" ];
+          repo.secrets.global.domain.home = "example.test";
+          systemd.services.example-job.serviceConfig.Type = "oneshot";
+          site.gatus.heartbeats.git-archive = lib.mkIf enable {
+            service = "example-job";
+            name = "Git Archive";
+            group = groups.work;
+            interval = "30h";
+          };
+        }
+      ];
+    }).config;
+  enabled = evaluate true;
+  disabled = evaluate false;
+  reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStopPost;
+in
+assert enabled.site.gatus.groups == groups;
+assert
+  enabled.site.gatus.externalEndpoints == [
+    {
+      name = "Git Archive (dewey)";
+      group = groups.work;
+      token = "$GATUS_EXTERNAL_TOKEN";
+      heartbeat.interval = "30h";
+      alerts = [ { type = "pushover"; } ];
+    }
+  ];
+assert
+  enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
+  == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
+assert lib.hasInfix "gatus-heartbeat systemd" reporterCommand;
+assert lib.hasInfix "--group '${groups.work}'" reporterCommand;
+assert lib.hasInfix "--name 'Git Archive (dewey)'" reporterCommand;
+assert disabled.site.gatus.externalEndpoints == [ ];
+pkgs.runCommand "gatus-heartbeats-test"
+  {
+    nativeBuildInputs = [
+      heartbeatPackage
+      pkgs.python3
+    ];
+  }
+  ''
+      export REQUEST_LOG="$TMPDIR/request.json"
+      cat > "$TMPDIR/server.py" <<'PY'
+    import json
+    import os
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            with open(os.environ["REQUEST_LOG"], "w", encoding="utf-8") as output:
+                json.dump({"path": self.path, "authorization": self.headers.get("Authorization")}, output)
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 18080), Handler)
+    server.timeout = 10
+    server.handle_request()
+    PY
+      python "$TMPDIR/server.py" &
+      server_pid=$!
+      sleep 0.2
+
+      export GATUS_EXTERNAL_TOKEN=test-token
+      gatus-heartbeat report \
+        --url http://127.0.0.1:18080 \
+        --group "${groups.work}" \
+        --name "Git Archive (dewey)" \
+        --success true
+      wait "$server_pid"
+
+      python - "$REQUEST_LOG" <<'PY'
+    import json
+    import sys
+    from urllib.parse import parse_qs, urlparse
+
+    with open(sys.argv[1], encoding="utf-8") as request_file:
+        request = json.load(request_file)
+    parsed = urlparse(request["path"])
+    assert parsed.path == "/api/v1/endpoints/work---collaboration_git-archive-(dewey)/external"
+    assert parse_qs(parsed.query) == {"success": ["true"]}
+    assert request["authorization"] == "Bearer test-token"
+    PY
+      touch "$out"
+  ''

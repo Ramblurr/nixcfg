@@ -44,6 +44,8 @@ in
     hosts4 = {
       addams = [
         "192.168.1.1"
+        # UniFi migration: activate only after disconnecting the Cloud Key.
+        "192.168.1.2"
         "192.168.1.3"
       ];
     };
@@ -159,6 +161,7 @@ in
       debord = [ "10.9.10.21" ];
       dewey = [ "10.9.10.14" ];
       mali = [ "10.9.10.10" ];
+      quine = [ "10.9.10.5" ];
     };
     #hosts6.main = {
     #  addams = [ "${prefix6}:11::1" ];
@@ -366,6 +369,10 @@ in
               Gateway = "10.9.4.21";
             }
           ];
+        };
+        data = {
+          type = "bridge";
+          parent = "lan0";
         };
         mgmt.type = "bridge";
         svc = {

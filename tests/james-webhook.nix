@@ -49,7 +49,6 @@ let
           config = {
             nixpkgs.pkgs = pkgs;
             system.stateVersion = "25.11";
-            services.nginx.enable = true;
             repo.secrets.global = {
               codeWork = "https://code.example.test";
               git.work = "https://git.example.test/work.git";
@@ -85,8 +84,7 @@ let
   service = cfg.systemd.services.${lib.removeSuffix ".service" serviceName};
   socketDirectory = "/var/lib/static-web/work.example.test/.run";
   socketPath = "${socketDirectory}/github-work-site-${hookId}.sock";
-  socketDirectoryRule = "d '${socketDirectory}' 0750 nginx nginx - -";
-  proxyPass = cfg.services.nginx.virtualHosts."work.example.test".locations."/_deploy".proxyPass;
+  socketDirectoryRule = "d '${socketDirectory}' 0750 caddy caddy - -";
 
   testServiceName = cfg.hosts.james.webhooks.hookServiceNames.${testHookId};
   testService = cfg.systemd.services.${lib.removeSuffix ".service" testServiceName};
@@ -100,10 +98,9 @@ let
     if builtins.isList workLoadCredential then builtins.head workLoadCredential else workLoadCredential;
 in
 assert cfg.hosts.james.webhooks.hookSocketPaths.${hookId} == socketPath;
-assert proxyPass == "http://unix:${socketPath}";
 assert builtins.elem socketDirectoryRule cfg.systemd.tmpfiles.rules;
-assert service.serviceConfig.User == "nginx";
-assert service.serviceConfig.Group == "nginx";
+assert service.serviceConfig.User == "caddy";
+assert service.serviceConfig.Group == "caddy";
 assert service.serviceConfig.UMask == "0007";
 assert service.serviceConfig.Restart == "on-failure";
 assert service.serviceConfig.RestartSec == "5s";
@@ -114,7 +111,6 @@ assert builtins.elem "sops-install-secrets.service" service.requires;
 assert builtins.elem "systemd-tmpfiles-setup.service" service.after;
 assert builtins.elem "systemd-tmpfiles-setup.service" service.requires;
 assert lib.hasInfix "-socket ${socketPath}" service.script;
-assert !(lib.hasInfix "/run/nginx" service.script);
 assert lib.hasPrefix "WEBHOOK_SECRET_FILE_" credentialName;
 assert lib.hasSuffix ":/run/secrets/webhook-github-work-secret" workLoadCredentialEntry;
 pkgs.runCommand "james-webhook-module-test"

@@ -1,13 +1,9 @@
 {
   lib,
-  inputs,
   modulesPath,
   ...
 }:
 {
-  imports = [
-    inputs.nixos-generators.nixosModules.all-formats
-  ];
   # Disable base.nix profile imported by sd-image module.
   # It adds recovery tools like w3m, testdisk, ddrescue that aren't needed on deployed RPi.
   disabledModules = [ "${modulesPath}/profiles/base.nix" ];

@@ -23,11 +23,6 @@ in
       default = "";
       description = "The domain to use for the kobo endpoint";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       http = lib.mkOption { type = lib.types.port; };
     };
@@ -118,64 +113,48 @@ in
         enableKepubify = true;
         reverseProxyAuth = {
           enable = true;
-          header = "X-authentik-username";
+          header = "Remote-User";
         };
       };
     };
 
-    # The /opds path will bypass SSO/forward auth.
-    services.nginx.virtualHosts.${cfg.domain}.locations = {
-      "/opds" = {
-        proxyPass = upstream;
-        recommendedProxySettings = true;
-        proxyWebsockets = true;
-        extraConfig = ''
-          auth_request off;
-          error_page 401 = @opds_401_passthrough;
-          proxy_set_header Authorization $http_authorization;
-        '';
-      };
-
-      "@opds_401_passthrough" = {
-        extraConfig = ''
-          internal;
-          return 401;
-        '';
-      };
+    site.gatus.endpoints = [
+      {
+        name = "Calibre Web";
+        group = config.site.gatus.groups.media;
+        url = "https://${cfg.domain}/_health/gatus";
+      }
+    ]
+    ++ lib.optional (cfg.domainKobo != "") {
+      name = "Calibre Web Kobo";
+      group = config.site.gatus.groups.media;
+      url = "https://${cfg.domainKobo}/login";
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.protectedRoutes.calibre-web = {
+      publicHost = cfg.domain;
       inherit upstream;
-      forwardAuth = true;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
-    };
-
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [
-          cfg.domain
-          cfg.domainKobo
-        ];
+      healthCheckPath = "/login";
+      clientID = config.repo.secrets.home-ops.calibreWebPocketIdClientId;
+      oidcRealm = "calibre-pocket-id";
+      requiredGroups = [ "books" ];
+      bypassPathPrefixes = [ "/opds" ];
+      identityHeaders = {
+        Remote-User = "userinfo|preferred_username";
+        Remote-Name = "userinfo|preferred_username";
+        Remote-Email = "email";
+        Remote-Groups = "roles";
+        X-Auth-Request-User = "sub";
+        X-Auth-Request-Preferred-Username = "userinfo|preferred_username";
+        X-Auth-Request-Email = "email";
+        X-Auth-Request-Groups = "roles";
       };
     };
-    modules.services.ingress.virtualHosts.${cfg.domainKobo} = lib.mkIf (cfg.domainKobo != "") {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.http}/";
-      upstreamExtraConfig = ''
-        proxy_buffering on;
-        proxy_buffers 4 256k;
-        proxy_buffer_size 256k;
-        proxy_busy_buffers_size 256k;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header X-Scheme https;
-      '';
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
+    modules.services.caddy.routes.books-kobo = lib.mkIf (cfg.domainKobo != "") {
+      publicHost = cfg.domainKobo;
+      inherit upstream;
+      requestHeaders.X-Scheme = "https";
     };
+
   };
 }

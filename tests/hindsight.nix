@@ -2,6 +2,12 @@
 
 let
   testSecrets = ./fixtures/hindsight.sops.yaml;
+  testCaddyOptions = { lib, ... }: {
+    options.modules.services.caddy.routes = lib.mkOption {
+      type = lib.types.attrsOf lib.types.attrs;
+      default = { };
+    };
+  };
   latencyEnvironment = {
     HINDSIGHT_API_CONSOLIDATION_LLM_MAX_CONCURRENT = "1";
     HINDSIGHT_API_CONSOLIDATION_LLM_PARALLELISM = "1";
@@ -36,7 +42,16 @@ let
     name = "hindsight-test-server";
     runtimeInputs = [ pkgs.busybox ];
     text = ''
-      mkdir -p /tmp/hindsight-test/api/v1/default /tmp/hindsight-test/control-plane/api
+      mkdir -p \
+        /tmp/hindsight-test/api/cgi-bin \
+        /tmp/hindsight-test/api/v1/default \
+        /tmp/hindsight-test/control-plane/api
+      cat > /tmp/hindsight-test/api/cgi-bin/consume <<'EOF'
+      #!/bin/sh
+      dd of=/dev/null bs=65536 2>/dev/null
+      printf 'Content-Type: text/plain\r\n\r\nconsumed\n'
+      EOF
+      chmod +x /tmp/hindsight-test/api/cgi-bin/consume
       printf '%s\n' healthy > /tmp/hindsight-test/api/health
       printf '%s\n' '{"api_version":"test"}' > /tmp/hindsight-test/api/version
       printf '%s\n' '{"banks":[]}' > /tmp/hindsight-test/api/v1/default/banks
@@ -130,7 +145,8 @@ let
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
-        ../modules/services/ingress.nix
+        testCaddyOptions
+        ../modules/site/gatus.nix
         ../modules/services/hindsight.nix
         {
           networking.hostName = "debord";
@@ -209,7 +225,7 @@ pkgs.testers.runNixOSTest {
       database = config.virtualisation.quadlet.containers.hindsight-db;
       network = config.virtualisation.quadlet.networks.hindsight;
       volume = config.virtualisation.quadlet.volumes.hindsight-db-data;
-      ingress = config.modules.services.ingress.virtualHosts."hindsight.example.test";
+      caddyRoute = config.modules.services.caddy.routes.hindsight;
       hindsightDataset = config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/hindsight";
       appTemplate = config.sops.templates."hindsight-app.env";
       dbTemplate = config.sops.templates."hindsight-db.env";
@@ -227,7 +243,8 @@ pkgs.testers.runNixOSTest {
         inputs.quadlet-nix2.nixosModules.default
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
-        ../modules/services/ingress.nix
+        testCaddyOptions
+        ../modules/site/gatus.nix
         ../modules/services/hindsight.nix
       ];
 
@@ -252,14 +269,6 @@ pkgs.testers.runNixOSTest {
         };
         embeddings.profile = "openai-small";
         extraEnvironment = latencyEnvironment;
-      };
-
-      services.nginx = {
-        enable = true;
-        virtualHosts."hindsight.example.test".locations."/" = {
-          proxyPass = "http://127.0.0.1:9999";
-          recommendedProxySettings = true;
-        };
       };
 
       sops = {
@@ -310,18 +319,14 @@ pkgs.testers.runNixOSTest {
           message = "The Hindsight control plane must bind only to loopback.";
         }
         {
-          assertion = ingress.forwardAuth == false;
-          message = "Hindsight must use its native authentication, not Authentik forward auth.";
-        }
-        {
-          assertion = config.modules.services.ingress.domains == { };
-          message = "Hindsight must not be added to an external ingress tunnel.";
-        }
-        {
           assertion =
-            config.services.nginx.virtualHosts."hindsight.example.test".locations."^~ /hindsight-api/".proxyPass
-            == "http://127.0.0.1:8888/";
-          message = "The prefixed Hindsight API route must strip its prefix and target the loopback API port.";
+            caddyRoute.publicHost == "hindsight.example.test"
+            && caddyRoute.handlerConfig != null
+            && lib.hasInfix "handle_path /hindsight-api/*" caddyRoute.handlerConfig
+            && lib.hasInfix "max_size 100MiB" caddyRoute.handlerConfig
+            && lib.hasInfix "reverse_proxy 127.0.0.1:8888" caddyRoute.handlerConfig
+            && lib.hasInfix "reverse_proxy 127.0.0.1:9999" caddyRoute.handlerConfig;
+          message = "Hindsight must expose equivalent control-plane and prefix-stripping API handlers through Caddy.";
         }
         {
           assertion = lib.elem "HINDSIGHT_API_TENANT_EXTENSION=hindsight_api.extensions.builtin.tenant:ApiKeyTenantExtension" app.containerConfig.Environment;
@@ -547,17 +552,7 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("hindsight.service", user=user, timeout=120)
     machine.wait_for_open_port(8888)
     machine.wait_for_open_port(9999)
-    machine.wait_for_unit("nginx.service")
-    machine.wait_for_open_port(80)
 
-    assert "healthy" in machine.succeed("curl -fsS http://127.0.0.1:8888/health")
-    assert "hindsight-control-plane" in machine.succeed("curl -fsS http://127.0.0.1:9999/")
-    nginx_curl = "curl -fsS -H 'Host: hindsight.example.test' http://127.0.0.1"
-    assert "hindsight-control-plane" in machine.succeed(f"{nginx_curl}/")
-    assert "control-plane-api" in machine.succeed(f"{nginx_curl}/api/health")
-    assert "healthy" in machine.succeed(f"{nginx_curl}/hindsight-api/health")
-    assert '"api_version":"test"' in machine.succeed(f"{nginx_curl}/hindsight-api/version")
-    assert '"banks":[]' in machine.succeed(f"{nginx_curl}/hindsight-api/v1/default/banks")
 
     machine.succeed("ss -ltn | grep -q '127.0.0.1:8888'")
     machine.succeed("ss -ltn | grep -q '127.0.0.1:9999'")

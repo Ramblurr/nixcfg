@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -18,63 +19,24 @@ in
       example = "podcasts.example.com";
       description = "The domain to use for the podcast feed";
     };
-    ingress = {
-      external = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Whether to expose the service externally";
-      };
-      domain = lib.mkOption {
-        type = lib.types.str;
-        example = "example.com";
-        description = "The ingress domain to use";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
-    services.nginx.virtualHosts."${cfg.domain}" = {
-      locations."~ /\\." = {
-        extraConfig = "deny all;";
-      };
-
-      locations."~ \\.log$" = {
-        extraConfig = "deny all;";
-      };
-
-      locations."~ ^/[^/]+/(inbox|processing|archive)(/|$)" = {
-        extraConfig = "deny all;";
-      };
-
-      locations."~ \\.rss$" = {
-        extraConfig = ''
-          sub_filter 'http://${cfg.domain}/' 'https://${cfg.domain}/';
-          sub_filter_once off;
-          sub_filter_types application/rss+xml text/xml;
-        '';
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      root = dataDir;
-      extraConfig = ''
-        types {
-          application/rss+xml rss xml;
-          audio/mpeg mp3;
-          audio/mp4 m4a;
-          video/mp4 mp4;
-        }
-        add_header Accept-Ranges bytes;
-      '';
-      upstreamExtraConfig = ''
-        autoindex on;
-        charset utf-8;
+    modules.services.caddy.routes.y2pod = {
+      publicHost = cfg.domain;
+      handlerConfig = ''
+        @y2pod_private path_regexp y2pod_private (^|/)\\.
+        respond @y2pod_private 403
+        @y2pod_logs path_regexp y2pod_logs \\.log$
+        respond @y2pod_logs 403
+        @y2pod_work path_regexp y2pod_work ^/[^/]+/(inbox|processing|archive)(/|$)
+        respond @y2pod_work 403
+        @y2pod_rss path_regexp y2pod_rss \\.rss$
+        header @y2pod_rss Content-Type "application/rss+xml; charset=utf-8"
+        header Accept-Ranges bytes
+        root * ${dataDir}
+        file_server browse
       '';
     };
 
@@ -85,10 +47,36 @@ in
     systemd.tmpfiles.rules = [
       "z '${dataDir}' 750 ${user} ${group} - -"
     ];
-    users.users.nginx.extraGroups = [ "y2r" ];
+    users.users.caddy.extraGroups = [ group ];
+
+    systemd.services = {
+      caddy = {
+        requires = [ "y2r-https-enclosures.service" ];
+        after = [ "y2r-https-enclosures.service" ];
+      };
+      y2r-https-enclosures = {
+        description = "Make existing y2pod enclosure URLs use HTTPS";
+        wantedBy = [ "multi-user.target" ];
+        unitConfig.RequiresMountsFor = [ dataDir ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = user;
+          Group = group;
+        };
+        script = ''
+          ${pkgs.findutils}/bin/find ${dataDir} -type f \( \
+            -name feed.body -o -name feed.rss \) \
+            -exec ${pkgs.gnused}/bin/sed -i \
+            's#http://${cfg.domain}/#https://${cfg.domain}/#g' {} +
+        '';
+      };
+    };
 
     modules.services.y2r = {
       enable = true;
+      package = pkgs.youtube-to-rss.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./my-y2r-https-enclosures.patch ];
+      });
       settings = {
         host = cfg.domain;
         documentRoot = dataDir;

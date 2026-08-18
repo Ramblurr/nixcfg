@@ -11,6 +11,11 @@ let
     ;
 in
 {
+  imports = [
+    ./gatus.nix
+    ./gatus-heartbeats.nix
+  ];
+
   options.site = {
     data = {
       contact = mkOption {

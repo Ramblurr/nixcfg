@@ -18,11 +18,6 @@ in
       type = lib.types.str;
       description = "The domain to use for tubearchivist";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     port = lib.mkOption {
       type = lib.types.port;
       description = "The external port for tubearchivist web UI";
@@ -96,7 +91,7 @@ in
           ELASTIC_PASSWORD = "tubearchivist";
           ES_URL = "http://tubearchivist-es:9200";
           REDIS_CON = "redis://tubearchivist-redis:6379";
-          TA_AUTH_PROXY_USERNAME_HEADER = "X_AUTHENTIK_USERNAME";
+          TA_AUTH_PROXY_USERNAME_HEADER = "REMOTE_USER";
           TA_ENABLE_AUTH_PROXY = "true";
           TA_HOST = "https://${cfg.domain} http://127.0.0.1:${toString cfg.port}";
           TA_LOGIN_AUTH_MODE = "forwardauth";
@@ -138,13 +133,10 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.protectedRoutes.tube = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.port}";
-      forwardAuth = true;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
+      identityHeaders.Remote-User = "userinfo|preferred_username";
     };
   };
 }

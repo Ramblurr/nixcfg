@@ -7,6 +7,7 @@
 let
   inherit (config.modules.users.primaryUser) username;
   defaultSopsFile = ./secrets.sops.yaml;
+  retiredCrucialDisk = "/dev/disk/by-id/ata-Crucial_CT525MX300SSD1_171816E66F09";
   inherit (config.repo.secrets) home-ops;
 in
 {
@@ -16,9 +17,9 @@ in
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
-    ./acme.nix
-    ./nginx.nix
-    ./minio.nix
+    ./zrepl-receiver-reconcile.nix
+    ./caddy.nix
+    ./garage.nix
     ./syncthing.nix
     ./borgbackup-server.nix
     ./ups.nix
@@ -27,6 +28,7 @@ in
     ./atticd.nix
     ./ncps.nix
     ./rclone.nix
+    ./tofu-state.nix
     ../../config
     ../../modules/site-net
   ];
@@ -58,6 +60,15 @@ in
       zsh.starship.enable = false;
     };
     services = {
+      databasus = {
+        enable = true;
+        domain = "databasus.${config.repo.secrets.global.domain.home}";
+        allowedRemoteIPs = [
+          config.site.net.prim.subnet4
+          config.site.net.mgmt.subnet4
+          "100.64.0.0/10"
+        ];
+      };
       sshd.enable = true;
     };
     editors = {
@@ -86,6 +97,27 @@ in
       "wheel"
       "k8s-nfs"
     ];
+  };
+
+  services.smartd.devices = [
+    {
+      device = retiredCrucialDisk;
+      options = "-d ignore";
+    }
+  ];
+
+  systemd.services.standby-retired-crucial-disk = {
+    description = "Put the retired Crucial SSD into standby";
+    wantedBy = [ "multi-user.target" ];
+    before = [
+      "smartd.service"
+      "prometheus-smartctl-exporter.service"
+    ];
+    unitConfig.ConditionPathExists = retiredCrucialDisk;
+    serviceConfig.Type = "oneshot";
+    script = ''
+      ${pkgs.smartmontools}/bin/smartctl --set=standby,now ${retiredCrucialDisk}
+    '';
   };
 
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
@@ -125,53 +157,60 @@ in
     source = config.sops.secrets.fastKey.path;
   };
 
-  users.groups = (removeAttrs home-ops.groups [ "media" ]) // {
-    k8s-nfs.gid = 2000;
-    proxmox.gid = 1004;
-    zigbee2mqtt.gid = 1006;
-    roon.gid = 1017;
-    hassos.gid = 1018;
-    photo-backup.gid = 3000;
-    atticd.gid = 1019;
-  };
-  users.users = (removeAttrs home-ops.users [ "media" ]) // {
-    k8s-nfs = {
-      group = "k8s-nfs";
-      uid = 2000;
-      isSystemUser = true;
+  users.groups =
+    (removeAttrs home-ops.groups [
+      "media"
+      "onepassword-connect"
+    ])
+    // {
+      k8s-nfs.gid = 2000;
+      proxmox.gid = 1004;
+      zigbee2mqtt.gid = 1006;
+      roon.gid = 1017;
+      hassos.gid = 1018;
+      photo-backup.gid = 3000;
+      atticd.gid = 1019;
     };
-    zigbee2mqtt = {
-      group = "zigbee2mqtt";
-      uid = 1006;
-      isNormalUser = true;
-      openssh.authorizedKeys.keys = [
-        ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
-      ];
+  users.users =
+    (removeAttrs home-ops.users [
+      "media"
+      "onepassword-connect"
+    ])
+    // {
+      k8s-nfs = {
+        group = "k8s-nfs";
+        uid = 2000;
+        isSystemUser = true;
+      };
+      zigbee2mqtt = {
+        group = "zigbee2mqtt";
+        uid = 1006;
+        isNormalUser = true;
+        openssh.authorizedKeys.keys = [
+          ''command="${pkgs.rrsync}/bin/rrsync /mnt/tank2/backups/zigbee2mqtt/",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILApoRF9K7265hxTEI9Frq4VEqpfeili/LdVfnt1zz4''
+        ];
+      };
+      proxmox = {
+        group = "proxmox";
+        uid = 1004;
+        isSystemUser = true;
+      };
+      roon = {
+        group = "roon";
+        isSystemUser = true;
+        uid = 1007;
+      };
+      hassos = {
+        group = "hassos";
+        isSystemUser = true;
+        uid = 1008;
+      };
+      atticd = {
+        group = "atticd";
+        isSystemUser = true;
+        uid = 1009;
+      };
     };
-    proxmox = {
-      group = "proxmox";
-      uid = 1004;
-      isSystemUser = true;
-    };
-    roon = {
-      group = "roon";
-      isSystemUser = true;
-      uid = 1007;
-    };
-    hassos = {
-      group = "hassos";
-      isSystemUser = true;
-      uid = 1008;
-    };
-    atticd = {
-      group = "atticd";
-      isSystemUser = true;
-      uid = 1009;
-    };
-    plex = home-ops.users.plex // {
-      extraGroups = [ "k8s-nfs" ];
-    };
-  };
   environment.systemPackages = with pkgs; [
 
     ipmitool
@@ -214,6 +253,13 @@ in
       OnBootSec = "5min";
       Persistent = true;
     };
+  };
+
+  site.gatus.heartbeats.fix-media-perms = {
+    service = "fix-media-perms";
+    name = "Fix Media Permissions";
+    group = config.site.gatus.groups.media;
+    interval = "2h";
   };
   environment.persistence."/persist" = {
     hideMounts = true;

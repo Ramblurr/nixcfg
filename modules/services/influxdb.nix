@@ -24,25 +24,20 @@ in
         description = "The HTTP port to use";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
   };
 
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "InfluxDB";
+        group = config.site.gatus.groups.infrastructure;
+        url = "https://${cfg.domain}/health";
+      }
+    ];
+
+    modules.services.caddy.routes.influxdb = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/influxdb"."mountpoint" = stateDirActual;

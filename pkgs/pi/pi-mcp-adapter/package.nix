@@ -6,20 +6,20 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "pi-mcp-adapter";
-  version = "2.21.0";
+  version = "2.26.0";
 
   src = fetchFromGitHub {
     owner = "nicobailon";
     repo = "pi-mcp-adapter";
-    rev = "eaf379782fddf836828811d1b71ad85d27bc70dd";
-    hash = "sha256-9B+Q+SIutyXMuNvWZrVvCfGSpMaVrBwvFHvE995zFMA=";
+    rev = "v2.26.0";
+    hash = "sha256-l8PDjwNk6SC4mzanp7gxOCsVm2NQcigNBl+7zs+CbWM=";
   };
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
-
-  npmDepsHash = "sha256-cK8pVCL93P06rFjgJiDneIgNEKOCl+Q2MWhP+EKhOCY=";
+  npmDepsHash = "sha256-UmOmxXpDF3XPUcWL6KLvgr4LK4Th5uZcuQiDpKL+bVU=";
+  npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
   npmInstallFlags = [ "--omit=dev" ];
   npmRebuildFlags = [ "--ignore-scripts" ];

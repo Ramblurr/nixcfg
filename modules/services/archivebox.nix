@@ -24,11 +24,6 @@ in
         description = "The HTTP port to use";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
   };
@@ -60,17 +55,6 @@ in
       "d ${homeDir} 750 ${cfg.user.name} ${cfg.group.name} - -"
     ];
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = true;
-    };
-
     home-manager.users.${cfg.user.name} =
       { pkgs, config, ... }:
       {
@@ -98,7 +82,6 @@ in
                 image = "ghcr.io/archivebox/archivebox:0.9.35rc137@sha256:08ec7b1c59dc96d4678879ca5269a2baeef2e6d11265e53adc91df57cc46050f";
                 userns = "keep-id:uid=${toString cfg.user.uid},gid=${toString cfg.group.gid}";
                 environments = {
-                  REVERSE_PROXY_USER_HEADER = "X-authentik-username";
                   REVERSE_PROXY_WHITELIST = "10.0.0.0/16,127.0.0.1/24";
                   PUBLIC_ADD_VIEW = "True"; # needed for firefox extension
                   ALLOWED_HOSTS = "*";
