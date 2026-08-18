@@ -60,8 +60,8 @@ let
   scrapeTargets = lib.mapAttrs (
     _: staticConfigs: lib.concatMap (static: static.targets) staticConfigs
   ) scrapeJobs;
-  objectStoreSecret = cfg.sops.secrets.thanos_sidecar_object_storage_configuration;
-  objectStorePath = objectStoreSecret.path;
+  objectStoreTemplate = cfg.sops.templates."thanos-object-storage.yaml";
+  objectStorePath = objectStoreTemplate.path;
   thanosUnits = map (name: cfg.systemd.services.${name}) [
     "thanos-sidecar"
     "thanos-store"
@@ -180,9 +180,25 @@ assert cfg.services.thanos.compact.http-address == "127.0.0.1:10907";
 assert cfg.services.thanos.sidecar.objstore.config-file == objectStorePath;
 assert cfg.services.thanos.store.objstore.config-file == objectStorePath;
 assert cfg.services.thanos.compact.objstore.config-file == objectStorePath;
-assert objectStoreSecret.owner == "root";
-assert objectStoreSecret.group == "thanos-objstore";
-assert objectStoreSecret.mode == "0440";
+assert objectStoreTemplate.owner == "root";
+assert objectStoreTemplate.group == "thanos-objstore";
+assert objectStoreTemplate.mode == "0440";
+assert builtins.hasAttr "thanos-object-storage-access-key" cfg.sops.secrets;
+assert builtins.hasAttr "thanos-object-storage-secret-key" cfg.sops.secrets;
+assert !(builtins.hasAttr "thanos_sidecar_object_storage_configuration" cfg.sops.secrets);
+assert
+  objectStoreTemplate.content == ''
+    type: S3
+    config:
+      bucket: debord-thanos
+      endpoint: garage.mgmt.example.test
+      region: us-east-1
+      access_key: ${cfg.sops.placeholder."thanos-object-storage-access-key"}
+      secret_key: ${cfg.sops.placeholder."thanos-object-storage-secret-key"}
+      insecure: false
+      signature_version2: false
+      bucket_lookup_type: path
+  '';
 assert builtins.hasAttr "thanos-objstore" cfg.users.groups;
 assert lib.all (
   unit: unit.serviceConfig.SupplementaryGroups == [ "thanos-objstore" ]
