@@ -39,6 +39,14 @@ in
       APP_SECRET = "op://home-ops-prod/davis/APP_SECRET";
       ADMIN_PASSWORD = "op://home-ops-prod/davis/ADMIN_PASSWORD";
     };
+    site.gatus.endpoints = [
+      {
+        name = "Davis";
+        group = "Home & Personal";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.davis = {
       publicHost = cfg.domain;
       handlerConfig = ''

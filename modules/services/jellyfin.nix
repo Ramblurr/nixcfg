@@ -25,6 +25,14 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    site.gatus.endpoints = [
+      {
+        name = "Jellyfin";
+        group = "Media & Library";
+        url = "https://${cfg.domain}/health";
+      }
+    ];
+
     modules.services.caddy.routes.jellyfin = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:8096";

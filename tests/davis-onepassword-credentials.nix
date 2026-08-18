@@ -20,7 +20,7 @@ let
           type = lib.types.attrs;
           default = { };
         };
-        site = lib.mkOption {
+        site.net = lib.mkOption {
           type = lib.types.attrs;
           default = { };
         };
@@ -40,6 +40,7 @@ let
       modules = [
         inputs.sops-nix.nixosModules.sops
         ../modules/services/onepassword-systemd-credentials.nix
+        ../modules/site/gatus.nix
         ../modules/services/davis.nix
         testOptions
         {

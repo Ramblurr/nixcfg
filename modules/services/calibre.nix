@@ -82,6 +82,20 @@ in
       extraOptions = [ ];
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Calibre GUI";
+        group = "Media & Library";
+        url = "https://${cfg.domain.gui}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+      {
+        name = "Calibre Server";
+        group = "Media & Library";
+        url = "https://${cfg.domain.server}/";
+      }
+    ];
+
     modules.services.caddy.protectedRoutes.calibre-gui = {
       publicHost = cfg.domain.gui;
       upstream = "http://127.0.0.1:${toString cfg.ports.gui}";

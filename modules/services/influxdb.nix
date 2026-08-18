@@ -27,6 +27,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    site.gatus.endpoints = [
+      {
+        name = "InfluxDB";
+        group = "Infrastructure & Operations";
+        url = "https://${cfg.domain}/health";
+      }
+    ];
+
     modules.services.caddy.routes.influxdb = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";

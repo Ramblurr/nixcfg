@@ -16,6 +16,14 @@ in
     # Nixbot runs on Debord. Dewey Caddy terminates TLS and proxies over the
     # prim VLAN. James HAProxy selects this hostname for James public exposure.
     # See the Debord Nixbot configuration.
+    site.gatus.endpoints = [
+      {
+        name = "Nixbot CI";
+        group = "Work & Collaboration";
+        url = "https://ci.${workDomain}/";
+      }
+    ];
+
     modules.services.caddy.routes.ci = {
       publicHost = "ci.${workDomain}";
       upstream = "http://debord.prim.${homeDomain}:${toString config.repo.secrets.home-ops.ports.nixbot}";

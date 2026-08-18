@@ -8,6 +8,14 @@ in
     lib.mkEnableOption "Home Assistant Caddy route";
 
   config = lib.mkIf cfg.enable {
+    site.gatus.endpoints = [
+      {
+        name = "Home Assistant";
+        group = "Home & Personal";
+        url = "https://home.${homeDomain}/";
+      }
+    ];
+
     modules.services.caddy.routes.home-assistant = {
       publicHost = "home.${homeDomain}";
       upstream = "http://10.9.4.25:8123";

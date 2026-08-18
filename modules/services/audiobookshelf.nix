@@ -105,6 +105,14 @@ in
       group = cfg.group.name;
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Audiobookshelf";
+        group = "Media & Library";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.audiobookshelf = {
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";

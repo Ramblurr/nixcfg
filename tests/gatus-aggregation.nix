@@ -45,6 +45,13 @@ let
             enable = true;
             domain = "status.example.test";
           };
+          site.gatus.endpoints = [
+            {
+              name = "dewey";
+              group = "hosts";
+              url = "https://dewey.example.test";
+            }
+          ];
         }
       ];
     };
@@ -122,7 +129,7 @@ assert
     }
     {
       name = "Paperless";
-      group = "webapps";
+      group = "Home & Personal";
       url = "https://paperless.example.test/api/schema/";
       interval = "5m";
       conditions = [ "[STATUS] == 200" ];

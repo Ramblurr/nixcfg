@@ -11,13 +11,14 @@ let
       ../modules/services/onepassword-systemd-credentials.nix
       ../modules/zfs-attrs.nix
       ../hosts/mali/caddy.nix
+      ../modules/site/gatus.nix
       ../hosts/mali/garage.nix
       {
         options.repo.secrets = lib.mkOption {
           type = lib.types.attrs;
           default = { };
         };
-        options.site = lib.mkOption {
+        options.site.net = lib.mkOption {
           type = lib.types.attrs;
           default = { };
         };
