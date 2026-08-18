@@ -48,6 +48,14 @@ let
               );
               default = { };
             };
+            sops.placeholder = lib.mkOption {
+              type = lib.types.attrsOf lib.types.str;
+              default = { };
+            };
+            sops.templates = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
             environment.persistence = lib.mkOption {
               type = lib.types.attrs;
               default = { };
@@ -65,6 +73,11 @@ let
               global.domain.tailnet = "example.test";
               local.crowdsec.trustedSourceCidrs = [ "100.64.0.0/10" ];
             };
+            sops.placeholder = {
+              "crowdsec/lapi-password" = "@CROWDSEC_LAPI_PASSWORD@";
+              "crowdsec/lapi-login" = "@CROWDSEC_LAPI_LOGIN@";
+              "crowdsec/lapi-url" = "@CROWDSEC_LAPI_URL@";
+            };
           };
         }
       )
@@ -74,6 +87,7 @@ let
   cfg = evaluated.config;
   crowdsec = cfg.systemd.services.crowdsec;
   bouncer = cfg.systemd.services.crowdsec-firewall-bouncer;
+  lapiCredentials = cfg.sops.templates."crowdsec/lapiCredentials";
   parserCleanup =
     cfg.systemd.tmpfiles.settings."09-crowdsec-local-parser-cleanup"."/etc/crowdsec/parsers/s02-enrich/*-parsers-s02-enrich.yaml".r;
   expectedAcquisitions = [
@@ -97,6 +111,21 @@ in
 assert cfg.services.crowdsec.settings.general.api.server.enable == false;
 assert
   cfg.services.crowdsec.settings.lapi.credentialsFile == "/run/secrets/crowdsec/lapiCredentials";
+assert builtins.hasAttr "crowdsec/lapi-password" cfg.sops.secrets;
+assert builtins.hasAttr "crowdsec/lapi-login" cfg.sops.secrets;
+assert builtins.hasAttr "crowdsec/lapi-url" cfg.sops.secrets;
+assert !(builtins.hasAttr "crowdsec/lapiCredentials" cfg.sops.secrets);
+assert lapiCredentials.path == "/run/secrets/crowdsec/lapiCredentials";
+assert lapiCredentials.owner == "crowdsec";
+assert lapiCredentials.group == "crowdsec";
+assert lapiCredentials.mode == "0400";
+assert lapiCredentials.restartUnits == [ "crowdsec.service" ];
+assert
+  lapiCredentials.content == ''
+    url: @CROWDSEC_LAPI_URL@
+    login: @CROWDSEC_LAPI_LOGIN@
+    password: @CROWDSEC_LAPI_PASSWORD@
+  '';
 assert cfg.services.crowdsec.localConfig.acquisitions == expectedAcquisitions;
 assert
   cfg.services.crowdsec.hub.collections == [
