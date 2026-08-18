@@ -561,6 +561,13 @@ Other work-item documents use the work-item number and basename, such as
     (user-error "Current buffer is not the project issues agenda"))
   (my/project-scratch-agenda-view))
 
+(defun my/org-agenda-redo ()
+  "Refresh the current agenda through its supported rendering path."
+  (interactive)
+  (if (equal org-agenda-name "Project issues")
+      (my/project-scratch-agenda-refresh)
+    (org-agenda-redo)))
+
 (defun my/project-scratch--finder-completion-table (files work-items)
   "Return a completion table for relative FILES and WORK-ITEMS."
   (lambda (input predicate action)
@@ -639,6 +646,8 @@ Other work-item documents use the work-item number and basename, such as
 
   (add-hook 'org-agenda-mode-hook #'my/org-agenda-source-mode-line)
   (add-hook 'org-agenda-finalize-hook #'my/org-agenda-insert-work-items)
+
+  (define-key org-agenda-mode-map (kbd "r") #'my/org-agenda-redo)
 
   (map! :map org-agenda-mode-map
         :localleader

@@ -239,6 +239,33 @@
            (buffer-substring-no-properties (point-min) (point-max)))
           t)))))))
 
+(ert-deftest my-project-scratch-agenda-plain-redo-refreshes-saved-sources ()
+  (project-scratch-test--with-project (root)
+    (let ((source
+           (project-scratch-test--write
+            root ".scratch-org/001-alpha/issues/01-ready.org"
+            "* READY-FOR-AGENT Before plain redo\n")))
+      (my/project-scratch-agenda)
+      (setq-local org-agenda-redo-command '(ignore))
+      (project-scratch-test--write
+       root
+       (file-relative-name source root)
+       "* READY-FOR-AGENT After plain redo\n")
+      (should (eq 'my/org-agenda-redo (key-binding (kbd "r"))))
+      (call-interactively (key-binding (kbd "r")))
+      (should
+       (string-match-p
+        "After plain redo"
+        (buffer-substring-no-properties (point-min) (point-max)))))))
+
+(ert-deftest my-org-agenda-redo-preserves-standard-agenda-behavior ()
+  (let ((org-agenda-name "Other agenda")
+        called)
+    (cl-letf (((symbol-function 'org-agenda-redo)
+               (lambda () (setq called t))))
+      (my/org-agenda-redo))
+    (should called)))
+
 (ert-deftest my-project-scratch-agenda-scans-each-source-once ()
   (project-scratch-test--with-project (root)
     (dolist (fixture
