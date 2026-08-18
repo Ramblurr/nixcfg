@@ -145,7 +145,6 @@ let
     && credentials.mode == "0400"
     && credentials.restartUnits == [ ]
     && cfg.users.users.${user.name}.shell == pkgs.bashInteractive
-    && lib.any (package: lib.getName package == "op-connectctl") cfg.environment.systemPackages
     &&
       cfg.home-manager.users.${user.name}.home.sessionVariables.DBUS_SESSION_BUS_ADDRESS
       == "unix:path=/run/user/${toString user.uid}/bus"
