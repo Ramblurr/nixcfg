@@ -3,6 +3,8 @@ let
   fakeOp = pkgs.writeShellScriptBin "op" ''
     set -eu
 
+    test "''${HOME:-}" = "/tmp"
+    test "''${XDG_CONFIG_HOME:-}" = "/tmp/op-config"
     test "''${OP_CONNECT_HOST:-}" = "http://192.0.2.22:8080"
     test "''${OP_CONNECT_TOKEN:-}" = "runtime-bootstrap-token"
     test "$1" = "read"
