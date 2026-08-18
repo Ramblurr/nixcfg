@@ -214,7 +214,10 @@ in
         peerPublicKey = "op://home-ops-prod/protonvpn-dewey/PeerPublicKey";
         peerEndpoint = "op://home-ops-prod/protonvpn-dewey/PeerEndpoint";
       };
-      qui.sessionSecret = "op://home-ops-prod/qbittorrent/qui-session-secret";
+      qui = {
+        oidcClientSecret = "op://home-ops-prod/qbittorrent/oidc-client-secret";
+        sessionSecret = "op://home-ops-prod/qbittorrent/qui-session-secret";
+      };
     };
 
     vpnNamespaces.${namespace} = {
@@ -322,15 +325,24 @@ in
       openFirewall = false;
       settings = {
         host = "127.0.0.1";
+        oidcClientId = "qui";
+        oidcDisableBuiltInLogin = false;
+        oidcEnabled = true;
+        oidcIssuer = "https://id.${cfg.baseDomain}";
+        oidcRedirectUrl = "https://${qbittorrentDomain}/api/auth/oidc/callback";
         port = cfg.ports.qbittorrent;
       };
     };
 
     systemd.services.qui = {
+      environment.QUI__OIDC_CLIENT_SECRET_FILE = onepassword.creds.qui.oidcClientSecret;
       unitConfig.RequiresMountsFor = [ stateDir ];
       serviceConfig = {
         BindPaths = [ "${quiStateDir}:/var/lib/qui" ];
-        LoadCredential = lib.mkForce [ "sessionSecret:${onepassword.socketPath}" ];
+        LoadCredential = lib.mkForce [
+          "oidcClientSecret:${onepassword.socketPath}"
+          "sessionSecret:${onepassword.socketPath}"
+        ];
       };
     };
 
