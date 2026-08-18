@@ -71,7 +71,12 @@ let
             notificationsFromAddress = "notifications@example.test";
             imapAuthUrlNew = "imaps://mail.example.test";
           };
-          modules.services.postgresql.enable = true;
+          modules.services.postgresql = {
+            enable = true;
+            package = pkgs.postgresql_18;
+            pgDataDir = "/var/lib/postgresql/18";
+            physicalBackup.enable = true;
+          };
           modules.services.davis = {
             enable = true;
             domain = "dav.example.test";
@@ -86,7 +91,25 @@ let
   backupCreds = provider.creds.databasus-davis-role;
   backupService = cfg.systemd.services.databasus-davis-role;
   backupScript = backupService.script;
+  physicalBackupService = cfg.systemd.services.databasus-pg-dewey-role;
+  physicalBackupScript = physicalBackupService.script;
+  davisService = cfg.systemd.services.phpfpm-davis;
+  davisMigrationService = cfg.systemd.services.davis-db-migrate;
 in
+assert cfg.services.postgresql.package.version == pkgs.postgresql_18.version;
+assert cfg.services.postgresql.dataDir == "/var/lib/postgresql/18";
+assert
+  lib.getAttrs [
+    "max_replication_slots"
+    "max_wal_senders"
+    "summarize_wal"
+    "wal_level"
+  ] cfg.services.postgresql.settings == {
+    max_replication_slots = 10;
+    max_wal_senders = 10;
+    summarize_wal = "on";
+    wal_level = "replica";
+  };
 assert provider.enable;
 assert provider.consumers.davis-env-setup == expectedCredentials;
 assert
@@ -131,7 +154,34 @@ assert lib.hasInfix "REVOKE TEMP ON DATABASE davis FROM PUBLIC" backupScript;
 assert lib.hasInfix "GRANT SELECT ON ALL TABLES IN SCHEMA public TO databasus_davis" backupScript;
 assert lib.hasInfix "ALTER DEFAULT PRIVILEGES FOR ROLE davis IN SCHEMA public" backupScript;
 assert
+  provider.consumers.databasus-pg-dewey-role == {
+    POSTGRES_PASSWORD = "op://home-ops-prod/databasus-pg-dewey/password";
+  };
+assert physicalBackupService.serviceConfig.User == "postgres";
+assert builtins.elem "postgresql.service" physicalBackupService.requires;
+assert builtins.elem "onepassword-credential-provider.socket" physicalBackupService.requires;
+assert builtins.elem "postgresql.service" physicalBackupService.after;
+assert builtins.elem "onepassword-credential-provider.socket" physicalBackupService.after;
+assert
+  physicalBackupService.serviceConfig.LoadCredential == [
+    "POSTGRES_PASSWORD:/run/onepassword-credential-provider.sock"
+  ];
+assert builtins.elem "${pkgs.coreutils}/bin/test -S /run/postgresql/.s.PGSQL.5432"
+  physicalBackupService.serviceConfig.ExecStartPre;
+assert builtins.elem "${pkgs.coreutils}/bin/test -s %d/POSTGRES_PASSWORD"
+  physicalBackupService.serviceConfig.ExecStartPre;
+assert lib.hasInfix "CREATE ROLE databasus_pg_dewey LOGIN REPLICATION" physicalBackupScript;
+assert lib.hasInfix "LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE REPLICATION NOBYPASSRLS"
+  physicalBackupScript;
+assert builtins.elem "postgresql.service" davisService.requires;
+assert builtins.elem "postgresql.service" davisService.after;
+assert builtins.elem "postgresql.service" davisMigrationService.requires;
+assert builtins.elem "postgresql.service" davisMigrationService.after;
+assert
   cfg.modules.services.postgresql.extraAuthentication == [
+    "host replication databasus_pg_dewey 192.0.2.3/32 scram-sha-256"
+    "host postgres databasus_pg_dewey 192.0.2.3/32 scram-sha-256"
+    "host all databasus_pg_dewey 192.0.2.3/32 reject"
     "host davis databasus_davis 192.0.2.3/32 scram-sha-256"
     "host all databasus_davis 192.0.2.3/32 reject"
   ];
@@ -141,6 +191,8 @@ assert lib.hasInfix ''iifname "mgmt"'' cfg.networking.firewall.extraInputRules;
 assert lib.hasInfix "ip saddr 192.0.2.3/32" cfg.networking.firewall.extraInputRules;
 assert lib.hasInfix "ip daddr 192.0.2.14" cfg.networking.firewall.extraInputRules;
 assert lib.hasInfix "tcp dport 5432 accept" cfg.networking.firewall.extraInputRules;
+assert lib.hasInfix ''comment "Databasus pg-dewey physical backup"''
+  cfg.networking.firewall.extraInputRules;
 assert !(builtins.elem "sops-install-secrets.service" service.requires);
 assert !(builtins.elem "sops-install-secrets.service" service.after);
 assert !(builtins.hasAttr "davis/APP_SECRET" cfg.sops.secrets);
