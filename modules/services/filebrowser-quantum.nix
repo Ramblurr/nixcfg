@@ -182,6 +182,15 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "FileBrowser Quantum";
+        group = "Media & Library";
+        url = "https://${cfg.domain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+    ];
+
     modules.services.caddy.protectedRoutes.files = {
       publicHost = cfg.domain;
       inherit upstream;

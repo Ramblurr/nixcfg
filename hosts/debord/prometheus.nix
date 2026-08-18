@@ -35,6 +35,24 @@ in
     "thanos"
   ];
 
+  site.gatus.endpoints = [
+    {
+      name = "Alertmanager";
+      group = "Infrastructure & Operations";
+      url = "https://alertmanager.${domain.home}/-/healthy";
+    }
+    {
+      name = "Prometheus";
+      group = "Infrastructure & Operations";
+      url = "https://prom.${domain.home}/-/healthy";
+    }
+    {
+      name = "Thanos Query";
+      group = "Infrastructure & Operations";
+      url = "https://thanos.${domain.home}/-/healthy";
+    }
+  ];
+
   modules.services.caddy.routes = {
     prom = {
       publicHost = "prom.${domain.home}";

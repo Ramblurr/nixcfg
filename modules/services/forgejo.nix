@@ -61,6 +61,14 @@ in
       };
     };
 
+    site.gatus.endpoints = [
+      {
+        name = "Forgejo";
+        group = "Work & Collaboration";
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
     modules.services.caddy.routes.forgejo = {
       publicHost = cfg.domain;
       upstream = "unix/${config.services.forgejo.settings.server.HTTP_ADDR}";

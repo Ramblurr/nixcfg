@@ -8,6 +8,7 @@ let
       inputs.sops-nix.nixosModules.sops
       ../modules/telemetry/prometheus.nix
       ../modules/telemetry/thanos.nix
+      ../modules/site/gatus.nix
       ../hosts/debord/prometheus.nix
       {
         options.repo.secrets = lib.mkOption {

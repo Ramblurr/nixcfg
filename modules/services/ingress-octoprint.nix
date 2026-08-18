@@ -7,6 +7,15 @@ in
   options.modules.services.ingress-octoprint.enable = lib.mkEnableOption "OctoPrint Caddy route";
 
   config = lib.mkIf cfg.enable {
+    site.gatus.endpoints = [
+      {
+        name = "OctoPrint";
+        group = "Home & Personal";
+        url = "https://octoprint.${homeDomain}/";
+        conditions = [ "[STATUS] == 302" ];
+      }
+    ];
+
     modules.services.caddy.routes.octoprint = {
       publicHost = "octoprint.${homeDomain}";
       handlerConfig = ''
