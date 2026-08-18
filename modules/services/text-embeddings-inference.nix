@@ -22,7 +22,7 @@ in
     image = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "ghcr.io/huggingface/text-embeddings-inference:89-1.9.3@sha256:e47e625ced2385d3dbfdee79ba0380204578e0b27ef1a926783f9b3486aaf109";
+      default = "ghcr.io/huggingface/text-embeddings-inference:100-1.9.3@sha256:8a50d10f8192ae18f7b01124a499a6f1524d7f10b412390537f94e55a051b805";
       description = "Digest-pinned Text Embeddings Inference OCI image.";
     };
 
