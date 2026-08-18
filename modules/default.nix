@@ -95,6 +95,7 @@
     ./services/filebrowser-quantum.nix
     ./services/flatpak.nix
     ./services/forgejo.nix
+    ./services/gatus.nix
     ./services/git-archive.nix
     ./services/github-runner.nix
     ./services/haproxy.nix
