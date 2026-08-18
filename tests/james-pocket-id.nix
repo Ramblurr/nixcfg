@@ -39,6 +39,7 @@ let
     };
   evaluated = lib.nixosSystem {
     modules = [
+      ../modules/site/gatus.nix
       ../modules/services/pocket-id.nix
       ../hosts/james/pocket-id.nix
       sopsOptions
@@ -57,6 +58,7 @@ let
   work = cfg.containers.pocket-id-work;
   homeService = cfg.systemd.services."container@pocket-id-home";
   workService = cfg.systemd.services."container@pocket-id-work";
+  pocketIdChecks = cfg.site.gatus.endpoints;
   homePocketId = home.config.services.pocket-id;
   workPocketId = work.config.services.pocket-id;
   homeDataPath = "/var/lib/pocket-id-containers/id.${homeDomain}";
@@ -124,6 +126,21 @@ assert builtins.elem "/run/secrets/home-pocket-id-encryption-key"
 assert builtins.elem workDataPath workService.unitConfig.RequiresMountsFor;
 assert builtins.elem "/run/secrets/work-pocket-id-encryption-key"
   workService.unitConfig.RequiresMountsFor;
+assert
+  map (check: {
+    inherit (check) name url conditions;
+  }) pocketIdChecks == [
+    {
+      name = "So" + "Cozy ID";
+      url = "https://id.${homeDomain}/healthz";
+      conditions = [ "[STATUS] == 204" ];
+    }
+    {
+      name = "Outskirts Labs ID";
+      url = "https://id.${workDomain}/healthz";
+      conditions = [ "[STATUS] == 204" ];
+    }
+  ];
 pkgs.runCommand "james-pocket-id-module-test" { } ''
   touch "$out"
 ''

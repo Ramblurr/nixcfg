@@ -34,4 +34,19 @@ in
       sopsKey = "work-pocket-id-encryption-key";
     };
   };
+
+  site.gatus.endpoints = [
+    {
+      name = "So" + "Cozy ID";
+      group = "Infrastructure & Operations";
+      url = "https://id.${homeDomain}/healthz";
+      conditions = [ "[STATUS] == 204" ];
+    }
+    {
+      name = "Outskirts Labs ID";
+      group = "Infrastructure & Operations";
+      url = "https://id.${workDomain}/healthz";
+      conditions = [ "[STATUS] == 204" ];
+    }
+  ];
 }
