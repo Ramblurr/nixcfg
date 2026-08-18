@@ -185,15 +185,6 @@ in
         name = "Paperless";
         group = "webapps";
         url = "https://${cfg.domain}/api/schema/";
-        interval = "5m";
-        conditions = [ "[STATUS] == 200" ];
-        alerts = [
-          {
-            type = "testing";
-            "failure-threshold" = 3;
-            description = "healthcheck failed";
-          }
-        ];
       }
     ];
 
