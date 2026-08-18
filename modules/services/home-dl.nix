@@ -232,6 +232,12 @@ in
       };
     };
 
+    site.gatus.heartbeats.recyclarr = {
+      service = "recyclarr";
+      name = "Recyclarr Sync";
+      group = config.site.gatus.groups.media;
+      interval = "30h";
+    };
     site.gatus.endpoints = [
       {
         name = "Prowlarr";
