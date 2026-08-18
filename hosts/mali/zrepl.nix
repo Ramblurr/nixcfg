@@ -136,8 +136,6 @@ in
               "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
-              "tank2/services/minio<" = false;
-              "tank2/services/minio-config<" = false;
               "tank2/services/garage<" = true;
               "tank2/iocage<" = false;
               "tank2/media<" = false;
@@ -182,8 +180,6 @@ in
               "rpool2/encrypted/safe<" = true;
               "tank/backup<" = false;
               "tank2<" = true;
-              "tank2/services/minio<" = false;
-              "tank2/services/minio-config<" = false;
               "tank2/services/garage<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
@@ -214,8 +210,6 @@ in
               "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
-              "tank2/services/minio<" = false;
-              "tank2/services/minio-config<" = false;
               "tank2/services/garage<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
