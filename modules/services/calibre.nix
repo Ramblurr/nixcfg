@@ -86,8 +86,7 @@ in
       {
         name = "Calibre GUI";
         group = "Media & Library";
-        url = "https://${cfg.domain.gui}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${cfg.domain.gui}/_health/gatus";
       }
       {
         name = "Calibre Server";
@@ -99,6 +98,7 @@ in
     modules.services.caddy.protectedRoutes.calibre-gui = {
       publicHost = cfg.domain.gui;
       upstream = "http://127.0.0.1:${toString cfg.ports.gui}";
+      healthCheckPath = "/";
     };
     modules.services.caddy.routes.calibre-server = {
       publicHost = cfg.domain.server;
