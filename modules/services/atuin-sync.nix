@@ -28,6 +28,10 @@ in
       openRegistration = false;
       port = cfg.ports.http;
     };
+    systemd.services.atuin = {
+      requires = [ "postgresql.service" ];
+      after = [ "postgresql.service" ];
+    };
     site.gatus.endpoints = [
       {
         name = "Atuin Sync";

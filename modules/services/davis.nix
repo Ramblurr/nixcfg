@@ -12,7 +12,6 @@ let
   backupRole = "databasus_davis";
   databaseName = "davis";
   maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
-  deweyMgmtAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
 in
 {
   options.modules.services.davis = {
@@ -56,9 +55,14 @@ in
       "host all ${backupRole} ${maliMgmtAddress}/32 reject"
     ];
 
-    networking.firewall.extraInputRules = ''
-      iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${deweyMgmtAddress} tcp dport 5432 accept comment "Databasus Davis backup"
-    '';
+    systemd.services.phpfpm-davis = {
+      requires = [ "postgresql.service" ];
+      after = [ "postgresql.service" ];
+    };
+    systemd.services.davis-db-migrate = {
+      requires = [ "postgresql.service" ];
+      after = [ "postgresql.service" ];
+    };
 
     systemd.services.databasus-davis-role = {
       description = "Provision the Databasus read-only role for Davis";
