@@ -10,6 +10,7 @@ let
       ../modules/site/gatus.nix
       ../modules/services/ingress-home-assistant.nix
       ../modules/services/ingress-octoprint.nix
+      ../modules/services/ingress-phoniebox.nix
       ../modules/services/calibre-web.nix
       ../modules/services/caddy.nix
       ../modules/services/onepassword-systemd-credentials.nix
@@ -27,6 +28,7 @@ let
         repo.secrets.home-ops.homeDomain = "example.test";
         modules.services.ingress-home-assistant.enable = true;
         modules.services.ingress-octoprint.enable = true;
+        modules.services.ingress-phoniebox.enable = true;
         repo.secrets.global.nodes.mali.dataCIDR = "192.0.2.1";
         repo.secrets.home-ops.calibreWebPocketIdClientId = "calibre-client-id";
         modules.services.calibre-web = {
@@ -172,6 +174,9 @@ assert
   || throw "failed Mali Caddy assertions: ${lib.concatStringsSep "; " maliFailedAssertions}";
 assert cfg.modules.services.caddy.routes.home-assistant.publicHost == "home.example.test";
 assert cfg.modules.services.caddy.routes.octoprint.publicHost == "octoprint.example.test";
+assert (findCheck "OctoPrint").url == "https://octoprint.example.test/online.txt";
+assert (findCheck "OctoPrint").conditions == [ "[STATUS] == 200" ];
+assert findCheck "Phoniebox" == null;
 assert caddy.enable;
 assert caddy.environmentFile == "/run/caddy-env/caddy.env";
 assert provider.consumers.caddy-env-setup == expectedCredentials;
