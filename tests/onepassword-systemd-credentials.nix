@@ -151,7 +151,8 @@ let
     && builtins.elem "onepassword-credential-provider.socket" consumer.requires
     && builtins.elem "onepassword-credential-provider.socket" consumer.after
     && builtins.elem "password:${provider.socketPath}" consumer.serviceConfig.LoadCredential
-    && builtins.elem "${pkgs.coreutils}/bin/test -s %d/password" consumer.serviceConfig.ExecStartPre;
+    && builtins.elem "${pkgs.coreutils}/bin/test -s %d/password" consumer.serviceConfig.ExecStartPre
+    && provider.creds.example.password == "/run/credentials/example.service/password";
 in
 assert enabledHosts == replicaNames;
 assert lib.all targetIsCorrect replicaNames;
