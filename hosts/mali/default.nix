@@ -254,6 +254,13 @@ in
       Persistent = true;
     };
   };
+
+  site.gatus.heartbeats.fix-media-perms = {
+    service = "fix-media-perms";
+    name = "Fix Media Permissions";
+    group = config.site.gatus.groups.media;
+    interval = "2h";
+  };
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
