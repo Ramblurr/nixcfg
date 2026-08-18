@@ -436,8 +436,6 @@ in
       enable = true;
       domain = "koreader.${home-ops.homeDomain}";
       ports.http = home-ops.ports.koreader-sync;
-      user = home-ops.users.koreader-sync;
-      group = home-ops.groups.koreader-sync;
     };
     modules.services.calibre-web = lib.mkIf cfg.apps.calibre-web.enable {
       enable = true;
