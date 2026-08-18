@@ -4,6 +4,7 @@
     { pkgs, ... }:
     {
       checks = {
+        databasus = import ../tests/databasus.nix { inherit inputs pkgs; };
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
         davis-onepassword-credentials = import ../tests/davis-onepassword-credentials.nix {
           inherit inputs pkgs;
