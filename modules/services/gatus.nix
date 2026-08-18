@@ -95,6 +95,7 @@ in
       script = ''
         {
           printf 'BORGMATIC_GATUS_TOKEN=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/borgmatic-external-endpoint-token")"
+          printf 'GATUS_EXTERNAL_TOKEN=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/borgmatic-external-endpoint-token")"
           printf 'PUSHOVER_API_TOKEN=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/pushover-api-token")"
           printf 'PUSHOVER_USER_KEY=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/pushover-user-key")"
         } > ${environmentFile}

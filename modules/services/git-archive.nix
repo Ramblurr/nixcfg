@@ -9,6 +9,26 @@ let
   onepassword = config.modules.services.onepassword-systemd-credentials;
   stateDirActual = "/var/lib/private/git-archive";
   stateDirEffective = "/var/lib/git-archive";
+  hostName = config.networking.hostName;
+  gatusEndpointName = "Git Archive (${hostName})";
+  gatusEndpointKey = "work---collaboration_git-archive-(${lib.toLower hostName})";
+  gatusUrl = "https://status.${config.repo.secrets.global.domain.home}";
+  gatusReport = pkgs.writeShellScript "gickup-gatus-report" ''
+    if [[ "$SERVICE_RESULT" == "success" ]]; then
+      success=true
+      error_args=()
+    else
+      success=false
+      error_args=(--data-urlencode "error=$SERVICE_RESULT ($EXIT_CODE/$EXIT_STATUS)")
+    fi
+
+    ${lib.getExe pkgs.curl} --fail --silent --show-error --retry 3 --get --request POST \
+      --header "Authorization: Bearer $(cat "$CREDENTIALS_DIRECTORY/GATUS_TOKEN")" \
+      --data-urlencode "success=$success" \
+      "''${error_args[@]}" \
+      "${gatusUrl}/api/v1/endpoints/${gatusEndpointKey}/external" \
+      || echo "Failed to report Git archive result to Gatus" >&2
+  '';
   gickupConfigTemplate = pkgs.writeText "gickup-config-template.yaml" ''
     ---
     source:
@@ -58,6 +78,7 @@ in
     ];
 
     modules.services.onepassword-systemd-credentials.consumers.gickup = {
+      GATUS_TOKEN = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
       GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
       GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/github-token-ol";
     };
@@ -70,6 +91,16 @@ in
         Persistent = true;
       };
     };
+
+    site.gatus.externalEndpoints = [
+      {
+        name = gatusEndpointName;
+        group = "Work & Collaboration";
+        token = "$GATUS_EXTERNAL_TOKEN";
+        heartbeat.interval = "30h";
+        alerts = [ { type = "pushover"; } ];
+      }
+    ];
     systemd.services.gickup = {
       enable = true;
       wants = [ "network-online.target" ];
@@ -91,6 +122,7 @@ in
       '';
       serviceConfig = {
         Type = "oneshot";
+        ExecStopPost = gatusReport;
         DynamicUser = true;
         StateDirectory = baseNameOf stateDirEffective;
         UMask = 77;

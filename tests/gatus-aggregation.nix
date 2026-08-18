@@ -164,6 +164,7 @@ assert
 assert gatusEnvSetup.before == [ "gatus.service" ];
 assert gatusEnvSetup.requiredBy == [ "gatus.service" ];
 assert lib.hasInfix "BORGMATIC_GATUS_TOKEN=%s" gatusEnvSetup.script;
+assert lib.hasInfix "GATUS_EXTERNAL_TOKEN=%s" gatusEnvSetup.script;
 pkgs.runCommand "gatus-aggregation-test" { } ''
   touch "$out"
 ''

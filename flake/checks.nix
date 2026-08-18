@@ -7,6 +7,7 @@
         borgmatic = import ../tests/borgmatic.nix { inherit inputs pkgs; };
         calibre = import ../tests/calibre.nix { inherit inputs pkgs; };
         databasus = import ../tests/databasus.nix { inherit inputs pkgs; };
+        git-archive = import ../tests/git-archive.nix { inherit inputs pkgs; };
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
         invoiceninja = import ../tests/invoiceninja.nix { inherit inputs pkgs; };
         davis-onepassword-credentials = import ../tests/davis-onepassword-credentials.nix {
