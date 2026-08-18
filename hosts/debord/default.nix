@@ -12,6 +12,7 @@ in
   imports = [
     ./hardware.nix
     ./disk-config.nix
+    ./gatus-pushover.nix
     ./networking.nix
     ./nixbot.nix
     ./prometheus.nix
