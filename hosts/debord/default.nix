@@ -64,9 +64,18 @@ in
       "home"
       "nad"
       "octoprint"
+      "status"
     ];
     acmeEmail = config.repo.secrets.global.email.acme;
     redirectStatus = 301;
+  };
+  modules.services.gatus = {
+    enable = true;
+    domain = "status.${config.repo.secrets.global.domain.home}";
+    allowedRemoteIPs = [
+      config.site.net.prim.subnet4
+      "100.64.0.0/10"
+    ];
   };
   modules.services.hindsight = {
     llm = {
