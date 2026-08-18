@@ -16,6 +16,13 @@ let
   dataDir = "/var/lib/onepassword-connect";
   credentials = config.sops.secrets."onepassword-connect/credentials";
   heartbeat = "${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 2 http://127.0.0.1:8080/heartbeat";
+  opConnectctl = pkgs.writeShellScriptBin "op-connectctl" ''
+    exec ${pkgs.sudo}/bin/sudo --user ${lib.escapeShellArg cfg.user.name} \
+      ${pkgs.coreutils}/bin/env \
+      XDG_RUNTIME_DIR=/run/user/${toString cfg.user.uid} \
+      DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${toString cfg.user.uid}/bus \
+      ${pkgs.systemd}/bin/systemctl --user "$@"
+  '';
   peerSet = lib.concatStringsSep ", " cfg.availability.peerAddresses;
 in
 {
@@ -88,13 +95,15 @@ in
       }
     ];
 
+    environment.systemPackages = [ opConnectctl ];
+
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
       isNormalUser = true;
       group = lib.mkForce cfg.group.name;
       home = dataDir;
-      shell = pkgs.shadow;
+      shell = pkgs.bashInteractive;
       linger = true;
       createHome = false;
       autoSubUidGidRange = true;
@@ -104,6 +113,22 @@ in
       inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
+
+    home-manager.users.${cfg.user.name} =
+      { config, ... }:
+      {
+        home.homeDirectory = dataDir;
+        home.sessionVariables = {
+          DBUS_SESSION_BUS_ADDRESS = "unix:path=/run/user/${toString cfg.user.uid}/bus";
+          XDG_RUNTIME_DIR = "/run/user/${toString cfg.user.uid}";
+        };
+        programs.bash = {
+          enable = true;
+          initExtra = ''
+            [[ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]] && source "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
+          '';
+        };
+      };
 
     sops.secrets."onepassword-connect/credentials" = {
       sopsFile = cfg.credentialsFile;
