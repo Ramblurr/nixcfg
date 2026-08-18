@@ -1,11 +1,18 @@
 {
   config,
   lib,
+  nodes ? { },
   ...
 }:
 
 let
   cfg = config.modules.services.gatus;
+  nodeConfigs =
+    let
+      configs = map (node: node.config) (builtins.attrValues nodes);
+    in
+    if configs == [ ] then [ config ] else configs;
+  collectEndpoints = name: lib.concatMap (nodeConfig: nodeConfig.site.gatus.${name}) nodeConfigs;
   stateDirActual = "/var/lib/private/gatus";
   stateDirEffective = "/var/lib/gatus";
 in
@@ -37,6 +44,8 @@ in
     services.gatus = {
       enable = true;
       settings = {
+        endpoints = collectEndpoints "endpoints";
+        "external-endpoints" = collectEndpoints "externalEndpoints";
         web.port = cfg.port;
         storage = {
           type = "sqlite";

@@ -30,6 +30,7 @@
           inherit (pkgs) deploy;
         };
         garage-terranix = import ../tests/garage-terranix.nix { inherit inputs pkgs; };
+        gatus-aggregation = import ../tests/gatus-aggregation.nix { inherit inputs pkgs; };
         hindsight = import ../tests/hindsight.nix {
           inherit inputs pkgs;
         };

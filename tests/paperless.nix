@@ -26,6 +26,7 @@ let
         inputs.impermanence.nixosModules.impermanence
         ../modules/services/caddy.nix
         ../modules/services/onepassword-systemd-credentials.nix
+        ../modules/site/gatus.nix
         ../modules/services/paperless.nix
         testOptions
         {

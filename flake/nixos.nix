@@ -59,6 +59,7 @@ let
       hostExtraModules ? [ ],
       hostOverlays ? [ ],
       enableDefaultModules ? true,
+      nodes ? { },
     }:
     let
       allOverlays = hostOverlays ++ defaultOverlays;
@@ -94,7 +95,7 @@ let
 
       specialArgs = {
         inherit inputs self;
-        nodes = { };
+        inherit nodes;
         inherit actual-nixpkgs;
         unstable = nixpkgs-unstable;
         inherit (nixpkgs') lib;
@@ -154,6 +155,13 @@ let
 in
 {
   inherit mkHost mkGuest;
-  mkHosts = mkMkHosts mkHost;
+  mkHosts =
+    hosts:
+    let
+      nodes = lib.genAttrs (builtins.attrNames hosts) (
+        hostName: mkHost hostName ((builtins.getAttr hostName hosts) // { inherit nodes; })
+      );
+    in
+    nodes;
   mkGuests = mkMkHosts mkGuest;
 }
