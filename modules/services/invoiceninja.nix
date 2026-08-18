@@ -105,8 +105,9 @@ in
 
     systemd.services.invoiceninja-env-setup = {
       description = "Prepare Invoice Ninja environment from 1Password credentials";
-      before = [ "invoiceninja-app.service" ];
-      requiredBy = [ "invoiceninja-app.service" ];
+      wantedBy = [ "multi-user.target" ];
+      wants = [ "user@${toString cfg.user.uid}.service" ];
+      after = [ "user@${toString cfg.user.uid}.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -120,6 +121,9 @@ in
         printf '%s=%s\n' APP_KEY "$(cat "$CREDENTIALS_DIRECTORY/APP_KEY")" >> ${appEnvironmentFile}
         printf '%s=%s\n' DB_PASSWORD "$(cat "$CREDENTIALS_DIRECTORY/DB_PASSWORD")" >> ${appEnvironmentFile}
         chown ${cfg.user.name}:${cfg.group.name} ${appEnvironmentFile}
+        ${config.systemd.package}/bin/systemctl \
+          --machine=${cfg.user.name}@.host --user restart \
+          invoiceninja-app.service invoiceninja-scheduler.service invoiceninja-worker.service
       '';
     };
     services.mysql = {
@@ -171,7 +175,7 @@ in
         };
         invoiceninja-app = {
           inherit (cfg.user) uid;
-          autoStart = true;
+          autoStart = false;
           containerConfig = {
             # renovate: docker-image
             Image = "ghcr.io/ramblurr/invoiceninja-octane:5.12.69@sha256:81a45bcd9b1040b96ddf7ab1cbe27c7d5936c0aec4269d364b9737016e84cbfb";
@@ -181,18 +185,14 @@ in
           }
           // inShared;
           unitConfig = {
-            After = [
-              "invoiceninja-env-setup.service"
-              "invoiceninja-redis.service"
-            ];
-            Requires = [ "invoiceninja-env-setup.service" ];
+            After = [ "invoiceninja-redis.service" ];
             Wants = [ "invoiceninja-redis.service" ];
           };
         };
 
         invoiceninja-scheduler = {
           inherit (cfg.user) uid;
-          autoStart = true;
+          autoStart = false;
           serviceConfig = {
             RestartSec = "30";
             Restart = "always";
@@ -211,7 +211,7 @@ in
         };
         invoiceninja-worker = {
           inherit (cfg.user) uid;
-          autoStart = true;
+          autoStart = false;
           serviceConfig = {
             RestartSec = "30";
             Restart = "always";
