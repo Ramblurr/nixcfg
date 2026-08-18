@@ -77,6 +77,15 @@ in
       "100.64.0.0/10"
     ];
   };
+  services.gatus.settings.endpoints = [
+    {
+      name = "Gatus";
+      group = "internal";
+      url = "http://127.0.0.1:${toString config.modules.services.gatus.port}/";
+      interval = "1m";
+      conditions = [ "[STATUS] == 200" ];
+    }
+  ];
   modules.services.hindsight = {
     llm = {
       retain.profile = "openai-codex-gpt-5.4-mini";
