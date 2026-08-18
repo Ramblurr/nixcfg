@@ -11,8 +11,7 @@ in
       {
         name = "OctoPrint";
         group = "Home & Personal";
-        url = "https://octoprint.${homeDomain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://octoprint.${homeDomain}/online.txt";
       }
     ];
 
