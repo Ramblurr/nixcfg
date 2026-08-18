@@ -7,6 +7,12 @@
 with lib;
 let
   cfg = config.modules.services.borgmatic;
+  hostName = config.networking.hostName;
+  gatusGroup = "Infrastructure & Operations";
+  gatusEndpointName = "Borgmatic Backup (${hostName})";
+  gatusEndpointKey = "infrastructure---operations_borgmatic-backup-(${lib.toLower hostName})";
+  gatusUrl = "https://status.${config.repo.secrets.global.domain.home}";
+  gatusStartFile = "/run/borgmatic/gatus-start";
   repository =
     with types;
     submodule {
@@ -57,7 +63,7 @@ in
         ..the ssh private key for the repos here..
       borgmatic-env:
         PASSPHRASE=ssh key passphrase here
-        HEALTHCHECK_URL=https://
+        BORGMATIC_GATUS_TOKEN=matching Gatus external endpoint token
     */
     environment.systemPackages = with pkgs; [
       borgbackup
@@ -66,7 +72,10 @@ in
     ];
     sops.secrets.borgmatic-ssh-key = { };
     sops.secrets.borgmatic-env = { };
-    systemd.services.borgmatic.serviceConfig.EnvironmentFile = "/run/secrets/borgmatic-env";
+    systemd.services.borgmatic.serviceConfig = {
+      EnvironmentFile = "/run/secrets/borgmatic-env";
+      RuntimeDirectory = "borgmatic";
+    };
     systemd.timers.borgmatic = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
@@ -75,6 +84,16 @@ in
         RandomizedDelaySec = "2h";
       };
     };
+
+    site.gatus.externalEndpoints = [
+      {
+        name = gatusEndpointName;
+        group = gatusGroup;
+        token = "$BORGMATIC_GATUS_TOKEN";
+        heartbeat.interval = "30h";
+        alerts = [ { type = "pushover"; } ];
+      }
+    ];
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
       enableConfigCheck = false; # We use environment variables in the config which aren't present during the config check
@@ -104,9 +123,28 @@ in
             frequency = "6 weeks";
           }
         ];
-        healthchecks = {
-          ping_url = "\${HEALTHCHECK_URL}";
-        };
+        commands = [
+          {
+            before = "action";
+            when = [ "create" ];
+            run = [ "${lib.getExe' pkgs.coreutils "date"} +%s > ${gatusStartFile}" ];
+          }
+          {
+            after = "action";
+            when = [ "create" ];
+            states = [ "finish" ];
+            run = [
+              ''${lib.getExe pkgs.curl} --fail --silent --show-error --retry 3 --request POST --header "Authorization: Bearer $BORGMATIC_GATUS_TOKEN" "${gatusUrl}/api/v1/endpoints/${gatusEndpointKey}/external?success=true&duration=$(( $(${lib.getExe' pkgs.coreutils "date"} +%s) - $(cat ${gatusStartFile}) ))s" || echo "Failed to report Borgmatic success to Gatus" >&2''
+            ];
+          }
+          {
+            after = "error";
+            when = [ "create" ];
+            run = [
+              ''${lib.getExe pkgs.curl} --fail --silent --show-error --retry 3 --get --request POST --header "Authorization: Bearer $BORGMATIC_GATUS_TOKEN" --data-urlencode "success=false" --data-urlencode error={error} "${gatusUrl}/api/v1/endpoints/${gatusEndpointKey}/external" || echo "Failed to report Borgmatic failure to Gatus" >&2''
+            ];
+          }
+        ];
       };
     };
   };

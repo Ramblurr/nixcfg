@@ -48,6 +48,7 @@ in
     ];
 
     modules.services.onepassword-systemd-credentials.consumers.gatus-env-setup = {
+      borgmatic-external-endpoint-token = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
       pushover-api-token = "op://home-ops-prod/pushover/pushover_api_token";
       pushover-user-key = "op://home-ops-prod/pushover/pushover_user_key";
     };
@@ -93,6 +94,7 @@ in
       };
       script = ''
         {
+          printf 'BORGMATIC_GATUS_TOKEN=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/borgmatic-external-endpoint-token")"
           printf 'PUSHOVER_API_TOKEN=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/pushover-api-token")"
           printf 'PUSHOVER_USER_KEY=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/pushover-user-key")"
         } > ${environmentFile}
