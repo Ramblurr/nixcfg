@@ -183,13 +183,22 @@ assert !config.systemd.services.qui.vpnConfinement.enable;
 assert
   qui.settings == {
     host = "127.0.0.1";
+    oidcClientId = "qui";
+    oidcDisableBuiltInLogin = false;
+    oidcEnabled = true;
+    oidcIssuer = "https://id.example.test";
+    oidcRedirectUrl = "https://qbittorrent.example.test/api/auth/oidc/callback";
     port = 10019;
   };
 assert !qui.openFirewall;
 assert
   config.systemd.services.qui.serviceConfig.LoadCredential == [
+    "oidcClientSecret:${credentialProvider.socketPath}"
     "sessionSecret:${credentialProvider.socketPath}"
   ];
+assert
+  config.systemd.services.qui.environment.QUI__OIDC_CLIENT_SECRET_FILE
+  == credentialProvider.creds.qui.oidcClientSecret;
 assert namespace.wireguardConfigFile == "/run/qbtvpn/wireguard.conf";
 assert lib.hasInfix "Address = 10.2.0.2/32" config.systemd.services.qbtvpn.preStart;
 assert lib.hasInfix "DNS = 10.2.0.1" config.systemd.services.qbtvpn.preStart;
@@ -217,7 +226,10 @@ assert
       peerPublicKey = "op://home-ops-prod/protonvpn-dewey/PeerPublicKey";
       peerEndpoint = "op://home-ops-prod/protonvpn-dewey/PeerEndpoint";
     };
-    qui.sessionSecret = "op://home-ops-prod/qbittorrent/qui-session-secret";
+    qui = {
+      oidcClientSecret = "op://home-ops-prod/qbittorrent/oidc-client-secret";
+      sessionSecret = "op://home-ops-prod/qbittorrent/qui-session-secret";
+    };
   };
 assert config.modules.services.caddy.routes.qbittorrent.upstream == "http://127.0.0.1:10019";
 assert !(lib.hasInfix "qbittorrent" (lib.toLower parentWithoutImport));
