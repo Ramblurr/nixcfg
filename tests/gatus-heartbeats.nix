@@ -5,7 +5,7 @@ let
   secretFile = pkgs.writeText "gatus-heartbeats-test-secrets.yaml" "{}\n";
   heartbeatPackage = pkgs.callPackage ../pkgs/gatus-heartbeat.nix { };
   evaluate =
-    enable: interval:
+    enable: interval: environmentFile:
     (lib.nixosSystem {
       modules = [
         inputs.sops-nix.nixosModules.sops
@@ -38,6 +38,7 @@ let
           sops.age.keyFile = "/tmp/age-key.txt";
           site.net.mgmt.hosts4.onepassword-connect = [ "192.0.2.22" ];
           repo.secrets.global.domain.home = "example.test";
+          site.gatus.heartbeatToken.environmentFile = environmentFile;
           systemd.services.example-job.serviceConfig.Type = "oneshot";
           site.gatus.heartbeats.git-archive = lib.mkIf enable {
             service = "example-job";
@@ -48,12 +49,15 @@ let
         }
       ];
     }).config;
-  enabled = evaluate true "30h";
-  disabled = evaluate false "30h";
+  enabled = evaluate true "30h" null;
+  disabled = evaluate false "30h" null;
+  environmentFileEnabled = evaluate true "30h" "/run/secrets/gatus-heartbeat";
   invalidInterval = builtins.tryEval (
-    builtins.deepSeq (evaluate true "8d").site.gatus.externalEndpoints true
+    builtins.deepSeq (evaluate true "8d" null).site.gatus.externalEndpoints true
   );
   reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStopPost;
+  environmentFileReporterCommand =
+    environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStopPost;
 in
 assert !invalidInterval.success;
 assert enabled.site.gatus.groups == groups;
@@ -73,6 +77,11 @@ assert
 assert lib.hasInfix "gatus-heartbeat systemd" reporterCommand;
 assert lib.hasInfix "--group '${groups.work}'" reporterCommand;
 assert lib.hasInfix "--name 'Git Archive (dewey)'" reporterCommand;
+assert lib.hasInfix "--token-file %d/gatus-token" reporterCommand;
+assert !(lib.hasInfix "--token-file" environmentFileReporterCommand);
+assert
+  environmentFileEnabled.systemd.services.example-job.serviceConfig.EnvironmentFile
+  == "/run/secrets/gatus-heartbeat";
 assert disabled.site.gatus.externalEndpoints == [ ];
 pkgs.runCommand "gatus-heartbeats-test"
   {
