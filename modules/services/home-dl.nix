@@ -7,6 +7,7 @@
 }:
 let
   cfg = config.modules.services.home-dl;
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   inherit (config.repo.secrets) home-ops;
   mediaUser = home-ops.users.media.name;
   mediaUid = home-ops.users.media.uid;
@@ -40,6 +41,7 @@ let
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
   gluetunStateDir = "${stateDirActual}/gluetun";
+  gluetunEnvironmentFile = "/run/home-dl-gluetun-env/gluetun.env";
   qbittorrentStateDir = "${stateDirActual}/qbittorrent";
   qbittorrentConfigDir = "${qbittorrentStateDir}/qBittorrent";
   qbittorrentConfigFile = "${qbittorrentConfigDir}/qBittorrent.conf";
@@ -119,23 +121,33 @@ in
       "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
     ];
 
-    sops.secrets = {
-      "home-dl-gluetun-protonvpn-wg-priv-key" = {
-        sopsFile = ../../configs/home-ops/shared.sops.yml;
-        restartUnits = [ "home-dl-gluetun.service" ];
-      };
-      "home-dl-gluetun-protonvpn-server-countries" = {
-        sopsFile = ../../configs/home-ops/shared.sops.yml;
-        restartUnits = [ "home-dl-gluetun.service" ];
-      };
+    assertions = [
+      {
+        assertion = onepassword.enable;
+        message = "Home download credentials require the 1Password systemd credential provider.";
+      }
+    ];
+
+    modules.services.onepassword-systemd-credentials.consumers.home-dl-gluetun-env-setup = {
+      WIREGUARD_PRIVATE_KEY = "op://home-ops-prod/home-dl-gluetun/wireguard-private-key";
+      SERVER_COUNTRIES = "op://home-ops-prod/home-dl-gluetun/server-countries";
     };
 
-    sops.templates."home-dl-gluetun-protonvpn.env" = {
-      owner = "root";
-      mode = "0400";
-      content = ''
-        WIREGUARD_PRIVATE_KEY=${config.sops.placeholder."home-dl-gluetun-protonvpn-wg-priv-key"}
-        SERVER_COUNTRIES=${config.sops.placeholder."home-dl-gluetun-protonvpn-server-countries"}
+    systemd.services.home-dl-gluetun-env-setup = {
+      description = "Prepare Gluetun environment from 1Password credentials";
+      before = [ "home-dl-gluetun.service" ];
+      requiredBy = [ "home-dl-gluetun.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        RuntimeDirectory = "home-dl-gluetun-env";
+        UMask = "0077";
+      };
+      script = ''
+        printf '%s=%s\n' WIREGUARD_PRIVATE_KEY \
+          "$(cat "$CREDENTIALS_DIRECTORY/WIREGUARD_PRIVATE_KEY")" > ${gluetunEnvironmentFile}
+        printf '%s=%s\n' SERVER_COUNTRIES \
+          "$(cat "$CREDENTIALS_DIRECTORY/SERVER_COUNTRIES")" >> ${gluetunEnvironmentFile}
       '';
     };
     systemd.services.home-dl-qbittorrent-config = {
@@ -310,7 +322,7 @@ in
             AddCapability = [ "NET_ADMIN" ];
             AddDevice = [ "/dev/net/tun:/dev/net/tun" ];
             PublishPort = [ "127.0.0.1:${toString cfg.ports.qbittorrent}:${toString cfg.ports.qbittorrent}" ];
-            EnvironmentFile = [ config.sops.templates."home-dl-gluetun-protonvpn.env".path ];
+            EnvironmentFile = [ gluetunEnvironmentFile ];
             Environment = [
               "VPN_SERVICE_PROVIDER=protonvpn"
               "VPN_TYPE=wireguard"

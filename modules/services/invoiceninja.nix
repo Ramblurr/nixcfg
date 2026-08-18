@@ -6,10 +6,10 @@
 
 let
   cfg = config.modules.services.invoiceninja;
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   # as invoiceninja2 user: podman unshare cat /proc/self/uid_map
   rootDir = "/var/lib/invoiceninja2";
-  sopsFile = ../../configs/home-ops/shared.sops.yml;
-  appEnvironmentFile = config.sops.templates."invoiceninja-app.env".path;
+  appEnvironmentFile = "/run/invoiceninja-env/invoiceninja.env";
   containerPort = "8000";
   inEnv = [
     "APP_ENV=production"
@@ -89,22 +89,37 @@ in
       inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
-    sops.secrets = {
-      "invoiceninja/in-user-email" = { inherit sopsFile; };
-      "invoiceninja/in-password" = { inherit sopsFile; };
-      "invoiceninja/app-key" = { inherit sopsFile; };
-      "invoiceninja/db-password" = { inherit sopsFile; };
+    assertions = [
+      {
+        assertion = onepassword.enable;
+        message = "Invoice Ninja credentials require the 1Password systemd credential provider.";
+      }
+    ];
+
+    modules.services.onepassword-systemd-credentials.consumers.invoiceninja-env-setup = {
+      IN_USER_EMAIL = "op://home-ops-prod/invoiceninja/in-user-email";
+      IN_PASSWORD = "op://home-ops-prod/invoiceninja/in-password";
+      APP_KEY = "op://home-ops-prod/invoiceninja/app-key";
+      DB_PASSWORD = "op://home-ops-prod/invoiceninja/db-password";
     };
 
-    sops.templates."invoiceninja-app.env" = {
-      owner = cfg.user.name;
-      group = cfg.group.name;
-      mode = "0400";
-      content = ''
-        IN_USER_EMAIL=${config.sops.placeholder."invoiceninja/in-user-email"}
-        IN_PASSWORD=${config.sops.placeholder."invoiceninja/in-password"}
-        APP_KEY=${config.sops.placeholder."invoiceninja/app-key"}
-        DB_PASSWORD=${config.sops.placeholder."invoiceninja/db-password"}
+    systemd.services.invoiceninja-env-setup = {
+      description = "Prepare Invoice Ninja environment from 1Password credentials";
+      before = [ "invoiceninja-app.service" ];
+      requiredBy = [ "invoiceninja-app.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        RuntimeDirectory = "invoiceninja-env";
+        UMask = "0077";
+      };
+      script = ''
+        : > ${appEnvironmentFile}
+        printf '%s=%s\n' IN_USER_EMAIL "$(cat "$CREDENTIALS_DIRECTORY/IN_USER_EMAIL")" >> ${appEnvironmentFile}
+        printf '%s=%s\n' IN_PASSWORD "$(cat "$CREDENTIALS_DIRECTORY/IN_PASSWORD")" >> ${appEnvironmentFile}
+        printf '%s=%s\n' APP_KEY "$(cat "$CREDENTIALS_DIRECTORY/APP_KEY")" >> ${appEnvironmentFile}
+        printf '%s=%s\n' DB_PASSWORD "$(cat "$CREDENTIALS_DIRECTORY/DB_PASSWORD")" >> ${appEnvironmentFile}
+        chown ${cfg.user.name}:${cfg.group.name} ${appEnvironmentFile}
       '';
     };
     services.mysql = {
@@ -166,7 +181,11 @@ in
           }
           // inShared;
           unitConfig = {
-            After = [ "invoiceninja-redis.service" ];
+            After = [
+              "invoiceninja-env-setup.service"
+              "invoiceninja-redis.service"
+            ];
+            Requires = [ "invoiceninja-env-setup.service" ];
             Wants = [ "invoiceninja-redis.service" ];
           };
         };

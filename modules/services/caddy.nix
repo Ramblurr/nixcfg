@@ -164,6 +164,7 @@ let
   );
 
   cfg = config.modules.services.caddy;
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   plainRoutes = cfg.routes;
   inherit (cfg) protectedRoutes;
   routeHosts = route: [ route.publicHost ] ++ route.aliases;
@@ -520,19 +521,19 @@ let
         ''
       );
   allPublicHosts = publicHosts;
-  secretNames = lib.concatMap (name: [
-    "${name}-oidc-client-secret"
-    "${name}-caddy-security-signing-key"
-  ]) protectedNames;
-  secretOptions =
-    _name: lib.optionalAttrs (cfg.edge.sopsFile != null) { sopsFile = cfg.edge.sopsFile; };
-  environmentLines =
-    lib.optional caddyEnabled "DESEC_API_TOKEN=${config.sops.placeholder.desec_api_token}"
-    ++ lib.concatMap (name: [
-      "${clientSecretEnv name}=${config.sops.placeholder."${name}-oidc-client-secret"}"
-      "${signingKeyEnv name}=${config.sops.placeholder."${name}-caddy-security-signing-key"}"
-    ]) protectedNames;
-  certificateSourceConfigured = cfg.edge.sopsFile != null;
+  caddyEnvironmentFile = "/run/caddy-env/caddy.env";
+  environmentCredentials = {
+    DESEC_API_TOKEN = "op://home-ops-prod/desec/api-token";
+  }
+  // lib.listToAttrs (
+    lib.concatMap (name: [
+      (lib.nameValuePair (clientSecretEnv name) "op://home-ops-prod/${name}/oidc-client-secret")
+      (lib.nameValuePair (signingKeyEnv name) "op://home-ops-prod/${name}/caddy-security-signing-key")
+    ]) protectedNames
+  );
+  environmentSetupLines = lib.mapAttrsToList (environmentName: _: ''
+    printf '%s=%s\n' '${environmentName}' "$(cat "$CREDENTIALS_DIRECTORY/${environmentName}")" >> ${caddyEnvironmentFile}
+  '') environmentCredentials;
 in
 {
   options.modules.services.caddy = {
@@ -592,11 +593,6 @@ in
         default = null;
         description = "Contact email for Caddy's ACME account";
       };
-      sopsFile = lib.mkOption {
-        type = lib.types.nullOr lib.types.path;
-        default = null;
-        description = "Encrypted SOPS source for Caddy's runtime secrets";
-      };
       redirectStatus = lib.mkOption {
         type = lib.types.enum [
           301
@@ -635,6 +631,10 @@ in
 
   config = lib.mkIf caddyEnabled {
     assertions = [
+      {
+        assertion = onepassword.enable;
+        message = "Caddy 1Password credentials require the systemd credential provider.";
+      }
       {
         assertion = edgeConfigured;
         message = "Caddy routes require at least one managed certificate domain or subject";
@@ -749,23 +749,24 @@ in
         assertion = !cfg.edge.directWan.enable || directWanRouteHasCertificate;
         message = "the direct-WAN route must match exactly one certificate source";
       }
-    ]
-    ++ lib.optional (!certificateSourceConfigured) {
-      assertion = false;
-      message = "Caddy edge requires an encrypted SOPS source for its runtime secrets";
-    };
+    ];
 
-    sops.secrets =
-      (lib.optionalAttrs caddyEnabled {
-        desec_api_token = secretOptions "desec_api_token";
-      })
-      // lib.genAttrs secretNames secretOptions;
-    sops.templates.caddy-env = {
-      owner = "caddy";
-      group = "caddy";
-      mode = "0400";
-      restartUnits = [ "caddy.service" ];
-      content = lib.concatStringsSep "\n" environmentLines;
+    modules.services.onepassword-systemd-credentials.consumers.caddy-env-setup = environmentCredentials;
+
+    systemd.services.caddy-env-setup = {
+      description = "Prepare Caddy environment from 1Password credentials";
+      before = [ "caddy.service" ];
+      requiredBy = [ "caddy.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        RuntimeDirectory = "caddy-env";
+        UMask = "0077";
+      };
+      script = ''
+        : > ${caddyEnvironmentFile}
+        ${lib.concatStrings environmentSetupLines}
+      '';
     };
 
     environment.persistence."/persist".directories = [ "/var/lib/caddy" ];
@@ -778,7 +779,7 @@ in
     services.caddy = {
       enable = true;
       package = pkgs.caddy-with-security;
-      environmentFile = config.sops.templates.caddy-env.path;
+      environmentFile = caddyEnvironmentFile;
       openFirewall = false;
       globalConfig = ''
         auto_https disable_redirects
@@ -822,8 +823,8 @@ in
     };
 
     systemd.services.caddy = {
-      requires = [ "sops-install-secrets.service" ];
-      after = [ "sops-install-secrets.service" ];
+      requires = [ "caddy-env-setup.service" ];
+      after = [ "caddy-env-setup.service" ];
       unitConfig.RequiresMountsFor = [ "/var/lib/caddy" ];
       serviceConfig = {
         CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
