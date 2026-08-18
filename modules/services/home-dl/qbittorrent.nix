@@ -22,6 +22,7 @@ let
   bridgeAddress = "192.168.15.5";
   wireguardInterface = "${namespace}0";
   protonGateway = "10.2.0.1";
+  wireguardConfigFile = "/run/${namespace}/wireguard.conf";
   qbittorrentApiPort = 8085;
 
   portForwardScript = pkgs.writeShellScript "proton-qbittorrent-port-forward" ''
@@ -207,13 +208,17 @@ in
     ];
 
     modules.services.onepassword-systemd-credentials.consumers = {
-      qbtvpn.wireguardConfig = "op://home-ops-prod/home-dl-qbittorrent/proton-wireguard-config";
-      qui.sessionSecret = "op://home-ops-prod/home-dl-qbittorrent/qui-session-secret";
+      qbtvpn = {
+        privateKey = "op://home-ops-prod/protonvpn-dewey/PrivateKey";
+        peerPublicKey = "op://home-ops-prod/protonvpn-dewey/PeerPublicKey";
+        peerEndpoint = "op://home-ops-prod/protonvpn-dewey/PeerEndpoint";
+      };
+      qui.sessionSecret = "op://home-ops-prod/qbittorrent/qui-session-secret";
     };
 
     vpnNamespaces.${namespace} = {
       enable = true;
-      wireguardConfigFile = onepassword.creds.qbtvpn.wireguardConfig;
+      inherit wireguardConfigFile;
       inherit namespaceAddress bridgeAddress;
       accessibleFrom = [ bridgeAddress ];
       portMappings = [
@@ -223,6 +228,28 @@ in
           protocol = "tcp";
         }
       ];
+    };
+
+    # VPN-Confinement uses the integer sysctl form while Tailscale uses a
+    # boolean. Normalize the equivalent values so NixOS can merge them.
+    boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = lib.mkForce 1;
+
+    systemd.services.${namespace} = {
+      preStart = ''
+        umask 0077
+        {
+          printf '%s\n' '[Interface]'
+          printf 'PrivateKey = %s\n' "$(cat "$CREDENTIALS_DIRECTORY/privateKey")"
+          printf '%s\n' 'Address = 10.2.0.2/32'
+          printf '%s\n' 'DNS = 10.2.0.1'
+          printf '%s\n' '[Peer]'
+          printf 'PublicKey = %s\n' "$(cat "$CREDENTIALS_DIRECTORY/peerPublicKey")"
+          printf '%s\n' 'AllowedIPs = 0.0.0.0/0'
+          printf 'Endpoint = %s\n' "$(cat "$CREDENTIALS_DIRECTORY/peerEndpoint")"
+          printf '%s\n' 'PersistentKeepalive = 25'
+        } > ${wireguardConfigFile}
+      '';
+      serviceConfig.RuntimeDirectory = namespace;
     };
 
     services.qbittorrent = {
