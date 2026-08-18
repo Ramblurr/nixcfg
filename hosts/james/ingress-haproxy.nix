@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.hosts.james.ingress;
+  caddySocket = "/run/caddy/james-ingress.sock";
   routes = import ./ingress-routes.nix { inherit config; };
 
   splitServices = domains: {
@@ -33,13 +33,13 @@ let
   );
 in
 {
-  config = lib.mkIf (cfg.implementation == "haproxy") {
+  config = {
     networking.firewall.allowedTCPPorts = [
       80
       443
     ];
 
-    users.users.haproxy.extraGroups = [ config.services.nginx.group ];
+    users.users.haproxy.extraGroups = [ config.services.caddy.group ];
 
     services.haproxy = {
       enable = true;
@@ -89,8 +89,13 @@ in
 
         backend bk_james_local
           mode tcp
-          server james-local /run/nginx/james-ingress.sock send-proxy
+          server james-local ${caddySocket} send-proxy
       '';
+    };
+
+    systemd.services.haproxy = {
+      after = [ "caddy.service" ];
+      wants = [ "caddy.service" ];
     };
 
     systemd.services.haproxy.serviceConfig = {

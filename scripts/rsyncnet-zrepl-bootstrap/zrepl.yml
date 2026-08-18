@@ -1,0 +1,33 @@
+global:
+  logging:
+  - format: human
+    level: warn
+    type: syslog
+jobs:
+  - name: pull_mali
+    type: pull
+    connect:
+      type: tls
+      address: "81.223.210.206:3479"
+      ca: "/usr/local/etc/zrepl/mali.crt"
+      cert: "/usr/local/etc/zrepl/rsyncnet.crt"
+      key: "/usr/local/etc/zrepl/rsyncnet.key"
+      server_cn: "mali"
+    recv:
+      properties:
+        override:
+          mountpoint: none
+          canmount: off
+          readonly: on
+      placeholder:
+        encryption: off
+    root_fs: "data1/replication/mali"
+    interval: 10m
+    pruning:
+      keep_sender:
+        - type: regex
+          regex: ".*"
+      keep_receiver:
+        # Restoration safety: do not destroy receiver snapshots in this work item.
+        - type: regex
+          regex: ".*"

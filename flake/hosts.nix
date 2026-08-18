@@ -12,6 +12,7 @@
           ;
       };
       mkDnsTerranix = import ../terranix/dns/package.nix;
+      mkGarageTerranix = import ../terranix/garage/package.nix;
       inherit (hostHelpers)
         mkHost
         mkGuest
@@ -127,6 +128,7 @@
           mkHosts
           mkGuests
           mkDnsTerranix
+          mkGarageTerranix
           ;
       };
 

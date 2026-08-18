@@ -48,4 +48,14 @@ in
       startAt = "Mon 4:55";
     };
   }) config.services.borgbackup.repos;
+
+  site.gatus.heartbeats = lib.mapAttrs' (
+    repo: _:
+    lib.nameValuePair "borgbackup-compact-${repo}" {
+      service = "borgbackup-compact-${repo}";
+      name = "Borg Repository Compaction: ${repo}";
+      group = config.site.gatus.groups.infrastructure;
+      interval = "8d";
+    }
+  ) config.services.borgbackup.repos;
 }

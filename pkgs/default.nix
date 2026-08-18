@@ -6,6 +6,9 @@ inputs: [
       pkgs-lib = prev.callPackage ../lib/pkgs.nix { flake-inputs = inputs; };
     in
     {
+      caddy-with-security = prev.callPackage ./caddy/package.nix {
+        buildPkgs = inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system};
+      };
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
         kernelPackages = prev.linuxPackages;
       };
@@ -16,7 +19,11 @@ inputs: [
       terraform-provider-desec = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./terraform-providers/desec.nix { };
+      terraform-provider-garage = prev.lib.callPackageWith (
+        prev // { inherit pkgs-lib; }
+      ) ./terraform-providers/garage.nix { };
       opentofu-powerdns = prev.opentofu.withPlugins (_plugins: [ _final.terraform-provider-powerdns ]);
+      opentofu-garage = prev.opentofu.withPlugins (_plugins: [ _final.terraform-provider-garage ]);
       opentofu-dns = prev.opentofu.withPlugins (_plugins: [
         _final.terraform-provider-desec
         _final.terraform-provider-powerdns
@@ -27,12 +34,13 @@ inputs: [
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       pi-web = prev.callPackage ./pi-web/package.nix { };
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
-      pi-hashline-edit = prev.callPackage ./pi/pi-hashline-edit/package.nix { };
+      pi-hashline-edit-pro = prev.callPackage ./pi/pi-hashline-edit-pro/package.nix { };
       plannotator-pi-extension = prev.callPackage ./pi/plannotator/package.nix { };
       epimetheus = prev.callPackage ./pi/epimetheus/package.nix { };
       pi-mcp-adapter = prev.callPackage ./pi/pi-mcp-adapter/package.nix { };
       pi-link = prev.callPackage ./pi/pi-link/package.nix { };
       pi-reload = prev.callPackage ./pi/pi-reload/package.nix { };
+      pi-heartbeat = prev.callPackage ./pi/pi-heartbeat/package.nix { };
       pi-ghost = prev.callPackage ./pi/pi-ghost/package.nix { };
       brepl-balance = prev.callPackage ./pi/brepl-balance/package.nix { };
       pi-link-control = prev.callPackage ./pi/pi-link-control/package.nix { };
@@ -51,7 +59,6 @@ inputs: [
       #linux-voice-assistant = (import ./linux-voice-assistant.nix) prev;
       linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
       youtube-to-rss = prev.callPackage ./youtube-to-rss/package.nix { };
-      jellyplex-watched = prev.callPackage ./jellyplex-watched/package.nix { };
       deploy = prev.callPackage ./deploy.nix { };
       swhkd = prev.callPackage ./swhkd { };
       qobuz-dl = prev.callPackage ./qobuz-dl.nix { };

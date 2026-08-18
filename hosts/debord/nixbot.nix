@@ -7,9 +7,9 @@
 }:
 # nixbot CI service (github.com/Mic92/nixbot)
 #
-# The service listens on a plain TCP port; TLS termination and external
-# exposure happen on dewey's nginx ingress (ci.<work> -> debord:<port>),
-# which in turn is reachable from the internet via the james gost tunnel.
+# The service listens on a plain TCP port. Dewey Caddy terminates TLS and
+# James HAProxy selects ci.<work> for James public exposure, then Dewey
+# proxies the request over the prim VLAN to Debord.
 let
   inherit (self.inputs.nixbot.lib) interpolate;
 
@@ -100,13 +100,6 @@ in
   sops.secrets."attic-nixbot-token" = {
     sopsFile = ./nixbot.sops.yaml;
   };
-
-  # Nixbot's flake prefetch is incompatible with Determinate Nix's archive behavior.
-  # Prefer upstream Nix for this service while retaining the Determinate daemon.
-  systemd.services.nixbot.path = lib.mkBefore [ pkgs.nix ];
-
-  # Materialize flake inputs so upstream Nix can register Nixbot's input GC roots.
-  nix.settings.lazy-trees = false;
 
   systemd.services.nixbot.serviceConfig.LoadCredential = [
     "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"

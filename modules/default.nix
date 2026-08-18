@@ -84,17 +84,21 @@
     ./services/invoiceninja.nix
     #./services/archivebox.nix
     ./services/atuin-sync.nix
-    ./services/authentik-module.nix
-    ./services/authentik.nix
     ./services/borgmatic.nix
     ./services/calibre.nix
     ./services/koreader-sync.nix
     ./services/calibre-web.nix
+    ./services/caddy.nix
+    ./services/databasus
     ./services/davis.nix
     ./services/docker.nix
     ./services/filebrowser-quantum.nix
     ./services/flatpak.nix
     ./services/forgejo.nix
+    ./site/gatus.nix
+    ./site/gatus-heartbeats.nix
+    ./site/gatus-heartbeats-onepassword.nix
+    ./services/gatus.nix
     ./services/git-archive.nix
     ./services/github-runner.nix
     ./services/haproxy.nix
@@ -102,12 +106,11 @@
     ./services/hindsight.nix
     ./services/influxdb.nix
     ./services/jellyfin.nix
-    ./services/jellyplex-watched.nix
-    ./services/ingress.nix
+    ./services/ingress-home-assistant.nix
+    ./services/ingress-octoprint.nix
     ./services/ingress-nixbot.nix
     ./services/ingress-paseo.nix
     ./services/ingress-phoniebox.nix
-    ./services/ingress-options.nix
     ./services/linux-voice-assistant.nix
     ./services/mariadb.nix
     ./services/matrix-discord.nix
@@ -116,10 +119,10 @@
     ./services/matrix-synapse-postgres.nix
     ./services/ocis.nix
     ./services/powerdns.nix
-    #./services/onepassword-connect.nix
+    ./services/onepassword-connect.nix
+    ./services/onepassword-systemd-credentials.nix
     ./services/pi-web.nix
     ./services/paperless.nix
-    ./services/plex.nix
     ./services/podman.nix
     ./services/text-embeddings-inference.nix
     ./services/postgresql.nix
@@ -155,7 +158,6 @@
     ./users/deploy-user.nix
     ./vpn/mullvad.nix
     ./vpn/tailscale.nix
-    ./distributed-config.nix
     ./meta.nix
     ./nix.nix
     ./nix-prune-aged-gcroots.nix

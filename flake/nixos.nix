@@ -14,6 +14,7 @@ let
     inputs.sops-nix.nixosModules.sops
     inputs.microvm.nixosModules.host
     inputs.determinate.nixosModules.default
+    inputs.vpn-confinement.nixosModules.default
   ];
   unstableDefaultModules = [
     inputs.disko-unstable.nixosModules.disko
@@ -45,8 +46,6 @@ let
         permittedInsecurePackages = [
           "libsoup-2.74.3"
           "olm-3.2.16"
-          # Temporary exception for the mali cryptkey migration; remove after MinIO remediation.
-          "minio-2025-10-15T17-29-55Z"
         ];
       };
     };
@@ -61,6 +60,7 @@ let
       hostExtraModules ? [ ],
       hostOverlays ? [ ],
       enableDefaultModules ? true,
+      nodes ? { },
     }:
     let
       allOverlays = hostOverlays ++ defaultOverlays;
@@ -96,7 +96,7 @@ let
 
       specialArgs = {
         inherit inputs self;
-        nodes = { };
+        inherit nodes;
         inherit actual-nixpkgs;
         unstable = nixpkgs-unstable;
         inherit (nixpkgs') lib;
@@ -156,6 +156,13 @@ let
 in
 {
   inherit mkHost mkGuest;
-  mkHosts = mkMkHosts mkHost;
+  mkHosts =
+    hosts:
+    let
+      nodes = lib.genAttrs (builtins.attrNames hosts) (
+        hostName: mkHost hostName ((builtins.getAttr hostName hosts) // { inherit nodes; })
+      );
+    in
+    nodes;
   mkGuests = mkMkHosts mkGuest;
 }

@@ -6,6 +6,7 @@
 let
   inherit (config.networking) hostName;
   inherit (config.modules.users.primaryUser) username;
+  inherit (config.repo.secrets) home-ops;
 in
 {
   imports = [
@@ -15,7 +16,6 @@ in
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
-    ./ingress.nix
   ];
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
@@ -31,32 +31,32 @@ in
 
   networking.firewall.allowedTCPPorts = [
     # todo: after microvm migration restrict with nftables to svc zone
-    5432
     3306
   ];
   networking.firewall.interfaces.mgmt.allowedTCPPorts = [
-    config.modules.services.ingress.directWan.listenPort
+    config.modules.services.caddy.edge.directWan.listenPort
   ];
   networking.firewall.interfaces.prim.allowedTCPPorts = [ 8096 ];
-  modules.services.ingress.directWan = {
+  modules.services.caddy.edge.directWan = {
     enable = true;
     listenAddress = builtins.head config.site.net.mgmt.hosts4.${hostName};
   };
+  modules.services.caddy.edge = {
+    certificateDomains = [
+      home-ops.homeDomain
+      home-ops.workDomain
+    ];
+    acmeEmail = config.repo.secrets.global.email.acme;
+  };
   home-ops = {
     enable = true;
-    ingress.enable = true;
-    postgresql = {
-      enable = true;
-      onsiteBackup.enable = false;
-      offsiteBackup.enable = false;
-    };
+    postgresql.enable = true;
     mariadb.enable = true;
     containers.enable = true;
     apps = {
       audiobookshelf.enable = true;
       filebrowser-quantum.enable = true;
       roon-server.enable = true;
-      authentik.enable = true;
       davis.enable = true;
       paperless.enable = true;
       ocis-work.enable = true;
@@ -73,11 +73,15 @@ in
       #actual-server.enable = true;
       atuin-sync.enable = true;
       snowflake-proxy.enable = true;
-      my-y2r.enable = true;
-      tubearchivist.enable = true;
+      #my-y2r.enable = true;
+      #tubearchivist.enable = true;
       invoiceninja.enable = true;
       stirling-pdf.enable = true;
     };
+  };
+  modules.services.paperless.oidc = {
+    enable = true;
+    mode = "enforced";
   };
 
   environment.persistence."/persist".users.${username}.directories = [ "work" ];

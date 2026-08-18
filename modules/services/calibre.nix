@@ -27,11 +27,6 @@ in
         description = "The domain to use for the calibre content server";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       gui = lib.mkOption { type = lib.types.port; };
       server = lib.mkOption { type = lib.types.port; };
@@ -84,28 +79,38 @@ in
         PUID = "2000";
         PGID = "2000";
       };
-      extraOptions = [ ];
+      extraOptions = [
+        "--health-cmd=curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8081/ >/dev/null"
+        "--health-interval=30s"
+        "--health-timeout=15s"
+        "--health-start-period=5m"
+        "--health-retries=3"
+        "--health-on-failure=kill"
+      ];
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain.gui} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "Calibre GUI";
+        group = config.site.gatus.groups.media;
+        url = "https://${cfg.domain.gui}/_health/gatus";
+      }
+      {
+        name = "Calibre Server";
+        group = config.site.gatus.groups.media;
+        url = "https://${cfg.domain.server}/";
+      }
+    ];
+
+    modules.services.caddy.protectedRoutes.calibre-gui = {
+      publicHost = cfg.domain.gui;
       upstream = "http://127.0.0.1:${toString cfg.ports.gui}";
-      forwardAuth = true;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
+      healthCheckPath = "/";
+    };
+    modules.services.caddy.routes.calibre-server = {
+      publicHost = cfg.domain.server;
+      upstream = "http://127.0.0.1:${toString cfg.ports.server}";
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain.server} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.server}";
-      upstreamExtraConfig = ''
-        proxy_set_header Authorization $http_authorization;
-        proxy_pass_header Authorization;
-      '';
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
-    };
   };
 }

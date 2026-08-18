@@ -17,13 +17,12 @@ in
     };
   };
 
-  modules.services.ingress.virtualHosts.${grafanaDomain} = {
-    acmeHost = domain.home;
-    upstream = "http://unix:${config.services.grafana.settings.server.socket}";
-    #forwardAuth = true;
+  modules.services.caddy.routes.grafana = {
+    publicHost = grafanaDomain;
+    upstream = "unix//${config.services.grafana.settings.server.socket}";
   };
-  systemd.services.nginx.serviceConfig.SupplementaryGroups = [ "grafana" ];
-  modules.services.grafana.enable = true;
+  users.users.caddy.extraGroups = [ "grafana" ];
+  modules.services.grafana.enable = false;
   modules.services.grafana.domain = grafanaDomain;
   services.grafana.provision = {
     enable = true;

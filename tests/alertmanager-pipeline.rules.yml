@@ -1,0 +1,10 @@
+groups:
+  - name: alertmanager-pipeline
+    interval: 100ms
+    rules:
+      - alert: MonitoringPipelineTest
+        expr: vector(1)
+        labels:
+          severity: test
+        annotations:
+          summary: Test alert for Prometheus to Alertmanager delivery

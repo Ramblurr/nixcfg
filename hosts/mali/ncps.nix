@@ -65,25 +65,6 @@ in
     "z /mnt/fast/ncps 770 ncps ncps"
   ];
   environment.persistence."/persist".directories = [ "/var/lib/ncps" ];
-  services.nginx.virtualHosts.${hostName} = {
-    useACMEHost = hostName;
-    forceSSL = true;
-    http3 = false;
-    http2 = false;
-    kTLS = true;
-    extraConfig = ''
-      access_log /var/log/nginx/access-ncps.log;
-      client_max_body_size 0;
-    '';
-    locations."/" = {
-      proxyPass = "http://${config.services.ncps.server.addr}";
-      recommendedProxySettings = true;
-    };
-  };
-  security.acme.certs.${hostName} = {
-    domain = hostName;
-    group = "nginx";
-  };
 
   #services.prometheus.scrapeConfigs = [
   #  {
@@ -99,5 +80,17 @@ in
     extra-trusted-public-keys = [
       config.repo.secrets.global.nixCachePublicKey
     ];
+  };
+  site.gatus.endpoints = [
+    {
+      name = "NCPS";
+      group = config.site.gatus.groups.infrastructure;
+      url = "https://${hostName}/";
+    }
+  ];
+
+  modules.services.caddy.routes.ncps = {
+    publicHost = hostName;
+    upstream = "http://${config.services.ncps.server.addr}";
   };
 }

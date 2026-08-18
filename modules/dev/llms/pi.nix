@@ -21,13 +21,14 @@ let
     ];
     packages = [
       pkgs.pi-reload
+      pkgs.pi-heartbeat
       pkgs.pi-ghost
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
       pkgs.brepl-balance
       pkgs.pi-sexp-edit
       pkgs.pi-nrepl
-      pkgs.pi-hashline-edit
+      pkgs.pi-hashline-edit-pro
       pkgs.plannotator-pi-extension
       pkgs.epimetheus
       pkgs.pi-mcp-adapter

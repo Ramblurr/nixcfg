@@ -15,14 +15,14 @@
     :source      {:kind :github
                   :owner "noctuid"
                   :repo  "epimetheus"
-                  :mode  :release}}
-   "pi-hashline-edit"
-   {:nix-name    "pi-hashline-edit"
-    :package-file "pkgs/pi/pi-hashline-edit/package.nix"
-    :lock-file   "pkgs/pi/pi-hashline-edit/package-lock.json"
+                  :mode  :head}}
+   "pi-hashline-edit-pro"
+   {:nix-name    "pi-hashline-edit-pro"
+    :package-file "pkgs/pi/pi-hashline-edit-pro/package.nix"
+    :lock-file   "pkgs/pi/pi-hashline-edit-pro/package-lock.json"
     :source      {:kind :github
-                  :owner "RimuruW"
-                  :repo  "pi-hashline-edit"
+                  :owner "YuGiMob"
+                  :repo  "pi-hashline-edit-pro"
                   :mode  :head}}
    "pi-mcp-adapter"
    {:nix-name    "pi-mcp-adapter"
@@ -38,7 +38,7 @@
     :source      {:kind :github
                   :owner "ramblurr"
                   :repo  "pi-nrepl"
-                  :mode  :release}}
+                  :mode  :head}}
    "plannotator"
    {:nix-name    "plannotator-pi-extension"
     :package-file "pkgs/pi/plannotator/package.nix"
@@ -101,7 +101,7 @@
 
 (defn package-version
   [source-dir]
-  (-> (slurp (fs/path source-dir "package.json"))
+  (-> (slurp (str (fs/path source-dir "package.json")))
       (json/parse-string true)
       :version))
 

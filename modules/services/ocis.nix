@@ -35,10 +35,65 @@ in
       '';
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
+    oidc = {
+      issuer = lib.mkOption {
+        type = lib.types.str;
+        description = "OpenID Connect issuer URL.";
+      };
+      clientId = lib.mkOption {
+        type = lib.types.str;
+        description = "Public oCIS web client ID.";
+      };
+      scopes = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+          "openid"
+          "profile"
+          "email"
+          "groups"
+        ];
+        description = "OpenID Connect scopes requested by the oCIS web client.";
+      };
+      autoProvisionAccounts = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether oCIS provisions and reconciles users and groups from OIDC claims.";
+      };
+      userOidcClaim = lib.mkOption {
+        type = lib.types.str;
+        default = "preferred_username";
+        description = "OIDC claim used to identify an oCIS user.";
+      };
+      userCs3Claim = lib.mkOption {
+        type = lib.types.enum [
+          "username"
+          "mail"
+          "userid"
+        ];
+        default = "username";
+        description = "oCIS user attribute matched against the OIDC identity claim.";
+      };
+      roleAssignmentDriver = lib.mkOption {
+        type = lib.types.enum [
+          "default"
+          "oidc"
+        ];
+        default = "default";
+        description = "oCIS role assignment mechanism.";
+      };
+      rewriteWellKnown = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether oCIS rewrites discovery for native clients.";
+      };
+      accessTokenVerifyMethod = lib.mkOption {
+        type = lib.types.enum [
+          "jwt"
+          "none"
+        ];
+        default = "jwt";
+        description = "Access token verification method used by the oCIS proxy.";
+      };
     };
 
     ports = {
@@ -55,12 +110,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
 
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
@@ -116,30 +165,30 @@ in
         #OCIS_LOG_LEVEL = "debug";
         OCIS_LOG_COLOR = "true";
         OCIS_LOG_PRETTY = "true";
-        # Authentik OIDC
-        OCIS_OIDC_ISSUER = "https://auth.${config.repo.secrets.home-ops.workDomain}/application/o/work-ocis/";
-        WEB_OIDC_CLIENT_ID = "work-ocis";
-        # Without this, I got the following errors in the ownCloud log:
-        # Authelia: failed to verify access token: token contains an invalid number of segments
-        # Authentik:  failed to verify access token: the JWT has an invalid kid: could not find kid in JWT header
-        PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD = "none";
-        PROXY_OIDC_REWRITE_WELLKNOWN = "true";
-        PROXY_AUTOPROVISION_ACCOUNTS = "true";
-        # Auto role assignment
-        # docs: https://doc.owncloud.com/ocis/next/deployment/services/s-list/proxy.html#automatic-role-assignments
-        PROXY_USER_OIDC_CLAIM = "preferred_username";
-        PROXY_ROLE_ASSIGNMENT_DRIVER = "oidc";
-        WEB_OIDC_SCOPE = "openid profile email groups";
+        OCIS_OIDC_ISSUER = cfg.oidc.issuer;
+        WEB_OIDC_CLIENT_ID = cfg.oidc.clientId;
+        PROXY_OIDC_ACCESS_TOKEN_VERIFY_METHOD = cfg.oidc.accessTokenVerifyMethod;
+        PROXY_OIDC_REWRITE_WELLKNOWN = lib.boolToString cfg.oidc.rewriteWellKnown;
+        PROXY_AUTOPROVISION_ACCOUNTS = lib.boolToString cfg.oidc.autoProvisionAccounts;
+        PROXY_USER_OIDC_CLAIM = cfg.oidc.userOidcClaim;
+        PROXY_USER_CS3_CLAIM = cfg.oidc.userCs3Claim;
+        PROXY_ROLE_ASSIGNMENT_DRIVER = cfg.oidc.roleAssignmentDriver;
+        WEB_OIDC_SCOPE = lib.concatStringsSep " " cfg.oidc.scopes;
         OCIS_SHARING_PUBLIC_SHARE_MUST_HAVE_PASSWORD = "false";
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "oCIS";
+        group = config.site.gatus.groups.work;
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
+    modules.services.caddy.routes.data = {
+      publicHost = cfg.domain;
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString cfg.ports.http}";
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
   };
 }

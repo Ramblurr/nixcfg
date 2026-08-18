@@ -95,7 +95,12 @@ pkgs.runCommand "local-issues-tests" { nativeBuildInputs = [ pkgs.emacs ]; } ''
     sourceRoot="$TMPDIR/source"
     mkdir -p "$sourceRoot/configs/doom/lisp" "$sourceRoot/tests"
     cp ${../configs/doom/lisp/local-issues-core.el} "$sourceRoot/configs/doom/lisp/local-issues-core.el"
+    cp ${../configs/doom/+local-issues.el} "$sourceRoot/configs/doom/+local-issues.el"
     cp ${./local-issues-test.el} "$sourceRoot/tests/local-issues-test.el"
+    cp ${./project-scratch-test.el} "$sourceRoot/tests/project-scratch-test.el"
+    ${pkgs.emacs}/bin/emacs --batch -Q \
+      -l "$sourceRoot/tests/project-scratch-test.el" \
+      -f ert-run-tests-batch-and-exit
 
     LOCAL_ISSUES_LAUNCHER=${launcher} \
       ${pkgs.emacs}/bin/emacs --batch -Q \

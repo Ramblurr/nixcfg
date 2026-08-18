@@ -107,24 +107,11 @@ in
                   regex = "^zrepl_.*";
                 }
               ];
+              # Received snapshots are the durable offsite queue until pull_mali copies them.
               keep_receiver = [
                 {
-                  type = "grid";
-                  # of the last 24 hours keep all snapshots
-                  # of the last 7 days keep 1 snapshot each day
-                  # of the last 30 days keep 1 snapshot each day
-                  # of the last 6 months keep 1 snapshot each month
-                  # of the last 1 year keep 1 snapshot each year
-                  # discard the rest
-                  # details see: https://zrepl.github.io/configuration/prune.html#policy-grid
-                  grid = "1x24h(keep=all) | 7x1d(keep=1) | 30x1d(keep=1) | 6x30d(keep=1) | 1x365d(keep=1)";
-                  regex = "^zrepl_.*";
-                }
-                # keep snapshots not created by zrepl
-                {
                   type = "regex";
-                  negate = true;
-                  regex = "^zrepl_.*";
+                  regex = ".*";
                 }
               ];
             };
@@ -143,10 +130,13 @@ in
             name = "mali_snap";
             type = "snap";
             filesystems = {
+              "fast<" = false;
+              "fast/services/garage/metadata" = true;
               "rpool<" = false;
               "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
+              "tank2/services/garage<" = true;
               "tank2/iocage<" = false;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
@@ -161,30 +151,12 @@ in
               interval = "6h";
             };
             pruning = {
+              # pull_mali is the sole deleting authority for exported Mali snapshots.
               keep = [
                 {
-                  # keep snapshots not created by zrepl
                   type = "regex";
-                  negate = true;
-                  regex = "^zrepl_.*";
+                  regex = ".*";
                 }
-                {
-                  type = "last_n";
-                  count = 1;
-                }
-                {
-                  # of the last 24 hours keep all snapshots
-                  # of the last 7 days keep 1 snapshot each day
-                  # of the last 30 days keep 1 snapshot each day
-                  # of the last 6 months keep 1 snapshot each month
-                  # DEACT of the last 1 year keep 1 snapshot each year
-                  # discard the rest
-                  # details see: https://zrepl.github.io/configuration/prune.html#policy-grid
-                  type = "grid";
-                  grid = "1x24h(keep=all) | 7x1d(keep=1) | 30x1d(keep=1) | 6x30d(keep=1)";
-                  regex = "^zrepl_.*";
-                }
-
               ];
             };
           }
@@ -200,12 +172,15 @@ in
               client_cns = [ "ludwig" ];
             };
             filesystems = {
+              "fast<" = false;
+              "fast/services/garage/metadata" = true;
               "rpool<" = false;
               "rpool2<" = false;
               "rpool/encrypted/safe<" = true;
               "rpool2/encrypted/safe<" = true;
               "tank/backup<" = false;
               "tank2<" = true;
+              "tank2/services/garage<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
               "tank2/replication/dewey/rpool/encrypted/safe<" = true;
@@ -229,10 +204,13 @@ in
               client_cns = [ "rsyncnet" ];
             };
             filesystems = {
+              "fast<" = false;
+              "fast/services/garage/metadata" = true;
               "rpool<" = false;
               "rpool2<" = false;
               "tank/backup<" = false;
               "tank2<" = true;
+              "tank2/services/garage<" = true;
               "tank2/media<" = false;
               "tank2/media/music/mine" = true;
               "tank2/replication<" = true;

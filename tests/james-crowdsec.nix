@@ -48,6 +48,14 @@ let
               );
               default = { };
             };
+            sops.placeholder = lib.mkOption {
+              type = lib.types.attrsOf lib.types.str;
+              default = { };
+            };
+            sops.templates = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
             environment.persistence = lib.mkOption {
               type = lib.types.attrs;
               default = { };
@@ -59,11 +67,16 @@ let
             networking.hostName = "james";
             system.stateVersion = "25.11";
             services.openssh.enable = true;
-            services.nginx.enable = true;
+            services.caddy.enable = true;
             services.tailscale.enable = true;
             repo.secrets = {
               global.domain.tailnet = "example.test";
               local.crowdsec.trustedSourceCidrs = [ "100.64.0.0/10" ];
+            };
+            sops.placeholder = {
+              "crowdsec/lapi-password" = "@CROWDSEC_LAPI_PASSWORD@";
+              "crowdsec/lapi-login" = "@CROWDSEC_LAPI_LOGIN@";
+              "crowdsec/lapi-url" = "@CROWDSEC_LAPI_URL@";
             };
           };
         }
@@ -74,6 +87,7 @@ let
   cfg = evaluated.config;
   crowdsec = cfg.systemd.services.crowdsec;
   bouncer = cfg.systemd.services.crowdsec-firewall-bouncer;
+  lapiCredentials = cfg.sops.templates."crowdsec/lapiCredentials";
   parserCleanup =
     cfg.systemd.tmpfiles.settings."09-crowdsec-local-parser-cleanup"."/etc/crowdsec/parsers/s02-enrich/*-parsers-s02-enrich.yaml".r;
   expectedAcquisitions = [
@@ -89,21 +103,48 @@ let
     }
     {
       source = "file";
-      filenames = [ "/var/log/nginx/crowdsec.log" ];
-      labels.type = "nginx";
+      filenames = [ "/var/log/caddy/access.log" ];
+      labels.type = "caddy";
     }
   ];
 in
 assert cfg.services.crowdsec.settings.general.api.server.enable == false;
 assert
   cfg.services.crowdsec.settings.lapi.credentialsFile == "/run/secrets/crowdsec/lapiCredentials";
+assert builtins.hasAttr "crowdsec/lapi-password" cfg.sops.secrets;
+assert builtins.hasAttr "crowdsec/lapi-login" cfg.sops.secrets;
+assert builtins.hasAttr "crowdsec/lapi-url" cfg.sops.secrets;
+assert !(builtins.hasAttr "crowdsec/lapiCredentials" cfg.sops.secrets);
+assert lapiCredentials.path == "/run/secrets/crowdsec/lapiCredentials";
+assert lapiCredentials.owner == "crowdsec";
+assert lapiCredentials.group == "crowdsec";
+assert lapiCredentials.mode == "0400";
+assert lapiCredentials.restartUnits == [ "crowdsec.service" ];
+assert
+  lapiCredentials.content == ''
+    url: @CROWDSEC_LAPI_URL@
+    login: @CROWDSEC_LAPI_LOGIN@
+    password: @CROWDSEC_LAPI_PASSWORD@
+  '';
 assert cfg.services.crowdsec.localConfig.acquisitions == expectedAcquisitions;
+assert
+  cfg.services.crowdsec.hub.collections == [
+    "crowdsecurity/linux"
+    "crowdsecurity/sshd"
+    "crowdsecurity/caddy"
+    "crowdsecurity/http-dos"
+  ];
+assert builtins.elem "caddy" cfg.users.users.crowdsec.extraGroups;
 assert cfg.services.crowdsec-firewall-bouncer.settings.api_url == "http://addams.example.test:6001";
 assert cfg.services.crowdsec-firewall-bouncer.settings.mode == "iptables";
 assert cfg.services.crowdsec-firewall-bouncer.registerBouncer.enable == false;
 assert
   cfg.services.crowdsec-firewall-bouncer.secrets.apiKeyPath == "/run/secrets/crowdsec/bouncerApiKey";
 assert bouncer.serviceConfig.LoadCredential == "API_KEY_FILE:/run/secrets/crowdsec/bouncerApiKey";
+assert
+  cfg.systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost == [
+    "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service"
+  ];
 assert crowdsec.serviceConfig.Restart == "on-failure";
 assert crowdsec.serviceConfig.RestartSec == "5s";
 assert crowdsec.serviceConfig.RestartSteps == 5;
@@ -125,6 +166,19 @@ assert !(builtins.elem "firewall.service" bouncer.after);
 assert !(builtins.elem "firewall.service" bouncer.wants);
 assert !(builtins.elem "firewall.service" bouncer.partOf);
 assert parserCleanup.type == "r";
-pkgs.runCommand "james-crowdsec-module-test" { } ''
+pkgs.runCommand "james-crowdsec-module-test" { nativeBuildInputs = [ pkgs.jq ]; } ''
+  cat > "$TMPDIR/caddy-access.json" <<'JSON'
+  {"level":"info","ts":1786816800.0,"logger":"http.log.access","msg":"handled request","request":{"remote_ip":"198.51.100.25","remote_port":"4242","client_ip":"198.51.100.25","proto":"HTTP/2.0","method":"GET","host":"work.example.test","uri":"/login","headers":{"User-Agent":["representative-agent"]}},"bytes_read":0,"duration":0.001,"size":123,"status":404}
+  JSON
+  jq -e '
+    .logger == "http.log.access" and
+    .request.client_ip == "198.51.100.25" and
+    .request.proto == "HTTP/2.0" and
+    .request.method == "GET" and
+    .request.host == "work.example.test" and
+    .request.uri == "/login" and
+    .request.headers["User-Agent"][0] == "representative-agent" and
+    .status == 404
+  ' "$TMPDIR/caddy-access.json"
   touch "$out"
 ''

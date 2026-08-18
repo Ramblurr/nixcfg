@@ -1,79 +1,62 @@
 {
   config,
+  inputs,
   lib,
   ...
 }:
 let
   cfg = config.modules.services.koreader-sync;
-  stateDir = "/var/lib/koreader-sync";
+  package = inputs.koreader-syncd.packages.${config.nixpkgs.hostPlatform.system}.default;
+  stateDirActual = "/var/lib/private/koreader-syncd";
+  stateDirEffective = "/var/lib/koreader-syncd";
 in
 {
   options.modules.services.koreader-sync = {
     enable = lib.mkEnableOption "koreader-sync";
     domain = lib.mkOption {
       type = lib.types.str;
-      description = "The domain to use for the calibre-web";
-    };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
+      description = "The domain to use for koreader-syncd";
     };
     ports = {
       http = lib.mkOption { type = lib.types.port; };
     };
-    user = lib.mkOption { type = lib.types.unspecified; };
-    group = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
     modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/koreader-sync"."mountpoint" = stateDir;
-      "rpool/encrypted/safe/svc/koreader-sync"."com.sun:auto-snapshot" = "false";
+      "rpool/encrypted/safe/svc/koreader-syncd"."mountpoint" = stateDirActual;
     };
+    systemd.services.koreader-syncd = {
+      description = "KOReader sync server";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+      unitConfig.RequiresMountsFor = [ stateDirActual ];
 
-    systemd.tmpfiles.rules = [
-      "d '${stateDir}' 750 ${cfg.user.name} ${cfg.group.name} - -"
-      "Z '${stateDir}' 750 ${cfg.user.name} ${cfg.group.name} - -"
-      "d '${stateDir}/kosync' 750 ${cfg.user.name} ${cfg.group.name} - -"
-      "Z '${stateDir}/kosync' 750 ${cfg.user.name} ${cfg.group.name} - -"
-    ];
-    users.users.${cfg.user.name} = {
-      inherit (cfg.user) name;
-      inherit (cfg.user) uid;
-      isNormalUser = true;
-      home = stateDir;
-      createHome = false;
-      group = lib.mkForce cfg.group.name;
-      linger = true;
-      # see https://github.com/nikstur/userborn/issues/7
-      # autoSubUidGidRange = true;
-    };
-    users.groups.${cfg.group.name} = {
-      inherit (cfg.group) name;
-      gid = lib.mkForce cfg.group.gid;
-    };
-    virtualisation.oci-containers.containers.koreader-sync = {
-      autoStart = false;
-      # renovate: docker-image
-      image = "ghcr.io/ramblurr/kosync:0.1.0@sha256:07bf51b5ee0cb41e6c84e9a2a136ef711c50b076bcd44be0244e0f42d643cd9f";
-      ports = [ "127.0.0.1:${toString cfg.ports.http}:3000" ];
-      volumes = [ "${stateDir}/kosync:/srv/data:rw" ];
-      podman = {
-        user = cfg.user.name;
-        sdnotify = "healthy";
+      serviceConfig = {
+        ExecStart = "${package}/bin/koreader-syncd -a 127.0.0.1:${toString cfg.ports.http} -d ${stateDirEffective}/state.db";
+        DynamicUser = true;
+        StateDirectory = baseNameOf stateDirEffective;
+        Restart = "on-failure";
+        RestartSec = "5s";
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
       };
-      extraOptions = [
-        "--health-cmd=curl -s http://localhost:3000/healthcheck > /dev/null || exit 1"
-        "--health-interval=30s"
-        "--health-timeout=3s"
-        "--health-start-period=5s"
-        "--health-retries=3"
-      ];
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "KOReader Sync";
+        group = config.site.gatus.groups.media;
+        url = "https://${cfg.domain}/users/auth";
+        conditions = [ "[STATUS] == 401" ];
+      }
+    ];
+
+    modules.services.caddy.routes.koreader = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
+      requestBodyMaxSize = "10MB";
     };
   };
 }

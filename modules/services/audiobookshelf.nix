@@ -17,11 +17,6 @@ in
       example = "audiobookshelf.example.com";
       description = "The domain to use for the audiobookshelf";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       http = lib.mkOption { type = lib.types.port; };
     };
@@ -110,20 +105,18 @@ in
       group = cfg.group.name;
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "Audiobookshelf";
+        group = config.site.gatus.groups.media;
+        url = "https://${cfg.domain}/";
+      }
+    ];
+
+    modules.services.caddy.routes.audiobookshelf = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
     };
 
-    #modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-    #  "${cfg.ingress.domain}" = {
-    #    externalDomains = [
-    #      cfg.domain
-    #    ];
-    #  };
-    #};
   };
 }

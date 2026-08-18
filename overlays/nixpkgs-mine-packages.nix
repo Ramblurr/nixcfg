@@ -18,13 +18,14 @@ in
   #inherit (nixpkgs-mine) llm;
   inherit (nixpkgs-mine) clojure-lsp;
   inherit (nixpkgs-mine) davis;
-  #inherit (nixpkgs-mine) plex;
   inherit (nixpkgs-mine) emacs-pgtk;
   #inherit (nixpkgs-mine) gost;
   inherit (nixpkgs-mine) ocis;
   inherit (nixpkgs-mine) ocis_71-bin;
   inherit (nixpkgs-mine) ocis_72-bin;
   inherit (nixpkgs-mine) ocis_73-bin;
+  inherit (nixpkgs-mine) qbittorrent-nox;
+  inherit (nixpkgs-mine) qui;
   inherit (nixpkgs-mine) roon-server;
   #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;

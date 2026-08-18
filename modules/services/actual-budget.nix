@@ -35,11 +35,6 @@ in
         description = "The HTTP port to use for the actual-server";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -92,15 +87,9 @@ in
       };
     };
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.routes.actual-budget = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${httpPort}";
-      forwardAuth = false;
     };
   };
 }

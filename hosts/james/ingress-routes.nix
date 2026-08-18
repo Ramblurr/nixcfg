@@ -26,18 +26,15 @@ let
   ];
 in
 {
+  # James HAProxy selects these public hostnames for TLS passthrough to Dewey.
+  # Dewey Caddy terminates TLS and proxies each route to its registered upstream.
   deweyServices = [
-    # nixbot CI on debord, relayed through dewey's nginx
     "ci.${work}"
-    "y2pod.${home}"
     "dav.${home}"
-    "requests.${home}"
     "home.${home}"
     "books.${home}"
     "files.${home}"
-    "auth.${home}"
     "clients.${work}"
-    "auth.${work}"
     "matrix.${work}"
     "data.${work}"
   ];

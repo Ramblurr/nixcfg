@@ -32,6 +32,8 @@
     impermanence.inputs.home-manager.follows = "";
     # do not follow nixpkgs: impermanence does not need it when consumed as a module
     impermanence.inputs.nixpkgs.follows = "";
+    koreader-syncd.url = "github:pborzenkov/koreader-syncd";
+    koreader-syncd.inputs.nixpkgs.follows = "nixpkgs";
     libro-fm-cli.url = "github:ramblurr/libro-fm-cli";
     libro-fm-cli.inputs.devshell.follows = "devshell";
     libro-fm-cli.inputs.nixpkgs.follows = "nixpkgs";
@@ -61,9 +63,6 @@
     nix-std.url = "github:chessai/nix-std";
     nixos-extra-modules.url = "github:oddlama/nixos-extra-modules";
     nixos-extra-modules.inputs.nixpkgs.follows = "nixpkgs";
-    nixos-generators.url = "github:nix-community/nixos-generators";
-    # do not follow nixpkgs: keep nixos-generators on nixpkgs-stable for image builds
-    nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
     # nixos-hardware doe snot have a nixpkgs input
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
@@ -91,6 +90,7 @@
     tmux-buddy.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+    vpn-confinement.url = "github:Maroka-chan/VPN-Confinement/b3aa71a7edfe6af748c23729d1bdec3b499741ff";
     #boxai.url = "path:/home/ramblurr/src/llm/vms";
     #boxai.inputs.nixpkgs.follows = "nixpkgs";
     #brother_ql_web.url = "github:makefu/brother_ql_web";

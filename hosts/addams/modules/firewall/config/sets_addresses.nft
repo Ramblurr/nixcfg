@@ -228,14 +228,6 @@ set zigbee2mqtt {
   elements = { 10.9.4.11 }
 }
 
-set minio {
-  type ipv4_addr
-  elements = {
-    10.9.10.12,
-    10.9.10.10
-  }
-}
-
 set unifi_cloudkey {
   type ipv4_addr
   elements = { 192.168.1.2 }

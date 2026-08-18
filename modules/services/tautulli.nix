@@ -15,11 +15,6 @@ in
       example = "tautulli.example.com";
       description = "The domain to use for the tautulli";
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     ports = {
       http = lib.mkOption {
         type = lib.types.port;
@@ -33,11 +28,6 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;
@@ -50,10 +40,9 @@ in
       "rpool/encrypted/safe/svc/tautulli"."com.sun:auto-snapshot" = "false";
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    modules.services.caddy.protectedRoutes.tautulli = {
+      publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      forwardAuth = true;
     };
 
     services.tautulli = {

@@ -1,0 +1,264 @@
+rule_files:
+  - @BACKUP_RULES@
+
+evaluation_interval: 1m
+
+tests:
+  - name: healthy ZFS and local zrepl series do not alert
+    interval: 1m
+    input_series:
+      - series: 'up{job="zfs", instance="mali:9134"}'
+        values: '1x180'
+      - series: 'zfs_scrape_collector_success{job="zfs", instance="mali:9134", collector="pool"}'
+        values: '1x180'
+      - series: 'zfs_pool_health{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '0x180'
+      - series: 'zfs_pool_allocated_bytes{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '50x180'
+      - series: 'zfs_pool_size_bytes{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '100x180'
+      - series: 'zrepl_replication_filesystem_errors{job="zrepl_mali", instance="mali:9811", zrepl_job="debord"}'
+        values: '0x180'
+      - series: 'zrepl_replication_last_successful{job="zrepl_mali", instance="mali:9811", zrepl_job="debord"}'
+        values: '1+60x180'
+      - series: 'zrepl_replication_filesystem_errors{job="zrepl_mali", instance="mali:9811", zrepl_job="dewey"}'
+        values: '0x180'
+      - series: 'zrepl_replication_last_successful{job="zrepl_mali", instance="mali:9811", zrepl_job="dewey"}'
+        values: '1+60x180'
+    alert_rule_test:
+      - eval_time: 3h
+        alertname: ZfsPoolCollectorFailed
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZfsPoolMetricsMissing
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZfsPoolUnhealthy
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZfsPoolCapacityWarning
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZfsPoolCapacityCritical
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZreplReplicationFilesystemErrors
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZreplReplicationMetricsMissing
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZreplReplicationStaleWarning
+        exp_alerts: []
+      - eval_time: 3h
+        alertname: ZreplReplicationStaleCritical
+        exp_alerts: []
+
+  - name: a transient zrepl attempt error clears before the persistent threshold
+    interval: 1m
+    input_series:
+      - series: 'zrepl_replication_filesystem_errors{job="zrepl_mali", instance="mali:9811", zrepl_job="debord"}'
+        values: '1x60 0x180'
+    alert_rule_test:
+      - eval_time: 3h
+        alertname: ZreplReplicationFilesystemErrors
+        exp_alerts: []
+
+  - name: persistent zrepl attempt errors alert
+    interval: 1m
+    input_series:
+      - series: 'zrepl_replication_filesystem_errors{job="zrepl_mali", instance="mali:9811", zrepl_job="debord"}'
+        values: '1x180'
+    alert_rule_test:
+      - eval_time: 121m
+        alertname: ZreplReplicationFilesystemErrors
+        exp_alerts:
+          - exp_labels:
+              instance: mali:9811
+              job: zrepl_mali
+              severity: critical
+              zrepl_job: debord
+            exp_annotations:
+              summary: zrepl job debord has persistent filesystem errors
+              description: Mali's latest completed debord pull has reported filesystem errors for two hours.
+
+  - name: receiver-side offsite success older than one day alerts
+    interval: 1m
+    input_series:
+      - series: 'zrepl_receiver_probe_success{job="node", instance="mali:9100", receiver="rsyncnet"}'
+        values: '1x1600'
+      - series: 'zrepl_replication_filesystem_errors{job="node", instance="mali:9100", zrepl_job="pull_mali", origin="rsyncnet"}'
+        values: '0x1600'
+      - series: 'zrepl_replication_last_successful{job="node", instance="mali:9100", zrepl_job="pull_mali", origin="rsyncnet"}'
+        values: '1x1600'
+    alert_rule_test:
+      - eval_time: 26h
+        alertname: OffsiteReplicationStaleWarning
+        exp_alerts:
+          - exp_labels:
+              instance: mali:9100
+              job: node
+              origin: rsyncnet
+              severity: warning
+              zrepl_job: pull_mali
+            exp_annotations:
+              summary: The rsync.net pull has no recent success
+              description: Receiver-side pull success is absent or more than one day old.
+
+  - name: absent offsite relay leaves receiver rules gated
+    alert_rule_test:
+      - eval_time: 8d
+        alertname: OffsiteReceiverProbeFailed
+        exp_alerts: []
+      - eval_time: 8d
+        alertname: OffsiteReceiverMetricsMissing
+        exp_alerts: []
+      - eval_time: 8d
+        alertname: OffsiteReplicationFilesystemErrors
+        exp_alerts: []
+      - eval_time: 8d
+        alertname: OffsiteReplicationStaleWarning
+        exp_alerts: []
+      - eval_time: 8d
+        alertname: OffsiteReplicationNeverSucceeded
+        exp_alerts: []
+      - eval_time: 8d
+        alertname: OffsiteReplicationStaleCritical
+        exp_alerts: []
+
+  - name: a restarted Thanos counter is not mistaken for many failures
+    interval: 5m
+    input_series:
+      - series: 'thanos_shipper_upload_failures_total{job="thanos-sidecar", instance="debord:10902"}'
+        values: '100 0 1x20'
+      - series: 'thanos_shipper_dir_sync_failures_total{job="thanos-sidecar", instance="debord:10902"}'
+        values: '0x22'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: ThanosSidecarUploadFailing
+        exp_alerts: []
+
+  - name: repeated Thanos upload and compactor failures alert
+    interval: 5m
+    input_series:
+      - series: 'thanos_shipper_upload_failures_total{job="thanos-sidecar", instance="debord:10902"}'
+        values: '0+1x20'
+      - series: 'thanos_shipper_dir_sync_failures_total{job="thanos-sidecar", instance="debord:10902"}'
+        values: '0x21'
+      - series: 'thanos_compact_downsample_failures_total{job="thanos-compact", instance="debord:10907", resolution="raw"}'
+        values: '0x21'
+      - series: 'thanos_compact_block_cleanup_failures_total{job="thanos-compact", instance="debord:10907"}'
+        values: '0+1x20'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: ThanosSidecarUploadFailing
+        exp_alerts:
+          - exp_labels:
+              instance: debord:10902
+              job: thanos-sidecar
+              severity: warning
+            exp_annotations:
+              summary: Thanos sidecar uploads are repeatedly failing
+              description: The sidecar at debord:10902 has recorded at least two upload or directory-sync failures in one hour.
+      - eval_time: 30m
+        alertname: ThanosCompactMaintenanceFailing
+        exp_alerts:
+          - exp_labels:
+              instance: debord:10907
+              job: thanos-compact
+              severity: warning
+            exp_annotations:
+              summary: Thanos compactor maintenance is repeatedly failing
+              description: Thanos compact has recorded at least two downsample or cleanup failures in one hour.
+
+  - name: missing expected ZFS pool series alerts
+    interval: 1m
+    input_series:
+      - series: 'up{job="zfs", instance="mali:9134"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: ZfsPoolMetricsMissing
+        exp_alerts:
+          - exp_labels:
+              instance: mali:9134
+              job: zfs
+              severity: warning
+            exp_annotations:
+              summary: Expected ZFS pool metrics are missing
+              description: The exporter at mali:9134 is scrapeable but an expected pool collector, health, allocated-byte, or size-byte series is absent.
+
+  - name: degraded ZFS pool alerts
+    interval: 1m
+    input_series:
+      - series: 'zfs_pool_health{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '1x20'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: ZfsPoolUnhealthy
+        exp_alerts:
+          - exp_labels:
+              instance: mali:9134
+              job: zfs
+              pool: tank2
+              severity: critical
+            exp_annotations:
+              summary: ZFS pool tank2 is unhealthy
+              description: Pool tank2 at mali:9134 has reported a non-ONLINE health code for ten minutes.
+
+  - name: warning ZFS capacity alerts after one hour
+    interval: 1m
+    input_series:
+      - series: 'zfs_pool_allocated_bytes{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '85x70'
+      - series: 'zfs_pool_size_bytes{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '100x70'
+    alert_rule_test:
+      - eval_time: 61m
+        alertname: ZfsPoolCapacityWarning
+        exp_alerts:
+          - exp_labels:
+              instance: mali:9134
+              job: zfs
+              pool: tank2
+              severity: warning
+            exp_annotations:
+              summary: ZFS pool tank2 is more than 80% allocated
+              description: Pool tank2 at mali:9134 has remained between 80% and 90% allocated for one hour.
+
+  - name: critical ZFS capacity alerts after thirty minutes
+    interval: 1m
+    input_series:
+      - series: 'zfs_pool_allocated_bytes{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '95x40'
+      - series: 'zfs_pool_size_bytes{job="zfs", instance="mali:9134", pool="tank2"}'
+        values: '100x40'
+    alert_rule_test:
+      - eval_time: 31m
+        alertname: ZfsPoolCapacityCritical
+        exp_alerts:
+          - exp_labels:
+              instance: mali:9134
+              job: zfs
+              pool: tank2
+              severity: critical
+            exp_annotations:
+              summary: ZFS pool tank2 is more than 90% allocated
+              description: Pool tank2 at mali:9134 has remained above 90% allocated for thirty minutes.
+
+  - name: unavailable target alerts after ten minutes
+    interval: 1m
+    input_series:
+      - series: 'up{job="thanos-store", instance="127.0.0.1:10904"}'
+        values: '0x20'
+    alert_rule_test:
+      - eval_time: 11m
+        alertname: PrometheusTargetDown
+        exp_alerts:
+          - exp_labels:
+              instance: 127.0.0.1:10904
+              job: thanos-store
+              severity: warning
+            exp_annotations:
+              summary: Prometheus target thanos-store is unavailable
+              description: Prometheus has failed to scrape 127.0.0.1:10904 for ten minutes. A total Prometheus outage cannot be detected by this Prometheus instance.

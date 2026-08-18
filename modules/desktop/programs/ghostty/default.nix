@@ -59,7 +59,7 @@ in
               background-opacity = 1.0;
               window-decoration = false;
               app-notifications = "no-clipboard-copy";
-              shell-integration-features = "ssh-terminfo,ssh-env";
+              shell-integration-features = "ssh-env";
             };
         };
       };

@@ -17,11 +17,13 @@ let
       "::1/128"
     ]
     ++ crowdsecSecret.trustedSourceCidrs;
+  webCollections = [
+    "crowdsecurity/caddy"
+    "crowdsecurity/http-dos"
+  ];
 in
 {
-  users.users.crowdsec.extraGroups = lib.optionals config.services.nginx.enable [
-    config.services.nginx.group
-  ];
+  users.users.crowdsec.extraGroups = [ config.services.caddy.group ];
 
   services.crowdsec = {
     enable = true;
@@ -31,10 +33,7 @@ in
       "crowdsecurity/linux"
     ]
     ++ lib.optionals config.services.openssh.enable [ "crowdsecurity/sshd" ]
-    ++ lib.optionals config.services.nginx.enable [
-      "crowdsecurity/nginx"
-      "crowdsecurity/http-dos"
-    ];
+    ++ webCollections;
     localConfig.acquisitions =
       (lib.optionals config.services.openssh.enable [
         {
@@ -50,11 +49,11 @@ in
           labels.type = "kernel";
         }
       ]
-      ++ lib.optionals config.services.nginx.enable [
+      ++ [
         {
           source = "file";
-          filenames = [ "/var/log/nginx/crowdsec.log" ];
-          labels.type = "nginx";
+          filenames = [ "/var/log/caddy/access.log" ];
+          labels.type = "caddy";
         }
       ];
     localConfig.parsers.s02Enrich = [
@@ -71,7 +70,7 @@ in
       api.server.enable = false;
       cscli.output = "human";
     };
-    settings.lapi.credentialsFile = config.sops.secrets."crowdsec/lapiCredentials".path;
+    settings.lapi.credentialsFile = config.sops.templates."crowdsec/lapiCredentials".path;
   };
 
   # The module uses content-addressed filenames for local parsers, so remove
@@ -93,7 +92,7 @@ in
     };
 
     crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
-      "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
+      "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service"
     ];
 
     crowdsec-firewall-bouncer = {
@@ -133,11 +132,21 @@ in
     "/var/lib/crowdsec"
   ];
 
-  sops.secrets."crowdsec/lapiCredentials" = {
+  sops.secrets."crowdsec/lapi-password" = { };
+  sops.secrets."crowdsec/lapi-login" = { };
+  sops.secrets."crowdsec/lapi-url" = { };
+
+  sops.templates."crowdsec/lapiCredentials" = {
+    path = "/run/secrets/crowdsec/lapiCredentials";
     owner = "crowdsec";
     group = "crowdsec";
     mode = "0400";
     restartUnits = [ "crowdsec.service" ];
+    content = ''
+      url: ${config.sops.placeholder."crowdsec/lapi-url"}
+      login: ${config.sops.placeholder."crowdsec/lapi-login"}
+      password: ${config.sops.placeholder."crowdsec/lapi-password"}
+    '';
   };
 
   sops.secrets."crowdsec/bouncerApiKey" = {

@@ -38,11 +38,6 @@ in
         description = "The HTTP port to use";
       };
     };
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
     user = lib.mkOption { type = lib.types.unspecified; };
     group = lib.mkOption { type = lib.types.unspecified; };
     bridgesGroup = lib.mkOption { type = lib.types.unspecified; };
@@ -71,50 +66,44 @@ in
         assertion = cfg.user.name == "matrix-synapse" && cfg.group.name == "matrix-synapse";
       }
     ];
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.http}";
-      http3.enable = false;
-    };
-    services.nginx.virtualHosts.${cfg.domain}.locations = {
-      "~ ^(/_matrix|/_synapse/client)" = {
-        proxyPass = "http://127.0.0.1:${toString cfg.ports.http}";
-        extraConfig = ''
-          client_max_body_size 200M;
-        '';
-      };
-      "/.well-known/matrix/server".extraConfig =
-        let
-          server = {
-            "m.server" = "${cfg.domain}:443";
-          };
-        in
-        ''
-          add_header Content-Type application/json;
-          return 200 '${builtins.toJSON server}';
-        '';
-    }
-    // lib.optionalAttrs cfg.ketesa.enable {
-      "= /admin".return = "307 /admin/";
-      "/admin/" = {
-        alias = "${cfg.ketesa.package}/";
-        priority = 500;
-        tryFiles = "$uri $uri/ /admin/index.html";
-      };
-      "~ ^/admin/.*\\.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$" = {
-        priority = 400;
-        root = cfg.ketesa.package;
-        extraConfig = ''
-          rewrite ^/admin/(.*)$ /$1 break;
-          expires 30d;
-          add_header Cache-Control "public";
-        '';
-      };
+    site.gatus.endpoints = [
+      {
+        name = "Matrix Synapse";
+        group = config.site.gatus.groups.work;
+        url = "https://${cfg.domain}/_matrix/client/versions";
+      }
+    ];
+
+    modules.services.caddy.routes.matrix = {
+      publicHost = cfg.domain;
+      http3 = false;
+      handlerConfig = ''
+        @matrix_server path /.well-known/matrix/server
+        handle @matrix_server {
+          header Content-Type application/json
+          respond ${builtins.toJSON (builtins.toJSON { "m.server" = "${cfg.domain}:443"; })} 200
+        }
+        handle /admin {
+          redir * /admin/ 307
+        }
+        handle_path /admin/* {
+          @matrix_admin_assets path_regexp matrix_admin_assets \\.(?:css|js|jpg|jpeg|gif|png|svg|ico|woff|woff2|ttf|eot|webp)$
+          header @matrix_admin_assets Cache-Control "public, max-age=2592000"
+          root * ${cfg.ketesa.package}
+          try_files {path} {path}/ /index.html
+          file_server
+        }
+        @matrix_api path /_matrix/* /_synapse/client/*
+        handle @matrix_api {
+          request_body {
+            max_size 200MB
+          }
+          reverse_proxy 127.0.0.1:${toString cfg.ports.http}
+        }
+        handle {
+          reverse_proxy 127.0.0.1:${toString cfg.ports.http}
+        }
+      '';
     };
 
     # the nixos module hardcodes the user matrix-synapse
@@ -153,11 +142,28 @@ in
       };
     };
 
-    sops.secrets."doublepuppet.yaml" = {
-      sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+    sops.secrets = {
+      doublepuppet-as-token.sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+      doublepuppet-hs-token.sopsFile = ../../configs/home-ops/matrix-synapse.sops.yaml;
+    };
+
+    sops.templates."doublepuppet.yaml" = {
+      path = "/run/secrets/doublepuppet.yaml";
       owner = cfg.user.name;
       group = cfg.bridgesGroup.name;
-      mode = "440";
+      mode = "0440";
+      content = ''
+        id: doublepuppet
+        url:
+        as_token: ${config.sops.placeholder.doublepuppet-as-token}
+        hs_token: ${config.sops.placeholder.doublepuppet-hs-token}
+        sender_localpart: XKuzraQqsXp6OXZ
+        rate_limited: false
+        namespaces:
+          users:
+            - regex: '@.*:outskirtslabs\.com'
+              exclusive: false
+      '';
     };
 
     sops.secrets."signingKey" = {
@@ -181,7 +187,7 @@ in
       enable = true;
       dataDir = synapseDataDir;
       settings = {
-        app_service_config_files = [ config.sops.secrets."doublepuppet.yaml".path ];
+        app_service_config_files = [ config.sops.templates."doublepuppet.yaml".path ];
 
         public_baseurl = "https://${cfg.domain}";
         report_stats = true;

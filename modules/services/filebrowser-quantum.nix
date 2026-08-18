@@ -62,12 +62,6 @@ in
       description = "The domain to use for FileBrowser Quantum.";
     };
 
-    ingress = lib.mkOption {
-      type = lib.types.submodule (
-        lib.recursiveUpdate (import ./ingress-options.nix { inherit config lib; }) { }
-      );
-    };
-
     adminUsername = lib.mkOption {
       type = lib.types.str;
       default = "casey";
@@ -76,7 +70,7 @@ in
 
     authProxyHeader = lib.mkOption {
       type = lib.types.str;
-      default = "X-authentik-username";
+      default = "Remote-User";
       description = "Header FileBrowser Quantum should trust for proxy authentication.";
     };
 
@@ -188,19 +182,20 @@ in
       };
     };
 
-    modules.services.ingress.virtualHosts.${cfg.domain} = {
-      acmeHost = cfg.ingress.domain;
+    site.gatus.endpoints = [
+      {
+        name = "FileBrowser Quantum";
+        group = config.site.gatus.groups.media;
+        url = "https://${cfg.domain}/_health/gatus";
+      }
+    ];
+
+    modules.services.caddy.protectedRoutes.files = {
+      publicHost = cfg.domain;
       inherit upstream;
-      inherit (cfg.ingress) forwardAuth;
-      extraConfig = ''
-        client_max_body_size 0;
-      '';
+      healthCheckPath = "/health";
+      identityHeaders.Remote-User = "userinfo|preferred_username";
     };
 
-    modules.services.ingress.domains = lib.mkIf cfg.ingress.external {
-      "${cfg.ingress.domain}" = {
-        externalDomains = [ cfg.domain ];
-      };
-    };
   };
 }
