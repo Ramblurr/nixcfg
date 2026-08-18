@@ -152,7 +152,16 @@ let
 in
 assert config.boot.kernel.sysctl."net.ipv6.conf.all.forwarding" == 1;
 assert lib.versionAtLeast qbittorrent.package.version "5.2.3";
-assert qbittorrent.profileDir == "/var/lib/private/home-dl/qbittorrent";
+assert qbittorrent.profileDir == "/var/lib/qbittorrent";
+assert
+  config.systemd.services.qbittorrent.serviceConfig.BindPaths == [
+    "/var/lib/private/home-dl/qbittorrent:/var/lib/qbittorrent"
+  ];
+assert
+  config.systemd.services.qbittorrent.serviceConfig.ReadWritePaths == [
+    "/var/lib/qbittorrent"
+    "/mnt/downloads"
+  ];
 assert qbittorrent.webuiPort == 8085;
 assert !qbittorrent.openFirewall;
 assert qbittorrent.serverConfig.LegalNotice.Accepted;

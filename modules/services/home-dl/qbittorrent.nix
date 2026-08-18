@@ -14,6 +14,7 @@ let
   stateDir = "/var/lib/private/home-dl";
   downloadsDir = "/mnt/downloads";
   qbittorrentStateDir = "${stateDir}/qbittorrent";
+  qbittorrentProfileDir = "/var/lib/qbittorrent";
   quiStateDir = "${stateDir}/qui";
   qbittorrentDomain = "qbittorrent.${cfg.baseDomain}";
 
@@ -257,7 +258,7 @@ in
       package = pkgs.qbittorrent-nox;
       user = mediaUser;
       group = mediaGroup;
-      profileDir = qbittorrentStateDir;
+      profileDir = qbittorrentProfileDir;
       webuiPort = qbittorrentApiPort;
       torrentingPort = null;
       openFirewall = false;
@@ -305,7 +306,11 @@ in
         downloadsDir
       ];
       serviceConfig = {
-        ReadWritePaths = [ downloadsDir ];
+        BindPaths = [ "${qbittorrentStateDir}:${qbittorrentProfileDir}" ];
+        ReadWritePaths = [
+          qbittorrentProfileDir
+          downloadsDir
+        ];
         UMask = "0007";
       };
     };
