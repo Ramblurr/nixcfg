@@ -122,20 +122,19 @@ in
       {
         name = "Calibre Web";
         group = "Media & Library";
-        url = "https://${cfg.domain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${cfg.domain}/_health/gatus";
       }
-      {
-        name = "Calibre Web Kobo";
-        group = "Media & Library";
-        url = "https://${cfg.domainKobo}/";
-        conditions = [ "[STATUS] == 302" ];
-      }
-    ];
+    ]
+    ++ lib.optional (cfg.domainKobo != "") {
+      name = "Calibre Web Kobo";
+      group = "Media & Library";
+      url = "https://${cfg.domainKobo}/login";
+    };
 
     modules.services.caddy.protectedRoutes.calibre-web = {
       publicHost = cfg.domain;
       inherit upstream;
+      healthCheckPath = "/login";
       clientID = config.repo.secrets.home-ops.calibreWebPocketIdClientId;
       oidcRealm = "calibre-pocket-id";
       requiredGroups = [ "books" ];
