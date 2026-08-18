@@ -4,6 +4,7 @@
     { pkgs, ... }:
     {
       checks = {
+        borgmatic = import ../tests/borgmatic.nix { inherit inputs pkgs; };
         calibre = import ../tests/calibre.nix { inherit inputs pkgs; };
         databasus = import ../tests/databasus.nix { inherit inputs pkgs; };
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
