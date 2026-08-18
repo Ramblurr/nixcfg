@@ -7,13 +7,9 @@
 }:
 let
   cfg = config.modules.services.home-dl;
-  onepassword = config.modules.services.onepassword-systemd-credentials;
   inherit (config.repo.secrets) home-ops;
   mediaUser = home-ops.users.media.name;
-  mediaUid = home-ops.users.media.uid;
   mediaGroup = home-ops.groups.media.name;
-  mediaGid = home-ops.groups.media.gid;
-  qbittorrentDomain = "qbittorrent.${cfg.baseDomain}";
   ingresses = {
     radarr = {
       domain = "radarr.${cfg.baseDomain}";
@@ -44,14 +40,6 @@ let
   stateDirEffective = "/var/lib/home-dl";
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
-  gluetunStateDir = "${stateDirActual}/gluetun";
-  gluetunEnvironmentFile = "/run/home-dl-gluetun-env/gluetun.env";
-  qbittorrentStateDir = "${stateDirActual}/qbittorrent";
-  qbittorrentConfigDir = "${qbittorrentStateDir}/qBittorrent";
-  qbittorrentConfigFile = "${qbittorrentConfigDir}/qBittorrent.conf";
-  qbittorrentPort = toString cfg.ports.qbittorrent;
-  qbittorrentPortForwardUpCommand = "/bin/sh -c 'wget -O- -nv --retry-connrefused --post-data \"json={\\\"listen_port\\\":{{PORT}},\\\"current_network_interface\\\":\\\"{{VPN_INTERFACE}}\\\",\\\"random_port\\\":false,\\\"upnp\\\":false}\" http://127.0.0.1:${qbittorrentPort}/api/v2/app/setPreferences'";
-  qbittorrentPortForwardDownCommand = "/bin/sh -c 'wget -O- -nv --retry-connrefused --post-data \"json={\\\"listen_port\\\":0,\\\"current_network_interface\\\":\\\"lo\\\"}\" http://127.0.0.1:${qbittorrentPort}/api/v2/app/setPreferences'";
   serviceDeps = [
     "${utils.escapeSystemdPath mediaLocalPath}.mount"
     "${utils.escapeSystemdPath dlLocalPath}.mount"
@@ -91,15 +79,13 @@ let
   };
 in
 {
+  imports = [ ./home-dl/qbittorrent.nix ];
   options.modules.services.home-dl = {
     enable = lib.mkEnableOption "home-dl";
     baseDomain = lib.mkOption {
       type = lib.types.str;
       example = "example.com";
       description = "The base domaint to use for all services";
-    };
-    ports = {
-      qbittorrent = lib.mkOption { type = lib.types.port; };
     };
     mediaNfsShare = lib.mkOption { type = lib.types.str; };
     subnet = lib.mkOption { type = lib.types.unspecified; };
@@ -121,61 +107,7 @@ in
     systemd.tmpfiles.rules = [
       "d ${dlLocalPath} 0770 ${mediaUser} ${mediaGroup}"
       "A ${dlLocalPath} - - - - d:group:${mediaGroup}:rwx"
-      "d ${gluetunStateDir} 0700 root root"
-      "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
     ];
-
-    assertions = [
-      {
-        assertion = onepassword.enable;
-        message = "Home download credentials require the 1Password systemd credential provider.";
-      }
-    ];
-
-    modules.services.onepassword-systemd-credentials.consumers.home-dl-gluetun-env-setup = {
-      WIREGUARD_PRIVATE_KEY = "op://home-ops-prod/home-dl-gluetun/wireguard-private-key";
-      SERVER_COUNTRIES = "op://home-ops-prod/home-dl-gluetun/server-countries";
-    };
-
-    systemd.services.home-dl-gluetun-env-setup = {
-      description = "Prepare Gluetun environment from 1Password credentials";
-      before = [ "home-dl-gluetun.service" ];
-      requiredBy = [ "home-dl-gluetun.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        RuntimeDirectory = "home-dl-gluetun-env";
-        UMask = "0077";
-      };
-      script = ''
-        printf '%s=%s\n' WIREGUARD_PRIVATE_KEY \
-          "$(cat "$CREDENTIALS_DIRECTORY/WIREGUARD_PRIVATE_KEY")" > ${gluetunEnvironmentFile}
-        printf '%s=%s\n' SERVER_COUNTRIES \
-          "$(cat "$CREDENTIALS_DIRECTORY/SERVER_COUNTRIES")" >> ${gluetunEnvironmentFile}
-      '';
-    };
-    systemd.services.home-dl-qbittorrent-config = {
-      description = "Prepare qBittorrent config for Gluetun port forwarding";
-      before = [ "home-dl-qbittorrent.service" ];
-      requiredBy = [ "home-dl-qbittorrent.service" ];
-      unitConfig.RequiresMountsFor = [ stateDirActual ];
-      serviceConfig = {
-        Type = "oneshot";
-        User = "root";
-      };
-      script = ''
-        install -d -m0770 -o ${mediaUser} -g ${mediaGroup} ${qbittorrentConfigDir}
-        touch ${qbittorrentConfigFile}
-        chown ${mediaUser}:${mediaGroup} ${qbittorrentConfigFile}
-        chmod 0660 ${qbittorrentConfigFile}
-
-        if grep -q '^WebUI\\LocalHostAuth=' ${qbittorrentConfigFile}; then
-          sed -i 's/^WebUI\\LocalHostAuth=.*/WebUI\\LocalHostAuth=false/' ${qbittorrentConfigFile}
-        else
-          printf '\nWebUI\\LocalHostAuth=false\n' >> ${qbittorrentConfigFile}
-        fi
-      '';
-    };
 
     modules.networking.systemd-netns-private = {
       enable = true;
@@ -300,90 +232,6 @@ in
       };
     };
 
-    virtualisation.quadlet.enable = true;
-    virtualisation.quadlet = {
-      networks.home-dl-torrent = {
-        autoStart = true;
-        networkConfig = {
-          NetworkName = "home-dl-torrent";
-        };
-      };
-      containers = {
-        home-dl-gluetun = {
-          autoStart = true;
-          serviceConfig = {
-            RestartSec = "30";
-            Restart = "always";
-          };
-          unitConfig = {
-            RequiresMountsFor = [ stateDirActual ];
-          };
-          containerConfig = {
-            # renovate: docker-image
-            Image = "ghcr.io/qdm12/gluetun:v3.41.1@sha256:1a5bf4b4820a879cdf8d93d7ef0d2d963af56670c9ebff8981860b6804ebc8ab";
-            ContainerName = "home-dl-gluetun";
-            Network = "home-dl-torrent.network";
-            AddCapability = [ "NET_ADMIN" ];
-            AddDevice = [ "/dev/net/tun:/dev/net/tun" ];
-            PublishPort = [ "127.0.0.1:${toString cfg.ports.qbittorrent}:${toString cfg.ports.qbittorrent}" ];
-            EnvironmentFile = [ gluetunEnvironmentFile ];
-            Environment = [
-              "VPN_SERVICE_PROVIDER=protonvpn"
-              "VPN_TYPE=wireguard"
-              "PORT_FORWARD_ONLY=on"
-              "VPN_PORT_FORWARDING=on"
-              "VPN_PORT_FORWARDING_UP_COMMAND=${qbittorrentPortForwardUpCommand}"
-              "VPN_PORT_FORWARDING_DOWN_COMMAND=${qbittorrentPortForwardDownCommand}"
-              "FIREWALL_INPUT_PORTS=${toString cfg.ports.qbittorrent}"
-              "TZ=Europe/Berlin"
-            ];
-            Volume = [ "${gluetunStateDir}:/gluetun:rw" ];
-            HealthCmd = "/gluetun-entrypoint healthcheck";
-            HealthInterval = "30s";
-            HealthTimeout = "10s";
-            HealthRetries = 3;
-            HealthStartPeriod = "30s";
-            HealthOnFailure = "kill";
-            Notify = "healthy";
-          };
-        };
-
-        home-dl-qbittorrent = {
-          autoStart = true;
-          serviceConfig = {
-            RestartSec = "30";
-            Restart = "always";
-          };
-          unitConfig = {
-            RequiresMountsFor = [
-              stateDirActual
-              dlLocalPath
-            ];
-          };
-          containerConfig = {
-            # renovate: docker-image
-            Image = "lscr.io/linuxserver/qbittorrent:5.2.3-libtorrentv1@sha256:1a4ebea9aaf5907a2eabc461a086a2989769c269d6b508ac07b7db9051c33c74";
-            ContainerName = "home-dl-qbittorrent";
-            Network = "home-dl-gluetun.container";
-            User = toString mediaUid;
-            Group = toString mediaGid;
-            Environment = [
-              "PUID=${toString mediaUid}"
-              "PGID=${toString mediaGid}"
-              "TZ=Europe/Berlin"
-              "UMASK=007"
-              "WEBUI_PORT=${toString cfg.ports.qbittorrent}"
-              "TORRENTING_PORT=6881"
-            ];
-            Volume = [
-              "${qbittorrentStateDir}:/config:rw"
-              "${dlLocalPath}:/downloads:rw"
-            ];
-          };
-        };
-      };
-    };
-
     site.gatus.endpoints = [
       {
         name = "Prowlarr";
@@ -405,11 +253,6 @@ in
         group = "Media & Library";
         url = "https://${ingresses.sonarr.domain}/_health/gatus";
       }
-      {
-        name = "qBittorrent";
-        group = "Media & Library";
-        url = "https://${qbittorrentDomain}/";
-      }
     ];
 
     modules.services.caddy.protectedRoutes = lib.mapAttrs (_name: ingress: {
@@ -417,10 +260,5 @@ in
       publicHost = ingress.domain;
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
     }) ingresses;
-    modules.services.caddy.routes.qbittorrent = {
-      publicHost = qbittorrentDomain;
-      upstream = "http://127.0.0.1:${toString cfg.ports.qbittorrent}";
-      requestBodyMaxSize = "10MB";
-    };
   };
 }

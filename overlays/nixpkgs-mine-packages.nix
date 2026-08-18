@@ -24,6 +24,8 @@ in
   inherit (nixpkgs-mine) ocis_71-bin;
   inherit (nixpkgs-mine) ocis_72-bin;
   inherit (nixpkgs-mine) ocis_73-bin;
+  inherit (nixpkgs-mine) qbittorrent-nox;
+  inherit (nixpkgs-mine) qui;
   inherit (nixpkgs-mine) roon-server;
   #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
