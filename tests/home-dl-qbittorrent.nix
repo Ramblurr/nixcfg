@@ -172,7 +172,26 @@ assert
     RandomPort = false;
     UPnP = false;
   };
-assert qbittorrent.serverConfig.Preferences.Downloads.SavePath == "/mnt/downloads/complete/";
+assert
+  qbittorrent.serverConfig.BitTorrent.Session == {
+    DHTEnabled = false;
+    LSDEnabled = false;
+    PeXEnabled = false;
+    TorrentContentLayout = "Subfolder";
+  };
+assert
+  qbittorrent.serverConfig.Preferences.Downloads == {
+    SavePath = "/mnt/downloads/torrents/qbit/complete/";
+    TempPath = "/mnt/downloads/torrents/qbit/incomplete/";
+    TempPathEnabled = true;
+  };
+assert
+  qbittorrent.serverConfig.Preferences.Queueing == {
+    MaxActiveDownloads = 10;
+    MaxActiveTorrents = 100;
+    MaxActiveUploads = 90;
+    QueueingEnabled = true;
+  };
 assert
   config.systemd.services.qbittorrent.vpnConfinement == {
     enable = true;

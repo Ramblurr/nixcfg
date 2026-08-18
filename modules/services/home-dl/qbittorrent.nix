@@ -13,6 +13,7 @@ let
   mediaGroup = home-ops.groups.media.name;
   stateDir = "/var/lib/private/home-dl";
   downloadsDir = "/mnt/downloads";
+  qbittorrentDownloadsDir = "${downloadsDir}/torrents/qbit";
   qbittorrentStateDir = "${stateDir}/qbittorrent";
   qbittorrentProfileDir = "/var/lib/qbittorrent";
   quiStateDir = "${stateDir}/qui";
@@ -267,6 +268,12 @@ in
       openFirewall = false;
       serverConfig = {
         LegalNotice.Accepted = true;
+        BitTorrent.Session = {
+          DHTEnabled = false;
+          LSDEnabled = false;
+          PeXEnabled = false;
+          TorrentContentLayout = "Subfolder";
+        };
         Preferences = {
           Connection = {
             Interface = "lo";
@@ -275,14 +282,14 @@ in
             UPnP = false;
           };
           Downloads = {
-            SavePath = "${downloadsDir}/complete/";
-            TempPath = "${downloadsDir}/incomplete/";
+            SavePath = "${qbittorrentDownloadsDir}/complete/";
+            TempPath = "${qbittorrentDownloadsDir}/incomplete/";
             TempPathEnabled = true;
           };
           Queueing = {
-            MaxActiveDownloads = 5;
-            MaxActiveTorrents = 10;
-            MaxActiveUploads = 5;
+            MaxActiveDownloads = 10;
+            MaxActiveTorrents = 100;
+            MaxActiveUploads = 90;
             QueueingEnabled = true;
           };
           WebUI = {
@@ -348,6 +355,8 @@ in
 
     systemd.tmpfiles.rules = [
       "d ${qbittorrentStateDir} 0770 ${mediaUser} ${mediaGroup}"
+      "d ${qbittorrentDownloadsDir}/complete 0770 ${mediaUser} ${mediaGroup}"
+      "d ${qbittorrentDownloadsDir}/incomplete 0770 ${mediaUser} ${mediaGroup}"
       "d ${quiStateDir} 0750 qui qui"
     ];
 
