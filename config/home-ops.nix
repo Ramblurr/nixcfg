@@ -15,11 +15,6 @@ let
   cfg = config.home-ops;
   postgresqlBackupEnabled = cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
-  podmanWaitForDns = pkgs.writeShellScript "podman-wait-for-dns" ''
-    until ${pkgs.glibc.getent}/bin/getent ahostsv4 registry-1.docker.io >/dev/null 2>&1; do
-      ${pkgs.coreutils}/bin/sleep 0.5
-    done
-  '';
 in
 {
   options.home-ops = {
@@ -206,6 +201,9 @@ in
       sopsFile = ../configs/home-ops/shared.sops.yml;
       mode = "400";
     };
+
+    modules.services.podman.enable = cfg.containers.enable;
+
     modules.services.postgresql = lib.mkIf cfg.postgresql.enable {
       enable = true;
       package = pkgs.postgresql_15;
@@ -233,9 +231,6 @@ in
     };
     modules.services.ingress-home-assistant.enable = true;
     modules.services.ingress-octoprint.enable = true;
-
-    virtualisation.podman.enable = lib.mkIf cfg.containers.enable true;
-    virtualisation.oci-containers = lib.mkIf cfg.containers.enable { backend = "podman"; };
 
     ######################
     # Impermanence Setup #
@@ -373,20 +368,6 @@ in
       Restart = "always";
       RestartSec = "5s";
     };
-
-    # Podman's rootless Quadlets already wait for this user unit to observe the
-    # system network-online target. On these hosts, DNS is provided by the local
-    # dnsdist instance and can remain unavailable while its upstream health
-    # checks recover. Keep the unit activating until external DNS works so
-    # containers do not exhaust their image-pull retries during boot.
-    systemd.user.services.podman-user-wait-network-online =
-      lib.mkIf config.virtualisation.podman.enable
-        {
-          serviceConfig = {
-            ExecStartPost = podmanWaitForDns;
-            TimeoutStartSec = "180s";
-          };
-        };
 
     ########################
     # Application Services #
