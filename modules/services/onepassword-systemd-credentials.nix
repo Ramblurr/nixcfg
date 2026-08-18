@@ -24,7 +24,7 @@ let
     "systemd-networkd"
     "systemd-networkd-wait-online"
   ];
-  tokenSecretName = "onepassword-connect/token";
+  tokenSecretName = "onepassword-connect-token";
   tokenFile =
     if cfg.bootstrapTokenFile == null then
       config.sops.secrets.${tokenSecretName}.path
@@ -164,19 +164,13 @@ in
       description = "1Password CLI package used to resolve op:// references.";
     };
 
-    bootstrapTokenSopsFile = lib.mkOption {
-      type = lib.types.path;
-      default = ../../configs/home-ops/shared.sops.yml;
-      description = "SOPS document containing onepassword-connect/token.";
-    };
-
     bootstrapTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
       example = "/run/credentials/onepassword-bootstrap/token";
       description = ''
         Optional externally managed runtime Connect token. When null, the module
-        declares onepassword-connect/token from bootstrapTokenSopsFile.
+        declares the host-local SOPS secret onepassword-connect-token.
       '';
     };
 
@@ -230,7 +224,6 @@ in
     ];
 
     sops.secrets.${tokenSecretName} = lib.mkIf (cfg.bootstrapTokenFile == null) {
-      sopsFile = cfg.bootstrapTokenSopsFile;
       owner = "root";
       group = "root";
       mode = "0400";
