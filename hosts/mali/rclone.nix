@@ -6,8 +6,6 @@
 }:
 
 let
-  mkHealthcheckStart = hc: "${pkgs.curl}/bin/curl --retry 3 ${hc}/start";
-  mkHealthcheckReturn = hc: "${pkgs.curl}/bin/curl --retry 3 ${hc}/$?";
   mkRcloneJob =
     {
       name,
@@ -15,7 +13,7 @@ let
       target,
       calendar,
       extraOpts ? [ ],
-      healthcheck ? null,
+      ...
     }:
     {
       service = {
@@ -24,14 +22,12 @@ let
           wants = [ "network-online.target" ];
           after = [ "network-online.target" ];
           script = ''
-            ${lib.optionalString (healthcheck != null) mkHealthcheckStart healthcheck}
-              ${pkgs.rclone}/bin/rclone \
-              --config ${config.sops.templates."rclone.conf".path} \
-              --transfers 50 \
-              --fast-list \
-              ${lib.strings.escapeShellArgs extraOpts} \
-              sync ${source} ${target}
-            ${lib.optionalString (healthcheck != null) mkHealthcheckReturn healthcheck}
+            ${pkgs.rclone}/bin/rclone \
+            --config ${config.sops.templates."rclone.conf".path} \
+            --transfers 50 \
+            --fast-list \
+            ${lib.strings.escapeShellArgs extraOpts} \
+            sync ${source} ${target}
           '';
 
           serviceConfig = {
@@ -66,7 +62,7 @@ let
   #     source = "google-personal:";
   #     target = "/mnt/tank2/backups/some-path";
   #     calendar = "*-*-* 14:00:00";
-  #     healthcheck = "https://hc-ping.com/some-uuid"; # optional
+  #     heartbeatInterval = "30h"; # optional; defaults to 30h
   #     extraOpts = [ "--drive-skip-dangling-shortcuts" ]; # specific to google drive
   #   }
   # ];
@@ -74,6 +70,17 @@ let
 
   jobServices = mergeServices "service" builtJobs;
   jobTimers = mergeServices "timer" builtJobs;
+  jobHeartbeats = builtins.listToAttrs (
+    map (job: {
+      name = "rclone-${job.name}";
+      value = {
+        service = "rclone-${job.name}";
+        name = "Rclone Backup: ${job.name}";
+        group = config.site.gatus.groups.home;
+        interval = job.heartbeatInterval or "30h";
+      };
+    }) config.repo.secrets.local.rcloneJobs
+  );
 in
 {
   sops.secrets = {
@@ -103,6 +110,7 @@ in
       team_drive =
     '';
   };
+  site.gatus.heartbeats = jobHeartbeats;
   systemd.services = jobServices;
   systemd.timers = jobTimers;
 }
