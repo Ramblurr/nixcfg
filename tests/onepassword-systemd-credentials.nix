@@ -31,8 +31,8 @@ let
           networking.hostName = name;
           system.stateVersion = "26.05";
           site.net.mgmt.hosts4.onepassword-connect = [ virtualAddress ];
+          sops.defaultSopsFile = tokenSopsFile;
           modules.services.onepassword-systemd-credentials = {
-            bootstrapTokenSopsFile = tokenSopsFile;
             inherit bootstrapTokenFile;
             package = testOp;
             consumers.${consumerService}.password = reference;
@@ -83,7 +83,7 @@ let
       socket = cfg.systemd.sockets.onepassword-credential-provider;
       helper = cfg.systemd.services."onepassword-credential-provider@";
       consumer = cfg.systemd.services.example;
-      token = cfg.sops.secrets."onepassword-connect/token";
+      token = cfg.sops.secrets.onepassword-connect-token;
       hardening = lib.getAttrs [
         "DynamicUser"
         "PrivateTmp"
