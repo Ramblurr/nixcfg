@@ -136,7 +136,6 @@ in
     ];
 
     systemd.services.${config.services.matrix-synapse.serviceUnit} = {
-      after = [ "postgresql.service" ];
       unitConfig = {
         RequiresMountsFor = [ cfg.dataDir ];
       };

@@ -79,6 +79,8 @@ let
   roleService = hostConfig.systemd.services.databasus-pg-matrix-role;
   proxyService = hostConfig.systemd.services.databasus-pg-matrix-proxy;
   proxySocket = hostConfig.systemd.sockets.databasus-pg-matrix-proxy;
+  synapseService = hostConfig.systemd.services.matrix-synapse;
+  discordService = hostConfig.systemd.services.mautrix-discord;
   authentication = containerConfig.services.postgresql.authentication;
 in
 assert
@@ -112,6 +114,13 @@ assert builtins.elem "${pkgs.coreutils}/bin/test -s %d/POSTGRES_PASSWORD"
 assert lib.hasInfix "CREATE ROLE databasus_pg_matrix" roleService.script;
 assert lib.hasInfix "LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE REPLICATION NOBYPASSRLS"
   roleService.script;
+assert builtins.elem "container@pg-matrix.service" synapseService.requires;
+assert builtins.elem "container@pg-matrix.service" synapseService.after;
+assert !(builtins.elem "postgresql.service" synapseService.after);
+assert builtins.elem "container@pg-matrix.service" discordService.requires;
+assert builtins.elem "container@pg-matrix.service" discordService.after;
+assert !(builtins.elem "postgresql.service" discordService.wants);
+assert !(builtins.elem "postgresql.service" discordService.after);
 assert proxySocket.socketConfig.ListenStream == "192.0.2.14:5433";
 assert builtins.elem "container@pg-matrix.service" proxyService.requires;
 assert lib.hasInfix "systemd-socket-proxyd /run/postgresql-matrix-synapse/.s.PGSQL.5432"

@@ -214,14 +214,8 @@ in
         lottieconverter
       ];
       wantedBy = [ "multi-user.target" ];
-      wants = [
-        "mautrix-discord-genregistration.service"
-        "postgresql.service"
-      ];
-      after = [
-        "mautrix-discord-genregistration.service"
-        "postgresql.service"
-      ];
+      wants = [ "mautrix-discord-genregistration.service" ];
+      after = [ "mautrix-discord-genregistration.service" ];
       serviceConfig = {
         Type = "simple";
         Restart = "always";

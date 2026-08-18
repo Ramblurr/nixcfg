@@ -53,6 +53,16 @@ in
       iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${deweyMgmtAddress} tcp dport 5433 accept comment "Databasus pg-matrix physical backup"
     '';
 
+    systemd.services.matrix-synapse = {
+      requires = [ "container@pg-matrix.service" ];
+      after = [ "container@pg-matrix.service" ];
+    };
+
+    systemd.services.mautrix-discord = lib.mkIf cfg.bridges.discord.enable {
+      requires = [ "container@pg-matrix.service" ];
+      after = [ "container@pg-matrix.service" ];
+    };
+
     systemd.sockets.databasus-pg-matrix-proxy = {
       description = "Databasus proxy for the pg-matrix PostgreSQL socket";
       wantedBy = [ "sockets.target" ];
