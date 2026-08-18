@@ -13,32 +13,12 @@ let
   inherit (config.modules.users.primaryUser) username;
   inherit (config.repo.secrets) home-ops;
   cfg = config.home-ops;
-  onepassword = config.modules.services.onepassword-systemd-credentials;
-  postgresqlBackupEnabled = cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
-  pgbackrestEnabled = cfg.postgresql.enable && postgresqlBackupEnabled;
   nodeSettings = config.repo.secrets.global.nodes.${config.networking.hostName};
 in
 {
   options.home-ops = {
     enable = lib.mkEnableOption "My modular multi-host Home Ops setup";
-    postgresql = {
-      enable = lib.mkEnableOption "Postgresql";
-      onsiteBackup = {
-        enable = lib.mkEnableOption "Onsite Backup";
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = "/${config.networking.hostName}/repo1";
-        };
-      };
-
-      offsiteBackup = {
-        enable = lib.mkEnableOption "Offsite Backup";
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = "/${config.networking.hostName}/repo2";
-        };
-      };
-    };
+    postgresql.enable = lib.mkEnableOption "Postgresql";
     mariadb = {
       enable = lib.mkEnableOption "MariaDB";
     };
@@ -83,18 +63,9 @@ in
   imports = [ ./zrepl.nix ];
   config = lib.mkIf cfg.enable {
     assertions = [
-      #{
-      #  assertion =
-      #    cfg.postgresql.enable -> cfg.postgresql.onsiteBackup.enable || cfg.postgresql.offsiteBackup.enable;
-      #  message = "Postgresql must be configured with backup repositories";
-      #}
       {
         assertion = !(cfg.apps.ocis-work.enable && cfg.apps.ocis-home.enable);
         message = "OCIS Work and OCIS Home cannot be enabled at the same time on the same host";
-      }
-      {
-        assertion = !pgbackrestEnabled || onepassword.enable;
-        message = "PostgreSQL backup credentials require the 1Password systemd credential provider.";
       }
     ];
 
@@ -203,56 +174,11 @@ in
       storage.zfs.enable = true;
       net.prim.enable = true;
     };
-    modules.services.onepassword-systemd-credentials.consumers.pgbackrest-secrets-setup =
-      lib.mkIf pgbackrestEnabled
-        {
-          repo1-s3-key-secret = "op://home-ops-prod/pgbackrest/repo1-s3-key-secret";
-          repo1-cipher-pass = "op://home-ops-prod/pgbackrest/repo1-cipher-pass";
-          repo2-s3-key = "op://home-ops-prod/pgbackrest/repo2-s3-key";
-          repo2-s3-key-secret = "op://home-ops-prod/pgbackrest/repo2-s3-key-secret";
-          repo2-cipher-pass = "op://home-ops-prod/pgbackrest/repo2-cipher-pass";
-        };
-
-    systemd.services.pgbackrest-secrets-setup = lib.mkIf pgbackrestEnabled {
-      description = "Prepare pgBackRest configuration from 1Password credentials";
-      before = [ "postgresql.service" ];
-      requiredBy = [ "postgresql.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        RuntimeDirectory = "pgbackrest";
-        UMask = "0077";
-      };
-      script = ''
-        install -m0400 -o postgres -g postgres /dev/null /run/pgbackrest/secrets.conf
-        {
-          printf '%s\n' '[global]' 'repo1-s3-key=pg-crunchy-app-db'
-          printf 'repo1-s3-key-secret=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/repo1-s3-key-secret")"
-          printf 'repo1-cipher-pass=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/repo1-cipher-pass")"
-          printf 'repo2-s3-key=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/repo2-s3-key")"
-          printf 'repo2-s3-key-secret=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/repo2-s3-key-secret")"
-          printf 'repo2-cipher-pass=%s\n' "$(cat "$CREDENTIALS_DIRECTORY/repo2-cipher-pass")"
-        } > /run/pgbackrest/secrets.conf
-      '';
-    };
     modules.services.podman.enable = cfg.containers.enable;
 
     modules.services.postgresql = lib.mkIf cfg.postgresql.enable {
       enable = true;
       package = pkgs.postgresql_15;
-      secretsFile = lib.mkIf postgresqlBackupEnabled "/run/pgbackrest/secrets.conf";
-      repo1 = {
-        inherit (cfg.postgresql.onsiteBackup) enable;
-        inherit (cfg.postgresql.onsiteBackup) path;
-        inherit (home-ops.pgBackup.onsite) bucket;
-        inherit (home-ops.pgBackup.onsite) endpoint;
-      };
-      repo2 = {
-        inherit (cfg.postgresql.offsiteBackup) enable;
-        inherit (cfg.postgresql.offsiteBackup) path;
-        inherit (home-ops.pgBackup.offsite) bucket;
-        inherit (home-ops.pgBackup.offsite) endpoint;
-      };
     };
     modules.services.mariadb = lib.mkIf cfg.mariadb.enable {
       enable = true;

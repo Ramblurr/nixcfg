@@ -51,11 +51,7 @@ in
   };
   home-ops = {
     enable = true;
-    postgresql = {
-      enable = true;
-      onsiteBackup.enable = false;
-      offsiteBackup.enable = false;
-    };
+    postgresql.enable = true;
     mariadb.enable = true;
     containers.enable = true;
     apps = {
