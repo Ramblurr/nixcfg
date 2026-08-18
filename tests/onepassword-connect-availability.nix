@@ -27,6 +27,7 @@ let
       system = pkgs.stdenv.hostPlatform.system;
       modules = [
         inputs.quadlet-nix2.nixosModules.default
+        inputs.home-manager.nixosModules.home-manager
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
         ../modules/services/onepassword-connect.nix
@@ -58,6 +59,7 @@ let
             nftables.enable = true;
           };
           system.stateVersion = "26.05";
+          home-manager.users.${user.name}.home.stateVersion = "26.05";
           repo.secrets = {
             global.nameservers = [ "192.0.2.53" ];
             home-ops = {
@@ -142,6 +144,14 @@ let
     && credentials.group == group.name
     && credentials.mode == "0400"
     && credentials.restartUnits == [ ]
+    && cfg.users.users.${user.name}.shell == pkgs.bashInteractive
+    && lib.any (package: lib.getName package == "op-connectctl") cfg.environment.systemPackages
+    &&
+      cfg.home-manager.users.${user.name}.home.sessionVariables.DBUS_SESSION_BUS_ADDRESS
+      == "unix:path=/run/user/${toString user.uid}/bus"
+    &&
+      cfg.home-manager.users.${user.name}.home.sessionVariables.XDG_RUNTIME_DIR
+      == "/run/user/${toString user.uid}"
     &&
       service.cacheDataset == (
         if name == "mali" then
