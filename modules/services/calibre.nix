@@ -79,7 +79,14 @@ in
         PUID = "2000";
         PGID = "2000";
       };
-      extraOptions = [ ];
+      extraOptions = [
+        "--health-cmd=curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8081/ >/dev/null"
+        "--health-interval=30s"
+        "--health-timeout=15s"
+        "--health-start-period=5m"
+        "--health-retries=3"
+        "--health-on-failure=kill"
+      ];
     };
 
     site.gatus.endpoints = [
@@ -103,7 +110,6 @@ in
     modules.services.caddy.routes.calibre-server = {
       publicHost = cfg.domain.server;
       upstream = "http://127.0.0.1:${toString cfg.ports.server}";
-      requestHeaders.Authorization = "{http.request.header.Authorization}";
     };
 
   };
