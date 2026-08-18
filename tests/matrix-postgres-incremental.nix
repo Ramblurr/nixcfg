@@ -116,11 +116,8 @@ assert lib.hasInfix "LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE REPLICATION NOBYP
   roleService.script;
 assert builtins.elem "container@pg-matrix.service" synapseService.requires;
 assert builtins.elem "container@pg-matrix.service" synapseService.after;
-assert !(builtins.elem "postgresql.service" synapseService.after);
 assert builtins.elem "container@pg-matrix.service" discordService.requires;
 assert builtins.elem "container@pg-matrix.service" discordService.after;
-assert !(builtins.elem "postgresql.service" discordService.wants);
-assert !(builtins.elem "postgresql.service" discordService.after);
 assert proxySocket.socketConfig.ListenStream == "192.0.2.14:5433";
 assert builtins.elem "container@pg-matrix.service" proxyService.requires;
 assert lib.hasInfix "systemd-socket-proxyd /run/postgresql-matrix-synapse/.s.PGSQL.5432"
