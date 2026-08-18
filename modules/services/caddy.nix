@@ -149,6 +149,11 @@ let
           default = [ ];
           description = "Path prefixes proxied without Caddy authentication";
         };
+        healthCheckPath = lib.mkOption {
+          type = lib.types.nullOr lib.types.nonEmptyStr;
+          default = null;
+          description = "Upstream URI served at the exact unauthenticated /_health/gatus path";
+        };
         identityHeaders = lib.mkOption {
           type = lib.types.attrsOf lib.types.nonEmptyStr;
           default = { };
@@ -290,9 +295,21 @@ let
       }
     }
   '';
+  mkHealthCheck =
+    app:
+    lib.optionalString (app.healthCheckPath != null) ''
+      handle /_health/gatus {
+        route {
+          ${mkHeaderScrub app}
+          rewrite * ${app.healthCheckPath}
+          reverse_proxy ${app.upstream}
+        }
+      }
+    '';
   mkApplicationRoute = name: app: ''
     @protected_${appId name} host ${lib.concatStringsSep " " (routeHosts app)}
     handle @protected_${appId name} {
+      ${mkHealthCheck app}
       handle ${portalPath app}* {
         authenticate with ${portalName name}
       }
@@ -698,6 +715,12 @@ in
           app: lib.all (pathPrefix: lib.hasPrefix "/" pathPrefix) app.bypassPathPrefixes
         ) applications;
         message = "Protected Caddy bypass path prefixes must begin with a slash";
+      }
+      {
+        assertion = lib.all (
+          app: app.healthCheckPath == null || lib.hasPrefix "/" app.healthCheckPath
+        ) applications;
+        message = "Protected Caddy health check paths must begin with a slash";
       }
       {
         assertion = lib.all (app: effectiveGroups app != [ ]) applications;

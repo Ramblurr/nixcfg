@@ -87,6 +87,7 @@ let
             clientID = "alpha-client-id";
             requiredGroups = [ "books" ];
             bypassPathPrefixes = [ "/opds" ];
+            healthCheckPath = "/ping?full=true";
             identityHeaders = {
               Remote-User = "userinfo|preferred_username";
             };
@@ -188,6 +189,8 @@ assert lib.hasInfix "@protected_calibre_web host books.example.test" caddy.extra
 assert lib.hasInfix "realm calibre-pocket-id" caddy.globalConfig;
 assert lib.hasInfix "/oauth2/calibre-pocket-id" caddy.globalConfig;
 assert lib.hasInfix "@protected_alpha host alpha.example.test" caddy.extraConfig;
+assert lib.hasInfix "handle /_health/gatus" caddy.extraConfig;
+assert lib.hasInfix "rewrite * /ping?full=true" caddy.extraConfig;
 assert lib.hasInfix "respond @unknown_host 421" caddy.extraConfig;
 assert !lib.hasInfix "18080" caddy.globalConfig;
 assert !lib.hasInfix "18080" caddy.extraConfig;
