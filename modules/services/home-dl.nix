@@ -18,21 +18,25 @@ let
     radarr = {
       domain = "radarr.${cfg.baseDomain}";
       port = 7878;
+      healthCheckPath = "/ping";
       forwardAuth = true;
     };
     sonarr = {
       domain = "sonarr.${cfg.baseDomain}";
       port = 8989;
+      healthCheckPath = "/ping";
       forwardAuth = true;
     };
     prowlarr = {
       domain = "prowlarr.${cfg.baseDomain}";
       port = 9696;
+      healthCheckPath = "/ping";
       forwardAuth = true;
     };
     sabnzbd = {
       domain = "sabnzbd.${cfg.baseDomain}";
       port = 8080;
+      healthCheckPath = "/api?mode=version&output=json";
       forwardAuth = true;
     };
   };
@@ -384,26 +388,22 @@ in
       {
         name = "Prowlarr";
         group = "Media & Library";
-        url = "https://${ingresses.prowlarr.domain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${ingresses.prowlarr.domain}/_health/gatus";
       }
       {
         name = "Radarr";
         group = "Media & Library";
-        url = "https://${ingresses.radarr.domain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${ingresses.radarr.domain}/_health/gatus";
       }
       {
         name = "SABnzbd";
         group = "Media & Library";
-        url = "https://${ingresses.sabnzbd.domain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${ingresses.sabnzbd.domain}/_health/gatus";
       }
       {
         name = "Sonarr";
         group = "Media & Library";
-        url = "https://${ingresses.sonarr.domain}/";
-        conditions = [ "[STATUS] == 302" ];
+        url = "https://${ingresses.sonarr.domain}/_health/gatus";
       }
       {
         name = "qBittorrent";
@@ -413,6 +413,7 @@ in
     ];
 
     modules.services.caddy.protectedRoutes = lib.mapAttrs (_name: ingress: {
+      inherit (ingress) healthCheckPath;
       publicHost = ingress.domain;
       upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
     }) ingresses;
