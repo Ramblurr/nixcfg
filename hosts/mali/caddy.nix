@@ -11,7 +11,7 @@ in
     certificateHosts = [
       "attic.mgmt.${homeDomain}"
       "attic.int.${homeDomain}"
-      "databasus.mgmt.${homeDomain}"
+      "databasus.${homeDomain}"
       "nix-cache.int.${homeDomain}"
       "garage.data.${homeDomain}"
       "garage.mgmt.${homeDomain}"
