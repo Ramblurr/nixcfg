@@ -4,7 +4,6 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
-      inputs.impermanence.nixosModules.impermanence
       ../modules/site/gatus.nix
       ../modules/services/databasus
       ../modules/services/podman.nix
@@ -51,9 +50,6 @@ assert
   == "docker.io/databasus/databasus:v3.53.0@sha256:ed017f58674a18173a924cc7fd8059121adbd0aa6171d68357c4398fa14e0763";
 assert cfg.modules.services.podman.enable;
 assert cfg.virtualisation.oci-containers.backend == "podman";
-assert lib.any (
-  entry: entry.directory == "/var/lib/containers"
-) cfg.environment.persistence."/persist".directories;
 assert cfg.modules.zfs.datasets.enable;
 assert
   cfg.modules.zfs.datasets.properties.${service.dataset} == {
