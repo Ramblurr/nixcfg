@@ -81,8 +81,8 @@ in
     environment.persistence."/persist".directories = [
       {
         directory = "/var/lib/${serviceName}";
-        user = serviceName;
-        group = serviceName;
+        # userborn has not created this service user when persistence activation runs.
+        # systemd applies StateDirectory ownership before starting the service.
         mode = "0700";
       }
     ];
