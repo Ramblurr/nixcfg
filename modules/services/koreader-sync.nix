@@ -1,10 +1,12 @@
 {
   config,
+  inputs,
   lib,
   ...
 }:
 let
   cfg = config.modules.services.koreader-sync;
+  package = inputs.koreader-syncd.packages.${config.nixpkgs.hostPlatform.system}.default;
   stateDir = "/var/lib/koreader-sync";
 in
 {
@@ -12,7 +14,7 @@ in
     enable = lib.mkEnableOption "koreader-sync";
     domain = lib.mkOption {
       type = lib.types.str;
-      description = "The domain to use for the calibre-web";
+      description = "The domain to use for koreader-syncd";
     };
     ports = {
       http = lib.mkOption { type = lib.types.port; };
@@ -29,8 +31,6 @@ in
     systemd.tmpfiles.rules = [
       "d '${stateDir}' 750 ${cfg.user.name} ${cfg.group.name} - -"
       "Z '${stateDir}' 750 ${cfg.user.name} ${cfg.group.name} - -"
-      "d '${stateDir}/kosync' 750 ${cfg.user.name} ${cfg.group.name} - -"
-      "Z '${stateDir}/kosync' 750 ${cfg.user.name} ${cfg.group.name} - -"
     ];
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
@@ -47,23 +47,23 @@ in
       inherit (cfg.group) name;
       gid = lib.mkForce cfg.group.gid;
     };
-    virtualisation.oci-containers.containers.koreader-sync = {
-      autoStart = false;
-      # renovate: docker-image
-      image = "ghcr.io/ramblurr/kosync:0.1.0@sha256:07bf51b5ee0cb41e6c84e9a2a136ef711c50b076bcd44be0244e0f42d643cd9f";
-      ports = [ "127.0.0.1:${toString cfg.ports.http}:3000" ];
-      volumes = [ "${stateDir}/kosync:/srv/data:rw" ];
-      podman = {
-        user = cfg.user.name;
-        sdnotify = "healthy";
+    systemd.services.koreader-syncd = {
+      description = "KOReader sync server";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        ExecStart = "${package}/bin/koreader-syncd -a 127.0.0.1:${toString cfg.ports.http} -d ${stateDir}/state.db";
+        User = cfg.user.name;
+        Group = cfg.group.name;
+        Restart = "on-failure";
+        RestartSec = "5s";
+        NoNewPrivileges = true;
+        ProtectSystem = "strict";
+        ReadWritePaths = stateDir;
+        ProtectHome = true;
+        PrivateTmp = true;
       };
-      extraOptions = [
-        "--health-cmd=curl -s http://localhost:3000/healthcheck > /dev/null || exit 1"
-        "--health-interval=30s"
-        "--health-timeout=3s"
-        "--health-start-period=5s"
-        "--health-retries=3"
-      ];
     };
 
     modules.services.caddy.routes.koreader = {

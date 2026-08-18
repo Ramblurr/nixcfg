@@ -32,6 +32,8 @@
     impermanence.inputs.home-manager.follows = "";
     # do not follow nixpkgs: impermanence does not need it when consumed as a module
     impermanence.inputs.nixpkgs.follows = "";
+    koreader-syncd.url = "github:pborzenkov/koreader-syncd";
+    koreader-syncd.inputs.nixpkgs.follows = "nixpkgs";
     libro-fm-cli.url = "github:ramblurr/libro-fm-cli";
     libro-fm-cli.inputs.devshell.follows = "devshell";
     libro-fm-cli.inputs.nixpkgs.follows = "nixpkgs";
