@@ -96,8 +96,6 @@ assert lib.any (lib.hasInfix adminPasswordPath) execStart;
 assert lib.any (lib.hasInfix appSecretPath) execStart;
 assert !(builtins.elem "sops-install-secrets.service" service.requires);
 assert !(builtins.elem "sops-install-secrets.service" service.after);
-assert builtins.hasAttr "davis/APP_SECRET" cfg.sops.secrets;
-assert builtins.hasAttr "davis/ADMIN_PASSWORD" cfg.sops.secrets;
-assert cfg.sops.secrets."davis/APP_SECRET".path != appSecretPath;
-assert cfg.sops.secrets."davis/ADMIN_PASSWORD".path != adminPasswordPath;
+assert !(builtins.hasAttr "davis/APP_SECRET" cfg.sops.secrets);
+assert !(builtins.hasAttr "davis/ADMIN_PASSWORD" cfg.sops.secrets);
 pkgs.runCommand "davis-onepassword-credentials" { } "touch $out"
