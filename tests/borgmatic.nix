@@ -4,14 +4,17 @@ let
   secretFile = pkgs.writeText "borgmatic-test-secrets.yaml" "{}\n";
   hostName = "quine";
   gatusUrl = "https://status.example.test";
-  endpointKey = "infrastructure---operations_borgmatic-backup-(quine)";
+  heartbeat = lib.getExe (pkgs.callPackage ../pkgs/gatus-heartbeat.nix { });
   startFile = "/run/borgmatic/gatus-start";
   evaluate =
     enable:
     lib.nixosSystem {
       modules = [
         inputs.sops-nix.nixosModules.sops
+        ../modules/services/onepassword-systemd-credentials.nix
         ../modules/site/gatus.nix
+        ../modules/site/gatus-heartbeats.nix
+        ../modules/site/gatus-heartbeats-onepassword.nix
         ../modules/services/borgmatic.nix
         {
           options.repo.secrets = lib.mkOption { type = lib.types.attrs; };
@@ -43,7 +46,6 @@ let
     };
   enabled = (evaluate true).config;
   disabled = (evaluate false).config;
-  curl = lib.getExe pkgs.curl;
   date = lib.getExe' pkgs.coreutils "date";
   expectedCommands = [
     {
@@ -56,14 +58,14 @@ let
       when = [ "create" ];
       states = [ "finish" ];
       run = [
-        ''${curl} --fail --silent --show-error --retry 3 --request POST --header "Authorization: Bearer $BORGMATIC_GATUS_TOKEN" "${gatusUrl}/api/v1/endpoints/${endpointKey}/external?success=true&duration=$(( $(${date} +%s) - $(cat ${startFile}) ))s" || echo "Failed to report Borgmatic success to Gatus" >&2''
+        ''${heartbeat} report --url "${gatusUrl}" --group "Infrastructure & Operations" --name "Borgmatic Backup (${hostName})" --success true --duration "$(( $(${date} +%s) - $(cat ${startFile}) ))s"''
       ];
     }
     {
       after = "error";
       when = [ "create" ];
       run = [
-        ''${curl} --fail --silent --show-error --retry 3 --get --request POST --header "Authorization: Bearer $BORGMATIC_GATUS_TOKEN" --data-urlencode "success=false" --data-urlencode error={error} "${gatusUrl}/api/v1/endpoints/${endpointKey}/external" || echo "Failed to report Borgmatic failure to Gatus" >&2''
+        ''${heartbeat} report --url "${gatusUrl}" --group "Infrastructure & Operations" --name "Borgmatic Backup (${hostName})" --success false --error "{error}"''
       ];
     }
   ];
@@ -76,7 +78,7 @@ assert
     {
       name = "Borgmatic Backup (${hostName})";
       group = "Infrastructure & Operations";
-      token = "$BORGMATIC_GATUS_TOKEN";
+      token = "$GATUS_EXTERNAL_TOKEN";
       heartbeat.interval = "30h";
       alerts = [ { type = "pushover"; } ];
     }

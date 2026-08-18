@@ -8,6 +8,8 @@ let
         inputs.sops-nix.nixosModules.sops
         ../modules/services/onepassword-systemd-credentials.nix
         ../modules/site/gatus.nix
+        ../modules/site/gatus-heartbeats.nix
+        ../modules/site/gatus-heartbeats-onepassword.nix
         ../modules/services/git-archive.nix
         {
           options = {
@@ -47,11 +49,11 @@ let
 in
 assert
   credentials == {
-    GATUS_TOKEN = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
+    gatus-token = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
     GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/github-token-ol";
     GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
   };
-assert lib.hasInfix "gickup-gatus-report" service.serviceConfig.ExecStopPost;
+assert lib.hasInfix "gatus-heartbeat systemd" service.serviceConfig.ExecStopPost;
 assert
   cfg.site.gatus.externalEndpoints == [
     {

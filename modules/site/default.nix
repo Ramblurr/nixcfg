@@ -11,7 +11,10 @@ let
     ;
 in
 {
-  imports = [ ./gatus.nix ];
+  imports = [
+    ./gatus.nix
+    ./gatus-heartbeats.nix
+  ];
 
   options.site = {
     data = {

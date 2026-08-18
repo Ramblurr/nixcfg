@@ -96,6 +96,8 @@
     ./services/flatpak.nix
     ./services/forgejo.nix
     ./site/gatus.nix
+    ./site/gatus-heartbeats.nix
+    ./site/gatus-heartbeats-onepassword.nix
     ./services/gatus.nix
     ./services/git-archive.nix
     ./services/github-runner.nix

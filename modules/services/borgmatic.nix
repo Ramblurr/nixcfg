@@ -10,7 +10,7 @@ let
   hostName = config.networking.hostName;
   gatusGroup = "Infrastructure & Operations";
   gatusEndpointName = "Borgmatic Backup (${hostName})";
-  gatusEndpointKey = "infrastructure---operations_borgmatic-backup-(${lib.toLower hostName})";
+  heartbeatPackage = pkgs.callPackage ../../pkgs/gatus-heartbeat.nix { };
   gatusUrl = "https://status.${config.repo.secrets.global.domain.home}";
   gatusStartFile = "/run/borgmatic/gatus-start";
   repository =
@@ -85,15 +85,11 @@ in
       };
     };
 
-    site.gatus.externalEndpoints = [
-      {
-        name = gatusEndpointName;
-        group = gatusGroup;
-        token = "$BORGMATIC_GATUS_TOKEN";
-        heartbeat.interval = "30h";
-        alerts = [ { type = "pushover"; } ];
-      }
-    ];
+    site.gatus.heartbeats.borgmatic = {
+      name = "Borgmatic Backup";
+      group = gatusGroup;
+      interval = "30h";
+    };
     services.borgmatic = lib.mkIf cfg.enable {
       enable = true;
       enableConfigCheck = false; # We use environment variables in the config which aren't present during the config check
@@ -134,14 +130,14 @@ in
             when = [ "create" ];
             states = [ "finish" ];
             run = [
-              ''${lib.getExe pkgs.curl} --fail --silent --show-error --retry 3 --request POST --header "Authorization: Bearer $BORGMATIC_GATUS_TOKEN" "${gatusUrl}/api/v1/endpoints/${gatusEndpointKey}/external?success=true&duration=$(( $(${lib.getExe' pkgs.coreutils "date"} +%s) - $(cat ${gatusStartFile}) ))s" || echo "Failed to report Borgmatic success to Gatus" >&2''
+              ''${lib.getExe heartbeatPackage} report --url "${gatusUrl}" --group "${gatusGroup}" --name "${gatusEndpointName}" --success true --duration "$(( $(${lib.getExe' pkgs.coreutils "date"} +%s) - $(cat ${gatusStartFile}) ))s"''
             ];
           }
           {
             after = "error";
             when = [ "create" ];
             run = [
-              ''${lib.getExe pkgs.curl} --fail --silent --show-error --retry 3 --get --request POST --header "Authorization: Bearer $BORGMATIC_GATUS_TOKEN" --data-urlencode "success=false" --data-urlencode error={error} "${gatusUrl}/api/v1/endpoints/${gatusEndpointKey}/external" || echo "Failed to report Borgmatic failure to Gatus" >&2''
+              ''${lib.getExe heartbeatPackage} report --url "${gatusUrl}" --group "${gatusGroup}" --name "${gatusEndpointName}" --success false --error "{error}"''
             ];
           }
         ];
