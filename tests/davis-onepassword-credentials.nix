@@ -66,15 +66,20 @@ let
         }
       ];
     }).config;
+  provider = cfg.modules.services.onepassword-systemd-credentials;
+  creds = provider.creds.davis-env-setup;
   service = cfg.systemd.services.davis-env-setup;
   execStart = service.serviceConfig.ExecStart;
 in
-assert cfg.modules.services.onepassword-systemd-credentials.enable;
+assert provider.enable;
+assert provider.consumers.davis-env-setup == expectedCredentials;
 assert
-  cfg.modules.services.onepassword-systemd-credentials.consumers.davis-env-setup
-  == expectedCredentials;
-assert cfg.services.davis.appSecretFile == appSecretPath;
-assert cfg.services.davis.adminPasswordFile == adminPasswordPath;
+  creds == {
+    ADMIN_PASSWORD = adminPasswordPath;
+    APP_SECRET = appSecretPath;
+  };
+assert cfg.services.davis.appSecretFile == creds.APP_SECRET;
+assert cfg.services.davis.adminPasswordFile == creds.ADMIN_PASSWORD;
 assert service.requires == [ "onepassword-credential-provider.socket" ];
 assert service.after == [ "onepassword-credential-provider.socket" ];
 assert

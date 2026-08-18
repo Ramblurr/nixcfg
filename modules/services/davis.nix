@@ -7,11 +7,8 @@
 }:
 let
   cfg = config.modules.services.davis;
+  onepassword = config.modules.services.onepassword-systemd-credentials;
   inherit (config.repo.secrets) home-ops;
-  credentialService = "davis-env-setup";
-  credentialDirectory = "/run/credentials/${credentialService}.service";
-  appSecretCredential = "APP_SECRET";
-  adminPasswordCredential = "ADMIN_PASSWORD";
 in
 {
   options.modules.services.davis = {
@@ -33,14 +30,14 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = config.modules.services.onepassword-systemd-credentials.enable;
+        assertion = onepassword.enable;
         message = "Davis 1Password credentials require the systemd credential provider.";
       }
     ];
 
-    modules.services.onepassword-systemd-credentials.consumers.${credentialService} = {
-      ${appSecretCredential} = "op://home-ops-prod/davis/APP_SECRET";
-      ${adminPasswordCredential} = "op://home-ops-prod/davis/ADMIN_PASSWORD";
+    modules.services.onepassword-systemd-credentials.consumers.davis-env-setup = {
+      APP_SECRET = "op://home-ops-prod/davis/APP_SECRET";
+      ADMIN_PASSWORD = "op://home-ops-prod/davis/ADMIN_PASSWORD";
     };
     modules.services.caddy.routes.davis = {
       publicHost = cfg.domain;
@@ -87,8 +84,8 @@ in
         inviteFromAddress = home-ops.mail.notificationsFromAddress;
       };
       adminLogin = "admin";
-      adminPasswordFile = "${credentialDirectory}/${adminPasswordCredential}";
-      appSecretFile = "${credentialDirectory}/${appSecretCredential}";
+      adminPasswordFile = onepassword.creds.davis-env-setup.ADMIN_PASSWORD;
+      appSecretFile = onepassword.creds.davis-env-setup.APP_SECRET;
       config = {
         IMAP_AUTH_URL = home-ops.mail.imapAuthUrlNew;
         IMAP_ENCRYPTION_METHOD = "ssl";

@@ -187,6 +187,16 @@ in
         map. Service names omit the .service suffix.
       '';
     };
+
+    creds = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
+      readOnly = true;
+      default = lib.mapAttrs (
+        service: credentials:
+        lib.mapAttrs (credentialId: _: "/run/credentials/${service}.service/${credentialId}") credentials
+      ) cfg.consumers;
+      description = "Runtime systemd credential paths generated for configured consumers.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
