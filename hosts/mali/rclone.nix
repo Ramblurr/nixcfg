@@ -26,7 +26,7 @@ let
           script = ''
             ${lib.optionalString (healthcheck != null) mkHealthcheckStart healthcheck}
               ${pkgs.rclone}/bin/rclone \
-              --config ${config.sops.secrets."rclone.conf".path} \
+              --config ${config.sops.templates."rclone.conf".path} \
               --transfers 50 \
               --fast-list \
               ${lib.strings.escapeShellArgs extraOpts} \
@@ -76,7 +76,33 @@ let
   jobTimers = mergeServices "timer" builtJobs;
 in
 {
-  sops.secrets."rclone.conf" = { };
+  sops.secrets = {
+    "sno-box-password" = { };
+    "google-personal-client-id" = { };
+    "google-personal-client-secret" = { };
+    "google-personal-token" = { };
+  };
+  sops.templates."rclone.conf" = {
+    owner = "root";
+    group = "root";
+    mode = "0400";
+    content = ''
+      [sno-box]
+      type = webdav
+      url = https://u202054.your-storagebox.de/
+      vendor = other
+      user = u202054
+      pass = ${config.sops.placeholder."sno-box-password"}
+
+      [google-personal]
+      type = drive
+      client_id = ${config.sops.placeholder."google-personal-client-id"}
+      client_secret = ${config.sops.placeholder."google-personal-client-secret"}
+      scope = drive
+      token = ${config.sops.placeholder."google-personal-token"}
+      team_drive =
+    '';
+  };
   systemd.services = jobServices;
   systemd.timers = jobTimers;
 }
