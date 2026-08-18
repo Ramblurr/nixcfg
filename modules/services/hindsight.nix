@@ -517,7 +517,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Hindsight";
-        group = "Home & Personal";
+        group = config.site.gatus.groups.home;
         url = "https://${cfg.domain}/hindsight-api/health";
       }
     ];

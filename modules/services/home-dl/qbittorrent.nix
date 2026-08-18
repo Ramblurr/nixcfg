@@ -383,7 +383,7 @@ in
     site.gatus.endpoints = [
       {
         name = "qBittorrent";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${qbittorrentDomain}/";
       }
     ];

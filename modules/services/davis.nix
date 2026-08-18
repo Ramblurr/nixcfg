@@ -113,7 +113,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Davis";
-        group = "Home & Personal";
+        group = config.site.gatus.groups.home;
         url = "https://${cfg.domain}/";
       }
     ];

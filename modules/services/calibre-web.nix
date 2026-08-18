@@ -121,13 +121,13 @@ in
     site.gatus.endpoints = [
       {
         name = "Calibre Web";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain}/_health/gatus";
       }
     ]
     ++ lib.optional (cfg.domainKobo != "") {
       name = "Calibre Web Kobo";
-      group = "Media & Library";
+      group = config.site.gatus.groups.media;
       url = "https://${cfg.domainKobo}/login";
     };
 

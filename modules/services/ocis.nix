@@ -181,7 +181,7 @@ in
     site.gatus.endpoints = [
       {
         name = "oCIS";
-        group = "Work & Collaboration";
+        group = config.site.gatus.groups.work;
         url = "https://${cfg.domain}/";
       }
     ];

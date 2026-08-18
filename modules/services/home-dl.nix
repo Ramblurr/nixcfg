@@ -235,22 +235,22 @@ in
     site.gatus.endpoints = [
       {
         name = "Prowlarr";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${ingresses.prowlarr.domain}/_health/gatus";
       }
       {
         name = "Radarr";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${ingresses.radarr.domain}/_health/gatus";
       }
       {
         name = "SABnzbd";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${ingresses.sabnzbd.domain}/_health/gatus";
       }
       {
         name = "Sonarr";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${ingresses.sonarr.domain}/_health/gatus";
       }
     ];

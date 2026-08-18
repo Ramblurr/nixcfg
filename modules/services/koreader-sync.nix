@@ -47,7 +47,7 @@ in
     site.gatus.endpoints = [
       {
         name = "KOReader Sync";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain}/users/auth";
         conditions = [ "[STATUS] == 401" ];
       }

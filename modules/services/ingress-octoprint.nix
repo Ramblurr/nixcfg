@@ -10,7 +10,7 @@ in
     site.gatus.endpoints = [
       {
         name = "OctoPrint";
-        group = "Home & Personal";
+        group = config.site.gatus.groups.home;
         url = "https://octoprint.${homeDomain}/online.txt";
       }
     ];

@@ -28,7 +28,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Jellyfin";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain}/health";
       }
     ];

@@ -38,13 +38,13 @@ in
   site.gatus.endpoints = [
     {
       name = "So" + "Cozy ID";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://id.${homeDomain}/healthz";
       conditions = [ "[STATUS] == 204" ];
     }
     {
       name = "Outskirts Labs ID";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://id.${workDomain}/healthz";
       conditions = [ "[STATUS] == 204" ];
     }

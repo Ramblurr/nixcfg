@@ -108,7 +108,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Audiobookshelf";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain}/";
       }
     ];

@@ -84,7 +84,7 @@ in
   site.gatus.endpoints = [
     {
       name = "NCPS";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://${hostName}/";
     }
   ];

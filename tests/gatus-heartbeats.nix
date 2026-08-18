@@ -1,6 +1,7 @@
 { inputs, pkgs }:
 let
   lib = inputs.nixpkgs.lib;
+  groups = import ../modules/site/gatus-groups.nix;
   secretFile = pkgs.writeText "gatus-heartbeats-test-secrets.yaml" "{}\n";
   heartbeatPackage = pkgs.callPackage ../pkgs/gatus-heartbeat.nix { };
   evaluate =
@@ -41,7 +42,7 @@ let
           site.gatus.heartbeats.git-archive = lib.mkIf enable {
             service = "example-job";
             name = "Git Archive";
-            group = "Work & Collaboration";
+            group = groups.work;
             interval = "30h";
           };
         }
@@ -51,11 +52,12 @@ let
   disabled = evaluate false;
   reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStopPost;
 in
+assert enabled.site.gatus.groups == groups;
 assert
   enabled.site.gatus.externalEndpoints == [
     {
       name = "Git Archive (dewey)";
-      group = "Work & Collaboration";
+      group = groups.work;
       token = "$GATUS_EXTERNAL_TOKEN";
       heartbeat.interval = "30h";
       alerts = [ { type = "pushover"; } ];
@@ -65,7 +67,7 @@ assert
   enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
   == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
 assert lib.hasInfix "gatus-heartbeat systemd" reporterCommand;
-assert lib.hasInfix "--group 'Work & Collaboration'" reporterCommand;
+assert lib.hasInfix "--group '${groups.work}'" reporterCommand;
 assert lib.hasInfix "--name 'Git Archive (dewey)'" reporterCommand;
 assert disabled.site.gatus.externalEndpoints == [ ];
 pkgs.runCommand "gatus-heartbeats-test"
@@ -103,7 +105,7 @@ pkgs.runCommand "gatus-heartbeats-test"
       export GATUS_EXTERNAL_TOKEN=test-token
       gatus-heartbeat report \
         --url http://127.0.0.1:18080 \
-        --group "Work & Collaboration" \
+        --group "${groups.work}" \
         --name "Git Archive (dewey)" \
         --success true
       wait "$server_pid"

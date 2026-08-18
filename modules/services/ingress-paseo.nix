@@ -15,7 +15,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Paseo";
-        group = "Work & Collaboration";
+        group = config.site.gatus.groups.work;
         url = "https://paseo.${homeDomain}/";
       }
     ];
