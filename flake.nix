@@ -90,6 +90,7 @@
     tmux-buddy.inputs.nixpkgs.follows = "nixpkgs";
     treefmt-nix.url = "github:numtide/treefmt-nix";
     treefmt-nix.inputs.nixpkgs.follows = "nixpkgs";
+    vpn-confinement.url = "github:Maroka-chan/VPN-Confinement/b3aa71a7edfe6af748c23729d1bdec3b499741ff";
     #boxai.url = "path:/home/ramblurr/src/llm/vms";
     #boxai.inputs.nixpkgs.follows = "nixpkgs";
     #brother_ql_web.url = "github:makefu/brother_ql_web";
