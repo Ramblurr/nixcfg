@@ -28,8 +28,11 @@ let
         };
         modules.services.databasus = {
           enable = true;
-          domain = "databasus.mgmt.example.test";
-          allowedRemoteIPs = [ "192.0.2.0/24" ];
+          domain = "databasus.example.test";
+          allowedRemoteIPs = [
+            "192.0.2.0/24"
+            "100.64.0.0/10"
+          ];
         };
       }
     ];
@@ -57,7 +60,7 @@ assert container.ports == [ "127.0.0.1:4005:4005" ];
 assert container.volumes == [ "/var/lib/databasus:/databasus-data:rw" ];
 assert
   container.environment == {
-    DATABASUS_URL = "https://databasus.mgmt.example.test";
+    DATABASUS_URL = "https://databasus.example.test";
     IS_DISABLE_ANONYMOUS_TELEMETRY = "true";
   };
 assert builtins.elem "--health-cmd=databasus healthcheck" container.extraOptions;
@@ -66,8 +69,11 @@ assert builtins.elem "zfs-datasets.service" unit.after;
 assert unit.unitConfig.RequiresMountsFor == [ "/var/lib/databasus" ];
 assert
   route == {
-    publicHost = "databasus.mgmt.example.test";
+    publicHost = "databasus.example.test";
     upstream = "http://127.0.0.1:4005";
-    allowedRemoteIPs = [ "192.0.2.0/24" ];
+    allowedRemoteIPs = [
+      "192.0.2.0/24"
+      "100.64.0.0/10"
+    ];
   };
 pkgs.runCommand "databasus-evaluation" { } "touch $out"

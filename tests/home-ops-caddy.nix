@@ -195,7 +195,7 @@ assert
   maliCfg.modules.services.caddy.edge.certificateHosts == [
     "attic.mgmt.example.test"
     "attic.int.example.test"
-    "databasus.mgmt.example.test"
+    "databasus.example.test"
     "nix-cache.int.example.test"
     "garage.data.example.test"
     "garage.mgmt.example.test"
