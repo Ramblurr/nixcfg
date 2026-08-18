@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.site.gatus;
+  groups = import ./gatus-groups.nix;
   heartbeatPackage = pkgs.callPackage ../../pkgs/gatus-heartbeat.nix { };
   hostName = config.networking.hostName;
   gatusUrl = "https://status.${config.repo.secrets.global.domain.home}";
@@ -35,12 +36,7 @@ let
         description = "Human-readable Gatus endpoint name before the hostname suffix";
       };
       group = lib.mkOption {
-        type = lib.types.enum [
-          "Infrastructure & Operations"
-          "Home & Personal"
-          "Work & Collaboration"
-          "Media & Library"
-        ];
+        type = lib.types.enum (builtins.attrValues groups);
         description = "Domain-oriented Gatus group";
       };
       interval = lib.mkOption {

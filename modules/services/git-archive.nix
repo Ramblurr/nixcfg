@@ -74,7 +74,7 @@ in
     site.gatus.heartbeats.git-archive = {
       service = "gickup";
       name = "Git Archive";
-      group = "Work & Collaboration";
+      group = config.site.gatus.groups.work;
       interval = "30h";
     };
     systemd.services.gickup = {

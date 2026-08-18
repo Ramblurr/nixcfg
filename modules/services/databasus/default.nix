@@ -90,7 +90,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Databasus";
-        group = "Infrastructure & Operations";
+        group = config.site.gatus.groups.infrastructure;
         url = "https://${cfg.domain}/";
       }
     ];

@@ -92,12 +92,12 @@ in
     site.gatus.endpoints = [
       {
         name = "Calibre GUI";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain.gui}/_health/gatus";
       }
       {
         name = "Calibre Server";
-        group = "Media & Library";
+        group = config.site.gatus.groups.media;
         url = "https://${cfg.domain.server}/";
       }
     ];

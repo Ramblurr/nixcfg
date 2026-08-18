@@ -1,6 +1,7 @@
 { inputs, pkgs }:
 let
   inherit (pkgs) lib;
+  groups = import ../modules/site/gatus-groups.nix;
 
   testOptions = {
     options = {
@@ -129,7 +130,7 @@ assert
     }
     {
       name = "Paperless";
-      group = "Home & Personal";
+      group = groups.home;
       url = "https://paperless.example.test/api/schema/";
       interval = "5m";
       conditions = [ "[STATUS] == 200" ];

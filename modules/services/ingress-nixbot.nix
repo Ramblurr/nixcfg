@@ -19,7 +19,7 @@ in
     site.gatus.endpoints = [
       {
         name = "Nixbot CI";
-        group = "Work & Collaboration";
+        group = config.site.gatus.groups.work;
         url = "https://ci.${workDomain}/";
       }
     ];

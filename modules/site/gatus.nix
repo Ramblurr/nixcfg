@@ -1,5 +1,6 @@
 { lib, ... }:
 let
+  groups = import ./gatus-groups.nix;
   endpointType = lib.types.submodule {
     freeformType = lib.types.attrsOf lib.types.anything;
     options = {
@@ -23,6 +24,13 @@ let
 in
 {
   options.site.gatus = {
+    groups = lib.mkOption {
+      type = lib.types.attrsOf lib.types.nonEmptyStr;
+      default = groups;
+      readOnly = true;
+      description = "Canonical domain-oriented Gatus endpoint groups";
+    };
+
     endpoints = lib.mkOption {
       description = "Gatus endpoints contributed by services on this host";
       type = lib.types.listOf endpointType;

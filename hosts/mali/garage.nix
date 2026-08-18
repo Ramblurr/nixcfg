@@ -144,7 +144,7 @@ in
   site.gatus.endpoints = [
     {
       name = "Garage Management API";
-      group = "Infrastructure & Operations";
+      group = config.site.gatus.groups.infrastructure;
       url = "https://garage.mgmt.${homeDomain}/";
       conditions = [ "[STATUS] == 403" ];
     }
