@@ -61,9 +61,6 @@
     nix-std.url = "github:chessai/nix-std";
     nixos-extra-modules.url = "github:oddlama/nixos-extra-modules";
     nixos-extra-modules.inputs.nixpkgs.follows = "nixpkgs";
-    nixos-generators.url = "github:nix-community/nixos-generators";
-    # do not follow nixpkgs: keep nixos-generators on nixpkgs-stable for image builds
-    nixos-generators.inputs.nixpkgs.follows = "nixpkgs-stable";
     # nixos-hardware doe snot have a nixpkgs input
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nixos-nftables-firewall.url = "github:thelegy/nixos-nftables-firewall";
