@@ -70,7 +70,7 @@ in
       api.server.enable = false;
       cscli.output = "human";
     };
-    settings.lapi.credentialsFile = config.sops.secrets."crowdsec/lapiCredentials".path;
+    settings.lapi.credentialsFile = config.sops.templates."crowdsec/lapiCredentials".path;
   };
 
   # The module uses content-addressed filenames for local parsers, so remove
@@ -132,11 +132,21 @@ in
     "/var/lib/crowdsec"
   ];
 
-  sops.secrets."crowdsec/lapiCredentials" = {
+  sops.secrets."crowdsec/lapi-password" = { };
+  sops.secrets."crowdsec/lapi-login" = { };
+  sops.secrets."crowdsec/lapi-url" = { };
+
+  sops.templates."crowdsec/lapiCredentials" = {
+    path = "/run/secrets/crowdsec/lapiCredentials";
     owner = "crowdsec";
     group = "crowdsec";
     mode = "0400";
     restartUnits = [ "crowdsec.service" ];
+    content = ''
+      url: ${config.sops.placeholder."crowdsec/lapi-url"}
+      login: ${config.sops.placeholder."crowdsec/lapi-login"}
+      password: ${config.sops.placeholder."crowdsec/lapi-password"}
+    '';
   };
 
   sops.secrets."crowdsec/bouncerApiKey" = {
