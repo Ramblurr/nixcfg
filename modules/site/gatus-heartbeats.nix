@@ -14,7 +14,8 @@ let
   endpointName = heartbeat: "${heartbeat.name} (${hostName})";
   reporterCommand =
     heartbeat:
-    lib.concatStringsSep " " (
+    lib.optionalString heartbeat.reporterAsRoot "!"
+    + lib.concatStringsSep " " (
       [
         (lib.getExe heartbeatPackage)
         "systemd"
@@ -37,6 +38,7 @@ let
         default = null;
         description = "Systemd service to report, without the .service suffix; null for a native adapter";
       };
+      reporterAsRoot = lib.mkEnableOption "running the heartbeat reporter as root for a DynamicUser service";
       name = lib.mkOption {
         type = lib.types.nonEmptyStr;
         description = "Human-readable Gatus endpoint name before the hostname suffix";
