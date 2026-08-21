@@ -38,7 +38,11 @@ let
           sops.age.keyFile = "/tmp/age-key.txt";
           site.net.mgmt.hosts4.onepassword-connect = [ "192.0.2.22" ];
           repo.secrets.global.domain.home = "example.test";
-          site.gatus.heartbeatToken.environmentFile = environmentFile;
+          site.gatus.heartbeatToken = {
+            inherit environmentFile;
+            gatusEnvironmentVariable =
+              if environmentFile == null then "GATUS_EXTERNAL_TOKEN" else "GATUS_QUINE_EXTERNAL_TOKEN";
+          };
           modules.services.onepassword-systemd-credentials.enable = environmentFile == null;
           systemd.services.example-job.serviceConfig = {
             Type = "oneshot";
@@ -72,6 +76,9 @@ assert enabled.site.gatus.groups == groups;
 assert enabled.site.gatus.heartbeatToken.available;
 assert environmentFileEnabled.site.gatus.heartbeatToken.available;
 assert environmentFileEnabled.modules.services.onepassword-systemd-credentials.consumers == { };
+assert
+  (builtins.head environmentFileEnabled.site.gatus.externalEndpoints).token
+  == "$GATUS_QUINE_EXTERNAL_TOKEN";
 assert
   enabled.site.gatus.externalEndpoints == [
     {
