@@ -137,7 +137,7 @@ in
             after = "error";
             when = [ "create" ];
             run = [
-              ''${lib.getExe heartbeatPackage} report --url "${gatusUrl}" --group "${gatusGroup}" --name "${gatusEndpointName}" --success false --error "{error}"''
+              ''${lib.getExe heartbeatPackage} report --url "${gatusUrl}" --group "${gatusGroup}" --name "${gatusEndpointName}" --success false --error {error}''
             ];
           }
         ];
