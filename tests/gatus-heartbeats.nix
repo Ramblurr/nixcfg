@@ -5,7 +5,7 @@ let
   secretFile = pkgs.writeText "gatus-heartbeats-test-secrets.yaml" "{}\n";
   heartbeatPackage = pkgs.callPackage ../pkgs/gatus-heartbeat.nix { };
   evaluate =
-    enable: interval: environmentFile:
+    enable: interval: environmentFile: dynamicUser:
     (lib.nixosSystem {
       modules = [
         inputs.sops-nix.nixosModules.sops
@@ -40,23 +40,30 @@ let
           repo.secrets.global.domain.home = "example.test";
           site.gatus.heartbeatToken.environmentFile = environmentFile;
           modules.services.onepassword-systemd-credentials.enable = environmentFile == null;
-          systemd.services.example-job.serviceConfig.Type = "oneshot";
+          systemd.services.example-job.serviceConfig = {
+            Type = "oneshot";
+            DynamicUser = dynamicUser;
+          };
           site.gatus.heartbeats.git-archive = lib.mkIf enable {
             service = "example-job";
             name = "Git Archive";
             group = groups.work;
             inherit interval;
+            reporterAsRoot = dynamicUser;
           };
         }
       ];
     }).config;
-  enabled = evaluate true "30h" null;
-  disabled = evaluate false "30h" null;
-  environmentFileEnabled = evaluate true "30h" "/run/secrets/gatus-heartbeat";
+  enabled = evaluate true "30h" null true;
+  staticUserEnabled = evaluate true "30h" null false;
+  disabled = evaluate false "30h" null false;
+  environmentFileEnabled = evaluate true "30h" "/run/secrets/gatus-heartbeat" false;
   invalidInterval = builtins.tryEval (
-    builtins.deepSeq (evaluate true "8d" null).site.gatus.externalEndpoints true
+    builtins.deepSeq (evaluate true "8d" null false).site.gatus.externalEndpoints true
   );
   reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStopPost;
+  staticUserReporterCommand =
+    staticUserEnabled.systemd.services.example-job.serviceConfig.ExecStopPost;
   environmentFileReporterCommand =
     environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStopPost;
 in
@@ -78,6 +85,8 @@ assert
 assert
   enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
   == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
+assert lib.hasPrefix "!" reporterCommand;
+assert !(lib.hasPrefix "!" staticUserReporterCommand);
 assert lib.hasInfix "gatus-heartbeat systemd" reporterCommand;
 assert lib.hasInfix "--group '${groups.work}'" reporterCommand;
 assert lib.hasInfix "--name 'Git Archive (dewey)'" reporterCommand;

@@ -76,6 +76,7 @@ in
       name = "Git Archive";
       group = config.site.gatus.groups.work;
       interval = "30h";
+      reporterAsRoot = true;
     };
     systemd.services.gickup = {
       enable = true;
