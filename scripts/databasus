@@ -70,9 +70,12 @@
 
 (defn api-root [config]
   (trim-trailing-slashes
-   (or (blank->nil (:api-url config))
-       (blank->nil (:guest-api-url config))
-       default-guest-api-url)))
+   (if (= "direct" (:transport config))
+     (or (blank->nil (:api-url config))
+         (throw (ex-info "--api-url is required for direct transport"
+                         {:transport "direct"})))
+     (or (blank->nil (:guest-api-url config))
+         default-guest-api-url))))
 
 (defn swagger-url [api-root]
   (str (trim-trailing-slashes api-root) swagger-path))
@@ -347,7 +350,7 @@
       bytes? (assoc :body-bytes body))))
 
 (defn make-transport [config]
-  (case (or (blank->nil (:transport config)) "ssh-vsock-curl")
+  (case (or (blank->nil (:transport config)) "direct")
     "ssh-vsock-curl" #(ssh-vsock-curl-request! config %)
     "direct" #(direct-request! config %)
     (throw (ex-info (str "Unsupported Databasus transport: " (:transport config))
@@ -411,7 +414,7 @@
 (defn effective-config [opts]
   {:transport (or (blank->nil (:transport opts))
                   (env "DATABASUS_TRANSPORT")
-                  "ssh-vsock-curl")
+                  "direct")
    :ssh-host (or (blank->nil (:ssh-host opts))
                  (env "DATABASUS_SSH_HOST")
                  "sno-new")
@@ -868,7 +871,8 @@
     "  --json                         Print JSON output where applicable"
     "  --swagger-file <path>          Load Swagger from a local fixture"
     "  --token <token>                Authorization header value"
-    "  --transport <ssh-vsock-curl|direct>"
+    "  --transport <direct|ssh-vsock-curl> Request transport (default: direct)"
+    "  --api-url <url>                 Required; use https://databasus.{home-domain}/api/v1"
     ""
     "Examples:"
     "  # Check whether Databasus is reachable"
