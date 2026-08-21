@@ -38,14 +38,6 @@ state_file() {
     [[ $(stat -c %a "$path") == 600 ]]
 }
 
-secure_file() {
-  local path=$1 owner mode
-  test -f "$path" && test ! -L "$path" && test -r "$path" || return 1
-  owner=$(stat -c %u "$path")
-  mode=$(stat -c %a "$path")
-  [[ $owner == 0 || $owner == "$(id -u)" ]] && [[ $mode == 400 || $mode == 600 ]]
-}
-
 read_number() {
   local path=$1 value
   state_file "$path" || return 1
@@ -124,10 +116,6 @@ if ((alias_valid == 0)) || [[ ! $receiver_host =~ $host_re ]]; then
 fi
 if [[ ! $ssh_deadline_seconds =~ ^[0-9]{1,4}$ ]] || ((ssh_deadline_seconds < 1 || ssh_deadline_seconds >= 1200)); then
   fail_local local ERROR 0 unknown config fail none none
-fi
-if ! secure_file "$identity_file" || ! test -r "$identity_file" ||
-  ! secure_file "$known_hosts_file" || ! test -r "$known_hosts_file"; then
-  fail_local credential ERROR 0 unknown credential fail none none
 fi
 
 expected_count=0

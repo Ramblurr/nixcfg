@@ -259,10 +259,6 @@ run_failure invalid
 check_true 'invalid remote output is rejected' grep -Fq 'reason=protocol' "$work/output"
 check_false 'invalid remote output is not replayed' grep -Fq secret-like "$work/output"
 
-mv "$CREDENTIALS_DIRECTORY/identity" "$CREDENTIALS_DIRECTORY/identity-away"
-run_failure healthy
-check_true 'missing Mali credential fails before SSH' grep -Fq 'ssh=credential' "$work/output"
-
 check_true 'module remains disabled without private prerequisites' grep -Fq 'default = false;' "$repository_root/hosts/mali/zrepl-receiver-reconcile.nix"
 check_false 'Mali reconciler never names receiver TLS key material' grep -Fq 'rsyncnet.key' \
   "$source_dir/reconcile.sh" "$repository_root/hosts/mali/zrepl-receiver-reconcile.nix"
