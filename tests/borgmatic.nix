@@ -66,7 +66,7 @@ let
       after = "error";
       when = [ "create" ];
       run = [
-        ''${heartbeat} report --url "${gatusUrl}" --group "${groups.infrastructure}" --name "Borgmatic Backup (${hostName})" --success false --error "{error}"''
+        ''${heartbeat} report --url "${gatusUrl}" --group "${groups.infrastructure}" --name "Borgmatic Backup (${hostName})" --success false --error {error}''
       ];
     }
   ];
