@@ -188,7 +188,7 @@ in
         DEALLOCATE PREPARE alter_user;
         REVOKE ALL PRIVILEGES, GRANT OPTION FROM '${backupUser}'@'${maliMgmtAddress}';
         GRANT SELECT, SHOW VIEW, LOCK TABLES, TRIGGER, EVENT
-          ON `${databaseName}`.* TO '${backupUser}'@'${maliMgmtAddress}';
+          ON ${databaseName}.* TO '${backupUser}'@'${maliMgmtAddress}';
         GRANT PROCESS, SHOW CREATE ROUTINE ON *.* TO '${backupUser}'@'${maliMgmtAddress}';
         SQL
       '';
