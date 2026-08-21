@@ -66,6 +66,7 @@ assert serviceConfig.ProtectSystem == "strict";
 assert serviceConfig.StateDirectory == "rsyncnet-zrepl-reconcile";
 assert serviceConfig.StateDirectoryMode == "0700";
 assert serviceConfig.RuntimeDirectory == "rsyncnet-zrepl-reconcile";
+assert builtins.elem "AF_UNIX" serviceConfig.RestrictAddressFamilies;
 assert service.unitConfig.RequiresMountsFor == [ "/var/lib/private/rsyncnet-zrepl-reconcile" ];
 assert
   stateDataset == {
