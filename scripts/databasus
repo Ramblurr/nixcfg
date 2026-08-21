@@ -703,7 +703,7 @@
         password-file (require-option! opts :password-file usage)]
     {"name" (require-option! opts :name usage)
      "workspaceId" (require-option! opts :workspace-id usage)
-     "type" "POSTGRES"
+     "type" "POSTGRES_LOGICAL"
      "postgresql" {"host" (require-option! opts :host usage)
                    "port" (parse-int-option (or (:port opts) "5432") "--port")
                    "database" (require-option! opts :database usage)
