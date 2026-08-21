@@ -1,0 +1,1 @@
+{:deps {com.github.oliyh/martian {:mvn/version "0.2.3"}}}

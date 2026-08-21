@@ -1,0 +1,1491 @@
+#!/usr/bin/env bb
+(ns databasus
+  (:require [babashka.cli :as cli]
+            [babashka.http-client :as http]
+            [babashka.process :as p]
+            [camel-snake-kebab.core :as csk]
+            [cheshire.core :as json]
+            [clojure.string :as str]
+            [martian.core :as martian]
+            [martian.interceptors :as martian-interceptors])
+  (:import [java.net URLEncoder]))
+
+(def body ::body)
+
+(def default-guest-api-url "http://127.0.0.1:4005/api/v1")
+(def swagger-path "/docs/swagger/doc.json")
+
+(def global-option-keys
+  #{:help
+    :json
+    :json-file
+    :output
+    :swagger-file
+    :token
+    :yes
+    :transport
+    :api-url
+    :guest-api-url
+    :ssh-host
+    :vsock-cid
+    :ssh-multiplex
+    :multiplex
+    :ssh-control-persist
+    :control-persist
+    :local-control-path
+    :remote-control-path})
+
+(def boolean-options #{:help :json :yes})
+
+(defn blank->nil [s]
+  (let [s* (some-> s str str/trim)]
+    (when-not (str/blank? s*) s*)))
+
+(defn env [k]
+  (blank->nil (System/getenv k)))
+
+(defn source-path-string [url-pattern]
+  (cond-> (str url-pattern)
+    (not (string? url-pattern)) (str/replace-first #"^:" "")))
+
+(defn route-segment [segment]
+  (-> segment
+      (str/replace #"^[{:]+" "")
+      (str/replace #"[}:]+$" "")
+      csk/->kebab-case-string))
+
+(defn full-path-route-name [url-pattern method _definition]
+  (->> (str/split (source-path-string url-pattern) #"/+")
+       (remove str/blank?)
+       (map route-segment)
+       (cons (name method))
+       (str/join "-")
+       keyword))
+
+(def martian-interceptors
+  (conj martian/default-interceptors martian-interceptors/default-encode-request))
+
+(defn trim-trailing-slashes [s]
+  (str/replace (str s) #"/+$" ""))
+
+(defn api-root [config]
+  (trim-trailing-slashes
+   (or (blank->nil (:api-url config))
+       (blank->nil (:guest-api-url config))
+       default-guest-api-url)))
+
+(defn swagger-url [api-root]
+  (str (trim-trailing-slashes api-root) swagger-path))
+
+(defn bootstrap-martian [api-root swagger]
+  (martian/bootstrap-openapi api-root swagger
+                             {:route-name-sources [full-path-route-name :operationId]
+                              :interceptors martian-interceptors}))
+
+(defn operation-catalog [martian-instance]
+  (mapv (fn [{:keys [route-name method path summary]}]
+          {:route-name route-name
+           :method method
+           :path path
+           :summary summary})
+        (:handlers martian-instance)))
+
+(defn route-key [route-name]
+  (if (keyword? route-name)
+    route-name
+    (keyword (str/replace (str route-name) #"^:" ""))))
+
+(defn handler-for [martian-instance route-name]
+  (let [route-name* (route-key route-name)]
+    (some (fn [handler]
+            (when (= route-name* (:route-name handler))
+              handler))
+          (:handlers martian-instance))))
+
+(defn add-auth-header [params token]
+  (if-let [token* (blank->nil token)]
+    (update params ::martian/request
+            (fn [request]
+              (update (or request {}) :headers merge {"Authorization" token*})))
+    params))
+
+(defn normalize-operation-params [params]
+  (cond-> (dissoc params ::body)
+    (contains? params ::body) (assoc ::martian/body (::body params))))
+
+(defn request-for-operation
+  ([martian-instance route-name params]
+   (request-for-operation martian-instance route-name params {}))
+  ([martian-instance route-name params {:keys [token]}]
+   (martian/request-for martian-instance
+                        (route-key route-name)
+                        (-> params
+                            normalize-operation-params
+                            (add-auth-header token)))))
+
+(defn urlencode [s]
+  (-> (URLEncoder/encode (str s) "UTF-8")
+      (str/replace "+" "%20")))
+
+(defn query-pairs [query-params]
+  (mapcat (fn [[k v]]
+            (if (sequential? v)
+              (map #(vector k %) v)
+              [[k v]]))
+          query-params))
+
+(defn query-string [query-params]
+  (when (seq query-params)
+    (->> (query-pairs query-params)
+         (map (fn [[k v]] (str (urlencode (name k)) "=" (urlencode v))))
+         (str/join "&"))))
+
+(defn url-with-query [{:keys [url query-params]}]
+  (if-let [query (query-string query-params)]
+    (str url (if (str/includes? url "?") "&" "?") query)
+    url))
+
+(defn shell-quote [s]
+  (str "'" (str/replace (str s) "'" "'\"'\"'") "'"))
+
+(defn control-dir [control-path]
+  (when-let [path (blank->nil control-path)]
+    (let [idx (str/last-index-of path "/")]
+      (when (and idx (pos? idx))
+        (subs path 0 idx)))))
+
+(defn ssh-mux-options [{:keys [multiplex control-persist control-path]}]
+  (if (= "off" (str/lower-case (str multiplex)))
+    []
+    ["-o" "ControlMaster=auto"
+     "-o" (str "ControlPersist=" (or (blank->nil control-persist) "300"))
+     "-o" (str "ControlPath=" control-path)]))
+
+(defn ssh-config-control-path [ssh-host]
+  (try
+    (let [result (p/shell {:out :string
+                           :err :string
+                           :continue true}
+                          "ssh" "-G" ssh-host)]
+      (when (zero? (:exit result))
+        (some (fn [line]
+                (when-let [[_ path] (re-find #"(?i)^controlpath\s+(.+)$" line)]
+                  (let [path* (blank->nil path)]
+                    (when (and path*
+                               (not= "none" (str/lower-case path*)))
+                      path*))))
+              (str/split-lines (:out result)))))
+    (catch Exception _
+      nil)))
+
+(defn curl-args [request]
+  (let [method (-> (:method request) name str/upper-case)
+        body? (contains? request :body)]
+    (cond-> ["curl"
+             "--silent"
+             "--show-error"
+             "--dump-header" "-"
+             "--output" "-"
+             "--request" method]
+      (seq (:headers request))
+      (into (mapcat (fn [[k v]] ["--header" (str k ": " v)]) (:headers request)))
+
+      body?
+      (into ["--data-binary" "@-"])
+
+      true
+      (conj (url-with-query request)))))
+
+(defn remote-vsock-command [{:keys [vsock-cid remote-control-path multiplex control-persist]} request]
+  (let [remote-control-dir (or (control-dir remote-control-path) "/run/databasus-cli-ssh")
+        nested-ssh-args (concat ["ssh" "-o" "BatchMode=yes"]
+                                (ssh-mux-options {:multiplex multiplex
+                                                  :control-persist control-persist
+                                                  :control-path remote-control-path})
+                                ["-l" "root" (str "vsock/" vsock-cid)])
+        curl-command (str/join " " (map shell-quote (curl-args request)))
+        argv (concat nested-ssh-args [curl-command])]
+    (str "install -d -m 700 " (shell-quote remote-control-dir)
+         " && exec "
+         (str/join " " (map shell-quote argv)))))
+
+(defn ssh-vsock-request-plan [config request]
+  (let [{:keys [ssh-host local-control-path multiplex control-persist]
+         :or {ssh-host "sno-new"
+              multiplex "auto"
+              control-persist "300"}} config
+        config* (merge {:vsock-cid "14"
+                        :remote-control-path "/run/databasus-cli-ssh/vsock-%C"}
+                       config)
+        local-control-path* (or (blank->nil local-control-path)
+                                (ssh-config-control-path ssh-host)
+                                (str (or (env "XDG_RUNTIME_DIR") "/tmp") "/databasus-cli/sno-%C"))
+        local-control-dir (when-not (= "off" (str/lower-case (str multiplex)))
+                            (control-dir local-control-path*))
+        ssh-args (concat ["ssh" "-o" "BatchMode=yes"]
+                         (ssh-mux-options {:multiplex multiplex
+                                           :control-persist control-persist
+                                           :control-path local-control-path*})
+                         [ssh-host
+                          (remote-vsock-command config* request)])]
+    {:cmd (vec ssh-args)
+     :in (:body request)
+     :response-as (:response-as request)
+     :local-control-dir local-control-dir}))
+
+(defn parse-status-line [line]
+  (if-let [[_ status] (re-find #"^HTTP/\S+\s+(\d+)" (str line))]
+    (parse-long status)
+    (throw (ex-info (str "Unable to parse HTTP status from curl output: " line)
+                    {:status-line line}))))
+
+(defn parse-header-line [line]
+  (when-let [idx (str/index-of line ":")]
+    [(str/lower-case (str/trim (subs line 0 idx)))
+     (str/trim (subs line (inc idx)))]))
+
+(defn index-of-bytes [bytes pattern]
+  (let [limit (- (alength bytes) (alength pattern))]
+    (loop [i 0]
+      (cond
+        (> i limit) nil
+        (loop [j 0]
+          (cond
+            (= j (alength pattern)) true
+            (= (aget bytes (+ i j)) (aget pattern j)) (recur (inc j))
+            :else false)) i
+        :else (recur (inc i))))))
+
+(defn parse-curl-response-string [stdout]
+  (let [normalized (str/replace (or stdout "") "\r\n" "\n")
+        split-idx (str/index-of normalized "\n\n")
+        header-text (if split-idx (subs normalized 0 split-idx) normalized)
+        response-body (if split-idx (subs normalized (+ split-idx 2)) "")
+        header-lines (remove str/blank? (str/split-lines header-text))]
+    (when-not (seq header-lines)
+      (throw (ex-info "curl produced no HTTP response headers" {:stdout stdout})))
+    {:status (parse-status-line (first header-lines))
+     :headers (into {} (keep parse-header-line (rest header-lines)))
+     :body response-body}))
+
+(defn parse-curl-response-bytes [stdout]
+  (let [crlf (.getBytes "\r\n\r\n" "UTF-8")
+        lf (.getBytes "\n\n" "UTF-8")
+        split-idx (or (index-of-bytes stdout crlf)
+                      (index-of-bytes stdout lf))
+        delimiter-len (if (= split-idx (index-of-bytes stdout crlf))
+                        (alength crlf)
+                        (alength lf))]
+    (when-not split-idx
+      (throw (ex-info "curl produced no HTTP response header delimiter" {})))
+    (let [header-bytes (java.util.Arrays/copyOfRange stdout 0 split-idx)
+          body-bytes (java.util.Arrays/copyOfRange stdout (+ split-idx delimiter-len) (alength stdout))
+          parsed (parse-curl-response-string (String. header-bytes "UTF-8"))]
+      (assoc parsed
+             :body (String. body-bytes "UTF-8")
+             :body-bytes body-bytes))))
+
+(defn parse-curl-response [stdout]
+  (if (bytes? stdout)
+    (parse-curl-response-bytes stdout)
+    (parse-curl-response-string stdout)))
+
+(defn run-process-request! [{:keys [cmd in response-as]}]
+  (let [bytes? (= :bytes response-as)
+        result (apply p/shell
+                      {:out (if bytes? :bytes :string)
+                       :err :string
+                       :in (or in "")
+                       :continue true}
+                      cmd)]
+    (if (zero? (:exit result))
+      (parse-curl-response (:out result))
+      (throw (ex-info (str "Transport command failed with exit " (:exit result)
+                           (when-let [err (blank->nil (:err result))]
+                             (str ": " err)))
+                      {:exit (:exit result)
+                       :err (:err result)})))))
+
+(defn ensure-private-dir! [path]
+  (when-let [path* (blank->nil path)]
+    (let [dir (java.io.File. path*)]
+      (.mkdirs dir)
+      (.setReadable dir false false)
+      (.setWritable dir false false)
+      (.setExecutable dir false false)
+      (.setReadable dir true true)
+      (.setWritable dir true true)
+      (.setExecutable dir true true)
+      dir)))
+
+(defn ssh-vsock-curl-request! [config request]
+  (let [plan (ssh-vsock-request-plan config request)]
+    (ensure-private-dir! (:local-control-dir plan))
+    (run-process-request! plan)))
+
+(defn normalize-header-map [headers]
+  (into {}
+        (map (fn [[k v]]
+               [(str/lower-case (if (keyword? k) (name k) (str k)))
+                (if (sequential? v)
+                  (str/join "," (map str v))
+                  (str v))])
+             headers)))
+
+(defn direct-request! [_config request]
+  (let [bytes? (= :bytes (:response-as request))
+        response (http/request {:method (:method request)
+                                :uri (url-with-query request)
+                                :headers (:headers request)
+                                :body (:body request)
+                                :as (when bytes? :bytes)
+                                :throw false})
+        body (or (:body response) (if bytes? (byte-array 0) ""))]
+    (cond-> {:status (:status response)
+             :headers (normalize-header-map (:headers response))
+             :body (if bytes? (String. body "UTF-8") body)}
+      bytes? (assoc :body-bytes body))))
+
+(defn make-transport [config]
+  (case (or (blank->nil (:transport config)) "ssh-vsock-curl")
+    "ssh-vsock-curl" #(ssh-vsock-curl-request! config %)
+    "direct" #(direct-request! config %)
+    (throw (ex-info (str "Unsupported Databasus transport: " (:transport config))
+                    {:transport (:transport config)}))))
+
+(defn json-content? [headers body]
+  (let [content-type (or (get headers "content-type") "")]
+    (or (str/includes? (str/lower-case content-type) "json")
+        (boolean (re-find #"^\s*[\[{]" (or body ""))))))
+
+(defn parse-json-body [s context]
+  (try
+    (json/parse-string s)
+    (catch Exception e
+      (throw (ex-info (str "Invalid JSON in " context ": " (ex-message e))
+                      {:context context}
+                      e)))))
+
+(defn success-status? [status]
+  (<= 200 (or status 0) 299))
+
+(defn response-error-detail [{:keys [headers body]}]
+  (let [body* (or body "")]
+    (or (when (and (not (str/blank? body*))
+                   (json-content? headers body*))
+          (try
+            (let [parsed (json/parse-string body*)]
+              (or (get parsed "message")
+                  (get parsed "error")))
+            (catch Exception _ nil)))
+        (blank->nil body*))))
+
+(defn parse-api-response [{:keys [status headers body] :as response}]
+  (let [headers* (normalize-header-map headers)
+        body* (or body "")]
+    (if (success-status? status)
+      (cond
+        (str/blank? body*) nil
+        (json-content? headers* body*) (parse-json-body body* "response body")
+        :else body*)
+      (let [detail (response-error-detail (assoc response :headers headers*))]
+        (throw (ex-info (str "Databasus API error " status
+                             (when detail (str ": " detail)))
+                        {:status status
+                         :body body*}))))))
+
+(defn read-json-file [path]
+  (parse-json-body (slurp path) (str "JSON file " path)))
+
+(defn load-swagger!
+  ([config]
+   (load-swagger! config (make-transport config)))
+  ([config transport]
+   (if-let [path (or (blank->nil (:swagger-file config))
+                     (env "DATABASUS_SWAGGER_FILE"))]
+     (read-json-file path)
+     (parse-api-response
+      (transport {:method :get
+                  :url (swagger-url (api-root config))})))))
+
+(defn effective-config [opts]
+  {:transport (or (blank->nil (:transport opts))
+                  (env "DATABASUS_TRANSPORT")
+                  "ssh-vsock-curl")
+   :ssh-host (or (blank->nil (:ssh-host opts))
+                 (env "DATABASUS_SSH_HOST")
+                 "sno-new")
+   :vsock-cid (or (blank->nil (:vsock-cid opts))
+                  (env "DATABASUS_VSOCK_CID")
+                  "14")
+   :guest-api-url (or (blank->nil (:guest-api-url opts))
+                      (env "DATABASUS_GUEST_API_URL")
+                      default-guest-api-url)
+   :api-url (or (blank->nil (:api-url opts))
+                (env "DATABASUS_API_URL"))
+   :multiplex (or (blank->nil (:ssh-multiplex opts))
+                  (blank->nil (:multiplex opts))
+                  (env "DATABASUS_SSH_MULTIPLEX")
+                  "auto")
+   :control-persist (or (blank->nil (:ssh-control-persist opts))
+                        (blank->nil (:control-persist opts))
+                        (env "DATABASUS_SSH_CONTROL_PERSIST")
+                        "300")
+   :local-control-path (or (blank->nil (:local-control-path opts))
+                           (env "DATABASUS_LOCAL_CONTROL_PATH"))
+   :remote-control-path (or (blank->nil (:remote-control-path opts))
+                            (env "DATABASUS_REMOTE_CONTROL_PATH")
+                            "/run/databasus-cli-ssh/vsock-%C")
+   :swagger-file (or (blank->nil (:swagger-file opts))
+                     (env "DATABASUS_SWAGGER_FILE"))
+   :token (or (blank->nil (:token opts))
+              (env "DATABASUS_TOKEN"))})
+
+(defn split-option-token [token]
+  (let [raw (subs token 2)
+        idx (str/index-of raw "=")]
+    (if idx
+      [(subs raw 0 idx) (subs raw (inc idx))]
+      [raw nil])))
+
+(defn parse-bool [value]
+  (not (#{"false" "0" "no" "off"} (str/lower-case (str value)))))
+
+(defn assoc-option [opts k v]
+  (if (contains? opts k)
+    (update opts k (fn [existing]
+                     (if (vector? existing)
+                       (conj existing v)
+                       [existing v])))
+    (assoc opts k v)))
+
+(defn parse-cli-args [argv]
+  (loop [tokens (seq argv)
+         args []
+         opts {}]
+    (if-not (seq tokens)
+      {:args args :opts opts}
+      (let [token (first tokens)]
+        (cond
+          (= "--" token)
+          {:args (into args (rest tokens)) :opts opts}
+
+          (str/starts-with? token "--")
+          (let [[raw-key inline-value] (split-option-token token)
+                k (keyword (csk/->kebab-case-string raw-key))]
+            (if (contains? boolean-options k)
+              (recur (rest tokens)
+                     args
+                     (assoc-option opts k (if (nil? inline-value) true (parse-bool inline-value))))
+              (if (some? inline-value)
+                (recur (rest tokens) args (assoc-option opts k inline-value))
+                (if-let [value (second tokens)]
+                  (recur (nnext tokens) args (assoc-option opts k value))
+                  (throw (ex-info (str "Missing value for --" raw-key) {:option k}))))))
+
+          :else
+          (recur (rest tokens) (conj args token) opts))))))
+
+(defn mutating-handler? [handler]
+  (not (contains? #{:get :head :options} (:method handler))))
+
+(defn body-handler? [handler]
+  (some? (:body-schema handler)))
+
+(defn require-known-handler! [martian-instance route-name]
+  (or (handler-for martian-instance route-name)
+      (throw (ex-info (str "Unknown Databasus operation: " route-name)
+                      {:route-name route-name}))))
+
+(defn require-yes-for-mutation! [handler opts]
+  (when (and (mutating-handler? handler)
+             (not (:yes opts)))
+    (throw (ex-info (str "Operation " (name (:route-name handler))
+                         " uses " (str/upper-case (name (:method handler)))
+                         " and requires --yes")
+                    {:route-name (:route-name handler)
+                     :method (:method handler)}))))
+
+(defn read-json-payload [opts in]
+  (let [raw (if-let [path (blank->nil (:json-file opts))]
+              (slurp path)
+              (slurp in))]
+    (if-let [raw* (blank->nil raw)]
+      (parse-json-body raw* (if (:json-file opts)
+                              (str "JSON file " (:json-file opts))
+                              "stdin"))
+      (throw (ex-info "JSON payload required on stdin or with --json-file" {})))))
+
+(defn operation-params
+  ([opts handler in]
+   (operation-params opts handler in nil))
+  ([opts handler in payload]
+   (cond-> (apply dissoc opts global-option-keys)
+     (body-handler? handler) (assoc ::body (or payload (read-json-payload opts in))))))
+
+(defn raw-swagger-parameters [handler]
+  (or (get-in handler [:swagger-definition :parameters])
+      (get-in handler ["swagger-definition" "parameters"])
+      []))
+
+(defn raw-parameter-name [parameter]
+  (or (:name parameter) (get parameter "name")))
+
+(defn raw-parameter-location [parameter]
+  (or (:in parameter) (get parameter "in")))
+
+(defn raw-parameter-required? [parameter]
+  (true? (or (:required parameter) (get parameter "required"))))
+
+(defn swagger-param-key [parameter]
+  (keyword (str (raw-parameter-name parameter))))
+
+(defn cli-param-key [parameter]
+  (keyword (csk/->kebab-case-string (raw-parameter-name parameter))))
+
+(defn normalize-cli-operation-params [handler params]
+  (reduce (fn [params* parameter]
+            (let [source-key (cli-param-key parameter)
+                  target-key (swagger-param-key parameter)]
+              (if (and (contains? params* source-key)
+                       (not (contains? params* target-key)))
+                (assoc params* target-key (get params* source-key))
+                params*)))
+          params
+          (remove #(= "body" (raw-parameter-location %))
+                  (raw-swagger-parameters handler))))
+
+(defn param-present? [params config parameter]
+  (let [name (raw-parameter-name parameter)
+        location (raw-parameter-location parameter)
+        target-key (swagger-param-key parameter)
+        source-key (cli-param-key parameter)
+        value (or (get params target-key) (get params source-key))]
+    (cond
+      (and (= "header" location)
+           (= "authorization" (str/lower-case (str name))))
+      (or (blank->nil (:token config)) (blank->nil value))
+
+      :else
+      (some? (blank->nil value)))))
+
+(defn missing-param-message [parameter]
+  (let [location (raw-parameter-location parameter)
+        option (str "--" (csk/->kebab-case-string (raw-parameter-name parameter)))]
+    (case location
+      "header" (str "Missing required option --token for required header " (raw-parameter-name parameter))
+      "path" (str "Missing required option " option)
+      "query" (str "Missing required option " option)
+      (str "Missing required option " option))))
+
+(defn validate-required-operation-params! [handler params config]
+  (doseq [parameter (raw-swagger-parameters handler)]
+    (when (and (raw-parameter-required? parameter)
+               (not= "body" (raw-parameter-location parameter))
+               (not (param-present? params config parameter)))
+      (throw (ex-info (missing-param-message parameter)
+                      {:route-name (:route-name handler)
+                       :parameter (raw-parameter-name parameter)
+                       :in (raw-parameter-location parameter)})))))
+
+(defn load-martian! [config transport]
+  (bootstrap-martian (api-root config)
+                     (load-swagger! config transport)))
+
+(defn perform-operation-response!
+  ([ctx route-name]
+   (perform-operation-response! ctx route-name {}))
+  ([{:keys [config transport in opts payload martian]} route-name {:keys [params response-as]}]
+   (let [martian-instance (or martian (load-martian! config transport))
+         handler (require-known-handler! martian-instance route-name)
+         params* (normalize-cli-operation-params handler (or params (operation-params opts handler in payload)))]
+     (require-yes-for-mutation! handler opts)
+     (validate-required-operation-params! handler params* config)
+     (-> (request-for-operation martian-instance route-name params* {:token (:token config)})
+         (cond-> response-as (assoc :response-as response-as))
+         transport))))
+
+(defn perform-operation! [ctx route-name]
+  (parse-api-response (perform-operation-response! ctx route-name)))
+
+(defn printable-catalog [catalog]
+  (sort-by (juxt :route-name :method :path) catalog))
+
+(defn write-json-line! [out value]
+  (.write out (json/generate-string value))
+  (.write out "\n"))
+
+(defn display-key [k]
+  (-> (if (keyword? k) (name k) (str k))
+      csk/->kebab-case-string
+      (str/upper-case)
+      (str/replace "-" "_")))
+
+(defn display-cell [value]
+  (cond
+    (nil? value) ""
+    (or (map? value) (sequential? value)) (json/generate-string value)
+    :else (str value)))
+
+(defn table-for-maps [rows]
+  (let [ks (->> rows (mapcat keys) distinct (sort-by #(str (display-key %))))]
+    (into [(mapv display-key ks)]
+          (map (fn [row]
+                 (mapv #(display-cell (get row %)) ks))
+               rows))))
+
+(declare write-table!)
+
+(defn write-human-result! [out value]
+  (cond
+    (and (sequential? value) (every? map? value))
+    (if (seq value)
+      (write-table! out (table-for-maps value))
+      (.write out "No results\n"))
+
+    :else
+    (write-json-line! out value)))
+
+(defn write-result! [out json? value]
+  (cond
+    json? (write-json-line! out value)
+    (nil? value) nil
+    (string? value) (do (.write out value) (.write out "\n"))
+    :else (write-human-result! out value)))
+
+(defn write-ops! [out json? catalog]
+  (let [catalog* (vec (printable-catalog catalog))]
+    (if json?
+      (write-json-line! out catalog*)
+      (do
+        (.write out
+                (cli/format-table
+                 {:indent 0
+                  :rows (into [["ROUTE" "METHOD" "PATH" "SUMMARY"]]
+                              (map (fn [{:keys [route-name method path summary]}]
+                                     [(name route-name)
+                                      (str/upper-case (name method))
+                                      path
+                                      (or summary "")])
+                                   catalog*))}))
+        (.write out "\n")))))
+
+(defn positional! [positionals idx usage]
+  (or (nth positionals idx nil)
+      (throw (ex-info usage {:usage usage}))))
+
+(defn require-option! [opts k usage]
+  (or (blank->nil (get opts k))
+      (throw (ex-info usage {:usage usage :option k}))))
+
+(defn with-command-opts [ctx extra-opts]
+  (update ctx :opts merge extra-opts))
+
+(defn with-payload [ctx payload]
+  (assoc ctx :payload payload))
+
+(defn parse-int-option [value option-name]
+  (try
+    (parse-long (str value))
+    (catch Exception _
+      (throw (ex-info (str "Invalid integer for " option-name ": " value)
+                      {:option option-name
+                       :value value})))))
+
+(defn trim-file [path]
+  (str/trim (slurp path)))
+
+(defn postgres-database-payload [opts]
+  (let [usage "Usage: scripts/databasus database create-postgres --name <name> --workspace-id <workspace-id> --host <host> --database <database> --username <username> --password-file <path> --yes [--json]"
+        password-file (require-option! opts :password-file usage)]
+    {"name" (require-option! opts :name usage)
+     "workspaceId" (require-option! opts :workspace-id usage)
+     "type" "POSTGRES"
+     "postgresql" {"host" (require-option! opts :host usage)
+                   "port" (parse-int-option (or (:port opts) "5432") "--port")
+                   "database" (require-option! opts :database usage)
+                   "username" (require-option! opts :username usage)
+                   "password" (trim-file password-file)
+                   "sslMode" (or (blank->nil (:ssl-mode opts)) "disable")
+                   "version" (or (blank->nil (:version opts)) "17")
+                   "backupType" (or (blank->nil (:backup-type opts)) "PG_DUMP")
+                   "cpuCount" (parse-int-option (or (:cpu-count opts) "1") "--cpu-count")}}))
+
+(defn daily-backup-config-payload [database-id opts]
+  (let [usage "Usage: scripts/databasus backup-config daily <database-id> --storage-id <storage-id> --time <HH:MM> --yes [--json]"
+        storage-id (require-option! opts :storage-id usage)
+        retention-count (parse-int-option (or (:retention-count opts) "100") "--retention-count")
+        max-failed (parse-int-option (or (:max-failed-tries opts) "3") "--max-failed-tries")]
+    {"databaseId" database-id
+     "storageId" storage-id
+     "storage" {"id" storage-id}
+     "isBackupsEnabled" true
+     "backupInterval" {"type" "DAILY"
+                       "timeOfDay" (require-option! opts :time usage)}
+     "retentionPolicyType" "TIME_PERIOD"
+     "retentionTimePeriod" (or (blank->nil (:retention opts)) "3_MONTH")
+     "retentionCount" retention-count
+     "retentionGfsYears" 3
+     "retentionGfsMonths" 12
+     "retentionGfsWeeks" 4
+     "retentionGfsDays" 7
+     "retentionGfsHours" 24
+     "encryption" (or (blank->nil (:encryption opts)) "ENCRYPTED")
+     "isRetryIfFailed" true
+     "maxFailedTriesCount" max-failed
+     "sendNotificationsOn" ["BACKUP_FAILED"]}))
+
+(defn hourly-gfs-backup-config-payload [database-id opts]
+  (let [usage "Usage: scripts/databasus backup-config hourly-gfs <database-id> --storage-id <storage-id> [--time <HH:MM>] --yes [--json]"
+        storage-id (require-option! opts :storage-id usage)
+        retention-count (parse-int-option (or (:retention-count opts) "100") "--retention-count")
+        max-failed (parse-int-option (or (:max-failed-tries opts) "3") "--max-failed-tries")]
+    {"databaseId" database-id
+     "storageId" storage-id
+     "storage" {"id" storage-id}
+     "isBackupsEnabled" true
+     "backupInterval" {"type" "HOURLY"
+                       "timeOfDay" (or (blank->nil (:time opts)) "00:00")}
+     "retentionPolicyType" "GFS"
+     "retentionTimePeriod" (or (blank->nil (:retention opts)) "3_MONTH")
+     "retentionCount" retention-count
+     "retentionGfsYears" (parse-int-option (or (:gfs-years opts) "3") "--gfs-years")
+     "retentionGfsMonths" (parse-int-option (or (:gfs-months opts) "12") "--gfs-months")
+     "retentionGfsWeeks" (parse-int-option (or (:gfs-weeks opts) "4") "--gfs-weeks")
+     "retentionGfsDays" (parse-int-option (or (:gfs-days opts) "7") "--gfs-days")
+     "retentionGfsHours" (parse-int-option (or (:gfs-hours opts) "24") "--gfs-hours")
+     "encryption" (or (blank->nil (:encryption opts)) "ENCRYPTED")
+     "isRetryIfFailed" true
+     "maxFailedTriesCount" max-failed
+     "sendNotificationsOn" ["BACKUP_FAILED"]}))
+
+(def backup-config-policy-keys
+  ["storageId"
+   "isBackupsEnabled"
+   "backupInterval"
+   "retentionPolicyType"
+   "retentionTimePeriod"
+   "retentionCount"
+   "retentionGfsYears"
+   "retentionGfsMonths"
+   "retentionGfsWeeks"
+   "retentionGfsDays"
+   "retentionGfsHours"
+   "encryption"
+   "isRetryIfFailed"
+   "maxFailedTriesCount"
+   "sendNotificationsOn"])
+
+(defn backup-config-storage-id [config]
+  (or (blank->nil (get config "storageId"))
+      (blank->nil (get-in config ["storage" "id"]))))
+
+(defn clone-backup-config-payload [source-config target-database-id]
+  (let [storage-id (or (backup-config-storage-id source-config)
+                       (throw (ex-info "Source backup config did not include storageId or storage.id"
+                                       {:source-database-id (get source-config "databaseId")})))]
+    (assoc (select-keys source-config backup-config-policy-keys)
+           "databaseId" target-database-id
+           "storageId" storage-id
+           "storage" {"id" storage-id})))
+
+(defn require-option-any! [opts ks usage]
+  (or (some #(blank->nil (get opts %)) ks)
+      (throw (ex-info usage {:usage usage :options ks}))))
+
+(defn clone-backup-config! [ctx source-database-id target-database-id]
+  (when-not (get-in ctx [:opts :yes])
+    (throw (ex-info "Operation backup-config clone-policy uses POST and requires --yes"
+                    {:command "backup-config clone-policy"
+                     :method :post})))
+  (let [martian-instance (load-martian! (:config ctx) (:transport ctx))
+        ctx* (assoc ctx :martian martian-instance)
+        source-config (perform-operation! (with-command-opts ctx* {:id source-database-id
+                                                                   :database-id source-database-id})
+                                          :get-backup-configs-database-id)
+        payload (clone-backup-config-payload source-config target-database-id)]
+    (perform-operation! (-> ctx*
+                            (assoc :opts {:yes true})
+                            (with-payload payload))
+                        :post-backup-configs-save)))
+
+(defn write-lines! [out lines]
+  (doseq [line (remove nil? lines)]
+    (.write out (str line "\n"))))
+
+(defn write-table! [out rows]
+  (.write out (cli/format-table {:indent 0 :rows rows}))
+  (.write out "\n"))
+
+(defn write-top-level-help! [out]
+  (write-lines!
+   out
+   ["Databasus CLI"
+    ""
+    "Usage: scripts/databasus <command> [options]"
+    ""])
+  (write-table!
+   out
+   [["COMMAND" "DESCRIPTION"]
+    ["workspaces" "List workspaces"]
+    ["databases --workspace-id <id>" "List databases in a workspace"]
+    ["database get <database-id>" "Show a database"]
+    ["database create --yes" "Create a database from JSON"]
+    ["database create-postgres --yes" "Create a Postgres database entry from flags"]
+    ["database update --yes" "Update a database from JSON"]
+    ["database delete <database-id> --yes" "Delete a database"]
+    ["storages --workspace-id <id>" "List storages in a workspace"]
+    ["storage get <storage-id>" "Show a storage config"]
+    ["storage save --yes" "Save storage config from JSON"]
+    ["storage delete <storage-id> --yes" "Delete storage config"]
+    ["notifiers --workspace-id <id>" "List notifiers in a workspace"]
+    ["notifier get <notifier-id>" "Show a notifier"]
+    ["notifier save --yes" "Save notifier from JSON"]
+    ["notifier delete <notifier-id> --yes" "Delete notifier"]
+    ["backups --database-id <id>" "List backups for a database"]
+    ["backup run <database-id>" "Start a backup"]
+    ["backup download <backup-id> --output <path>" "Download a backup file"]
+    ["backup cancel <backup-id> --yes" "Cancel an in-progress backup"]
+    ["backup delete <backup-id> --yes" "Delete a backup"]
+    ["backup-config get <database-id>" "Get backup configuration"]
+    ["backup-config save --yes" "Save backup configuration from JSON"]
+    ["backup-config daily <database-id> --yes" "Enable daily backups to a storage"]
+    ["backup-config hourly-gfs <database-id> --yes" "Enable hourly GFS backups to a storage"]
+    ["backup-config clone-policy --yes" "Copy a backup config policy to another database"]
+    ["restores --backup-id <id>" "List restore jobs for a backup"]
+    ["restore run <backup-id> --yes" "Start a restore"]
+    ["restore cancel <restore-id> --yes" "Cancel a restore"]
+    ["disk usage" "Show Databasus disk usage"]
+    ["ops" "List generated Swagger operations"]
+    ["op <route-name>" "Call any generated Swagger operation"]
+    ["health" "Check Databasus health"]
+    ["version" "Show Databasus version"]
+    ["swagger" "Print the live Swagger document as JSON"]])
+  (write-lines!
+   out
+   [""
+    "Global options:"
+    "  --json                         Print JSON output where applicable"
+    "  --swagger-file <path>          Load Swagger from a local fixture"
+    "  --token <token>                Authorization header value"
+    "  --transport <ssh-vsock-curl|direct>"
+    ""
+    "Examples:"
+    "  # Check whether Databasus is reachable"
+    "  scripts/databasus health"
+    ""
+    "  # Find the workspace and database IDs you need"
+    "  scripts/databasus workspaces"
+    "  scripts/databasus databases --workspace-id <workspace-id>"
+    ""
+    "  # List backups for a database"
+    "  scripts/databasus backups --database-id <database-id>"
+    "  scripts/databasus backups --database-id <database-id> --json"
+    ""
+    "  # Start a backup for a database"
+    "  scripts/databasus backup run <database-id> --json"
+    ""
+    "  # Download a backup file to disk"
+    "  scripts/databasus backup download <backup-id> --output backup.tar.gz"
+    ""
+    "  # Update backup configuration from a JSON file"
+    "  scripts/databasus backup-config save --yes --json-file backup-config.json --json"
+    ""
+    "  # Call a raw Swagger operation when no friendly alias exists"
+    "  scripts/databasus op get-backups --database-id <database-id> --json"
+    ""
+    "Databasus model guide for agents:"
+    "  Databasus is workspace-scoped. Workspaces own databases, storages, and notifiers."
+    "  Databases are the things being backed up and restored. Storages are backup"
+    "  destinations. Notifiers are notification targets for backup or restore events."
+    ""
+    "  Backup configs attach backup policy to one database: enabled/disabled state,"
+    "  retention, schedule, destination storage, and notifier choices. Backups are jobs"
+    "  and artifacts for a database. Restores are jobs created from a backup artifact."
+    ""
+    "  Agent workflow:"
+    "    1. Discover workspace IDs, then database/storage/notifier IDs."
+    "    2. Read current config before writing anything."
+    "    3. Use --json for machine reads; use --json-file or stdin JSON for writes."
+    "    4. Include --yes only when you intend a mutating or destructive action."
+    ""
+    "  Useful discovery commands:"
+    "    scripts/databasus workspaces --json"
+    "    scripts/databasus databases --workspace-id <workspace-id> --json"
+    "    scripts/databasus storages --workspace-id <workspace-id> --json"
+    "    scripts/databasus notifiers --workspace-id <workspace-id> --json"
+    "    scripts/databasus backup-config get <database-id> --json"
+    "    scripts/databasus backups --database-id <database-id> --json"
+    ""
+    "Run `scripts/databasus <command> --help` for command help."
+    "Run `scripts/databasus ops` to list generated route names."]))
+
+(defn write-ops-help! [out]
+  (write-lines!
+   out
+   ["Usage: scripts/databasus ops [--json]"
+    ""
+    "List the operation catalog generated from the Databasus Swagger document."
+    ""
+    "Options:"
+    "  --json                 Print catalog as JSON"
+    "  --swagger-file <path>  Load Swagger from a local fixture"]))
+
+(defn schema-ref-name [ref]
+  (when-let [ref* (blank->nil ref)]
+    (last (str/split ref* #"/"))))
+
+(defn schema-type [schema]
+  (or (:type schema)
+      (get schema "type")
+      (some-> (or (:$ref schema) (get schema :$ref) (get schema "$ref")) schema-ref-name)
+      "object"))
+
+(defn parameter-name [parameter]
+  (or (:name parameter) (get parameter "name")))
+
+(defn parameter-location [parameter]
+  (or (:in parameter) (get parameter "in")))
+
+(defn parameter-description [parameter]
+  (or (:description parameter) (get parameter "description") ""))
+
+(defn parameter-required? [parameter]
+  (true? (or (:required parameter) (get parameter "required"))))
+
+(defn parameter-type [parameter]
+  (or (:type parameter)
+      (get parameter "type")
+      (schema-type (or (:schema parameter) (get parameter "schema")))))
+
+(defn swagger-parameters [handler]
+  (or (get-in handler [:swagger-definition :parameters])
+      (get-in handler ["swagger-definition" "parameters"])
+      []))
+
+(defn cli-parameter-name [parameter]
+  (let [location (parameter-location parameter)
+        name (parameter-name parameter)]
+    (case location
+      "body" "stdin JSON / --json-file"
+      "positional" (str "<" (csk/->kebab-case-string name) ">")
+      (str "--" (csk/->kebab-case-string name)))))
+
+(defn parameter-rows [parameters]
+  (into [["PARAMETER" "IN" "TYPE" "REQUIRED" "DESCRIPTION"]]
+        (map (fn [parameter]
+               [(cli-parameter-name parameter)
+                (or (parameter-location parameter) "")
+                (parameter-type parameter)
+                (if (parameter-required? parameter) "required" "optional")
+                (parameter-description parameter)])
+             parameters)))
+
+(defn operation-usage [route-name handler]
+  (let [params (swagger-parameters handler)
+        non-body-required (filter #(and (parameter-required? %)
+                                        (not= "body" (parameter-location %)))
+                                  params)
+        body? (some #(= "body" (parameter-location %)) params)]
+    (str "scripts/databasus op " (name (route-key route-name))
+         (apply str
+                (map (fn [parameter]
+                       (str " " (cli-parameter-name parameter) " <"
+                            (csk/->kebab-case-string (parameter-name parameter)) ">"))
+                     non-body-required))
+         (when body? " --yes [--json-file <path>]")
+         " [--json]")))
+
+(defn write-operation-help!
+  ([out usage handler]
+   (write-operation-help! out usage handler {}))
+  ([out usage handler options]
+   (let [route-name (:route-name handler)
+         method (str/upper-case (name (:method handler)))
+         path (:path handler)
+         summary (:summary handler)
+         params (or (:parameters options) (swagger-parameters handler))
+         yes-required? (if (contains? options :yes-required?)
+                         (:yes-required? options)
+                         (mutating-handler? handler))
+         body-option? (and (body-handler? handler)
+                           (not (:parameters options)))]
+     (write-lines!
+      out
+      [(str "Usage: " usage)
+       ""
+       (str "Generated route: " (name route-name))
+       (str method " " path)
+       (or summary "")
+       ""
+       "Parameters:"])
+     (if (seq params)
+       (write-table! out (parameter-rows params))
+       (write-lines! out ["  none"]))
+     (write-lines!
+      out
+      [""
+       "Common options:"
+       "  --json                 Print parsed response as JSON"
+       "  --swagger-file <path>  Load Swagger from a local fixture"
+       (when yes-required?
+         "  --yes                  Required for mutating generated operations")
+       (when body-option?
+         "  --json-file <path>    Read JSON body from a file instead of stdin")])
+     (when-let [notes (seq (:notes options))]
+       (write-lines! out (cons "" notes))))))
+
+(def alias-help
+  {["health"] {:route :get-system-health
+               :usage "scripts/databasus health [--json]"}
+   ["version"] {:route :get-system-version
+                :usage "scripts/databasus version [--json]"}
+   ["workspaces"] {:route :get-workspaces
+                   :usage "scripts/databasus workspaces [--json]"}
+   ["databases"] {:route :get-databases
+                  :usage "scripts/databasus databases --workspace-id <workspace-id> [--json]"}
+   ["database" "get"] {:route :get-databases-id
+                       :usage "scripts/databasus database get <database-id> [--json]"}
+   ["database" "create"] {:route :post-databases-create
+                          :usage "scripts/databasus database create --yes [--json-file <path>] [--json]"}
+   ["database" "create-postgres"] {:route :post-databases-create
+                                   :usage "scripts/databasus database create-postgres --name <name> --workspace-id <workspace-id> --host <host> --database <database> --username <username> --password-file <path> --yes [--json]"
+                                   :parameters [{:name "name" :in "query" :type "string" :required true :description "Databasus display name"}
+                                                {:name "workspace-id" :in "query" :type "string" :required true :description "Workspace ID"}
+                                                {:name "host" :in "query" :type "string" :required true :description "Postgres host"}
+                                                {:name "database" :in "query" :type "string" :required true :description "Postgres database name"}
+                                                {:name "username" :in "query" :type "string" :required true :description "Postgres username"}
+                                                {:name "password-file" :in "query" :type "path" :required true :description "File containing Postgres password"}]}
+   ["database" "update"] {:route :post-databases-update
+                          :usage "scripts/databasus database update --yes [--json-file <path>] [--json]"}
+   ["database" "delete"] {:route :delete-databases-id
+                          :usage "scripts/databasus database delete <database-id> --yes [--json]"}
+   ["storages"] {:route :get-storages
+                 :usage "scripts/databasus storages --workspace-id <workspace-id> [--json]"}
+   ["storage" "get"] {:route :get-storages-id
+                      :usage "scripts/databasus storage get <storage-id> [--json]"}
+   ["storage" "save"] {:route :post-storages
+                       :usage "scripts/databasus storage save --yes [--json-file <path>] [--json]"}
+   ["storage" "delete"] {:route :delete-storages-id
+                         :usage "scripts/databasus storage delete <storage-id> --yes [--json]"}
+   ["notifiers"] {:route :get-notifiers
+                  :usage "scripts/databasus notifiers --workspace-id <workspace-id> [--json]"}
+   ["notifier" "get"] {:route :get-notifiers-id
+                       :usage "scripts/databasus notifier get <notifier-id> [--json]"}
+   ["notifier" "save"] {:route :post-notifiers
+                        :usage "scripts/databasus notifier save --yes [--json-file <path>] [--json]"}
+   ["notifier" "delete"] {:route :delete-notifiers-id
+                          :usage "scripts/databasus notifier delete <notifier-id> --yes [--json]"}
+   ["disk" "usage"] {:route :get-disk-usage
+                     :usage "scripts/databasus disk usage [--json]"}
+   ["backups"] {:route :get-backups
+                :usage "scripts/databasus backups --database-id <database-id> [--limit <n>] [--offset <n>] [--json]"}
+   ["backup" "run"] {:route :post-backups
+                     :usage "scripts/databasus backup run <database-id> [--json]"
+                     :yes-required? false
+                     :parameters [{:name "database-id"
+                                   :in "positional"
+                                   :type "string"
+                                   :required true
+                                   :description "Database ID; sent as request body database_id"}]
+                     :notes ["This friendly command builds the JSON request body; no stdin JSON is required."]}
+   ["backup" "download"] {:route :post-backups-id-download-token
+                          :usage "scripts/databasus backup download <backup-id> --output <path>"
+                          :yes-required? false
+                          :notes ["Generates a download token, downloads the backup file, and writes it to --output."]}
+   ["backup" "cancel"] {:route :post-backups-id-cancel
+                        :usage "scripts/databasus backup cancel <backup-id> --yes [--json]"}
+   ["backup" "delete"] {:route :delete-backups-id
+                        :usage "scripts/databasus backup delete <backup-id> --yes [--json]"}
+   ["backup-config" "get"] {:route :get-backup-configs-database-id
+                            :usage "scripts/databasus backup-config get <database-id> [--json]"}
+   ["backup-config" "save"] {:route :post-backup-configs-save
+                             :usage "scripts/databasus backup-config save --yes [--json-file <path>] [--json]"}
+   ["backup-config" "daily"] {:route :post-backup-configs-save
+                              :usage "scripts/databasus backup-config daily <database-id> --storage-id <storage-id> --time <HH:MM> --yes [--json]"
+                              :parameters [{:name "database-id" :in "positional" :type "string" :required true :description "Database ID"}
+                                           {:name "storage-id" :in "query" :type "string" :required true :description "Storage ID"}
+                                           {:name "time" :in "query" :type "HH:MM" :required true :description "Daily backup time"}
+                                           {:name "retention" :in "query" :type "TimePeriod" :required false :description "Retention period, default 3_MONTH"}]}
+   ["backup-config" "hourly-gfs"] {:route :post-backup-configs-save
+                                   :usage "scripts/databasus backup-config hourly-gfs <database-id> --storage-id <storage-id> [--time <HH:MM>] --yes [--json]"
+                                   :parameters [{:name "database-id" :in "positional" :type "string" :required true :description "Database ID"}
+                                                {:name "storage-id" :in "query" :type "string" :required true :description "Storage ID"}
+                                                {:name "time" :in "query" :type "HH:MM" :required false :description "Hourly schedule anchor, default 00:00"}
+                                                {:name "gfs-years" :in "query" :type "integer" :required false :description "GFS yearly restore points, default 3"}
+                                                {:name "gfs-months" :in "query" :type "integer" :required false :description "GFS monthly restore points, default 12"}
+                                                {:name "gfs-weeks" :in "query" :type "integer" :required false :description "GFS weekly restore points, default 4"}
+                                                {:name "gfs-days" :in "query" :type "integer" :required false :description "GFS daily restore points, default 7"}
+                                                {:name "gfs-hours" :in "query" :type "integer" :required false :description "GFS hourly restore points, default 24"}]
+                                   :notes ["Uses current SNO GFS defaults: 3 yearly, 12 monthly, 4 weekly, 7 daily, and 24 hourly restore points."]}
+   ["backup-config" "clone-policy"] {:route :post-backup-configs-save
+                                     :usage "scripts/databasus backup-config clone-policy --from-db-id <source-database-id> --to-db-id <target-database-id> --yes [--json]"
+                                     :parameters [{:name "from-db-id" :in "query" :type "string" :required true :description "Source database ID to read backup config from"}
+                                                  {:name "to-db-id" :in "query" :type "string" :required true :description "Target database ID to save backup config to"}]
+                                     :notes ["Reads the source backup config, copies schedule, storage, retention, encryption, retry, and notification fields, and changes only databaseId to the target."]}
+   ["restores"] {:route :get-restores-backup-id
+                 :usage "scripts/databasus restores --backup-id <backup-id> [--json]"}
+   ["restore" "run"] {:route :post-restores-backup-id-restore
+                      :usage "scripts/databasus restore run <backup-id> --yes [--json]"}
+   ["restore" "cancel"] {:route :post-restores-cancel-restore-id
+                         :usage "scripts/databasus restore cancel <restore-id> --yes [--json]"}})
+
+(defn alias-help-entry [positionals]
+  (or (get alias-help (vec (take 2 positionals)))
+      (get alias-help (vec (take 1 positionals)))))
+
+(defn write-op-help! [out config transport positionals]
+  (if-let [route-name (second positionals)]
+    (let [martian-instance (load-martian! config transport)
+          handler (require-known-handler! martian-instance route-name)]
+      (write-operation-help! out (operation-usage route-name handler) handler))
+    (write-lines!
+     out
+     ["Usage: scripts/databasus op <route-name> [options]"
+      ""
+      "Call any operation generated from the Databasus Swagger document."
+      "Run `scripts/databasus ops` to list route names."
+      "Run `scripts/databasus op <route-name> --help` for operation parameters."])))
+
+(defn write-alias-help! [out config transport entry]
+  (let [martian-instance (load-martian! config transport)
+        handler (require-known-handler! martian-instance (:route entry))]
+    (write-operation-help! out (:usage entry) handler entry)))
+
+(defn write-help! [out config transport positionals]
+  (let [command (first positionals)]
+    (cond
+      (nil? command)
+      (write-top-level-help! out)
+
+      (= "ops" command)
+      (write-ops-help! out)
+
+      (= "op" command)
+      (write-op-help! out config transport positionals)
+
+      (alias-help-entry positionals)
+      (write-alias-help! out config transport (alias-help-entry positionals))
+
+      :else
+      (write-top-level-help! out))))
+
+(defn response-token [value]
+  (or (get value "token")
+      (get value :token)
+      (get value "download_token")
+      (get value :download-token)
+      (get value "downloadToken")
+      (get value :downloadToken)))
+
+(defn write-bytes-file! [path bytes]
+  (let [file (java.io.File. path)]
+    (when-let [parent (.getParentFile file)]
+      (.mkdirs parent))
+    (with-open [out (java.io.FileOutputStream. file)]
+      (.write out bytes))))
+
+(defn raw-api-request! [ctx method path]
+  (parse-api-response
+   ((:transport ctx)
+    {:method method
+     :url (str (api-root (:config ctx)) path)
+     :headers (cond-> {}
+                (blank->nil (get-in ctx [:config :token]))
+                (assoc "Authorization" (get-in ctx [:config :token])))})))
+
+(defn backup-download! [ctx backup-id output-path]
+  (let [martian-instance (load-martian! (:config ctx) (:transport ctx))
+        ctx* (assoc ctx :martian martian-instance)
+        token-response (perform-operation!
+                        (with-command-opts ctx* {:id backup-id :yes true})
+                        :post-backups-id-download-token)
+        token (or (response-token token-response)
+                  (throw (ex-info "Download token response did not contain a token"
+                                  {:response token-response})))
+        response (perform-operation-response!
+                  ctx*
+                  :get-backups-id-file
+                  {:params {:id backup-id :token token}
+                   :response-as :bytes})
+        bytes (or (:body-bytes response)
+                  (.getBytes (or (:body response) "") "UTF-8"))]
+    (when-not (<= 200 (:status response) 299)
+      (parse-api-response response))
+    (write-bytes-file! output-path bytes)
+    {:output output-path
+     :backup_id backup-id
+     :bytes (alength bytes)}))
+
+(defn run-cli!
+  ([argv]
+   (run-cli! argv {}))
+  ([argv {:keys [transport out in]
+          :or {out *out*
+               in *in*}}]
+   (let [{positionals :args opts :opts} (parse-cli-args argv)
+         command (first positionals)
+         config (effective-config opts)
+         transport* (or transport (make-transport config))
+         ctx {:config config
+              :transport transport*
+              :out out
+              :in in
+              :opts opts}
+         json? (:json opts)]
+     (if (or (:help opts) (nil? command))
+       (write-help! out config transport* positionals)
+       (case command
+         "ops"
+         (write-ops! out json? (operation-catalog (load-martian! config transport*)))
+
+         "op"
+         (let [route-name (second positionals)]
+           (when-not route-name
+             (throw (ex-info "Usage: scripts/databasus op <route-name>" {})))
+           (write-result! out json? (perform-operation! ctx route-name)))
+
+         "health"
+         (write-result! out json? (perform-operation! ctx :get-system-health))
+
+         "version"
+         (write-result! out json? (perform-operation! ctx :get-system-version))
+
+         "swagger"
+         (write-result! out true (load-swagger! config transport*))
+
+         "workspaces"
+         (write-result! out json? (perform-operation! ctx :get-workspaces))
+
+         "databases"
+         (write-result! out json? (perform-operation! ctx :get-databases))
+
+         "database"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "get"
+             (let [database-id (positional! positionals 2
+                                            "Usage: scripts/databasus database get <database-id>")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id database-id
+                                                                          :database-id database-id})
+                                                  :get-databases-id)))
+
+             "create"
+             (write-result! out json? (perform-operation! ctx :post-databases-create))
+
+             "create-postgres"
+             (write-result! out json?
+                            (perform-operation! (-> ctx
+                                                    (assoc :opts {:yes (:yes opts)})
+                                                    (with-payload (postgres-database-payload opts)))
+                                                :post-databases-create))
+
+             "update"
+             (write-result! out json? (perform-operation! ctx :post-databases-update))
+
+             "delete"
+             (let [database-id (positional! positionals 2
+                                            "Usage: scripts/databasus database delete <database-id> --yes")]
+               (when-not (:yes opts)
+                 (throw (ex-info "Operation database delete uses DELETE and requires --yes" {})))
+               (write-result! out json?
+                              (if-let [_handler (handler-for (load-martian! config transport*) :delete-databases-id)]
+                                (perform-operation! (with-command-opts ctx {:id database-id
+                                                                            :database-id database-id})
+                                                    :delete-databases-id)
+                                (raw-api-request! ctx :delete (str "/databases/" (urlencode database-id))))))
+
+             (throw (ex-info (str "Unknown Databasus database command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         "storages"
+         (write-result! out json? (perform-operation! ctx :get-storages))
+
+         "storage"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "get"
+             (let [storage-id (positional! positionals 2
+                                           "Usage: scripts/databasus storage get <storage-id>")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id storage-id
+                                                                          :storage-id storage-id})
+                                                  :get-storages-id)))
+
+             "save"
+             (write-result! out json? (perform-operation! ctx :post-storages))
+
+             "delete"
+             (let [storage-id (positional! positionals 2
+                                           "Usage: scripts/databasus storage delete <storage-id> --yes")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id storage-id
+                                                                          :storage-id storage-id})
+                                                  :delete-storages-id)))
+
+             (throw (ex-info (str "Unknown Databasus storage command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         "notifiers"
+         (write-result! out json? (perform-operation! ctx :get-notifiers))
+
+         "notifier"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "get"
+             (let [notifier-id (positional! positionals 2
+                                            "Usage: scripts/databasus notifier get <notifier-id>")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id notifier-id
+                                                                          :notifier-id notifier-id})
+                                                  :get-notifiers-id)))
+
+             "save"
+             (write-result! out json? (perform-operation! ctx :post-notifiers))
+
+             "delete"
+             (let [notifier-id (positional! positionals 2
+                                            "Usage: scripts/databasus notifier delete <notifier-id> --yes")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id notifier-id
+                                                                          :notifier-id notifier-id})
+                                                  :delete-notifiers-id)))
+
+             (throw (ex-info (str "Unknown Databasus notifier command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         "disk"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "usage"
+             (write-result! out json? (perform-operation! ctx :get-disk-usage))
+
+             (throw (ex-info (str "Unknown Databasus disk command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         "backups"
+         (write-result! out json? (perform-operation! ctx :get-backups))
+
+         "backup-config"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "get"
+             (let [database-id (positional! positionals 2
+                                            "Usage: scripts/databasus backup-config get <database-id>")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id database-id
+                                                                          :database-id database-id})
+                                                  :get-backup-configs-database-id)))
+
+             "save"
+             (write-result! out json?
+                            (perform-operation! ctx :post-backup-configs-save))
+
+             "daily"
+             (let [database-id (positional! positionals 2
+                                            "Usage: scripts/databasus backup-config daily <database-id> --storage-id <storage-id> --time <HH:MM> --yes")]
+               (write-result! out json?
+                              (perform-operation! (-> ctx
+                                                      (assoc :opts {:yes (:yes opts)})
+                                                      (with-payload (daily-backup-config-payload database-id opts)))
+                                                  :post-backup-configs-save)))
+
+             "hourly-gfs"
+             (let [database-id (positional! positionals 2
+                                            "Usage: scripts/databasus backup-config hourly-gfs <database-id> --storage-id <storage-id> [--time <HH:MM>] --yes")]
+               (write-result! out json?
+                              (perform-operation! (-> ctx
+                                                      (assoc :opts {:yes (:yes opts)})
+                                                      (with-payload (hourly-gfs-backup-config-payload database-id opts)))
+                                                  :post-backup-configs-save)))
+
+             "clone-policy"
+             (let [usage "Usage: scripts/databasus backup-config clone-policy --from-db-id <source-database-id> --to-db-id <target-database-id> --yes"
+                   source-database-id (require-option-any! opts [:from-db-id :from-database-id] usage)
+                   target-database-id (require-option-any! opts [:to-db-id :to-database-id] usage)]
+               (write-result! out json?
+                              (clone-backup-config! ctx source-database-id target-database-id)))
+
+             (throw (ex-info (str "Unknown Databasus backup-config command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         "backup"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "run"
+             (let [database-id (positional! positionals 2
+                                            "Usage: scripts/databasus backup run <database-id>")
+                   ctx* (-> ctx
+                            (with-command-opts {:yes true})
+                            (with-payload {"database_id" database-id}))]
+               (write-result! out json? (perform-operation! ctx* :post-backups)))
+
+             "download"
+             (let [backup-id (positional! positionals 2
+                                          "Usage: scripts/databasus backup download <backup-id> --output <path>")
+                   output-path (require-option! opts :output
+                                                "Usage: scripts/databasus backup download <backup-id> --output <path>")]
+               (write-result! out json? (backup-download! ctx backup-id output-path)))
+
+             "cancel"
+             (let [backup-id (positional! positionals 2
+                                          "Usage: scripts/databasus backup cancel <backup-id> --yes")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id backup-id
+                                                                          :backup-id backup-id})
+                                                  :post-backups-id-cancel)))
+
+             "delete"
+             (let [backup-id (positional! positionals 2
+                                          "Usage: scripts/databasus backup delete <backup-id> --yes")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:id backup-id
+                                                                          :backup-id backup-id})
+                                                  :delete-backups-id)))
+
+             (throw (ex-info (str "Unknown Databasus backup command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         "restores"
+         (let [backup-id (require-option! opts :backup-id
+                                          "Usage: scripts/databasus restores --backup-id <backup-id>")]
+           (write-result! out json?
+                          (perform-operation! (with-command-opts ctx {:backup-id backup-id})
+                                              :get-restores-backup-id)))
+
+         "restore"
+         (let [subcommand (second positionals)]
+           (case subcommand
+             "run"
+             (let [backup-id (positional! positionals 2
+                                          "Usage: scripts/databasus restore run <backup-id> --yes")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:backup-id backup-id})
+                                                  :post-restores-backup-id-restore)))
+
+             "cancel"
+             (let [restore-id (positional! positionals 2
+                                           "Usage: scripts/databasus restore cancel <restore-id> --yes")]
+               (write-result! out json?
+                              (perform-operation! (with-command-opts ctx {:restore-id restore-id})
+                                                  :post-restores-cancel-restore-id)))
+
+             (throw (ex-info (str "Unknown Databasus restore command: " (or subcommand "<none>"))
+                             {:command subcommand}))))
+
+         (throw (ex-info (str "Unknown Databasus command: " (or command "<none>"))
+                         {:command command}))))
+     (.flush out)
+     0)))
+
+(defn -main [& args]
+  (try
+    (System/exit (run-cli! args))
+    (catch Exception e
+      (binding [*out* *err*]
+        (println (ex-message e)))
+      (System/exit 1))))
+
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))
