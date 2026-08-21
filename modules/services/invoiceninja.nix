@@ -1,12 +1,17 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 
 let
   cfg = config.modules.services.invoiceninja;
   onepassword = config.modules.services.onepassword-systemd-credentials;
+  backupUser = "databasus_invoiceninja";
+  databaseName = "invoiceninja";
+  deweyMgmtAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
+  maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
   # as invoiceninja2 user: podman unshare cat /proc/self/uid_map
   rootDir = "/var/lib/invoiceninja2";
   appEnvironmentFile = "/run/invoiceninja-env/invoiceninja.env";
@@ -27,7 +32,7 @@ let
     "FILESYSTEM_DISK=debian_docker"
     "DB_PORT=3306"
     "DB_HOST=host.containers.internal"
-    "DB_DATABASE=invoiceninja"
+    "DB_DATABASE=${databaseName}"
     "DB_USERNAME=${cfg.user.name}"
     "DB_CONNECTION=mysql"
     "IS_DOCKER=true"
@@ -102,6 +107,10 @@ in
         assertion = onepassword.enable;
         message = "Invoice Ninja credentials require the 1Password systemd credential provider.";
       }
+      {
+        assertion = !(builtins.elem 3306 config.networking.firewall.allowedTCPPorts);
+        message = "Invoice Ninja MariaDB must not be exposed through globally allowed TCP port 3306.";
+      }
     ];
 
     modules.services.onepassword-systemd-credentials.consumers.invoiceninja-env-setup = {
@@ -109,6 +118,9 @@ in
       IN_PASSWORD = "op://home-ops-prod/invoiceninja/in-password";
       APP_KEY = "op://home-ops-prod/invoiceninja/app-key";
       DB_PASSWORD = "op://home-ops-prod/invoiceninja/db-password";
+    };
+    modules.services.onepassword-systemd-credentials.consumers.databasus-invoiceninja-role = {
+      MARIADB_PASSWORD = "op://home-ops-prod/databasus-invoiceninja/password";
     };
 
     systemd.services.invoiceninja-env-setup = {
@@ -135,15 +147,58 @@ in
       '';
     };
     services.mysql = {
-      ensureDatabases = [ "invoiceninja" ];
+      ensureDatabases = [ databaseName ];
+      # Rootless Podman's host.containers.internal forwarder needs an IPv4 wildcard listener;
+      # nftables and the source-qualified MariaDB account provide the remote boundary.
+      settings.mysqld.bind-address = "0.0.0.0";
       ensureUsers = [
         {
           inherit (cfg.user) name;
           ensurePermissions = {
-            "invoiceninja.*" = "ALL PRIVILEGES";
+            "${databaseName}.*" = "ALL PRIVILEGES";
           };
         }
       ];
+    };
+
+    systemd.services.databasus-invoiceninja-role = {
+      description = "Provision the Databasus read-only role for Invoice Ninja";
+      wantedBy = [ "multi-user.target" ];
+      requires = [ "mysql.service" ];
+      after = [ "mysql.service" ];
+      script = ''
+        password_b64="$(${pkgs.coreutils}/bin/base64 --wrap=0 "$CREDENTIALS_DIRECTORY/MARIADB_PASSWORD")"
+        trap 'unset password_b64' EXIT
+
+        ${config.services.mysql.package}/bin/mariadb --batch <<SQL
+        SET @backup_password = FROM_BASE64('$password_b64');
+        SET @statement = CONCAT(
+          "CREATE USER IF NOT EXISTS '${backupUser}'@'${maliMgmtAddress}' IDENTIFIED BY ",
+          QUOTE(@backup_password)
+        );
+        PREPARE create_user FROM @statement;
+        EXECUTE create_user;
+        DEALLOCATE PREPARE create_user;
+        SET @statement = CONCAT(
+          "ALTER USER '${backupUser}'@'${maliMgmtAddress}' IDENTIFIED BY ",
+          QUOTE(@backup_password)
+        );
+        PREPARE alter_user FROM @statement;
+        EXECUTE alter_user;
+        DEALLOCATE PREPARE alter_user;
+        REVOKE ALL PRIVILEGES, GRANT OPTION FROM '${backupUser}'@'${maliMgmtAddress}';
+        GRANT SELECT, SHOW VIEW, LOCK TABLES, TRIGGER, EVENT
+          ON `${databaseName}`.* TO '${backupUser}'@'${maliMgmtAddress}';
+        GRANT PROCESS, SHOW CREATE ROUTINE ON *.* TO '${backupUser}'@'${maliMgmtAddress}';
+        SQL
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        User = "mysql";
+        Group = "mysql";
+        RemainAfterExit = true;
+        ExecStartPre = "${pkgs.coreutils}/bin/test -S /run/mysqld/mysqld.sock";
+      };
     };
     virtualisation.quadlet.enable = true;
     virtualisation.quadlet = {
@@ -238,5 +293,9 @@ in
         };
       };
     };
+
+    networking.firewall.extraInputRules = ''
+      iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${deweyMgmtAddress} tcp dport 3306 accept comment "Databasus Invoice Ninja logical backup"
+    '';
   };
 }

@@ -29,10 +29,6 @@ in
     baseZfsDataset = "rpool/encrypted/safe/microvms";
   };
 
-  networking.firewall.allowedTCPPorts = [
-    # todo: after microvm migration restrict with nftables to svc zone
-    3306
-  ];
   networking.firewall.interfaces.mgmt.allowedTCPPorts = [
     config.modules.services.caddy.edge.directWan.listenPort
   ];
