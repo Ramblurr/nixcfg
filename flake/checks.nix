@@ -19,6 +19,9 @@
         matrix-postgres-incremental = import ../tests/matrix-postgres-incremental.nix {
           inherit inputs pkgs;
         };
+        nixbot-postgresql-backup = import ../tests/nixbot-postgresql-backup.nix {
+          inherit inputs pkgs;
+        };
         onepassword-connect-availability = import ../tests/onepassword-connect-availability.nix {
           inherit inputs pkgs;
         };
