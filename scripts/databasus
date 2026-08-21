@@ -704,15 +704,14 @@
     {"name" (require-option! opts :name usage)
      "workspaceId" (require-option! opts :workspace-id usage)
      "type" "POSTGRES_LOGICAL"
-     "postgresql" {"host" (require-option! opts :host usage)
-                   "port" (parse-int-option (or (:port opts) "5432") "--port")
-                   "database" (require-option! opts :database usage)
-                   "username" (require-option! opts :username usage)
-                   "password" (trim-file password-file)
-                   "sslMode" (or (blank->nil (:ssl-mode opts)) "disable")
-                   "version" (or (blank->nil (:version opts)) "17")
-                   "backupType" (or (blank->nil (:backup-type opts)) "PG_DUMP")
-                   "cpuCount" (parse-int-option (or (:cpu-count opts) "1") "--cpu-count")}}))
+     "postgresqlLogical" {"host" (require-option! opts :host usage)
+                          "port" (parse-int-option (or (:port opts) "5432") "--port")
+                          "database" (require-option! opts :database usage)
+                          "username" (require-option! opts :username usage)
+                          "password" (trim-file password-file)
+                          "sslMode" (or (blank->nil (:ssl-mode opts)) "disable")
+                          "version" (or (blank->nil (:version opts)) "17")
+                          "cpuCount" (parse-int-option (or (:cpu-count opts) "1") "--cpu-count")}}))
 
 (defn daily-backup-config-payload [database-id opts]
   (let [usage "Usage: scripts/databasus backup-config daily <database-id> --storage-id <storage-id> --time <HH:MM> --yes [--json]"
