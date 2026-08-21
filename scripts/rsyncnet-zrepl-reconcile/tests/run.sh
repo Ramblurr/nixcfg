@@ -130,7 +130,7 @@ esac
 EOF
 chmod +x "$work/bin/ssh"
 
-export EXPECTED_BUNDLE_ID=v1-ccc29d6eb3b5a463-initial
+export EXPECTED_BUNDLE_ID=v1-c337a0f46626b904-initial
 export EXPECTED_DATASETS_FILE=$work/datasets
 export RECEIVER_ALIAS=rsyncnet
 export RECEIVER_HOST=receiver.example.invalid
