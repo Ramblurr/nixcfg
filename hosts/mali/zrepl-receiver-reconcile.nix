@@ -7,7 +7,7 @@
 let
   cfg = config.services.rsyncnet-zrepl-reconcile;
   serviceName = "rsyncnet-zrepl-reconcile";
-  runtimeUser = "rsyncnet-zrepl-dynamic";
+  runtimeUser = "rsyncnet-zrepl";
   stateDataset = "rpool2/encrypted/safe/svc/zrepl-reconcile";
   stateDirActual = "/var/lib/private/${serviceName}";
   expectedBundleId = "v1-ccc29d6eb3b5a463-initial";
