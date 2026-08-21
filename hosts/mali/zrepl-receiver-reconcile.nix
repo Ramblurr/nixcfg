@@ -75,6 +75,14 @@ in
       known-hosts = cfg.knownHostsReference;
     };
 
+    site.gatus.heartbeats.rsyncnet-zrepl-reconcile = lib.mkIf cfg.timer.enable {
+      service = serviceName;
+      name = "rsync.net Zrepl Receiver Reconciliation";
+      group = config.site.gatus.groups.infrastructure;
+      interval = "45m";
+      reporterAsRoot = true;
+    };
+
     modules.zfs.datasets.properties.${stateDataset} = {
       atime = "off";
       compression = "zstd";

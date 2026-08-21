@@ -9,9 +9,17 @@ let
         ../modules/zfs-attrs.nix
         inputs.sops-nix.nixosModules.sops
         ../modules/services/onepassword-systemd-credentials.nix
+        ../modules/site/gatus.nix
+        ../modules/site/gatus-heartbeats.nix
+        ../modules/site/gatus-heartbeats-onepassword.nix
         ../hosts/mali/zrepl-receiver-reconcile.nix
         {
+          options.repo.secrets = lib.mkOption { type = lib.types.attrs; };
+        }
+        {
           nixpkgs.pkgs = pkgs;
+          networking.hostName = "mali";
+          repo.secrets.global.domain.home = "example.test";
           system.stateVersion = "26.05";
           boot.loader.grub.devices = [ "nodev" ];
           fileSystems."/" = {
@@ -47,9 +55,8 @@ let
   provider = evaluated.config.modules.services.onepassword-systemd-credentials;
   service = evaluated.config.systemd.services.rsyncnet-zrepl-reconcile;
   timer = evaluated.config.systemd.timers.rsyncnet-zrepl-reconcile;
-  unscheduledTimer =
-    (mkEvaluated (validConfig // { timer.enable = false; }))
-    .config.systemd.timers.rsyncnet-zrepl-reconcile;
+  unscheduled = mkEvaluated (validConfig // { timer.enable = false; });
+  unscheduledTimer = unscheduled.config.systemd.timers.rsyncnet-zrepl-reconcile;
   inherit (service) serviceConfig;
   stateDataset =
     evaluated.config.modules.zfs.datasets.properties."rpool2/encrypted/safe/svc/zrepl-reconcile";
@@ -81,13 +88,28 @@ assert !(service.environment ? RUNTIME_DIRECTORY);
 assert
   provider.consumers.rsyncnet-zrepl-reconcile == {
     identity = "op://test/mali-rsyncnet-reconciler/private key";
+    gatus-token = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
     known-hosts = "op://test/mali-rsyncnet-reconciler/known hosts";
   };
 assert
   serviceConfig.LoadCredential == [
+    "gatus-token:${provider.socketPath}"
     "identity:${provider.socketPath}"
     "known-hosts:${provider.socketPath}"
   ];
+assert
+  evaluated.config.site.gatus.externalEndpoints == [
+    {
+      name = "rsync.net Zrepl Receiver Reconciliation (mali)";
+      group = evaluated.config.site.gatus.groups.infrastructure;
+      token = "$GATUS_EXTERNAL_TOKEN";
+      heartbeat.interval = "45m";
+      alerts = [ { type = "pushover"; } ];
+    }
+  ];
+assert lib.hasPrefix "!" serviceConfig.ExecStopPost;
+assert lib.hasInfix "--name 'rsync.net Zrepl Receiver Reconciliation (mali)'"
+  serviceConfig.ExecStopPost;
 assert builtins.elem "onepassword-credential-provider.socket" service.requires;
 assert builtins.elem "onepassword-credential-provider.socket" service.after;
 assert builtins.elem "${pkgs.coreutils}/bin/test -s %d/identity" serviceConfig.ExecStartPre;
@@ -95,6 +117,7 @@ assert builtins.elem "${pkgs.coreutils}/bin/test -s %d/known-hosts" serviceConfi
 assert service.wantedBy == [ ];
 assert timer.wantedBy == [ "timers.target" ];
 assert unscheduledTimer.wantedBy == [ ];
+assert unscheduled.config.site.gatus.externalEndpoints == [ ];
 assert timer.timerConfig.OnCalendar == "*:0/15";
 assert timer.timerConfig.RandomizedDelaySec == "2min";
 assert timer.timerConfig.Persistent;
