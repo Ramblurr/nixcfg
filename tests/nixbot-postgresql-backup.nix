@@ -67,7 +67,7 @@ let
     }).config;
   provider = cfg.modules.services.onepassword-systemd-credentials;
   service = cfg.systemd.services.databasus-nixbot-role;
-  script = service.script;
+  inherit (service) script;
 in
 assert
   provider.consumers.databasus-nixbot-role == {
