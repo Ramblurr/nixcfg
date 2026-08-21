@@ -7,6 +7,7 @@ let
   identity = pkgs.writeText "identity" "test identity\n";
   knownHosts = pkgs.writeText "known-hosts" "receiver.example.invalid ssh-ed25519 TEST\n";
   fakeSsh = pkgs.writeShellScriptBin "ssh" ''
+    ${pkgs.glibc.bin}/bin/getent passwd "$(${pkgs.coreutils}/bin/id -u)" >/dev/null
     printf '%s\n' \
       'ZREPL_SNAPSHOT_V1 dataset=data1/replication/mali/test snapshot=data1/replication/mali/test@zrepl_test guid=1000 creation=2000' \
       'ZREPL_BOOTSTRAP_V1 initial=HEALTHY final=HEALTHY changed=0 bundle=${expectedBundle} reason=healthy validation=pass'
@@ -45,6 +46,11 @@ pkgs.testers.runNixOSTest {
         StateDirectoryMode = "0700";
         RuntimeDirectory = "rsyncnet-zrepl-reconcile";
         RuntimeDirectoryMode = "0700";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_INET"
+          "AF_INET6"
+        ];
         LoadCredential = [
           "identity:${identity}"
           "known-hosts:${knownHosts}"
