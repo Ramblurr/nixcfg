@@ -102,7 +102,7 @@ verify_release() {
   verify_manifest "$RELEASE_ROOT" "$RELEASE_ROOT/manifest.private.sha256" "$expected_private" || return 1
 
   test "$(meta_value package_name)" = zrepl || return 1
-  test "$(meta_value package_origin)" = sysutils/zrepl || return 1
+  test "$(meta_value package_origin)" = filesystems/zrepl || return 1
   test "$(meta_value package_arch)" = FreeBSD:14:amd64 || return 1
   test "$(meta_value pruning_mode)" = keep-all || return 1
   grep -Fxq "zrepl.yml|$(meta_value live_config)|600" "$RELEASE_ROOT/managed-files" || return 1

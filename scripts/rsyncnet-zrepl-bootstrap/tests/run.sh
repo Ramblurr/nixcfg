@@ -59,10 +59,10 @@ check_false 'pkg self-upgrade dependency rejected' validate_pkg_self_plan "$FIXT
 check_false 'dependency plan rejected' validate_package_plan "$FIXTURES/pkg-plan-dependency.txt" 0.7.0_5
 check_false 'removal plan rejected' validate_package_plan "$FIXTURES/pkg-plan-removal.txt" 0.7.0_5
 check_false 'wrong zrepl version rejected' validate_package_plan "$FIXTURES/pkg-plan-accepted.txt" 0.8.0
-check_true 'script-free exact-origin package manifest accepted' validate_package_manifest "$FIXTURES/pkg-manifest-safe.ucl" 0.7.0_5 sysutils/zrepl FreeBSD:14:amd64
-check_false 'package install script rejected' validate_package_manifest "$FIXTURES/pkg-manifest-scripted.ucl" 0.7.0_5 sysutils/zrepl FreeBSD:14:amd64
-check_false 'wrong package origin rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-origin.ucl" 0.7.0_5 sysutils/zrepl FreeBSD:14:amd64
-check_false 'wrong package architecture rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-arch.ucl" 0.7.0_5 sysutils/zrepl FreeBSD:14:amd64
+check_true 'script-free exact-origin package manifest accepted' validate_package_manifest "$FIXTURES/pkg-manifest-safe.ucl" 0.7.0_5 filesystems/zrepl FreeBSD:14:amd64
+check_false 'package install script rejected' validate_package_manifest "$FIXTURES/pkg-manifest-scripted.ucl" 0.7.0_5 filesystems/zrepl FreeBSD:14:amd64
+check_false 'wrong package origin rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-origin.ucl" 0.7.0_5 filesystems/zrepl FreeBSD:14:amd64
+check_false 'wrong package architecture rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-arch.ucl" 0.7.0_5 filesystems/zrepl FreeBSD:14:amd64
 check_eq 'package transaction size parsed' 44040192 "$(package_plan_required_bytes "$FIXTURES/pkg-plan-accepted.txt")"
 check_false 'missing package transaction size rejected' package_plan_required_bytes "$FIXTURES/pkg-plan-dependency.txt"
 check_true 'unchanged package payload accepted' validate_pkg_check_result /dev/null 0 0.7.0_5
