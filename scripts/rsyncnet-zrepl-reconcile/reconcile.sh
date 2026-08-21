@@ -32,10 +32,10 @@ write_state() {
   mv -f "$temporary" "$state_directory/$name"
 }
 
-secure_directory() {
+state_file() {
   local path=$1
-  test -d "$path" && test ! -L "$path" &&
-    [[ $(stat -c %u "$path") == "$(id -u)" ]] && [[ $(stat -c %a "$path") == 700 ]]
+  test -f "$path" && test ! -L "$path" && test -r "$path" &&
+    [[ $(stat -c %a "$path") == 600 ]]
 }
 
 secure_file() {
@@ -48,7 +48,7 @@ secure_file() {
 
 read_number() {
   local path=$1 value
-  secure_file "$path" || return 1
+  state_file "$path" || return 1
   value=$(cat "$path")
   [[ $value =~ ^[0-9]{1,18}$ ]] || return 1
   printf '%s\n' "$value"
@@ -91,12 +91,6 @@ fail_local() {
   emit_local_result failure "$1" "${2:-ERROR}" "${3:-0}" "${4:-unknown}" "$5" "${6:-fail}" "${7:-none}" "${8:-none}"
   exit 1
 }
-
-if ! secure_directory "$state_directory" || ! secure_directory "$runtime_directory"; then
-  printf 'ZREPL_RECONCILE_V1 time=%s receiver=%s ssh=local state=ERROR changed=0 bundle=unknown reason=state validation=fail advancement=none failures=0 threshold=0 action=none\n' \
-    "$timestamp" "$receiver_alias"
-  exit 70
-fi
 
 remote_output=$(mktemp "$runtime_directory/remote-output.XXXXXX")
 remote_error=$(mktemp "$runtime_directory/remote-error.XXXXXX")
@@ -329,7 +323,7 @@ if [[ $changed == 1 ]]; then
   mv -f "$temporary" "$baseline"
   write_state advancement-deadline "$((now + 2700))"
   advancement=baseline
-elif secure_file "$baseline"; then
+elif state_file "$baseline"; then
   advanced=0
   while IFS= read -r dataset; do
     baseline_creation=$(awk -v target="dataset=$dataset" '$2 == target { sub(/^creation=/, "", $5); print $5 }' "$baseline")
