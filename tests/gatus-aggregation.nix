@@ -159,6 +159,7 @@ assert
 assert
   credentialConsumer == {
     borgmatic-external-endpoint-token = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
+    quine-external-endpoint-token = "op://home-ops-prod/gatus/quine_external_endpoint_token";
     pushover-api-token = "op://home-ops-prod/pushover/pushover_api_token";
     pushover-user-key = "op://home-ops-prod/pushover/pushover_user_key";
   };
@@ -166,6 +167,7 @@ assert gatusEnvSetup.before == [ "gatus.service" ];
 assert gatusEnvSetup.requiredBy == [ "gatus.service" ];
 assert lib.hasInfix "BORGMATIC_GATUS_TOKEN=%s" gatusEnvSetup.script;
 assert lib.hasInfix "GATUS_EXTERNAL_TOKEN=%s" gatusEnvSetup.script;
+assert lib.hasInfix "GATUS_QUINE_EXTERNAL_TOKEN=%s" gatusEnvSetup.script;
 pkgs.runCommand "gatus-aggregation-test" { } ''
   touch "$out"
 ''

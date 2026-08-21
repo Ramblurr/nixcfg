@@ -36,6 +36,7 @@ in
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+  site.gatus.heartbeatToken.gatusEnvironmentVariable = "GATUS_QUINE_EXTERNAL_TOKEN";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   environment.persistence."/persist".directories = [ "/var/lib/containers" ];
   networking.hostId = lib.my.generateHostId config.networking.hostName;
