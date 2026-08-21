@@ -68,6 +68,11 @@ in
         internal = true;
         description = "Whether this host has a configured recurring-job heartbeat token source";
       };
+      gatusEnvironmentVariable = lib.mkOption {
+        type = lib.types.strMatching "^[A-Z][A-Z0-9_]*$";
+        default = "GATUS_EXTERNAL_TOKEN";
+        description = "Gatus process environment variable containing the token that validates this host's external endpoints";
+      };
       onepasswordReference = lib.mkOption {
         type = lib.types.strMatching "^op://.+";
         default = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
@@ -96,7 +101,7 @@ in
     site.gatus.externalEndpoints = lib.mapAttrsToList (_: heartbeat: {
       name = endpointName heartbeat;
       inherit (heartbeat) group;
-      token = "$GATUS_EXTERNAL_TOKEN";
+      token = "$" + cfg.heartbeatToken.gatusEnvironmentVariable;
       heartbeat.interval = heartbeat.interval;
       alerts = [ { type = "pushover"; } ];
     }) cfg.heartbeats;
