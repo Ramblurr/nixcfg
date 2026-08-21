@@ -96,6 +96,7 @@ assert lib.hasInfix "CREATE USER IF NOT EXISTS 'databasus_invoiceninja'@'192.0.2
 assert lib.hasInfix "FROM_BASE64" backupScript;
 assert lib.hasInfix "REVOKE ALL PRIVILEGES, GRANT OPTION" backupScript;
 assert lib.hasInfix "GRANT SELECT, SHOW VIEW" backupScript;
+assert lib.hasInfix "ON invoiceninja.* TO" backupScript;
 assert !(lib.hasInfix "GRANT INSERT" backupScript);
 assert cfg.services.mysql.settings.mysqld.bind-address == "0.0.0.0";
 assert !(builtins.elem 3306 cfg.networking.firewall.allowedTCPPorts);
