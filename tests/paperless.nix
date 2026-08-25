@@ -129,11 +129,14 @@ assert lib.all (
   service: builtins.elem "postgresql.service" service.after
 ) postgresDependentServices;
 assert !(builtins.hasAttr "paperless-copy-password" compatibility.systemd.services);
-assert webService.serviceConfig.EnvironmentFile == "/run/paperless-secrets/oidc.env";
+assert builtins.elem "/run/paperless-secrets/oidc.env" (
+  lib.toList webService.serviceConfig.EnvironmentFile
+);
 assert !(builtins.hasAttr "paperless/adminPassword" compatibility.sops.secrets);
 assert !(builtins.hasAttr "paperless/oidcProvider" compatibility.sops.secrets);
 assert compatibility.sops.templates == { };
-assert lib.hasInfix "/var/lib/paperless/nixos-paperless-secret-key" webService.script;
+assert lib.hasInfix "/var/lib/paperless/nixos-paperless-secret-key.env"
+  compatibility.systemd.services.paperless-secret-key.script;
 assert compatibility.services.caddy.enable;
 assert compatibility.modules.services.caddy.routes.paperless.publicHost == "paperless.example.test";
 pkgs.runCommand "paperless-oidc-module-test" { } ''
