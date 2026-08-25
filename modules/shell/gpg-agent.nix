@@ -24,7 +24,7 @@ in
         enableExtraSocket = true;
         enableBashIntegration = true;
         sshKeys = [ "978C4D08058BA26EB97CB51820782DBCACFAACDA" ];
-        pinentry.package = pkgs.pinentry-gtk2;
+        pinentry.package = pkgs.pinentry-gnome3;
       };
       programs.gpg = {
         enable = true;
