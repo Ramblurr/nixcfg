@@ -11,7 +11,7 @@ let
   cfg = config.repo.secrets.local;
   homeZone = config.repo.secrets.global.domain.home;
   workZone = config.repo.secrets.global.domain.work;
-  pdns = pkgs.pdns-unstable;
+  pdns = pkgs.pdns;
   addamsMgmtIp = lib.head config.site.net.mgmt.hosts4.addams;
   quineMgmtIp = lib.head config.site.net.mgmt.hosts4.quine;
 in

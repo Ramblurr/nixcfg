@@ -12,7 +12,6 @@ inputs: [
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
         kernelPackages = prev.linuxPackages;
       };
-      pdns-unstable = prev.callPackage ./pdns-unstable/package.nix { };
       terraform-provider-powerdns = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./terraform-providers/powerdns.nix { };
