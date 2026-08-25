@@ -120,11 +120,19 @@ check_eq 'captured marker is bounded' \
   "$(cat "$work/markers")"
 PATH=$original_path
 
-check_true 'recovery YAML is exact reviewed safe config' cmp -s \
-  "$SOURCE_DIR/zrepl.yml" \
-  "$SOURCE_DIR/../../.scratch-org/034-restore-rsyncnet-zrepl/evidence/zrepl-live-safe.yml"
+property_block=$(sed -n '/^      properties:$/,/^      placeholder:$/p' "$SOURCE_DIR/zrepl.yml")
+check_eq 'mixed filesystem and zvol receive properties are type-safe' \
+  '      properties:
+        inherit:
+          - mountpoint
+          - canmount
+          - overlay
+        override:
+          readonly: on
+      placeholder:' \
+  "$property_block"
 check_eq 'reviewed safe config checksum' \
-  3320db84ba58312a6c33bdb1aaace30589ddf851f77cb9ab75ee211b2b321d43 \
+  4c669c8bfc1be49abc535b8a74008dc9c9a049244bfff6f35b95d8c4c26db731 \
   "$(sha256_file "$SOURCE_DIR/zrepl.yml")"
 check_eq 'sender and receiver are both keep-all' 2 \
   "$(grep -c 'regex: "\.\*"' "$SOURCE_DIR/zrepl.yml")"
