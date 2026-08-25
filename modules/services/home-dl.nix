@@ -237,7 +237,7 @@ in
       name = "Recyclarr Sync";
       group = config.site.gatus.groups.media;
       interval = "30h";
-      reporterAsRoot = true;
+      reporterFullyPrivileged = true;
     };
     site.gatus.endpoints = [
       {

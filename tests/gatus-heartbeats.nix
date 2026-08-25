@@ -53,7 +53,7 @@ let
             name = "Git Archive";
             group = groups.work;
             inherit interval;
-            reporterAsRoot = dynamicUser;
+            reporterFullyPrivileged = dynamicUser;
           };
         }
       ];
@@ -92,8 +92,8 @@ assert
 assert
   enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
   == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
-assert lib.hasPrefix "!" reporterCommand;
-assert !(lib.hasPrefix "!" staticUserReporterCommand);
+assert lib.hasPrefix "+" reporterCommand;
+assert !(lib.hasPrefix "+" staticUserReporterCommand);
 assert lib.hasInfix "gatus-heartbeat systemd" reporterCommand;
 assert lib.hasInfix "--group '${groups.work}'" reporterCommand;
 assert lib.hasInfix "--name 'Git Archive (dewey)'" reporterCommand;
