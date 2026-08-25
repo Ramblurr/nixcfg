@@ -80,7 +80,7 @@ in
       name = "rsync.net Zrepl Receiver Reconciliation";
       group = config.site.gatus.groups.infrastructure;
       interval = "45m";
-      reporterAsRoot = true;
+      reporterFullyPrivileged = true;
     };
 
     modules.zfs.datasets.properties.${stateDataset} = {

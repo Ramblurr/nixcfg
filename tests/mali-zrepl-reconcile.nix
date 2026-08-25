@@ -107,7 +107,7 @@ assert
       alerts = [ { type = "pushover"; } ];
     }
   ];
-assert lib.hasPrefix "!" serviceConfig.ExecStopPost;
+assert lib.hasPrefix "+" serviceConfig.ExecStopPost;
 assert lib.hasInfix "--name 'rsync.net Zrepl Receiver Reconciliation (mali)'"
   serviceConfig.ExecStopPost;
 assert builtins.elem "onepassword-credential-provider.socket" service.requires;
