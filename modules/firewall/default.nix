@@ -3,56 +3,64 @@
   lib,
   ...
 }:
-with lib;
 let
   cfg = config.modules.firewall;
   useMullvad = config.modules.vpn.mullvad.enable;
   useTailscale = config.modules.vpn.tailscale.enable;
+  rawRuleset = config.networking.nftables.ruleset;
   localResolverAddrs = ''
     {
-    192.168.1.3,
-    10.9.4.4,
-    10.10.10.53,
-    10.10.12.53
-    }'';
-
+      192.168.1.3,
+      10.9.4.4,
+      10.10.10.53,
+      10.10.12.53
+    }
+  '';
   excludedIps = ''
     {
-                 10.8.3.1/24,
-                 10.9.4.1/22,
-                 10.9.8.1/23,
-                 10.9.10.1/23,
-                 10.8.50.1/23,
-                 10.8.60.1/23,
-                 10.5.0.0/24,
-                 10.10.10.0/23,
-                 10.10.12.0/23,
-                 192.168.1.0/24,
-                 192.168.8.0/22
-               }
-
+      10.8.3.1/24,
+      10.9.4.1/22,
+      10.9.8.1/23,
+      10.9.10.1/23,
+      10.8.50.1/23,
+      10.8.60.1/23,
+      10.5.0.0/24,
+      10.10.10.0/23,
+      10.10.12.0/23,
+      192.168.1.0/24,
+      192.168.8.0/22
+    }
   '';
 in
 {
-  options.modules.firewall = {
-    enable = lib.mkEnableOption "";
-  };
-  config = mkIf cfg.enable {
+  options.modules.firewall.enable = lib.mkEnableOption "the shared nftables firewall";
+
+  config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = rawRuleset == "" || builtins.match "^[[:space:]]*$" rawRuleset == null;
+        message = "networking.nftables.ruleset must not contain only whitespace; use networking.nftables.tables for managed tables";
+      }
+    ];
+
     networking = {
-      firewall.enable = true;
-      nftables.enable = true;
-      firewall.logRefusedConnections = false;
-    };
-    # FIXME: allow mullvad custom dns
-    networking.nftables.ruleset = ''
-            ${optionalString (useTailscale && useMullvad) ''
-              table inet mullvad-tailscale-exclude {
+      firewall = {
+        enable = true;
+        logRefusedConnections = false;
+      };
+      nftables = {
+        enable = true;
+        tables = lib.mkMerge [
+          (lib.mkIf (useTailscale && useMullvad) {
+            "mullvad-tailscale-exclude" = {
+              family = "inet";
+              content = ''
                 chain exclude-outgoing {
                   type route hook output priority 0; policy accept;
-                #  this breaks mullvad dns
-                #  ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+                  # This breaks Mullvad DNS:
+                  # ip daddr 100.64.0.0/10 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
 
-                  # this should work, but also doesn't
+                  # This should work, but also doesn't.
                   ip daddr 100.64.0.0/32 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                   ip daddr 100.64.0.8/29 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                   ip daddr 100.64.0.16/28 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
@@ -78,76 +86,58 @@ in
                   ip daddr 10.11.0.0/16 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                   ip6 daddr fd7a:115c:a1e0::/48 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                 }
+
                 chain allow-incoming {
                   type filter hook input priority -100; policy accept;
                   iifname "tailscale0" ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                 }
+
                 define TAILSCALE_RESOLVER_ADDRS = {
-                  # tailscale dns
+                  # Tailscale DNS
                   100.100.100.100
                 }
+
                 chain exclude-dns {
                   type filter hook output priority -10; policy accept;
                   ip daddr $TAILSCALE_RESOLVER_ADDRS udp dport 53 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                   ip daddr $TAILSCALE_RESOLVER_ADDRS tcp dport 53 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                 }
-              }
-            ''}
-
-      ${optionalString (useTailscale && !useMullvad && false) ''
-        table inet tailscale-local-exclude {
-          chain allow-incoming-ssh {
-            type filter hook input priority -100; policy accept;
-            tcp dport 22 ct mark set 0x00000f41 meta mark set 0x80000;
-          }
-
-          chain allow-outgoing-ssh {
-            type route hook output priority -100; policy accept;
-            tcp dport 22 ct mark set 0x00000f41 meta mark set 0x80000;
-          }
-
-          define LOCAL_RESOLVER_ADDRS = ${localResolverAddrs}
-          chain exclude-local-dns {
-            type filter hook output priority -100; policy accept;
-            ip daddr $LOCAL_RESOLVER_ADDRS udp dport 53 meta mark set 0x80000;
-            ip daddr $LOCAL_RESOLVER_ADDRS tcp dport 53 meta mark set 0x80000;
-          }
-          define EXCLUDED_IPS = ${excludedIps}
-
-          chain exclude-local-lan {
-              type route hook output priority -100; policy accept;
-              ip daddr $EXCLUDED_IPS meta mark set 0x80000;
-          }
-        }
-      ''}
-
-              ${optionalString useMullvad ''
-                table inet mullvad-local-exclude {
-                  chain allow-incoming-ssh {
-                    type filter hook input priority -100; policy accept;
-                    tcp dport 22 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  }
-
-                  chain allow-outgoing-ssh {
-                    type route hook output priority -100; policy accept;
-                    tcp sport 22 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  }
-
-                  define LOCAL_RESOLVER_ADDRS = ${localResolverAddrs}
-                 chain exclude-local-dns {
-                    type filter hook output priority -10; policy accept;
-                    ip daddr $LOCAL_RESOLVER_ADDRS udp dport 53 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                    ip daddr $LOCAL_RESOLVER_ADDRS tcp dport 53 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  }
-                  define EXCLUDED_IPS = ${excludedIps}
-
-
-                  chain exclude-local-lan {
-                      type route hook output priority 0; policy accept;
-                      ip daddr $EXCLUDED_IPS ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
-                  }
+              '';
+            };
+          })
+          (lib.mkIf useMullvad {
+            "mullvad-local-exclude" = {
+              family = "inet";
+              content = ''
+                chain allow-incoming-ssh {
+                  type filter hook input priority -100; policy accept;
+                  tcp dport 22 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
                 }
-              ''}
-    '';
+
+                chain allow-outgoing-ssh {
+                  type route hook output priority -100; policy accept;
+                  tcp sport 22 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+                }
+
+                define LOCAL_RESOLVER_ADDRS = ${localResolverAddrs}
+
+                chain exclude-local-dns {
+                  type filter hook output priority -10; policy accept;
+                  ip daddr $LOCAL_RESOLVER_ADDRS udp dport 53 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+                  ip daddr $LOCAL_RESOLVER_ADDRS tcp dport 53 ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+                }
+
+                define EXCLUDED_IPS = ${excludedIps}
+
+                chain exclude-local-lan {
+                  type route hook output priority 0; policy accept;
+                  ip daddr $EXCLUDED_IPS ct mark set 0x00000f41 meta mark set 0x6d6f6c65;
+                }
+              '';
+            };
+          })
+        ];
+      };
+    };
   };
 }
