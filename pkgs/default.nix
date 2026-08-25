@@ -12,6 +12,30 @@ inputs: [
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
         kernelPackages = prev.linuxPackages;
       };
+      # TODO: remove when nixpkgs Jet works with GraalVM 25.2.4.
+      jet =
+        if prev.stdenv.hostPlatform.system == "x86_64-linux" then
+          prev.stdenvNoCC.mkDerivation (finalAttrs: {
+            pname = "jet";
+            inherit (prev.jet) version;
+            src = prev.fetchurl {
+              url = "https://github.com/borkdude/jet/releases/download/v${finalAttrs.version}/jet-${finalAttrs.version}-linux-amd64.tar.gz";
+              hash = "sha256-QR5ly+bqlOpplOInI8vHOEPHFeKYKMs/uMpsWvY5po0=";
+            };
+            sourceRoot = ".";
+            dontConfigure = true;
+            dontBuild = true;
+            installPhase = ''
+              runHook preInstall
+              install -Dm755 jet $out/bin/jet
+              runHook postInstall
+            '';
+            meta = prev.jet.meta // {
+              sourceProvenance = [ prev.lib.sourceTypes.binaryNativeCode ];
+            };
+          })
+        else
+          prev.jet;
       terraform-provider-powerdns = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./terraform-providers/powerdns.nix { };
