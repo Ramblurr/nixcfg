@@ -63,7 +63,7 @@ in
         age-plugin-yubikey
         age
         rage
-        pinentry-gtk2
+        pinentry-gnome3
         libfido2
       ];
       programs.yubikey-touch-detector.enable = true;

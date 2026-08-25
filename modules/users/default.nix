@@ -200,10 +200,10 @@ in
               if cfg.headless.enable then
                 "${pkgs.pinentry-tty}/bin/pinentry"
               else
-                "${pkgs.pinentry-gtk2}/bin/pinentry";
+                "${pkgs.pinentry-gnome3}/bin/pinentry";
             PATH = lib.mkForce (
               lib.makeBinPath (
-                hm.config.sops.age.plugins ++ lib.optionals (!cfg.headless.enable) [ pkgs.pinentry-gtk2 ]
+                hm.config.sops.age.plugins ++ lib.optionals (!cfg.headless.enable) [ pkgs.pinentry-gnome3 ]
               )
             );
           };
@@ -214,7 +214,7 @@ in
             pkgs.age-plugin-tpm
           ];
         };
-        home.packages = lib.optionals (!cfg.headless.enable) [ pkgs.pinentry-gtk2 ];
+        home.packages = lib.optionals (!cfg.headless.enable) [ pkgs.pinentry-gnome3 ];
         manual.manpages.enable = lib.mkDefault (!cfg.headless.enable);
         systemd.user.startServices = true;
         programs.home-manager.enable = true;
