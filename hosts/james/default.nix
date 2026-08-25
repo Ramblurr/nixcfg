@@ -63,6 +63,7 @@ in
     zfs.datasets.enable = true;
     security.default.enable = true;
     users.enable = true;
+    users.headless.enable = true;
     users.primaryUser.extraGroups = [
       "wheel"
     ];
