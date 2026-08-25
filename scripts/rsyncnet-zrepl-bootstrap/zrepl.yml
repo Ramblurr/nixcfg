@@ -15,9 +15,11 @@ jobs:
       server_cn: "mali"
     recv:
       properties:
+        inherit:
+          - mountpoint
+          - canmount
+          - overlay
         override:
-          mountpoint: none
-          canmount: off
           readonly: on
       placeholder:
         encryption: off
