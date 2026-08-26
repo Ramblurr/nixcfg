@@ -58,6 +58,7 @@ let
   unscheduled = mkEvaluated (validConfig // { timer.enable = false; });
   unscheduledTimer = unscheduled.config.systemd.timers.rsyncnet-zrepl-reconcile;
   inherit (service) serviceConfig;
+  reporterCommand = builtins.head serviceConfig.ExecStartPost;
   stateDataset =
     evaluated.config.modules.zfs.datasets.properties."rpool2/encrypted/safe/svc/zrepl-reconcile";
 in
@@ -107,11 +108,11 @@ assert
       alerts = [ { type = "pushover"; } ];
     }
   ];
-assert !(lib.hasPrefix "+" serviceConfig.ExecStartPost);
-assert lib.hasInfix "gatus-heartbeat report" serviceConfig.ExecStartPost;
-assert lib.hasInfix "--success true" serviceConfig.ExecStartPost;
+assert !(lib.hasPrefix "+" reporterCommand);
+assert lib.hasInfix "gatus-heartbeat report" reporterCommand;
+assert lib.hasInfix "--success true" reporterCommand;
 assert lib.hasInfix "--name 'rsync.net Zrepl Receiver Reconciliation (mali)'"
-  serviceConfig.ExecStartPost;
+  reporterCommand;
 assert (serviceConfig.ExecStopPost or null) == null;
 assert builtins.elem "onepassword-credential-provider.socket" service.requires;
 assert builtins.elem "onepassword-credential-provider.socket" service.after;

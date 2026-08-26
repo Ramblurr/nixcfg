@@ -47,6 +47,7 @@ let
           systemd.services.example-job.serviceConfig = {
             Type = "oneshot";
             DynamicUser = dynamicUser;
+            ExecStartPost = [ "${pkgs.coreutils}/bin/true" ];
           };
           site.gatus.heartbeats.git-archive = lib.mkIf enable {
             service = "example-job";
@@ -64,10 +65,10 @@ let
   invalidInterval = builtins.tryEval (
     builtins.deepSeq (evaluate true "8d" null false).site.gatus.externalEndpoints true
   );
-  reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStartPost;
-  staticUserReporterCommand =
+  reporterCommand = lib.last enabled.systemd.services.example-job.serviceConfig.ExecStartPost;
+  staticUserReporterCommand = lib.last
     staticUserEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
-  environmentFileReporterCommand =
+  environmentFileReporterCommand = lib.last
     environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
 in
 assert !invalidInterval.success;
@@ -91,6 +92,8 @@ assert
 assert
   enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
   == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
+assert builtins.head enabled.systemd.services.example-job.serviceConfig.ExecStartPost
+  == "${pkgs.coreutils}/bin/true";
 assert !(lib.hasPrefix "+" reporterCommand);
 assert reporterCommand == staticUserReporterCommand;
 assert (enabled.systemd.services.example-job.serviceConfig.ExecStopPost or null) == null;
