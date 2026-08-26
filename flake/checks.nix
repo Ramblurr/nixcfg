@@ -37,6 +37,7 @@
         mali-zrepl-reconcile = import ../tests/mali-zrepl-reconcile.nix { inherit inputs pkgs; };
         mali-zrepl-reconcile-vm = import ../tests/mali-zrepl-reconcile-vm.nix { inherit pkgs; };
         zrepl-outage-continuity = import ../tests/zrepl-outage-continuity.nix { inherit pkgs; };
+        zfs-datasets = import ../tests/zfs-datasets.nix { inherit inputs pkgs; };
         common-server = import ../tests/common-server.nix { inherit inputs pkgs; };
         debord-monitoring = import ../tests/debord-monitoring.nix { inherit inputs pkgs; };
         deploy = import ../tests/deploy.nix {
