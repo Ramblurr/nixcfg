@@ -90,15 +90,18 @@
     mode = "0440";
     group = "nut";
   };
+  # Preserve NUT state ownership across impermanent-root boots that rebuild accounts with userborn.
   users.users.nut = {
+    uid = 992;
     isSystemUser = true;
     home = "/var/lib/nut";
     createHome = true;
     group = "nut";
     description = "UPS monitor user";
   };
-  users.groups."nut" = {
-  };
+  users.groups.nut.gid = 993;
+  users.users.nutmon.uid = 991;
+  users.groups.nutmon.gid = 992;
   systemd.services.upsd.serviceConfig = {
     User = "root";
     Group = "nut";

@@ -12,6 +12,10 @@ let
   hostName = "nix-cache.int.${domain.home}";
 in
 {
+  # Preserve cache ownership across impermanent-root boots that rebuild accounts with userborn.
+  users.groups.ncps.gid = 996;
+  users.users.ncps.uid = 995;
+
   sops.secrets.ncps_private_key = {
     owner = "ncps";
     group = "ncps";

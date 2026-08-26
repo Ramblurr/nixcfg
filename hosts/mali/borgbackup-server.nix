@@ -9,7 +9,9 @@ let
   backupDir = "/mnt/tank2/backups/borg_repos";
 in
 {
-  users.users."${backupUser}" = { };
+  # Preserve repository ownership across impermanent-root boots that rebuild accounts with userborn.
+  users.groups."${backupUser}".gid = 999;
+  users.users."${backupUser}".uid = 999;
   systemd.tmpfiles.rules = [ "d ${backupDir} 0755 root root - -" ];
   services.borgbackup.repos = {
     aquinas = {
