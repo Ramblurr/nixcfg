@@ -330,19 +330,6 @@ in
         enable = true;
         vpnNamespace = namespace;
       };
-      requires = [ "zfs-datasets.service" ];
-      after = [ "zfs-datasets.service" ];
-      bindsTo = [ "zfs-mount.service" ];
-      unitConfig = {
-        AssertPathIsMountPoint = [
-          stateDir
-          downloadsDir
-        ];
-        RequiresMountsFor = [
-          stateDir
-          downloadsDir
-        ];
-      };
       serviceConfig = {
         BindPaths = [ "${qbittorrentStateDir}:${qbittorrentProfileDir}" ];
         BindReadOnlyPaths = [
@@ -384,13 +371,6 @@ in
 
     systemd.services.qui = {
       environment.QUI__OIDC_CLIENT_SECRET_FILE = onepassword.creds.qui.oidcClientSecret;
-      requires = [ "zfs-datasets.service" ];
-      after = [ "zfs-datasets.service" ];
-      bindsTo = [ "zfs-mount.service" ];
-      unitConfig = {
-        AssertPathIsMountPoint = [ stateDir ];
-        RequiresMountsFor = [ stateDir ];
-      };
       serviceConfig = {
         BindPaths = [ "${quiStateDir}:/var/lib/qui" ];
         LoadCredential = lib.mkForce [
