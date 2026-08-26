@@ -8,13 +8,8 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
+      ../modules/zfs-attrs.nix
       ../modules/services/roon-server.nix
-      {
-        options.modules.zfs.datasets.properties = lib.mkOption {
-          type = lib.types.attrs;
-          default = { };
-        };
-      }
       {
         nixpkgs.pkgs = hostPkgs;
         system.stateVersion = "26.05";
@@ -23,6 +18,7 @@ let
           device = "none";
           fsType = "tmpfs";
         };
+        modules.zfs.datasets.enable = true;
         modules.services.roon-server.enable = true;
       }
     ];
