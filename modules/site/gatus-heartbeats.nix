@@ -110,7 +110,7 @@ in
       _: heartbeat:
       lib.nameValuePair heartbeat.service {
         serviceConfig = {
-          ExecStartPost = reporterCommand heartbeat;
+          ExecStartPost = lib.mkAfter [ (reporterCommand heartbeat) ];
           EnvironmentFile = lib.mkIf (
             cfg.heartbeatToken.environmentFile != null
           ) cfg.heartbeatToken.environmentFile;
