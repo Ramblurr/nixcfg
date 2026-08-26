@@ -9,10 +9,8 @@ let
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   stateDir = "/var/lib/calibre";
   dlLocalPath = "/mnt/downloads";
-  serviceDeps = [
-    "${utils.escapeSystemdPath mediaLocalPath}.mount"
-    "${utils.escapeSystemdPath dlLocalPath}.mount"
-  ];
+  nfsMountDeps = [ "${utils.escapeSystemdPath mediaLocalPath}.mount" ];
+  zfsDeps = [ "zfs-datasets.service" ];
 in
 {
   options.modules.services.calibre = {
@@ -59,8 +57,21 @@ in
       "rpool/encrypted/safe/svc/calibre"."com.sun:auto-snapshot" = "false";
     };
 
-    systemd.services.podman-calibre.after = serviceDeps;
-    systemd.services.podman-calibre.bindsTo = serviceDeps;
+    systemd.services.podman-calibre = {
+      requires = zfsDeps;
+      after = nfsMountDeps ++ zfsDeps;
+      bindsTo = nfsMountDeps ++ [ "zfs-mount.service" ];
+      unitConfig = {
+        AssertPathIsMountPoint = [
+          stateDir
+          dlLocalPath
+        ];
+        RequiresMountsFor = [
+          stateDir
+          dlLocalPath
+        ];
+      };
+    };
     virtualisation.oci-containers.containers.calibre = {
       autoStart = true;
       # renovate: docker-image
