@@ -41,19 +41,19 @@ let
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
   nfsMountDeps = [ "${utils.escapeSystemdPath mediaLocalPath}.mount" ];
-  zfsDeps = [ "zfs-datasets.service" ];
-  zfsMountPoints = [
-    stateDirActual
-    dlLocalPath
+  stateDataset = "rpool/encrypted/safe/svc/home-dl";
+  downloadsDataset = "tank/encrypted/downloads";
+  zfsServices = [
+    "prowlarr"
+    "qbittorrent"
+    "qui"
+    "radarr"
+    "sabnzbd"
+    "sonarr"
   ];
   sharedSystemdService = {
-    requires = zfsDeps;
-    after = [ "network.target" ] ++ nfsMountDeps ++ zfsDeps;
-    bindsTo = nfsMountDeps ++ [ "zfs-mount.service" ];
-    unitConfig = {
-      AssertPathIsMountPoint = zfsMountPoints;
-      RequiresMountsFor = zfsMountPoints;
-    };
+    after = [ "network.target" ] ++ nfsMountDeps;
+    bindsTo = nfsMountDeps;
   };
   sharedServiceConfig = {
     UMask = 77;
@@ -107,11 +107,21 @@ in
       fsType = "nfs";
     };
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/home-dl"."mountpoint" = "${stateDirActual}";
-      "rpool/encrypted/safe/svc/home-dl"."com.sun:auto-snapshot" = "false";
-      "tank/encrypted/downloads"."mountpoint" = "${dlLocalPath}";
-      "tank/encrypted/downloads"."com.sun:auto-snapshot" = "false";
+    modules.zfs.datasets = {
+      properties = {
+        ${stateDataset} = {
+          mountpoint = stateDirActual;
+          "com.sun:auto-snapshot" = "false";
+        };
+        ${downloadsDataset} = {
+          mountpoint = dlLocalPath;
+          "com.sun:auto-snapshot" = "false";
+        };
+      };
+      services = {
+        ${stateDataset} = zfsServices;
+        ${downloadsDataset} = zfsServices;
+      };
     };
 
     systemd.tmpfiles.rules = [
