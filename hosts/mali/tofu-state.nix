@@ -13,8 +13,10 @@ in
     };
   };
 
-  users.groups.tofu-state = { };
+  # Preserve ownership across impermanent-root boots that rebuild accounts with userborn.
+  users.groups.tofu-state.gid = 984;
   users.users.tofu-state = {
+    uid = 987;
     isSystemUser = true;
     group = "tofu-state";
     home = stateDir;
