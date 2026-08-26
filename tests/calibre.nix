@@ -56,8 +56,25 @@ let
   cfg = evaluated.config;
   container = cfg.virtualisation.oci-containers.containers.calibre;
   unit = cfg.systemd.services.podman-calibre;
+  dependencyNames = unit.requires ++ unit.wants ++ unit.after ++ unit.bindsTo;
+  mediaMount = "mnt-mali-tank2-media.mount";
   serverRoute = cfg.modules.services.caddy.routes.calibre-server;
 in
+assert builtins.elem "zfs-datasets.service" unit.requires;
+assert builtins.elem "zfs-datasets.service" unit.after;
+assert builtins.elem "zfs-mount.service" unit.bindsTo;
+assert !(builtins.elem "mnt-downloads.mount" dependencyNames);
+assert builtins.elem mediaMount unit.after;
+assert builtins.elem mediaMount unit.bindsTo;
+assert
+  unit.unitConfig.AssertPathIsMountPoint == [
+    "/var/lib/calibre"
+    "/mnt/downloads"
+  ];
+assert lib.all (path: builtins.elem path unit.unitConfig.RequiresMountsFor) [
+  "/var/lib/calibre"
+  "/mnt/downloads"
+];
 assert
   container.extraOptions == [
     "--health-cmd=curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8081/ >/dev/null"
