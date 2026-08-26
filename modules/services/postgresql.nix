@@ -12,7 +12,6 @@ let
   deweyMgmtAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
 
   serviceDeps = [
-    "var-lib-postgresql.mount"
     "zfs-datasets.service"
   ];
 in
@@ -182,8 +181,15 @@ in
     };
     systemd.tmpfiles.rules = [ "d ${cfg.pgDataDir} 750 postgres postgres" ];
 
-    systemd.services.postgresql.requires = serviceDeps;
-    systemd.services.postgresql.wants = serviceDeps;
+    systemd.services.postgresql = {
+      requires = serviceDeps;
+      after = serviceDeps;
+      bindsTo = [ "zfs-mount.service" ];
+      unitConfig = {
+        AssertPathIsMountPoint = [ "/var/lib/postgresql" ];
+        RequiresMountsFor = [ "/var/lib/postgresql" ];
+      };
+    };
 
   };
 }
