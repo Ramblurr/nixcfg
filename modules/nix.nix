@@ -41,7 +41,7 @@ with lib;
     gc = {
       automatic = true;
       dates = "daily";
-      options = "--delete-older-than 7d";
+      options = lib.mkDefault "--delete-older-than 7d";
     };
 
     registry.nixpkgs.flake = actual-nixpkgs;
