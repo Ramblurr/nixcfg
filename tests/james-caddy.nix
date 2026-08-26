@@ -129,20 +129,15 @@ assert lib.hasInfix "reverse_proxy http://127.0.0.1:1411" caddy.extraConfig;
 assert lib.hasInfix "reverse_proxy http://127.0.0.1:1412" caddy.extraConfig;
 assert lib.hasInfix "root * /var/lib/static-web/work.example.test/www" caddy.extraConfig;
 assert lib.hasInfix "root * /var/lib/static-web/partner.example.test" caddy.extraConfig;
-assert lib.hasInfix "path_regexp client_ip_latest" caddy.extraConfig;
-assert lib.hasInfix "redir @client_ip_latest /ol.client-ip/0.1/{re.client_ip_latest.1} 302"
-  caddy.extraConfig;
-assert lib.hasInfix "redir /ol.client-ip/ /ol.client-ip/0.1/ 301" caddy.extraConfig;
-assert lib.hasInfix "path_regexp docs_add_trailing_slash ^.+[^/]$" caddy.extraConfig;
-assert lib.hasInfix "file {http.request.uri.path}/index.html" caddy.extraConfig;
-assert lib.hasInfix "redir @docs_add_trailing_slash {http.request.uri.path}/ 301" caddy.extraConfig;
-assert lib.hasInfix "path_regexp docs_strip_trailing_slash ^(.+)/$" caddy.extraConfig;
-assert lib.hasInfix "not file {http.request.uri.path}index.html" caddy.extraConfig;
-assert lib.hasInfix "redir @docs_strip_trailing_slash {re.docs_strip_trailing_slash.1} 301"
-  caddy.extraConfig;
+assert lib.hasInfix "handle /_deploy*" caddy.extraConfig;
 assert lib.hasInfix
-  ''header @docs_short_cache Cache-Control "public, no-transform, max-age=1800, must-revalidate"''
+  "reverse_proxy unix//var/lib/static-web/work.example.test/docs/.run/docs-site.sock"
   caddy.extraConfig;
+assert !lib.hasInfix "path_regexp client_ip_latest" caddy.extraConfig;
+assert !lib.hasInfix "redir /ol.client-ip/ /ol.client-ip/0.1/ 301" caddy.extraConfig;
+assert !lib.hasInfix "root * /var/lib/static-web/work.example.test/docs/current" caddy.extraConfig;
+assert !lib.hasInfix "docs_add_trailing_slash" caddy.extraConfig;
+assert !lib.hasInfix "docs_short_cache" caddy.extraConfig;
 assert lib.hasInfix "respond 421" caddy.extraConfig;
 assert cfg.sops.templates.james-caddy-env.owner == "caddy";
 assert cfg.sops.templates.james-caddy-env.group == "caddy";
@@ -165,8 +160,13 @@ assert caddyService.serviceConfig.RuntimeDirectoryMode == "0750";
 assert caddyService.serviceConfig.AmbientCapabilities == [ ];
 assert caddyService.serviceConfig.CapabilityBoundingSet == [ ];
 assert cfg.users.users.haproxy.extraGroups == [ "caddy" ];
-assert cfg.users.users.caddy.extraGroups == [ "casey.example.test" ];
+assert
+  cfg.users.users.caddy.extraGroups == [
+    "casey.example.test"
+    "docs.work.example.test"
+  ];
 assert builtins.elem "casey.example.test" cfg.users.users.caddy.extraGroups;
+assert builtins.elem "docs.work.example.test" cfg.users.users.caddy.extraGroups;
 assert lib.hasInfix "server james-local /run/caddy/james-ingress.sock send-proxy"
   cfg.services.haproxy.config;
 assert lib.hasInfix "server dewey dewey.prim.home.example.test:443" cfg.services.haproxy.config;
