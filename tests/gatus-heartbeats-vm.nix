@@ -8,17 +8,20 @@ let
     test "$3" = op://home-ops-prod/gatus/borgmatic_external_endpoint_token
     printf %s heartbeat-test-token
   '';
-  testCertificate = pkgs.runCommand "gatus-heartbeat-test-certificate" {
-    nativeBuildInputs = [ pkgs.openssl ];
-  } ''
-    mkdir -p "$out"
-    openssl req -x509 -newkey rsa:2048 -nodes \
-      -keyout "$out/key.pem" \
-      -out "$out/cert.pem" \
-      -days 1 \
-      -subj /CN=status.example.test \
-      -addext subjectAltName=DNS:status.example.test
-  '';
+  testCertificate =
+    pkgs.runCommand "gatus-heartbeat-test-certificate"
+      {
+        nativeBuildInputs = [ pkgs.openssl ];
+      }
+      ''
+        mkdir -p "$out"
+        openssl req -x509 -newkey rsa:2048 -nodes \
+          -keyout "$out/key.pem" \
+          -out "$out/cert.pem" \
+          -days 1 \
+          -subj /CN=status.example.test \
+          -addext subjectAltName=DNS:status.example.test
+      '';
 in
 pkgs.testers.runNixOSTest {
   name = "gatus-heartbeats";
@@ -84,8 +87,8 @@ pkgs.testers.runNixOSTest {
                   if valid:
                       Path("/run/gatus-heartbeat-vm-reported").touch()
                   self.send_response(200 if valid else 403)
+                  self.send_header("Content-Length", "0")
                   self.end_headers()
-
               def log_message(self, *_args):
                   pass
 
@@ -130,6 +133,7 @@ pkgs.testers.runNixOSTest {
     machine.succeed("test -e /run/gatus-heartbeat-vm-reported")
     journal = machine.succeed("journalctl --no-pager -u heartbeat-job.service")
     assert "token is unavailable" not in journal
+    assert "failed to report result" not in journal
     assert "heartbeat-test-token" not in journal
   '';
 }
