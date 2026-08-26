@@ -95,6 +95,10 @@ in
             ''}
           '';
         };
+        paperless-secret-key = {
+          after = oidcDeps;
+          requires = oidcDeps;
+        };
       }
       (lib.genAttrs paperlessServices (_: {
         after = serviceDeps ++ oidcDeps ++ [ "postgresql.service" ];
