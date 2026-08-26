@@ -45,10 +45,15 @@ in
         "systemd-tmpfiles-setup.service"
         "systemd-tmpfiles-resetup.service"
       ];
-      after = [ "local-fs.target" ];
+      requires = [ "zfs-mount.service" ];
+      after = [
+        "zfs-mount.service"
+        "local-fs.target"
+      ];
       unitConfig.DefaultDependencies = false;
       serviceConfig = {
         Type = "oneshot";
+        RemainAfterExit = true;
       };
       restartIfChanged = true;
       restartTriggers = [ config.systemd.services.zfs-datasets.script ];
