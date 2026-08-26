@@ -7,10 +7,7 @@
 let
   cfg = config.modules.services.mariadb;
   mysqlUser = config.services.mysql.user;
-
-  serviceDeps = [
-    "zfs-datasets.service"
-  ];
+  mariadbDataset = "rpool/encrypted/safe/svc/mariadb";
 in
 {
   options.modules.services.mariadb = {
@@ -44,16 +41,6 @@ in
       };
     };
 
-    systemd.services.mysql = {
-      requires = serviceDeps;
-      after = serviceDeps;
-      bindsTo = [ "zfs-mount.service" ];
-      unitConfig = {
-        AssertPathIsMountPoint = [ "/var/lib/mysql" ];
-        RequiresMountsFor = [ "/var/lib/mysql" ];
-      };
-    };
-
     # services.mysqlBackup = {
     #   enable = true;
     #   location = "/var/backup/mysql";
@@ -61,12 +48,15 @@ in
     #   singleTransaction = true;
     # };
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/mariadb"."mountpoint" = "/var/lib/mysql";
-      "rpool/encrypted/safe/svc/mariadb"."com.sun:auto-snapshot" = "false";
-      "rpool/encrypted/safe/svc/mariadb"."recordsize" = "16k";
-      "rpool/encrypted/safe/svc/mariadb"."primarycache" = "all";
-      "rpool/encrypted/safe/svc/mariadb"."logbias" = "throughput";
+    modules.zfs.datasets = {
+      properties.${mariadbDataset} = {
+        mountpoint = "/var/lib/mysql";
+        "com.sun:auto-snapshot" = "false";
+        recordsize = "16k";
+        primarycache = "all";
+        logbias = "throughput";
+      };
+      services.${mariadbDataset} = [ "mysql" ];
     };
     systemd.tmpfiles.rules = [ "z /var/lib/mysql 750 ${mysqlUser} ${mysqlUser}" ];
   };

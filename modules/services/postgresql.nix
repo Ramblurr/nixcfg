@@ -10,10 +10,7 @@ let
   backupRole = "databasus_pg_dewey";
   maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
   deweyMgmtAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
-
-  serviceDeps = [
-    "zfs-datasets.service"
-  ];
+  postgresqlDataset = "rpool/encrypted/safe/svc/postgresql";
 in
 {
   options.modules.services.postgresql = {
@@ -173,23 +170,16 @@ in
       else
         prefix + (lib.concatStrings (map exec cfgsWithPasswords)) + suffix;
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/postgresql"."mountpoint" = "/var/lib/postgresql";
-      "rpool/encrypted/safe/svc/postgresql"."com.sun:auto-snapshot" = "false";
-      "rpool/encrypted/safe/svc/postgresql"."recordsize" = "16k";
-      "rpool/encrypted/safe/svc/postgresql"."primarycache" = "all";
+    modules.zfs.datasets = {
+      properties.${postgresqlDataset} = {
+        mountpoint = "/var/lib/postgresql";
+        "com.sun:auto-snapshot" = "false";
+        recordsize = "16k";
+        primarycache = "all";
+      };
+      services.${postgresqlDataset} = [ "postgresql" ];
     };
     systemd.tmpfiles.rules = [ "d ${cfg.pgDataDir} 750 postgres postgres" ];
-
-    systemd.services.postgresql = {
-      requires = serviceDeps;
-      after = serviceDeps;
-      bindsTo = [ "zfs-mount.service" ];
-      unitConfig = {
-        AssertPathIsMountPoint = [ "/var/lib/postgresql" ];
-        RequiresMountsFor = [ "/var/lib/postgresql" ];
-      };
-    };
 
   };
 }
