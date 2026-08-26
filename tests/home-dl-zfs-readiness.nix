@@ -71,7 +71,8 @@ let
     "sonarr"
   ];
   quiUnit = services.qui;
-  zfsServiceUnits = downloadServiceUnits ++ [ quiUnit ];
+  recyclarrUnit = services.recyclarr;
+  zfsServiceUnits = downloadServiceUnits ++ [ quiUnit recyclarrUnit ];
   nfsServiceUnits = map (name: services.${name}) [
     "prowlarr"
     "radarr"
@@ -105,6 +106,7 @@ assert lib.all (
   ]
 ) downloadServiceUnits;
 assert quiUnit.unitConfig.AssertPathIsMountPoint == [ "/var/lib/private/home-dl" ];
+assert recyclarrUnit.unitConfig.AssertPathIsMountPoint == [ "/var/lib/private/home-dl" ];
 assert lib.all (
   service:
   lib.all (path: builtins.elem path service.unitConfig.RequiresMountsFor) [
@@ -113,4 +115,5 @@ assert lib.all (
   ]
 ) downloadServiceUnits;
 assert quiUnit.unitConfig.RequiresMountsFor == [ "/var/lib/private/home-dl" ];
+assert recyclarrUnit.unitConfig.RequiresMountsFor == [ "/var/lib/private/home-dl" ];
 pkgs.runCommand "home-dl-zfs-readiness-evaluation" { } "touch $out"

@@ -26,6 +26,10 @@ let
               type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
               default = { };
             };
+            modules.zfs.datasets.services = lib.mkOption {
+              type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+              default = { };
+            };
           };
         }
         {
@@ -54,6 +58,7 @@ assert
     GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/github-token-ol";
     GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
   };
+assert cfg.modules.zfs.datasets.services."tank/svc/git-archive" == [ "gickup" ];
 assert lib.hasInfix "gatus-heartbeat report" service.serviceConfig.ExecStartPost;
 assert lib.hasInfix "--success true" service.serviceConfig.ExecStartPost;
 assert (service.serviceConfig.ExecStopPost or null) == null;
