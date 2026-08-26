@@ -53,6 +53,10 @@
             help = "Build and deploy this nix config to nodes";
           }
           {
+            package = pkgs.cache-push;
+            help = "Build and push Nix closures to an Attic cache";
+          }
+          {
             package = pkgs.nix-tree;
             help = "Interactively browse dependency graphs of Nix derivations";
           }
