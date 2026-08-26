@@ -107,9 +107,12 @@ assert
       alerts = [ { type = "pushover"; } ];
     }
   ];
-assert lib.hasPrefix "+" serviceConfig.ExecStopPost;
+assert !(lib.hasPrefix "+" serviceConfig.ExecStartPost);
+assert lib.hasInfix "gatus-heartbeat report" serviceConfig.ExecStartPost;
+assert lib.hasInfix "--success true" serviceConfig.ExecStartPost;
 assert lib.hasInfix "--name 'rsync.net Zrepl Receiver Reconciliation (mali)'"
-  serviceConfig.ExecStopPost;
+  serviceConfig.ExecStartPost;
+assert (serviceConfig.ExecStopPost or null) == null;
 assert builtins.elem "onepassword-credential-provider.socket" service.requires;
 assert builtins.elem "onepassword-credential-provider.socket" service.after;
 assert builtins.elem "${pkgs.coreutils}/bin/test -s %d/identity" serviceConfig.ExecStartPre;

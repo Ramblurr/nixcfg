@@ -54,8 +54,9 @@ assert
     GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/github-token-ol";
     GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
   };
-assert lib.hasPrefix "+" service.serviceConfig.ExecStopPost;
-assert lib.hasInfix "gatus-heartbeat systemd" service.serviceConfig.ExecStopPost;
+assert lib.hasInfix "gatus-heartbeat report" service.serviceConfig.ExecStartPost;
+assert lib.hasInfix "--success true" service.serviceConfig.ExecStartPost;
+assert (service.serviceConfig.ExecStopPost or null) == null;
 assert
   cfg.site.gatus.externalEndpoints == [
     {

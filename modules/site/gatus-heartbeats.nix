@@ -14,11 +14,12 @@ let
   endpointName = heartbeat: "${heartbeat.name} (${hostName})";
   reporterCommand =
     heartbeat:
-    lib.optionalString heartbeat.reporterFullyPrivileged "+"
-    + lib.concatStringsSep " " (
+    lib.concatStringsSep " " (
       [
         (lib.getExe heartbeatPackage)
-        "systemd"
+        "report"
+        "--success"
+        "true"
         "--url"
         (lib.escapeShellArg gatusUrl)
         "--group"
@@ -38,7 +39,6 @@ let
         default = null;
         description = "Systemd service to report, without the .service suffix; null for a native adapter";
       };
-      reporterFullyPrivileged = lib.mkEnableOption "running the heartbeat reporter with full privileges so ExecStopPost can access service credentials";
       name = lib.mkOption {
         type = lib.types.nonEmptyStr;
         description = "Human-readable Gatus endpoint name before the hostname suffix";
@@ -110,7 +110,7 @@ in
       _: heartbeat:
       lib.nameValuePair heartbeat.service {
         serviceConfig = {
-          ExecStopPost = reporterCommand heartbeat;
+          ExecStartPost = reporterCommand heartbeat;
           EnvironmentFile = lib.mkIf (
             cfg.heartbeatToken.environmentFile != null
           ) cfg.heartbeatToken.environmentFile;
