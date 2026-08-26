@@ -2544,6 +2544,26 @@
         "type": "github"
       }
     },
+    "nix-tarmac": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787579478,
+        "narHash": "sha256-7cHPKFF97ipYg6h1d8dJkZnO7MVrQ8T0K/OTIZGAVGY=",
+        "owner": "Mic92",
+        "repo": "nix-tarmac",
+        "rev": "ff95dfa1af2cd3058ed5a83036825a9ce10cb47b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "nix-tarmac",
+        "type": "github"
+      }
+    },
     "nix2container": {
       "inputs": {
         "nixpkgs": [
@@ -3816,6 +3836,7 @@
         "nix-doom-emacs-unstraightened": "nix-doom-emacs-unstraightened",
         "nix-gaming": "nix-gaming",
         "nix-std": "nix-std",
+        "nix-tarmac": "nix-tarmac",
         "nixbot": "nixbot",
         "nixos-extra-modules": "nixos-extra-modules",
         "nixos-hardware": "nixos-hardware",
