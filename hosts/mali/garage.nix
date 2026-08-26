@@ -19,8 +19,10 @@ let
   };
 in
 {
-  users.groups.garage = { };
+  # Preserve ownership across impermanent-root boots that rebuild accounts with userborn.
+  users.groups.garage.gid = 997;
   users.users.garage = {
+    uid = 997;
     isSystemUser = true;
     group = "garage";
   };

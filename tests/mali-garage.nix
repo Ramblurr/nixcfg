@@ -71,6 +71,8 @@ assert map (check: check.name) cfg.site.gatus.endpoints == [ "Garage Management 
 assert cfg.services.garage.enable;
 assert cfg.services.garage.package == pkgs.garage_2;
 assert cfg.services.garage.package.version == "2.3.0";
+assert cfg.users.users.garage.uid == 997;
+assert cfg.users.groups.garage.gid == 997;
 assert
   settings == {
     metadata_dir = "/mnt/fast/services/garage/metadata";
