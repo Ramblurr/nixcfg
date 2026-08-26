@@ -28,13 +28,13 @@ let
   '';
   stateDirActual = "/var/lib/private/roon-server";
   stateDirEffective = "/var/lib/roon-server";
-  serviceDeps = map (path: "${utils.escapeSystemdPath path}.mount") [
-    stateDirActual
+  nfsMountDeps = map (path: "${utils.escapeSystemdPath path}.mount") [
     "/mnt/roon/backup"
     "/mnt/roon/music-other"
     "/mnt/roon/music-mine"
     "/mnt/roon/audiobooks"
   ];
+  zfsDeps = [ "zfs-datasets.service" ];
 in
 {
   options.modules.services.roon-server = {
@@ -78,17 +78,23 @@ in
         "network.target"
         "network-online.target"
       ];
+      requires = zfsDeps;
       after = [
         "network.target"
         "network-online.target"
       ]
-      ++ serviceDeps;
-      bindsTo = serviceDeps;
+      ++ nfsMountDeps
+      ++ zfsDeps;
+      bindsTo = nfsMountDeps ++ [ "zfs-mount.service" ];
       description = "Roon Server";
       wantedBy = [ "multi-user.target" ];
       environment = {
         ROON_DATAROOT = stateDirEffective;
         ROON_ID_DIR = stateDirEffective;
+      };
+      unitConfig = {
+        AssertPathIsMountPoint = [ stateDirActual ];
+        RequiresMountsFor = [ stateDirActual ];
       };
       serviceConfig = {
         ExecStart = "${lib.getExe pkgs.roon-server}";

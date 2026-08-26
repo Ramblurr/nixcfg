@@ -61,6 +61,7 @@
         local-issues = import ../tests/local-issues.nix { inherit inputs pkgs; };
         ocis = import ../tests/ocis.nix { inherit inputs pkgs; };
         paperless = import ../tests/paperless.nix { inherit inputs pkgs; };
+        roon-server = import ../tests/roon-server.nix { inherit inputs pkgs; };
         linux-voice-assistant = import ../tests/linux-voice-assistant.nix {
           inherit inputs pkgs;
         };
