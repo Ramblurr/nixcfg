@@ -79,6 +79,7 @@ in
     '';
   };
 
+  nix.gc.options = "--delete-older-than 30d";
   services.nixbot = {
     enable = true;
     domain = "ci.${workDomain}";
