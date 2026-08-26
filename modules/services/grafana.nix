@@ -7,11 +7,7 @@
 let
   cfg = config.modules.services.grafana;
   stateDir = "/var/lib/grafana";
-
-  serviceDeps = [
-    "var-lib-grafana.mount"
-    "zfs-datasets.service"
-  ];
+  grafanaDataset = "rpool/encrypted/safe/svc/grafana";
   grafanaDomain = cfg.domain;
 in
 {
@@ -26,18 +22,14 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/grafana"."mountpoint" = stateDir;
+    modules.zfs.datasets = {
+      properties.${grafanaDataset}.mountpoint = stateDir;
+      services.${grafanaDataset} = [ "grafana" ];
     };
 
     systemd.tmpfiles.rules = [
       "z '${stateDir}' 750 grafana grafana - -"
     ];
-
-    systemd.services.grafana = {
-      requires = serviceDeps;
-      after = serviceDeps;
-    };
 
     services.grafana = {
       enable = true;

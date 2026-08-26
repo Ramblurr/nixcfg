@@ -6,6 +6,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       inputs.sops-nix.nixosModules.sops
+      ../modules/zfs-attrs.nix
       ../modules/telemetry/prometheus.nix
       ../modules/telemetry/thanos.nix
       ../modules/site/gatus.nix
@@ -25,10 +26,6 @@ let
             default = { };
           };
         };
-        options.modules.zfs.datasets.properties = lib.mkOption {
-          type = lib.types.attrs;
-          default = { };
-        };
       }
       {
         nixpkgs.pkgs = pkgs;
@@ -43,6 +40,7 @@ let
           device = "none";
           fsType = "tmpfs";
         };
+        modules.zfs.datasets.enable = true;
         sops.defaultSopsFile = secretFile;
         sops.age.keyFile = "/tmp/age-key.txt";
       }
@@ -120,8 +118,12 @@ assert cfg.services.prometheus.globalConfig.external_labels == { prometheus = "d
 assert
   cfg.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/prometheus".mountpoint
   == "/var/lib/prometheus2";
-assert builtins.elem "var-lib-prometheus2.mount" cfg.systemd.services.prometheus.requires;
+assert !(builtins.elem "var-lib-prometheus2.mount" cfg.systemd.services.prometheus.requires);
 assert builtins.elem "zfs-datasets.service" cfg.systemd.services.prometheus.requires;
+assert builtins.elem "zfs-datasets.service" cfg.systemd.services.prometheus.after;
+assert builtins.elem "zfs-mount.service" cfg.systemd.services.prometheus.bindsTo;
+assert
+  cfg.systemd.services.prometheus.unitConfig.AssertPathIsMountPoint == [ "/var/lib/prometheus2" ];
 assert lib.all (unit: !(builtins.elem "var-lib-prometheus2.mount" unit.requires)) thanosUnits;
 assert lib.all (unit: !(builtins.elem "zfs-datasets.service" unit.requires)) thanosUnits;
 assert
