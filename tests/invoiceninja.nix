@@ -69,6 +69,7 @@ let
   backupScript = backupService.script;
   provider = cfg.modules.services.onepassword-systemd-credentials;
 in
+assert containers.invoiceninja-redis.autoStart == false;
 assert containers.invoiceninja-app.autoStart == false;
 assert containers.invoiceninja-scheduler.autoStart == false;
 assert containers.invoiceninja-worker.autoStart == false;
