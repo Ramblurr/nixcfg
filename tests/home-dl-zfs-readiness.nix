@@ -13,6 +13,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     specialArgs.lib = hostPkgs.lib;
     modules = [
+      ../modules/zfs-attrs.nix
       ../modules/services/home-dl.nix
       {
         disabledModules = [ ../modules/services/home-dl/qbittorrent.nix ];
@@ -22,10 +23,6 @@ let
             default = { };
           };
           modules.services.caddy.protectedRoutes = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-          };
-          modules.zfs.datasets.properties = lib.mkOption {
             type = lib.types.attrs;
             default = { };
           };
@@ -52,6 +49,7 @@ let
           };
         };
         site.gatus.groups.media = "Media";
+        modules.zfs.datasets.enable = true;
         modules.services.home-dl = {
           enable = true;
           baseDomain = "example.test";
@@ -65,11 +63,19 @@ let
     ];
   };
   services = evaluated.config.systemd.services;
-  consumers = map (name: services.${name}) [
-    "sonarr"
+  zfsServiceUnits = map (name: services.${name}) [
+    "prowlarr"
+    "qbittorrent"
+    "qui"
     "radarr"
     "sabnzbd"
+    "sonarr"
+  ];
+  nfsServiceUnits = map (name: services.${name}) [
     "prowlarr"
+    "radarr"
+    "sabnzbd"
+    "sonarr"
   ];
   dependencyNames = service: service.requires ++ service.wants ++ service.after ++ service.bindsTo;
   nfsMount = "mnt-mali-tank2-media.mount";
@@ -83,25 +89,25 @@ let
     && builtins.elem "zfs-datasets.service" service.after
     && builtins.elem "zfs-mount.service" service.bindsTo;
 in
-assert lib.all hasReadiness consumers;
+assert lib.all hasReadiness zfsServiceUnits;
 assert lib.all (
   service: lib.all (mount: !(builtins.elem mount (dependencyNames service))) nativeZfsMounts
-) consumers;
+) zfsServiceUnits;
 assert lib.all (
   service: builtins.elem nfsMount service.after && builtins.elem nfsMount service.bindsTo
-) consumers;
+) nfsServiceUnits;
 assert lib.all (
   service:
   service.unitConfig.AssertPathIsMountPoint == [
     "/var/lib/private/home-dl"
     "/mnt/downloads"
   ]
-) consumers;
+) zfsServiceUnits;
 assert lib.all (
   service:
   lib.all (path: builtins.elem path service.unitConfig.RequiresMountsFor) [
     "/var/lib/private/home-dl"
     "/mnt/downloads"
   ]
-) consumers;
+) zfsServiceUnits;
 pkgs.runCommand "home-dl-zfs-readiness-evaluation" { } "touch $out"

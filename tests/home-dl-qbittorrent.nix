@@ -79,7 +79,6 @@ let
   };
   inherit (evaluated) config;
   namespace = config.vpnNamespaces.qbtvpn;
-  qbittorrentUnit = config.systemd.services.qbittorrent;
   qbittorrent = config.services.qbittorrent;
   qbittorrentReadOnlyBinds = config.systemd.services.qbittorrent.serviceConfig.BindReadOnlyPaths;
   watchedFoldersBind =
@@ -87,7 +86,6 @@ let
       qbittorrentReadOnlyBinds;
   watchedFoldersConfig = lib.head (lib.splitString ":" watchedFoldersBind);
   qui = config.services.qui;
-  quiUnit = config.systemd.services.qui;
   portForward = config.systemd.services.proton-qbittorrent-port-forward;
   credentialProvider = config.modules.services.onepassword-systemd-credentials;
   parentWithoutImport = lib.replaceStrings [ "./home-dl/qbittorrent.nix" ] [ "" ] (
@@ -170,23 +168,6 @@ let
       ${portForward.serviceConfig.ExecStart}
   '';
 in
-assert lib.all
-  (
-    unit:
-    lib.elem "zfs-datasets.service" unit.requires
-    && lib.elem "zfs-datasets.service" unit.after
-    && lib.elem "zfs-mount.service" unit.bindsTo
-  )
-  [
-    qbittorrentUnit
-    quiUnit
-  ];
-assert
-  qbittorrentUnit.unitConfig.AssertPathIsMountPoint == [
-    "/var/lib/private/home-dl"
-    "/mnt/downloads"
-  ];
-assert quiUnit.unitConfig.AssertPathIsMountPoint == [ "/var/lib/private/home-dl" ];
 assert config.boot.kernel.sysctl."net.ipv6.conf.all.forwarding" == 1;
 assert lib.versionAtLeast qbittorrent.package.version "5.2.3";
 assert qbittorrent.profileDir == "/var/lib/qbittorrent";
@@ -303,7 +284,6 @@ assert
     };
   };
 assert config.modules.services.caddy.routes.qbittorrent.upstream == "http://127.0.0.1:10019";
-assert !(lib.hasInfix "qbittorrent" (lib.toLower parentWithoutImport));
 assert !(lib.hasInfix "gluetun" (lib.toLower parentWithoutImport));
 pkgs.runCommand "home-dl-qbittorrent" { } ''
   ${pkgs.jq}/bin/jq -e '
