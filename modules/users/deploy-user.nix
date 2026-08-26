@@ -125,6 +125,7 @@ in
           "d ${runtimeDirectory} 0770 ${username} ${username}"
           "d ${homeDirectory}/.run 0750 ${username} ${username} -"
           "d ${homeDirectory}/.config 0770 ${username} ${username} -"
+          "d ${homeDirectory}/.config/systemd 0750 ${username} ${username} -"
           "d ${homeDirectory}/.config/systemd/user 0750 ${username} ${username}"
           "d ${homeDirectory}/.local 755 ${username} ${username}"
           "d ${homeDirectory}/.local/state 755 ${username} ${username}"
