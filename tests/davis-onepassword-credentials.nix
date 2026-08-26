@@ -66,10 +66,21 @@ let
             onepassword-connect = [ "192.0.2.22" ];
           };
           networking.firewall.allowedTCPPorts = [ 3306 ];
-          repo.secrets.home-ops.mail = {
-            dsn = "smtp://mail.example.test";
-            notificationsFromAddress = "notifications@example.test";
-            imapAuthUrlNew = "imaps://mail.example.test";
+          repo.secrets.home-ops = {
+            mail = {
+              dsn = "smtp://mail.example.test";
+              notificationsFromAddress = "notifications@example.test";
+              imapAuthUrlNew = "imaps://mail.example.test";
+            };
+            users.davis = {
+              name = "davis";
+              uid = 3021;
+              isSystemUser = true;
+            };
+            groups.davis = {
+              name = "davis";
+              gid = 3021;
+            };
           };
           modules.services.postgresql = {
             enable = true;
@@ -109,6 +120,18 @@ assert
     max_wal_senders = 10;
     summarize_wal = "on";
     wal_level = "replica";
+  };
+assert
+  {
+    user = cfg.services.davis.user;
+    group = cfg.services.davis.group;
+    uid = cfg.users.users.davis.uid;
+    gid = cfg.users.groups.davis.gid;
+  } == {
+    user = "davis";
+    group = "davis";
+    uid = 3021;
+    gid = 3021;
   };
 assert provider.enable;
 assert provider.consumers.davis-env-setup == expectedCredentials;
