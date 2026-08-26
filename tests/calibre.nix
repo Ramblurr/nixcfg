@@ -9,6 +9,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     specialArgs.lib = extendedPkgs.lib;
     modules = [
+      ../modules/zfs-attrs.nix
       ../modules/services/calibre.nix
       {
         options = {
@@ -17,10 +18,6 @@ let
             default = { };
           };
           modules.services.caddy.routes = lib.mkOption {
-            type = lib.types.attrs;
-            default = { };
-          };
-          modules.zfs.datasets.properties = lib.mkOption {
             type = lib.types.attrs;
             default = { };
           };
@@ -42,6 +39,10 @@ let
           fsType = "tmpfs";
         };
         repo.secrets.global.nodes.mali.dataCIDR = "192.0.2.1/24";
+        modules.zfs.datasets = {
+          enable = true;
+          properties."tank/encrypted/downloads".mountpoint = "/mnt/downloads";
+        };
         modules.services.calibre = {
           enable = true;
           domain.gui = "calibre.example.test";

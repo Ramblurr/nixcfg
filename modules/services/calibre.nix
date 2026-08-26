@@ -10,7 +10,8 @@ let
   stateDir = "/var/lib/calibre";
   dlLocalPath = "/mnt/downloads";
   nfsMountDeps = [ "${utils.escapeSystemdPath mediaLocalPath}.mount" ];
-  zfsDeps = [ "zfs-datasets.service" ];
+  stateDataset = "rpool/encrypted/safe/svc/calibre";
+  downloadsDataset = "tank/encrypted/downloads";
 in
 {
   options.modules.services.calibre = {
@@ -52,25 +53,20 @@ in
       fsType = "nfs";
     };
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/calibre"."mountpoint" = stateDir;
-      "rpool/encrypted/safe/svc/calibre"."com.sun:auto-snapshot" = "false";
+    modules.zfs.datasets = {
+      properties.${stateDataset} = {
+        mountpoint = stateDir;
+        "com.sun:auto-snapshot" = "false";
+      };
+      services = {
+        ${stateDataset} = [ "podman-calibre" ];
+        ${downloadsDataset} = [ "podman-calibre" ];
+      };
     };
 
     systemd.services.podman-calibre = {
-      requires = zfsDeps;
-      after = nfsMountDeps ++ zfsDeps;
-      bindsTo = nfsMountDeps ++ [ "zfs-mount.service" ];
-      unitConfig = {
-        AssertPathIsMountPoint = [
-          stateDir
-          dlLocalPath
-        ];
-        RequiresMountsFor = [
-          stateDir
-          dlLocalPath
-        ];
-      };
+      after = nfsMountDeps;
+      bindsTo = nfsMountDeps;
     };
     virtualisation.oci-containers.containers.calibre = {
       autoStart = true;
