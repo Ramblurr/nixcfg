@@ -12,13 +12,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "hindsight-cli";
-  version = "0.9.0";
+  version = "0.9.2";
 
   src = fetchFromGitHub {
     owner = "vectorize-io";
     repo = "hindsight";
     rev = "v${version}";
-    hash = "sha256-o74lzvW15bekJKoRTMvi5tM5EoTjh+DlIgKqo2fVohk=";
+    hash = "sha256-rOHmZXt7oEajLwrK2A6N5RRsQP2BL8nduqB1F7WowDg=";
   };
 
   cargoRoot = "hindsight-cli";
