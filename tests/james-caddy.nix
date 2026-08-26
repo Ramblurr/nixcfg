@@ -92,6 +92,19 @@ let
   persistedDirectories = map (
     entry: if builtins.isString entry then entry else entry.directory
   ) cfg.environment.persistence."/persist".directories;
+  caddyLines = lib.splitString "\n" caddy.extraConfig;
+  docsMatcherIndex = lib.lists.findFirstIndex (
+    line: lib.hasInfix "@plain_work_docs host docs.${domains.work}" line
+  ) (builtins.length caddyLines) caddyLines;
+  docsRouteLines = lib.drop docsMatcherIndex caddyLines;
+  docsLineIndex =
+    predicate: lib.lists.findFirstIndex predicate (builtins.length docsRouteLines) docsRouteLines;
+  docsHandleIndex = docsLineIndex (line: lib.hasInfix "handle @plain_work_docs" line);
+  docsWebhookIndex = docsLineIndex (line: lib.trim line == "handle /_deploy* {");
+  docsHookIndex = docsLineIndex (line: lib.hasInfix "github-docs-hook.sock" line);
+  docsCatchAllIndex = docsLineIndex (line: lib.trim line == "handle {");
+  docsBackendIndex = docsLineIndex (line: lib.hasInfix "docs-site.sock" line);
+  docsEndIndex = docsLineIndex (line: lib.trim line == "respond 421");
   failedAssertions = map (entry: entry.message) (lib.filter (entry: !entry.assertion) cfg.assertions);
 in
 assert lib.assertMsg (
@@ -133,6 +146,12 @@ assert lib.hasInfix "handle /_deploy*" caddy.extraConfig;
 assert lib.hasInfix
   "reverse_proxy unix//var/lib/static-web/work.example.test/docs/.run/docs-site.sock"
   caddy.extraConfig;
+assert docsMatcherIndex < builtins.length caddyLines;
+assert docsHandleIndex < docsWebhookIndex;
+assert docsWebhookIndex < docsHookIndex;
+assert docsHookIndex < docsCatchAllIndex;
+assert docsCatchAllIndex < docsBackendIndex;
+assert docsBackendIndex < docsEndIndex;
 assert !lib.hasInfix "path_regexp client_ip_latest" caddy.extraConfig;
 assert !lib.hasInfix "redir /ol.client-ip/ /ol.client-ip/0.1/ 301" caddy.extraConfig;
 assert !lib.hasInfix "root * /var/lib/static-web/work.example.test/docs/current" caddy.extraConfig;
