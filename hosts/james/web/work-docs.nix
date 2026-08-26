@@ -13,8 +13,6 @@ let
   deployUserCfg = config.modules.users.deploy-users.${deployUser};
   caddyGroup = config.services.caddy.group;
   sitePath = "/var/lib/static-web/${domain}/docs";
-  bootstrapPath = "${sitePath}/bootstrap";
-  rootPath = "${sitePath}/current";
   docsHookSocketDir = "${sitePath}/.run";
   docsHookSocketPath = "${docsHookSocketDir}/github-docs-hook.sock";
   docsWebhookSecretFile = config.sops.secrets.webhook-github-docs-secret.path;
@@ -67,26 +65,7 @@ in
   systemd.tmpfiles.rules = [
     "d '${sitePath}' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
     "d '${docsHookSocketDir}' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
-    "d '${bootstrapPath}' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
-    "d '${bootstrapPath}/.etc' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
-    "d '${bootstrapPath}/.etc/nginx' 0750 ${deployUserCfg.username} ${caddyGroup} - -"
-    "f '${bootstrapPath}/.etc/nginx/rewrite.conf' 0640 ${deployUserCfg.username} ${caddyGroup} - -"
   ];
-  system.activationScripts.docsSiteBootstrap.text = ''
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${sitePath}'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${docsHookSocketDir}'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${bootstrapPath}'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${bootstrapPath}/.etc'
-    install -d -m 0750 -o ${deployUserCfg.username} -g ${caddyGroup} '${bootstrapPath}/.etc/nginx'
-
-    if [ ! -e '${bootstrapPath}/.etc/nginx/rewrite.conf' ]; then
-      install -m 0640 -o ${deployUserCfg.username} -g ${caddyGroup} /dev/null '${bootstrapPath}/.etc/nginx/rewrite.conf'
-    fi
-
-    if [ ! -e '${rootPath}' ]; then
-      ln -s '${bootstrapPath}' '${rootPath}'
-    fi
-  '';
 
   hosts.james.webhooks.hooks = {
     ${hookId} = {
