@@ -51,6 +51,7 @@ let
     }).config;
   credentials = cfg.modules.services.onepassword-systemd-credentials.consumers.gickup;
   service = cfg.systemd.services.gickup;
+  reporterCommand = builtins.head service.serviceConfig.ExecStartPost;
 in
 assert
   credentials == {
@@ -59,8 +60,8 @@ assert
     GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
   };
 assert cfg.modules.zfs.datasets.services."tank/svc/git-archive" == [ "gickup" ];
-assert lib.hasInfix "gatus-heartbeat report" service.serviceConfig.ExecStartPost;
-assert lib.hasInfix "--success true" service.serviceConfig.ExecStartPost;
+assert lib.hasInfix "gatus-heartbeat report" reporterCommand;
+assert lib.hasInfix "--success true" reporterCommand;
 assert (service.serviceConfig.ExecStopPost or null) == null;
 assert
   cfg.site.gatus.externalEndpoints == [
