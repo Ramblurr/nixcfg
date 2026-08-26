@@ -46,8 +46,9 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    modules.zfs.datasets.properties = {
-      "tank/svc/git-archive"."mountpoint" = stateDirActual;
+    modules.zfs.datasets = {
+      properties."tank/svc/git-archive".mountpoint = stateDirActual;
+      services."tank/svc/git-archive" = [ "gickup" ];
     };
     environment.systemPackages = [ pkgs.gickup ];
     assertions = [
@@ -81,9 +82,6 @@ in
       enable = true;
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
-      unitConfig = {
-        RequiresMountsFor = [ stateDirActual ];
-      };
       preStart = ''
         mkdir -p $STATE_DIRECTORY/archive
         mkdir -p $STATE_DIRECTORY/logs
