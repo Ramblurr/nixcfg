@@ -34,7 +34,7 @@ let
     "/mnt/roon/music-mine"
     "/mnt/roon/audiobooks"
   ];
-  zfsDeps = [ "zfs-datasets.service" ];
+  stateDataset = "rpool/encrypted/safe/svc/roon-server";
 in
 {
   options.modules.services.roon-server = {
@@ -78,23 +78,17 @@ in
         "network.target"
         "network-online.target"
       ];
-      requires = zfsDeps;
       after = [
         "network.target"
         "network-online.target"
       ]
-      ++ nfsMountDeps
-      ++ zfsDeps;
-      bindsTo = nfsMountDeps ++ [ "zfs-mount.service" ];
+      ++ nfsMountDeps;
+      bindsTo = nfsMountDeps;
       description = "Roon Server";
       wantedBy = [ "multi-user.target" ];
       environment = {
         ROON_DATAROOT = stateDirEffective;
         ROON_ID_DIR = stateDirEffective;
-      };
-      unitConfig = {
-        AssertPathIsMountPoint = [ stateDirActual ];
-        RequiresMountsFor = [ stateDirActual ];
       };
       serviceConfig = {
         ExecStart = "${lib.getExe pkgs.roon-server}";
@@ -144,9 +138,12 @@ in
       fsType = "nfs";
     };
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/roon-server"."mountpoint" = "/var/lib/private/roon-server";
-      "rpool/encrypted/safe/svc/roon-server"."com.sun:auto-snapshot" = "false";
+    modules.zfs.datasets = {
+      properties.${stateDataset} = {
+        mountpoint = stateDirActual;
+        "com.sun:auto-snapshot" = "false";
+      };
+      services.${stateDataset} = [ "roon-server" ];
     };
   };
 }
