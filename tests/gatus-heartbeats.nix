@@ -53,7 +53,6 @@ let
             name = "Git Archive";
             group = groups.work;
             inherit interval;
-            reporterFullyPrivileged = dynamicUser;
           };
         }
       ];
@@ -65,11 +64,11 @@ let
   invalidInterval = builtins.tryEval (
     builtins.deepSeq (evaluate true "8d" null false).site.gatus.externalEndpoints true
   );
-  reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStopPost;
+  reporterCommand = enabled.systemd.services.example-job.serviceConfig.ExecStartPost;
   staticUserReporterCommand =
-    staticUserEnabled.systemd.services.example-job.serviceConfig.ExecStopPost;
+    staticUserEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
   environmentFileReporterCommand =
-    environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStopPost;
+    environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
 in
 assert !invalidInterval.success;
 assert enabled.site.gatus.groups == groups;
@@ -92,9 +91,11 @@ assert
 assert
   enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
   == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
-assert lib.hasPrefix "+" reporterCommand;
-assert !(lib.hasPrefix "+" staticUserReporterCommand);
-assert lib.hasInfix "gatus-heartbeat systemd" reporterCommand;
+assert !(lib.hasPrefix "+" reporterCommand);
+assert reporterCommand == staticUserReporterCommand;
+assert (enabled.systemd.services.example-job.serviceConfig.ExecStopPost or null) == null;
+assert lib.hasInfix "gatus-heartbeat report" reporterCommand;
+assert lib.hasInfix "--success true" reporterCommand;
 assert lib.hasInfix "--group '${groups.work}'" reporterCommand;
 assert lib.hasInfix "--name 'Git Archive (dewey)'" reporterCommand;
 assert lib.hasInfix "--token-file %d/gatus-token" reporterCommand;
