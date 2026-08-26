@@ -51,8 +51,21 @@ let
         };
         repo.secrets = {
           home-ops = {
-            users.media.name = "media";
-            groups.media.name = "media";
+            users = {
+              media.name = "media";
+              qui = {
+                name = "qui";
+                uid = 3023;
+                isSystemUser = true;
+              };
+            };
+            groups = {
+              media.name = "media";
+              qui = {
+                name = "qui";
+                gid = 3023;
+              };
+            };
           };
         };
         users.users.media = {
@@ -207,6 +220,18 @@ assert
   };
 assert lib.elem "qbtvpn.service" config.systemd.services.qbittorrent.bindsTo;
 assert !config.systemd.services.qui.vpnConfinement.enable;
+assert
+  {
+    inherit (qui) user;
+    inherit (qui) group;
+    uid = config.users.users.qui.uid;
+    gid = config.users.groups.qui.gid;
+  } == {
+    user = "qui";
+    group = "qui";
+    uid = 3023;
+    gid = 3023;
+  };
 assert
   qui.settings == {
     host = "127.0.0.1";

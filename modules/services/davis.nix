@@ -9,6 +9,8 @@ let
   cfg = config.modules.services.davis;
   onepassword = config.modules.services.onepassword-systemd-credentials;
   inherit (config.repo.secrets) home-ops;
+  davisUser = home-ops.users.davis;
+  davisGroup = home-ops.groups.davis;
   backupRole = "databasus_davis";
   databaseName = "davis";
   maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
@@ -138,12 +140,22 @@ in
         file_server
       '';
     };
+    users.users.${davisUser.name} = {
+      inherit (davisUser) name uid isSystemUser;
+      group = davisGroup.name;
+    };
+    users.groups.${davisGroup.name} = {
+      inherit (davisGroup) gid;
+    };
+
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/davis"."mountpoint" = config.services.davis.dataDir;
       "rpool/encrypted/safe/svc/davis"."com.sun:auto-snapshot" = "false";
     };
     services.davis = {
       enable = true;
+      user = davisUser.name;
+      group = davisGroup.name;
       hostname = cfg.domain;
       package = pkgs.davis;
       database = {

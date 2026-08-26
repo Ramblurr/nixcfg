@@ -6,6 +6,8 @@
 }:
 let
   cfg = config.modules.services.influxdb;
+  influxdbUser = config.repo.secrets.home-ops.users.influxdb2;
+  influxdbGroup = config.repo.secrets.home-ops.groups.influxdb2;
   stateDirActual = "/var/lib/private/influxdb";
   stateDirEffective = "/var/lib/influxdb";
 in
@@ -39,6 +41,14 @@ in
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
     };
+    users.users.${influxdbUser.name} = {
+      inherit (influxdbUser) name uid isSystemUser;
+      group = influxdbGroup.name;
+    };
+    users.groups.${influxdbGroup.name} = {
+      inherit (influxdbGroup) gid;
+    };
+
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/influxdb"."mountpoint" = stateDirActual;
     };
@@ -50,8 +60,8 @@ in
       serviceConfig = {
         DynamicUser = true;
         StateDirectory = lib.mkForce (baseNameOf stateDirEffective);
-        User = lib.mkForce null;
-        Group = lib.mkForce null;
+        User = lib.mkForce influxdbUser.name;
+        Group = lib.mkForce influxdbGroup.name;
       };
     };
     services.influxdb2 = {
