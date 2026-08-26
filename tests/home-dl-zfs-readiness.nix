@@ -63,14 +63,15 @@ let
     ];
   };
   services = evaluated.config.systemd.services;
-  zfsServiceUnits = map (name: services.${name}) [
+  downloadServiceUnits = map (name: services.${name}) [
     "prowlarr"
     "qbittorrent"
-    "qui"
     "radarr"
     "sabnzbd"
     "sonarr"
   ];
+  quiUnit = services.qui;
+  zfsServiceUnits = downloadServiceUnits ++ [ quiUnit ];
   nfsServiceUnits = map (name: services.${name}) [
     "prowlarr"
     "radarr"
@@ -102,12 +103,14 @@ assert lib.all (
     "/var/lib/private/home-dl"
     "/mnt/downloads"
   ]
-) zfsServiceUnits;
+) downloadServiceUnits;
+assert quiUnit.unitConfig.AssertPathIsMountPoint == [ "/var/lib/private/home-dl" ];
 assert lib.all (
   service:
   lib.all (path: builtins.elem path service.unitConfig.RequiresMountsFor) [
     "/var/lib/private/home-dl"
     "/mnt/downloads"
   ]
-) zfsServiceUnits;
+) downloadServiceUnits;
+assert quiUnit.unitConfig.RequiresMountsFor == [ "/var/lib/private/home-dl" ];
 pkgs.runCommand "home-dl-zfs-readiness-evaluation" { } "touch $out"
