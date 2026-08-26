@@ -14,6 +14,14 @@ let
       op://test/Example/password)
         printf %s dynamic-credential-value
         ;;
+      op://test/Example/transient)
+        attempts_file="$HOME/transient-attempts"
+        attempts=$(cat "$attempts_file" 2>/dev/null || printf 0)
+        attempts=$((attempts + 1))
+        printf %s "$attempts" > "$attempts_file"
+        test "$attempts" -ge 3 || exit 1
+        printf %s recovered-credential-value
+        ;;
       op://test/Example/empty)
         ;;
       op://test/Example/oversized)
@@ -54,6 +62,7 @@ pkgs.testers.runNixOSTest {
         bootstrapTokenFile = "/run/onepassword-provider-test-token";
         consumers = {
           credential-success.password = "op://test/Example/password";
+          credential-transient.password = "op://test/Example/transient";
           credential-empty.password = "op://test/Example/empty";
           credential-oversized.password = "op://test/Example/oversized";
           credential-failure.password = "op://test/Example/failure";
@@ -73,6 +82,14 @@ pkgs.testers.runNixOSTest {
         script = ''
           test "$(cat "$CREDENTIALS_DIRECTORY/password")" = dynamic-credential-value
           touch /run/credential-success
+        '';
+      };
+
+      systemd.services.credential-transient = {
+        serviceConfig.Type = "oneshot";
+        script = ''
+          test "$(cat "$CREDENTIALS_DIRECTORY/password")" = recovered-credential-value
+          touch /run/credential-transient
         '';
       };
 
@@ -115,6 +132,9 @@ pkgs.testers.runNixOSTest {
     machine.succeed("systemctl start credential-success.service")
     machine.succeed("test -e /run/credential-success")
 
+    machine.succeed("systemctl start credential-transient.service")
+    machine.succeed("test -e /run/credential-transient")
+
     for unit in [
         "credential-empty.service",
         "credential-oversized.service",
@@ -133,5 +153,6 @@ pkgs.testers.runNixOSTest {
     )
     assert "runtime-bootstrap-token" not in journal
     assert "dynamic-credential-value" not in journal
+    assert "recovered-credential-value" not in journal
   '';
 }
