@@ -6,11 +6,7 @@
 let
   cfg = config.modules.telemetry.prometheus;
   stateDir = "/var/lib/prometheus2";
-
-  serviceDeps = [
-    "var-lib-prometheus2.mount"
-    "zfs-datasets.service"
-  ];
+  prometheusDataset = "rpool/encrypted/safe/svc/prometheus";
 in
 {
   options.modules.telemetry.prometheus = {
@@ -33,8 +29,9 @@ in
       globalConfig.external_labels.prometheus = "${config.networking.hostName}";
     };
 
-    modules.zfs.datasets.properties = {
-      "rpool/encrypted/safe/svc/prometheus"."mountpoint" = stateDir;
+    modules.zfs.datasets = {
+      properties.${prometheusDataset}.mountpoint = stateDir;
+      services.${prometheusDataset} = [ "prometheus" ];
     };
 
     systemd.tmpfiles.rules = [
@@ -46,10 +43,6 @@ in
     ];
 
     services.borgmatic.configurations.system.exclude_patterns = [ "${stateDir}/data/wal" ];
-    systemd.services.prometheus = {
-      requires = serviceDeps;
-      after = serviceDeps;
-    };
   };
 
 }
