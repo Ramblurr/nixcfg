@@ -11,6 +11,8 @@ let
 
   mediaUser = home-ops.users.media.name;
   mediaGroup = home-ops.groups.media.name;
+  quiUser = home-ops.users.qui;
+  quiGroup = home-ops.groups.qui;
   stateDir = "/var/lib/private/home-dl";
   downloadsDir = "/mnt/downloads";
   qbittorrentDownloadsDir = "${downloadsDir}/torrents/qbit";
@@ -345,8 +347,18 @@ in
       };
     };
 
+    users.users.${quiUser.name} = {
+      inherit (quiUser) name uid isSystemUser;
+      group = quiGroup.name;
+    };
+    users.groups.${quiGroup.name} = {
+      inherit (quiGroup) gid;
+    };
+
     services.qui = {
       enable = true;
+      user = quiUser.name;
+      group = quiGroup.name;
       package = pkgs.qui;
       secretFile = onepassword.creds.qui.sessionSecret;
       openFirewall = false;
@@ -380,7 +392,7 @@ in
       "d ${qbittorrentDownloadsDir}/incomplete 0770 ${mediaUser} ${mediaGroup}"
       "d ${qbittorrentTorrentFilesDir} 0770 ${mediaUser} ${mediaGroup}"
       "d ${qbittorrentFinishedTorrentFilesDir} 0770 ${mediaUser} ${mediaGroup}"
-      "d ${quiStateDir} 0750 qui qui"
+      "d ${quiStateDir} 0750 ${quiUser.name} ${quiGroup.name}"
     ];
 
     systemd.services.proton-qbittorrent-port-forward = {

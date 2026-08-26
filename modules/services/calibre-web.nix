@@ -100,6 +100,8 @@ in
     };
     services.calibre-web = {
       enable = true;
+      user = cfg.user.name;
+      group = cfg.group.name;
       package = pkgs.calibre-web.overrideAttrs (prev: {
         propagatedBuildInputs = prev.propagatedBuildInputs ++ prev.passthru.optional-dependencies.kobo;
       });
