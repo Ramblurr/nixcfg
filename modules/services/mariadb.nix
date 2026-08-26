@@ -9,7 +9,6 @@ let
   mysqlUser = config.services.mysql.user;
 
   serviceDeps = [
-    "var-lib-mysql.mount"
     "zfs-datasets.service"
   ];
 in
@@ -45,8 +44,15 @@ in
       };
     };
 
-    systemd.services.mysql.requires = serviceDeps;
-    systemd.services.mysql.wants = serviceDeps;
+    systemd.services.mysql = {
+      requires = serviceDeps;
+      after = serviceDeps;
+      bindsTo = [ "zfs-mount.service" ];
+      unitConfig = {
+        AssertPathIsMountPoint = [ "/var/lib/mysql" ];
+        RequiresMountsFor = [ "/var/lib/mysql" ];
+      };
+    };
 
     # services.mysqlBackup = {
     #   enable = true;
