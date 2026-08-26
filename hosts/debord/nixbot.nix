@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   pkgs,
   lib,
   self,
@@ -65,6 +66,7 @@ in
       message = "Nixbot PostgreSQL must not be exposed through globally allowed TCP port 5432.";
     }
   ];
+  imports = [ inputs.nix-tarmac.nixosModules.default ];
 
   modules.services.onepassword-systemd-credentials.consumers.databasus-nixbot-role = {
     POSTGRES_PASSWORD = "op://home-ops-prod/databasus-nixbot/password";

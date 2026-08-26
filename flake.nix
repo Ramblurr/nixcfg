@@ -61,6 +61,8 @@
     nix-gaming.url = "github:fufexan/nix-gaming";
     nix-gaming.inputs.nixpkgs.follows = "nixpkgs";
     nix-std.url = "github:chessai/nix-std";
+    nix-tarmac.url = "github:Mic92/nix-tarmac";
+    nix-tarmac.inputs.nixpkgs.follows = "nixpkgs";
     nixos-extra-modules.url = "github:oddlama/nixos-extra-modules";
     nixos-extra-modules.inputs.nixpkgs.follows = "nixpkgs";
     # nixos-hardware doe snot have a nixpkgs input
