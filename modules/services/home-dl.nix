@@ -43,14 +43,14 @@ let
   nfsMountDeps = [ "${utils.escapeSystemdPath mediaLocalPath}.mount" ];
   stateDataset = "rpool/encrypted/safe/svc/home-dl";
   downloadsDataset = "tank/encrypted/downloads";
-  zfsServices = [
+  downloadServices = [
     "prowlarr"
     "qbittorrent"
-    "qui"
     "radarr"
     "sabnzbd"
     "sonarr"
   ];
+  stateServices = downloadServices ++ [ "qui" ];
   sharedSystemdService = {
     after = [ "network.target" ] ++ nfsMountDeps;
     bindsTo = nfsMountDeps;
@@ -119,8 +119,8 @@ in
         };
       };
       services = {
-        ${stateDataset} = zfsServices;
-        ${downloadsDataset} = zfsServices;
+        ${stateDataset} = stateServices;
+        ${downloadsDataset} = downloadServices;
       };
     };
 
