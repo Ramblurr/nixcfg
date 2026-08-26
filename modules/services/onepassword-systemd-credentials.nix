@@ -48,7 +48,10 @@ let
       import re
       import subprocess
       import sys
+      import time
 
+      LOOKUP_RETRY_SECONDS = 15
+      LOOKUP_TIMEOUT_SECONDS = 5
       MAX_CREDENTIAL_SIZE = 1024 * 1024
 
 
@@ -102,21 +105,28 @@ let
           }
       )
 
-      try:
-          result = subprocess.run(
-              [${builtins.toJSON (lib.getExe cfg.package)}, "read", "--no-newline", reference],
-              stdin=subprocess.DEVNULL,
-              stdout=subprocess.PIPE,
-              stderr=subprocess.DEVNULL,
-              env=environment,
-              check=False,
-              timeout=25,
-          )
-      except (OSError, subprocess.SubprocessError):
-          fail(f"lookup failed for {unit_name}/{credential_id}")
+      deadline = time.monotonic() + LOOKUP_RETRY_SECONDS
+      while True:
+          try:
+              result = subprocess.run(
+                  [${builtins.toJSON (lib.getExe cfg.package)}, "read", "--no-newline", reference],
+                  stdin=subprocess.DEVNULL,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.DEVNULL,
+                  env=environment,
+                  check=False,
+                  timeout=LOOKUP_TIMEOUT_SECONDS,
+              )
+          except OSError:
+              fail(f"lookup failed for {unit_name}/{credential_id}")
+          except subprocess.TimeoutExpired:
+              result = None
 
-      if result.returncode != 0:
-          fail(f"lookup failed for {unit_name}/{credential_id}")
+          if result is not None and result.returncode == 0:
+              break
+          if time.monotonic() >= deadline:
+              fail(f"lookup failed for {unit_name}/{credential_id}")
+          time.sleep(1)
       if not result.stdout:
           fail(f"lookup returned an empty value for {unit_name}/{credential_id}")
       if len(result.stdout) > MAX_CREDENTIAL_SIZE:
