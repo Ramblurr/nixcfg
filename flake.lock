@@ -2417,7 +2417,7 @@
         "flake-parts": "flake-parts_6",
         "git-hooks-nix": "git-hooks-nix_4",
         "nixpkgs": [
-          "nixpkgs"
+          "nixpkgs-stable"
         ],
         "process-compose-flake": "process-compose-flake",
         "treefmt-nix": "treefmt-nix_4",
