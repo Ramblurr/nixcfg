@@ -212,7 +212,7 @@ in
       containers = {
         invoiceninja-redis = {
           inherit (cfg.user) uid;
-          autoStart = true;
+          autoStart = false;
           serviceConfig = {
             RestartSec = "30";
             Restart = "always";
