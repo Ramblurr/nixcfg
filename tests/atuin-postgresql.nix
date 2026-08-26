@@ -22,6 +22,10 @@ let
           type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           default = { };
         };
+        modules.zfs.datasets.services = lib.mkOption {
+          type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+          default = { };
+        };
         site.gatus = lib.mkOption {
           type = lib.types.attrs;
           default = { };
