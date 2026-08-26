@@ -40,11 +40,21 @@ let
   stateDirEffective = "/var/lib/home-dl";
   mediaLocalPath = "/mnt/mali/${cfg.mediaNfsShare}";
   dlLocalPath = "/mnt/downloads";
-  serviceDeps = [
-    "${utils.escapeSystemdPath mediaLocalPath}.mount"
-    "${utils.escapeSystemdPath dlLocalPath}.mount"
-    "${utils.escapeSystemdPath stateDirActual}.mount"
+  nfsMountDeps = [ "${utils.escapeSystemdPath mediaLocalPath}.mount" ];
+  zfsDeps = [ "zfs-datasets.service" ];
+  zfsMountPoints = [
+    stateDirActual
+    dlLocalPath
   ];
+  sharedSystemdService = {
+    requires = zfsDeps;
+    after = [ "network.target" ] ++ nfsMountDeps ++ zfsDeps;
+    bindsTo = nfsMountDeps ++ [ "zfs-mount.service" ];
+    unitConfig = {
+      AssertPathIsMountPoint = zfsMountPoints;
+      RequiresMountsFor = zfsMountPoints;
+    };
+  };
   sharedServiceConfig = {
     UMask = 77;
     DynamicUser = true;
@@ -127,8 +137,6 @@ in
     };
     systemd.services.sonarr = {
       description = "Sonarr";
-      after = [ "network.target" ] ++ serviceDeps;
-      bindsTo = serviceDeps;
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
@@ -141,11 +149,10 @@ in
         ];
       }
       // sharedServiceConfig;
-    };
+    }
+    // sharedSystemdService;
     systemd.services.radarr = {
       description = "Radarr";
-      after = [ "network.target" ] ++ serviceDeps;
-      bindsTo = serviceDeps;
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
@@ -158,12 +165,11 @@ in
         ];
       }
       // sharedServiceConfig;
-    };
+    }
+    // sharedSystemdService;
     systemd.services.sabnzbd = {
       description = "sabnzbd server";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ] ++ serviceDeps;
-      bindsTo = serviceDeps;
       serviceConfig = {
         Type = "forking";
         GuessMainPID = "no";
@@ -177,11 +183,10 @@ in
         ];
       }
       // sharedServiceConfig;
-    };
+    }
+    // sharedSystemdService;
     systemd.services.prowlarr = {
       description = "Prowlarr";
-      after = [ "network.target" ] ++ serviceDeps;
-      bindsTo = serviceDeps;
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
@@ -191,7 +196,8 @@ in
         Restart = "on-failure";
       }
       // sharedServiceConfig;
-    };
+    }
+    // sharedSystemdService;
     #sops.secrets."home-dl/sonarr/apiKey" = { };
     #sops.secrets."home-dl/radarr/apiKey" = { };
     systemd.services.recyclarr = {
