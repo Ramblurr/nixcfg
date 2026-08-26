@@ -87,6 +87,7 @@ let
   };
   provider = compatibility.modules.services.onepassword-systemd-credentials;
   setupService = compatibility.systemd.services.paperless-secrets-setup;
+  secretKeyService = compatibility.systemd.services.paperless-secret-key;
   webService = compatibility.systemd.services.paperless-web;
   postgresDependentServices = map (name: compatibility.systemd.services.${name}) [
     "paperless-consumer"
@@ -119,6 +120,8 @@ assert compatibility.services.paperless.environmentFile == "/run/paperless-secre
 assert compatibility.services.paperless.passwordFile == "/run/paperless-secrets/admin-password";
 assert provider.consumers.paperless-secrets-setup == paperlessCredentials;
 assert builtins.elem "paperless-web.service" setupService.requiredBy;
+assert builtins.elem "paperless-secrets-setup.service" secretKeyService.requires;
+assert builtins.elem "paperless-secrets-setup.service" secretKeyService.after;
 assert builtins.elem "onepassword-credential-provider.socket" setupService.requires;
 assert builtins.elem "paperless-secrets-setup.service" webService.requires;
 assert builtins.elem "paperless-secrets-setup.service" webService.after;
