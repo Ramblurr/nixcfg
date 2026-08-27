@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  expectedBundle = "v1-8fd29de2f24ce397-initial";
+  expectedBundle = "v1-3ad7fd22743fba64-initial";
   expectedDatasets = pkgs.writeText "expected-datasets" ''
     data1/replication/mali/test
   '';

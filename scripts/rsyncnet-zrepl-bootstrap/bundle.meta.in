@@ -4,7 +4,6 @@ receiver_hostname=fm2124b.rsync.net
 freebsd_arch=amd64
 freebsd_release_pattern=14.*
 package_name=zrepl
-package_version=0.7.0_5
 package_origin=filesystems/zrepl
 package_arch=FreeBSD:14:amd64
 pruning_mode=keep-all
