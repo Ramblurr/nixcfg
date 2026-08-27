@@ -17,10 +17,6 @@ let
           type = lib.types.attrs;
           default = { };
         };
-        modules.zfs.datasets.properties = lib.mkOption {
-          type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
-          default = { };
-        };
       };
     };
   cfg =
@@ -31,6 +27,7 @@ let
       };
       modules = [
         inputs.sops-nix.nixosModules.sops
+        ../modules/zfs-attrs.nix
         inputs.nixbot.nixosModules.nixbot
         ../modules/services/onepassword-systemd-credentials.nix
         ../hosts/debord/nixbot.nix
@@ -44,6 +41,7 @@ let
             device = "none";
             fsType = "tmpfs";
           };
+          modules.zfs.datasets.enable = true;
           sops.defaultSopsFile = secretFile;
           sops.age.keyFile = "/tmp/age-key.txt";
           site.net.mgmt.hosts4 = {
@@ -67,6 +65,14 @@ let
     }).config;
   provider = cfg.modules.services.onepassword-systemd-credentials;
   service = cfg.systemd.services.databasus-nixbot-role;
+  postgresql = cfg.systemd.services.postgresql;
+  nixbot = cfg.systemd.services.nixbot;
+  nixbotSshKeygen = cfg.systemd.services.nixbot-ssh-keygen;
+  zfsUnits = [
+    postgresql
+    nixbot
+    nixbotSshKeygen
+  ];
   inherit (service) script;
 in
 assert
@@ -89,6 +95,17 @@ assert lib.hasInfix "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO databasus
 assert lib.hasInfix "ALTER DEFAULT PRIVILEGES FOR ROLE nixbot IN SCHEMA public" script;
 assert cfg.services.postgresql.enableTCPIP;
 assert cfg.services.postgresql.settings.listen_addresses == "192.0.2.21";
+assert builtins.elem "network-online.target" postgresql.wants;
+assert builtins.elem "network-online.target" postgresql.after;
+assert cfg.modules.zfs.datasets.services."rpool/encrypted/safe/svc/postgresql" == [ "postgresql" ];
+assert
+  cfg.modules.zfs.datasets.services."rpool/encrypted/safe/svc/nixbot" == [
+    "nixbot"
+    "nixbot-ssh-keygen"
+  ];
+assert lib.all (unit: builtins.elem "zfs-datasets.service" unit.requires) zfsUnits;
+assert lib.all (unit: builtins.elem "zfs-datasets.service" unit.after) zfsUnits;
+assert lib.all (unit: builtins.elem "zfs-mount.service" unit.bindsTo) zfsUnits;
 assert lib.hasInfix "host nixbot databasus_nixbot 192.0.2.3/32 scram-sha-256"
   cfg.services.postgresql.authentication;
 assert lib.hasInfix "host all databasus_nixbot 192.0.2.3/32 reject"
