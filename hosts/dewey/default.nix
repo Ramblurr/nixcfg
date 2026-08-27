@@ -27,6 +27,7 @@ in
   modules.networking.systemd-netns-private.namespaces.home-dl.egress = {
     source = home-ops.subnets.home-dl.hostAddr;
     interface = "prim";
+    onLinkSubnet = config.site.net.prim.subnet4;
     gateway = lib.head config.site.net.prim.hosts4.${config.site.net.prim.dhcp.router};
     routingTable = 100;
   };

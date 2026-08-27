@@ -94,6 +94,10 @@ in
                           type = lib.types.str;
                           description = "Host interface used for egress";
                         };
+                        onLinkSubnet = lib.mkOption {
+                          type = lib.types.str;
+                          description = "CIDR directly reachable on the egress interface";
+                        };
                         gateway = lib.mkOption {
                           type = lib.types.str;
                           description = "IPv4 egress gateway";
@@ -182,6 +186,8 @@ in
             inherit (ns) egress;
           in
           lib.optionals (egress != null) [
+            "${pkgs.iproute2}/bin/ip route replace ${egress.source} dev ${ns.hostIface} src ${cidrToIp ns.hostAddr} table ${toString egress.routingTable}"
+            "${pkgs.iproute2}/bin/ip route replace ${egress.onLinkSubnet} dev ${egress.interface} table ${toString egress.routingTable}"
             "${pkgs.iproute2}/bin/ip route replace default via ${egress.gateway} dev ${egress.interface} table ${toString egress.routingTable}"
             "${pkgs.iproute2}/bin/ip rule add priority ${toString egress.rulePriority} from ${egress.source} table ${toString egress.routingTable}"
           ];
@@ -193,6 +199,8 @@ in
           lib.optionals (egress != null) [
             "-${pkgs.iproute2}/bin/ip rule del priority ${toString egress.rulePriority} from ${egress.source} table ${toString egress.routingTable}"
             "-${pkgs.iproute2}/bin/ip route del default via ${egress.gateway} dev ${egress.interface} table ${toString egress.routingTable}"
+            "-${pkgs.iproute2}/bin/ip route del ${egress.onLinkSubnet} dev ${egress.interface} table ${toString egress.routingTable}"
+            "-${pkgs.iproute2}/bin/ip route del ${egress.source} dev ${ns.hostIface} table ${toString egress.routingTable}"
           ];
         mkServices = name: ns: [
           {
