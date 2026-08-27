@@ -97,6 +97,16 @@ assert cfg.services.postgresql.enableTCPIP;
 assert cfg.services.postgresql.settings.listen_addresses == "192.0.2.21";
 assert builtins.elem "network-online.target" postgresql.wants;
 assert builtins.elem "network-online.target" postgresql.after;
+assert
+  cfg.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/postgresql" == {
+    mountpoint = "/var/lib/postgresql";
+    "com.sun:auto-snapshot" = "false";
+  };
+assert
+  cfg.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/nixbot" == {
+    mountpoint = "/var/lib/nixbot";
+    "com.sun:auto-snapshot" = "false";
+  };
 assert cfg.modules.zfs.datasets.services."rpool/encrypted/safe/svc/postgresql" == [ "postgresql" ];
 assert
   cfg.modules.zfs.datasets.services."rpool/encrypted/safe/svc/nixbot" == [
