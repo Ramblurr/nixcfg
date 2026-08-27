@@ -21,6 +21,9 @@ sonarr:
               - WEBRip-480p
           - name: DVD
           - name: SDTV
+        upgrade:
+          allowed: false
+          until_quality: WEB 480p
         reset_unmatched_scores:
           enabled: true
       - name: HD-1080p
@@ -32,6 +35,9 @@ sonarr:
             qualities:
               - WEBDL-1080p
               - WEBRip-1080p
+        upgrade:
+          allowed: false
+          until_quality: WEB 1080p
         reset_unmatched_scores:
           enabled: true
       - name: Ultra-HD
