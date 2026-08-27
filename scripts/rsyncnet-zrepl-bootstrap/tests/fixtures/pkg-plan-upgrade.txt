@@ -1,0 +1,6 @@
+Installed packages to be UPGRADED:
+        zrepl: 0.7.0_5 -> 0.7.0_7
+
+Number of packages to be upgraded: 1
+
+The process will require 22 MiB more space.

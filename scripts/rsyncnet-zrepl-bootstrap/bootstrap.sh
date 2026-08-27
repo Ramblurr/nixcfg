@@ -195,7 +195,7 @@ planned_package_required_bytes() {
       return 1
     }
   fi
-  validate_package_plan "$plan" "$(meta_value package_version)" || {
+  validate_package_plan "$plan" || {
     rm -f "$plan"
     return 1
   }
@@ -325,7 +325,6 @@ restore_live_files() {
 
 inspect_package_scripts() {
   metadata_dir=$1
-  expected_version=$(meta_value package_version) || return 1
   expected_origin=$(meta_value package_origin) || return 1
   expected_arch=$(meta_value package_arch) || return 1
   install -d -o root -g wheel -m 0700 "$metadata_dir" || return 1
@@ -334,56 +333,73 @@ inspect_package_scripts() {
   test "$archive_count" -eq 1 || return 1
   archive=$(find "$metadata_dir" -maxdepth 1 -type f \( -name '*.pkg' -o -name '*.txz' \))
   pkg info -F "$archive" -R --raw-format ucl >"$metadata_dir/manifest.ucl" 2>&1 || return 1
-  validate_package_manifest "$metadata_dir/manifest.ucl" "$expected_version" "$expected_origin" "$expected_arch"
+  validate_package_manifest "$metadata_dir/manifest.ucl" "$expected_origin" "$expected_arch"
 }
 
 inspect_package_candidate() {
   evidence_name=$1
+  plan=$2
   metadata_dir=$(mktemp -d /tmp/zrepl-package-inspect.XXXXXX) || return 1
   inspect_package_scripts "$metadata_dir"
   result=$?
   if test "$result" -eq 0; then
+    candidate=$(find "$metadata_dir" -maxdepth 1 -type f \( -name '*.pkg' -o -name '*.txz' \))
+    package_candidate_matches_plan "$plan" "$metadata_dir/manifest.ucl" || result=1
+  fi
+  if test "$result" -eq 0; then
+    PACKAGE_CANDIDATE=$BACKUP/$evidence_name.pkg
+    PACKAGE_CANDIDATE_VERSION=$(package_manifest_version "$metadata_dir/manifest.ucl") || result=1
     install -o root -g wheel -m 0600 "$metadata_dir/manifest.ucl" "$BACKUP/$evidence_name.manifest.ucl" || result=1
+    install -o root -g wheel -m 0600 "$candidate" "$PACKAGE_CANDIDATE" || result=1
   fi
   rm -rf "$metadata_dir"
   return "$result"
 }
 
 package_payload_valid() {
-  expected_version=$(meta_value package_version) || return 1
+  installed_version=$1
   check_output=$(mktemp /tmp/zrepl-pkg-check.XXXXXX) || return 1
   pkg check -sq zrepl >/dev/null 2>"$check_output"
   check_result=$?
-  validate_pkg_check_result "$check_output" "$check_result" "$expected_version"
+  validate_pkg_check_result "$check_output" "$check_result" "$installed_version"
   valid=$?
   rm -f "$check_output"
   return "$valid"
 }
 
 expected_package_valid() {
-  expected_version=$(meta_value package_version) || return 1
   expected_origin=$(meta_value package_origin) || return 1
   expected_arch=$(meta_value package_arch) || return 1
-  pkg info -e "zrepl-$expected_version" >/dev/null 2>&1 || return 1
-  test "$(pkg query '%n|%v|%o|%q' zrepl 2>/dev/null)" = "zrepl|$expected_version|$expected_origin|$expected_arch" || return 1
-  test "$(pkg which -q /usr/local/bin/zrepl 2>/dev/null)" = "zrepl-$expected_version" || return 1
-  test "$(pkg which -q /usr/local/etc/rc.d/zrepl 2>/dev/null)" = "zrepl-$expected_version" || return 1
-  package_payload_valid || return 1
+  identity=$(pkg query '%n|%v|%o|%q' zrepl 2>/dev/null) || return 1
+  package_name=${identity%%|*}
+  remainder=${identity#*|}
+  installed_version=${remainder%%|*}
+  remainder=${remainder#*|}
+  installed_origin=${remainder%%|*}
+  installed_arch=${remainder#*|}
+  test "$package_name" = zrepl || return 1
+  case $installed_version in '' | *[!A-Za-z0-9._,+-]*) return 1 ;; esac
+  test "$installed_origin" = "$expected_origin" || return 1
+  test "$installed_arch" = "$expected_arch" || return 1
+  package_id=zrepl-$installed_version
+  pkg info -e "$package_id" >/dev/null 2>&1 || return 1
+  test "$(pkg which -q /usr/local/bin/zrepl 2>/dev/null)" = "$package_id" || return 1
+  test "$(pkg which -q /usr/local/etc/rc.d/zrepl 2>/dev/null)" = "$package_id" || return 1
+  package_payload_valid "$installed_version" || return 1
   test -x /usr/local/bin/zrepl && test -f /usr/local/bin/zrepl && test ! -L /usr/local/bin/zrepl || return 1
   test -x /usr/local/etc/rc.d/zrepl && test -f /usr/local/etc/rc.d/zrepl && test ! -L /usr/local/etc/rc.d/zrepl
 }
 
 install_expected_package() {
   force=$1
-  expected_version=$(meta_value package_version) || return 1
   plan=$BACKUP/pkg-install.dry-run
   if test "$force" = 1; then
     pkg install -nf zrepl >"$plan" 2>&1 || return 1
   else
     pkg install -n zrepl >"$plan" 2>&1 || return 1
   fi
-  validate_package_plan "$plan" "$expected_version" || return 1
-  inspect_package_candidate pkg-candidate || return 1
+  validate_package_plan "$plan" || return 1
+  inspect_package_candidate pkg-candidate "$plan" || return 1
 
   if package_plan_has_pkg_upgrade "$plan"; then
     pkg install -n pkg >"$BACKUP/pkg-self-upgrade.dry-run" 2>&1 || return 1
@@ -394,16 +410,17 @@ install_expected_package() {
     else
       pkg install -n zrepl >"$plan.after-pkg" 2>&1 || return 1
     fi
-    validate_package_plan "$plan.after-pkg" "$expected_version" || return 1
-    inspect_package_candidate pkg-candidate-after-pkg || return 1
+    validate_package_plan "$plan.after-pkg" || return 1
+    inspect_package_candidate pkg-candidate-after-pkg "$plan.after-pkg" || return 1
   fi
 
   if test "$force" = 1; then
-    pkg install -yf zrepl >"$BACKUP/pkg-install.log" 2>&1 || return 1
+    pkg add -f "$PACKAGE_CANDIDATE" >"$BACKUP/pkg-install.log" 2>&1 || return 1
   else
-    pkg install -y zrepl >"$BACKUP/pkg-install.log" 2>&1 || return 1
+    pkg add "$PACKAGE_CANDIDATE" >"$BACKUP/pkg-install.log" 2>&1 || return 1
   fi
-  expected_package_valid
+  expected_package_valid || return 1
+  test "$(pkg query '%v' zrepl 2>/dev/null)" = "$PACKAGE_CANDIDATE_VERSION"
 }
 
 install_live_file() {
@@ -502,7 +519,7 @@ run_locked() {
   package_needed=0
   if ! expected_package_valid; then
     package_needed=1
-    if pkg info -e "zrepl-$(meta_value package_version)" >/dev/null 2>&1; then
+    if pkg info -e 'zrepl-*' >/dev/null 2>&1; then
       package_force=1
     fi
   fi
