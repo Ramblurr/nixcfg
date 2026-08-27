@@ -50,7 +50,10 @@ let
     "sabnzbd"
     "sonarr"
   ];
-  stateServices = downloadServices ++ [ "qui" "recyclarr" ];
+  stateServices = downloadServices ++ [
+    "qui"
+    "recyclarr"
+  ];
   sharedSystemdService = {
     after = [ "network.target" ] ++ nfsMountDeps;
     bindsTo = nfsMountDeps;
