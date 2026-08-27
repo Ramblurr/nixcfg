@@ -393,15 +393,66 @@ package_plan_required_bytes() {
   ' "$1"
 }
 
+single_package_archive() {
+  root=$1
+  test -d "$root" && test ! -L "$root" || return 1
+  matches=$(mktemp "${TMPDIR:-/tmp}/zrepl-package-archives.XXXXXX") || return 1
+  find "$root" -mindepth 1 -maxdepth 3 -type f \( -name '*.pkg' -o -name '*.txz' \) -print >"$matches" || {
+    rm -f "$matches"
+    return 1
+  }
+  if test "$(wc -l <"$matches" | tr -d ' ')" -ne 1; then
+    rm -f "$matches"
+    return 1
+  fi
+  archive=$(cat "$matches")
+  rm -f "$matches"
+  case $archive in "$root"/*) ;; *) return 1 ;; esac
+  test -f "$archive" && test ! -L "$archive" || return 1
+  printf '%s\n' "$archive"
+}
+
+package_lua_scripts_hash() {
+  manifest=$1
+  count=$(grep -Ec '^[[:space:]]*lua_scripts[[:space:]]*[:={]' "$manifest" || true)
+  case $count in
+    0)
+      printf 'none\n'
+      return
+      ;;
+    1) ;;
+    *) return 1 ;;
+  esac
+
+  block=$(mktemp "${TMPDIR:-/tmp}/zrepl-package-lua-scripts.XXXXXX") || return 1
+  if ! awk '
+    /^lua_scripts[[:space:]]*\{/ { capture=1; found=1 }
+    capture { print }
+    capture && /^}/ { closed=1; exit }
+    END { if (!found || !closed) exit 1 }
+  ' "$manifest" >"$block"; then
+    rm -f "$block"
+    return 1
+  fi
+  hash=$(sha256_file "$block") || {
+    rm -f "$block"
+    return 1
+  }
+  rm -f "$block"
+  printf '%s\n' "$hash"
+}
+
 validate_package_manifest() {
   manifest=$1
   expected_origin=$2
   expected_arch=$3
+  expected_lua_scripts_hash=$4
   grep -Eq '^[[:space:]]*name[[:space:]]*[:=][[:space:]]*"?zrepl"?[,;]?$' "$manifest" || return 1
   grep -Eq '^[[:space:]]*version[[:space:]]*[:=][[:space:]]*"?[A-Za-z0-9][A-Za-z0-9._,+-]*"?[,;]?$' "$manifest" || return 1
   grep -Eq "^[[:space:]]*origin[[:space:]]*[:=][[:space:]]*\"?$expected_origin\"?[,;]?$" "$manifest" || return 1
   grep -Eq "^[[:space:]]*arch[[:space:]]*[:=][[:space:]]*\"?$expected_arch\"?[,;]?$" "$manifest" || return 1
-  if grep -Eq '^[[:space:]]*(scripts|lua_scripts)[[:space:]]*[:={]' "$manifest"; then
+  if grep -Eq '^[[:space:]]*scripts[[:space:]]*[:={]' "$manifest"; then
     return 1
   fi
+  test "$(package_lua_scripts_hash "$manifest")" = "$expected_lua_scripts_hash"
 }
