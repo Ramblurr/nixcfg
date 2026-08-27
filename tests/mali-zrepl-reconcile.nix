@@ -82,7 +82,7 @@ assert
     compression = "zstd";
     mountpoint = "/var/lib/private/rsyncnet-zrepl-reconcile";
   };
-assert service.environment.EXPECTED_BUNDLE_ID == "v1-3ad7fd22743fba64-initial";
+assert service.environment.EXPECTED_BUNDLE_ID == "v1-7edc60fffa7eed56-initial";
 assert service.environment.SSH_DEADLINE_SECONDS == "900";
 assert !(service.environment ? STATE_DIRECTORY);
 assert !(service.environment ? RUNTIME_DIRECTORY);

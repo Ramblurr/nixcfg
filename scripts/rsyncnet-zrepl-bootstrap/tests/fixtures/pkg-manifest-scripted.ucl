@@ -1,7 +1,7 @@
 name = "zrepl";
 version = "0.7.0_5";
 origin = "filesystems/zrepl";
-arch = "FreeBSD:14:amd64";
+arch = "freebsd:14:x86:64";
 scripts {
   post-install = "service zrepl start";
 }

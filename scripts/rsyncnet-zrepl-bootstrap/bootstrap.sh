@@ -104,6 +104,8 @@ verify_release() {
   test "$(meta_value package_name)" = zrepl || return 1
   test "$(meta_value package_origin)" = filesystems/zrepl || return 1
   test "$(meta_value package_arch)" = FreeBSD:14:amd64 || return 1
+  test "$(meta_value package_manifest_arch)" = freebsd:14:x86:64 || return 1
+  test "$(meta_value package_lua_scripts_sha256)" = 6b7d6c91f960a4f9ed4d572f4a695900a116c802c8e14878ff40a1267255a494 || return 1
   test "$(meta_value pruning_mode)" = keep-all || return 1
   grep -Fxq "zrepl.yml|$(meta_value live_config)|600" "$RELEASE_ROOT/managed-files" || return 1
   grep -Fxq "rc.conf.d-zrepl|$(meta_value live_rc)|644" "$RELEASE_ROOT/managed-files" || return 1
@@ -326,14 +328,13 @@ restore_live_files() {
 inspect_package_scripts() {
   metadata_dir=$1
   expected_origin=$(meta_value package_origin) || return 1
-  expected_arch=$(meta_value package_arch) || return 1
+  expected_arch=$(meta_value package_manifest_arch) || return 1
+  expected_lua_scripts_hash=$(meta_value package_lua_scripts_sha256) || return 1
   install -d -o root -g wheel -m 0700 "$metadata_dir" || return 1
   pkg fetch -y -o "$metadata_dir" zrepl >"$metadata_dir/fetch.log" 2>&1 || return 1
-  archive_count=$(find "$metadata_dir" -maxdepth 1 -type f \( -name '*.pkg' -o -name '*.txz' \) | wc -l)
-  test "$archive_count" -eq 1 || return 1
-  archive=$(find "$metadata_dir" -maxdepth 1 -type f \( -name '*.pkg' -o -name '*.txz' \))
+  archive=$(single_package_archive "$metadata_dir") || return 1
   pkg info -F "$archive" -R --raw-format ucl >"$metadata_dir/manifest.ucl" 2>&1 || return 1
-  validate_package_manifest "$metadata_dir/manifest.ucl" "$expected_origin" "$expected_arch"
+  validate_package_manifest "$metadata_dir/manifest.ucl" "$expected_origin" "$expected_arch" "$expected_lua_scripts_hash"
 }
 
 inspect_package_candidate() {
@@ -343,7 +344,7 @@ inspect_package_candidate() {
   inspect_package_scripts "$metadata_dir"
   result=$?
   if test "$result" -eq 0; then
-    candidate=$(find "$metadata_dir" -maxdepth 1 -type f \( -name '*.pkg' -o -name '*.txz' \))
+    candidate=$(single_package_archive "$metadata_dir") || result=1
     package_candidate_matches_plan "$plan" "$metadata_dir/manifest.ucl" || result=1
   fi
   if test "$result" -eq 0; then
