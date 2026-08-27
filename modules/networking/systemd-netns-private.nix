@@ -80,6 +80,37 @@ in
                   type = lib.types.strMatching "[a-zA-Z0-9@%:_.\\-]+";
                   description = "The namespace name. Defaults to <name>";
                 };
+                egress = lib.mkOption {
+                  default = null;
+                  description = "Optional source-based egress policy for this namespace";
+                  type = lib.types.nullOr (
+                    lib.types.submodule {
+                      options = {
+                        source = lib.mkOption {
+                          type = lib.types.str;
+                          description = "Source CIDR routed by this policy";
+                        };
+                        interface = lib.mkOption {
+                          type = lib.types.str;
+                          description = "Host interface used for egress";
+                        };
+                        gateway = lib.mkOption {
+                          type = lib.types.str;
+                          description = "IPv4 egress gateway";
+                        };
+                        routingTable = lib.mkOption {
+                          type = lib.types.ints.positive;
+                          description = "Dedicated routing table number";
+                        };
+                        rulePriority = lib.mkOption {
+                          type = lib.types.ints.positive;
+                          default = 100;
+                          description = "Source rule priority, after the host-local rule";
+                        };
+                      };
+                    }
+                  );
+                };
               };
               config = {
                 hostIface = lib.mkDefault "veth-${name}-host";
@@ -137,6 +168,32 @@ in
               };
             };
           }) ns.services;
+        natSource = ns: if ns.egress == null then ns.nsAddr else ns.egress.source;
+        natInterface = ns: if ns.egress == null then "mgmt" else ns.egress.interface;
+        mkNatAdd =
+          ns:
+          "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${natSource ns} -o ${natInterface ns} -j MASQUERADE";
+        mkNatDelete =
+          ns:
+          "-${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${natSource ns} -o ${natInterface ns} -j MASQUERADE";
+        mkEgressStart =
+          ns:
+          let
+            inherit (ns) egress;
+          in
+          lib.optionals (egress != null) [
+            "${pkgs.iproute2}/bin/ip route replace default via ${egress.gateway} dev ${egress.interface} table ${toString egress.routingTable}"
+            "${pkgs.iproute2}/bin/ip rule add priority ${toString egress.rulePriority} from ${egress.source} table ${toString egress.routingTable}"
+          ];
+        mkEgressCleanup =
+          ns:
+          let
+            inherit (ns) egress;
+          in
+          lib.optionals (egress != null) [
+            "-${pkgs.iproute2}/bin/ip rule del priority ${toString egress.rulePriority} from ${egress.source} table ${toString egress.routingTable}"
+            "-${pkgs.iproute2}/bin/ip route del default via ${egress.gateway} dev ${egress.interface} table ${toString egress.routingTable}"
+          ];
         mkServices = name: ns: [
           {
             name = "systemd-netns-private-${name}";
@@ -179,7 +236,9 @@ in
               after = [
                 "network.target"
                 "systemd-netns-private-${name}.service"
-              ];
+              ]
+              ++ lib.optional (ns.egress != null) "network-online.target";
+              wants = lib.optional (ns.egress != null) "network-online.target";
               before = ns.services;
               bindsTo = [ "systemd-netns-private-${name}.service" ];
               path = [
@@ -198,7 +257,9 @@ in
                   "-${pkgs.iproute2}/bin/ip addr add ${ns.hostAddr} dev ${ns.hostIface}"
                   "-${pkgs.iproute2}/bin/ip link set ${ns.hostIface} up"
                   "-${pkgs.procps}/bin/sysctl -w net.ipv4.ip_forward=1"
-                ];
+                ]
+                ++ [ (mkNatDelete ns) ]
+                ++ mkEgressCleanup ns;
 
                 ExecStart = [
                   "${pkgs.iproute2}/bin/ip link set ${ns.nsIface} netns ${ns.name}"
@@ -206,12 +267,16 @@ in
                   "${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip link set ${ns.nsIface} up"
                   "-${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip link set lo up"
                   "-${pkgs.iproute2}/bin/ip netns exec ${ns.name} ip route add default via ${cidrToIp ns.hostAddr}"
-                  "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${ns.nsAddr} -o mgmt -j MASQUERADE"
-                ];
+                ]
+                ++ mkEgressStart ns
+                ++ [ (mkNatAdd ns) ];
                 ExecStopPost = [
-                  "${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s ${ns.nsAddr} -o mgmt -j MASQUERADE"
-                  "${pkgs.iproute2}/bin/ip link del ${ns.nsIface}"
-                  "${pkgs.iproute2}/bin/ip link del ${ns.hostIface}"
+                  (mkNatDelete ns)
+                ]
+                ++ mkEgressCleanup ns
+                ++ [
+                  "-${pkgs.iproute2}/bin/ip link del ${ns.nsIface}"
+                  "-${pkgs.iproute2}/bin/ip link del ${ns.hostIface}"
                 ];
               };
             };

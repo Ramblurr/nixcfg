@@ -14,12 +14,24 @@ sonarr:
       type: series
     quality_profiles:
       - name: SD
+        qualities:
+          - name: WEB 480p
+            qualities:
+              - WEBDL-480p
+              - WEBRip-480p
+          - name: DVD
+          - name: SDTV
         reset_unmatched_scores:
           enabled: true
       - name: HD-1080p
         reset_unmatched_scores:
           enabled: true
       - name: WEB-1080p
+        qualities:
+          - name: WEB 1080p
+            qualities:
+              - WEBDL-1080p
+              - WEBRip-1080p
         reset_unmatched_scores:
           enabled: true
       - name: Ultra-HD
@@ -52,16 +64,10 @@ sonarr:
           - eb3d5cc0a2be0db205fb823640db6a3c # Repack v2
           - 44e7c4de10ae50265753082e5dc76047 # Repack v3
           # HDR Metadata
-          #- 7878c33f1963fefb3d6c8657d46c2f0a # DV HDR10
-          #- 1f733af03141f068a540eec352589a89 # DV HLG
-          #- 27954b0a80aab882522a88a4d9eae1cd # DV SDR
-          #- 6d0d8de7b57e35518ac0308b0ddf404e # DV
-          - bb019e1cd00f304f80971c965de064dc # HDR (undefined)
-          - 3e2c4e748b64a1a1118e0ea3f4cf6875 # HDR
-          - 3497799d29a085e2ac2df9d468413c94 # HDR10
-          - a3d82cbef5039f8d295478d28a887159 # HDR10+
+          # TRaSH consolidated the former HDR variants into HDR and HDR10+ Boost.
+          - 505d871304820ba7106b693be6fe4a9e # HDR
+          - 0c4b99df9206d2cfac3c05ab897dd62a # HDR10+ Boost
           - 17e889ce13117940092308f48b48b45b # HLG
-          - 2a7e3be05d3861d6df7171ec74cad727 # PQ
           # Unwanted
           - 32b367365729d530ca1c124a0b180c64 # Bad Dual Groups
           - 85c61753df5da1fb2aab6f2a47426b09 # BR-DISK
@@ -102,16 +108,10 @@ sonarr:
           - eb3d5cc0a2be0db205fb823640db6a3c # Repack v2
           - 44e7c4de10ae50265753082e5dc76047 # Repack v3
           # HDR Metadata
-          #- 7878c33f1963fefb3d6c8657d46c2f0a # DV HDR10
-          #- 1f733af03141f068a540eec352589a89 # DV HLG
-          #- 27954b0a80aab882522a88a4d9eae1cd # DV SDR
-          #- 6d0d8de7b57e35518ac0308b0ddf404e # DV
-          - bb019e1cd00f304f80971c965de064dc # HDR (undefined)
-          - 3e2c4e748b64a1a1118e0ea3f4cf6875 # HDR
-          - 3497799d29a085e2ac2df9d468413c94 # HDR10
-          - a3d82cbef5039f8d295478d28a887159 # HDR10+
+          # TRaSH consolidated the former HDR variants into HDR and HDR10+ Boost.
+          - 505d871304820ba7106b693be6fe4a9e # HDR
+          - 0c4b99df9206d2cfac3c05ab897dd62a # HDR10+ Boost
           - 17e889ce13117940092308f48b48b45b # HLG
-          - 2a7e3be05d3861d6df7171ec74cad727 # PQ
           # Unwanted
           - 32b367365729d530ca1c124a0b180c64 # Bad Dual Groups
           - 85c61753df5da1fb2aab6f2a47426b09 # BR-DISK
@@ -154,11 +154,9 @@ radarr:
           - 1c1a4c5e823891c75bc50380a6866f73 # DTS
           - 240770601cc226190c367ef59aba7463 # ACC
           - c2998bd0d90ed5621d8df281e839436e # DD
-          - b974a6cd08c1066250f1f177d7aa1225 # HDR10Plus
-          - dfb86d5941bc9075d6af23b09c2aeecd # HDR10
-          - e61e28db95d22bedcadf030b8f156d96 # HDR
-          - 2a4d9069cc1fe3242ff9bdaebed239bb # HDR (Undefined)
-          - 08d6d8834ad9ec87b1dc7ec8148e7a1f # PQ several HDR/DV Custom Formats
+          # TRaSH consolidated the former HDR variants into HDR and HDR10+ Boost.
+          - 493b6d1dbec3c3364c59d7607f7e3405 # HDR
+          - caa37d0df9c348912df1fb1d88f9273a # HDR10+ Boost
           - 9364dd386c9b4a1100dde8264690add7 # HLG
           - 0f12c086e289cf966fa5948eac571f44 # Hybrid
           - 570bc9ebecd92723d2d21500f4be314c # Remaster
@@ -169,7 +167,7 @@ radarr:
           - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
           - e7718d7a3ce595f289bfee26adc178f5 # Repack
           - ed38b889b31be83fda192888e2286d83 # BR-DISK -10000
-          - 90cedc1fea7ea5d11298bebd3d1d3223 # EVO (no WEBDL) -1000
+          - e204b80c87be9497a8a6eaff48f72905 # LQ (Release Title), including EVO (no WEBDL)
           - 90a6f9a284dff5103f6346090e6280c8 # LQ -10000
           - b8cd450cbfa689c0259a01d9e29ba3d6 # 3D -10000
           - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
@@ -180,10 +178,8 @@ radarr:
       - trash_ids:
           - 4b900e171accbfb172729b63323ea8ca # Optional: Multi
           - 923b6abef9b17f937fab56cfcf89e1f1 # Optional: DV (WEBDL) without fallback to HDR, set to manual score 0 or -10000
-          - e23edd2482476e595fb990b12e7c609c # DV HDR10  HDR/DV Custom Formats
-          - 58d6a88f13e2db7f5059c41047876f00 # DV
-          - 55d53828b9d81cbe20b02efd00aa0efd # DV HLG  HDR/DV Custom Formats
-          - a3e19f8f627608af0211acd02bf89735 # DV SDR  HDR/DV Custom Formats
+          # TRaSH consolidated the former DV variants into DV Boost.
+          - b337d6812e06c200ec9a2d3cfa9d20a7 # DV Boost
         assign_scores_to:
           - name: HD-1080p
             score: -10000
@@ -208,11 +204,9 @@ radarr:
           - 1c1a4c5e823891c75bc50380a6866f73 # DTS
           - 240770601cc226190c367ef59aba7463 # ACC
           - c2998bd0d90ed5621d8df281e839436e # DD
-          - b974a6cd08c1066250f1f177d7aa1225 # HDR10Plus
-          - dfb86d5941bc9075d6af23b09c2aeecd # HDR10
-          - e61e28db95d22bedcadf030b8f156d96 # HDR
-          - 2a4d9069cc1fe3242ff9bdaebed239bb # HDR (Undefined)
-          - 08d6d8834ad9ec87b1dc7ec8148e7a1f # PQ several HDR/DV Custom Formats
+          # TRaSH consolidated the former HDR variants into HDR and HDR10+ Boost.
+          - 493b6d1dbec3c3364c59d7607f7e3405 # HDR
+          - caa37d0df9c348912df1fb1d88f9273a # HDR10+ Boost
           - 9364dd386c9b4a1100dde8264690add7 # HLG
           - 0f12c086e289cf966fa5948eac571f44 # Hybrid
           - 570bc9ebecd92723d2d21500f4be314c # Remaster
@@ -223,7 +217,7 @@ radarr:
           - 9f6cbff8cfe4ebbc1bde14c7b7bec0de # IMAX Enhanced
           - e7718d7a3ce595f289bfee26adc178f5 # Repack
           - ed38b889b31be83fda192888e2286d83 # BR-DISK -10000
-          - 90cedc1fea7ea5d11298bebd3d1d3223 # EVO (no WEBDL) -1000
+          - e204b80c87be9497a8a6eaff48f72905 # LQ (Release Title), including EVO (no WEBDL)
           - 90a6f9a284dff5103f6346090e6280c8 # LQ -10000
           - b8cd450cbfa689c0259a01d9e29ba3d6 # 3D -10000
           - 7357cf5161efbf8c4d5d0c30b4815ee2 # Obfuscated
@@ -234,10 +228,8 @@ radarr:
       - trash_ids:
           - 4b900e171accbfb172729b63323ea8ca # Optional: Multi
           - 923b6abef9b17f937fab56cfcf89e1f1 # Optional: DV (WEBDL) without fallback to HDR, set to manual score 0 or -10000
-          - e23edd2482476e595fb990b12e7c609c # DV HDR10  HDR/DV Custom Formats
-          - 58d6a88f13e2db7f5059c41047876f00 # DV
-          - 55d53828b9d81cbe20b02efd00aa0efd # DV HLG  HDR/DV Custom Formats
-          - a3e19f8f627608af0211acd02bf89735 # DV SDR  HDR/DV Custom Formats
+          # TRaSH consolidated the former DV variants into DV Boost.
+          - b337d6812e06c200ec9a2d3cfa9d20a7 # DV Boost
         assign_scores_to:
           - name: Ultra-HD
             score: -10000

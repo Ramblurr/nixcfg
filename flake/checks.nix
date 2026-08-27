@@ -17,6 +17,10 @@
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
         home-dl-qbittorrent = import ../tests/home-dl-qbittorrent.nix { inherit inputs pkgs; };
         home-dl-zfs-readiness = import ../tests/home-dl-zfs-readiness.nix { inherit inputs pkgs; };
+        recyclarr-policy = import ../tests/recyclarr-policy.nix { inherit pkgs; };
+        systemd-netns-private-egress = import ../tests/systemd-netns-private-egress.nix {
+          inherit inputs pkgs;
+        };
         invoiceninja = import ../tests/invoiceninja.nix { inherit inputs pkgs; };
         davis-onepassword-credentials = import ../tests/davis-onepassword-credentials.nix {
           inherit inputs pkgs;
