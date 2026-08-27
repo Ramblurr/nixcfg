@@ -24,6 +24,12 @@ in
   users.users.${username}.linger = true;
 
   modules.vpn.tailscale.enable = true;
+  modules.networking.systemd-netns-private.namespaces.home-dl.egress = {
+    source = home-ops.subnets.home-dl.hostAddr;
+    interface = "prim";
+    gateway = lib.head config.site.net.prim.hosts4.${config.site.net.prim.dhcp.router};
+    routingTable = 100;
+  };
   modules.microvm-host = {
     enable = true;
     baseZfsDataset = "rpool/encrypted/safe/microvms";
