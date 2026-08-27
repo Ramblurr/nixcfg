@@ -123,6 +123,8 @@ let
     && heartbeat.interval == 5
     && heartbeat.fall == 1
     && heartbeat.rise == 1
+    && heartbeat.user == user.name
+    && heartbeat.group == group.name
     && lib.hasInfix "http://127.0.0.1:8080/heartbeat" heartbeat.script
     &&
       pod.podConfig.PublishPort == [
