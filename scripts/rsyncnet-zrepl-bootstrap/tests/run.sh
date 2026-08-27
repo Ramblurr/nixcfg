@@ -46,6 +46,9 @@ check_eq 'post-start inactive status rolls back' ROLLBACK "$(post_start_action I
 check_true 'non-writable parent mode accepted' directory_mode_safe 755
 check_false 'group-writable parent mode rejected' directory_mode_safe 775
 check_false 'world-writable parent mode rejected' directory_mode_safe 757
+mode=600
+directory_mode_safe 755
+check_eq 'directory validation does not clobber caller mode' 600 "$mode"
 check_eq 'running healthy classification' HEALTHY "$(classify_state 1 1 1 1 "$FIXTURES/status-healthy.txt")"
 check_eq 'running mismatch fails closed' ERROR "$(classify_state 1 1 0 1 "$FIXTURES/status-healthy.txt")"
 check_eq 'control without process fails closed' ERROR "$(classify_state 0 1 1 1 "$FIXTURES/status-healthy.txt")"

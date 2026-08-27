@@ -25,10 +25,10 @@ valid_result_token() {
 }
 
 directory_mode_safe() {
-  mode=$1
-  case $mode in '' | *[!0-7]*) return 1 ;; esac
-  test $(((mode / 10 % 10) & 2)) -eq 0 || return 1
-  test $(((mode % 10) & 2)) -eq 0
+  checked_mode=$1
+  case $checked_mode in '' | *[!0-7]*) return 1 ;; esac
+  test $(((checked_mode / 10 % 10) & 2)) -eq 0 || return 1
+  test $(((checked_mode % 10) & 2)) -eq 0
 }
 valid_state() {
   case ${1-} in
