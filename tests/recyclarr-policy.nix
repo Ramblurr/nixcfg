@@ -69,5 +69,13 @@ pkgs.runCommand "recyclarr-policy"
       ]
     ' >/dev/null
 
+    yq -o=json '.sonarr.smain.quality_profiles' ${config} | jq --exit-status '
+      map(select(.name == "SD" or .name == "WEB-1080p")) |
+      map(.upgrade) == [
+        {"allowed": false, "until_quality": "WEB 480p"},
+        {"allowed": false, "until_quality": "WEB 1080p"}
+      ]
+    ' >/dev/null
+
     touch "$out"
   ''
