@@ -291,15 +291,49 @@ package_plan_actions() {
       sub(/:.*/, "", name)
       version=line
       sub(/^[^:]+:[[:space:]]*/, "", version)
+      if (version ~ /[[:space:]]->[[:space:]]/) sub(/^.*[[:space:]]->[[:space:]]*/, "", version)
       sub(/[[:space:]].*/, "", version)
       print section "|" name "|" version
     }
   ' "$1"
 }
 
+package_plan_zrepl_version() {
+  package_plan_actions "$1" | awk -F '|' '
+    $2 == "zrepl" {
+      count++
+      version=$3
+    }
+    END {
+      if (count != 1 || version !~ /^[A-Za-z0-9][A-Za-z0-9._,+-]*$/) exit 1
+      print version
+    }
+  '
+}
+
+package_manifest_version() {
+  awk '
+    /^[[:space:]]*version[[:space:]]*[:=]/ {
+      line=$0
+      sub(/^[[:space:]]*version[[:space:]]*[:=][[:space:]]*/, "", line)
+      sub(/[,;][[:space:]]*$/, "", line)
+      gsub(/^"|"$/, "", line)
+      count++
+      version=line
+    }
+    END {
+      if (count != 1 || version !~ /^[A-Za-z0-9][A-Za-z0-9._,+-]*$/) exit 1
+      print version
+    }
+  ' "$1"
+}
+
+package_candidate_matches_plan() {
+  test "$(package_plan_zrepl_version "$1")" = "$(package_manifest_version "$2")"
+}
+
 validate_package_plan() {
   plan=$1
-  expected_version=$2
   actions=$(mktemp "${TMPDIR:-/tmp}/zrepl-package-plan.XXXXXX") || return 1
   package_plan_actions "$plan" >"$actions"
   if ! test -s "$actions"; then
@@ -307,10 +341,13 @@ validate_package_plan() {
     return 1
   fi
 
-  if ! awk -F '|' -v expected="$expected_version" '
+  if ! awk -F '|' '
     $1 ~ /DOWNGRADED|REMOVED/ { exit 1 }
     $2 != "pkg" && $2 != "zrepl" { exit 1 }
-    $2 == "zrepl" { zrepl++; if ($3 != expected) exit 1 }
+    $2 == "zrepl" {
+      zrepl++
+      if ($3 !~ /^[A-Za-z0-9][A-Za-z0-9._,+-]*$/) exit 1
+    }
     END { if (zrepl != 1) exit 1 }
   ' "$actions"; then
     rm -f "$actions"
@@ -358,11 +395,10 @@ package_plan_required_bytes() {
 
 validate_package_manifest() {
   manifest=$1
-  expected_version=$2
-  expected_origin=$3
-  expected_arch=$4
+  expected_origin=$2
+  expected_arch=$3
   grep -Eq '^[[:space:]]*name[[:space:]]*[:=][[:space:]]*"?zrepl"?[,;]?$' "$manifest" || return 1
-  grep -Eq "^[[:space:]]*version[[:space:]]*[:=][[:space:]]*\"?$expected_version\"?[,;]?$" "$manifest" || return 1
+  grep -Eq '^[[:space:]]*version[[:space:]]*[:=][[:space:]]*"?[A-Za-z0-9][A-Za-z0-9._,+-]*"?[,;]?$' "$manifest" || return 1
   grep -Eq "^[[:space:]]*origin[[:space:]]*[:=][[:space:]]*\"?$expected_origin\"?[,;]?$" "$manifest" || return 1
   grep -Eq "^[[:space:]]*arch[[:space:]]*[:=][[:space:]]*\"?$expected_arch\"?[,;]?$" "$manifest" || return 1
   if grep -Eq '^[[:space:]]*(scripts|lua_scripts)[[:space:]]*[:={]' "$manifest"; then
