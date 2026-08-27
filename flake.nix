@@ -32,6 +32,8 @@
     impermanence.inputs.home-manager.follows = "";
     # do not follow nixpkgs: impermanence does not need it when consumed as a module
     impermanence.inputs.nixpkgs.follows = "";
+    jolt.url = "git+https://github.com/jolt-lang/jolt?submodules=1";
+    jolt.inputs.nixpkgs.follows = "nixpkgs";
     koreader-syncd.url = "github:pborzenkov/koreader-syncd";
     koreader-syncd.inputs.nixpkgs.follows = "nixpkgs";
     libro-fm-cli.url = "github:ramblurr/libro-fm-cli";

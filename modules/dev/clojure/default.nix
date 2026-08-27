@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -39,6 +40,7 @@ in
         home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
         home.packages = with pkgs; [
           flutter
+          (inputs.jolt.packages.${pkgs.stdenv.hostPlatform.system}.default)
           jdk25
           neil
           maven
