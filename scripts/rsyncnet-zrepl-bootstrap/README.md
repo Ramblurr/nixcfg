@@ -2,7 +2,7 @@
 
 This directory is the non-secret source for the persistent receiver recovery bundle accepted in work item 035. `publish-release.sh` runs only on the receiver: it installs an immutable-by-contract release under `/mnt/local/zrepl-recovery/releases/`, verifies separate repository, public-certificate, and silent private-key manifests, and atomically repoints `current` only after complete release validation. It does not install live files or start zrepl. `bootstrap.sh` repairs only process-free `ABSENT` or `PARTIAL` disposable installations.
 
-Package recovery installs the current `zrepl` package from the configured FreeBSD repository. The bundle does not pin a package version; it still validates the transaction scope, package name, origin, architecture, scripts, payload, and owned executable/rc paths. Bootstrap installs the exact archive it inspected, so a repository update cannot swap candidates between validation and installation.
+Package recovery installs the current `zrepl` package from the configured FreeBSD repository. The bundle does not pin a package version; it still validates the transaction scope, package name, origin, installed ABI, archive architecture, audited Lua lifecycle-script hash, payload, and owned executable/rc paths. It accepts the repository's nested `All/Hashed` fetch layout and installs the exact archive it inspected, so a repository update cannot swap candidates between validation and installation.
 
 ## Receiver-local private key boundary
 

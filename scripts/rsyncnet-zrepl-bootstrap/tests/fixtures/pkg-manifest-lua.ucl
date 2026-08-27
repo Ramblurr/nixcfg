@@ -1,0 +1,127 @@
+name = "zrepl";
+version = "0.7.0_7";
+origin = "filesystems/zrepl";
+arch = "freebsd:14:x86:64";
+lua_scripts {
+    post-install [
+        <<EOD
+-- args: etc/zrepl/zrepl.yml.sample
+  args = {}
+  for arg in string.gmatch("etc/zrepl/zrepl.yml.sample", "%S+") do
+    table.insert(args, arg)
+  end
+  sample_file = pkg.prefixed_path(args[1])
+  if args[2] == nil then
+    target_file = string.gsub(sample_file,'%.sample$', "")
+  else
+    target_file = pkg.prefixed_path(args[2])
+  end
+  if not pkg.stat(target_file) then
+    pkg.copy(sample_file, target_file)
+    if pkg_metalog ~= nil and pkg.metalog_copy ~= nil then
+      pkg.metalog_copy(sample_file, target_file)
+    end
+  end
+EOD,
+        <<EOD
+-- args: share/examples/zrepl/newsyslog.conf etc/newsyslog.conf.d/zrepl.conf
+  args = {}
+  for arg in string.gmatch("share/examples/zrepl/newsyslog.conf etc/newsyslog.conf.d/zrepl.conf", "%S+") do
+    table.insert(args, arg)
+  end
+  sample_file = pkg.prefixed_path(args[1])
+  if args[2] == nil then
+    target_file = string.gsub(sample_file,'%.sample$', "")
+  else
+    target_file = pkg.prefixed_path(args[2])
+  end
+  if not pkg.stat(target_file) then
+    pkg.copy(sample_file, target_file)
+    if pkg_metalog ~= nil and pkg.metalog_copy ~= nil then
+      pkg.metalog_copy(sample_file, target_file)
+    end
+  end
+EOD,
+        <<EOD
+-- args: share/examples/zrepl/syslog.conf etc/syslog.d/zrepl.conf
+  args = {}
+  for arg in string.gmatch("share/examples/zrepl/syslog.conf etc/syslog.d/zrepl.conf", "%S+") do
+    table.insert(args, arg)
+  end
+  sample_file = pkg.prefixed_path(args[1])
+  if args[2] == nil then
+    target_file = string.gsub(sample_file,'%.sample$', "")
+  else
+    target_file = pkg.prefixed_path(args[2])
+  end
+  if not pkg.stat(target_file) then
+    pkg.copy(sample_file, target_file)
+    if pkg_metalog ~= nil and pkg.metalog_copy ~= nil then
+      pkg.metalog_copy(sample_file, target_file)
+    end
+  end
+EOD,
+    ]
+    pre-deinstall [
+        <<EOD
+-- args: etc/zrepl/zrepl.yml.sample
+  args = {}
+  for arg in string.gmatch("etc/zrepl/zrepl.yml.sample", "%S+") do
+    table.insert(args, arg)
+  end
+  sample_file = pkg.prefixed_path(args[1])
+  if args[2] == nil then
+    target_file = string.gsub(sample_file,'%.sample$', "")
+  else
+    target_file = pkg.prefixed_path(args[2])
+  end
+  if pkg.filecmp(sample_file, target_file) == 0 then
+    os.remove(target_file)
+  else
+    if not pkg.pkg_upgrade then
+      pkg.print_msg("You may need to manually remove " .. target_file .. " if it is no longer needed.")
+    end
+  end
+EOD,
+        <<EOD
+-- args: share/examples/zrepl/newsyslog.conf etc/newsyslog.conf.d/zrepl.conf
+  args = {}
+  for arg in string.gmatch("share/examples/zrepl/newsyslog.conf etc/newsyslog.conf.d/zrepl.conf", "%S+") do
+    table.insert(args, arg)
+  end
+  sample_file = pkg.prefixed_path(args[1])
+  if args[2] == nil then
+    target_file = string.gsub(sample_file,'%.sample$', "")
+  else
+    target_file = pkg.prefixed_path(args[2])
+  end
+  if pkg.filecmp(sample_file, target_file) == 0 then
+    os.remove(target_file)
+  else
+    if not pkg.pkg_upgrade then
+      pkg.print_msg("You may need to manually remove " .. target_file .. " if it is no longer needed.")
+    end
+  end
+EOD,
+        <<EOD
+-- args: share/examples/zrepl/syslog.conf etc/syslog.d/zrepl.conf
+  args = {}
+  for arg in string.gmatch("share/examples/zrepl/syslog.conf etc/syslog.d/zrepl.conf", "%S+") do
+    table.insert(args, arg)
+  end
+  sample_file = pkg.prefixed_path(args[1])
+  if args[2] == nil then
+    target_file = string.gsub(sample_file,'%.sample$', "")
+  else
+    target_file = pkg.prefixed_path(args[2])
+  end
+  if pkg.filecmp(sample_file, target_file) == 0 then
+    os.remove(target_file)
+  else
+    if not pkg.pkg_upgrade then
+      pkg.print_msg("You may need to manually remove " .. target_file .. " if it is no longer needed.")
+    end
+  end
+EOD,
+    ]
+}

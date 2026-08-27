@@ -60,8 +60,11 @@ check_true 'isolated pkg self-upgrade accepted' validate_pkg_self_plan "$FIXTURE
 check_false 'pkg self-upgrade dependency rejected' validate_pkg_self_plan "$FIXTURES/pkg-plan-self-upgrade-dependency.txt"
 check_false 'dependency plan rejected' validate_package_plan "$FIXTURES/pkg-plan-dependency.txt"
 check_false 'removal plan rejected' validate_package_plan "$FIXTURES/pkg-plan-removal.txt"
-check_true 'script-free exact-origin package manifest accepted' validate_package_manifest "$FIXTURES/pkg-manifest-safe.ucl" filesystems/zrepl FreeBSD:14:amd64
-check_true 'newer script-free package manifest accepted' validate_package_manifest "$FIXTURES/pkg-manifest-newer.ucl" filesystems/zrepl FreeBSD:14:amd64
+check_true 'script-free exact-origin package manifest accepted' validate_package_manifest "$FIXTURES/pkg-manifest-safe.ucl" filesystems/zrepl freebsd:14:x86:64 none
+check_true 'newer script-free package manifest accepted' validate_package_manifest "$FIXTURES/pkg-manifest-newer.ucl" filesystems/zrepl freebsd:14:x86:64 none
+check_eq 'audited Lua package scripts hashed' 6b7d6c91f960a4f9ed4d572f4a695900a116c802c8e14878ff40a1267255a494 "$(package_lua_scripts_hash "$FIXTURES/pkg-manifest-lua.ucl")"
+check_true 'audited Lua package scripts accepted' validate_package_manifest "$FIXTURES/pkg-manifest-lua.ucl" filesystems/zrepl freebsd:14:x86:64 6b7d6c91f960a4f9ed4d572f4a695900a116c802c8e14878ff40a1267255a494
+check_false 'changed Lua package scripts rejected' validate_package_manifest "$FIXTURES/pkg-manifest-lua.ucl" filesystems/zrepl freebsd:14:x86:64 0000000000000000000000000000000000000000000000000000000000000000
 check_eq 'planned package version parsed' 0.7.0_7 "$(package_plan_zrepl_version "$FIXTURES/pkg-plan-newer.txt")"
 check_eq 'upgrade target package version parsed' 0.7.0_7 "$(package_plan_zrepl_version "$FIXTURES/pkg-plan-upgrade.txt")"
 check_eq 'candidate package version parsed' 0.7.0_7 "$(package_manifest_version "$FIXTURES/pkg-manifest-newer.ucl")"
@@ -69,9 +72,9 @@ check_true 'inspected candidate matches plan' package_candidate_matches_plan "$F
 check_false 'candidate version mismatch rejected' package_candidate_matches_plan "$FIXTURES/pkg-plan-accepted.txt" "$FIXTURES/pkg-manifest-newer.ucl"
 check_true 'upgrade candidate matches target version' package_candidate_matches_plan "$FIXTURES/pkg-plan-upgrade.txt" "$FIXTURES/pkg-manifest-newer.ucl"
 check_false 'upgrade candidate old version rejected' package_candidate_matches_plan "$FIXTURES/pkg-plan-upgrade.txt" "$FIXTURES/pkg-manifest-safe.ucl"
-check_false 'package install script rejected' validate_package_manifest "$FIXTURES/pkg-manifest-scripted.ucl" filesystems/zrepl FreeBSD:14:amd64
-check_false 'wrong package origin rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-origin.ucl" filesystems/zrepl FreeBSD:14:amd64
-check_false 'wrong package architecture rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-arch.ucl" filesystems/zrepl FreeBSD:14:amd64
+check_false 'package install script rejected' validate_package_manifest "$FIXTURES/pkg-manifest-scripted.ucl" filesystems/zrepl freebsd:14:x86:64 none
+check_false 'wrong package origin rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-origin.ucl" filesystems/zrepl freebsd:14:x86:64 none
+check_false 'wrong package architecture rejected' validate_package_manifest "$FIXTURES/pkg-manifest-wrong-arch.ucl" filesystems/zrepl freebsd:14:x86:64 none
 check_eq 'package transaction size parsed' 44040192 "$(package_plan_required_bytes "$FIXTURES/pkg-plan-accepted.txt")"
 check_false 'missing package transaction size rejected' package_plan_required_bytes "$FIXTURES/pkg-plan-dependency.txt"
 check_true 'unchanged package payload accepted' validate_pkg_check_result /dev/null 0 0.7.0_5
@@ -92,6 +95,12 @@ check_false 'free-text result reason rejected' emit_result ERROR ERROR 0 v1-dead
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/zrepl-bootstrap-tests.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
+mkdir -p "$work/package-fetch/All/Hashed"
+printf 'candidate\n' >"$work/package-fetch/All/Hashed/zrepl.pkg"
+check_eq 'hashed repository package layout accepted' "$work/package-fetch/All/Hashed/zrepl.pkg" "$(single_package_archive "$work/package-fetch")"
+printf 'unexpected\n' >"$work/package-fetch/All/Hashed/other.pkg"
+check_false 'multiple fetched package archives rejected' single_package_archive "$work/package-fetch"
+rm -f "$work/package-fetch/All/Hashed/other.pkg"
 mkdir "$work/root"
 printf 'alpha\n' >"$work/root/a"
 printf 'nested\n' >"$work/root/b"
@@ -172,6 +181,8 @@ check_true 'existing release fully validates before current repoint' test "$vali
 check_true 'human-only private-key recovery is documented' grep -Fq 'restore a lost key manually from 1Password' "$SOURCE_DIR/README.md"
 check_false 'inert package policy removed' test -e "$SOURCE_DIR/package.policy"
 check_false 'bundle metadata does not pin package version' grep -q '^package_version=' "$SOURCE_DIR/bundle.meta.in"
+check_true 'archive architecture is pinned to package manifest format' grep -Fxq 'package_manifest_arch=freebsd:14:x86:64' "$SOURCE_DIR/bundle.meta.in"
+check_true 'audited package Lua scripts are pinned' grep -Fxq 'package_lua_scripts_sha256=6b7d6c91f960a4f9ed4d572f4a695900a116c802c8e14878ff40a1267255a494' "$SOURCE_DIR/bundle.meta.in"
 check_true 'unversioned package policy documented' grep -Fq 'does not pin a package version' "$SOURCE_DIR/README.md"
 check_true 'post-start failures use rollback boundary' grep -Fq 'rollback_started_repair' "$SOURCE_DIR/bootstrap.sh"
 check_true 'installed package origin and architecture are exact' grep -Fq "pkg query '%n|%v|%o|%q'" "$SOURCE_DIR/bootstrap.sh"
