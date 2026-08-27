@@ -17,6 +17,8 @@ let
   nixbotPort = config.repo.secrets.home-ops.ports.nixbot;
   backupRole = "databasus_nixbot";
   databaseName = "nixbot";
+  nixbotDataset = "rpool/encrypted/safe/svc/nixbot";
+  postgresqlDataset = "rpool/encrypted/safe/svc/postgresql";
   maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
   debordMgmtAddress = builtins.head config.site.net.mgmt.hosts4.debord;
   workDomain = config.repo.secrets.global.domain.work;
@@ -191,10 +193,22 @@ in
   # datasets. The postgresql dataset is already declared in disk-config.nix;
   # declaring it here as well lets zfs-datasets create it if it is missing.
   modules.zfs.datasets.properties = {
-    "rpool/encrypted/safe/svc/nixbot"."mountpoint" = "/var/lib/nixbot";
-    "rpool/encrypted/safe/svc/nixbot"."com.sun:auto-snapshot" = "false";
-    "rpool/encrypted/safe/svc/postgresql"."mountpoint" = "/var/lib/postgresql";
-    "rpool/encrypted/safe/svc/postgresql"."com.sun:auto-snapshot" = "false";
+    ${nixbotDataset}."mountpoint" = "/var/lib/nixbot";
+    ${nixbotDataset}."com.sun:auto-snapshot" = "false";
+    ${postgresqlDataset}."mountpoint" = "/var/lib/postgresql";
+    ${postgresqlDataset}."com.sun:auto-snapshot" = "false";
+  };
+  modules.zfs.datasets.services = {
+    ${nixbotDataset} = [
+      "nixbot"
+      "nixbot-ssh-keygen"
+    ];
+    ${postgresqlDataset} = [ "postgresql" ];
+  };
+
+  systemd.services.postgresql = {
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
   };
 
   networking.firewall.allowedTCPPorts = [ nixbotPort ];
