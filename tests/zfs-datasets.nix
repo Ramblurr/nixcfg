@@ -33,30 +33,24 @@ let
     };
   };
   evaluated = mkEvaluated validConfig;
-  invalidDataset = builtins.tryEval (
-    (mkEvaluated (
+  invalidDataset = builtins.tryEval (mkEvaluated (
       validConfig
       // {
         services."tank/services/missing" = [ "broken" ];
       }
-    )).config.system.build.toplevel.drvPath
-  );
-  invalidMountpoint = builtins.tryEval (
-    (mkEvaluated (
+    )).config.system.build.toplevel.drvPath;
+  invalidMountpoint = builtins.tryEval (mkEvaluated (
       validConfig
       // {
         properties."tank/services/alpha".mountpoint = "legacy";
       }
-    )).config.system.build.toplevel.drvPath
-  );
-  invalidService = builtins.tryEval (
-    (mkEvaluated (
+    )).config.system.build.toplevel.drvPath;
+  invalidService = builtins.tryEval (mkEvaluated (
       validConfig
       // {
         services."tank/services/alpha" = [ "broken.service" ];
       }
-    )).config.system.build.toplevel.drvPath
-  );
+    )).config.system.build.toplevel.drvPath;
   service = evaluated.config.systemd.services.zfs-datasets;
   alpha = evaluated.config.systemd.services.alpha;
   shared = evaluated.config.systemd.services.shared;

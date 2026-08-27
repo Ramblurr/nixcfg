@@ -72,7 +72,10 @@ let
   ];
   quiUnit = services.qui;
   recyclarrUnit = services.recyclarr;
-  zfsServiceUnits = downloadServiceUnits ++ [ quiUnit recyclarrUnit ];
+  zfsServiceUnits = downloadServiceUnits ++ [
+    quiUnit
+    recyclarrUnit
+  ];
   nfsServiceUnits = map (name: services.${name}) [
     "prowlarr"
     "radarr"

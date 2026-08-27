@@ -66,10 +66,8 @@ let
     builtins.deepSeq (evaluate true "8d" null false).site.gatus.externalEndpoints true
   );
   reporterCommand = lib.last enabled.systemd.services.example-job.serviceConfig.ExecStartPost;
-  staticUserReporterCommand = lib.last
-    staticUserEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
-  environmentFileReporterCommand = lib.last
-    environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
+  staticUserReporterCommand = lib.last staticUserEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
+  environmentFileReporterCommand = lib.last environmentFileEnabled.systemd.services.example-job.serviceConfig.ExecStartPost;
 in
 assert !invalidInterval.success;
 assert enabled.site.gatus.groups == groups;
@@ -92,7 +90,8 @@ assert
 assert
   enabled.modules.services.onepassword-systemd-credentials.consumers.example-job.gatus-token
   == "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
-assert builtins.head enabled.systemd.services.example-job.serviceConfig.ExecStartPost
+assert
+  builtins.head enabled.systemd.services.example-job.serviceConfig.ExecStartPost
   == "${pkgs.coreutils}/bin/true";
 assert !(lib.hasPrefix "+" reporterCommand);
 assert reporterCommand == staticUserReporterCommand;

@@ -111,8 +111,7 @@ assert
 assert !(lib.hasPrefix "+" reporterCommand);
 assert lib.hasInfix "gatus-heartbeat report" reporterCommand;
 assert lib.hasInfix "--success true" reporterCommand;
-assert lib.hasInfix "--name 'rsync.net Zrepl Receiver Reconciliation (mali)'"
-  reporterCommand;
+assert lib.hasInfix "--name 'rsync.net Zrepl Receiver Reconciliation (mali)'" reporterCommand;
 assert (serviceConfig.ExecStopPost or null) == null;
 assert builtins.elem "onepassword-credential-provider.socket" service.requires;
 assert builtins.elem "onepassword-credential-provider.socket" service.after;
