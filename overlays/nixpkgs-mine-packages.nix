@@ -27,6 +27,7 @@ in
   inherit (nixpkgs-mine) qbittorrent-nox;
   inherit (nixpkgs-mine) qui;
   inherit (nixpkgs-mine) roon-server;
+  inherit (nixpkgs-mine) sprite;
   #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
