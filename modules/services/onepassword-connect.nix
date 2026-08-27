@@ -149,6 +149,8 @@ in
       enableScriptSecurity = true;
       vrrpScripts.onepassword-connect-heartbeat = {
         script = "${heartbeat}";
+        user = cfg.user.name;
+        group = cfg.group.name;
         interval = 5;
         timeout = 3;
         fall = 1;
