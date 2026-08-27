@@ -190,6 +190,8 @@ check_true 'required package paths have exact owner package' grep -Fq 'pkg which
 capacity_line=$(grep -n 'verify_repair_capacity' "$SOURCE_DIR/bootstrap.sh" | tail -n 1 | cut -d: -f1)
 backup_line=$(grep -n 'backup_live_files ||' "$SOURCE_DIR/bootstrap.sh" | cut -d: -f1)
 check_true 'transaction and backup capacity precede persistent backup' test "$capacity_line" -lt "$backup_line"
+check_eq 'package dry-runs are noninteractive' 7 \
+  "$(grep -Ec 'pkg install -n( -f)? -y (zrepl|pkg)' "$SOURCE_DIR/bootstrap.sh")"
 forbidden_public_identifier=$(printf '\142\157\157\153\163\056\163\157\143\157\172\171\056\143\141\163\141')
 check_false 'publication tree excludes forbidden private identifier' grep -rFq \
   "$forbidden_public_identifier" "$SOURCE_DIR"

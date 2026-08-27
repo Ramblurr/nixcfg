@@ -187,12 +187,12 @@ planned_package_required_bytes() {
   force=$1
   plan=$(mktemp /tmp/zrepl-capacity-plan.XXXXXX) || return 1
   if test "$force" = 1; then
-    pkg install -nf zrepl >"$plan" 2>&1 || {
+    pkg install -n -f -y zrepl >"$plan" 2>&1 || {
       rm -f "$plan"
       return 1
     }
   else
-    pkg install -n zrepl >"$plan" 2>&1 || {
+    pkg install -n -y zrepl >"$plan" 2>&1 || {
       rm -f "$plan"
       return 1
     }
@@ -395,21 +395,21 @@ install_expected_package() {
   force=$1
   plan=$BACKUP/pkg-install.dry-run
   if test "$force" = 1; then
-    pkg install -nf zrepl >"$plan" 2>&1 || return 1
+    pkg install -n -f -y zrepl >"$plan" 2>&1 || return 1
   else
-    pkg install -n zrepl >"$plan" 2>&1 || return 1
+    pkg install -n -y zrepl >"$plan" 2>&1 || return 1
   fi
   validate_package_plan "$plan" || return 1
   inspect_package_candidate pkg-candidate "$plan" || return 1
 
   if package_plan_has_pkg_upgrade "$plan"; then
-    pkg install -n pkg >"$BACKUP/pkg-self-upgrade.dry-run" 2>&1 || return 1
+    pkg install -n -y pkg >"$BACKUP/pkg-self-upgrade.dry-run" 2>&1 || return 1
     validate_pkg_self_plan "$BACKUP/pkg-self-upgrade.dry-run" || return 1
     pkg install -y pkg >"$BACKUP/pkg-self-upgrade.log" 2>&1 || return 1
     if test "$force" = 1; then
-      pkg install -nf zrepl >"$plan.after-pkg" 2>&1 || return 1
+      pkg install -n -f -y zrepl >"$plan.after-pkg" 2>&1 || return 1
     else
-      pkg install -n zrepl >"$plan.after-pkg" 2>&1 || return 1
+      pkg install -n -y zrepl >"$plan.after-pkg" 2>&1 || return 1
     fi
     validate_package_plan "$plan.after-pkg" || return 1
     inspect_package_candidate pkg-candidate-after-pkg "$plan.after-pkg" || return 1
