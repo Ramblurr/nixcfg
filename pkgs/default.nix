@@ -74,6 +74,10 @@ inputs: [
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
+      spel = prev.callPackage ./spel/package.nix {
+        clojureNixLocker = inputs.clojure-nix-locker;
+        pkgs = prev;
+      };
       spdx-util = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./spdx-util/package.nix { };
       nixbot-cli = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nixbot-cli/package.nix { };
       hindsight-cli = prev.lib.callPackageWith (

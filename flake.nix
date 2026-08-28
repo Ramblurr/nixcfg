@@ -2,6 +2,9 @@
   inputs = {
     automatic-ripping-machine.url = "github:xieve/automatic-ripping-machine/main?dir=nixos";
     automatic-ripping-machine.inputs.nixpkgs.follows = "nixpkgs";
+    clojure-nix-locker.url = "github:bevuta/clojure-nix-locker";
+    clojure-nix-locker.inputs.flake-utils.follows = "flake-utils";
+    clojure-nix-locker.inputs.nixpkgs.follows = "nixpkgs";
     devshell.url = "github:numtide/devshell";
     devshell.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use determinate's pinned nixpkgs for nixd integration
