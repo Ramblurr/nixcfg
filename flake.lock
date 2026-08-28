@@ -114,7 +114,7 @@
     },
     "clj-helpers": {
       "inputs": {
-        "clojure-nix-locker": "clojure-nix-locker_2",
+        "clojure-nix-locker": "clojure-nix-locker_3",
         "nixpkgs": [
           "nad-api",
           "nixpkgs"
@@ -135,6 +135,29 @@
       }
     },
     "clojure-nix-locker": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767628431,
+        "narHash": "sha256-9JHKdlgDspXbBTE9b+bYYBMfXzBwHMUymY9DUHIvZrQ=",
+        "owner": "bevuta",
+        "repo": "clojure-nix-locker",
+        "rev": "d706ad2804bf8237a61171757b44783042bc9fee",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bevuta",
+        "repo": "clojure-nix-locker",
+        "type": "github"
+      }
+    },
+    "clojure-nix-locker_2": {
       "inputs": {
         "flake-utils": "flake-utils_4",
         "nixpkgs": [
@@ -157,7 +180,7 @@
         "type": "github"
       }
     },
-    "clojure-nix-locker_2": {
+    "clojure-nix-locker_3": {
       "inputs": {
         "flake-utils": "flake-utils_5",
         "nixpkgs": [
@@ -423,7 +446,7 @@
     },
     "devenv": {
       "inputs": {
-        "clojure-nix-locker": "clojure-nix-locker",
+        "clojure-nix-locker": "clojure-nix-locker_2",
         "determinate": "determinate_2",
         "devshell": "devshell_2",
         "fh": "fh",
@@ -3853,6 +3876,7 @@
     "root": {
       "inputs": {
         "automatic-ripping-machine": "automatic-ripping-machine",
+        "clojure-nix-locker": "clojure-nix-locker",
         "determinate": "determinate",
         "devshell": "devshell",
         "dirge": "dirge",
