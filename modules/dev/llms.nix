@@ -69,6 +69,11 @@ in
         PLANNOTATOR_GLIMPSE = "0";
         PLANNOTATOR_SHARE = "disabled";
         PASEO_HOME = "$XDG_STATE_HOME/paseo";
+        SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
+        SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
+      };
+      xdg.configFile."spel/config.json".text = builtins.toJSON {
+        contentBoundaries = true;
       };
       home.packages =
         with pkgs;
@@ -78,6 +83,7 @@ in
           #playwright-mcp
           geckodriver
           chromedriver
+          spel
           glimpseui
           #dirge
           piper-tts
