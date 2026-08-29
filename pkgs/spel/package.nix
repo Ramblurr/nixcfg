@@ -12,7 +12,8 @@
   pkgs,
 }:
 let
-  version = "0.9.32";
+  version = "0.9.33-unstable-2026-08-27";
+  rev = "bd40aee84dc4c4037c1f348eb826a11d2d033f9f";
   playwrightVersion = "1.61.0";
   driverPlatform =
     if stdenv.hostPlatform.isLinux then
@@ -24,8 +25,8 @@ let
   upstreamSrc = fetchFromGitHub {
     owner = "Blockether";
     repo = "spel";
-    rev = "edf591b98e163229a284be7b49682e3d8949d748";
-    hash = "sha256-dkFzLka7+wRfDRVB2hCzPBH44HhRueA9OWbWn5TaozI=";
+    inherit rev;
+    hash = "sha256-X4D3jVxM7WyN5eP4405Y7/K9jJRF8cGVJ4VKeKc1yu8=";
   };
   src = runCommand "spel-${version}-source" { } ''
     cp -r ${upstreamSrc}/. $out
@@ -89,7 +90,7 @@ stdenv.mkDerivation {
   meta = {
     description = "Clojure Playwright library and browser automation CLI";
     homepage = "https://github.com/Blockether/spel";
-    changelog = "https://github.com/Blockether/spel/releases/tag/v${version}";
+    changelog = "https://github.com/Blockether/spel/blob/${rev}/CHANGELOG.md";
     license = lib.licenses.asl20;
     inherit (graalvm.meta) platforms;
     mainProgram = "spel";
