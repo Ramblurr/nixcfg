@@ -116,8 +116,8 @@ in
           }
         ];
         shellAliases = {
-          "pi" = "nono run --profile pi --allow-cwd -- pi";
-          "pix" = "command pi";
+          "pis" = "nono run --profile pi --allow-cwd -- pi";
+          #"pix" = "command pi";
           "cc" = "claude --dangerously-skip-permissions";
           "cx" = "codex --dangerously-bypass-approvals-and-sandbox";
           "md" = "glow -p";
