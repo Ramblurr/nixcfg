@@ -95,7 +95,7 @@ in
     buildSystems = [ "x86_64-linux" ];
     buildConcurrency = 2;
     evalWorkerCount = 4;
-    evalMaxMemorySize = 4096;
+    evalMaxMemorySize = 8192;
     github = {
       enable = true;
       appId = config.repo.secrets.local.nixbot.appId;
