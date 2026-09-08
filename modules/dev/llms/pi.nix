@@ -10,8 +10,8 @@ let
   cfg = config.modules.dev.llms;
   settings = home: {
     defaultProvider = "openai-codex";
-    defaultModel = "gpt-5.6-sol";
-    defaultThinkingLevel = "high";
+    defaultModel = "gpt-6-astra";
+    defaultThinkingLevel = "medium";
     skills = [
       "${home}/src/github.com/ramblurr/nix-devenv/skills/pi"
       "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
