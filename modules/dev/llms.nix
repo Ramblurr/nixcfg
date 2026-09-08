@@ -93,6 +93,8 @@ in
           llmWithPlugins
           pkgs.github-mcp-server
           inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
+          llm-agents.opencode
+          llm-agents.opencode2
           #llm-agents.vix
           #llm-agents.mistral-vibe
           #codex
