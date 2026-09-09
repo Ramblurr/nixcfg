@@ -6,18 +6,18 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "plannotator-pi-extension";
-  version = "0.27.8";
+  version = "0.27.12";
 
   src = fetchurl {
-    url = "https://registry.npmjs.org/@plannotator/pi-extension/-/pi-extension-0.27.8.tgz";
-    hash = "sha256-RWQxwuP3NCuJj03Qwpuf3TDmCJZw/4xO4t/PZBs+s9I=";
+    url = "https://registry.npmjs.org/@plannotator/pi-extension/-/pi-extension-0.27.12.tgz";
+    hash = "sha256-0hblPEEV/YBn32CiyIGJ394zT/LBNesm+KOQLZs5Ix0=";
   };
   sourceRoot = "package";
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
-  npmDepsHash = "sha256-nkTUTmYbutmQRD5LV1aOXnCEqmB6Cn43hBRdxFp1ULw=";
+  npmDepsHash = "sha256-k9mw7nLWEq2a2oS0SQiC/3oxYTFSpZggOl79dE4605Y=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
   npmInstallFlags = [ "--omit=dev" ];

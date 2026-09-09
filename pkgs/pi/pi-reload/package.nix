@@ -6,13 +6,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "pi-reload";
-  version = "0.1.0-unstable-2026-08-11";
+  version = "0.1.0-unstable-2026-09-09";
 
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "pi-extensions";
-    rev = "27393860d3b8b7cf031e5e02a0684f7f477e5c04";
-    hash = "sha256-oPWEdkZfnxY0uo5dkx55/GWNCTEM8dtzXIFz4SLDZ34=";
+    rev = "8bc8f21ed15f3ac9870898f7a65c08f54872f77a";
+    hash = "sha256-oEXSH1iSjLCfX94rxOVDte8bdVRJEwC1adBcjue0KHo=";
   };
   sourceRoot = "source/reload";
 
