@@ -11,10 +11,11 @@ let
     "isRpi"
     "board"
     "cpu"
-    "ramGiB"
+    "ramMiB"
     "gpu"
     "role"
     "os"
+    "showInReadme"
   ];
   validHost =
     name:
@@ -29,8 +30,10 @@ let
       ../hosts + "/${name}/default.nix"
     )) "${name}: missing host source directory"
     && lib.assertMsg (
-      builtins.isBool host.isRpi && builtins.isString host.system
-    ) "${name}: invalid host platform or Raspberry Pi flag"
+      builtins.isBool host.isRpi
+      && builtins.isString host.system
+      && builtins.isBool (host.showInReadme or true)
+    ) "${name}: invalid host platform, Raspberry Pi flag, or README visibility"
     && lib.assertMsg (
       builder.system == host.system
       && builder.isStable == (host.channel == "stable")

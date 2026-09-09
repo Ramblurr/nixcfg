@@ -9,6 +9,10 @@ let
       system = "x86_64-linux";
       channel = "unstable";
       role = "server";
+      board = "Lenovo ThinkCentre M720q (312D)";
+      cpu = "Intel Core i5-8400T";
+      ramMiB = 65536;
+      gpu = "Intel UHD Graphics 630";
     };
     debord = {
       # Guy Debord - https://en.wikipedia.org/wiki/Guy_Debord
@@ -17,6 +21,10 @@ let
       system = "x86_64-linux";
       channel = "unstable";
       role = "server";
+      board = "Intel NUC12WSBi5 (NUC12WSHi5)";
+      cpu = "Intel Core i5-1240P";
+      ramMiB = 65536;
+      gpu = "Intel Iris Xe Graphics";
     };
     dewey = {
       # John Dewey - https://en.wikipedia.org/wiki/John_Dewey
@@ -25,6 +33,10 @@ let
       system = "x86_64-linux";
       channel = "unstable";
       role = "server";
+      board = "Intel NUC10i5FNB (NUC10i5FNH)";
+      cpu = "Intel Core i5-10210U";
+      ramMiB = 65536;
+      gpu = "Intel UHD Graphics (Comet Lake-U)";
     };
     james = {
       # William James - https://en.wikipedia.org/wiki/William_James
@@ -32,7 +44,10 @@ let
       system = "x86_64-linux";
       channel = "unstable";
       role = "cloud";
-      board = "QEMU virtual machine"; # hosts/james/hardware.nix
+      board = "KVM Q35 (Hetzner vServer)";
+      cpu = "AMD EPYC-Milan (2 vCPUs)";
+      ramMiB = 8000;
+      gpu = "Virtio 1.0 GPU";
     };
     mali = {
       purpose = "Storage NAS";
@@ -40,6 +55,10 @@ let
       system = "x86_64-linux";
       channel = "stable";
       role = "server";
+      board = "Supermicro X11SCH-F";
+      cpu = "Intel Core i3-8100";
+      ramMiB = 65536;
+      gpu = "ASPEED Graphics Family";
     };
     octoprint = {
       purpose = "3D printer controller";
@@ -47,7 +66,9 @@ let
       channel = "stable";
       role = "server";
       isRpi = true;
-      board = "Raspberry Pi 4"; # hosts/octoprint/hardware.nix
+      board = "Raspberry Pi 4 Model B Rev 1.5";
+      cpu = "ARM Cortex-A72 (4 cores)";
+      gpu = "Broadcom BCM2711 V3D";
     };
     quine = {
       # Willard Van Orman Quine - https://en.wikipedia.org/wiki/Willard_Van_Orman_Quine
@@ -56,6 +77,10 @@ let
       system = "x86_64-linux";
       channel = "unstable";
       role = "desktop";
+      board = "ASUS ProArt X670E-CREATOR WIFI";
+      cpu = "AMD Ryzen 9 7950X3D";
+      ramMiB = 65536;
+      gpu = "NVIDIA GeForce RTX 4090";
     };
     witt = {
       # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
@@ -70,6 +95,7 @@ let
       system = "aarch64-linux";
       channel = "stable";
       role = "server";
+      showInReadme = false;
       isRpi = true;
       board = "Raspberry Pi 4"; # hosts/wyoming-satellite-bedroom/hardware.nix
     };
@@ -82,7 +108,7 @@ builtins.mapAttrs (
     isRpi = false;
     board = null;
     cpu = null;
-    ramGiB = null;
+    ramMiB = null;
     gpu = null;
   }
   // host

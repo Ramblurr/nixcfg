@@ -52,7 +52,13 @@ def render_readme(source, inventory):
         "| Hostname | Purpose | Board | CPU | RAM | GPU | Channel | Role | OS |",
         "|---|---|---|---|---|---|---|---|---|",
     ]
+    visible_systems = set()
     for name, host in sorted(inventory.items()):
+        show = host.get("showInReadme", True)
+        if type(show) is not bool:
+            raise ValueError(f"{name}: showInReadme must be a boolean")
+        if not show:
+            continue
         if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
             raise ValueError(f"Invalid inventory hostname: {name}")
         for field, choices in [
@@ -62,9 +68,14 @@ def render_readme(source, inventory):
         ]:
             if not isinstance(host.get(field), str) or host[field] not in choices:
                 raise ValueError(f"{name}: invalid {field}: {host.get(field)!r}")
-        ram = host.get("ramGiB")
+        ram = host.get("ramMiB")
         if ram is not None and (type(ram) is not int or ram <= 0):
-            raise ValueError(f"{name}: ramGiB must be a positive integer or null")
+            raise ValueError(f"{name}: ramMiB must be a positive integer or null")
+        memory = (
+            None
+            if ram is None
+            else (f"{ram // 1024} GiB" if ram % 1024 == 0 else f"{ram} MiB")
+        )
         purpose = cell(host["purpose"])
         documentation = host.get("documentation")
         if documentation is not None:
@@ -76,20 +87,21 @@ def render_readme(source, inventory):
             purpose,
             cell(host.get("board")),
             cell(host.get("cpu")),
-            cell(f"{ram} GiB" if ram is not None else None),
+            cell(memory),
             cell(host.get("gpu")),
             cell(host["channel"]),
             icon(ROLES[host["role"]]),
             icon(OPERATING_SYSTEMS[host["os"]]),
         ]
         rows.append("| " + " | ".join(values) + " |")
+        visible_systems.add(host["os"])
     rows.extend(["", "**Roles**", ""])
     rows.extend(f"- {entity}: {label}" for label, entity in ROLES.values())
     rows.extend(["", "**OS**", ""])
     rows.extend(
         f"- {entity}: {label}"
         for key, (label, entity) in OPERATING_SYSTEMS.items()
-        if any(host["os"] == key for host in inventory.values())
+        if key in visible_systems
     )
     return before + BEGIN + "\n\n" + "\n".join(rows) + "\n\n" + END + after
 

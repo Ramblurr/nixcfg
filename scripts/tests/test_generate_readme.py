@@ -26,7 +26,7 @@ class GenerateReadmeTests(unittest.TestCase):
                 "purpose": "Workstation",
                 "board": "Example board",
                 "cpu": "Example CPU",
-                "ramGiB": 64,
+                "ramMiB": 65536,
                 "gpu": "Example GPU",
                 "channel": "unstable",
                 "role": "desktop",
@@ -47,6 +47,27 @@ class GenerateReadmeTests(unittest.TestCase):
         self.assertTrue(result.startswith("Intro\n<!-- BEGIN HOSTS -->\n\n"))
         self.assertTrue(result.endswith("\n<!-- END HOSTS -->\nFooter\n"))
         self.assertEqual(generator.render_readme(result, inventory), result)
+
+    def test_hidden_hosts_and_non_whole_gib_memory(self):
+        host = {
+            "purpose": "VPS",
+            "channel": "unstable",
+            "role": "cloud",
+            "os": "nixos",
+            "ramMiB": 8000,
+        }
+        inventory = {"visible": host, "hidden": host | {"showInReadme": False}}
+        result = generator.render_readme(
+            "<!-- BEGIN HOSTS -->\n<!-- END HOSTS -->", inventory
+        )
+        rows = [line for line in result.splitlines() if line.startswith("| [")]
+        self.assertEqual(
+            rows,
+            [
+                '| [visible](./hosts/visible/) | VPS | Unknown | Unknown | 8000 MiB | Unknown | unstable | <span title="Cloud Server">&#x2601;&#xFE0F;</span> | <span title="NixOS">&#x2744;&#xFE0F;</span> |',
+            ],
+        )
+        self.assertEqual(set(inventory), {"visible", "hidden"})
 
     def test_cli_updates_preserves_prose_and_checks_drift_without_writing(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -152,7 +173,8 @@ class GenerateReadmeTests(unittest.TestCase):
             ("channel", "stabel"),
             ("role", "sever"),
             ("os", "unknown"),
-            ("ramGiB", -1),
+            ("ramMiB", -1),
+            ("showInReadme", "false"),
             ("documentation", "javascript:alert(1)"),
         ]:
             with self.subTest(field=field):
