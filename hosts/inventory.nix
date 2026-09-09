@@ -83,6 +83,16 @@ let
       ramMiB = 65536;
       gpu = "NVIDIA GeForce RTX 4090";
     };
+    thinkpad1 = {
+      purpose = "Family laptop";
+      system = "x86_64-linux";
+      channel = "stable";
+      role = "laptop";
+      board = "Lenovo ThinkPad X13 Yoga Gen 1";
+      cpu = "Intel Core i5-10310U";
+      ramMiB = 16384;
+      gpu = "Intel UHD Graphics";
+    };
     witt = {
       # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
       purpose = "Travel laptop";
