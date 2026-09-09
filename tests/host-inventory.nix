@@ -44,15 +44,15 @@ assert lib.assertMsg (builtins.attrNames hosts == names) "Builder and inventory 
 assert builtins.all validHost names;
 pkgs.runCommand "check-host-inventory"
   {
-    nativeBuildInputs = [ pkgs.python3 ];
+    nativeBuildInputs = [ pkgs.babashka ];
     inventoryJSON = pkgs.writeText "host-inventory.json" (builtins.toJSON hostInventory);
   }
   ''
     mkdir -p scripts/tests
-    cp ${../scripts/generate-readme.py} scripts/generate-readme.py
-    cp ${../scripts/tests/test_generate_readme.py} scripts/tests/test_generate_readme.py
-    python3 -B scripts/tests/test_generate_readme.py
-    python3 -B scripts/generate-readme.py \
+    cp ${../scripts/generate-readme.clj} scripts/generate-readme.clj
+    cp ${../scripts/tests/generate_readme_test.clj} scripts/tests/generate_readme_test.clj
+    bb scripts/tests/generate_readme_test.clj
+    bb scripts/generate-readme.clj \
       --inventory-json "$inventoryJSON" --readme ${../README.md} --check
     touch "$out"
   ''

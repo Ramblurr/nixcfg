@@ -34,41 +34,6 @@
 
 <!-- END HOSTS -->
 
-### Updating the host inventory
-
-Edit [`hosts/inventory.nix`](./hosts/inventory.nix), then regenerate the table:
-
-```sh
-python3 scripts/generate-readme.py
-python3 scripts/generate-readme.py --check
-```
-
-The generator needs only Python 3 and Nix. It evaluates the pure inventory file,
-not the flake, host configurations, or private secrets. `--check` fails when the
-generated section is stale and never writes the README. The `host-inventory`
-flake check also checks the table and its agreement with the builder arguments.
-
-Hostnames link to their source directories. Hardware fields left as `null` appear
-as **Unknown**. `ramMiB` records installed or guest-allocated capacity, not currently
-free memory. Exact multiples of 1024 MiB render as GiB; other sizes retain MiB.
-Role is descriptive metadata only; it does not enable services or change imports.
-Set `showInReadme = false` to omit a row without removing the host's build definition.
-The role icons and OS icon are encoded as HTML entities in Markdown source.
-
-The inventory supplies platform, channel, and Raspberry Pi facts to
-[`flake/hosts.nix`](./flake/hosts.nix), which keeps executable module and overlay
-additions separate. Public metadata is also available as `lib.nixcfg.hostInventory`:
-
-```sh
-nix eval --json --file hosts/inventory.nix
-```
-
-When adding a host, add its inventory entry and `hosts/<hostname>/` configuration;
-add executable extras in `flake/hosts.nix` only if needed. Real host outputs and
-private secret wiring still belong in `nixcfg-private`. Do not put private site
-data or secrets in the public inventory. Guest discovery is unchanged.
-
-
 ---
 
 # License and Inspiration
