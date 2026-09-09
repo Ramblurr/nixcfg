@@ -68,6 +68,7 @@ let
       isRpi = true;
       board = "Raspberry Pi 4 Model B Rev 1.5";
       cpu = "ARM Cortex-A72 (4 cores)";
+      ramMiB = 2048;
       gpu = "Broadcom BCM2711 V3D";
     };
     quine = {
