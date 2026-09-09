@@ -4,7 +4,6 @@
   pkgs,
   ...
 }:
-with lib;
 let
   cfg = config.modules.desktop.kde;
   withImpermanence = config.modules.impermanence.enable;
@@ -13,6 +12,12 @@ in
 {
   options.modules.desktop.kde = {
     enable = lib.mkEnableOption "";
+    sddm.listUsers = lib.mkEnableOption "listing normal user accounts on the login screen";
+    krohnkite.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Install the optional Krohnkite tiling extension.";
+    };
     sddm.hideUsers = lib.mkOption {
       description = "List of users to hide from the SDDM login screen";
       default = [ ];
@@ -22,7 +27,7 @@ in
       type = lib.types.listOf lib.types.str;
     };
   };
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.enable && !config.modules.desktop.niri.enable;
@@ -41,15 +46,13 @@ in
         );
         Users.RememberLastUser = cfg.sddm.hideUsers == [ ];
         Theme.EnableAvatars = false;
-        Users.MinimumUid = 99999;
-        Users.MaximumUid = 99999;
+        Users.MinimumUid = if cfg.sddm.listUsers then 1000 else 99999;
+        Users.MaximumUid = if cfg.sddm.listUsers then 60000 else 99999;
       };
     };
     programs.dconf.enable = true;
 
-    environment.systemPackages = [
-      pkgs.kdePackages.krohnkite
-    ];
+    environment.systemPackages = lib.optional cfg.krohnkite.enable pkgs.kdePackages.krohnkite;
 
     environment.plasma6.excludePackages = [ pkgs.kdePackages.khelpcenter ];
 

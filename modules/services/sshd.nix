@@ -14,6 +14,11 @@ in
       type = lib.types.bool;
       default = true;
     };
+    openFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Open SSH on all interfaces; disable for overlay-only access.";
+    };
   };
   config = mkIf cfg.enable {
     # Should exist already as it is used for sops bootstrapping
@@ -24,10 +29,10 @@ in
     sops.secrets.ssh_host_ed25519_key_pub = {
       path = "${lib.optionalString withImpermanence "/persist"}/etc/ssh/ssh_host_ed25519_key.pub";
     };
-    networking.firewall.allowedTCPPorts = [ 22 ];
 
     services.openssh = {
       enable = true;
+      inherit (cfg) openFirewall;
       authorizedKeysFiles = lib.mkForce [ "/etc/ssh/authorized_keys.d/%u" ];
       settings = {
         # AcceptEnv type changed: string in 25.11 (stable), list in 26.05+ (unstable)
