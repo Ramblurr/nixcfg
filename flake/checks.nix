@@ -4,6 +4,7 @@
     { pkgs, ... }:
     {
       checks = {
+        host-inventory = import ../tests/host-inventory.nix { inherit inputs pkgs; };
         atuin-postgresql = import ../tests/atuin-postgresql.nix { inherit inputs pkgs; };
         borgmatic = import ../tests/borgmatic.nix { inherit inputs pkgs; };
         calibre = import ../tests/calibre.nix { inherit inputs pkgs; };
