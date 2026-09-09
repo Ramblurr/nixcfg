@@ -20,96 +20,46 @@
         mkGuests
         ;
 
-      hosts = {
+      hostInventory = import ../hosts/inventory.nix;
+      # Executable additions stay out of the public, JSON-serialisable inventory.
+      hostExtras = {
         debord = {
-          # Guy Debord - https://en.wikipedia.org/wiki/Guy_Debord
-          isStable = false;
-          system = "x86_64-linux";
           hostExtraModules = [
             inputs.nad-api.nixosModules.default
             inputs.nixbot.nixosModules.nixbot
           ];
-          # inputs.nixos-nftables-firewall.nixosModules.default
           hostOverlays = [ inputs.nad-api.overlays.default ];
         };
-        addams = {
-          # Jane Addams - https://en.wikipedia.org/wiki/Jane_Addams
-          isStable = false;
-          system = "x86_64-linux";
-          hostExtraModules = [
-            inputs.nixos-nftables-firewall.nixosModules.default
-          ];
-        };
-        dewey = {
-          # John Dewey - https://en.wikipedia.org/wiki/John_Dewey
-          isStable = false;
-          system = "x86_64-linux";
-        };
-        james = {
-          # William James https://en.wikipedia.org/wiki/William_James
-          isStable = false;
-          system = "x86_64-linux";
-        };
-        witt = {
-          # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
-          isStable = false;
-          system = "x86_64-linux";
-        };
+        addams.hostExtraModules = [
+          inputs.nixos-nftables-firewall.nixosModules.default
+        ];
         quine = {
-          # Willard Van Orman Quine - https://en.wikipedia.org/wiki/Willard_Van_Orman_Quine
-          isStable = false;
-          system = "x86_64-linux";
-          hostOverlays = [
-          ];
+          hostOverlays = [ ];
           hostExtraModules = [
             inputs.automatic-ripping-machine.nixosModules.default
             inputs.paseo.nixosModules.default
           ];
         };
-        mali = {
-          isStable = true;
-          system = "x86_64-linux";
-        };
-        #rpi4 = {
-        #  isStable = true;
-        #  system = "aarch64-linux";
-        #};
-        octoprint = {
-          isStable = true;
-          isRpi = true;
-          system = "aarch64-linux";
-          hostOverlays = [
-            (import ../overlays/rpi4.nix)
-          ];
-        };
-        wyoming-satellite-bedroom = {
-          isStable = true;
-          isRpi = true;
-          system = "aarch64-linux";
-          hostOverlays = [
-            (import ../overlays/rpi4.nix)
-          ];
-        };
-        #_hello-world = {
-        #  hostPath = ../guests/hello-world;
-        #  enableDefaultModules = false;
-        #  hostExtraModules = [
-        #    inputs.impermanence.nixosModules.impermanence
-        #    inputs.microvm.nixosModules.microvm
-        #    inputs.sops-nix.nixosModules.sops
-        #    ../config
-        #    ../config/common-server.nix
-        #    ../modules/microvm-guest
-        #    ../modules/site
-        #    ../modules/services/sshd.nix
-        #    ../modules/secrets.nix
-        #    ../modules/meta.nix
-        #    ../modules/globals.nix
-        #    ../modules/impermanence/default.nix
-        #    ../guests/hello-world
-        #  ];
-        #};
+        octoprint.hostOverlays = [ (import ../overlays/rpi4.nix) ];
+        wyoming-satellite-bedroom.hostOverlays = [ (import ../overlays/rpi4.nix) ];
       };
+      hosts =
+        assert lib.assertMsg (lib.all (name: builtins.hasAttr name hostInventory) (
+          builtins.attrNames hostExtras
+        )) "Host additions must have a public inventory entry";
+        lib.mapAttrs (
+          name: host:
+          (hostExtras.${name} or { })
+          // {
+            inherit (host) system isRpi;
+            isStable =
+              {
+                stable = true;
+                unstable = false;
+              }
+              .${host.channel};
+          }
+        ) hostInventory;
       guestNames = builtins.attrNames (
         lib.filterAttrs (_: type: type == "directory") (builtins.readDir ../guests)
       );
@@ -122,6 +72,7 @@
       lib.nixcfg = {
         inherit
           hosts
+          hostInventory
           guests
           mkHost
           mkGuest
