@@ -72,6 +72,12 @@ creation_rules:
           - *dewey
         merge:
           - *admin-group
+  - path_regex: hosts/thinkpad1/(secrets/)?secrets\.sops\.ya?ml$
+    key_groups:
+      - age:
+          - age1sgyc7d7v3yv7f45pmt4c4wrvc9zr9aac6ns84xgdjwrgmjga7d3shjevdg
+        merge:
+          - *admin-group
   - path_regex: hosts/addams/.*.sops.*$
     key_groups:
       - age:
