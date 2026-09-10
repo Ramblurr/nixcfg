@@ -21,6 +21,10 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  modules.boot.zfs.trimPools = [
+    "rpool"
+    "tank"
+  ];
   users.users.${username}.linger = true;
 
   modules.vpn.tailscale.enable = true;

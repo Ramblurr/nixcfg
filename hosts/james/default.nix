@@ -27,6 +27,8 @@ in
   system.stateVersion = "24.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  sops.secrets.gatus-heartbeat-env = { };
+  site.gatus.heartbeatToken.environmentFile = config.sops.secrets.gatus-heartbeat-env.path;
   time.timeZone = "Europe/Berlin";
 
   networking.hostId = lib.my.generateHostId hostName;

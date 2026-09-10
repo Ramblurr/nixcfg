@@ -167,9 +167,15 @@ in
     };
   };
 
-  systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
-    "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
-  ];
+  site.gatus.heartbeats.crowdsec-update-hub = {
+    service = "crowdsec-update-hub";
+    name = "CrowdSec Hub Update";
+    group = config.site.gatus.groups.infrastructure;
+    interval = "30h";
+    startPostCommands = [
+      "+${pkgs.systemd}/bin/systemctl try-reload-or-restart crowdsec.service"
+    ];
+  };
 
   systemd.services.crowdsec-firewall-bouncer.serviceConfig = {
     Restart = "on-failure";

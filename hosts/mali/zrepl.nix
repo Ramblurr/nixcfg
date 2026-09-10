@@ -25,7 +25,8 @@ in
   ];
   modules.services.zfs-backup-check = {
     enable = true;
-    healthchecks = config.repo.secrets.local.zfsHealthchecks;
+    # Keep evaluation-time dataset data private; legacy ping URLs are not consumed.
+    healthchecks = map (hc: { inherit (hc) dataset time; }) config.repo.secrets.local.zfsHealthchecks;
   };
   sops.secrets."zrepl/ludwigCert" = { };
   sops.secrets."zrepl/rsyncnetCert" = { };

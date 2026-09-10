@@ -81,6 +81,11 @@ in
       encrypted = true;
       rootPool = "rpool2";
       scrubPools = [ "rpool2" ];
+      # HDD-only tank and tank2 do not support trim.
+      trimPools = [
+        "rpool2"
+        "fast"
+      ];
       autoSnapshot.enable = false;
       extraPools = [
         "tank"

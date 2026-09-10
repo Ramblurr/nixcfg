@@ -27,6 +27,8 @@ in
   system.stateVersion = "23.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  sops.secrets.gatus-heartbeat-env = { };
+  site.gatus.heartbeatToken.environmentFile = config.sops.secrets.gatus-heartbeat-env.path;
   time.timeZone = "Europe/Berlin";
   boot.loader.systemd-boot.enable = true;
 
