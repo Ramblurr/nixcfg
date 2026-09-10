@@ -55,6 +55,7 @@
         zfs-activation-vm = import ../tests/zfs-activation-vm.nix { inherit pkgs; };
         common-server = import ../tests/common-server.nix { inherit inputs pkgs; };
         debord-monitoring = import ../tests/debord-monitoring.nix { inherit inputs pkgs; };
+        guest-wrappers = import ../tests/guest-wrappers.nix { inherit pkgs; };
         deploy = import ../tests/deploy.nix {
           inherit pkgs;
           inherit (pkgs) deploy;

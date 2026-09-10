@@ -28,6 +28,10 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   cat > "$fakeBin/nix" <<'EOF'
   #!/bin/sh
   printf '%s\n' "$*" >> "$nixLog"
+  if [ "$1" = "eval" ]; then
+    printf '%s\n' '{"debord":{"guest":false,"buildAttribute":"nixosConfigurations.debord.config.system.build.toplevel"},"quine":{"guest":false,"buildAttribute":"nixosConfigurations.quine.config.system.build.toplevel"},"addams":{"guest":false,"buildAttribute":"nixosConfigurations.addams.config.system.build.toplevel"}}'
+    exit 0
+  fi
   [ "$1" = "copy" ] && exit 0
   exit 64
   EOF

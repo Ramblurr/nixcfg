@@ -87,6 +87,7 @@ inputs: [
       linux-voice-assistant-unstable = (import ./linux-voice-assistant-unstable.nix) prev;
       youtube-to-rss = prev.callPackage ./youtube-to-rss/package.nix { };
       cache-push = prev.callPackage ./cache-push.nix { };
+      build = prev.callPackage ./build.nix { };
       deploy = prev.callPackage ./deploy.nix { };
       swhkd = prev.callPackage ./swhkd { };
       qobuz-dl = prev.callPackage ./qobuz-dl.nix { };
