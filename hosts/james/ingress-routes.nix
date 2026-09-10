@@ -35,7 +35,7 @@ in
     "books.${home}"
     "files.${home}"
     "data.${home}"
-    "docs.${home}"
+    "euro-office.${home}"
     "clients.${work}"
     "matrix.${work}"
     "data.${work}"
