@@ -153,8 +153,10 @@ check_eq 'mixed filesystem and zvol receive properties are type-safe' \
       placeholder:' \
   "$property_block"
 check_eq 'reviewed safe config checksum' \
-  4c669c8bfc1be49abc535b8a74008dc9c9a049244bfff6f35b95d8c4c26db731 \
+  bc792644e06f6a41df75f1ee28605ba76e13d19ea2d8f61bfaaa6661fc95cd99 \
   "$(sha256_file "$SOURCE_DIR/zrepl.yml")"
+check_eq 'metrics listener is loopback-only' 1 \
+  "$(grep -c "listen: '127.0.0.1:9811'" "$SOURCE_DIR/zrepl.yml")"
 check_eq 'sender and receiver are both keep-all' 2 \
   "$(grep -c 'regex: "\.\*"' "$SOURCE_DIR/zrepl.yml")"
 

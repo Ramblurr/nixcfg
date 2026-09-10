@@ -136,6 +136,7 @@ assert
     "zrepl_dewey"
     "zrepl_debord"
     "zrepl_mali"
+    "zrepl_rsyncnet"
     "prometheus"
     "alertmanager"
     "thanos-sidecar"
@@ -168,6 +169,7 @@ assert
     zrepl_dewey = [ "dewey.mgmt.example.test:9811" ];
     zrepl_debord = [ "debord.mgmt.example.test:9811" ];
     zrepl_mali = [ "mali.mgmt.example.test:9811" ];
+    zrepl_rsyncnet = [ "mali.mgmt.example.test:9812" ];
     prometheus = [ "127.0.0.1:9090" ];
     alertmanager = [ "127.0.0.1:9093" ];
     thanos-sidecar = [ "127.0.0.1:10902" ];

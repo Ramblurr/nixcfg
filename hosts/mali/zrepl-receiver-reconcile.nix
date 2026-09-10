@@ -10,7 +10,7 @@ let
   runtimeUser = "rsyncnet-zrepl";
   stateDataset = "rpool2/encrypted/safe/svc/zrepl-reconcile";
   stateDirActual = "/var/lib/private/${serviceName}";
-  expectedBundleId = "v1-908d7b7dc489cc8c-initial";
+  expectedBundleId = "v1-c3532e5dd0cd3efd-initial";
   onepassword = config.modules.services.onepassword-systemd-credentials;
   expectedDatasets = pkgs.writeText "rsyncnet-zrepl-validation-datasets" (
     builtins.readFile ../../scripts/rsyncnet-zrepl-bootstrap/validation-datasets

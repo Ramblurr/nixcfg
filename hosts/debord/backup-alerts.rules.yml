@@ -162,9 +162,10 @@ groups:
 
   - name: debord-zrepl-offsite
     rules:
-      # These rules remain dormant until work item 035 securely relays receiver-side
-      # pull_mali metrics through Mali. They intentionally do not infer offsite health
-      # from Mali's passive mali_rsyncnet source job.
+      # Scrape receiver-side metrics through Mali's SSH tunnel, not Mali's passive source job.
+      - record: zrepl_receiver_probe_success
+        expr: up{job="zrepl_rsyncnet", receiver="rsyncnet"}
+
       - alert: OffsiteReceiverProbeFailed
         expr: zrepl_receiver_probe_success{receiver="rsyncnet"} == 0
         for: 30m
