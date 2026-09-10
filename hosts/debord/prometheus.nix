@@ -136,6 +136,18 @@ in
     ]
   )
   ++ [
+    {
+      job_name = "zrepl_rsyncnet";
+      static_configs = [
+        {
+          targets = [ "mali.mgmt.${domain.home}:9812" ];
+          labels = {
+            origin = "rsyncnet";
+            receiver = "rsyncnet";
+          };
+        }
+      ];
+    }
     (mkLocalScrape "prometheus" "127.0.0.1:${toString config.services.prometheus.port}")
     (mkLocalScrape "alertmanager" "127.0.0.1:${toString config.services.prometheus.alertmanager.port}")
     (mkLocalScrape "thanos-sidecar" config.services.thanos.sidecar.http-address)

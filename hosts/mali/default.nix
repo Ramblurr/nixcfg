@@ -19,6 +19,7 @@ in
     ./zrepl.nix
     ./zfs-keys.nix
     ./zrepl-receiver-reconcile.nix
+    ./zrepl-metrics-tunnel.nix
     ./caddy.nix
     ./garage.nix
     ./syncthing.nix
@@ -38,6 +39,7 @@ in
   time.timeZone = "Europe/Berlin";
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
+  services.rsyncnet-zrepl-reconcile.metricsTunnel.enable = true;
 
   documentation.nixos.enable = false;
   documentation.doc.enable = false;

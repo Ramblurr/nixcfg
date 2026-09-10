@@ -13,12 +13,19 @@ let
         ../modules/site/gatus-heartbeats.nix
         ../modules/site/gatus-heartbeats-onepassword.nix
         ../hosts/mali/zrepl-receiver-reconcile.nix
+        ../hosts/mali/zrepl-metrics-tunnel.nix
         {
           options.repo.secrets = lib.mkOption { type = lib.types.attrs; };
+          options.site.net = lib.mkOption { type = lib.types.attrs; };
         }
         {
           nixpkgs.pkgs = pkgs;
           networking.hostName = "mali";
+          networking.nftables.enable = true;
+          site.net.mgmt.hosts4 = {
+            mali = [ "192.0.2.22" ];
+            debord = [ "192.0.2.21" ];
+          };
           repo.secrets.global.domain.home = "example.test";
           system.stateVersion = "26.05";
           boot.loader.grub.devices = [ "nodev" ];
@@ -45,6 +52,8 @@ let
     knownHostsReference = "op://test/mali-rsyncnet-reconciler/known hosts";
   };
   evaluated = mkEvaluated validConfig;
+  withTunnel = mkEvaluated (validConfig // { metricsTunnel.enable = true; });
+  tunnel = withTunnel.config.systemd.services.rsyncnet-zrepl-metrics-tunnel;
   invalidHostEvaluation =
     builtins.tryEval
       (mkEvaluated (validConfig // { receiverHost = "bad host"; })).config.system.build.toplevel.drvPath;
@@ -62,6 +71,23 @@ let
   stateDataset =
     evaluated.config.modules.zfs.datasets.properties."rpool2/encrypted/safe/svc/zrepl-reconcile";
 in
+assert !(evaluated.config.systemd.services ? rsyncnet-zrepl-metrics-tunnel);
+assert tunnel.serviceConfig.DynamicUser;
+assert tunnel.serviceConfig.Restart == "always";
+assert lib.hasInfix "192.0.2.22:9812:127.0.0.1:9811" tunnel.serviceConfig.ExecStart;
+assert lib.hasInfix "StrictHostKeyChecking=yes" tunnel.serviceConfig.ExecStart;
+assert lib.hasInfix "ExitOnForwardFailure=yes" tunnel.serviceConfig.ExecStart;
+assert lib.hasInfix "IdentityAgent=none" tunnel.serviceConfig.ExecStart;
+assert lib.hasInfix "-N" tunnel.serviceConfig.ExecStart;
+assert
+  withTunnel.config.modules.services.onepassword-systemd-credentials.consumers.rsyncnet-zrepl-metrics-tunnel
+  == {
+    identity = validConfig.identityReference;
+    known-hosts = validConfig.knownHostsReference;
+  };
+assert lib.hasInfix "ip saddr 192.0.2.21 ip daddr 192.0.2.22 tcp dport 9812 accept"
+  withTunnel.config.networking.firewall.extraInputRules;
+assert !(builtins.elem 9812 withTunnel.config.networking.firewall.allowedTCPPorts);
 assert !invalidHostEvaluation.success;
 assert !invalidReferenceEvaluation.success;
 assert serviceConfig.Type == "oneshot";
@@ -82,7 +108,7 @@ assert
     compression = "zstd";
     mountpoint = "/var/lib/private/rsyncnet-zrepl-reconcile";
   };
-assert service.environment.EXPECTED_BUNDLE_ID == "v1-908d7b7dc489cc8c-initial";
+assert service.environment.EXPECTED_BUNDLE_ID == "v1-c3532e5dd0cd3efd-initial";
 assert service.environment.SSH_DEADLINE_SECONDS == "900";
 assert !(service.environment ? STATE_DIRECTORY);
 assert !(service.environment ? RUNTIME_DIRECTORY);

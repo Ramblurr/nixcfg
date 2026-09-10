@@ -1,4 +1,7 @@
 global:
+  monitoring:
+  - type: prometheus
+    listen: '127.0.0.1:9811'
   logging:
   - format: human
     level: warn

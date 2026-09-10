@@ -4,6 +4,28 @@ rule_files:
 evaluation_interval: 1m
 
 tests:
+  - name: SSH tunnel scrape health supplies the receiver probe metric
+    interval: 1m
+    input_series:
+      - series: 'up{job="zrepl_rsyncnet", instance="mali:9812", origin="rsyncnet", receiver="rsyncnet"}'
+        values: '1 0 1'
+    promql_expr_test:
+      - expr: 'zrepl_receiver_probe_success{receiver="rsyncnet"}'
+        eval_time: 0m
+        exp_samples:
+          - labels: 'zrepl_receiver_probe_success{job="zrepl_rsyncnet", instance="mali:9812", origin="rsyncnet", receiver="rsyncnet"}'
+            value: 1
+      - expr: 'zrepl_receiver_probe_success{receiver="rsyncnet"}'
+        eval_time: 1m
+        exp_samples:
+          - labels: 'zrepl_receiver_probe_success{job="zrepl_rsyncnet", instance="mali:9812", origin="rsyncnet", receiver="rsyncnet"}'
+            value: 0
+      - expr: 'zrepl_receiver_probe_success{receiver="rsyncnet"}'
+        eval_time: 2m
+        exp_samples:
+          - labels: 'zrepl_receiver_probe_success{job="zrepl_rsyncnet", instance="mali:9812", origin="rsyncnet", receiver="rsyncnet"}'
+            value: 1
+
   - name: healthy ZFS and local zrepl series do not alert
     interval: 1m
     input_series:
