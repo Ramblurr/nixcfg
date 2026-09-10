@@ -37,7 +37,7 @@ in
     ./hardware.nix
     ./borgmatic.nix
     ./syncthing.nix
-    ./storage.nix
+    ./disk-config.nix
   ];
 
   system.stateVersion = "26.05";

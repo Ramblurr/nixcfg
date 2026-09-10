@@ -33,6 +33,27 @@ let
       && c.users.users.viki.password == null
       && c.users.users.viki.hashedPasswordFile != null;
     stable = c.system.nixos.release == "26.05";
+    diskLayout =
+      c.fileSystems."/".fsType == "btrfs"
+      && c.fileSystems."/home".fsType == "btrfs"
+      && c.disko.devices.disk.main.device == c.repo.secrets.local.systemDisk
+      && c.disko.devices.disk.main.content.partitions.encrypted.content.type == "luks"
+      && c.disko.devices.disk.main.content.partitions.encrypted.content.content.vg == "thinkpad1"
+      && c.disko.devices.lvm_vg.thinkpad1.lvs.swap.size == "24G";
+    hibernation =
+      c.boot.initrd.systemd.enable
+      && c.boot.initrd.systemd.tpm2.enable
+      && c.boot.resumeDevice == "/dev/thinkpad1/swap"
+      && map (s: s.device) c.swapDevices == [ "/dev/thinkpad1/swap" ]
+      && !c.disko.devices.lvm_vg.thinkpad1.lvs.swap.content.randomEncryption
+      && !builtins.elem "nohibernate" c.boot.kernelParams;
+    homeSnapshots =
+      c.services.snapper.configs.home.SUBVOLUME == "/home"
+      && c.services.snapper.configs.home.TIMELINE_CREATE
+      && c.services.snapper.configs.home.TIMELINE_CLEANUP
+      && c.services.snapper.configs.home.TIMELINE_LIMIT_HOURLY == 24
+      && builtins.elem "sh:home/.snapshots" c.modules.services.borgmatic.exclude-patterns
+      && c.virtualisation.vmVariant.services.snapper.configs == { };
     syncthing =
       c.services.syncthing.enable
       && c.services.syncthing.user == family
