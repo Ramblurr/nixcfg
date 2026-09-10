@@ -163,6 +163,7 @@ in
       dewey = [ "10.9.10.14" ];
       mali = [ "10.9.10.10" ];
       quine = [ "10.9.10.5" ];
+      immich-home = [ "10.9.10.23" ];
     };
     #hosts6.main = {
     #  addams = [ "${prefix6}:11::1" ];
@@ -250,6 +251,7 @@ in
       debord = [ "172.20.20.4" ];
       claude-test = [ "172.20.20.21" ];
       dev1 = [ "172.20.20.22" ];
+      immich-home = [ "172.20.20.23" ];
     };
     #hosts6.local = {
     #  addams = [ "${prefix6}:5::1" ];

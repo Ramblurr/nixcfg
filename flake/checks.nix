@@ -6,6 +6,7 @@
       checks = {
         host-inventory = import ../tests/host-inventory.nix { inherit inputs pkgs; };
         peirce-boot = import ../tests/peirce-boot.nix { inherit inputs pkgs; };
+        immich-guest = import ../tests/immich-guest.nix { inherit inputs pkgs; };
         atuin-postgresql = import ../tests/atuin-postgresql.nix { inherit inputs pkgs; };
         borgmatic = import ../tests/borgmatic.nix { inherit inputs pkgs; };
         calibre = import ../tests/calibre.nix { inherit inputs pkgs; };
