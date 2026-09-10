@@ -8,8 +8,9 @@ builtins.listToAttrs (
     name:
     let
       fail = reason: throw "${name}: ${reason}";
-      config =
-        (configurations.${name} or (fail "not exported by this flake; run from nixcfg-private")).config;
+      inherit ((configurations.${name} or (fail "not exported by this flake; run from nixcfg-private")))
+        config
+        ;
       guest = config.modules.microvm-guest.enable or false;
       host = config.modules.microvm-guest.host or null;
       addresses = config.site.net.svc.hosts4.${config.networking.hostName} or [ ];

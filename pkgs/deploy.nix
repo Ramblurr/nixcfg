@@ -161,8 +161,10 @@ let
         echo "[1;36m    Applying [m⚙️ [34m$host[m"
         if [[ "$host" == "${localTargetHost}" ]]; then
           prev_system=$(readlink -e /nix/var/nix/profiles/system)
-          sudo /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
-            || die "Failed to set system profile"
+          if [[ "$ACTION" != "dry-activate" ]]; then
+            sudo /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
+              || die "Failed to set system profile"
+          fi
           sudo "$store_path"/bin/switch-to-configuration "$ACTION" \
             || die "Failed to activate $host"
           if [[ -n "$prev_system" ]]; then
@@ -172,10 +174,19 @@ let
           ssh_target="''${SSH_TARGETS[$host]-$host}"
           ssh_host="root@$ssh_target"
           prev_system=$(ssh "$ssh_target" -- readlink -e /nix/var/nix/profiles/system)
-          ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
-            || die "Failed to set system profile"
-          ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \
-            || die "Failed to activate $host"
+          if [[ "$host" == "thinkpad1" ]]; then
+            [[ -x "$store_path/thinkpad1-tpm-deploy" ]] \
+              || die "Missing TPM deployment helper for $host"
+            ssh "$ssh_host" -- "$store_path/thinkpad1-tpm-deploy" "$ACTION" "$store_path" \
+              || die "Failed TPM-aware activation of $host"
+          else
+            if [[ "$ACTION" != "dry-activate" ]]; then
+              ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
+                || die "Failed to set system profile"
+            fi
+            ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \
+              || die "Failed to activate $host"
+          fi
           if [[ -n "$prev_system" ]]; then
             # nvd must be installed on the target system for this to work
             ssh "$ssh_host" -- nvd --color always diff "$prev_system" "$store_path" || true

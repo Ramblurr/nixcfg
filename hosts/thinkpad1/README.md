@@ -1,8 +1,8 @@
 # thinkpad1
 
-**Disk layout prepared; installation not yet authorized.** `disk-config.nix` defines
-Btrfs and persistent swap inside LUKS2. Hardware validation, TPM enrollment,
-recovery-key verification, and backup completion remain installation gates.
+The laptop is installed with Btrfs and persistent swap inside LUKS2.
+TPM deployment automation is under development. VM tests do not replace
+the required hardware rollout and boot checks.
 
 ## Repository layout
 
@@ -162,11 +162,9 @@ or reboot.
   Local snapshots are not a substitute for backups. Application databases may
   require application-specific recovery because snapshots are not app-quiesced.
 
-Secure Boot stays disabled to support standard-kernel hibernation. The initrd
-supports TPM2 unlock with passphrase fallback, but no TPM policy is enrolled by
-this configuration. Before enrollment, confirm TPM2 availability and select a
-measured-boot policy that checks boot components, not merely disabled Secure Boot.
-Boot changes may require the recovery passphrase and policy re-enrollment.
+Secure Boot stays disabled to support standard-kernel hibernation. Disk unlock
+uses SHA256 PCR4 and PCR9, with recovery-passphrase fallback. The login PIN is
+separate from disk unlock. Never clear the TPM to repair either mechanism.
 
 Supply `/run/thinkpad1-luks-passphrase` through nixos-anywhere's
 `--disk-encryption-keys` option during installation only. Save the passphrase securely
@@ -174,6 +172,66 @@ outside the laptop and test it before enabling TPM unlock. Never place it in Nix
 source or the Nix store. The TPM must unlock LUKS before LVM activates the resume
 device. Verify cold boot, suspend, hibernate, resume, and snapshot file recovery
 on the installed hardware; a successful build does not establish these behaviors.
+
+## TPM-aware deployment: settings-only support
+
+`deploy thinkpad1` uses the candidate system's `thinkpad1-tpm-deploy` helper.
+Run it from a fresh private `nix develop` shell after updating the public input.
+An older installed deploy wrapper does not provide this protection. Direct
+`switch-to-configuration` and `nixos-rebuild` calls are not supported for updates.
+For `switch` and `boot`, the helper prepares enrollment before boot installation.
+It checks the selected boot entry and installed files before it reports success.
+A working current disk enrollment authorizes this operation. The helper does not
+read or store the plaintext volume key, and does not request the recovery password.
+Candidates without the helper are rejected rather than deployed without this check.
+Automatic enrollment also rejects active PIN-protected disk tokens. It does not
+try PIN values. This restriction does not apply to the separate pinpam login PIN.
+
+This first implementation supports unchanged kernel, initrd, and bootloader files.
+A settings change still needs a new policy because `init=` changes. Changed boot
+artifacts are rejected before default selection. Firmware overrides, a different
+boot order, and unsupported boot layouts are also rejected. There is no automatic
+reboot. `test` and `dry-activate` do not enroll or change the boot profile.
+The live firmware entry must be active and use the standard GPT HD/File/End path
+to the observed systemd-boot image. Its partition UUID and geometry must match
+the FAT partition mounted at `/boot`. Other paths, optional load arguments,
+stacked mounts, and mounts of a partition subdirectory are rejected.
+Persistent EFI preferences and `preferred` configuration directives are unsupported.
+The helper accepts only the supported loader settings and Linux BLS entry fields.
+It requires one default, one options line, one kernel, and one initrd. Extra entry
+types and conflicting directives are rejected, including changes made by install hooks.
+Kernel parameters must be non-empty printable strings without outer whitespace;
+an empty parameter list is not supported. This keeps BLS parsing and PCR prediction
+consistent. Nix can accept quoted line breaks that a BLS entry cannot preserve.
+
+The journal is `/var/lib/thinkpad1-tpm-deploy/state.json`. It records enrollment
+intent and fingerprints of owned tokens and slots. Recovery slot 0 and unmanaged
+credentials are never retired. After a successful installation, the helper retains
+the two most recent confirmed boot policies and the pending candidate. Confirmation
+requires matching current boot measurements and successful TPM authorization;
+activation alone is not proof.
+Native profiles named `thinkpad1-tpm-<policy>` under
+`/nix/var/nix/profiles/system-profiles/` keep the required systems available to the
+boot loader and protect them from garbage collection. Do not edit these profiles.
+
+Failure handling:
+
+- If the LUKS header has insufficient space, deployment stops. It does not remove
+  old credentials to make space for an enrollment that has not yet succeeded.
+- After an interruption, retry can adopt a unique matching new token. A new slot
+  without a matching token requires manual review. The journal and slot are kept.
+- After a boot installation error, the helper attempts to restore the previous
+  profile and boot default. Prepared enrollments remain available for retry.
+  This is not an atomic transaction across LUKS metadata and the EFI filesystem.
+- Do not reboot after a failed deployment until the boot default and recovery
+  path have been checked. Do not delete the journal or wipe all TPM slots as a fix.
+
+The cache under `/run/thinkpad1-tpm-deploy/` is valid only for the same boot, PCR
+values, and measurement tool. Only immutable store-file digests are cached.
+Installed EFI files are read again before and after installation. Current TPM
+authorization is never cached. Timing output separates validation, PCR reads,
+authorization, enrollment, and the native boot installation command. These are
+command or phase times, not measurements of TPM hardware latency alone.
 
 ## Installation preparation
 
@@ -196,7 +254,8 @@ wrapper:
 
 ```sh
 cd ~/nixcfg-private
-nix flake update
+nix flake update nixcfg
+nix develop
 nix eval --impure --json .#nixosConfigurations \
   --apply "import $HOME/nixcfg/tests/thinkpad1.nix"
 build thinkpad1
