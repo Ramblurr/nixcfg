@@ -6,7 +6,7 @@
 }:
 let
   # Choose latte, frappe, macchiato, or mocha.
-  catppuccinVariant = "mocha";
+  catppuccinVariant = "latte";
   # Choose mauve, lavender, teal, sapphire, or sky.
   catppuccinAccent = "mauve";
   catppuccinAccentName =
