@@ -34,7 +34,8 @@ in
                 "--type"
                 "luks2"
               ];
-              # Disko prompts for a recovery passphrase during installation.
+              # Supplied only to the live installer by nixos-anywhere.
+              passwordFile = "/run/thinkpad1-luks-passphrase";
               settings.crypttabExtraOpts = [ "tpm2-device=auto" ];
               content = {
                 type = "lvm_pv";
