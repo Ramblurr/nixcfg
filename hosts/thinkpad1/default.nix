@@ -126,6 +126,11 @@ in
     ];
     systemPackages = [ kdeTheme ];
     # System defaults only: ~/.config/kdeglobals remains owned by the user.
-    etc."xdg/kdeglobals".source = "${kdeTheme}/share/color-schemes/CatppuccinMochaMauve.colors";
+    etc."xdg/kdeglobals".text = ''
+      [KDE]
+      LookAndFeelPackage=Catppuccin-Mocha-Mauve
+      [General]
+      ColorScheme=CatppuccinMochaMauve
+    '';
   };
 }
