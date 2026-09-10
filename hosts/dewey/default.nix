@@ -13,6 +13,7 @@ in
     ./hardware.nix
     ./disk-config.nix
     ./guests.nix
+    ./immich-home.nix
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net
