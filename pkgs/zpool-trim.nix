@@ -9,7 +9,8 @@ writeShellApplication {
   runtimeInputs = [ zfs ];
   text = ''
     result=0
-    for pool in ${lib.escapeShellArgs pools}; do
+    pools=(${lib.escapeShellArgs pools})
+    for pool in "''${pools[@]}"; do
       zpool trim -w "$pool" || result=1
     done
     exit "$result"
