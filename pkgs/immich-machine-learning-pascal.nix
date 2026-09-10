@@ -57,6 +57,10 @@ let
           cudnn
         ];
         dependencies = [ final.coloredlogs final.numpy final.packaging final.flatbuffers final.protobuf final.sympy ];
+        # TensorRT 10 does not support Pascal; Immich uses CUDAExecutionProvider.
+        postInstall = ''
+          rm "$out/${python.sitePackages}/onnxruntime/capi/libonnxruntime_providers_tensorrt.so"
+        '';
         pythonImportsCheck = [ "onnxruntime" ];
         meta = {
           description = "Upstream CUDA 12 ONNX Runtime wheel with Pascal kernels";
