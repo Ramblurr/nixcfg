@@ -75,7 +75,7 @@ creation_rules:
   - path_regex: hosts/thinkpad1/(secrets/)?secrets\.sops\.ya?ml$
     key_groups:
       - age:
-          - age1sgyc7d7v3yv7f45pmt4c4wrvc9zr9aac6ns84xgdjwrgmjga7d3shjevdg
+          - age1400pmtztsv02hh7ar5cn6ltrwedjgwxcgs7h57y87e6gcw9dtdrq4en8v0
         merge:
           - *admin-group
   - path_regex: hosts/addams/.*.sops.*$
