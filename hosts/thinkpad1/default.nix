@@ -48,6 +48,11 @@ in
 
   time.timeZone = "Europe/Vienna";
   i18n.defaultLocale = "en_US.UTF-8";
+  i18n.supportedLocales = [
+    "de_AT.UTF-8/UTF-8"
+    "en_US.UTF-8/UTF-8"
+    "es_ES.UTF-8/UTF-8"
+  ];
   console.keyMap = "de";
 
   sops.defaultSopsFile = ./secrets.sops.yaml;
