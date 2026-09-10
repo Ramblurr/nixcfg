@@ -35,9 +35,9 @@ let
     stable = c.system.nixos.release == "26.05";
     locale =
       c.time.timeZone == "Europe/Vienna"
-      && c.i18n.defaultLocale == "de_AT.UTF-8"
+      && c.i18n.defaultLocale == "en_US.UTF-8"
       && c.console.keyMap == "de"
-      && c.services.xserver.xkb.layout == "de";
+      && c.services.xserver.xkb.layout == "at";
     accounts =
       user.uid == 1000
       && user.extraGroups == [ "networkmanager" ]

@@ -42,7 +42,7 @@ in
   virtualisation.vmVariant = import ./vm.nix;
 
   time.timeZone = "Europe/Vienna";
-  i18n.defaultLocale = "de_AT.UTF-8";
+  i18n.defaultLocale = "en_US.UTF-8";
   console.keyMap = "de";
 
   sops.defaultSopsFile = ./secrets.sops.yaml;
@@ -96,7 +96,7 @@ in
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
   services = {
-    xserver.xkb.layout = "de";
+    xserver.xkb.layout = "at";
     openssh.settings.AllowUsers = [
       "root"
       "ramblurr"
