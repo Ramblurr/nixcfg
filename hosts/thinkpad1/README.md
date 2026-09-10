@@ -140,7 +140,8 @@ this configuration. Before enrollment, confirm TPM2 availability and select a
 measured-boot policy that checks boot components, not merely disabled Secure Boot.
 Boot changes may require the recovery passphrase and policy re-enrollment.
 
-Disko asks for the LUKS recovery passphrase during formatting. Save it securely
+Supply `/run/thinkpad1-luks-passphrase` through nixos-anywhere's
+`--disk-encryption-keys` option during installation only. Save the passphrase securely
 outside the laptop and test it before enabling TPM unlock. Never place it in Nix
 source or the Nix store. The TPM must unlock LUKS before LVM activates the resume
 device. Verify cold boot, suspend, hibernate, resume, and snapshot file recovery
