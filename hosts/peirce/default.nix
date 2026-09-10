@@ -3,7 +3,6 @@
   config,
   pkgs,
   lib,
-  inputs,
   ...
 }:
 let
@@ -12,11 +11,36 @@ in
 {
   imports = [
     ./hardware.nix
+    ./disk-config.nix
+    ../../config
+    ../../config/home-ops.nix
   ];
   system.stateVersion = "25.11";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   sops.defaultSopsFile = ./secrets.sops.yaml;
   time.timeZone = "Europe/Berlin";
+
+  # Bootstrap on the existing untagged LAN. Enable the home-ops profile after
+  # assigning management/data networks; it assumes static addresses and a tank pool.
+  home-ops.enable = false;
+  networking.hostId = lib.my.generateHostId config.networking.hostName;
+  networking.useDHCP = false;
+  networking.useNetworkd = true;
+  systemd.network.networks."10-lan" = {
+    matchConfig.PermanentMACAddress = config.repo.secrets.local.lan0.hwaddr;
+    networkConfig.DHCP = "ipv4";
+    linkConfig.RequiredForOnline = "routable";
+  };
+  services.resolved.enable = true;
+  systemd.sleep.settings.Sleep = {
+    AllowSuspend = false;
+    AllowHibernation = false;
+    AllowHybridSleep = false;
+    AllowSuspendThenHibernate = false;
+  };
+  sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+  environment.systemPackages = [ pkgs.smartmontools pkgs.gptfdisk ];
+  documentation.nixos.enable = false;
 
   modules = {
     shell = {
@@ -39,11 +63,14 @@ in
       scrubPools = [ "rpool" ];
       extraPools = [ ];
       autoSnapshot.enable = false;
+      usePlymouth = false;
     };
     zfs.datasets.enable = true;
     security.default.enable = true;
     firewall.enable = true;
     users.enable = true;
+    users.headless.enable = true;
+    telemetry.smartd.enable = true;
     users.primaryUser.extraGroups = [
       "wheel"
     ];
