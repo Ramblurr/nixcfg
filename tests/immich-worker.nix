@@ -42,6 +42,9 @@ in
 assert lib.assertMsg (!disabled.services.immich.enable) "Disabled worker must not enable Immich";
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Enabled worker must fully evaluate";
 assert lib.assertMsg (
+  !(cfg.nixpkgs.config.cudaSupport or false)
+) "Worker CUDA package selection must not enable CUDA globally";
+assert lib.assertMsg (
   !(builtins.tryEval colocated.system.build.toplevel.drvPath).success
 ) "Worker must reject a local PostgreSQL cluster rather than suppressing its setup hooks";
 assert lib.assertMsg (
