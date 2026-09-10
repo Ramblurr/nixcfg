@@ -1,4 +1,3 @@
-
 {
   config,
   pkgs,
@@ -39,7 +38,10 @@ in
     AllowSuspendThenHibernate = false;
   };
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-  environment.systemPackages = [ pkgs.smartmontools pkgs.gptfdisk ];
+  environment.systemPackages = [
+    pkgs.smartmontools
+    pkgs.gptfdisk
+  ];
   documentation.nixos.enable = false;
 
   modules = {
