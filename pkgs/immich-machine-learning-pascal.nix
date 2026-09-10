@@ -1,4 +1,4 @@
-{ lib, pkgs }:
+{ lib, pkgs, immich ? pkgs.immich }:
 let
   # Keep the standard CUDA derivations so Flox substitutes remain usable.
   cuda = pkgs.cudaPackages_12_9;
@@ -61,7 +61,7 @@ let
     };
   };
 in
-(pkgs.immich-machine-learning.override { python3 = python; }).overrideAttrs (old: {
+(pkgs.immich-machine-learning.override { inherit immich; python3 = python; }).overrideAttrs (old: {
   passthru = (old.passthru or { }) // {
     inherit python cudnn;
     validationPython = python.withPackages (p: [ p.onnx p.onnxruntime p.pillow p.requests ]);
