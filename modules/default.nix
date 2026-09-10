@@ -118,6 +118,7 @@
     ./services/matrix-synapse.nix
     ./services/matrix-synapse-postgres.nix
     ./services/ocis.nix
+    ./services/opencloud.nix
     ./services/powerdns.nix
     ./services/onepassword-connect.nix
     ./services/onepassword-systemd-credentials.nix
