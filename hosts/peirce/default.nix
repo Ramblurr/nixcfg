@@ -33,6 +33,10 @@
     linkConfig.RequiredForOnline = lib.mkForce "routable";
   };
 
+  # Persistence creates the sops/age parent as root on the rolled-back root.
+  # Home Manager needs to create the remaining per-user configuration here.
+  systemd.tmpfiles.rules = [ "d /home/ramblurr/.config 0755 ramblurr ramblurr -" ];
+
   systemd.sleep.settings.Sleep = {
     AllowSuspend = false;
     AllowHibernation = false;
