@@ -4,9 +4,9 @@ Run using the installed ML service's Python/PYTHONPATH, with a disposable cache,
 working directory, and a public face photograph supplied as argv[1]. Downloads
 and profiles stay in that directory. This is an on-hardware validation, not a mock test.
 """
-import base64
 import gc
 import hashlib
+import itertools
 import json
 import sys
 from pathlib import Path
@@ -17,13 +17,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 OriginalSession = ort.InferenceSession
 sessions = []
+profile_ids = itertools.count()
 
 
 class ComparedSession(OriginalSession):
     def __init__(self, path, sess_options=None, providers=None, provider_options=None, **kwargs):
         opts = sess_options or ort.SessionOptions()
         opts.enable_profiling = True
-        opts.profile_file_prefix = str(Path.cwd() / f"profile-{len(sessions)}")
+        opts.profile_file_prefix = str(Path.cwd() / f"profile-{next(profile_ids)}")
         super().__init__(path, opts, providers=providers, provider_options=provider_options, **kwargs)
         self.disable_fallback()
         assert "CUDAExecutionProvider" in self.get_providers(), self.get_providers()
@@ -76,13 +77,19 @@ image = Image.open(sys.argv[1]).convert("RGB")
 text_model = OpenClipTextualEncoder("ViT-B-32__openai")
 text_embeddings = [text_model.predict(text) for text in ["a photograph of a person", "a red sports car"]]
 assert text_embeddings[0] != text_embeddings[1]
-assert len(np.frombuffer(base64.b64decode(text_embeddings[0]), dtype=np.float32)) == 512
+assert len(json.loads(text_embeddings[0])) == 512
 finish("smart-search-text")
 del text_model
 
 visual = OpenClipVisualEncoder("ViT-B-32__openai")
 embedding = visual.predict(image)
-assert len(np.frombuffer(base64.b64decode(embedding), dtype=np.float32)) == 512
+assert len(json.loads(embedding)) == 512
+text_vectors = np.array([json.loads(value) for value in text_embeddings])
+image_vector = np.array(json.loads(embedding))
+similarities = (text_vectors @ image_vector) / (
+    np.linalg.norm(text_vectors, axis=1) * np.linalg.norm(image_vector))
+assert similarities[0] > similarities[1], similarities
+print(json.dumps({"person_vs_car_similarity": similarities.tolist()}), flush=True)
 finish("smart-search-image")
 del visual
 
@@ -97,8 +104,7 @@ recognizer = FaceRecognizer("buffalo_l")
 recognizer.batch_size = 1
 recognized = recognizer.predict(image, faces)
 assert len(recognized) == len(faces["boxes"])
-assert all(len(np.frombuffer(base64.b64decode(face["embedding"]), dtype=np.float32)) == 512
-           for face in recognized)
+assert all(len(json.loads(face["embedding"])) == 512 for face in recognized)
 finish("face-recognition")
 del recognizer
 
