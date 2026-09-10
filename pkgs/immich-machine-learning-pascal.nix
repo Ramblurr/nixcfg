@@ -10,7 +10,8 @@ let
       sha256 = "d0defcbc4c6dad711ff4cb66d254036a300c9071b07c7b64199aacab534313c1";
     };
     nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-    buildInputs = [ pkgs.stdenv.cc.cc.lib cuda.cuda_cudart cuda.libcublas ];
+    buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.zlib cuda.cuda_cudart cuda.libcublas ];
+    runtimeDependencies = map lib.getLib [ cuda.cuda_nvrtc cuda.libcublas cuda.cuda_cudart ];
     dontBuild = true;
     installPhase = ''
       runHook preInstall
