@@ -61,6 +61,13 @@ let
         postInstall = ''
           rm "$out/${python.sitePackages}/onnxruntime/capi/libonnxruntime_providers_tensorrt.so"
         '';
+        # ORT dlopens its provider bridge by basename, outside ELF DT_NEEDED.
+        postPhases = [ "addOrtRunpath" ];
+        addOrtRunpath = ''
+          for elf in "$out/${python.sitePackages}/onnxruntime/capi/"*.so*; do
+            patchelf --add-rpath '$ORIGIN' "$elf"
+          done
+        '';
         pythonImportsCheck = [ "onnxruntime" ];
         meta = {
           description = "Upstream CUDA 12 ONNX Runtime wheel with Pascal kernels";
