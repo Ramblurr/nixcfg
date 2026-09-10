@@ -23,6 +23,28 @@ in
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Guest must fully evaluate";
 assert lib.assertMsg (cfg.microvm.devices == [ ]) "Guest must not receive GPU devices";
 assert lib.assertMsg (
+  cfg.services.immich.environment.IMMICH_WORKERS_INCLUDE == "api"
+  && !cfg.services.immich.machine-learning.enable
+  && cfg.services.immich.accelerationDevices == [ ]
+) "Guest must remain API-only without GPU or ML fallback";
+assert lib.assertMsg (
+  cfg.services.immich.settings == null
+  && !(cfg.systemd.services.immich-server.environment ? IMMICH_CONFIG_FILE)
+) "Guest settings must remain UI-managed";
+assert lib.assertMsg (
+  cfg.services.postgresql.settings.listen_addresses == "172.20.20.23"
+  && cfg.services.redis.servers.immich.bind == "172.20.20.23"
+  && cfg.services.redis.servers.immich.settings.appendonly == "yes"
+) "Private state listeners and durable queue must be explicit";
+assert lib.assertMsg (
+  builtins.elem "var-lib-immich.mount" cfg.systemd.services.immich-server.bindsTo
+  && cfg.systemd.services.immich-server.serviceConfig.StateDirectory == ""
+) "API must stop with NFS and leave export ownership to Mali";
+assert lib.assertMsg (
+  cfg.services.immich.secretsFile == "/var/lib/immich-secrets/environment"
+  && cfg.services.redis.servers.immich.requirePassFile == "/var/lib/immich-secrets/redis-password"
+) "Guest credentials must be runtime file paths";
+assert lib.assertMsg (
   links.imhome-svc.macvtap.link == "vlan-svc" && links.imhome-data.macvtap.link == "vlan-data"
 ) "Each guest network must use its own VLAN parent";
 assert lib.assertMsg (

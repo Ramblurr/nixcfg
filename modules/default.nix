@@ -82,6 +82,7 @@
     ./services/audiobookshelf.nix
     ./services/soju.nix
     ./services/invoiceninja.nix
+    ./services/immich-worker.nix
     #./services/archivebox.nix
     ./services/atuin-sync.nix
     ./services/borgmatic.nix
