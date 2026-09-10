@@ -14,6 +14,21 @@ builtins.listToAttrs (
       host = config.modules.microvm-guest.host or null;
       addresses = config.site.net.svc.hosts4.${config.networking.hostName} or [ ];
       hostConfig = (configurations.${host} or (fail "guest host is not exported by this flake")).config;
+      vsock = config.microvm.vsock.ssh.enable or false;
+      vsockDeployment =
+        if !vsock then { }
+        else if !(builtins.hasAttr "microvm-${name}" (hostConfig.programs.ssh.knownHosts or { })) then
+          fail "VSOCK deployment requires host-owned SSH configuration and a pinned guest key"
+        else {
+          guestSSH =
+            if config.microvm.hypervisor == "qemu" then
+              "vsock/${toString config.microvm.vsock.cid}"
+            else if config.microvm.hypervisor == "cloud-hypervisor" then
+              "vsock-mux/${hostConfig.microvm.stateDir}/${name}/notify.vsock"
+            else fail "unsupported VSOCK deployment hypervisor";
+          installOnHost = toString config.microvm.deploy.installOnHost;
+          sshSwitch = toString config.microvm.deploy.sshSwitch;
+        };
       deployment =
         if !guest then
           { }
@@ -31,7 +46,7 @@ builtins.listToAttrs (
           {
             inherit host;
             guestIP = builtins.head addresses;
-          };
+          } // vsockDeployment;
     in
     {
       inherit name;

@@ -32,6 +32,18 @@ let
         guest.config = pkgs.lib.recursiveUpdate guest.config update;
       };
     };
+  vsockConfigurations = pkgs.lib.recursiveUpdate configurations {
+    host.config = {
+      microvm.stateDir = "/var/lib/microvms";
+      programs.ssh.knownHosts.microvm-guest.publicKey = "pinned";
+    };
+    guest.config.microvm = {
+      hypervisor = "qemu";
+      vsock = { cid = 4244; ssh.enable = true; };
+      deploy.installOnHost = "installer";
+    };
+  };
+  resolveVsock = cs: (resolve { configurations = cs; names = [ "guest" ]; }).guest;
 in
 assert
   resolved == {
@@ -76,6 +88,22 @@ assert fails (badGuest {
 assert fails (badGuest {
   microvm.deploy.sshSwitch = null;
 });
+assert (resolveVsock vsockConfigurations).guestSSH == "vsock/4244";
+assert (resolveVsock vsockConfigurations).installOnHost == "installer";
+assert (resolveVsock vsockConfigurations).sshSwitch == "available";
+assert (resolveVsock (pkgs.lib.recursiveUpdate vsockConfigurations {
+  guest.config.microvm.hypervisor = "cloud-hypervisor";
+})).guestSSH == "vsock-mux//var/lib/microvms/guest/notify.vsock";
+assert fails {
+  configurations = vsockConfigurations // { inherit host; };
+  names = [ "guest" ];
+};
+assert fails {
+  configurations = pkgs.lib.recursiveUpdate vsockConfigurations {
+    guest.config.microvm.hypervisor = "unsupported";
+  };
+  names = [ "guest" ];
+};
 pkgs.runCommand "guest-build-deploy-wrappers"
   {
     nativeBuildInputs = [ pkgs.python3 ];

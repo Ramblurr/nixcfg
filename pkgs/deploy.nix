@@ -127,10 +127,29 @@ let
       for host in "''${HOSTS[@]}"; do
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
         if [[ -n "''${GUEST_HOSTS[$host]-}" ]]; then
-          echo "Deploying guest $host on ''${GUEST_HOSTS[$host]} (''${GUEST_IPS[$host]})"
-          # Pinned upstream rejects an explicit action; no action defaults to switch.
-          "$store_path/bin/microvm-rebuild" "root@''${GUEST_HOSTS[$host]}" "root@''${GUEST_IPS[$host]}" \
-            || die "Failed to deploy guest $host"
+          ssh_host="root@''${GUEST_HOSTS[$host]}"
+          if guest_ssh=$(target_field "$host" guestSSH); then
+            echo "Deploying guest $host via $ssh_host -> $guest_ssh"
+            installer=$(target_field "$host" installOnHost)
+            switcher=$(target_field "$host" sshSwitch)
+            # Authenticate before changing the host's installed guest runner.
+            # SSH runs on the VM host so its identity and pinned keys are used.
+            printf -v remote_command '%q ' ssh -o BatchMode=yes "root@$guest_ssh" true
+            ssh "$ssh_host" -- "$remote_command" \
+              || die "VSOCK preflight failed for $host; not falling back to network SSH"
+            nix copy --to "ssh://$ssh_host" "$switcher" \
+              || die "Failed to copy guest switch helper for $host"
+            "$installer/bin/microvm-install-on-host" "$ssh_host" \
+              || die "Failed to install guest $host on its host"
+            printf -v remote_command '%q ' "$switcher/bin/microvm-switch" "root@$guest_ssh"
+            ssh "$ssh_host" -- "$remote_command" \
+              || die "Failed to switch guest $host over VSOCK"
+          else
+            echo "Deploying guest $host on ''${GUEST_HOSTS[$host]} (''${GUEST_IPS[$host]})"
+            # Keep the upstream network route for guests without VSOCK SSH.
+            "$store_path/bin/microvm-rebuild" "$ssh_host" "root@''${GUEST_IPS[$host]}" \
+              || die "Failed to deploy guest $host"
+          fi
           continue
         fi
         echo "[1;36m    Applying [m⚙️ [34m$host[m"
