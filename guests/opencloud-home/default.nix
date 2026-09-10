@@ -25,7 +25,6 @@
     hypervisor = "qemu";
     mem = 8192;
     vcpu = 4;
-    vsock.ssh.enable = false;
     volumes = [
       {
         # Host backing is a ZFS dataset below the existing safe/vms backup root.

@@ -9,6 +9,7 @@ let
   cfg = config.modules.microvm-host;
 in
 {
+  imports = [ ./ssh-access.nix ];
   options.modules.microvm-host = {
     enable = lib.mkEnableOption "Enable microvm host services (for imperative control!)";
     baseZfsDataset = lib.mkOption {
