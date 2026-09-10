@@ -4,6 +4,12 @@
   pkgs,
   ...
 }:
+let
+  kdeTheme = pkgs.catppuccin-kde.override {
+    flavour = [ "mocha" ];
+    accents = [ "mauve" ];
+  };
+in
 {
   imports = [
     ../../config/common.nix
@@ -118,16 +124,8 @@
       pkgs.kdePackages.okular
       pkgs.kdePackages.gwenview
     ];
-    systemPackages = [
-      (pkgs.catppuccin-kde.override {
-        flavour = [ "mocha" ];
-        accents = [ "mauve" ];
-      })
-    ];
+    systemPackages = [ kdeTheme ];
     # System defaults only: ~/.config/kdeglobals remains owned by the user.
-    etc."xdg/kdeglobals".text = ''
-      [General]
-      ColorScheme=CatppuccinMochaMauve
-    '';
+    etc."xdg/kdeglobals".source = "${kdeTheme}/share/color-schemes/CatppuccinMochaMauve.colors";
   };
 }
