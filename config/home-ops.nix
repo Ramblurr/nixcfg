@@ -223,7 +223,7 @@ in
     environment.etc."resolv-external.conf" = {
       mode = "0644";
       text = ''
-        nameserver ${lib.my.cidrToIp nodeSettings.mgmtCIDR}
+        nameserver ${lib.my.cidrToIp (nodeSettings.mgmtCIDR or nodeSettings.primCIDR)}
       '';
     };
     services.dnsdist = {
@@ -243,7 +243,9 @@ in
 
           -- udp/tcp dns listening
           setLocal("127.0.0.1:53", {})
-          addLocal("${lib.my.cidrToIp nodeSettings.mgmtCIDR}:53", {})
+          ${lib.optionalString (nodeSettings ? mgmtCIDR) ''
+            addLocal("${lib.my.cidrToIp nodeSettings.mgmtCIDR}:53", {})
+          ''}
           addLocal("${lib.my.cidrToIp nodeSettings.primCIDR}:53", {})
 
           -- Local LAN

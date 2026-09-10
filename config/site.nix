@@ -71,6 +71,7 @@ in
       ];
       debord = [ "10.9.4.21" ];
       dewey = [ "10.9.4.17" ];
+      peirce = [ "10.9.4.24" ];
       mali = [ "10.9.4.10" ];
       #quine = [ "10.9.4.3" ]; uses dhcp
     };
@@ -262,6 +263,11 @@ in
   };
 
   site.hosts = {
+    peirce = {
+      role = "server";
+      # The switch presents prim untagged; there are no host-side VLANs yet.
+      interfaces.prim.type = "phys";
+    };
     addams = {
       role = "server";
       isRouter = true;
