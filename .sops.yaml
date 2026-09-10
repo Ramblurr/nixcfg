@@ -11,6 +11,7 @@ keys:
       - &mali age10w46rzpkfyx7cfx8hy6dq059cw8zy7mrvtu2gc06hngyxspeh9aq45ssty
       - &debord age1ns0hnk5n6sw9uqdn7v4rynumjk0zd8zfsjhegka74xw55nnluy4qtju5um
       - &dewey age1dtwmd5txsdjh3agr7zlqum8h024hasarflnpfavyqsu7g2lvvyksv8zff5
+      - &peirce age1f67pujrh0ejw4a0540wmjs6jhxwdpkyvw798nnm5c6smfgmw99yqs34n2s
       - &witt age1dzr2v5py0vwj3wujdmfgcfjqc26vz07u7vl0j8la345y97f0au2smk79jd
       - &addams age1t70vans0qsnru7j06fwtj7wq7hpfj59cxreu9a20rrxuahff9fmqsa2wjd
       - &james age1597uk5043pwvqj93g03thh6ca2yvnmkfqaqnfchujg5jkddrt5ks6k79tz
@@ -72,6 +73,12 @@ creation_rules:
           - *dewey
         merge:
           - *admin-group
+  - path_regex: hosts/peirce/.*\.sops\.ya?ml$
+    key_groups:
+      - age:
+          - *peirce
+        merge:
+          - *admin-group
   - path_regex: hosts/thinkpad1/(secrets/)?secrets\.sops\.ya?ml$
     key_groups:
       - age:
@@ -108,6 +115,7 @@ creation_rules:
           - *dewey
           - *debord
           - *mali
+          - *peirce
         merge:
           - *admin-group
   - path_regex: guests/dev1/secrets.sops.ya?ml$
