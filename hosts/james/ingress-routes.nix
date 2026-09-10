@@ -34,6 +34,8 @@ in
     "home.${home}"
     "books.${home}"
     "files.${home}"
+    "data.${home}"
+    "docs.${home}"
     "clients.${work}"
     "matrix.${work}"
     "data.${work}"
