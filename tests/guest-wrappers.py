@@ -38,12 +38,14 @@ elif command == "nix" and args[0] == "eval":
             result[name].update(host="host", guestIP="192.0.2.23" if name == "guest" else "192.0.2.24")
             if os.environ.get("VSOCK"):
                 target = "vsock-mux//var/lib/microvms/guest/notify.vsock" if name == "guest" else "vsock/4244"
-                result[name].update(guestSSH=target, installOnHost=os.environ["SYSTEM"], sshSwitch=os.environ["SYSTEM"])
+                result[name].update(guestSSH=target)
     print(json.dumps(result))
 elif command in ("nom", "nix") and args[0] == "build":
     if os.environ.get("FAIL_BUILD"):
         sys.exit(41)
     print(os.environ["SYSTEM"])
+    if any(a.endswith(".microvm.deploy.installOnHost") for a in args):
+        print(os.environ["SYSTEM"])
 elif command == "microvm-rebuild":
     sys.exit(42 if os.environ.get("FAIL_GUEST") else 0)
 elif command == "nix" and args[0] == "copy":

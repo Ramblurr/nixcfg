@@ -40,7 +40,6 @@ let
     guest.config.microvm = {
       hypervisor = "qemu";
       vsock = { cid = 4244; ssh.enable = true; };
-      deploy.installOnHost = "installer";
     };
   };
   resolveVsock = cs: (resolve { configurations = cs; names = [ "guest" ]; }).guest;
@@ -89,8 +88,6 @@ assert fails (badGuest {
   microvm.deploy.sshSwitch = null;
 });
 assert (resolveVsock vsockConfigurations).guestSSH == "vsock/4244";
-assert (resolveVsock vsockConfigurations).installOnHost == "installer";
-assert (resolveVsock vsockConfigurations).sshSwitch == "available";
 assert (resolveVsock (pkgs.lib.recursiveUpdate vsockConfigurations {
   guest.config.microvm.hypervisor = "cloud-hypervisor";
 })).guestSSH == "vsock-mux//var/lib/microvms/guest/notify.vsock";

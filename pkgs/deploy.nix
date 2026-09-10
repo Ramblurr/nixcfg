@@ -101,9 +101,13 @@ let
       # Get outputs of all derivations (should be cached)
       declare -A TOPLEVEL_STORE_PATHS
       for host in "''${HOSTS[@]}"; do
-        toplevel="''${TOPLEVEL_FLAKE_PATHS["$host"]}"
+        build_targets=("''${TOPLEVEL_FLAKE_PATHS[$host]}")
+        if target_field "$host" guestSSH >/dev/null; then
+          build_targets=(".#nixosConfigurations.$host.config.microvm.deploy.installOnHost"
+                         ".#nixosConfigurations.$host.config.microvm.deploy.sshSwitch")
+        fi
         echo "[1;36m    Building [m📦 [34m$host[m"
-        TOPLEVEL_STORE_PATHS["$host"]=$($BUILD_CMD --no-link --print-out-paths "''${OPTIONS[@]}" "$toplevel") \
+        TOPLEVEL_STORE_PATHS["$host"]=$($BUILD_CMD --no-link --print-out-paths "''${OPTIONS[@]}" "''${build_targets[@]}") \
           || die "Failed to get derivation path for $host from ''${TOPLEVEL_FLAKE_PATHS["$host"]}"
         time_next
         echo "[1;32m       Built [m✅ [34m$host[m [33m''${TOPLEVEL_STORE_PATHS["$host"]}[m [90min ''${T_LAST}s[m"
@@ -130,8 +134,10 @@ let
           ssh_host="root@''${GUEST_HOSTS[$host]}"
           if guest_ssh=$(target_field "$host" guestSSH); then
             echo "Deploying guest $host via $ssh_host -> $guest_ssh"
-            installer=$(target_field "$host" installOnHost)
-            switcher=$(target_field "$host" sshSwitch)
+            readarray -t guest_helpers <<< "$store_path"
+            [[ ''${#guest_helpers[@]} -eq 2 ]] || die "Expected two built guest helpers for $host"
+            installer="''${guest_helpers[0]}"
+            switcher="''${guest_helpers[1]}"
             # Authenticate before changing the host's installed guest runner.
             # SSH runs on the VM host so its identity and pinned keys are used.
             printf -v remote_command '%q ' ssh -o BatchMode=yes "root@$guest_ssh" true

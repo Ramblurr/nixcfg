@@ -26,8 +26,6 @@ builtins.listToAttrs (
             else if config.microvm.hypervisor == "cloud-hypervisor" then
               "vsock-mux/${hostConfig.microvm.stateDir}/${name}/notify.vsock"
             else fail "unsupported VSOCK deployment hypervisor";
-          installOnHost = toString config.microvm.deploy.installOnHost;
-          sshSwitch = toString config.microvm.deploy.sshSwitch;
         };
       deployment =
         if !guest then
