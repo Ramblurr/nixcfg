@@ -27,6 +27,11 @@ let
   };
   python = pkgs.python312.override {
     packageOverrides = final: prev: {
+      # Documentation snapshots fail on Python 3.12 in this pinned package set.
+      # Keep runtime tests; this is only a test dependency of the ML environment.
+      inline-snapshot = prev.inline-snapshot.overridePythonAttrs (old: {
+        disabledTestPaths = (old.disabledTestPaths or [ ]) ++ [ "tests/test_docs.py" ];
+      });
       onnxruntime = final.buildPythonPackage {
         pname = "onnxruntime-gpu";
         version = "1.23.2";
