@@ -23,7 +23,6 @@ in
   microvm = {
     vcpu = 2;
     mem = 4096;
-    vsock.cid = 4243;
     devices = lib.mkForce [ ];
     interfaces = map (net: {
       type = "macvtap";
