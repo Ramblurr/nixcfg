@@ -56,10 +56,12 @@ in
 
     environment.plasma6.excludePackages = [ pkgs.kdePackages.khelpcenter ];
 
-    environment.persistence."/persist".directories = lib.mkIf withImpermanence [
-      "/var/lib/NetworkManager"
-      "/etc/NetworkManager/system-connections"
-    ];
+    environment.persistence = lib.mkIf withImpermanence {
+      "/persist".directories = [
+        "/var/lib/NetworkManager"
+        "/etc/NetworkManager/system-connections"
+      ];
+    };
 
     # ref: https://github.com/NixOS/nixpkgs/issues/180175
     #systemd.services.NetworkManager-wait-online.enable = lib.mkForce false;
