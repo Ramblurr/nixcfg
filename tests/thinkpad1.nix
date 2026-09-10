@@ -26,6 +26,7 @@ let
       && v.sops.secrets == { }
       && !v.services.tailscale.enable
       && !v.services.openssh.enable
+      && !v.services.syncthing.enable
       && v.users.users.viki.password == "test"
       && v.users.users.viki.hashedPasswordFile == null
       && v.users.users.ramblurr.hashedPasswordFile == null
@@ -80,10 +81,27 @@ let
       c.services.syncthing.enable
       && c.services.syncthing.user == family
       && c.services.syncthing.guiAddress == "127.0.0.1:8384"
-      && !c.services.syncthing.overrideDevices
-      && !c.services.syncthing.overrideFolders
-      && c.services.syncthing.key == null
-      && c.services.syncthing.cert == null
+      && c.services.syncthing.overrideDevices
+      && c.services.syncthing.overrideFolders
+      && c.services.syncthing.key == c.sops.secrets.syncthing-key.path
+      && c.services.syncthing.cert == c.sops.secrets.syncthing-cert.path
+      && c.sops.secrets.syncthing-key.owner == family
+      && c.sops.secrets.syncthing-cert.owner == family
+      &&
+        builtins.attrNames c.services.syncthing.settings.devices
+        == builtins.attrNames c.repo.secrets.local.syncthing.devices
+      && builtins.hasAttr c.repo.secrets.local.syncthing.deviceID c.services.syncthing.settings.devices
+      && lib.all (
+        name:
+        let
+          actual = c.services.syncthing.settings.folders.${name};
+          expected = c.repo.secrets.local.syncthing.folders.${name};
+        in
+        actual.id == expected.id
+        && actual.path == "${user.home}/Sync/${expected.label}"
+        && actual.paused == expected.paused
+        && map (d: d.name) actual.devices == map (d: d.name) expected.devices
+      ) (builtins.attrNames c.repo.secrets.local.syncthing.folders)
       && c.systemd.services.syncthing.environment.STNODEFAULTFOLDER == "true";
     backupPlan =
       c.modules.services.borgmatic.name == "thinkpad1"
