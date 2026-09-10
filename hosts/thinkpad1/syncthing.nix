@@ -21,9 +21,6 @@ in
     cert = config.sops.secrets.syncthing-cert.path;
     settings = {
       devices = {
-        "Viki" = {
-          id = "BADXFFZ-F7WH6O5-SEVFIKH-QIGE5FL-WQFT4FU-DUBFQSP-UJFTT57-BOX7NAJ";
-        };
         "mali" = {
           id = "FUWM2VN-32WHX4C-AFGU6HX-TZAITRE-PO4YKQI-UR6Z54O-DSQORX2-FJPG3AE";
         };
@@ -36,27 +33,11 @@ in
         "Casey Pixel 9" = {
           id = "I5V5S76-7X343XH-O6DS27F-XQ6NW27-LQ65D2P-CZQRTE2-4FUI37W-CQYPOQG";
         };
-        "Viki-Laptop" = {
-          id = "LXTQ3J7-GI43PWK-ZSSHMNZ-RJM6DEX-4ZUG67O-OBMH7SZ-WKJPMTY-JZNFYQZ";
-        };
         "Casey's iPad" = {
           id = "MV4BQ23-XDBDIG6-WHBCLSE-XYRFJD7-SS7HCJP-Y7CA6EE-USJLP3Z-JDKCGAS";
         };
-        "rorty" = {
-          id = "OURFCGA-AT7K6SV-KBT6DDR-UJIGS5A-SYR3SWR-BGIJQ3I-IMP7VCA-MKSGVAB";
-        };
-        "rmblr-windoz" = {
-          id = "PMTKL4J-TU4EWD5-RBCZPWP-ZTOLDKQ-F42SHXO-T5LT6W7-RPQQSLV-XJSRBAT";
-        };
         "quine" = {
           id = "RK7O6ZN-OSUW3SM-TP2E2YZ-RBFGWK6-V2MHYEY-Z4HGCJU-EQTC4TO-72WI2QA";
-        };
-        "mali-2" = {
-          name = "mali";
-          id = "SS4DIYV-GL4SUAO-3H6JWGX-Q2PBKNT-UWII65N-ZNTEQBU-N6D7XFQ-V2K7TQU";
-        };
-        "CaseyAquinas" = {
-          id = "TMPYYCJ-RZKU2XA-HD6NLDK-2N6FAYE-C6K5I4Q-LGOGI67-WLM26FR-M7FSVA4";
         };
         "witt" = {
           id = "TPXTYXZ-UJEBYRU-MJQN4F5-JHM6BVP-EGLQHIL-QMN7TPG-GAYMDBA-SFP26AG";
@@ -78,16 +59,11 @@ in
           id = "emomw-9nc2j";
           path = "${home}/Sync/CaseyPC";
           devices = [
-            "Viki"
             "Pixel 6a"
             "SM-G998B"
             "Casey Pixel 9"
-            "Viki-Laptop"
             "Casey's iPad"
-            "rorty"
-            "rmblr-windoz"
             "quine"
-            "CaseyAquinas"
             "witt"
             "aquinas"
           ];
