@@ -10,6 +10,8 @@ let
   ];
 in
 {
+  imports = [ ./immich.nix ];
+
   system.stateVersion = "26.05";
 
   modules.microvm-guest = {
