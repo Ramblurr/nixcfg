@@ -7,14 +7,20 @@
 }:
 let
   cfg = config.modules.services.immich-worker;
+  # Match the standard CUDA package set published by Flox, including its
+  # default OpenVINO support. Keep this separate from the host package set.
+  cudaPkgs = import pkgs.path {
+    system = pkgs.stdenv.hostPlatform.system;
+    config = {
+      allowUnfree = true;
+      cudaSupport = true;
+    };
+  };
   cudaPython = pkgs.python3.override (previous: {
     packageOverrides = lib.composeExtensions (previous.packageOverrides or (_: _: { })) (
       _: prev: {
         onnxruntime = prev.onnxruntime.override {
-          onnxruntime = pkgs.onnxruntime.override {
-            cudaSupport = true;
-            openvinoSupport = false;
-          };
+          onnxruntime = cudaPkgs.onnxruntime;
         };
       }
     );
