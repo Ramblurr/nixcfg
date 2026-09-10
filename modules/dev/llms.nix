@@ -78,6 +78,7 @@ in
       home.packages =
         with pkgs;
         [
+          llm-agents.swamp
           #playwright
           #playwright-test
           #playwright-mcp
