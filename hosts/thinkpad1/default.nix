@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   imports = [
     ../../config/common.nix
@@ -9,10 +9,9 @@
 
   modules = {
     users.enable = true;
+    desktop.programs.onepassword.enable = true;
     desktop.kde = {
       enable = true;
-      sddm.listUsers = true;
-      sddm.hideUsers = [ "ramblurr" ];
       krohnkite.enable = false;
     };
     services = {
@@ -38,7 +37,13 @@
     timesyncd.enable = true;
     fwupd.enable = true;
     power-profiles-daemon.enable = true;
-    displayManager.sddm.theme = "catppuccin-mocha-mauve";
+    displayManager = {
+      sddm.enable = lib.mkForce false;
+      plasma-login-manager = {
+        enable = true;
+        settings.Greeter.PreselectedUser = "viki";
+      };
+    };
   };
 
   # Plasma supplies its portals, Dolphin, Discover, and ordinary desktop utilities.
@@ -47,6 +52,7 @@
   programs = {
     firefox.enable = true;
     kde-pim.enable = false;
+    kdeconnect.enable = true;
     appimage = {
       enable = true;
       binfmt = true;
@@ -73,10 +79,6 @@
       pkgs.kdePackages.gwenview
     ];
     systemPackages = [
-      (pkgs.catppuccin-sddm.override {
-        flavor = "mocha";
-        accent = "mauve";
-      })
       (pkgs.catppuccin-kde.override {
         flavour = [ "mocha" ];
         accents = [ "mauve" ];
