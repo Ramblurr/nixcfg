@@ -36,4 +36,6 @@ in
   users.users.immich.extraGroups = [ "video" "render" ];
   systemd.services.immich-machine-learning.environment.LD_LIBRARY_PATH = "/run/opengl-driver/lib";
   environment.systemPackages = [ ml.validationPython pkgs.jellyfin-ffmpeg ];
+  # Separate experiment: keep its Python/Torch stack out of Immich's environment.
+  system.extraDependencies = [ (pkgs.callPackage ../../pkgs/pascal-reranker-python.nix { }) ];
 }
