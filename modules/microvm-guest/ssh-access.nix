@@ -23,7 +23,7 @@ in
       overrideStrategy = "asDropin";
       serviceConfig.ExecStart = [
         ""
-        "${lib.getExe' config.services.openssh.package "sshd"} -i -D -f /etc/ssh/sshd_config -o 'AuthorizedKeysFile /etc/ssh/microvm-host.pub /etc/ssh/authorized_keys.d/%%u .ssh/authorized_keys' -o 'AllowUsers root'"
+        "-${lib.getExe' config.services.openssh.package "sshd"} -i -D -f /etc/ssh/sshd_config -o 'AuthorizedKeysFile /etc/ssh/microvm-host.pub /etc/ssh/authorized_keys.d/%%u .ssh/authorized_keys' -o 'AllowUsers root'"
       ];
     };
   };
