@@ -63,6 +63,9 @@ in
       hindsight.enable = true;
     };
   };
+  # Preserve the existing routes; normal DNS ingress is through dewey.
+  modules.services.ingress-home-assistant.enable = true;
+  modules.services.ingress-octoprint.enable = true;
   modules.services.caddy.edge = {
     certificateHosts = map (host: "${host}.${config.repo.secrets.global.domain.home}") [
       "hindsight"

@@ -189,8 +189,6 @@ in
     modules.services.caddy = {
       auth.issuerURL = "https://id.${home-ops.homeDomain}";
     };
-    modules.services.ingress-home-assistant.enable = true;
-    modules.services.ingress-octoprint.enable = true;
 
     ######################
     # Impermanence Setup #
