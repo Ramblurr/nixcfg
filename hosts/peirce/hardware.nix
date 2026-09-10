@@ -88,6 +88,12 @@
           after = [ "peirce-zfs-key.service" ];
         };
         services.rollback = {
+          description = "Rollback ZFS datasets to a pristine state";
+          wantedBy = [ "initrd.target" ];
+          before = [ "sysroot.mount" ];
+          path = [ config.boot.zfs.package ];
+          unitConfig.DefaultDependencies = "no";
+          serviceConfig.Type = "oneshot";
           requires = [ "zfs-import-rpool.service" ];
           after = [ "zfs-import-rpool.service" ];
           # The shared module also rolls back local/home, which peirce lacks.
