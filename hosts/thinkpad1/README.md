@@ -37,7 +37,24 @@ Change `catppuccinVariant` in `default.nix` to `latte`, `frappe`, `macchiato`, o
 Plymouth theme. Existing per-user theme choices take precedence over system defaults.
 
 Set `catppuccinAccent` to `mauve`, `lavender`, `teal`, `sapphire`, or `sky` for KDE.
-Plymouth follows the variant only.
+Plymouth uses its own `plymouthVariant` setting, currently Mocha for a legible
+passphrase prompt. KDE stays Latte. Encrypted Btrfs device mounts wait without a
+90-second deadline so a slow recovery-passphrase entry does not trigger emergency mode.
+
+## TPM login PIN
+
+Pinpam accepts a six-digit PIN for `viki` through the login PAM stack (used by
+Plasma Login Manager and console login) and the KDE screen locker. Enter the PIN
+in the existing password field. Password authentication remains available; SSH,
+sudo, polkit, and other users do not gain PIN authentication.
+
+From an administrator terminal, enroll with `sudo pinutil setup --username viki`.
+Five failed PIN attempts lock the PIN until an administrator deletes and recreates
+it. Do not clear the TPM: that also invalidates LUKS TPM enrollment. Normal users
+must not join the `tss` group. The privileged pinutil wrapper mediates TPM access.
+
+The experimental master-key/keyring feature is deliberately disabled. A PIN does
+not itself unlock an existing password-protected KWallet or 1Password vault.
 
 ## Backups and synchronization
 

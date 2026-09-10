@@ -7,6 +7,8 @@
 let
   # Choose latte, frappe, macchiato, or mocha.
   catppuccinVariant = "latte";
+  # Keep the boot passphrase prompt on a dark background, including with Latte KDE.
+  plymouthVariant = "mocha";
   # Choose mauve, lavender, teal, sapphire, or sky.
   catppuccinAccent = "mauve";
   catppuccinAccentName =
@@ -37,6 +39,7 @@ in
     ./hardware.nix
     ./borgmatic.nix
     ./syncthing.nix
+    ./pinpam.nix
     ./disk-config.nix
   ];
 
@@ -104,6 +107,8 @@ in
       "ramblurr"
     ];
     timesyncd.enable = true;
+    # Use ordinary OpenSSH over the VPN, not Tailscale SSH's separate user policy.
+    tailscale.extraSetFlags = [ "--ssh=false" ];
     fwupd.enable = true;
     power-profiles-daemon.enable = true;
     displayManager = {
@@ -135,8 +140,8 @@ in
 
   boot.plymouth = {
     enable = true;
-    theme = "catppuccin-${catppuccinVariant}";
-    themePackages = [ (pkgs.catppuccin-plymouth.override { variant = catppuccinVariant; }) ];
+    theme = "catppuccin-${plymouthVariant}";
+    themePackages = [ (pkgs.catppuccin-plymouth.override { variant = plymouthVariant; }) ];
   };
   environment = {
     # Ordinary optional applications belong to the user's Flathub installation.

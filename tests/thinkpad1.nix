@@ -33,6 +33,28 @@ let
       && c.users.users.viki.password == null
       && c.users.users.viki.hashedPasswordFile != null;
     stable = c.system.nixos.release == "26.05";
+    pinLogin =
+      c.security.pinpam.enable
+      &&
+        c.security.pinpam.auth.services == [
+          "login"
+          "kde"
+        ]
+      && c.security.pam.services.login.rules.auth.pinpam.control == "sufficient"
+      && c.security.pam.services.login.rules.auth.pinpam.args == [ "use_first_pass" ]
+      &&
+        c.security.pam.services.login.rules.auth.pinpam.order
+        > c.security.pam.services.login.rules.auth.unix.order
+      &&
+        c.security.pam.services.login.rules.auth.pinpam.order
+        < c.security.pam.services.login.rules.auth.deny.order
+      && !(c.security.pam.services.sudo.rules.auth ? pinpam)
+      && !(c.security.pam.services.sshd.rules.auth ? pinpam)
+      && !builtins.elem "tss" c.users.users.viki.extraGroups
+      && !c.security.pinpam.masterKey.enable;
+    slowUnlock = builtins.elem "x-systemd.device-timeout=0" c.fileSystems."/".options;
+    bootPrompt = c.boot.plymouth.theme == "catppuccin-mocha";
+    ordinarySsh = builtins.elem "--ssh=false" c.services.tailscale.extraSetFlags;
     diskLayout =
       c.fileSystems."/".fsType == "btrfs"
       && c.fileSystems."/home".fsType == "btrfs"
