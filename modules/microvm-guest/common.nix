@@ -236,9 +236,8 @@ in
       "d /home/root 0700 root root -" # createHome does not create it
     ];
 
-    systemd.user.extraConfig = ''
-      DefaultEnvironment="PATH=/run/current-system/sw/bin:/run/wrappers/bin:${lib.makeBinPath [ pkgs.bash ]}"
-    '';
+    systemd.user.settings.Manager.DefaultEnvironment =
+      "PATH=/run/current-system/sw/bin:/run/wrappers/bin:${lib.makeBinPath [ pkgs.bash ]}";
 
     users = {
       mutableUsers = false;
