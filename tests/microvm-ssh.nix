@@ -39,6 +39,7 @@ let
       && cfg.microvm.vsock.ssh.enable
       && cfg.environment.etc."ssh/microvm-host.pub".mode == "0444"
       && cfg.systemd.services."sshd-vsock@".overrideStrategy == "asDropin"
+      && lib.hasPrefix "-" (builtins.elemAt cfg.systemd.services."sshd-vsock@".serviceConfig.ExecStart 1)
       && lib.hasInfix "AllowUsers root" (builtins.elemAt cfg.systemd.services."sshd-vsock@".serviceConfig.ExecStart 1)
       && lib.hasInfix "/etc/ssh/microvm-host.pub" (builtins.elemAt cfg.systemd.services."sshd-vsock@".serviceConfig.ExecStart 1)
       && !(builtins.elem "/etc/ssh/microvm-host.pub" cfg.services.openssh.authorizedKeysFiles)
