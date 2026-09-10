@@ -1,8 +1,8 @@
 # thinkpad1
 
-**Buildable, not installable yet.** `storage.nix` contains build-only filesystem
-placeholders. Replace them with the agreed disk configuration before installation
-or deployment.
+**Disk layout prepared; installation not yet authorized.** `disk-config.nix` defines
+Btrfs and persistent swap inside LUKS2. Hardware validation, TPM enrollment,
+recovery-key verification, and backup completion remain installation gates.
 
 ## Repository layout
 
@@ -117,6 +117,35 @@ decrypt passwords on first boot. Keep a secure recovery copy before removing the
 temporary plaintext material; runtime temporary directories do not survive logout
 or reboot.
 
+## Filesystems and recovery
+
+- GPT with a 1 GiB EFI filesystem at `/boot`; the remaining space is LUKS2.
+- LVM inside LUKS contains 24 GiB of persistent swap and a Btrfs filesystem.
+  Swap uses the same outer encryption as the filesystem, not a new random key
+  each boot. The swap LV is the explicit hibernation resume device.
+- Btrfs subvolumes separate `/`, `/home`, `/nix`, `/var/log`, and `/home/.snapshots`.
+- Snapper takes hourly snapshots of both home directories. Retention is 24 hourly,
+  7 daily, 4 weekly, and 3 monthly snapshots. These are count limits, not a hard
+  disk-space quota. Monitor free space; changed or deleted files can retain space.
+- Snapshot access is administrator-only. Inspect with `sudo snapper -c home list`.
+  Restore selected files from `/home/.snapshots/<number>/snapshot/`, preserving
+  ownership. Do not roll back the entire mounted home subvolume during a session.
+- Borg excludes `/home/.snapshots`; it backs up the current home data separately.
+  Local snapshots are not a substitute for backups. Application databases may
+  require application-specific recovery because snapshots are not app-quiesced.
+
+Secure Boot stays disabled to support standard-kernel hibernation. The initrd
+supports TPM2 unlock with passphrase fallback, but no TPM policy is enrolled by
+this configuration. Before enrollment, confirm TPM2 availability and select a
+measured-boot policy that checks boot components, not merely disabled Secure Boot.
+Boot changes may require the recovery passphrase and policy re-enrollment.
+
+Disko asks for the LUKS recovery passphrase during formatting. Save it securely
+outside the laptop and test it before enabling TPM unlock. Never place it in Nix
+source or the Nix store. The TPM must unlock LUKS before LVM activates the resume
+device. Verify cold boot, suspend, hibernate, resume, and snapshot file recovery
+on the installed hardware; a successful build does not establish these behaviors.
+
 ## Installation preparation
 
 Boot the installer in UEFI mode and collect hardware/filesystem details privately.
@@ -128,7 +157,7 @@ files:
 sudo nixos-generate-config --root /mnt --show-hardware-config
 ```
 
-Use the actual filesystem, swap, and LUKS settings to replace `storage.nix`.
+Compare the resulting filesystem, swap, and LUKS settings with `disk-config.nix`.
 Keep the original Windows SSD untouched until the migration is verified.
 
 ## Build and validation
@@ -145,9 +174,9 @@ build thinkpad1
 ```
 
 Installation will use a standard NixOS live USB and nixos-anywhere from the private
-wrapper. Disko will supply the agreed disk layout, replacing `storage.nix`. Disk
-selection and formatting are deferred until the new SSD has been identified and
-the Windows backup verified.
+wrapper. Disko supplies the agreed layout from `disk-config.nix`; the target SSD's
+stable ID is held in private `local.nix` as `systemDisk`. Reconfirm its identity
+and verify the Windows backup before authorizing formatting.
 
 Enable key-based SSH access in the live environment. Supply the decrypted host
 key through nixos-anywhere's `--extra-files` mechanism, at

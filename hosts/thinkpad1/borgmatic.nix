@@ -15,6 +15,7 @@
       }
     ];
     exclude-patterns = [
+      "sh:home/.snapshots"
       "sh:home/*/.cache"
       "sh:home/*/.local/share/Trash"
       "sh:home/*/.local/share/flatpak/repo"

@@ -10,7 +10,7 @@
       "sd_mod"
       "sdhci_pci"
     ];
-    # Installation policy; actual filesystems are supplied by the private wrapper.
+    # Disko supplies filesystems and encrypted swap in disk-config.nix.
     loader = {
       systemd-boot = {
         enable = true;
