@@ -100,6 +100,8 @@ in
 
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
+  # Expose the Yoga's accelerometer to Plasma for automatic screen rotation.
+  hardware.sensor.iio.enable = true;
   services = {
     xserver.xkb.layout = "at";
     openssh.settings.AllowUsers = [
@@ -152,7 +154,18 @@ in
       pkgs.kdePackages.okular
       pkgs.kdePackages.gwenview
     ];
-    systemPackages = [ kdeTheme ];
+    systemPackages = [
+      kdeTheme
+      pkgs.maliit-keyboard
+    ];
+    # KWin handles the Yoga's tablet-mode switch; select its Wayland keyboard.
+    # Defaults only: users can still change these in Plasma System Settings.
+    etc."xdg/kwinrc".text = ''
+      [Wayland]
+      InputMethod=${pkgs.maliit-keyboard}/share/applications/com.github.maliit.keyboard.desktop
+      [Input]
+      TabletMode=auto
+    '';
     # System defaults only: ~/.config/kdeglobals remains owned by the user.
     etc."xdg/kdeglobals".text = ''
       [KDE]
