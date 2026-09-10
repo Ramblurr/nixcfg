@@ -175,6 +175,7 @@ in
       hassos.gid = 1018;
       photo-backup.gid = 3000;
       atticd.gid = 1019;
+      viki.gid = 983;
     };
   users.users =
     (removeAttrs home-ops.users [
@@ -214,6 +215,13 @@ in
         group = "atticd";
         isSystemUser = true;
         uid = 1009;
+      };
+      viki = {
+        isSystemUser = true;
+        uid = 986;
+        group = "viki";
+        description = "SMB-only account for Viki";
+        hashedPassword = "!";
       };
     };
   environment.systemPackages = with pkgs; [
