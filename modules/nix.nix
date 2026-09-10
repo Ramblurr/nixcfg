@@ -105,9 +105,9 @@ with lib;
     script = ''
       set -eu
       # created by nix-collect-garbage, might be stale
-      ${pkgs.findutils}/bin/find /nix/var/nix/temproots -type f -mtime +10 -delete || true
+      ${pkgs.findutils}/bin/find /nix/var/nix/temproots -type f -mtime +10 -delete
       # delete broken symlinks
-      ${pkgs.findutils}/bin/find /nix/var/nix/gcroots -xtype l -delete || true
+      ${pkgs.findutils}/bin/find /nix/var/nix/gcroots -xtype l -delete
     '';
   };
 
@@ -118,6 +118,13 @@ with lib;
       OnCalendar = "Sun *-*-* 03:30:00";
       Persistent = true;
     };
+  };
+
+  site.gatus.heartbeats.nix-cleanup-gcroots = lib.mkIf heartbeatAvailable {
+    service = "nix-cleanup-gcroots";
+    name = "Nix GC-root Cleanup";
+    group = config.site.gatus.groups.infrastructure;
+    interval = "192h";
   };
 
   site.gatus.heartbeats.nix-gc = lib.mkIf (heartbeatAvailable && config.nix.gc.automatic) {

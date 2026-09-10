@@ -39,6 +39,11 @@ let
         default = null;
         description = "Systemd service to report, without the .service suffix; null for a native adapter";
       };
+      startPostCommands = lib.mkOption {
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+        default = null;
+        description = "Replace upstream ExecStartPost hooks with these commands before reporting success; null preserves existing hooks";
+      };
       name = lib.mkOption {
         type = lib.types.nonEmptyStr;
         description = "Human-readable Gatus endpoint name before the hostname suffix";
@@ -110,7 +115,11 @@ in
       _: heartbeat:
       lib.nameValuePair heartbeat.service {
         serviceConfig = {
-          ExecStartPost = lib.mkAfter [ (reporterCommand heartbeat) ];
+          ExecStartPost =
+            if heartbeat.startPostCommands == null then
+              lib.mkAfter [ (reporterCommand heartbeat) ]
+            else
+              lib.mkForce (heartbeat.startPostCommands ++ [ (reporterCommand heartbeat) ]);
           EnvironmentFile = lib.mkIf (
             cfg.heartbeatToken.environmentFile != null
           ) cfg.heartbeatToken.environmentFile;

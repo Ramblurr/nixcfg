@@ -34,6 +34,11 @@ in
         type = lib.types.uniq lib.types.str;
         default = "rpool";
       };
+      trimPools = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ cfg.rootPool ];
+        description = "Trim-capable pools checked by the monitored trim job; exclude HDD-only pools";
+      };
       scrubPools = mkOption {
         type = types.listOf types.str;
         default = [ "rpool" ];
@@ -151,15 +156,66 @@ in
           monthly = 1; # keep only one monthly snapshot (instead of twelve)
         };
       };
-      site.gatus.heartbeats = lib.mkIf heartbeatAvailable {
-        zfs-scrub = {
+    })
+    (lib.mkIf (heartbeatAvailable && config.boot.zfs.enabled) {
+      site.gatus.heartbeats = {
+        zfs-scrub = lib.mkIf config.services.zfs.autoScrub.enable {
           service = "zfs-scrub";
           name = "ZFS Scrub";
           group = config.site.gatus.groups.infrastructure;
           interval = "840h";
         };
+        zpool-trim = lib.mkIf (config.services.zfs.trim.enable && cfg.trimPools != [ ]) {
+          service = "zpool-trim";
+          name = "Zpool Trim";
+          group = config.site.gatus.groups.infrastructure;
+          interval = "192h";
+        };
+      }
+      //
+        lib.mapAttrs'
+          (
+            period: interval:
+            lib.nameValuePair "zfs-snapshot-${period}" (
+              lib.mkIf (config.services.zfs.autoSnapshot.enable && config.services.zfs.autoSnapshot.${period} > 0)
+                {
+                  service = "zfs-snapshot-${period}";
+                  name = "ZFS Snapshot: ${period}";
+                  group = config.site.gatus.groups.infrastructure;
+                  inherit interval;
+                }
+            )
+          )
+          {
+            frequent = "45m";
+            hourly = "3h";
+            daily = "30h";
+            weekly = "192h";
+            monthly = "840h";
+          };
+
+      # ExecStartPost must follow scrub completion, not just process creation.
+      systemd.services.zfs-scrub = lib.mkIf config.services.zfs.autoScrub.enable {
+        serviceConfig.Type = lib.mkForce "oneshot";
+        serviceConfig.TimeoutStartSec = "infinity";
+      };
+      systemd.services.zpool-trim = lib.mkIf (config.services.zfs.trim.enable && cfg.trimPools != [ ]) {
+        serviceConfig = {
+          Type = lib.mkForce "oneshot";
+          TimeoutStartSec = "infinity";
+          ExecStart = lib.mkForce (
+            lib.getExe (
+              pkgs.callPackage ../../pkgs/zpool-trim.nix {
+                zfs = config.boot.zfs.package;
+                pools = cfg.trimPools;
+              }
+            )
+          );
+        };
       };
 
+    })
+    (lib.mkIf cfg.enable {
       services.zfs.zed = mkIf (cfg.zed.enable && config.modules.server.smtp-external-relay.enable) {
         enableMail = true;
         settings = {

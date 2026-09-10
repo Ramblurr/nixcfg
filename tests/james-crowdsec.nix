@@ -3,10 +3,13 @@
   pkgs,
 }:
 let
+  lib = inputs.nixpkgs.lib;
 
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       ../hosts/james/crowdsec.nix
+      ../modules/site/gatus.nix
+      ../modules/site/gatus-heartbeats.nix
       (
         { lib, ... }:
         {
@@ -71,6 +74,7 @@ let
             services.tailscale.enable = true;
             repo.secrets = {
               global.domain.tailnet = "example.test";
+              global.domain.home = "example.test";
               local.crowdsec.trustedSourceCidrs = [ "100.64.0.0/10" ];
             };
             sops.placeholder = {
@@ -142,9 +146,12 @@ assert
   cfg.services.crowdsec-firewall-bouncer.secrets.apiKeyPath == "/run/secrets/crowdsec/bouncerApiKey";
 assert bouncer.serviceConfig.LoadCredential == "API_KEY_FILE:/run/secrets/crowdsec/bouncerApiKey";
 assert
-  cfg.systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost == [
-    "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service"
-  ];
+  builtins.head cfg.systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost
+  == "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service";
+assert builtins.length cfg.systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost == 2;
+assert lib.hasInfix "gatus-heartbeat report" (
+  lib.last cfg.systemd.services.crowdsec-update-hub.serviceConfig.ExecStartPost
+);
 assert crowdsec.serviceConfig.Restart == "on-failure";
 assert crowdsec.serviceConfig.RestartSec == "5s";
 assert crowdsec.serviceConfig.RestartSteps == 5;

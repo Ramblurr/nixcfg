@@ -35,6 +35,8 @@ in
 
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  sops.secrets.gatus-heartbeat-env = { };
+  site.gatus.heartbeatToken.environmentFile = config.sops.secrets.gatus-heartbeat-env.path;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   site.gatus.heartbeatToken.gatusEnvironmentVariable = "GATUS_QUINE_EXTERNAL_TOKEN";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;

@@ -14,6 +14,7 @@
         git-archive = import ../tests/git-archive.nix { inherit inputs pkgs; };
         gatus-heartbeats = import ../tests/gatus-heartbeats.nix { inherit inputs pkgs; };
         gatus-heartbeats-vm = import ../tests/gatus-heartbeats-vm.nix { inherit inputs pkgs; };
+        maintenance-heartbeats = import ../tests/maintenance-heartbeats.nix { inherit inputs pkgs; };
         grafana-zfs-readiness = import ../tests/grafana-zfs-readiness.nix { inherit inputs pkgs; };
         home-ops-caddy = import ../tests/home-ops-caddy.nix { inherit inputs pkgs; };
         home-dl-qbittorrent = import ../tests/home-dl-qbittorrent.nix { inherit inputs pkgs; };

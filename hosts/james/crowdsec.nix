@@ -79,6 +79,16 @@ in
     "/etc/crowdsec/parsers/s02-enrich/*-parsers-s02-enrich.yaml".r = { };
   };
 
+  site.gatus.heartbeats.crowdsec-update-hub = {
+    service = "crowdsec-update-hub";
+    name = "CrowdSec Hub Update";
+    group = config.site.gatus.groups.infrastructure;
+    interval = "30h";
+    startPostCommands = [
+      "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service"
+    ];
+  };
+
   systemd.services = {
     crowdsec = {
       after = [ "tailscaled.service" ];
@@ -90,10 +100,6 @@ in
         RestartMaxDelaySec = "60s";
       };
     };
-
-    crowdsec-update-hub.serviceConfig.ExecStartPost = lib.mkForce [
-      "+${pkgs.systemd}/bin/systemctl --no-block try-reload-or-restart crowdsec.service"
-    ];
 
     crowdsec-firewall-bouncer = {
       # James's watcher and bouncer independently consume Addams LAPI.

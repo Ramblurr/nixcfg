@@ -13,12 +13,24 @@ in
     lib.mkEnableOption "age-based cleanup of automatic and per-user Nix GC roots";
 
   config = lib.mkIf cfg.enable {
+    site.gatus.heartbeats.nix-prune-aged-gcroots = lib.mkIf config.site.gatus.heartbeatToken.available {
+      service = "nix-prune-aged-gcroots";
+      name = "Aged Nix GC-root Pruning";
+      group = config.site.gatus.groups.infrastructure;
+      interval = "192h";
+    };
+
     systemd.services.nix-prune-aged-gcroots = {
       description = "Prune aged Nix GC roots";
       serviceConfig.Type = "oneshot";
       script = ''
         set -eu
-        ${pkgs.findutils}/bin/find /nix/var/nix/gcroots/auto /nix/var/nix/gcroots/per-user -type l -mtime +90 -delete || true
+        for root in /nix/var/nix/gcroots/auto /nix/var/nix/gcroots/per-user; do
+          # Nix creates these optional directories on first use.
+          if [ -d "$root" ]; then
+            ${pkgs.findutils}/bin/find "$root" -type l -mtime +90 -delete
+          fi
+        done
       '';
     };
 

@@ -6,65 +6,55 @@
 }:
 let
   cfg = config.modules.services.zfs-backup-check;
-  checkScript = pkgs.writeScriptBin "check-zrepl-snapshot" ''
-    #!${pkgs.bash}/bin/bash
-    # This script is from  Callum Gare @callumgare
-    # source: https://github.com/zrepl/zrepl/issues/394#issuecomment-1099778015
-    set -e
-    dataset="$1"
-    timeToCheckForSnapshotsAfterHumanReadable="$2"
-    endpointToPingOnSuccess="$3"
-    endpointToPingOnFailure="$4"
-
-
-    timeToCheckForSnapshotsAfter=$(date --date "$timeToCheckForSnapshotsAfterHumanReadable" +'%s')
-    timeOfLastSnapshot=$(${pkgs.zfs}/bin/zfs list -Hp -t snapshot -r -o creation -s creation "$dataset" | tail -1)
-
-    if [ $timeOfLastSnapshot -gt $timeToCheckForSnapshotsAfter ]; then
-      echo "OK: $dataset"
-      ${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 -o /dev/null "$endpointToPingOnSuccess"
-    else
-      echo "FAIL: $dataset"
-      ${pkgs.curl}/bin/curl -fsS -m 10 --retry 5 -o /dev/null "$endpointToPingOnFailure"
-    fi
-  '';
+  check = pkgs.callPackage ../../pkgs/zfs-snapshot-age.nix { };
 in
 {
-
   options.modules.services.zfs-backup-check = {
-    enable = lib.mkEnableOption "zfs backup check";
+    enable = lib.mkEnableOption "ZFS backup snapshot-age checks";
     calendar = lib.mkOption {
       type = lib.types.str;
       default = "*-*-* *:11:00";
-      description = lib.mdDoc ''
-        The calendar expression for the healthcheck timer.
-      '';
-      example = lib.literalExpression "*-*-* *:00:00";
+      description = "Calendar expression for the backup healthcheck timer";
+    };
+    heartbeatInterval = lib.mkOption {
+      type = lib.types.str;
+      default = "3h";
+      description = "Maximum interval between successful checks, including timer jitter";
     };
     healthchecks = lib.mkOption {
-      type = lib.types.listOf (lib.types.attrsOf lib.types.str);
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            dataset = lib.mkOption {
+              type = lib.types.nonEmptyStr;
+              description = "Dataset whose newest recursive snapshot is checked";
+            };
+            time = lib.mkOption {
+              type = lib.types.nonEmptyStr;
+              description = "Oldest acceptable snapshot time, in GNU date syntax";
+              example = "1 hour ago";
+            };
+          };
+        }
+      );
       default = [ ];
-      description = lib.mdDoc ''
-        List of healthchecks, each represented by an attribute set with 'hc-url' and 'dataset' keys.
-      '';
-      example = lib.literalExpression ''
-        [
-          {
-            hc-url = "https://hc.example.com/ping/abc123";
-            dataset = "tank/bar";
-            time = "1 hour ago";
-          }
-          {
-            hc-url = "https://hc.example.com/ping/def456";
-            dataset = "tank/foo";
-            time = "1 hour ago";
-          }
-        ]
-      '';
+      description = "Snapshot-age checks; every dataset must pass before reporting success";
     };
   };
-  config = lib.mkIf cfg.enable {
 
+  config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.healthchecks != [ ];
+        message = "ZFS backup health monitoring requires at least one dataset.";
+      }
+    ];
+    site.gatus.heartbeats.zrepl-healthcheck = {
+      service = "zrepl-healthcheck";
+      name = "Zrepl Backup Health";
+      group = config.site.gatus.groups.infrastructure;
+      interval = cfg.heartbeatInterval;
+    };
     systemd.timers.zrepl-healthcheck = {
       description = "ZFS backup healthcheck";
       timerConfig = {
@@ -82,15 +72,12 @@ in
         Type = "oneshot";
         User = "root";
       };
-      path = [
-        checkScript
-        pkgs.coreutils
-      ];
       script = ''
-        ${lib.concatMapStrings (hc: ''
-          echo "Running healthcheck for dataset ${hc.dataset}"
-          check-zrepl-snapshot ${hc.dataset} ${lib.escapeShellArg hc.time} ${lib.escapeShellArg hc.hc-url}  ${lib.escapeShellArg hc.hc-url}/fail
+        result=0
+        ${lib.concatMapStringsSep "\n" (hc: ''
+          ${lib.getExe check} ${lib.escapeShellArg hc.dataset} ${lib.escapeShellArg hc.time} || result=1
         '') cfg.healthchecks}
+        exit "$result"
       '';
     };
   };
