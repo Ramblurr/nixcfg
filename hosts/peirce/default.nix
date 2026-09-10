@@ -22,6 +22,7 @@
     zrepl.enable = lib.mkForce false;
   };
   modules.boot.zfs.extraPools = lib.mkForce [ ];
+  modules.vpn.tailscale.enable = true;
 
   # Use the existing untagged prim connection, matched by the physical NIC.
   systemd.network.links."10-prim" = {
