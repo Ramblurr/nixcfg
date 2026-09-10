@@ -57,18 +57,16 @@ pkgs.testers.runNixOSTest {
         ../guests/immich-home/immich.nix
       ];
       options = {
-        repo.secrets = lib.mkOption { type = lib.types.attrs; };
         site.net = lib.mkOption { type = lib.types.attrs; };
       };
       config = {
-        repo.secrets.local.immich = {
-          workerHost = "worker";
-          mediaLocation = "/var/lib/immich";
-          secretsDirectory = "/etc/immich-test";
-        };
+        services.immich.secretsFile = lib.mkForce "/etc/immich-test/environment";
+        services.redis.servers.immich.requirePassFile = lib.mkForce "/etc/immich-test/redis-password";
+        systemd.services.postgresql-setup.serviceConfig.EnvironmentFile =
+          lib.mkForce "/etc/immich-test/environment";
         site.net.svc.hosts4 = {
           api = [ nodes.api.networking.primaryIPAddress ];
-          worker = [ nodes.worker.networking.primaryIPAddress ];
+          ${(import ../config/immich-home.nix).workerHost} = [ nodes.worker.networking.primaryIPAddress ];
           dewey = [ nodes.api.networking.primaryIPAddress ];
         };
         networking.nftables.enable = true;

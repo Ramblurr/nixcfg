@@ -1,7 +1,7 @@
 { config, lib, ... }:
 let
   name = config.networking.hostName;
-  instance = config.repo.secrets.local.immich;
+  instance = import ../../config/immich-home.nix;
   address = net: builtins.head config.site.net.${net}.hosts4.${name};
   hostAddress = net: host: builtins.head config.site.net.${net}.hosts4.${host};
   networks = [
