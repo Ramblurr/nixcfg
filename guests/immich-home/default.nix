@@ -89,7 +89,7 @@ in
 
   users.users.immich = {
     isSystemUser = true;
-    uid = instance.uid;
+    inherit (instance) uid;
     group = "immich";
   };
   users.groups.immich.gid = instance.gid;
