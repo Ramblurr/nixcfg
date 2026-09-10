@@ -42,6 +42,8 @@ in
         after = [
           "local-fs.target"
           "zfs-datasets.service"
+          # The installer supplies current/share/microvm/virtiofs on first boot.
+          "install-microvm-%i.service"
         ];
         partOf = [ "microvm@%i.service" ];
         unitConfig.ConditionPathExists = "/var/lib/microvms/%i/current/share/microvm/virtiofs";

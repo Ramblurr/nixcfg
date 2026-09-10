@@ -50,6 +50,18 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   links.imhome-svc.type == "macvtap" && links.imhome-data.macvtap.mode == "bridge"
 ) "Guest must share the host macvlan segment";
+assert lib.assertMsg (lib.all
+  (
+    net:
+    builtins.hasAttr "10-${net}" cfg.systemd.network.links
+    && cfg.systemd.network.links."10-${net}".linkConfig.Name == net
+    && cfg.systemd.network.links."10-${net}".matchConfig.MACAddress == links."imhome-${net}".mac
+  )
+  [
+    "svc"
+    "data"
+  ]
+) "Guest interface naming must precede 99-default.link so firewall interface rules match";
 assert lib.assertMsg (
   cfg.microvm.mem == 4096 && cfg.microvm.vcpu == 2
 ) "Guest resource budget changed";

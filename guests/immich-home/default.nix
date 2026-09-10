@@ -63,10 +63,16 @@ in
       gateway = lib.optional (net == "svc") (hostAddress "svc" "addams");
       dns = lib.optional (net == "svc") (hostAddress "svc" "addams");
     });
-    links = lib.genAttrs networks (net: {
-      matchConfig.MACAddress = lib.my.generateMacAddress "${name}-${net}";
-      linkConfig.Name = net;
-    });
+    # Apply service-interface names before systemd's 99-default.link policy.
+    links = lib.listToAttrs (
+      map (net: {
+        name = "10-${net}";
+        value = {
+          matchConfig.MACAddress = lib.my.generateMacAddress "${name}-${net}";
+          linkConfig.Name = net;
+        };
+      }) networks
+    );
   };
 
   services.openssh = {
