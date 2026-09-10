@@ -33,6 +33,24 @@ let
       && c.users.users.viki.password == null
       && c.users.users.viki.hashedPasswordFile != null;
     stable = c.system.nixos.release == "26.05";
+    syncthing =
+      c.services.syncthing.enable
+      && c.services.syncthing.user == family
+      && c.services.syncthing.guiAddress == "127.0.0.1:8384"
+      && !c.services.syncthing.overrideDevices
+      && !c.services.syncthing.overrideFolders
+      && c.services.syncthing.key == null
+      && c.services.syncthing.cert == null
+      && c.systemd.services.syncthing.environment.STNODEFAULTFOLDER == "true";
+    backupPlan =
+      c.modules.services.borgmatic.name == "thinkpad1"
+      &&
+        c.services.borgmatic.settings.source_directories == [
+          "/home"
+          "/etc"
+        ]
+      && builtins.length c.modules.services.borgmatic.repositories == 2
+      && !c.virtualisation.vmVariant.services.borgmatic.enable;
     locale =
       c.time.timeZone == "Europe/Vienna"
       && c.i18n.defaultLocale == "en_US.UTF-8"
