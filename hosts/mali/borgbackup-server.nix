@@ -14,6 +14,12 @@ in
   users.users."${backupUser}".uid = 999;
   systemd.tmpfiles.rules = [ "d ${backupDir} 0755 root root - -" ];
   services.borgbackup.repos = {
+    thinkpad1 = {
+      path = "/mnt/tank2/backups/borg_repos/thinkpad1";
+      authorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlpk31n9XT2pOC6yqE2crWh79Bhhl8JQSy+narc5LCl thinkpad1-borg"
+      ];
+    };
     aquinas = {
       path = "/mnt/tank2/backups/borg_repos/aquinas";
       authorizedKeys = [
