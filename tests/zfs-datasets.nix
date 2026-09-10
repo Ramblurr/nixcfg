@@ -57,17 +57,36 @@ let
           services."tank/services/alpha" = [ "broken.service" ];
         }
       )).config.system.build.toplevel.drvPath;
+  reservedService =
+    builtins.tryEval
+      (mkEvaluated (
+        validConfig
+        // {
+          services."tank/services/alpha" = [ "zfs-datasets-reactivation" ];
+        }
+      )).config.system.build.toplevel.drvPath;
   service = evaluated.config.systemd.services.zfs-datasets;
+  reactivation = evaluated.config.systemd.services.zfs-datasets-reactivation;
   alpha = evaluated.config.systemd.services.alpha;
   shared = evaluated.config.systemd.services.shared;
 in
 assert !invalidDataset.success;
 assert !invalidMountpoint.success;
 assert !invalidService.success;
+assert !reservedService.success;
 assert builtins.elem "zfs-mount.service" service.requires;
 assert builtins.elem "zfs-mount.service" service.after;
 assert service.serviceConfig.Type == "oneshot";
 assert service.serviceConfig.RemainAfterExit;
+assert !service.restartIfChanged;
+assert reactivation.script == service.script;
+assert builtins.elem pkgs.zfs reactivation.path;
+assert reactivation.serviceConfig.Type == "oneshot";
+assert !(reactivation.serviceConfig.RemainAfterExit or false);
+assert builtins.elem "systemd-tmpfiles-resetup.service" reactivation.requiredBy;
+assert builtins.elem "systemd-tmpfiles-resetup.service" reactivation.before;
+assert builtins.elem "zfs-datasets.service" reactivation.requires;
+assert builtins.elem "zfs-datasets.service" reactivation.after;
 assert builtins.elem "zfs-datasets.service" alpha.requires;
 assert builtins.elem "zfs-datasets.service" alpha.after;
 assert builtins.elem "zfs-mount.service" alpha.bindsTo;

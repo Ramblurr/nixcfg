@@ -17,6 +17,7 @@ in
     ./nfs.nix
     ./samba.nix
     ./zrepl.nix
+    ./zfs-keys.nix
     ./zrepl-receiver-reconcile.nix
     ./caddy.nix
     ./garage.nix
@@ -126,41 +127,6 @@ in
   };
 
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
-  sops.secrets."tank2Key" = {
-    neededForUsers = true;
-    mode = "400";
-    owner = "root";
-    group = "root";
-  };
-
-  sops.secrets."fastKey" = {
-    neededForUsers = true;
-    mode = "400";
-    owner = "root";
-    group = "root";
-  };
-
-  systemd.services.zfs-import-tank2 = {
-    requires = [ "sops-install-secrets-for-users.service" ];
-    after = [ "sops-install-secrets-for-users.service" ];
-  };
-
-  systemd.services.zfs-import-fast = {
-    requires = [ "sops-install-secrets-for-users.service" ];
-    after = [ "sops-install-secrets-for-users.service" ];
-  };
-
-  systemd.services.zfs-mount.requires = [ "zfs-import.target" ];
-
-  environment.etc."mali-keys/tank2.key" = {
-    user = "root";
-    source = config.sops.secrets.tank2Key.path;
-  };
-
-  environment.etc."mali-keys/fast.key" = {
-    user = "root";
-    source = config.sops.secrets.fastKey.path;
-  };
 
   users.groups =
     (removeAttrs home-ops.groups [

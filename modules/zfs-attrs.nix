@@ -82,9 +82,15 @@ in
       }
       {
         assertion = lib.all (
-          service: service != "" && !(lib.hasSuffix ".service" service) && service != "zfs-datasets"
+          service:
+          service != ""
+          && !(lib.hasSuffix ".service" service)
+          && !(builtins.elem service [
+            "zfs-datasets"
+            "zfs-datasets-reactivation"
+          ])
         ) registeredServices;
-        message = "ZFS dataset service names must omit .service and cannot name zfs-datasets.";
+        message = "ZFS dataset service names must omit .service and cannot name dataset readiness services.";
       }
     ];
     systemd.services = serviceUnits // {
@@ -111,8 +117,8 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
         };
-        restartIfChanged = true;
-        restartTriggers = [ config.systemd.services.zfs-datasets.script ];
+        # Keep the boot readiness barrier active; reactivation below reapplies changes.
+        restartIfChanged = false;
         path = [ pkgs.zfs ];
         script = ''
           dsList=(${toString (lib.mapAttrsToList (ds: _prop: "${ds}") cfg.properties)})
@@ -140,6 +146,24 @@ in
             )
           )}
         '';
+      };
+      # NixOS runs sysinit reactivation before ordinary reloads. Reapply here so
+      # tmpfiles cannot create directories beneath datasets not yet mounted.
+      zfs-datasets-reactivation = {
+        requiredBy = [
+          "sysinit-reactivation.target"
+          "systemd-tmpfiles-resetup.service"
+        ];
+        before = [
+          "sysinit-reactivation.target"
+          "systemd-tmpfiles-resetup.service"
+        ];
+        requires = [ "zfs-datasets.service" ];
+        after = [ "zfs-datasets.service" ];
+        unitConfig.DefaultDependencies = false;
+        serviceConfig.Type = "oneshot";
+        restartIfChanged = false;
+        inherit (config.systemd.services.zfs-datasets) path script;
       };
     };
   };
