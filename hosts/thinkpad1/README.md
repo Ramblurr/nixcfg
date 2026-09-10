@@ -39,6 +39,32 @@ Plymouth theme. Existing per-user theme choices take precedence over system defa
 Set `catppuccinAccent` to `mauve`, `lavender`, `teal`, `sapphire`, or `sky` for KDE.
 Plymouth follows the variant only.
 
+## Backups and synchronization
+
+`borgmatic.nix` prepares separate `thinkpad1` repositories on `mali` and offsite2.
+It backs up `/home` and `/etc`, excluding caches, trash, and reinstallable Flatpak
+packages. Flatpak application data and Syncthing configuration remain included.
+The shared module supplies daily scheduling and the same retention policy as quine.
+
+Borgmatic is deliberately disabled until repository provisioning is complete:
+
+1. Generate a new dedicated, non-interactive Borg SSH key, distinct from the host
+   SSH key and quine's backup key. Keep the private key out of Git.
+2. Register its public key with a restricted `thinkpad1` repository on each server.
+3. Use SOPS to add `borgmatic-ssh-key` and `borgmatic-env` to this host's encrypted
+   YAML. The latter must be a multiline environment-file string containing
+   `PASSPHRASE`, `NAS_REPOSITORY`, `OFFSITE_REPOSITORY2`, and
+   `BORGMATIC_GATUS_TOKEN`. Use a new Borg encryption passphrase and new repository
+   paths, not quine's existing repositories.
+4. Verify server host keys, initialize the encrypted repositories, enable Borgmatic
+   in `borgmatic.nix`, and test a backup and restore before relying on the timer.
+
+Syncthing runs as `viki`. Open `http://127.0.0.1:8384` on the laptop and configure
+devices and folders through its web UI; rebuilds preserve those choices. The GUI
+is loopback-only, while the normal sync/discovery ports are open. A fresh identity
+is generated in `~/.config/syncthing`; no default folder or peer is configured.
+Do not reuse the disposable VM's Syncthing identity for the installed laptop.
+
 ## Secret bootstrap (human-operated)
 
 The committed `secrets.sops.yaml` is encrypted. Its host-key decryption has been

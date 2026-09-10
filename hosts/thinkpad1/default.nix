@@ -35,6 +35,8 @@ in
   imports = [
     ../../config/common.nix
     ./hardware.nix
+    ./borgmatic.nix
+    ./syncthing.nix
     ./storage.nix
   ];
 
