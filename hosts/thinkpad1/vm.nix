@@ -1,7 +1,10 @@
 { lib, ... }:
 {
   # Only imported by virtualisation.vmVariant, never by the installed host.
-  disabledModules = [ ./disk-config.nix ];
+  disabledModules = [
+    ./disk-config.nix
+    ./syncthing.nix
+  ];
   networking.hostName = lib.mkForce "thinkpad1-vm";
   modules = {
     users = {

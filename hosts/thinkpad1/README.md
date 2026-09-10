@@ -48,7 +48,7 @@ Plasma Login Manager and console login) and the KDE screen locker. Enter the PIN
 in the existing password field. Password authentication remains available; SSH,
 sudo, polkit, and other users do not gain PIN authentication.
 
-From an administrator terminal, enroll with `sudo pinutil setup --username viki`.
+From an administrator terminal, enroll with `sudo pinutil setup viki`.
 Five failed PIN attempts lock the PIN until an administrator deletes and recreates
 it. Do not clear the TPM: that also invalidates LUKS TPM enrollment. Normal users
 must not join the `tss` group. The privileged pinutil wrapper mediates TPM access.
@@ -76,11 +76,22 @@ Borgmatic is deliberately disabled until repository provisioning is complete:
 4. Verify server host keys, initialize the encrypted repositories, enable Borgmatic
    in `borgmatic.nix`, and test a backup and restore before relying on the timer.
 
-Syncthing runs as `viki`. Open `http://127.0.0.1:8384` on the laptop and configure
-devices and folders through its web UI; rebuilds preserve those choices. The GUI
-is loopback-only, while the normal sync/discovery ports are open. A fresh identity
-is generated in `~/.config/syncthing`; no default folder or peer is configured.
-Do not reuse the disposable VM's Syncthing identity for the installed laptop.
+Syncthing runs as `viki`, with its GUI at `http://127.0.0.1:8384`. Its restored
+device key and certificate come from the `syncthing-key` and `syncthing-cert` SOPS
+secrets. Devices and folders are managed declaratively, as on quine; edits to
+those lists in the web UI are replaced on service initialization.
+
+Private `hosts/thinkpad1/secrets/syncthing.nix` holds the original device IDs,
+labels, sharing assignments and folder settings, imported by `local.nix`. Public
+`syncthing.nix` maps each folder to `/home/viki/Sync/<label>`. Imported folders
+start paused until their data and ignore files have been checked; their `paused`
+values are managed in the private Nix data.
+
+Migration preserves the old configuration and database before changing identity,
+and seeds the restored XML once to retain settings outside the declarative peer
+and folder lists. The new identity must use a fresh database, not the previous
+temporary identity's database. Do not run the old Windows device concurrently.
+Syncthing is disabled in the disposable VM variant.
 
 ## Secret bootstrap (human-operated)
 

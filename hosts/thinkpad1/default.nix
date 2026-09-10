@@ -132,7 +132,7 @@ in
   xdg.portal.xdgOpenUsePortal = true;
   programs = {
     firefox.enable = true;
-    programs.chromium.enable = true;
+    chromium.enable = true;
     kde-pim.enable = false;
     kdeconnect.enable = true;
     appimage = {
