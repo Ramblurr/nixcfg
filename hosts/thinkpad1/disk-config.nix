@@ -3,6 +3,8 @@ let
   mountOptions = [
     "compress=zstd"
     "noatime"
+    # LUKS may wait longer than 90 seconds for a recovery passphrase.
+    "x-systemd.device-timeout=0"
   ];
 in
 {

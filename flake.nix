@@ -82,6 +82,8 @@
     nur.inputs.nixpkgs.follows = "nixpkgs";
     paseo.url = "github:getpaseo/paseo";
     paseo.inputs.nixpkgs.follows = "nixpkgs";
+    pinpam.url = "github:RazeLighter777/pinpam/1c22a9475baa8834fd597ca6fdeee0dafe483ff1";
+    pinpam.inputs.nixpkgs.follows = "nixpkgs-stable";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
     quadlet-nix2.url = "github:mirkolenz/quadlet-nix/main";
