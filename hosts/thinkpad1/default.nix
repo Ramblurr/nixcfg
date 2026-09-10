@@ -12,6 +12,7 @@
   ];
 
   system.stateVersion = "26.05";
+  virtualisation.vmVariant = import ./vm.nix;
 
   time.timeZone = "Europe/Vienna";
   i18n.defaultLocale = "de_AT.UTF-8";

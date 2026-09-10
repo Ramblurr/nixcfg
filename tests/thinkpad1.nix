@@ -18,6 +18,20 @@ let
     && old.systemd.user.timers.flatpak-auto-update.timerConfig.OnCalendar == "daily"
     && old.services.openssh.openFirewall;
   checks = {
+    vmIsolation =
+      let
+        v = c.virtualisation.vmVariant;
+      in
+      v.networking.hostName == "thinkpad1-vm"
+      && v.sops.secrets == { }
+      && !v.services.tailscale.enable
+      && !v.services.openssh.enable
+      && v.users.users.viki.password == "test"
+      && v.users.users.viki.hashedPasswordFile == null
+      && v.users.users.ramblurr.hashedPasswordFile == null
+      && !(v.fileSystems ? "/boot")
+      && c.users.users.viki.password == null
+      && c.users.users.viki.hashedPasswordFile != null;
     stable = c.system.nixos.release == "26.05";
     locale =
       c.time.timeZone == "Europe/Vienna"
