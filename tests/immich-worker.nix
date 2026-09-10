@@ -68,6 +68,10 @@ assert lib.assertMsg (
   ml.environment.MACHINE_LEARNING_REQUEST_THREADS == "1"
   && ml.environment.MACHINE_LEARNING_WORKERS == "1"
 ) "ML request/process concurrency must be bounded";
+assert lib.assertMsg (lib.all (group: builtins.elem group cfg.users.users.immich.extraGroups) [
+  "video"
+  "render"
+]) "Worker identity must have standard GPU device groups";
 assert lib.assertMsg (
   cfg.services.immich.package.version == cfg.services.immich.package.machine-learning.version
 ) "Server and ML releases must match";
