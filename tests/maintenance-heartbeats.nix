@@ -155,6 +155,10 @@ pkgs.runCommand "maintenance-heartbeats-test" { nativeBuildInputs = [ pkgs.coreu
   done
   if ${lib.getExe check} recent 'not a date'; then exit 1; fi
   if ${backup}; then echo 'aggregate concealed stale dataset'; exit 1; fi
+  ${lib.getExe (trim [ "ssd" ])}
+  if ${lib.getExe (trim [ "failed" ])}; then
+    echo 'trim concealed single pool failure'; exit 1
+  fi
   ${lib.getExe (trim [
     "ssd"
     "other"
