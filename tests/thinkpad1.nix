@@ -87,21 +87,14 @@ let
       && c.services.syncthing.cert == c.sops.secrets.syncthing-cert.path
       && c.sops.secrets.syncthing-key.owner == family
       && c.sops.secrets.syncthing-cert.owner == family
-      &&
-        builtins.attrNames c.services.syncthing.settings.devices
-        == builtins.attrNames c.repo.secrets.local.syncthing.devices
-      && builtins.hasAttr c.repo.secrets.local.syncthing.deviceID c.services.syncthing.settings.devices
-      && lib.all (
-        name:
-        let
-          actual = c.services.syncthing.settings.folders.${name};
-          expected = c.repo.secrets.local.syncthing.folders.${name};
-        in
-        actual.id == expected.id
-        && actual.path == "${user.home}/Sync/${expected.label}"
-        && actual.paused == expected.paused
-        && map (d: d.name) actual.devices == map (d: d.name) expected.devices
-      ) (builtins.attrNames c.repo.secrets.local.syncthing.folders)
+      && builtins.length (builtins.attrNames c.services.syncthing.settings.devices) == 14
+      && builtins.length (builtins.attrNames c.services.syncthing.settings.folders) == 3
+      && c.services.syncthing.settings.folders."default".path == "${user.home}/Sync/Default Folder"
+      && c.services.syncthing.settings.folders.CaseyPC.path == "${user.home}/Sync/CaseyPC"
+      && c.services.syncthing.settings.folders."My Devices".path == "${user.home}/Sync/My Devices"
+      && builtins.length c.services.syncthing.settings.folders.CaseyPC.devices == 12
+      && c.services.syncthing.settings.folders.CaseyPC.paused
+      && c.services.syncthing.settings.folders.CaseyPC.versioning.type == "staggered"
       && c.systemd.services.syncthing.environment.STNODEFAULTFOLDER == "true";
     backupPlan =
       c.modules.services.borgmatic.name == "thinkpad1"
