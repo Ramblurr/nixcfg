@@ -17,7 +17,7 @@ Never copy that data or plaintext secrets into this repository.
 
 ## Desktop and accounts
 
-- Stable NixOS 26.05 with Plasma, German QWERTZ, `de_AT.UTF-8`, Europe/Vienna.
+- Stable NixOS 26.05 with Plasma, US English locale, Austrian German QWERTZ, Europe/Vienna.
 - Primary user `viki`: UID 1000, Bash, NetworkManager group, user-scoped Home Manager.
 - Administrator `ramblurr`: UID 1001, wheel, repository-controlled SSH keys.
 - Plasma Login Manager shows both normal accounts and preselects `viki`.
