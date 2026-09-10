@@ -23,10 +23,13 @@ elif command == "nix" and args[0] == "eval":
     if os.environ.get("FAIL_METADATA"):
         sys.exit(40)
     expression = args[args.index("--apply") + 1]
-    names = re.findall(r'"([a-zA-Z0-9_-]+)"', expression.split("names = [", 1)[1].split("]", 1)[0])
+    if "names = builtins.attrNames cs" in expression:
+        names = [] if os.environ.get("EMPTY_INVENTORY") else ["guest2", "zhost", "guest", "host"]
+    else:
+        names = re.findall(r'"([a-zA-Z0-9_-]+)"', expression.split("names = [", 1)[1].split("]", 1)[0])
     result = {}
     for name in names:
-        if name not in ("host", "guest", "guest2"):
+        if name not in ("host", "zhost", "guest", "guest2"):
             sys.exit(1)
         guest = name.startswith("guest")
         result[name] = {"guest": guest, "buildAttribute": "nixosConfigurations." + name + ".config." + ("microvm.declaredRunner" if guest else "system.build.toplevel")}
@@ -69,7 +72,37 @@ class Wrappers(unittest.TestCase):
         result = subprocess.run([executable, *args], cwd=self.root, env=self.env,
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
+        self.stdout = result.stdout
         return [json.loads(line) for line in self.log.read_text().splitlines()]
+
+    def test_no_args_and_help(self):
+        outputs = []
+        for executable, args in ((BUILD, []), (DEPLOY, []), (DEPLOY, ["--help"])):
+            with self.subTest(executable=executable, args=args):
+                self.log.unlink(missing_ok=True)
+                commands = self.run_wrapper(executable, *args)
+                self.assertEqual([c[0] for c in commands], ["git", "nix"])
+                self.assertEqual(commands[-1][1], "eval")
+                outputs.append(self.stdout)
+        self.assertEqual(outputs, [outputs[0]] * 3)
+        self.assertIn("Hosts\n  host\n  zhost\n\nGuests    Runs on\n  guest   host\n  guest2  host\n", outputs[0])
+        for phrase in ("Usage: build <name>...", "deploy [OPTIONS] <name,...> [ACTION]",
+                       "Deploy actions", "switch", "boot", "test", "dry-activate",
+                       "Guests support switch only.", "Options", "--show-trace, --keep-going, --verbose",
+                       "Local build options do not apply to that remote build."):
+            self.assertIn(phrase, outputs[0])
+
+    def test_help_empty_inventory_and_eval_failure(self):
+        for executable in (BUILD, DEPLOY):
+            with self.subTest(executable=executable):
+                self.env["EMPTY_INVENTORY"] = "1"
+                self.run_wrapper(executable)
+                self.assertIn("Hosts\n\nGuests    Runs on\n", self.stdout)
+                del self.env["EMPTY_INVENTORY"]
+                self.env["FAIL_METADATA"] = "1"
+                self.run_wrapper(executable, success=False)
+                del self.env["FAIL_METADATA"]
+
 
     def test_mixed_build(self):
         commands = self.run_wrapper(BUILD, "host", "guest")

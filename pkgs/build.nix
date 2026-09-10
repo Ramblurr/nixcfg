@@ -7,10 +7,12 @@ writeShellApplication {
   name = "build";
   text = ''
     set -euo pipefail
-    [[ "$#" -ge 1 ]] \
-      || { echo "usage: build <HOST|GUEST>... (run from nixcfg-private)" >&2; exit 1; }
     cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     ${import ./target-helpers.nix { inherit jq lib; }}
+    if [[ $# -eq 0 ]]; then
+      show_help
+      exit 0
+    fi
     resolve_targets "$@"
     targets=()
     for name in "$@"; do

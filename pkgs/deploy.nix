@@ -15,22 +15,7 @@ let
       declare -A SSH_TARGETS=([addams]="addams-lan")
 
       function die() { echo "error: $*" >&2; exit 1; }
-      function show_help() {
-        echo 'Usage: deploy [OPTIONS] <host,...> [ACTION]'
-        echo "Builds, pushes and activates nixosConfigurations on target systems."
-        echo ""
-        echo 'ACTION:'
-        echo '  switch          [default] Switch immediately to the new configuration and make it the boot default'
-        echo '  boot            Make the configuration the new boot default'
-        echo "  test            Activate the configuration but don't make it the boot default"
-        echo "  dry-activate    Don't activate, just show what would be done"
-        echo ""
-        echo 'OPTIONS: [passed to nix build]'
-        echo 'Guests support switch only; run from nixcfg-private.'
-        echo 'Guest deployment builds remotely on its host; local build options do not reach that build.'
-        echo 'Hot switching does not apply VM hardware/kernel or host-side service/credential changes.'
-        echo 'Those changes require a separately planned VM restart or host deployment.'
-      }
+      ${import ./target-helpers.nix { inherit jq lib; }}
 
 
       function time_start() {
@@ -58,7 +43,7 @@ let
 
       [[ $# -gt 0 ]] || {
         show_help
-        exit 1
+        exit 0
       }
 
       OPTIONS=()
@@ -67,7 +52,7 @@ let
         case "$1" in
           "help"|"--help"|"-help"|"-h")
             show_help
-            exit 1
+            exit 0
             ;;
 
           -*) OPTIONS+=("$1") ;;
@@ -89,7 +74,6 @@ let
         *) die "Unsupported action: $ACTION" ;;
       esac
 
-      ${import ./target-helpers.nix { inherit jq lib; }}
       resolve_targets "''${HOSTS[@]}" || die "Failed to resolve deployment targets"
 
       declare -A TOPLEVEL_FLAKE_PATHS GUEST_HOSTS GUEST_IPS
