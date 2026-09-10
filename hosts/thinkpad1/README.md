@@ -123,3 +123,20 @@ On the installed laptop, verify login and user preselection, networking, audio,
 Bluetooth, touch/pen, suspend/resume, and greeter readability. Test Discover with a
 user-scoped Flatpak and confirm there are no automatic update timers. Change a
 wallpaper or panel, rebuild, and confirm those personal settings survive.
+
+## Desktop VM
+
+The VM variant uses a virtual disk, a separate hostname, and password `test` for
+`viki`, `ramblurr`, and root. SOPS secrets, SSH and Tailscale are disabled in the VM.
+These overrides do not apply to the installed host.
+
+Build the launcher from the private wrapper:
+
+```sh
+cd ~/nixcfg-private
+nix build .#nixosConfigurations.thinkpad1.config.system.build.vm --out-link result-thinkpad1-vm
+```
+
+Run `result-thinkpad1-vm/bin/run-thinkpad1-vm-vm` from a disposable working directory.
+It opens a QEMU window and creates its virtual disk in the working directory.
+This tests the desktop, not installation, encryption, or physical hardware.
