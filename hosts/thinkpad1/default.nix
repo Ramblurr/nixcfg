@@ -1,11 +1,45 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   imports = [
     ../../config/common.nix
     ./hardware.nix
+    ./storage.nix
   ];
 
   system.stateVersion = "26.05";
+
+  time.timeZone = "Europe/Vienna";
+  i18n.defaultLocale = "de_AT.UTF-8";
+  console.keyMap = "de";
+
+  sops.defaultSopsFile = ./secrets.sops.yaml;
+  modules.users.primaryUser = {
+    username = "viki";
+    name = config.repo.secrets.local.primaryUserName;
+    homeDirectory = "/home/viki";
+    uid = 1000;
+    shell = pkgs.bashInteractive;
+    passwordSecretKey = "viki-password";
+    authorizedKeys = [ ];
+    extraGroups = [ "networkmanager" ];
+  };
+
+  sops.secrets.ramblurr-password.neededForUsers = true;
+  users.users.ramblurr = {
+    isNormalUser = true;
+    uid = 1001;
+    group = "ramblurr";
+    extraGroups = [ "wheel" ];
+    shell = pkgs.bashInteractive;
+    hashedPasswordFile = config.sops.secrets.ramblurr-password.path;
+    openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
+  };
+  users.groups.ramblurr.gid = 1001;
 
   modules = {
     users.enable = true;
@@ -34,6 +68,11 @@
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
   services = {
+    xserver.xkb.layout = "de";
+    openssh.settings.AllowUsers = [
+      "root"
+      "ramblurr"
+    ];
     timesyncd.enable = true;
     fwupd.enable = true;
     power-profiles-daemon.enable = true;
