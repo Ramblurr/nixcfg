@@ -5,7 +5,7 @@
   ...
 }:
 let
-  instance = config.repo.secrets.local.immich;
+  instance = import ../../config/immich-home.nix;
   address = host: builtins.head config.site.net.svc.hosts4.${host};
   apiAddress = address config.networking.hostName;
   workerAddress = address instance.workerHost;
