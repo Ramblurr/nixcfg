@@ -21,7 +21,7 @@ Never copy that data or plaintext secrets into this repository.
 - Primary user `viki`: UID 1000, Bash, NetworkManager group, user-scoped Home Manager.
 - Administrator `ramblurr`: UID 1001, wheel, repository-controlled SSH keys.
 - Plasma Login Manager shows both normal accounts and preselects `viki`.
-- Catppuccin Mocha/Mauve KDE defaults and Mocha Plymouth theme.
+- Catppuccin KDE and Plymouth themes, with selectable variant and KDE accent.
 - NetworkManager, Bluetooth, PipeWire, firmware updates, power profiles, KDE Connect.
 - Firefox and 1Password installed through Nix; no configured 1Password autostart.
 - User-scoped Flathub for ordinary optional applications through Discover.
@@ -29,6 +29,15 @@ Never copy that data or plaintext secrets into this repository.
 - Plasma settings remain user-owned, including panels, wallpapers and shortcuts.
 - SSH accepts keys only, permits root and the administrator, and is reachable only
   through the trusted Tailscale interface. Enroll with `sudo tailscale up` locally.
+
+## Theme variant
+
+Change `catppuccinVariant` in `default.nix` to `latte`, `frappe`, `macchiato`, or
+`mocha`. That single setting selects the KDE global theme, color scheme, and
+Plymouth theme. Existing per-user theme choices take precedence over system defaults.
+
+Set `catppuccinAccent` to `mauve`, `lavender`, `teal`, `sapphire`, or `sky` for KDE.
+Plymouth follows the variant only.
 
 ## Secret bootstrap (human-operated)
 

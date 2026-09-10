@@ -5,9 +5,30 @@
   ...
 }:
 let
+  # Choose latte, frappe, macchiato, or mocha.
+  catppuccinVariant = "mocha";
+  # Choose mauve, lavender, teal, sapphire, or sky.
+  catppuccinAccent = "mauve";
+  catppuccinAccentName =
+    {
+      mauve = "Mauve";
+      lavender = "Lavender";
+      teal = "Teal";
+      sapphire = "Sapphire";
+      sky = "Sky";
+    }
+    .${catppuccinAccent};
+  catppuccinName =
+    {
+      latte = "Latte";
+      frappe = "Frappe";
+      macchiato = "Macchiato";
+      mocha = "Mocha";
+    }
+    .${catppuccinVariant};
   kdeTheme = pkgs.catppuccin-kde.override {
-    flavour = [ "mocha" ];
-    accents = [ "mauve" ];
+    flavour = [ catppuccinVariant ];
+    accents = [ catppuccinAccent ];
   };
 in
 {
@@ -112,8 +133,8 @@ in
 
   boot.plymouth = {
     enable = true;
-    theme = "catppuccin-mocha";
-    themePackages = [ (pkgs.catppuccin-plymouth.override { variant = "mocha"; }) ];
+    theme = "catppuccin-${catppuccinVariant}";
+    themePackages = [ (pkgs.catppuccin-plymouth.override { variant = catppuccinVariant; }) ];
   };
   environment = {
     # Ordinary optional applications belong to the user's Flathub installation.
@@ -128,9 +149,9 @@ in
     # System defaults only: ~/.config/kdeglobals remains owned by the user.
     etc."xdg/kdeglobals".text = ''
       [KDE]
-      LookAndFeelPackage=Catppuccin-Mocha-Mauve
+      LookAndFeelPackage=Catppuccin-${catppuccinName}-${catppuccinAccentName}
       [General]
-      ColorScheme=CatppuccinMochaMauve
+      ColorScheme=Catppuccin${catppuccinName}${catppuccinAccentName}
     '';
   };
 }
