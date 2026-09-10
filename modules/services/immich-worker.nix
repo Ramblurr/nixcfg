@@ -67,6 +67,10 @@ in
             };
           };
         };
+        users.users.${config.services.immich.user}.extraGroups = [
+          "video"
+          "render"
+        ];
 
         # nixpkgs 1eb89746 defines this even with database.enable = false.
         # Reject co-location above rather than deleting another cluster's hooks.
