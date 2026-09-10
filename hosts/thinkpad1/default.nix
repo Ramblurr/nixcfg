@@ -10,7 +10,7 @@ let
   # Keep the boot passphrase prompt on a dark background, including with Latte KDE.
   plymouthVariant = "mocha";
   # Choose mauve, lavender, teal, sapphire, or sky.
-  catppuccinAccent = "mauve";
+  catppuccinAccent = "teal";
   catppuccinAccentName =
     {
       mauve = "Mauve";
