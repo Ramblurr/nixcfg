@@ -46,6 +46,9 @@ in
       path = with pkgs; [ borgbackup ];
       script = "borg compact --verbose ${repoCfg.path}";
       serviceConfig = {
+        # Report success only after compaction completes, however long it takes.
+        Type = "oneshot";
+        TimeoutStartSec = "infinity";
         CPUSchedulingPolicy = "idle";
         IOSchedulingClass = "idle";
         PrivateTmp = true;

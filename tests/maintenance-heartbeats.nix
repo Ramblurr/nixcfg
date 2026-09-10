@@ -64,6 +64,24 @@ let
         })
       ];
     }).config;
+  borgCfg =
+    (lib.nixosSystem {
+      modules = [
+        ../hosts/mali/borgbackup-server.nix
+        ../modules/site/gatus.nix
+        ../modules/site/gatus-heartbeats.nix
+        ({ lib, ... }: {
+          options.repo.secrets = lib.mkOption { type = lib.types.attrs; };
+          config = {
+            nixpkgs.pkgs = pkgs;
+            networking.hostName = "mali";
+            system.stateVersion = "26.05";
+            repo.secrets.global.domain.home = "example.test";
+            site.gatus.heartbeatToken.environmentFile = "/run/secrets/gatus-env";
+          };
+        })
+      ];
+    }).config;
   cfg = evaluate true true;
   noToken = evaluate false true;
   noSnapshots = evaluate true false;
@@ -101,6 +119,15 @@ let
       inherit pools;
     };
 in
+assert lib.all (
+  repo:
+  let
+    service = borgCfg.systemd.services."borgbackup-compact-${repo}";
+  in
+  (service.serviceConfig.Type or "exec") == "oneshot"
+  && service.serviceConfig.TimeoutStartSec == "infinity"
+  && lib.any (command: lib.hasInfix "--success true" command) service.serviceConfig.ExecStartPost
+) (builtins.attrNames borgCfg.services.borgbackup.repos);
 assert
   builtins.attrNames cfg.site.gatus.heartbeats == [
     "nix-cleanup-gcroots"
