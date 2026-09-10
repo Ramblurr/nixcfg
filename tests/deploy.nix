@@ -29,7 +29,12 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   #!/bin/sh
   printf '%s\n' "$*" >> "$nixLog"
   if [ "$1" = "eval" ]; then
-    printf '%s\n' '{"debord":{"guest":false,"buildAttribute":"nixosConfigurations.debord.config.system.build.toplevel"},"quine":{"guest":false,"buildAttribute":"nixosConfigurations.quine.config.system.build.toplevel"},"addams":{"guest":false,"buildAttribute":"nixosConfigurations.addams.config.system.build.toplevel"}}'
+    printf '%s\n' '{
+      "debord":{"guest":false,"buildAttribute":"nixosConfigurations.debord.config.system.build.toplevel"},
+      "quine":{"guest":false,"buildAttribute":"nixosConfigurations.quine.config.system.build.toplevel"},
+      "addams":{"guest":false,"buildAttribute":"nixosConfigurations.addams.config.system.build.toplevel"},
+      "thinkpad1":{"guest":false,"buildAttribute":"nixosConfigurations.thinkpad1.config.system.build.toplevel"}
+    }'
     exit 0
   fi
   [ "$1" = "copy" ] && exit 0
@@ -46,13 +51,16 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   printf '%s|%s\n' "$host" "$*" >> "$sshLog"
 
   case "$host:$1" in
-    debord:readlink|addams-lan:readlink)
+    debord:readlink|addams-lan:readlink|thinkpad1:readlink)
       printf '%s\n' /nix/store/previous-system
       exit 0
       ;;
   esac
 
   case "$host:$1" in
+    root@thinkpad1:"$fakeSystem/thinkpad1-tpm-deploy")
+      exit 42
+      ;;
     root@debord:/run/current-system/sw/bin/nix-env|root@addams-lan:/run/current-system/sw/bin/nix-env)
       exit 0
       ;;
@@ -107,7 +115,10 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
       exit 1
     fi
 
-    grep -F "$expected" "$TMPDIR/$host.stderr"
+    grep -F "$expected" "$TMPDIR/$host.stderr" || {
+      cat "$TMPDIR/$host.stderr" >&2
+      exit 1
+    }
   }
 
   run_expected_failure debord "error: Failed to activate debord"
@@ -119,6 +130,30 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   grep -F "root@addams-lan|$fakeSystem/bin/switch-to-configuration switch" "$sshLog"
   if grep -q '^addams|' "$sshLog" || grep -q '^root@addams|' "$sshLog"; then
     echo "addams deployment used its Tailscale SSH target" >&2
+    exit 1
+  fi
+
+  : > "$sshLog"
+  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy addams dry-activate > "$TMPDIR/preview.stdout" 2> "$TMPDIR/preview.stderr"
+  if grep -q 'nix-env' "$sshLog"; then
+    echo "dry-activate changed the system profile" >&2
+    exit 1
+  fi
+
+  # Test the CLI's failure propagation, not TPM behavior (covered by the VM).
+  : > "$sshLog"
+  run_expected_failure thinkpad1 "error: Missing TPM deployment helper for thinkpad1"
+  if grep -q 'nix-env\|switch-to-configuration' "$sshLog"; then
+    echo "missing TPM helper fell through to ordinary activation" >&2
+    exit 1
+  fi
+
+  touch "$fakeSystem/thinkpad1-tpm-deploy"
+  chmod +x "$fakeSystem/thinkpad1-tpm-deploy"
+  : > "$sshLog"
+  run_expected_failure thinkpad1 "error: Failed TPM-aware activation of thinkpad1"
+  if grep -q 'nix-env\|switch-to-configuration' "$sshLog"; then
+    echo "TPM-aware deployment fell through to ordinary activation" >&2
     exit 1
   fi
 

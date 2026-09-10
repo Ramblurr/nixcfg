@@ -4,6 +4,7 @@
   disabledModules = [
     ./disk-config.nix
     ./syncthing.nix
+    ./tpm-deploy.nix
   ];
   networking.hostName = lib.mkForce "thinkpad1-vm";
   modules = {
