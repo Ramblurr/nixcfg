@@ -1,5 +1,7 @@
 {
   bc,
+  jq,
+  lib,
   writeShellApplication,
 }:
 let
@@ -24,6 +26,10 @@ let
         echo "  dry-activate    Don't activate, just show what would be done"
         echo ""
         echo 'OPTIONS: [passed to nix build]'
+        echo 'Guests support switch only; run from nixcfg-private.'
+        echo 'Guest deployment builds remotely on its host; local build options do not reach that build.'
+        echo 'Hot switching does not apply VM hardware/kernel or host-side service/credential changes.'
+        echo 'Those changes require a separately planned VM restart or host deployment.'
       }
 
 
@@ -78,10 +84,27 @@ let
       tr , '\n' <<< "''${POSITIONAL_ARGS[0]}" | sort -u | readarray -t HOSTS
       ACTION="''${POSITIONAL_ARGS[1]-switch}"
 
-      # Expand flake paths for hosts definitions
-      declare -A TOPLEVEL_FLAKE_PATHS
+      case "$ACTION" in
+        switch|boot|test|dry-activate) ;;
+        *) die "Unsupported action: $ACTION" ;;
+      esac
+
+      ${import ./target-helpers.nix { inherit jq lib; }}
+      resolve_targets "''${HOSTS[@]}" || die "Failed to resolve deployment targets"
+
+      declare -A TOPLEVEL_FLAKE_PATHS GUEST_HOSTS GUEST_IPS
       for host in "''${HOSTS[@]}"; do
-        TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.system.build.toplevel"
+        if [[ "$(target_field "$host" guest)" == true ]]; then
+          [[ "$ACTION" == switch ]] || die "Guest $host only supports switch"
+          guest_host=$(target_field "$host" host)
+          [[ "$guest_host" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]] || die "Invalid guest host: $guest_host"
+          GUEST_HOSTS["$host"]="''${SSH_TARGETS[$guest_host]-$guest_host}"
+          GUEST_IPS["$host"]=$(target_field "$host" guestIP)
+          [[ "''${GUEST_IPS[$host]}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Invalid guest IPv4 address for $host"
+          TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.microvm.deploy.rebuild"
+        else
+          TOPLEVEL_FLAKE_PATHS["$host"]=".#$(target_field "$host" buildAttribute)"
+        fi
       done
 
       time_start
@@ -103,6 +126,7 @@ let
       done
 
       for host in "''${HOSTS[@]}"; do
+        [[ -z "''${GUEST_HOSTS[$host]-}" ]] || continue
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
         if [[ "$host" == "${localTargetHost}" ]]; then
           echo "[1;36m     Copying [m[34m$host[m skipped; target is local"
@@ -118,6 +142,13 @@ let
 
       for host in "''${HOSTS[@]}"; do
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
+        if [[ -n "''${GUEST_HOSTS[$host]-}" ]]; then
+          echo "Deploying guest $host on ''${GUEST_HOSTS[$host]} (''${GUEST_IPS[$host]})"
+          # Pinned upstream rejects an explicit action; no action defaults to switch.
+          "$store_path/bin/microvm-rebuild" "root@''${GUEST_HOSTS[$host]}" "root@''${GUEST_IPS[$host]}" \
+            || die "Failed to deploy guest $host"
+          continue
+        fi
         echo "[1;36m    Applying [m⚙️ [34m$host[m"
         if [[ "$host" == "${localTargetHost}" ]]; then
           prev_system=$(readlink -e /nix/var/nix/profiles/system)
