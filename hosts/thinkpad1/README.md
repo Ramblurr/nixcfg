@@ -7,7 +7,7 @@ or deployment.
 ## Repository layout
 
 This public directory contains the host configuration, hardware modules, storage
-configuration, standalone installer module, and SOPS-encrypted host secrets.
+configuration, and SOPS-encrypted host secrets.
 Policy checks live in `tests/thinkpad1.nix` in this repository.
 
 The private wrapper supplies `node.secretsDir` and `repo.secretFiles.*`.
@@ -109,16 +109,15 @@ nix eval --impure --json .#nixosConfigurations \
 build thinkpad1
 ```
 
-The standalone minimal installer contains no target identity, passwords, private
-host key, or target disk layout. Build it from the private wrapper:
+Installation will use a standard NixOS live USB and nixos-anywhere from the private
+wrapper. Disko will supply the agreed disk layout, replacing `storage.nix`. Disk
+selection and formatting are deferred until the new SSD has been identified and
+the Windows backup verified.
 
-```sh
-nix build .#thinkpad1-installer --out-link result-thinkpad1-installer
-sha256sum result-thinkpad1-installer/iso/*.iso
-```
-
-The live image uses a German console keymap. Connect Wi-Fi with `nmtui`; SSH needs
-an explicitly installed authorized public key. It does not partition disks.
+Enable key-based SSH access in the live environment. Supply the decrypted host
+key through nixos-anywhere's `--extra-files` mechanism, at
+`etc/ssh/ssh_host_ed25519_key` within the staging directory, with mode 0600.
+Do not run Disko or nixos-anywhere until the destructive disk operation is approved.
 
 On the installed laptop, verify login and user preselection, networking, audio,
 Bluetooth, touch/pen, suspend/resume, and greeter readability. Test Discover with a
