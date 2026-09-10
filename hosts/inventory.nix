@@ -71,6 +71,16 @@ let
       ramMiB = 2048;
       gpu = "Broadcom BCM2711 V3D";
     };
+    peirce = {
+      # Charles Sanders Peirce - https://en.wikipedia.org/wiki/Charles_Sanders_Peirce
+      purpose = "Home production server";
+      system = "x86_64-linux";
+      channel = "unstable";
+      role = "server";
+      board = "Gigabyte Z390 I AORUS PRO WIFI-CF";
+      cpu = "Intel Core i5-9600K";
+      gpu = "NVIDIA GeForce GTX 1070 Ti";
+    };
     quine = {
       # Willard Van Orman Quine - https://en.wikipedia.org/wiki/Willard_Van_Orman_Quine
       purpose = "Primary workstation";
