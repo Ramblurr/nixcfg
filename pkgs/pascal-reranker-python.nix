@@ -1,13 +1,15 @@
 { lib, pkgs }:
 let
   ml = pkgs.callPackage ./immich-machine-learning-pascal.nix { };
-  cuda = pkgs.cudaPackages_12_6 // { cudnn = ml.cudnn; };
+  # The cu126 wheel uses CUDA-12 SONAMEs; reuse the native 12.9 runtime from Immich.
+  cuda = pkgs.cudaPackages_12_9 // { cudnn = ml.cudnn; };
   python = pkgs.python312.override {
     packageOverrides = final: prev: {
       fastapi = ml.python.pkgs.fastapi;
       torch = (prev.torch-bin.override { cudaPackages = cuda; }).overridePythonAttrs (old: {
         version = "2.14.0";
         src = pkgs.fetchurl {
+          name = "torch-2.14.0+cu126-cp312-cp312-manylinux_2_28_x86_64.whl";
           url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.0%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl";
           hash = "sha256-6ZIkQcsu0ml0KkYkaEDFNjTKlj+LCjjTAYLCi06DiNo=";
         };
