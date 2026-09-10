@@ -24,17 +24,6 @@ let
       && c.i18n.defaultLocale == "de_AT.UTF-8"
       && c.console.keyMap == "de"
       && c.services.xserver.xkb.layout == "de";
-    installer =
-      let
-        i = nixosConfigurations.thinkpad1-installer.config;
-      in
-      i.isoImage.makeEfiBootable
-      && i.isoImage.makeUsbBootable
-      && i.fileSystems."/".fsType == "tmpfs"
-      && !i.services.openssh.settings.PasswordAuthentication
-      && !i.services.openssh.settings.KbdInteractiveAuthentication
-      && !(builtins.hasAttr family i.users.users)
-      && !(i ? sops);
     accounts =
       user.uid == 1000
       && user.extraGroups == [ "networkmanager" ]
