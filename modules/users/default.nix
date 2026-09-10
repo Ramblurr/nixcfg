@@ -104,6 +104,8 @@ in
         u = cfg.primaryUser.username;
       in
       [
+        "d ${lib.optionalString withImpermanence "/persist"}/home/${u}/.config 0700 ${u} ${u} -"
+        "d ${lib.optionalString withImpermanence "/persist"}/home/${u}/.config/sops 0700 ${u} ${u} -"
         "d ${lib.optionalString withImpermanence "/persist"}/home/${u}/.config/sops/age 0700 ${u} ${u}  -"
       ];
     users = {
