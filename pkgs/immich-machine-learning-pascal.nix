@@ -12,6 +12,11 @@ let
     nativeBuildInputs = [ pkgs.autoPatchelfHook ];
     buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.zlib cuda.cuda_cudart cuda.libcublas ];
     runtimeDependencies = map lib.getLib [ cuda.cuda_nvrtc cuda.libcublas cuda.cuda_cudart ];
+    # cuDNN also dlopens its split graph/engine libraries by basename.
+    postPhases = [ "addCudnnRunpath" ];
+    addCudnnRunpath = ''
+      find "$out/lib" -type f -name '*.so*' -exec patchelf --add-rpath '$ORIGIN' {} \;
+    '';
     dontBuild = true;
     installPhase = ''
       runHook preInstall
