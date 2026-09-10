@@ -8,7 +8,7 @@ in
 {
   modules.services.immich-worker.enable = true;
   services.immich = {
-    mediaLocation = instance.mediaLocation;
+    inherit (instance) mediaLocation;
     secretsFile = "${instance.secretsDirectory}/environment";
     database.host = apiAddress;
     redis = {

@@ -20,7 +20,7 @@ let
     packageOverrides = lib.composeExtensions (previous.packageOverrides or (_: _: { })) (
       _: prev: {
         onnxruntime = prev.onnxruntime.override {
-          onnxruntime = cudaPkgs.onnxruntime;
+          inherit (cudaPkgs) onnxruntime;
         };
       }
     );

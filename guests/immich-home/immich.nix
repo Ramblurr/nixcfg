@@ -17,7 +17,7 @@ in
   services.immich = {
     enable = true;
     host = apiAddress;
-    mediaLocation = instance.mediaLocation;
+    inherit (instance) mediaLocation;
     inherit secretsFile;
     accelerationDevices = [ ];
     machine-learning.enable = false;
