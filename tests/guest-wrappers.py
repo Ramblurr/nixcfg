@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -35,6 +36,9 @@ elif command == "nix" and args[0] == "eval":
         result[name] = {"guest": guest, "buildAttribute": "nixosConfigurations." + name + ".config." + ("microvm.declaredRunner" if guest else "system.build.toplevel")}
         if guest:
             result[name].update(host="host", guestIP="192.0.2.23" if name == "guest" else "192.0.2.24")
+            if os.environ.get("VSOCK"):
+                target = "vsock-mux//var/lib/microvms/guest/notify.vsock" if name == "guest" else "vsock/4244"
+                result[name].update(guestSSH=target, installOnHost=os.environ["SYSTEM"], sshSwitch=os.environ["SYSTEM"])
     print(json.dumps(result))
 elif command in ("nom", "nix") and args[0] == "build":
     if os.environ.get("FAIL_BUILD"):
@@ -43,8 +47,14 @@ elif command in ("nom", "nix") and args[0] == "build":
 elif command == "microvm-rebuild":
     sys.exit(42 if os.environ.get("FAIL_GUEST") else 0)
 elif command == "nix" and args[0] == "copy":
-    pass
+    sys.exit(46 if os.environ.get("FAIL_COPY") else 0)
+elif command == "microvm-install-on-host":
+    sys.exit(45 if os.environ.get("FAIL_INSTALL") else 0)
 elif command == "ssh":
+    if args[-1].startswith("ssh ") and os.environ.get("FAIL_PREFLIGHT"):
+        sys.exit(43)
+    if "microvm-switch" in args[-1] and os.environ.get("FAIL_SWITCH"):
+        sys.exit(44)
     if "readlink" in args:
         print("/previous-system")
 else:
@@ -61,7 +71,7 @@ class Wrappers(unittest.TestCase):
         self.bin.mkdir()
         (self.root / "flake.nix").touch()
         self.log = self.root / "commands.jsonl"
-        for name in ("git", "nix", "nom", "ssh", "microvm-rebuild"):
+        for name in ("git", "nix", "nom", "ssh", "microvm-rebuild", "microvm-install-on-host"):
             path = self.bin / name
             path.write_text(f"#!{sys.executable}\n" + STUB)
             path.chmod(0o755)
@@ -74,6 +84,36 @@ class Wrappers(unittest.TestCase):
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         self.stdout = result.stdout
         return [json.loads(line) for line in self.log.read_text().splitlines()]
+
+    def test_vsock_runs_upstream_switch_on_host_for_both_transports(self):
+        self.env["VSOCK"] = "1"
+        commands = self.run_wrapper(DEPLOY, "guest,guest2")
+        self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
+        ssh = [c for c in commands if c[0] == "ssh"]
+        self.assertEqual(len(ssh), 4)
+        targets = ("vsock-mux//var/lib/microvms/guest/notify.vsock", "vsock/4244")
+        for i, target in enumerate(targets):
+            self.assertEqual(ssh[2*i][1:3], ["root@host", "--"])
+            self.assertEqual(shlex.split(ssh[2*i][-1]), ["ssh", "-o", "BatchMode=yes", "root@" + target, "true"])
+            self.assertEqual(shlex.split(ssh[2*i+1][-1]), [str(self.bin / "microvm-switch"), "root@" + target])
+        self.assertEqual(sum(c[0] == "microvm-install-on-host" for c in commands), 2)
+        self.assertTrue(all("root@192.0.2." not in str(c) for c in commands if c[0] != "nix"))
+
+    def test_vsock_failures_stop_without_network_fallback(self):
+        self.env["VSOCK"] = "1"
+        for failure, last in (("FAIL_PREFLIGHT", "ssh"), ("FAIL_COPY", "nix"),
+                              ("FAIL_INSTALL", "microvm-install-on-host"), ("FAIL_SWITCH", "ssh")):
+            with self.subTest(failure=failure):
+                self.log.unlink(missing_ok=True)
+                self.env[failure] = "1"
+                commands = self.run_wrapper(DEPLOY, "guest", success=False)
+                del self.env[failure]
+                self.assertEqual(commands[-1][0], last)
+                self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
+                if failure == "FAIL_PREFLIGHT":
+                    self.assertFalse(any(c[:2] == ["nix", "copy"] or c[0] == "microvm-install-on-host" for c in commands))
+                if failure == "FAIL_INSTALL":
+                    self.assertFalse(any(c[0] == "ssh" and "microvm-switch" in c[-1] for c in commands))
 
     def test_no_args_and_help(self):
         outputs = []
