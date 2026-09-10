@@ -23,5 +23,6 @@ let
 in
 {
   config = json.generate "config.tf.json" terranix.config;
-  runtime = pkgs.opentofu-dns;
+  # Provider releases are verified by the workspace's committed OpenTofu lock.
+  runtime = pkgs.opentofu;
 }
