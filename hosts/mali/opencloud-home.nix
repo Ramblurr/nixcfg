@@ -1,22 +1,31 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.modules.services.opencloud.maliStorage;
   guestAddress = builtins.head config.site.net.svc.hosts4.opencloud-home;
 in
 {
   options.modules.services.opencloud.maliStorage = lib.mkOption {
-    type = lib.types.nullOr (lib.types.submodule ({ ... }: {
-      options = {
-        dataset = lib.mkOption {
-          type = lib.types.str;
-          description = "ZFS dataset containing this OpenCloud instance's data.";
-        };
-        dataDir = lib.mkOption {
-          type = lib.types.str;
-          description = "Mountpoint for this OpenCloud instance's data dataset.";
-        };
-      };
-    }));
+    type = lib.types.nullOr (
+      lib.types.submodule (
+        _: {
+          options = {
+            dataset = lib.mkOption {
+              type = lib.types.str;
+              description = "ZFS dataset containing this OpenCloud instance's data.";
+            };
+            dataDir = lib.mkOption {
+              type = lib.types.str;
+              description = "Mountpoint for this OpenCloud instance's data dataset.";
+            };
+          };
+        }
+      )
+    );
     default = null;
     description = "Mali storage and NFS export for one OpenCloud instance.";
   };

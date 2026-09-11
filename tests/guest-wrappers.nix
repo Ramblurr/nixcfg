@@ -39,10 +39,18 @@ let
     };
     guest.config.microvm = {
       hypervisor = "qemu";
-      vsock = { cid = 4244; ssh.enable = true; };
+      vsock = {
+        cid = 4244;
+        ssh.enable = true;
+      };
     };
   };
-  resolveVsock = cs: (resolve { configurations = cs; names = [ "guest" ]; }).guest;
+  resolveVsock =
+    cs:
+    (resolve {
+      configurations = cs;
+      names = [ "guest" ];
+    }).guest;
 in
 assert
   resolved == {
@@ -88,11 +96,16 @@ assert fails (badGuest {
   microvm.deploy.sshSwitch = null;
 });
 assert (resolveVsock vsockConfigurations).guestSSH == "vsock/4244";
-assert (resolveVsock (pkgs.lib.recursiveUpdate vsockConfigurations {
-  guest.config.microvm.hypervisor = "cloud-hypervisor";
-})).guestSSH == "vsock-mux//var/lib/microvms/guest/notify.vsock";
+assert
+  (resolveVsock (
+    pkgs.lib.recursiveUpdate vsockConfigurations {
+      guest.config.microvm.hypervisor = "cloud-hypervisor";
+    }
+  )).guestSSH == "vsock-mux//var/lib/microvms/guest/notify.vsock";
 assert fails {
-  configurations = vsockConfigurations // { inherit host; };
+  configurations = vsockConfigurations // {
+    inherit host;
+  };
   names = [ "guest" ];
 };
 assert fails {

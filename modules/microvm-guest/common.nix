@@ -42,7 +42,7 @@ in
     });
     microvm = {
       vsock = lib.mkIf (sshGuest != null) {
-        cid = sshGuest.cid;
+        inherit (sshGuest) cid;
         ssh.enable = true;
       };
       writableStoreOverlay = lib.mkIf cfg.writableStoreOverlay.enable "/nix/.rw-store";
