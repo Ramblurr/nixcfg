@@ -14,6 +14,7 @@ in
     ./disk-config.nix
     ./guests.nix
     ./immich-home.nix
+    ./opencloud-home.nix
     ../../config
     ../../config/home-ops.nix
     ../../modules/site-net

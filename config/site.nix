@@ -252,6 +252,7 @@ in
       claude-test = [ "172.20.20.21" ];
       dev1 = [ "172.20.20.22" ];
       immich-home = [ "172.20.20.23" ];
+      opencloud-home = [ "172.20.20.24" ];
     };
     #hosts6.local = {
     #  addams = [ "${prefix6}:5::1" ];
