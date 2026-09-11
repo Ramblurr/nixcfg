@@ -16,6 +16,7 @@ in
     ./networking.nix
     ./nfs.nix
     ./opencloud-home.nix
+    ./immich-home.nix
     ./samba.nix
     ./zrepl.nix
     ./zfs-keys.nix
