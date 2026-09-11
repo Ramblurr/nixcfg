@@ -28,6 +28,19 @@ assert lib.assertMsg (
   && cfg.services.immich.accelerationDevices == [ ]
 ) "Guest must remain API-only without GPU or ML fallback";
 assert lib.assertMsg (
+  cfg.services.immich.environment.IMMICH_MACHINE_LEARNING_URL == "http://127.0.0.1:3004"
+  && cfg.modules.services.immich-ml-proxy.upstreamAddress == "10.9.4.24"
+  && cfg.modules.services.immich-ml-proxy.allowedUser == "immich"
+) "Guest ML traffic must use the UID-restricted local mTLS proxy";
+assert lib.assertMsg (
+  builtins.elem "immich-ml-client-proxy.service" cfg.systemd.services.immich-server.requires
+  && builtins.elem "immich-ml-client-proxy" cfg.modules.microvm-guest.hostSecrets.services
+) "Guest credentials and proxy must start before Immich";
+assert lib.assertMsg (
+  lib.hasInfix "meta skuid 3024" cfg.networking.nftables.tables.immich-ml-client-access.content
+  && lib.hasInfix "ip6 daddr ::1" cfg.networking.nftables.tables.immich-ml-client-access.content
+) "Local ML proxy access must restrict IPv4 and IPv6 loopback by UID";
+assert lib.assertMsg (
   cfg.services.immich.settings == null
   && !(cfg.systemd.services.immich-server.environment ? IMMICH_CONFIG_FILE)
 ) "Guest settings must remain UI-managed";

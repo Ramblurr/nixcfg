@@ -84,6 +84,7 @@
     ./services/soju.nix
     ./services/invoiceninja.nix
     ./services/immich-machine-learning.nix
+    ./services/immich-ml-proxy.nix
     ./services/immich-worker.nix
     #./services/archivebox.nix
     ./services/atuin-sync.nix

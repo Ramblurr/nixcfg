@@ -9,6 +9,7 @@
         immich-guest = import ../tests/immich-guest.nix { inherit inputs pkgs; };
         microvm-ssh = import ../tests/microvm-ssh.nix { inherit inputs pkgs; };
         immich-machine-learning = import ../tests/immich-machine-learning.nix { inherit inputs pkgs; };
+        immich-ml-proxy = import ../tests/immich-ml-proxy.nix { inherit pkgs; };
         immich-worker = import ../tests/immich-worker.nix { inherit inputs pkgs; };
         immich-split = import ../tests/immich-split.nix { inherit pkgs; };
         atuin-postgresql = import ../tests/atuin-postgresql.nix { inherit inputs pkgs; };

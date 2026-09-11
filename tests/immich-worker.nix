@@ -37,13 +37,9 @@ let
   disabled = evaluate false false;
   colocated = evaluate true true;
   server = cfg.systemd.services.immich-server;
-  ml = cfg.systemd.services.immich-machine-learning;
 in
 assert lib.assertMsg (!disabled.services.immich.enable) "Disabled worker must not enable Immich";
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Enabled worker must fully evaluate";
-assert lib.assertMsg (
-  !(cfg.nixpkgs.config.cudaSupport or false)
-) "Worker CUDA package selection must not enable CUDA globally";
 assert lib.assertMsg (
   !(builtins.tryEval colocated.system.build.toplevel.drvPath).success
 ) "Worker must reject a local PostgreSQL cluster rather than suppressing its setup hooks";
@@ -68,16 +64,12 @@ assert lib.assertMsg (
   server.serviceConfig.StateDirectory == "" && builtins.elem "var-lib-immich.mount" server.bindsTo
 ) "NFS must be required without client-root ownership changes";
 assert lib.assertMsg (
-  ml.environment.MACHINE_LEARNING_REQUEST_THREADS == "1"
-  && ml.environment.MACHINE_LEARNING_WORKERS == "1"
-) "ML request/process concurrency must be bounded";
+  !cfg.services.immich.machine-learning.enable && !(cfg.systemd.services ? immich-machine-learning)
+) "Worker must use only the authenticated remote ML endpoint";
 assert lib.assertMsg (lib.all (group: builtins.elem group cfg.users.users.immich.extraGroups) [
   "video"
   "render"
 ]) "Worker identity must have standard GPU device groups";
-assert lib.assertMsg (
-  cfg.services.immich.package.version == cfg.services.immich.package.machine-learning.version
-) "Server and ML releases must match";
 assert lib.assertMsg (
   !builtins.elem 2283 cfg.networking.firewall.allowedTCPPorts
   && !builtins.elem 3003 cfg.networking.firewall.allowedTCPPorts
