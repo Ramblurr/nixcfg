@@ -98,6 +98,7 @@ let
       unit = "opencloud-${name}";
       officeUnit = "${unit}-office";
       envList = attrs: lib.mapAttrsToList (key: value: "${key}=${value}") attrs;
+      officeProbeAddress = if i.listenAddress == "0.0.0.0" then "127.0.0.1" else i.listenAddress;
       csp = yaml.generate "${unit}-csp.yaml" {
         directives = {
           default-src = [ "'none'" ];
@@ -192,6 +193,18 @@ let
         umask 077
         ${pkgs.coreutils}/bin/mkdir -p ${lib.escapeShellArg "${i.dataMount}/users"} ${lib.escapeShellArg "${i.dataMount}/metadata"}
       '';
+      waitForOffice = pkgs.writeShellScript "${unit}-wait-for-office" ''
+        ${pkgs.curl}/bin/curl \
+          --fail \
+          --silent \
+          --show-error \
+          --retry 60 \
+          --retry-all-errors \
+          --retry-delay 2 \
+          --retry-max-time 180 \
+          --connect-timeout 5 \
+          ${lib.escapeShellArg "http://${officeProbeAddress}:${toString i.ports.office}/hosting/discovery"} >/dev/null
+      '';
       start = pkgs.writeText "${unit}-start.sh" ''
         set -eu
         umask 077
@@ -274,7 +287,14 @@ let
           }
         ) officeVolumes;
         containers.${unit} = lib.recursiveUpdate common {
-          serviceConfig.ExecStartPre = [ prepare ];
+          unitConfig = {
+            Requires = [ "${officeUnit}.service" ];
+            After = [ "${officeUnit}.service" ];
+          };
+          serviceConfig.ExecStartPre = [
+            waitForOffice
+            prepare
+          ];
           containerConfig = {
             Image = i.image;
             ContainerName = unit;
