@@ -35,8 +35,8 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = !config.services.immich.enable;
-        message = "Standalone Immich ML cannot share its unit and identity with the full Immich service.";
+        assertion = !config.services.immich.enable || !config.services.immich.machine-learning.enable;
+        message = "Standalone Immich ML cannot share its unit with the built-in Immich ML service.";
       }
     ];
     users.users.immich = {

@@ -6,8 +6,8 @@
 }:
 let
   instance = import ../../config/immich-home.nix;
-  address = host: builtins.head config.site.net.data.hosts4.${host};
-  exportClient = host: "${address host}(rw,sync,root_squash,no_subtree_check)";
+  address = network: host: builtins.head config.site.net.${network}.hosts4.${host};
+  exportClient = network: host: "${address network host}(rw,sync,root_squash,no_subtree_check)";
 in
 {
   modules.zfs.datasets = {
@@ -41,6 +41,6 @@ in
     '';
   };
   services.nfs.server.exports = lib.mkAfter ''
-    ${instance.mediaExport} ${exportClient "immich-home"} ${exportClient instance.workerHost}
+    ${instance.mediaExport} ${exportClient "data" "immich-home"} ${exportClient instance.workerNetwork instance.workerHost}
   '';
 }

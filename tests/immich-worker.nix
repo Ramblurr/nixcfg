@@ -64,8 +64,8 @@ assert lib.assertMsg (
   server.serviceConfig.StateDirectory == "" && builtins.elem "var-lib-immich.mount" server.bindsTo
 ) "NFS must be required without client-root ownership changes";
 assert lib.assertMsg (
-  cfg.services.immich.machine-learning.enable && cfg.systemd.services ? immich-machine-learning
-) "Worker must retain native ML during the rollback window";
+  !cfg.services.immich.machine-learning.enable && !(cfg.systemd.services ? immich-machine-learning)
+) "Worker must use the separate Peirce machine-learning service";
 assert lib.assertMsg (lib.all (group: builtins.elem group cfg.users.users.immich.extraGroups) [
   "video"
   "render"

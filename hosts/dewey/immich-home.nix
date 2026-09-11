@@ -2,12 +2,19 @@
 let
   inherit (config.repo.secrets) home-ops;
   apiAddress = builtins.head config.site.net.svc.hosts4.immich-home;
+  instance = import ../../config/immich-home.nix;
+  credentials = instance.machineLearning.credentials;
 in
 {
   # The private wrapper supplies the evaluated, secret-aware guest configuration.
   microvm.vms.immich-home = {
     autostart = true;
     restartIfChanged = true;
+  };
+  modules.services.onepassword-systemd-credentials.microvmSecrets.immich-home = {
+    "immich-ml-ca.pem" = "${credentials.ca}/ca-certificate";
+    "immich-ml-api-client.pem" = "${credentials.apiClient}/certificate";
+    "immich-ml-api-client-key.pem" = "${credentials.apiClient}/private-key";
   };
   modules.services.caddy.routes.immich-home = {
     publicHost = "photos.${home-ops.homeDomain}";

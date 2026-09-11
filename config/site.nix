@@ -100,6 +100,7 @@ in
       dewey = [ "10.9.8.14" ];
       debord = [ "10.9.8.21" ];
       mali = [ "10.9.8.3" ];
+      onepassword-connect = [ "10.9.8.22" ];
     };
     #hosts6.main = {
     #  addams = [ "${prefix6}:9::1" ];

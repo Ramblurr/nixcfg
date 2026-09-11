@@ -6,9 +6,9 @@
 }:
 let
   instance = import ../../config/immich-home.nix;
-  address = host: builtins.head config.site.net.svc.hosts4.${host};
-  apiAddress = address config.networking.hostName;
-  workerAddress = address instance.workerHost;
+  address = network: host: builtins.head config.site.net.${network}.hosts4.${host};
+  apiAddress = address "svc" config.networking.hostName;
+  workerAddress = address instance.workerNetwork instance.workerHost;
   machineLearningAddress = builtins.head config.site.net.prim.hosts4.${instance.machineLearning.host};
   machineLearningServerName = "immich-ml.${instance.machineLearning.host}.${config.site.net.prim.domainName}";
   hostSecrets = "/run/host-secrets";
@@ -102,7 +102,7 @@ in
   systemd.tmpfiles.rules = [ "d ${instance.secretsDirectory} 0700 root root -" ];
 
   networking.firewall.extraInputRules = ''
-    ip saddr ${address "dewey"} ip daddr ${apiAddress} tcp dport 2283 accept
+    ip saddr ${address "svc" "dewey"} ip daddr ${apiAddress} tcp dport 2283 accept
     ip saddr ${workerAddress} ip daddr ${apiAddress} tcp dport { 5432, 6379 } accept
   '';
 }

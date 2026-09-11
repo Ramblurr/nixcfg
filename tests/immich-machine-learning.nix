@@ -61,7 +61,7 @@ assert lib.assertMsg (
 ) "ML must not alter another PostgreSQL cluster's setup";
 assert lib.assertMsg (
   !(builtins.tryEval conflict.system.build.toplevel.drvPath).success
-) "Reject overlapping ownership by full Immich";
+) "Reject overlapping ownership by built-in Immich ML";
 assert lib.assertMsg (
   ml.environment.IMMICH_HOST == "127.0.0.1" && ml.environment.IMMICH_PORT == "3003"
 ) "Default endpoint must be loopback-only";
