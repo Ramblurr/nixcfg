@@ -37,18 +37,14 @@ let
     let cfg = guest name;
     in cfg.microvm.vsock.cid == registry.dewey.guests.${name}.cid
       && cfg.microvm.vsock.ssh.enable
-      && cfg.environment.etc."ssh/microvm-host.pub".mode == "0444"
-      && cfg.systemd.services."sshd-vsock@".overrideStrategy == "asDropin"
-      && lib.hasPrefix "-" (builtins.elemAt cfg.systemd.services."sshd-vsock@".serviceConfig.ExecStart 1)
-      && lib.hasInfix "AllowUsers root" (builtins.elemAt cfg.systemd.services."sshd-vsock@".serviceConfig.ExecStart 1)
-      && lib.hasInfix "/etc/ssh/microvm-host.pub" (builtins.elemAt cfg.systemd.services."sshd-vsock@".serviceConfig.ExecStart 1)
-      && !(builtins.elem "/etc/ssh/microvm-host.pub" cfg.services.openssh.authorizedKeysFiles)
-      && cfg.users.users.root.openssh.authorizedKeys.keys == [ ];
+      && !(cfg.environment.etc ? "ssh/microvm-host.pub")
+      && !(cfg.systemd.services."sshd-vsock@".serviceConfig ? ExecStart)
+      && builtins.elem registry.dewey.publicKeyFile cfg.users.users.root.openssh.authorizedKeys.keyFiles;
   sshConfig = pkgs.writeText "microvm-ssh-config" host.environment.etc."ssh/ssh_config".text;
   helper = builtins.head (builtins.filter (p: (p.name or "") == "microvm-verified-ssh") host.environment.systemPackages);
 in
-assert lib.assertMsg (lib.all checkGuest registered) "Both guests must authorize the host only on the root VSOCK listener";
-assert lib.assertMsg (!((guest "unregistered").systemd.services ? "sshd-vsock@")) "Unregistered guests must not acquire host access";
+assert lib.assertMsg (lib.all checkGuest registered) "Both guests must use standard root authorized keys without a custom VSOCK override";
+assert lib.assertMsg ((guest "unregistered").users.users.root.openssh.authorizedKeys.keyFiles == [ ]) "Unregistered guests must not acquire host access";
 assert lib.assertMsg (lib.all (name: host.programs.ssh.knownHosts."microvm-${name}".publicKeyFile == registry.dewey.guests.${name}.hostKeyFile) registered) "Guest host identities must be pinned";
 pkgs.runCommand "microvm-ssh-check" {
   nativeBuildInputs = [ pkgs.openssh pkgs.python3 pkgs.bash ];
