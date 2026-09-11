@@ -11,8 +11,8 @@ let
     packageOverrides =
       final: prev:
       let
-        # Remove when the pinned inline-snapshot docs tests pass. Restrict the
-        # workaround to these consumers so unrelated cache paths stay unchanged.
+        # Documentation snapshots fail on generated example formatting.
+        # See docs/immich-pascal.md, "Documentation test exception", before removal.
         docsSnapshot = prev.inline-snapshot.overridePythonAttrs (old: {
           disabledTestPaths = (old.disabledTestPaths or [ ]) ++ [ "tests/test_docs.py" ];
         });
