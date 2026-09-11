@@ -30,9 +30,63 @@ let
       config.sops.secrets.${tokenSecretName}.path
     else
       cfg.bootstrapTokenFile;
+  microvmConsumers = lib.mapAttrs' (
+    guest: credentials: lib.nameValuePair "microvm-secrets-${guest}" credentials
+  ) cfg.microvmSecrets;
+  consumers = cfg.consumers // microvmConsumers;
+  microvmSecretServices = lib.mapAttrs' (
+    guest: credentials:
+    let
+      directory = "/run/microvms/secrets/${guest}";
+      credentialNames = builtins.attrNames credentials;
+    in
+    lib.nameValuePair "microvm-secrets-${guest}" {
+      description = "Materialize 1Password credentials for MicroVM '${guest}'";
+      before = [
+        "microvm-virtiofsd@${guest}.service"
+        "microvm@${guest}.service"
+      ];
+      partOf = [ "microvm@${guest}.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        User = "microvm";
+        Group = "kvm";
+        UMask = "0077";
+        ExecStopPost = "${pkgs.coreutils}/bin/rm -rf ${lib.escapeShellArg directory}";
+      };
+      script = ''
+        set -eu
+        directory=${lib.escapeShellArg directory}
+        ${pkgs.coreutils}/bin/install -d -m 0700 "$directory"
+        ${pkgs.coreutils}/bin/rm -f "$directory"/*
+        trap '${pkgs.coreutils}/bin/rm -f "$directory"/*.new' EXIT
+        ${lib.concatMapStringsSep "\n" (credential: ''
+          ${pkgs.coreutils}/bin/install -m 0400 "$CREDENTIALS_DIRECTORY/${credential}" ${lib.escapeShellArg "${directory}/${credential}.new"}
+        '') credentialNames}
+        ${lib.concatMapStringsSep "\n" (credential: ''
+          ${pkgs.coreutils}/bin/mv -f ${lib.escapeShellArg "${directory}/${credential}.new"} ${lib.escapeShellArg "${directory}/${credential}"}
+        '') credentialNames}
+      '';
+    }
+  ) cfg.microvmSecrets;
+  microvmSecretDependencies = lib.foldl' (
+    result: guest:
+    result
+    // {
+      "microvm-virtiofsd@${guest}" = {
+        requires = [ "microvm-secrets-${guest}.service" ];
+        after = [ "microvm-secrets-${guest}.service" ];
+      };
+      "microvm@${guest}" = {
+        requires = [ "microvm-secrets-${guest}.service" ];
+        after = [ "microvm-secrets-${guest}.service" ];
+      };
+    }
+  ) { } (builtins.attrNames cfg.microvmSecrets);
   authorizationMap = lib.mapAttrs' (
     service: credentials: lib.nameValuePair "${service}.service" credentials
-  ) cfg.consumers;
+  ) consumers;
   authorizationMapFile = pkgs.writeText "onepassword-credential-map.json" (
     builtins.toJSON authorizationMap
   );
@@ -147,7 +201,7 @@ let
         credentialId: _: "${pkgs.coreutils}/bin/test -s %d/${credentialId}"
       ) credentials;
     };
-  }) cfg.consumers;
+  }) consumers;
 in
 {
   options.modules.services.onepassword-systemd-credentials = {
@@ -198,13 +252,27 @@ in
       '';
     };
 
+    microvmSecrets = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.attrsOf (lib.types.strMatching "^op://.+"));
+      default = { };
+      example = {
+        example-guest.API_TOKEN = "op://home-ops-prod/Example/token";
+      };
+      description = ''
+        1Password references to materialize as volatile files for MicroVM guests.
+        Each guest gets a read-only virtiofs source directory at
+        /run/microvms/secrets/<guest>; each attribute name is the filename.
+        The corresponding guest must opt into modules.microvm-guest.hostSecrets.
+      '';
+    };
+
     creds = lib.mkOption {
       type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
       readOnly = true;
       default = lib.mapAttrs (
         service: credentials:
         lib.mapAttrs (credentialId: _: "/run/credentials/${service}.service/${credentialId}") credentials
-      ) cfg.consumers;
+      ) consumers;
       description = "Runtime systemd credential paths generated for configured consumers.";
     };
   };
@@ -225,13 +293,11 @@ in
         message = "The 1Password provider bootstrap token must not come from the Nix store.";
       }
       {
-        assertion = lib.all (service: !(lib.hasSuffix ".service" service)) (
-          builtins.attrNames cfg.consumers
-        );
+        assertion = lib.all (service: !(lib.hasSuffix ".service" service)) (builtins.attrNames consumers);
         message = "1Password credential consumer names must omit the .service suffix.";
       }
       {
-        assertion = lib.intersectLists bootstrapServiceNames (builtins.attrNames cfg.consumers) == [ ];
+        assertion = lib.intersectLists bootstrapServiceNames (builtins.attrNames consumers) == [ ];
         message = "Bootstrap-critical services cannot use the 1Password credential provider.";
       }
       {
@@ -240,8 +306,25 @@ in
           lib.all (credentialId: builtins.match "[A-Za-z0-9_.-]+" credentialId != null) (
             builtins.attrNames credentials
           )
-        ) (builtins.attrValues cfg.consumers);
+        ) (builtins.attrValues consumers);
         message = "1Password credential IDs may contain only letters, digits, dot, underscore, and hyphen.";
+      }
+      {
+        assertion =
+          lib.intersectLists (builtins.attrNames cfg.consumers) (builtins.attrNames microvmConsumers) == [ ];
+        message = "MicroVM 1Password secret service names must not overlap regular consumers.";
+      }
+      {
+        assertion = lib.all (guest: builtins.match "[A-Za-z0-9][A-Za-z0-9_.-]*" guest != null) (
+          builtins.attrNames cfg.microvmSecrets
+        );
+        message = "MicroVM 1Password secret guest names contain invalid characters.";
+      }
+      {
+        assertion = lib.all (guest: cfg.microvmSecrets.${guest} != { }) (
+          builtins.attrNames cfg.microvmSecrets
+        );
+        message = "Each MicroVM 1Password secret guest must define at least one file.";
       }
     ];
 
@@ -263,6 +346,11 @@ in
         MaxConnections = 64;
       };
     };
+
+    systemd.tmpfiles.rules = lib.optionals (cfg.microvmSecrets != { }) [
+      "d /run/microvms 0755 root root -"
+      "d /run/microvms/secrets 0755 root root -"
+    ];
 
     systemd.services = lib.mkMerge [
       {
@@ -307,6 +395,8 @@ in
         };
       }
       consumerServices
+      microvmSecretServices
+      microvmSecretDependencies
     ];
   };
 }

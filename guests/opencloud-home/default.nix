@@ -28,12 +28,16 @@ in
     microvm-guest = {
       host = "dewey";
       hostFQDN = "dewey.${config.site.net.svc.domainName}";
+      hostSecrets = {
+        enable = true;
+        services = [ "opencloud-home-credentials" ];
+      };
     };
     users.enable = lib.mkForce false;
     services.sshd.enable = lib.mkForce false;
   };
   microvm = {
-    # QEMU supports the host-supplied systemd credentials used by this guest.
+    # Host supplies credentials through the read-only virtiofs share.
     hypervisor = "qemu";
     mem = 8192;
     vcpu = 4;
@@ -139,10 +143,6 @@ in
     }
   ];
 
-  microvm.credentialFiles = {
-    opencloud-home-env = "/run/opencloud-home-env/app.env";
-    opencloud-home-office-env = "/run/opencloud-home-env/office.env";
-  };
   systemd.services.opencloud-home-credentials = {
     wantedBy = [ "multi-user.target" ];
     after = [ "systemd-tmpfiles-setup.service" ];
@@ -150,15 +150,15 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ImportCredential = [
-        "opencloud-home-env"
-        "opencloud-home-office-env"
+      LoadCredential = [
+        "IDM_ADMIN_PASSWORD:${config.modules.microvm-guest.hostSecrets.mountPoint}/IDM_ADMIN_PASSWORD"
+        "JWT_SECRET:${config.modules.microvm-guest.hostSecrets.mountPoint}/JWT_SECRET"
       ];
     };
     script = ''
       ${pkgs.coreutils}/bin/install -d -m 0700 -o ${user} -g ${user} /run/opencloud-home
-      ${pkgs.coreutils}/bin/install -m 0400 -o ${user} -g ${user} "$CREDENTIALS_DIRECTORY/opencloud-home-env" /run/opencloud-home/app.env
-      ${pkgs.coreutils}/bin/install -m 0400 -o ${user} -g ${user} "$CREDENTIALS_DIRECTORY/opencloud-home-office-env" /run/opencloud-home/office.env
+      ${pkgs.coreutils}/bin/install -m 0400 -o ${user} -g ${user} "$CREDENTIALS_DIRECTORY/IDM_ADMIN_PASSWORD" /run/opencloud-home/app.env
+      ${pkgs.coreutils}/bin/install -m 0400 -o ${user} -g ${user} "$CREDENTIALS_DIRECTORY/JWT_SECRET" /run/opencloud-home/office.env
     '';
   };
   systemd.services."user@3100" = {

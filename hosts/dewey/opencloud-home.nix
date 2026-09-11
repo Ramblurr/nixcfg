@@ -19,7 +19,7 @@ in
       services.${dataset} = [ "microvm@opencloud-home" ];
     };
     services = {
-      onepassword-systemd-credentials.consumers.opencloud-home-env-setup = {
+      onepassword-systemd-credentials.microvmSecrets.opencloud-home = {
         IDM_ADMIN_PASSWORD = "op://home-ops-prod/opencloud-home/admin-password";
         JWT_SECRET = "op://home-ops-prod/opencloud-home/office-jwt-secret";
       };
@@ -47,38 +47,6 @@ in
       message = "OpenCloud host credentials require the 1Password systemd provider.";
     }
   ];
-  systemd.services = {
-    "microvm@opencloud-home" = {
-      overrideStrategy = "asDropin";
-      requires = [ "opencloud-home-env-setup.service" ];
-      after = [
-        "opencloud-home-env-setup.service"
-        "systemd-tmpfiles-setup.service"
-      ];
-    };
-    opencloud-home-env-setup = {
-      before = [ "microvm@opencloud-home.service" ];
-      partOf = [ "microvm@opencloud-home.service" ];
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-        User = "microvm";
-        RuntimeDirectory = "opencloud-home-env";
-        RuntimeDirectoryMode = "0700";
-        UMask = "0077";
-      };
-      script = ''
-        set -eu
-        admin_password=$(cat "$CREDENTIALS_DIRECTORY/IDM_ADMIN_PASSWORD")
-        office_secret=$(cat "$CREDENTIALS_DIRECTORY/JWT_SECRET")
-        printf 'IDM_ADMIN_PASSWORD=%s\n' "$admin_password" > "$RUNTIME_DIRECTORY/app.env.new"
-        printf 'JWT_SECRET=%s\n' "$office_secret" > "$RUNTIME_DIRECTORY/office.env.new"
-        chmod 0400 "$RUNTIME_DIRECTORY/"*.env.new
-        mv -f "$RUNTIME_DIRECTORY/app.env.new" "$RUNTIME_DIRECTORY/app.env"
-        mv -f "$RUNTIME_DIRECTORY/office.env.new" "$RUNTIME_DIRECTORY/office.env"
-      '';
-    };
-  };
   site.gatus.endpoints = [
     {
       name = "OpenCloud home";
