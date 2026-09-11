@@ -15,6 +15,7 @@ let
       consumerService ? "example",
       reference ? "op://home-ops-prod/Example/password",
       bootstrapTokenFile ? null,
+      microvmSecrets ? { },
     }:
     (inputs.nixpkgs.lib.nixosSystem {
       system = pkgs.stdenv.hostPlatform.system;
@@ -36,6 +37,7 @@ let
             inherit bootstrapTokenFile;
             package = testOp;
             consumers.${consumerService}.password = reference;
+            inherit microvmSecrets;
           };
           systemd.services = lib.optionalAttrs (consumerService == "example") {
             example.script = "true";
@@ -44,6 +46,10 @@ let
       ];
     }).config;
   configs = lib.genAttrs (replicaNames ++ [ "quine" ]) (name: evaluate { inherit name; });
+  microvmConfig = evaluate {
+    name = "dewey";
+    microvmSecrets.demo.API_TOKEN = "op://home-ops-prod/Example/token";
+  };
   invalidReference =
     builtins.tryEval
       (evaluate {
@@ -153,14 +159,46 @@ let
     && builtins.elem "password:${provider.socketPath}" consumer.serviceConfig.LoadCredential
     && builtins.elem "${pkgs.coreutils}/bin/test -s %d/password" consumer.serviceConfig.ExecStartPre
     && provider.creds.example.password == "/run/credentials/example.service/password";
+  microvmSecretService = microvmConfig.systemd.services."microvm-secrets-demo";
+  microvmGuestService = microvmConfig.systemd.services."microvm@demo";
+  microvmVirtiofsdService = microvmConfig.systemd.services."microvm-virtiofsd@demo";
+  microvmAuthorizationMapFile = lib.removePrefix "credential-map:" (
+    builtins.elemAt
+      microvmConfig.systemd.services."onepassword-credential-provider@".serviceConfig.LoadCredential
+      0
+  );
+  expectedMicrovmAuthorizationMap = builtins.toJSON {
+    "example.service".password = "op://home-ops-prod/Example/password";
+    "microvm-secrets-demo.service".API_TOKEN = "op://home-ops-prod/Example/token";
+  };
 in
 assert enabledHosts == replicaNames;
 assert lib.all targetIsCorrect replicaNames;
 assert !invalidReference.success;
 assert !storeBootstrapToken.success;
 assert !bootstrapConsumer.success;
+assert
+  microvmConfig.modules.services.onepassword-systemd-credentials.microvmSecrets.demo.API_TOKEN
+  == "op://home-ops-prod/Example/token";
+assert microvmSecretService.serviceConfig.Type == "oneshot";
+assert microvmSecretService.serviceConfig.User == "microvm";
+assert microvmSecretService.serviceConfig.Group == "kvm";
+assert microvmSecretService.serviceConfig.UMask == "0077";
+assert
+  microvmSecretService.serviceConfig.LoadCredential == [
+    "API_TOKEN:${microvmConfig.modules.services.onepassword-systemd-credentials.socketPath}"
+  ];
+assert microvmSecretService.partOf == [ "microvm@demo.service" ];
+assert builtins.elem "microvm-secrets-demo.service" microvmGuestService.requires;
+assert builtins.elem "microvm-secrets-demo.service" microvmVirtiofsdService.requires;
+assert lib.all (rule: builtins.elem rule microvmConfig.systemd.tmpfiles.rules) [
+  "d /run/microvms 0755 root root -"
+  "d /run/microvms/secrets 0755 root root -"
+];
 pkgs.runCommand "onepassword-systemd-credentials-evaluation" { } ''
   printf %s ${lib.escapeShellArg expectedAuthorizationMap} > expected-map.json
   cmp expected-map.json ${authorizationMapFile}
+  printf %s ${lib.escapeShellArg expectedMicrovmAuthorizationMap} > expected-microvm-map.json
+  cmp expected-microvm-map.json ${microvmAuthorizationMapFile}
   touch $out
 ''
