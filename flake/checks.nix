@@ -65,6 +65,7 @@
         deploy-user = import ../tests/deploy-user.nix { inherit inputs pkgs; };
         thinkpad1-tpm-deploy = import ../tests/thinkpad1-tpm-deploy.nix {
           pkgs = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+          alternateSystemd = inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.systemd;
         };
         garage-terranix = import ../tests/garage-terranix.nix { inherit inputs pkgs; };
         gatus-aggregation = import ../tests/gatus-aggregation.nix { inherit inputs pkgs; };

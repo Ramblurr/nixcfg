@@ -170,6 +170,17 @@ def firmware_check():
     loader_config()
 
 
+def loader_source(system):
+    source = Path(system) / "systemd/lib/systemd/boot/efi/systemd-bootx64.efi"
+    require(
+        not Path(f"{source}.signed").exists(),
+        "signed bootloader layouts are unsupported",
+    )
+    source = source.resolve()
+    require(source.is_relative_to("/nix/store"), "bootloader source must be immutable")
+    return source
+
+
 def bootspec(system):
     document = json.loads((system / "boot.json").read_text())
     spec = document["org.nixos.bootspec.v1"]
@@ -282,7 +293,7 @@ def metadata(device):
     return json.loads(run("cryptsetup", "luksDump", "--dump-json-metadata", device))
 
 
-def check_capacity(luks, token_id):
+def check_capacity(luks, token_id, *, count=1):
     token = luks["tokens"][token_id]
     slot = luks["keyslots"][token["keyslots"][0]]
 
@@ -292,10 +303,10 @@ def check_capacity(luks, token_id):
     # Reserve a comparable token/keyslot plus serialization headroom. The native
     # enrollment operation remains the final authority on allocation success.
     json_size = int(luks["config"]["json_size"])
-    needed_json = len(compact([token, slot])) + 1024
+    needed_json = count * (len(compact([token, slot])) + 1024)
     require(
-        len(luks["keyslots"]) < 32
-        and len(luks["tokens"]) < 32
+        len(luks["keyslots"]) + count <= 32
+        and len(luks["tokens"]) + count <= 32
         and json_size - len(compact(luks)) >= needed_json,
         "insufficient LUKS enrollment capacity: no safe header headroom; existing credentials retained",
     )
@@ -317,7 +328,7 @@ def check_capacity(luks, token_id):
         cursor = offset + size
     gaps.append(limit - cursor)
     require(
-        max(gaps) >= int(slot["area"]["size"]),
+        max(gaps) >= count * int(slot["area"]["size"]),
         "insufficient LUKS enrollment capacity: keyslot area full; existing credentials retained",
     )
 
@@ -453,7 +464,7 @@ def load_state(device, luks):
     if STATE.exists():
         state = json.loads(STATE.read_text())
         require(
-            state["version"] == 1 and state["uuid"] == identity,
+            state["version"] == 2 and state["uuid"] == identity,
             "enrollment state belongs to another disk or version",
         )
         require(
@@ -462,12 +473,12 @@ def load_state(device, luks):
         )
     else:
         state = {
-            "version": 1,
+            "version": 2,
             "uuid": identity,
             "recovery": recovery,
             "owned": {},
             "confirmed": [],
-            "systems": {},
+            "contexts": {},
             "intent": None,
         }
     # Enrollment can finish before the process records its token. Only adopt the
@@ -505,36 +516,44 @@ def load_state(device, luks):
     return state
 
 
-def retain_systems(state, keep):
-    # Native system-profiles are GC roots and are included by the boot installer.
-    # Keep one generation per policy; never modify the human's main profile here.
+def retain_contexts(state, keep):
+    # System profiles provide BLS entries; separate loader profiles are only GC roots.
     directory = Path("/nix/var/nix/profiles/system-profiles")
     directory.mkdir(parents=True, exist_ok=True)
-    for policy, system in list(state["systems"].items()):
+    for policy, context in list(state["contexts"].items()):
         require(
             len(policy) == 64 and all(c in "0123456789abcdef" for c in policy),
             "invalid policy name",
         )
-        profile = directory / f"thinkpad1-tpm-{policy}"
-        generation = directory / f"thinkpad1-tpm-{policy}-1-link"
-        if policy in keep:
-            if not profile.exists():
-                run("nix-env", "--profile", profile, "--set", system)
-            require(
-                profile.resolve(strict=True) == Path(system),
-                "managed rollback profile changed",
-            )
-        else:
-            for path in (profile, generation):
-                if path.is_symlink():
-                    require(
-                        path.resolve() == Path(system),
-                        "managed rollback profile changed; refusing removal",
-                    )
-                    path.unlink()
-                else:
-                    require(not path.exists(), "unexpected managed profile file")
-            del state["systems"][policy]
+        loader_root = (
+            Path("/nix/store")
+            / Path(context["loader"]).relative_to("/nix/store").parts[0]
+        )
+        profiles = {
+            directory / f"thinkpad1-tpm-{policy}": Path(context["system"]),
+            directory.parent / f"thinkpad1-tpm-loader-{policy}": loader_root,
+        }
+        for profile, target in profiles.items():
+            generation = profile.with_name(profile.name + "-1-link")
+            if policy in keep:
+                if not profile.exists():
+                    run("nix-env", "--profile", profile, "--set", target)
+                require(
+                    profile.resolve(strict=True) == target,
+                    "managed rollback profile changed",
+                )
+            else:
+                for path in (profile, generation):
+                    if path.is_symlink():
+                        require(
+                            path.resolve() == target,
+                            "managed rollback profile changed; refusing removal",
+                        )
+                        path.unlink()
+                    else:
+                        require(not path.exists(), "unexpected managed profile file")
+        if policy not in keep:
+            del state["contexts"][policy]
     save_state(state)
 
 
@@ -578,111 +597,9 @@ def retire_pending(device, state, keep):
         save_state(state)
 
 
-def deploy(action, candidate):
-    firmware_check()
-    booted = Path("/run/booted-system").resolve(strict=True)
-    old, new = bootspec(booted), bootspec(candidate)
-    pcrs = {
-        p["nr"]: p["sha256"]
-        for p in json.loads(
-            run("systemd-analyze", "pcrs", "4", "9", "--json=short", timing="pcr-read")
-        )
-    }
-    artifact_started = time.monotonic()
-    TIMINGS["enrollment"] = 0.0
-    cache = measurement_cache(pcrs)
-    for key in ("kernel", "initrd"):
-        require(
-            Path(old[key]).resolve() == Path(new[key]).resolve(),
-            f"changed {key} not supported yet; default unchanged",
-        )
-        require(
-            immutable_digest(old[key], cache)
-            == file_hash(ESP / esp_path(old[key])).hex(),
-            f"installed {key} differs from immutable source",
-        )
-    loader = booted / "systemd/lib/systemd/boot/efi/systemd-bootx64.efi"
-    require(
-        immutable_digest(loader, cache)
-        == immutable_digest(
-            candidate / "systemd/lib/systemd/boot/efi/systemd-bootx64.efi", cache
-        ),
-        "changed bootloader not supported yet",
-    )
-    require(
-        immutable_digest(loader, cache)
-        == file_hash(ESP / "EFI/systemd/systemd-bootx64.efi").hex(),
-        "installed bootloader differs from booted source",
-    )
-    require(
-        command_line(old) == Path("/proc/cmdline").read_text().strip(),
-        "unsupported boot argument encoding",
-    )
-    events = cache["events"]
-    events4 = [e for e in events if e["pcr"] == 4]
-    events9 = [e for e in events if e["pcr"] == 9]
-    require(
-        extend(bytes.fromhex(e["sha256"]) for e in events4) == pcrs[4],
-        "PCR4 event replay mismatch",
-    )
-    images = [
-        e["sha256"] for e in events4 if e["event"] == "efi-boot-services-application"
-    ]
-    require(
-        images[-2:]
-        == [
-            immutable_digest(loader, cache, pe=True),
-            immutable_digest(old["kernel"], cache, pe=True),
-        ],
-        "booted EFI images do not match sources",
-    )
-    old_digests = [
-        sha((command_line(old) + "\0").encode("utf-16-le")),
-        bytes.fromhex(immutable_digest(old["initrd"], cache)),
-    ]
-    require(
-        [e["sha256"] for e in events9] == [d.hex() for d in old_digests],
-        "unsupported PCR9 event sequence",
-    )
-    require(
-        extend(old_digests) == pcrs[9], "PCR9 prediction does not match current boot"
-    )
-    cached_bytes = json.dumps(cache, sort_keys=True).encode()
-    if not CACHE.exists() or CACHE.read_bytes() != cached_bytes:
-        atomic_write(CACHE, cached_bytes)
-    TIMINGS["artifact-and-event-validation"] = time.monotonic() - artifact_started
-    device = os.environ["TPM_DEPLOY_DEVICE"]
-    before = metadata(device)
-    require("0" in before["keyslots"], "original recovery slot missing")
-    current_tokens = matching_tokens(before, policy_hash(pcrs))
-    require(
-        current_tokens,
-        "no bound TPM enrollment covers current boot; explicit recovery required",
-    )
-    run(
-        "cryptsetup",
-        "open",
-        "--test-passphrase",
-        "--token-only",
-        "--token-id",
-        current_tokens[0],
-        device,
-        timing="authorization",
-    )
-    state = load_state(device, before)
-    current_policy = policy_hash(pcrs)
-    state["confirmed"] = (
-        [current_policy] + [p for p in state["confirmed"] if p != current_policy]
-    )[:2]
-    state["systems"][current_policy] = str(booted)
-    save_state(state)
-    future = {
-        4: pcrs[4],
-        9: extend(
-            [sha((command_line(new) + "\0").encode("utf-16-le")), old_digests[1]]
-        ),
-    }
+def prepare_policy(device, state, context, future, authorization_token):
     expected = policy_hash(future)
+    before = metadata(device)
     if not matching_tokens(before, expected):
         require(
             not any(
@@ -693,10 +610,11 @@ def deploy(action, candidate):
             ),
             "PIN-protected disk tokens are unsupported for unattended enrollment; no PIN will be requested",
         )
-        check_capacity(before, current_tokens[0])
+        check_capacity(before, authorization_token)
+        state["contexts"][expected] = context
         state["intent"] = {
             "policy": expected,
-            "system": str(candidate),
+            "system": context["system"],
             "tokens_before": list(before["tokens"]),
             "slots_before": list(before["keyslots"]),
         }
@@ -721,15 +639,264 @@ def deploy(action, candidate):
         "candidate enrollment absent after preparation",
     )
     state = load_state(device, after)
-    state["systems"][expected] = str(candidate)
-    keep = set(state["confirmed"]) | {expected}
-    retain_systems(state, set(state["systems"]))
+    state["contexts"][expected] = context
+    save_state(state)
+    return state
+
+
+def deploy(action, candidate):
+    firmware_check()
+    booted = Path("/run/booted-system").resolve(strict=True)
+    old, new = bootspec(booted), bootspec(candidate)
     loader_conf = ESP / "loader/loader.conf"
     previous_conf = loader_conf.read_bytes()
     previous_profile = PROFILE.resolve(strict=True)
-    rollback_entry = entry_for(old)
-    rollback_contents = rollback_entry.read_bytes()
+    name = loader_config()["default"][0]
+    require(
+        Path(name).name == name and name.endswith(".conf"), "unsupported boot default"
+    )
+    default_entry = ESP / "loader/entries" / name
+    options = bls_fields(default_entry).get("options", [])
+    require(
+        len(options) == 1 and options[0].startswith("init=/nix/store/"),
+        "unsupported existing boot default",
+    )
+    initial = Path(options[0].split()[0].removeprefix("init="))
+    previous_system = initial.parent
+    require(
+        initial.name == "init" and previous_system.parent == Path("/nix/store"),
+        "unsupported existing boot default",
+    )
+    previous_spec = bootspec(previous_system)
+    entry_for(previous_spec, default=True)
+    pcrs = {
+        p["nr"]: p["sha256"]
+        for p in json.loads(
+            run("systemd-analyze", "pcrs", "4", "9", "--json=short", timing="pcr-read")
+        )
+    }
+    TIMINGS["enrollment"] = 0.0
+    device = os.environ["TPM_DEPLOY_DEVICE"]
+    before = metadata(device)
+    require("0" in before["keyslots"], "original recovery slot missing")
+    current_policy = policy_hash(pcrs)
+    current_tokens = matching_tokens(before, current_policy)
+    require(
+        current_tokens,
+        "no bound TPM enrollment covers current boot; explicit recovery required",
+    )
+    run(
+        "cryptsetup",
+        "open",
+        "--test-passphrase",
+        "--token-only",
+        "--token-id",
+        current_tokens[0],
+        device,
+        timing="authorization",
+    )
+    state = load_state(device, before)
+    artifact_started = time.monotonic()
+    cache = measurement_cache(pcrs)
+    events4 = [event for event in cache["events"] if event["pcr"] == 4]
+    events9 = [event for event in cache["events"] if event["pcr"] == 9]
+    require(
+        extend(bytes.fromhex(event["sha256"]) for event in events4) == pcrs[4],
+        "PCR4 event replay mismatch",
+    )
+    positions = [
+        i
+        for i, event in enumerate(events4)
+        if event["event"] == "efi-boot-services-application"
+    ]
+    separators = [i for i, event in enumerate(events4) if event["event"] == "separator"]
+    returning = sha(b"Returning from EFI Application from Boot Option").hex()
+    require(
+        len(separators) == 1
+        and len(positions) >= 2
+        and [i for i in positions if i > separators[0]] == positions[-2:]
+        and not any(event["sha256"] == returning for event in events4),
+        "unsupported PCR4 boot sequence",
+    )
+    desired_loader = loader_source(candidate)
+    sources = {loader_source(system) for system in (booted, candidate, previous_system)}
+    sources.update(Path(context["loader"]) for context in state["contexts"].values())
+    sources = sorted(source for source in sources if source.is_file())
+    observed_sources = [
+        source
+        for source in sources
+        if immutable_digest(source, cache, pe=True) == events4[positions[-2]]["sha256"]
+    ]
+    require(observed_sources, "booted EFI loader does not match known sources")
+    observed_loader = observed_sources[0]
+    efi_paths = [ESP / "EFI/systemd/systemd-bootx64.efi", ESP / "EFI/BOOT/BOOTX64.EFI"]
+    installed_hash = file_hash(efi_paths[0]).hex()
+    installed_sources = [
+        source
+        for source in sources
+        if immutable_digest(source, cache) == installed_hash
+    ]
+    require(installed_sources, "installed bootloader differs from known sources")
+    installed_loader = installed_sources[0]
+    fallback_hash = file_hash(efi_paths[1]).hex() if efi_paths[1].exists() else None
+    desired_hash = immutable_digest(desired_loader, cache)
+    loader_changed = installed_hash != desired_hash or fallback_hash != desired_hash
+    if fallback_hash is not None:
+        require(
+            fallback_hash in {immutable_digest(source, cache) for source in sources},
+            "unrecognized fallback bootloader",
+        )
+    require(
+        immutable_digest(old["kernel"], cache, pe=True)
+        == events4[positions[-1]]["sha256"],
+        "booted EFI images do not match sources",
+    )
+    require(
+        command_line(old) == Path("/proc/cmdline").read_text().strip(),
+        "unsupported boot argument encoding",
+    )
+    old_digests = [
+        sha((command_line(old) + "\0").encode("utf-16-le")),
+        bytes.fromhex(immutable_digest(old["initrd"], cache)),
+    ]
+    require(
+        [event["sha256"] for event in events9]
+        == [digest.hex() for digest in old_digests],
+        "unsupported PCR9 event sequence",
+    )
+    require(
+        extend(old_digests) == pcrs[9], "PCR9 prediction does not match current boot"
+    )
+
+    verified = set()
+
+    def verify_files(spec):
+        for key in ("kernel", "initrd"):
+            path = ESP / esp_path(spec[key])
+            if path not in verified:
+                require(
+                    immutable_digest(spec[key], cache) == file_hash(path).hex(),
+                    f"installed {key} differs from immutable source",
+                )
+                verified.add(path)
+
+    def predict(spec, source):
+        digests = [event["sha256"] for event in events4]
+        predicted = digests.copy()
+        predicted[positions[-2]] = immutable_digest(source, cache, pe=True)
+        predicted[positions[-1]] = immutable_digest(spec["kernel"], cache, pe=True)
+        return {
+            4: pcrs[4]
+            if predicted == digests
+            else extend(bytes.fromhex(digest) for digest in predicted),
+            9: extend(
+                [
+                    sha((command_line(spec) + "\0").encode("utf-16-le")),
+                    bytes.fromhex(immutable_digest(spec["initrd"], cache)),
+                ]
+            ),
+        }
+
+    verify_files(old)
+    verify_files(previous_spec)
+    state["confirmed"] = (
+        [current_policy]
+        + [policy for policy in state["confirmed"] if policy != current_policy]
+    )[:2]
+    state["contexts"][current_policy] = {
+        "system": str(booted),
+        "loader": str(observed_loader),
+    }
+    save_state(state)
+    wanted = {}
+    specs = {booted: old, candidate: new, previous_system: previous_spec}
+
+    def want(system, source):
+        if system not in specs:
+            specs[system] = bootspec(system)
+        future = predict(specs[system], source)
+        policy = policy_hash(future)
+        wanted[policy] = ({"system": str(system), "loader": str(source)}, future)
+        return policy
+
+    keep = set(state["confirmed"])
+    for policy in state["confirmed"]:
+        system = Path(state["contexts"][policy]["system"])
+        keep.add(want(system, desired_loader))
+        verify_files(specs[system])
+        entry_for(specs[system])
+    keep.add(want(candidate, desired_loader))
+    # Cover the bridge and original default under the currently installed loader
+    # before either the global loader or the boot default can change.
+    want(booted, installed_loader)
+    want(previous_system, installed_loader)
+    for spec in specs.values():
+        for key in ("kernel", "initrd"):
+            immutable_digest(spec[key], cache)
+    cached_bytes = json.dumps(cache, sort_keys=True).encode()
+    if not CACHE.exists() or CACHE.read_bytes() != cached_bytes:
+        atomic_write(CACHE, cached_bytes)
+    TIMINGS["artifact-and-event-validation"] = time.monotonic() - artifact_started
+    missing = sum(not matching_tokens(before, policy) for policy in wanted)
+    if missing:
+        check_capacity(before, current_tokens[0], count=missing)
+    for policy, (context, future) in wanted.items():
+        if not matching_tokens(before, policy):
+            state = prepare_policy(device, state, context, future, current_tokens[0])
+    state["contexts"].update(
+        {policy: context for policy, (context, _) in wanted.items()}
+    )
+    save_state(state)
+    prepared = metadata(device)
+    for section in ("keyslots", "tokens"):
+        require(
+            all(
+                prepared[section].get(key) == value
+                for key, value in before[section].items()
+            ),
+            "existing LUKS credentials changed during preparation",
+        )
+    require(
+        all(matching_tokens(prepared, policy) for policy in wanted),
+        "prepared boot policy missing",
+    )
+    retain_contexts(state, set(state["contexts"]))
+    rollback_contents = entry_for(old).read_bytes()
+    # Native generation pruning must not remove the selected bridge mid-install.
+    rollback_entry = ESP / "loader/entries/thinkpad1-tpm-rollback.conf"
+    default_contents = default_entry.read_bytes()
+    bridge_lines = previous_conf.decode().splitlines()
+    for i, line in enumerate(bridge_lines):
+        fields = line.split(maxsplit=1)
+        if len(fields) == 2 and fields[0] == "default":
+            bridge_lines[i] = f"default {rollback_entry.name}"
+    bridge_conf = ("\n".join(bridge_lines) + "\n").encode()
+    previous_images = {
+        path: path.read_bytes() if path.exists() else None for path in efi_paths
+    }
     try:
+        atomic_write(rollback_entry, rollback_contents)
+        atomic_write(loader_conf, bridge_conf)
+        entry_for(old, default=True)
+        if loader_changed:
+            run(
+                candidate / "systemd/bin/bootctl",
+                "--esp-path=/boot",
+                "--no-variables",
+                "--random-seed=no",
+                "--secure-boot-auto-enroll=no",
+                "install",
+                timing="bootloader-installation",
+            )
+            require(
+                all(
+                    file_hash(path).hex() == immutable_digest(desired_loader, cache)
+                    for path in efi_paths
+                ),
+                "native bootloader installation differs from prepared source",
+            )
+            entry_for(old, default=True)
+            firmware_check()
         run("nix-env", "--profile", PROFILE, "--set", candidate)
         print(
             run(
@@ -740,27 +907,44 @@ def deploy(action, candidate):
             end="",
         )
         entry_for(new, default=True)
-        for key in ("kernel", "initrd"):
-            require(
-                immutable_digest(new[key], cache)
-                == file_hash(ESP / esp_path(new[key])).hex(),
-                f"installed {key} failed verification",
-            )
+        verified.clear()
+        for policy in keep:
+            spec = specs[Path(state["contexts"][policy]["system"])]
+            entry_for(spec)
+            verify_files(spec)
         require(
-            immutable_digest(loader, cache)
-            == file_hash(ESP / "EFI/systemd/systemd-bootx64.efi").hex(),
+            file_hash(efi_paths[0]).hex() == immutable_digest(desired_loader, cache),
             "bootloader changed during installation",
         )
+        require(
+            file_hash(efi_paths[1]).hex() == desired_hash,
+            "fallback bootloader changed during installation",
+        )
         firmware_check()
+        # Publish durable EFI files/default before retiring transition-only policies.
+        run("sync", "-f", ESP)
     except BaseException:
-        atomic_write(loader_conf, previous_conf)
+        # Restore a bridge covered under both loader versions before reverting EFI.
+        for spec in (old, previous_spec):
+            for key in ("kernel", "initrd"):
+                path = ESP / esp_path(spec[key])
+                if not path.exists() or file_hash(path).hex() != immutable_digest(
+                    spec[key], cache
+                ):
+                    atomic_write(path, Path(spec[key]).read_bytes())
         atomic_write(rollback_entry, rollback_contents)
+        atomic_write(loader_conf, bridge_conf)
+        for path, content in previous_images.items():
+            if content is not None:
+                atomic_write(path, content)
+            elif path.exists():
+                path.unlink()
+        atomic_write(default_entry, default_contents)
+        atomic_write(loader_conf, previous_conf)
         run("nix-env", "--profile", PROFILE, "--set", previous_profile)
         raise
-    if not rollback_entry.exists():
-        atomic_write(rollback_entry, rollback_contents)
     retire_pending(device, state, keep)
-    retain_systems(state, keep)
+    retain_contexts(state, keep)
     print("TPM enrollment covers installed next boot; physical boot validation pending")
 
 

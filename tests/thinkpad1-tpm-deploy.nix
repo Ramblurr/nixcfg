@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, alternateSystemd }:
 pkgs.testers.runNixOSTest {
   name = "thinkpad1-tpm-deploy";
 
@@ -56,9 +56,12 @@ pkgs.testers.runNixOSTest {
       boot.initrd.systemd.enable = true;
       boot.initrd.systemd.tpm2.enable = true;
       boot.initrd.availableKernelModules = [ "tpm_tis" ];
+      # Keep the VM control connection alive across systemd package switches.
+      systemd.services.backdoor.restartIfChanged = false;
       environment.systemPackages = [
         pkgs.cryptsetup
         pkgs.efibootmgr
+        pkgs.strace
       ];
 
       specialisation.encrypted.configuration = encryptedConfig;
@@ -90,6 +93,26 @@ pkgs.testers.runNixOSTest {
         imports = [ encryptedConfig ];
         boot.initrd.systemd.storePaths = [ pkgs.hello ];
       };
+      specialisation.changedMicrocode.configuration = {
+        imports = [ encryptedConfig ];
+        hardware.cpu.intel.updateMicrocode = true;
+      };
+      specialisation.changedKernel.configuration = {
+        imports = [ encryptedConfig ];
+        boot.kernelPackages = pkgs.linuxPackages_6_12;
+      };
+      specialisation.changedBootloader.configuration = {
+        imports = [ encryptedConfig ];
+        systemd.package = alternateSystemd;
+      };
+      specialisation.failedLoader.configuration = {
+        imports = [ encryptedConfig ];
+        systemd.package = alternateSystemd;
+        boot.loader.systemd-boot.extraInstallCommands = ''
+          echo "deliberate failure after loader replacement" >&2
+          exit 42
+        '';
+      };
       specialisation.invalidArguments.configuration = {
         imports = [ encryptedConfig ];
         boot.kernelParams = lib.mkAfter [ "example=\"quiet\nunexpected\"" ];
@@ -108,6 +131,7 @@ pkgs.testers.runNixOSTest {
       settings2 = nodes.machine.specialisation.settings2.configuration.system.build.toplevel;
       settings3 = nodes.machine.specialisation.settings3.configuration.system.build.toplevel;
       failedInstall = nodes.machine.specialisation.failedInstall.configuration.system.build.toplevel;
+      failedLoader = nodes.machine.specialisation.failedLoader.configuration.system.build.toplevel;
       duplicateOptions =
         nodes.machine.specialisation.duplicateOptions.configuration.system.build.toplevel;
       duplicateLinux = nodes.machine.specialisation.duplicateLinux.configuration.system.build.toplevel;
@@ -116,6 +140,11 @@ pkgs.testers.runNixOSTest {
       duplicateDefault =
         nodes.machine.specialisation.duplicateDefault.configuration.system.build.toplevel;
       changedInitrd = nodes.machine.specialisation.changedInitrd.configuration.system.build.toplevel;
+      changedMicrocode =
+        nodes.machine.specialisation.changedMicrocode.configuration.system.build.toplevel;
+      changedKernel = nodes.machine.specialisation.changedKernel.configuration.system.build.toplevel;
+      changedBootloader =
+        nodes.machine.specialisation.changedBootloader.configuration.system.build.toplevel;
       invalidArguments =
         nodes.machine.specialisation.invalidArguments.configuration.system.build.toplevel;
       emptyArguments = nodes.machine.specialisation.emptyArguments.configuration.system.build.toplevel;
@@ -126,12 +155,16 @@ pkgs.testers.runNixOSTest {
           settings2
           settings3
           failedInstall
+          failedLoader
           duplicateOptions
           duplicateLinux
           alternateEntry
           preferredEntry
           duplicateDefault
           changedInitrd
+          changedMicrocode
+          changedKernel
+          changedBootloader
           invalidArguments
           emptyArguments
         ];
@@ -139,6 +172,7 @@ pkgs.testers.runNixOSTest {
     in
     ''
       import json
+      import shlex
       import time
 
       def snapshot():
@@ -146,6 +180,7 @@ pkgs.testers.runNixOSTest {
               "luks": json.loads(machine.succeed("cryptsetup luksDump --dump-json-metadata /dev/vdb")),
               "profile": machine.succeed("readlink -f /nix/var/nix/profiles/system"),
               "loader": machine.succeed("cat /boot/loader/loader.conf"),
+              "efi": machine.succeed("sha256sum /boot/EFI/systemd/systemd-bootx64.efi /boot/EFI/BOOT/BOOTX64.EFI"),
           }
 
       def refused(message, candidate="${settings3}"):
@@ -220,8 +255,6 @@ pkgs.testers.runNixOSTest {
       with subtest("non-canonical boot arguments are rejected before enrollment"):
           refused("unsupported kernel parameter encoding", "${invalidArguments}")
           refused("unsupported kernel parameter encoding", "${emptyArguments}")
-      with subtest("unsupported artifact changes leave the existing default intact"):
-          refused("changed initrd not supported yet", "${changedInitrd}")
       with subtest("preview and test activation do not change enrollment or boot default"):
           before_luks = machine.succeed("cryptsetup luksDump --dump-json-metadata /dev/vdb")
           before_profile = machine.succeed("readlink -f /nix/var/nix/profiles/system")
@@ -395,5 +428,142 @@ pkgs.testers.runNixOSTest {
           refused("PIN-protected disk tokens", "${failedInstall}")
           pin_token = next(token for token in snapshot()["luks"]["tokens"].values() if token.get("tpm2-pin"))
           machine.succeed("systemd-cryptenroll --wipe-slot=" + pin_token["keyslots"][0] + " /dev/vdb")
+      with subtest("boot artifact updates preserve unattended unlock and rollback"):
+          machine.succeed("cmp -n $(stat -c %s ${pkgs.microcode-intel}/intel-ucode.img) ${pkgs.microcode-intel}/intel-ucode.img ${changedMicrocode}/initrd")
+          original_token = next(key for key, token in snapshot()["luks"]["tokens"].items() if token.get("keyslots") == ["2"])
+          original_unlock = f"LD_LIBRARY_PATH=${encrypted}/systemd/lib/cryptsetup cryptsetup open --test-passphrase --token-only --token-id {original_token} /dev/vdb"
+          machine.succeed(original_unlock)
+          for candidate in ["${changedInitrd}", "${changedMicrocode}", "${changedKernel}", "${changedBootloader}", "${encrypted}"]:
+              started = time.monotonic()
+              action = "switch" if candidate == "${changedBootloader}" else "boot"
+              output = machine.succeed(f"{candidate}/thinkpad1-tpm-deploy {action} {candidate}")
+              print(f"Artifact deployment {candidate}: {time.monotonic() - started:.2f}s")
+              if action == "switch":
+                  machine.succeed(f"test $(readlink -f /run/current-system) = {candidate}")
+              assert len(snapshot()["luks"]["keyslots"]) <= 8
+              contexts = json.loads(machine.succeed("cat /var/lib/thinkpad1-tpm-deploy/state.json"))["contexts"]
+              for policy, context in contexts.items():
+                  loader_root = "/".join(context["loader"].split("/")[:4])
+                  machine.succeed(f"nix-store --query --roots {loader_root} | grep -F thinkpad1-tpm-loader-{policy}-1-link")
+              before = snapshot()
+              again = machine.succeed(f"{candidate}/thinkpad1-tpm-deploy {action} {candidate}")
+              assert "Preparing next-boot TPM enrollment" not in again
+              assert snapshot() == before, "repeated artifact deployment changed state"
+              machine.succeed("sync")
+              machine.crash()
+              machine.wait_for_unit("multi-user.target")
+              machine.succeed(f"grep -F 'init={candidate}/init' /proc/cmdline")
+              machine.succeed("findmnt -n -o SOURCE / | grep /dev/mapper/cryptroot")
+              if candidate == "${encrypted}":
+                  machine.succeed(original_unlock)
+              else:
+                  assert snapshot()["luks"]["tokens"][original_token]["keyslots"] == ["2"]
+                  machine.fail(original_unlock)
+              if candidate == "${changedBootloader}":
+                  machine.succeed(f"{candidate}/thinkpad1-tpm-deploy boot {candidate}")
+                  entries = json.loads(machine.succeed("bootctl list --json=short"))
+                  old_kernel = next(entry for entry in entries if "init=${changedKernel}/init" in entry.get("options", "").split())
+                  machine.succeed("bootctl set-oneshot " + old_kernel["id"])
+                  machine.succeed("sync")
+                  machine.crash()
+                  machine.wait_for_unit("multi-user.target")
+                  machine.succeed("grep -F 'init=${changedKernel}/init' /proc/cmdline")
+                  # The booted closure has the old systemd package, but firmware
+                  # used the newly installed shared bootloader.
+                  machine.succeed(f"{candidate}/thinkpad1-tpm-deploy boot {candidate}")
+      with subtest("unexpected cached boot sequence cannot authorize preparation"):
+          machine.succeed("${encrypted}/thinkpad1-tpm-deploy boot ${encrypted}")
+          cache_path = "/run/thinkpad1-tpm-deploy/measurements.json"
+          saved_cache = machine.succeed(f"cat {cache_path}")
+          corrupted = json.loads(saved_cache)
+          event = next(event for event in corrupted["events"] if event["pcr"] == 4 and event["event"] != "separator")
+          event["event"] = "separator"
+          try:
+              machine.succeed("printf %s " + shlex.quote(json.dumps(corrupted)) + " > " + cache_path)
+              refused("unsupported PCR4 boot sequence")
+          finally:
+              machine.succeed("printf %s " + shlex.quote(saved_cache) + " > " + cache_path)
+      with subtest("live EFI bytes are checked despite cached source measurements"):
+          for path, message in [
+              ("/boot/EFI/systemd/systemd-bootx64.efi", "installed bootloader differs from known sources"),
+              ("/boot/EFI/BOOT/BOOTX64.EFI", "unrecognized fallback bootloader"),
+          ]:
+              machine.succeed(f"cp {path} /tmp/saved-efi; printf changed >> {path}")
+              try:
+                  refused(message)
+              finally:
+                  machine.succeed(f"cp /tmp/saved-efi {path}")
+      with subtest("whole loader-policy bundle capacity is checked before enrollment"):
+          tokens = snapshot()["luks"]["tokens"]
+          fillers = [token for token in range(32) if str(token) not in tokens][:-1]
+          machine.succeed("printf %s " + shlex.quote(json.dumps({"type": "test-capacity", "keyslots": []})) + " > /tmp/capacity-token.json")
+          try:
+              for token in fillers:
+                  machine.succeed(f"cryptsetup token import --token-id {token} --json-file /tmp/capacity-token.json /dev/vdb")
+              refused("insufficient LUKS enrollment capacity", "${failedLoader}")
+          finally:
+              for token in fillers:
+                  machine.succeed(f"cryptsetup token remove --token-id {token} /dev/vdb")
+      with subtest("failed loader replacement restores both EFI images and the prior default"):
+          before = snapshot()
+          status, output = machine.execute("${failedLoader}/thinkpad1-tpm-deploy boot ${failedLoader} 2>&1")
+          assert status != 0 and "deliberate failure after loader replacement" in output, output
+          after = snapshot()
+          for key in ["profile", "loader", "efi"]:
+              assert after[key] == before[key], f"failed loader update changed {key}"
+          for section in ["keyslots", "tokens"]:
+              for key, value in before["luks"][section].items():
+                  assert after["luks"][section][key] == value
+          machine.succeed("sync")
+          machine.crash()
+          machine.wait_for_unit("multi-user.target")
+          machine.succeed("grep -F 'init=${encrypted}/init' /proc/cmdline")
+      with subtest("power loss on both sides of loader replacement boots the prepared bridge"):
+          for phase in ["entry-pruning", "before", "after"]:
+              machine.succeed("${encrypted}/thinkpad1-tpm-deploy boot ${encrypted}")
+              machine.succeed("sync")
+              machine.crash()
+              machine.wait_for_unit("multi-user.target")
+              machine.succeed("grep -F 'init=${encrypted}/init' /proc/cmdline")
+              # Leave a prepared but unbooted default different from the bridge.
+              machine.succeed("${settings3}/thinkpad1-tpm-deploy boot ${settings3}")
+              primary = "/boot/EFI/systemd/systemd-bootx64.efi"
+              original = machine.succeed(f"sha256sum {primary} | cut -d ' ' -f1").strip()
+              fallback = machine.succeed("sha256sum /boot/EFI/BOOT/BOOTX64.EFI | cut -d ' ' -f1").strip()
+              desired = machine.succeed("sha256sum ${changedBootloader}/systemd/lib/systemd/boot/efi/systemd-bootx64.efi | cut -d ' ' -f1").strip()
+              if phase == "entry-pruning":
+                  old_entry = machine.succeed("grep -l 'init=${encrypted}/init' /boot/loader/entries/nixos-generation-*.conf | LC_ALL=C sort | head -n1").strip()
+                  assert old_entry
+                  machine.succeed("nix-env --profile /nix/var/nix/profiles/system --delete-generations old")
+                  trace = f"-e trace=unlink -e inject=unlink:signal=SIGSTOP:when=1+ -P {old_entry}"
+              else:
+                  injection = "delay_enter=120s" if phase == "before" else "signal=SIGSTOP"
+                  trace = f"-e trace=renameat -e inject=renameat:{injection}:when=1 -P /boot/EFI/systemd"
+              machine.succeed(f"setsid strace -f -o /tmp/loader-trace {trace} ${changedBootloader}/thinkpad1-tpm-deploy boot ${changedBootloader} > /tmp/interrupted-loader.log 2>&1 &")
+              try:
+                  if phase == "entry-pruning":
+                      machine.wait_until_succeeds(f"test ! -e {old_entry}", timeout=90)
+                  if phase != "before":
+                      machine.wait_until_succeeds(f"test $(sha256sum {primary} | cut -d ' ' -f1) = {desired}", timeout=90)
+                  machine.wait_until_succeeds("ps -eo stat,args | grep -E '^[Tt].*(bootctl|python)'", timeout=90)
+                  machine.succeed(f"test $(sha256sum {primary} | cut -d ' ' -f1) = {original if phase == 'before' else desired}")
+                  machine.succeed(f"test $(sha256sum /boot/EFI/BOOT/BOOTX64.EFI | cut -d ' ' -f1) = {desired if phase == 'entry-pruning' else fallback}")
+                  if phase == "entry-pruning":
+                      print(machine.succeed("cat /boot/loader/loader.conf /tmp/loader-trace"))
+                  machine.succeed("entry=$(awk '$1 == \"default\" {print $2}' /boot/loader/loader.conf); grep -F 'init=${encrypted}/init' /boot/loader/entries/$entry")
+              except Exception:
+                  print(machine.execute("cat /tmp/interrupted-loader.log /tmp/loader-trace"))
+                  raise
+              machine.succeed("sync")
+              machine.crash()
+              machine.wait_for_unit("multi-user.target")
+              machine.succeed("grep -F 'init=${encrypted}/init' /proc/cmdline")
+              machine.succeed("${changedBootloader}/thinkpad1-tpm-deploy boot ${changedBootloader}")
+              machine.succeed(f"test $(sha256sum /boot/EFI/BOOT/BOOTX64.EFI | cut -d ' ' -f1) = {desired}")
+              assert len(snapshot()["luks"]["keyslots"]) <= 8
+              machine.succeed("sync")
+              machine.crash()
+              machine.wait_for_unit("multi-user.target")
+              machine.succeed("grep -F 'init=${changedBootloader}/init' /proc/cmdline")
     '';
 }
