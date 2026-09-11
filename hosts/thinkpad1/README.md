@@ -1,8 +1,8 @@
 # thinkpad1
 
 The laptop is installed with Btrfs and persistent swap inside LUKS2.
-TPM deployment automation is under development. VM tests do not replace
-the required hardware rollout and boot checks.
+TPM-aware deployment is enabled and has passed physical unattended-boot, rollback,
+and recovery checks. VM tests cover additional failure and boot-artifact transitions.
 
 ## Repository layout
 
@@ -193,7 +193,7 @@ Nix-prepended microcode is measured as part of the single combined initrd; separ
 extra initrd images remain unsupported. A settings change still needs a new policy
 because `init=` changes. Firmware overrides and unsupported boot layouts are rejected.
 There is no automatic reboot. `test` and `dry-activate` do not enroll or change
-the boot profile. Laptop rollout still requires approved physical validation.
+the boot profile. Successful enrollment alone does not prove next-boot unlock.
 The live firmware entry must be active and use the standard GPT HD/File/End path
 to the observed systemd-boot image. Its partition UUID and geometry must match
 the FAT partition mounted at `/boot`. Other paths, optional load arguments,
