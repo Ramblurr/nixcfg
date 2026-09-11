@@ -156,9 +156,24 @@ in
       ];
     };
     script = ''
+      set -eu
+      umask 077
       ${pkgs.coreutils}/bin/install -d -m 0700 -o ${user} -g ${user} /run/opencloud-home
-      ${pkgs.coreutils}/bin/install -m 0400 -o ${user} -g ${user} "$CREDENTIALS_DIRECTORY/IDM_ADMIN_PASSWORD" /run/opencloud-home/app.env
-      ${pkgs.coreutils}/bin/install -m 0400 -o ${user} -g ${user} "$CREDENTIALS_DIRECTORY/JWT_SECRET" /run/opencloud-home/office.env
+      trap '${pkgs.coreutils}/bin/rm -f /run/opencloud-home/*.new' EXIT
+      {
+        printf 'IDM_ADMIN_PASSWORD='
+        ${pkgs.coreutils}/bin/cat "$CREDENTIALS_DIRECTORY/IDM_ADMIN_PASSWORD"
+        printf '\n'
+      } > /run/opencloud-home/app.env.new
+      {
+        printf 'JWT_SECRET='
+        ${pkgs.coreutils}/bin/cat "$CREDENTIALS_DIRECTORY/JWT_SECRET"
+        printf '\n'
+      } > /run/opencloud-home/office.env.new
+      ${pkgs.coreutils}/bin/chown ${user}:${user} /run/opencloud-home/*.new
+      ${pkgs.coreutils}/bin/chmod 0400 /run/opencloud-home/*.new
+      ${pkgs.coreutils}/bin/mv -f /run/opencloud-home/app.env.new /run/opencloud-home/app.env
+      ${pkgs.coreutils}/bin/mv -f /run/opencloud-home/office.env.new /run/opencloud-home/office.env
     '';
   };
   systemd.services."user@3100" = {

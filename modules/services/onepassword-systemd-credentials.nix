@@ -50,8 +50,8 @@ let
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        User = "microvm";
-        Group = "kvm";
+        User = "root";
+        Group = "root";
         UMask = "0077";
         ExecStopPost = "${pkgs.coreutils}/bin/rm -rf ${lib.escapeShellArg directory}";
       };

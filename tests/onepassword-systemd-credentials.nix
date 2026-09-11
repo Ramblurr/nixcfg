@@ -181,8 +181,8 @@ assert
   microvmConfig.modules.services.onepassword-systemd-credentials.microvmSecrets.demo.API_TOKEN
   == "op://home-ops-prod/Example/token";
 assert microvmSecretService.serviceConfig.Type == "oneshot";
-assert microvmSecretService.serviceConfig.User == "microvm";
-assert microvmSecretService.serviceConfig.Group == "kvm";
+assert microvmSecretService.serviceConfig.User == "root";
+assert microvmSecretService.serviceConfig.Group == "root";
 assert microvmSecretService.serviceConfig.UMask == "0077";
 assert
   microvmSecretService.serviceConfig.LoadCredential == [

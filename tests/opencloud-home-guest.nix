@@ -79,6 +79,16 @@ assert
     "IDM_ADMIN_PASSWORD:/run/host-secrets/IDM_ADMIN_PASSWORD"
     "JWT_SECRET:/run/host-secrets/JWT_SECRET"
   ];
+assert builtins.all (option: builtins.elem option c.fileSystems."/run/host-secrets".options) [
+  "ro"
+  "nodev"
+  "nosuid"
+  "noexec"
+];
+assert pkgs.lib.hasInfix "printf 'IDM_ADMIN_PASSWORD='"
+  c.systemd.services.opencloud-home-credentials.script;
+assert pkgs.lib.hasInfix "printf 'JWT_SECRET='"
+  c.systemd.services.opencloud-home-credentials.script;
 assert
   c.systemd.services.opencloud-home-credentials.unitConfig.RequiresMountsFor
   == [ "/run/host-secrets" ];
