@@ -71,6 +71,10 @@ assert c.modules.microvm-guest.hostSecrets.enable;
 assert builtins.length secretShares == 1;
 assert (builtins.head secretShares).source == "/run/microvms/secrets/opencloud-home";
 assert (builtins.head secretShares).mountPoint == "/run/host-secrets";
+assert (builtins.head secretShares).cache == "never";
+assert builtins.all (
+  argument: !(pkgs.lib.hasPrefix "--cache=" argument)
+) c.microvm.virtiofsd.extraArgs;
 assert (builtins.head secretShares).proto == "virtiofs";
 assert (builtins.head secretShares).readOnly;
 assert c.microvm.credentialFiles == { };
