@@ -7,7 +7,7 @@ let
       }
       ''
         mkdir -p "$out"
-        openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+        openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
           -subj /CN=immich-ml-test-ca \
           -keyout "$out/ca-key.pem" -out "$out/ca.pem" >/dev/null 2>&1
         openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
@@ -34,12 +34,13 @@ let
             -CAcreateserial -extfile "$out/$name.ext" -out "$out/$name.pem" >/dev/null 2>&1
         }
 
-        issue_certificate server serverAuth DNS:immich-ml.test 1
-        issue_certificate wrong-server serverAuth DNS:wrong-name.test 1
-        issue_certificate authorized-client clientAuth "" 1
-        issue_certificate replacement-client clientAuth "" 1
+        issue_certificate server serverAuth DNS:immich-ml.test 40
+        issue_certificate wrong-server serverAuth DNS:wrong-name.test 40
+        issue_certificate authorized-client clientAuth "" 40
+        issue_certificate replacement-client clientAuth "" 40
+        issue_certificate expiring-client clientAuth "" 1
         issue_certificate expired-client clientAuth "" 0
-        issue_certificate rogue-client clientAuth "" 1
+        issue_certificate rogue-client clientAuth "" 40
       '';
   provisionCertificates = serviceName: {
     systemd.services.immich-ml-test-certificates = {
@@ -62,9 +63,12 @@ let
         install -m 0400 ${certificates}/rogue-client-key.pem /run/immich-ml-test-certificates/rogue-client-key.pem
         install -m 0444 ${certificates}/replacement-client.pem /run/immich-ml-test-certificates/replacement-client.pem
         install -m 0400 ${certificates}/replacement-client-key.pem /run/immich-ml-test-certificates/replacement-client-key.pem
+        install -m 0444 ${certificates}/expiring-client.pem /run/immich-ml-test-certificates/expiring-client.pem
         install -m 0444 ${certificates}/expired-client.pem /run/immich-ml-test-certificates/expired-client.pem
         install -m 0400 ${certificates}/expired-client-key.pem /run/immich-ml-test-certificates/expired-client-key.pem
         install -m 0444 ${certificates}/wrong-ca.pem /run/immich-ml-test-certificates/wrong-ca.pem
+        printf 'synthetic-token\n' > /run/immich-ml-test-certificates/gatus-token
+        chmod 0400 /run/immich-ml-test-certificates/gatus-token
       '';
     };
     systemd.services.${serviceName} = {
@@ -114,8 +118,12 @@ pkgs.testers.runNixOSTest {
           monitoredCertificates = {
             "server.pem" = "/run/immich-ml-test-certificates/server.pem";
             "authorized-client.pem" = "/run/immich-ml-test-certificates/authorized-client.pem";
+            "expiring-client.pem" = "/run/immich-ml-test-certificates/expiring-client.pem";
           };
         };
+        systemd.services.immich-ml-server-proxy-certificate-expiry.serviceConfig.LoadCredential = [
+          "gatus-token:/run/immich-ml-test-certificates/gatus-token"
+        ];
       };
 
     client =
@@ -165,6 +173,9 @@ pkgs.testers.runNixOSTest {
     client.wait_for_unit("immich-ml-client-proxy.service")
     server.fail("systemctl start immich-ml-server-proxy-certificate-expiry.service")
     server.succeed("systemctl is-failed immich-ml-server-proxy-certificate-expiry.service")
+    server.succeed("install -m 0444 /run/immich-ml-test-certificates/replacement-client.pem /run/immich-ml-test-certificates/expiring-client.pem")
+    server.succeed("systemctl reset-failed immich-ml-server-proxy-certificate-expiry.service")
+    server.succeed("systemctl start immich-ml-server-proxy-certificate-expiry.service")
 
     client.succeed("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 10 http://127.0.0.1:3004/ >/dev/null")
 
