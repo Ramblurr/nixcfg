@@ -18,7 +18,7 @@ in
       home.packages = [
         pkgs.opencloud-desktop
       ]
-      ++ lib.optional config.modules.desktop.kde.enable pkgs.desktop-shell-integration-dolphin;
+      ++ lib.optional config.modules.desktop.kde.enable pkgs.opencloud-desktop-shell-integration-dolphin;
       systemd.user.services.opencloud-desktop = {
         Unit = {
           Description = "OpenCloud Desktop Client";
