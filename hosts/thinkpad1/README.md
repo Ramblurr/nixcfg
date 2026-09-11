@@ -23,7 +23,7 @@ Never copy that data or plaintext secrets into this repository.
 - Plasma Login Manager shows both normal accounts and preselects `viki`.
 - Catppuccin KDE and Plymouth themes, with selectable variant and KDE accent.
 - NetworkManager, Bluetooth, PipeWire, firmware updates, power profiles, KDE Connect.
-- Firefox and 1Password installed through Nix; no configured 1Password autostart.
+- Firefox and 1Password installed through Nix; 1Password starts at Viki's graphical login.
 - User-scoped Flathub for ordinary optional applications through Discover.
 - No automatic NixOS or Flatpak updates; no Krohnkite.
 - Plasma settings remain user-owned, including panels, wallpapers and shortcuts.
@@ -48,6 +48,11 @@ Plasma Login Manager and console login), the KDE screen locker, and Polkit
 authorization prompts. Enter the PIN in the existing password field. This includes
 privileged actions authorized through Polkit. Password authentication remains
 available; SSH, sudo, and other users do not gain PIN authentication.
+
+Initial and console login use PIN/password only: Plasma Login Manager cannot run
+fingerprint authentication in parallel, so enabling it there delays typed input
+until the fingerprint timeout. KDE screen unlocking retains its separate fingerprint
+path. Polkit remains unchanged and may wait for fingerprint before accepting a PIN.
 
 From an administrator terminal, enroll with `sudo pinutil setup viki`.
 Five failed PIN attempts lock the PIN until an administrator deletes and recreates

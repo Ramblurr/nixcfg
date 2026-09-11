@@ -43,6 +43,9 @@
   };
 
   security.pam.services = lib.genAttrs [ "login" "kde" "polkit-1" ] (service: {
+    # Plasma Login Manager uses the login substack and cannot run fingerprint auth in parallel.
+    # Keep fingerprint authentication in KDE's separate unlock stack, not initial/TTY login.
+    fprintAuth = lib.mkIf (service == "login") false;
     rules.auth = {
       # Password auth runs first. A PIN reuses the same field without another prompt.
       pinpam.args = [ "use_first_pass" ];

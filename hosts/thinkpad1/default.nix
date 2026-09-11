@@ -190,6 +190,8 @@ in
   services.onedrive.enable = false;
   # create config file in ~/.config
   myhm = {
+    xdg.configFile."autostart/1password.desktop".source =
+      "${config.programs._1password-gui.package}/share/applications/1password.desktop";
     xdg.configFile."onedrive/config".text = ''
       sync_dir = "/home/viki/OneDrive"
       skip_file = "~*|.~*|*.tmp"
