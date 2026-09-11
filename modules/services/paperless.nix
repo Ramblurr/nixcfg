@@ -9,7 +9,7 @@ let
   cfg = config.modules.services.paperless;
   onepassword = config.modules.services.onepassword-systemd-credentials;
   localPath = "/mnt/mali/${cfg.nfsShare}";
-  quinePrimAddress = builtins.head config.site.net.prim.hosts4.quine;
+  quineServiceAddress = builtins.head config.site.net.svc.hosts4.quine;
   paperlessPasswordFile = "/run/paperless-secrets/admin-password";
   paperlessOidcEnvironmentFile = "/run/paperless-secrets/oidc.env";
   paperlessServices = [
@@ -176,10 +176,10 @@ in
         PAPERLESS_AI_ENABLED = true;
         PAPERLESS_AI_LLM_BACKEND = "ollama";
         PAPERLESS_AI_LLM_MODEL = "llama3.1";
-        PAPERLESS_AI_LLM_ENDPOINT = "http://${quinePrimAddress}:11434";
+        PAPERLESS_AI_LLM_ENDPOINT = "http://${quineServiceAddress}:11434";
         PAPERLESS_AI_LLM_EMBEDDING_BACKEND = "openai-like";
         PAPERLESS_AI_LLM_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2";
-        PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT = "http://${quinePrimAddress}:8083/v1";
+        PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT = "http://${quineServiceAddress}:8083/v1";
         PAPERLESS_AI_LLM_EMBEDDING_CHUNK_SIZE = 256;
         PAPERLESS_AI_LLM_API_KEY = "paperless-local";
         PAPERLESS_AI_LLM_ALLOW_INTERNAL_ENDPOINTS = true;

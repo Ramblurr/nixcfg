@@ -21,6 +21,16 @@ in
     ../../modules/site-net
   ];
   determinate.enable = false;
+  assertions = [
+    {
+      assertion = builtins.elem {
+        Address = "${
+          builtins.head config.site.net.svc.hosts4.${hostName}
+        }/${toString config.site.net.svc.subnet4Len}";
+      } config.systemd.network.networks."30-svc".addresses;
+      message = "Debord must have its static service-network address for Hindsight reranking.";
+    }
+  ];
   system.stateVersion = "24.05";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
@@ -106,7 +116,7 @@ in
     extraEnvironment = {
       # Active GPU reranker.
       HINDSIGHT_API_RERANKER_PROVIDER = "tei";
-      HINDSIGHT_API_RERANKER_TEI_URL = "http://10.9.4.3:8082";
+      HINDSIGHT_API_RERANKER_TEI_URL = "http://${builtins.head config.site.net.svc.hosts4.quine}:8082";
       HINDSIGHT_API_RERANKER_TEI_BATCH_SIZE = "128";
       HINDSIGHT_API_RERANKER_TEI_MAX_CONCURRENT = "4";
       HINDSIGHT_API_RERANKER_TEI_HTTP_TIMEOUT = "5";
