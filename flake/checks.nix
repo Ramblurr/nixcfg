@@ -64,6 +64,10 @@
           inherit (pkgs) deploy;
         };
         deploy-user = import ../tests/deploy-user.nix { inherit inputs pkgs; };
+        thinkpad1-wallet = import ../tests/thinkpad1-wallet.nix {
+          inherit inputs;
+          pkgs = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+        };
         thinkpad1-tpm-deploy = import ../tests/thinkpad1-tpm-deploy.nix {
           pkgs = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
           alternateSystemd = inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.systemd;

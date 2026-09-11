@@ -59,8 +59,19 @@ Five failed PIN attempts lock the PIN until an administrator deletes and recreat
 it. Do not clear the TPM: that also invalidates LUKS TPM enrollment. Normal users
 must not join the `tss` group. The privileged pinutil wrapper mediates TPM access.
 
-The experimental master-key/keyring feature is deliberately disabled. A PIN does
-not itself unlock an existing password-protected KWallet or 1Password vault.
+Viki's graphical login passes a TPM-derived key to KWallet after the existing
+login authentication substack. The wallet PAM module then replaces its earlier
+password/PIN capture before opening the session. Other users keep their normal
+wallet password, and console login, screen unlock, Polkit, SSH and sudo do not
+receive the master-key module. The PIN and disk-enrollment objects stay separate.
+
+The initial disposable wallet is reset once during provisioning, not on every
+login or deployment. KDE can create the missing wallet with the supplied key at
+the next graphical login. Existing wallets need deliberate migration before
+using this feature. Without a provisioned master key, login still works but
+wallet auto-unlock is not guaranteed. Loss of the master key makes data keyed to
+it inaccessible unless separate recovery was arranged; do not clear the TPM as
+a repair. This feature does not unlock a 1Password vault.
 
 ## Backups and synchronization
 
