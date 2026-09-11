@@ -94,7 +94,6 @@ in
         threadPoolSize = 4;
         extraArgs = [
           "--allow-mmap" # requires virtiofsd > 1.10.1
-          "--cache=auto"
           "--inode-file-handles=mandatory"
         ];
       };
