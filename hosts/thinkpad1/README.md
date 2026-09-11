@@ -173,7 +173,7 @@ source or the Nix store. The TPM must unlock LUKS before LVM activates the resum
 device. Verify cold boot, suspend, hibernate, resume, and snapshot file recovery
 on the installed hardware; a successful build does not establish these behaviors.
 
-## TPM-aware deployment: settings-only support
+## TPM-aware deployment
 
 `deploy thinkpad1` uses the candidate system's `thinkpad1-tpm-deploy` helper.
 Run it from a fresh private `nix develop` shell after updating the public input.
@@ -187,11 +187,12 @@ Candidates without the helper are rejected rather than deployed without this che
 Automatic enrollment also rejects active PIN-protected disk tokens. It does not
 try PIN values. This restriction does not apply to the separate pinpam login PIN.
 
-This first implementation supports unchanged kernel, initrd, and bootloader files.
-A settings change still needs a new policy because `init=` changes. Changed boot
-artifacts are rejected before default selection. Firmware overrides, a different
-boot order, and unsupported boot layouts are also rejected. There is no automatic
-reboot. `test` and `dry-activate` do not enroll or change the boot profile.
+The helper supports settings, kernel, initrd, and unsigned systemd-boot updates.
+Nix-prepended microcode is measured as part of the single combined initrd; separate
+extra initrd images remain unsupported. A settings change still needs a new policy
+because `init=` changes. Firmware overrides and unsupported boot layouts are rejected.
+There is no automatic reboot. `test` and `dry-activate` do not enroll or change
+the boot profile. Laptop rollout still requires approved physical validation.
 The live firmware entry must be active and use the standard GPT HD/File/End path
 to the observed systemd-boot image. Its partition UUID and geometry must match
 the FAT partition mounted at `/boot`. Other paths, optional load arguments,
@@ -203,26 +204,47 @@ types and conflicting directives are rejected, including changes made by install
 Kernel parameters must be non-empty printable strings without outer whitespace;
 an empty parameter list is not supported. This keeps BLS parsing and PCR prediction
 consistent. Nix can accept quoted line breaks that a BLS entry cannot preserve.
+A boot log containing returned/retried EFI applications is unsupported: copying
+those attempts into a next-boot prediction would be unsafe after a boot-order change.
+
+A shared bootloader update also changes the measurement for rollback entries.
+Before replacing either EFI copy, the helper prepares the candidate and retained
+rollback systems, then temporarily selects the booted system as a bridge. That
+bridge is covered under both the installed and desired loaders. Native `bootctl`
+installs the exact desired version without changing firmware variables, including
+on downgrade. The candidate becomes the default only after this preparation.
+All boot installations use `/boot/loader/entries/thinkpad1-tpm-rollback.conf`
+as this bridge. Its name keeps it outside native generation pruning. It remains
+available as a rollback entry, with its system and policy retained. Do not edit it.
+The helper flushes the EFI filesystem before retiring transition-only policies.
 
 The journal is `/var/lib/thinkpad1-tpm-deploy/state.json`. It records enrollment
 intent and fingerprints of owned tokens and slots. Recovery slot 0 and unmanaged
 credentials are never retired. After a successful installation, the helper retains
-the two most recent confirmed boot policies and the pending candidate. Confirmation
+the two most recent confirmed boot policies, their equivalents under the desired
+loader, and the pending candidate: at most five automation-owned policies, plus
+unmanaged credentials. Preparation can temporarily require more space. Confirmation
 requires matching current boot measurements and successful TPM authorization;
 activation alone is not proof.
 Native profiles named `thinkpad1-tpm-<policy>` under
 `/nix/var/nix/profiles/system-profiles/` keep the required systems available to the
-boot loader and protect them from garbage collection. Do not edit these profiles.
+boot loader and protect them from garbage collection. Separate profiles named
+`thinkpad1-tpm-loader-<policy>` under `/nix/var/nix/profiles/` retain each policy's
+loader package, which can differ from its system's package after a manual rollback.
+Do not edit either set of managed profiles.
 
 Failure handling:
 
-- If the LUKS header has insufficient space, deployment stops. It does not remove
-  old credentials to make space for an enrollment that has not yet succeeded.
+- Before enrollment, capacity checks cover the whole missing policy set: available
+  keyslot and token numbers, JSON metadata space, and contiguous keyslot storage.
+  Insufficient capacity stops deployment without deleting old credentials to make
+  room for an enrollment that has not yet succeeded.
 - After an interruption, retry can adopt a unique matching new token. A new slot
   without a matching token requires manual review. The journal and slot are kept.
-- After a boot installation error, the helper attempts to restore the previous
-  profile and boot default. Prepared enrollments remain available for retry.
-  This is not an atomic transaction across LUKS metadata and the EFI filesystem.
+- After a boot installation error, the helper attempts to restore the bridge, both
+  previous EFI images, and the previous profile/default. Prepared enrollments remain
+  available for retry. This is not an atomic transaction across LUKS metadata and
+  the EFI filesystem, nor a guarantee against filesystem damage during power loss.
 - Do not reboot after a failed deployment until the boot default and recovery
   path have been checked. Do not delete the journal or wipe all TPM slots as a fix.
 
