@@ -27,6 +27,7 @@ let
       ];
     };
   defaultCfg = (evaluate { }).config;
+  legacyCfg = (evaluate { system.stateVersion = lib.mkForce "23.05"; }).config;
   mullvadCfg =
     (evaluate {
       modules.vpn.mullvad.enable = true;
@@ -42,6 +43,7 @@ let
 in
 assert defaultCfg.networking.nftables.ruleset == "";
 assert !defaultCfg.networking.nftables.flushRuleset;
+assert !legacyCfg.networking.nftables.flushRuleset;
 assert !(defaultCfg.networking.nftables.tables ? "mullvad-local-exclude");
 assert !(defaultCfg.networking.nftables.tables ? "mullvad-tailscale-exclude");
 assert mullvadCfg.networking.nftables.tables ? "mullvad-local-exclude";
