@@ -86,6 +86,7 @@ in
   modules = {
     users.enable = true;
     desktop.programs.onepassword.enable = true;
+    desktop.programs.opencloud.enable = true;
     desktop.kde = {
       enable = true;
       krohnkite.enable = false;

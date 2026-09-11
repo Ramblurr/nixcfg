@@ -34,6 +34,7 @@
     ./desktop/programs/nextcloud.nix
     ./desktop/programs/nheko.nix
     ./desktop/programs/obs.nix
+    ./desktop/programs/opencloud.nix
     ./desktop/programs/owncloud.nix
     ./desktop/programs/signal.nix
     ./desktop/programs/slack.nix
