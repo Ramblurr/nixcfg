@@ -8,9 +8,9 @@ let
   cfg = config.modules.services.immich-machine-learning;
 in
 {
-  # The pinned upstream module gates ML behind the full server enable flag and
-  # adds PostgreSQL setup hooks even with its database disabled. Keep this role
-  # independent until upstream supports a standalone ML service.
+  # The nixpkgs Immich module requires the full server to enable machine learning.
+  # It also adds PostgreSQL setup commands when its database is disabled.
+  # This module runs machine learning without those services or commands.
   options.modules.services.immich-machine-learning = {
     enable = lib.mkEnableOption "standalone Immich machine learning";
     package = lib.mkPackageOption pkgs "immich-machine-learning" { };

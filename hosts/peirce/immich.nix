@@ -4,6 +4,8 @@
   services.xserver.videoDrivers = [ "nvidia" ];
   hardware.nvidia = {
     open = false;
+    # The GTX 1070 Ti uses Pascal. R580 is the last NVIDIA driver series
+    # that supports this GPU. Newer driver series cannot be used.
     package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
     nvidiaSettings = false;
   };
@@ -13,7 +15,6 @@
     extra-trusted-public-keys = [ "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs=" ];
   };
 
-  # Production still uses Quine. Network exposure and cutover are separate changes.
   modules.services.immich-machine-learning = {
     enable = true;
     gpu = true;

@@ -4,7 +4,8 @@ assert lib.assertMsg (
 ) "The Pascal reranker binaries require x86_64-linux";
 let
   ml = pkgs.callPackage ./immich-machine-learning-pascal.nix { };
-  # The cu126 wheel uses CUDA-12 SONAMEs; reuse the native 12.9 runtime from Immich.
+  # Reuse the cached CUDA 12.9 libraries instead of building a second CUDA runtime.
+  # The cu126 wheel uses CUDA 12 library names. GPU tests verified this combination.
   cuda = pkgs.cudaPackages_12_9 // {
     cudnn = ml.cudnn;
     # Match the cu126 wheel's redistribution instead of compiling all NVSHMEM GPU targets.
@@ -102,7 +103,8 @@ let
           "nvidia-cufile-cu12"
           "nvidia-nvshmem-cu12"
         ];
-        # The inherited diagnostic describes the default CUDA-13 wheel, not this cu126 artifact.
+        # nixpkgs torch-bin reports unsupported-cuda-version for its default CUDA 13 wheel.
+        # This override selects a CUDA 12.6 wheel, so that warning does not apply.
         meta = old.meta // {
           platforms = [ "x86_64-linux" ];
           problems = builtins.removeAttrs (old.meta.problems or { }) [ "unsupported-cuda-version" ];
