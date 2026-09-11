@@ -8,7 +8,9 @@
 }:
 let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
-  primAddress = builtins.head config.site.net.prim.hosts4.${config.networking.hostName};
+  # Quine's primary address is DHCP-reserved; site.net.prim.hosts4 means static addressing.
+  # Keep this listener address separate so evaluating it does not disable DHCP/default routes.
+  primAddress = "10.9.4.3";
   deweyPrimAddress = builtins.head config.site.net.prim.hosts4.dewey;
   inherit (config.modules.users.primaryUser) username;
 in
@@ -33,6 +35,13 @@ in
     #./arm.nix
     ./remote-builder.nix
     ./llm.nix
+  ];
+
+  assertions = [
+    {
+      assertion = config.systemd.network.networks."30-prim".networkConfig.DHCP == "ipv4";
+      message = "Quine primary networking must retain DHCP so its reserved address includes the default route.";
+    }
   ];
 
   system.stateVersion = "23.05";
