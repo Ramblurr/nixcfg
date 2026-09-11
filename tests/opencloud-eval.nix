@@ -49,6 +49,8 @@ let
     in
     lib.any (a: !a.assertion) changed.config.assertions;
   c = configuration.config;
+  alphaExecStartPre = c.virtualisation.quadlet.containers.opencloud-alpha.serviceConfig.ExecStartPre;
+  officeWait = lib.findFirst (lib.hasInfix "-wait-for-office") null alphaExecStartPre;
 in
 assert lib.all (a: a.assertion) c.assertions;
 assert c.users.users.opencloud-alpha.uid == 3101;
@@ -56,9 +58,16 @@ assert c.users.users.opencloud-beta.uid == 3102;
 assert c.users.users.opencloud-alpha.linger;
 assert c.virtualisation.quadlet.containers.opencloud-alpha.uid == 3101;
 assert c.virtualisation.quadlet.containers.opencloud-beta.uid == 3102;
+assert builtins.elem "opencloud-alpha-office.service" (
+  c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig.Requires or [ ]
+);
+assert builtins.elem "opencloud-alpha-office.service" (
+  c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig.After or [ ]
+);
 assert
   c.virtualisation.quadlet.containers.opencloud-alpha.containerConfig.UserNS
   == "keep-id:uid=1000,gid=1000";
+assert officeWait != null;
 assert rejects { modules.services.opencloud.instances.beta.uid = lib.mkForce 3101; };
 assert rejects { modules.services.opencloud.instances.beta.ports.app = lib.mkForce 9200; };
 assert rejects {
@@ -69,5 +78,8 @@ assert rejects {
     lib.mkForce "/var/lib/other/../opencloud-alpha";
 };
 pkgs.runCommand "opencloud-evaluation" { } ''
+  ${pkgs.gnugrep}/bin/grep -F \
+    'http://127.0.0.1:9201/hosting/discovery' \
+    ${officeWait}
   touch $out
 ''
