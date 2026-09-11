@@ -1,5 +1,5 @@
 # Host-owned administrative SSH over VSOCK. Public keys only.
-# Onboarding and rotation: docs/microvm-ssh.md.
+# Onboarding and rotation: nixcfg-private/docs/services/microvm-ssh.md.
 {
   dewey = {
     publicKeyFile = ./ssh/dewey-microvm.pub;
