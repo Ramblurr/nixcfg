@@ -40,6 +40,7 @@ let
         c.security.pinpam.auth.services == [
           "login"
           "kde"
+          "polkit-1"
         ]
       && c.security.pam.services.login.rules.auth.pinpam.control == "sufficient"
       && c.security.pam.services.login.rules.auth.pinpam.args == [ "use_first_pass" ]
@@ -51,6 +52,26 @@ let
         < c.security.pam.services.login.rules.auth.deny.order
       && !(c.security.pam.services.sudo.rules.auth ? pinpam)
       && !(c.security.pam.services.sshd.rules.auth ? pinpam)
+      && c.security.pam.services.polkit-1.rules.auth.pinpam.control == "sufficient"
+      && c.security.pam.services.polkit-1.rules.auth.pinpam.args == [ "use_first_pass" ]
+      &&
+        c.security.pam.services.polkit-1.rules.auth.pinpam.order
+        > c.security.pam.services.polkit-1.rules.auth.unix.order
+      &&
+        c.security.pam.services.polkit-1.rules.auth.pinpam.order
+        < c.security.pam.services.polkit-1.rules.auth.deny.order
+      &&
+        c.security.pam.services.polkit-1.rules.auth.pinpam-viki-only.args == [
+          "user"
+          "!="
+          "viki"
+          "quiet"
+        ]
+      && c.systemd.services."polkit-agent-helper@".serviceConfig.PrivateDevices == "no"
+      &&
+        builtins.elem "/dev/tpmrm0 rw"
+          c.systemd.services."polkit-agent-helper@".serviceConfig.DeviceAllow
+      && builtins.elem "/dev/ptmx rw" c.systemd.services."polkit-agent-helper@".serviceConfig.DeviceAllow
       && !builtins.elem "tss" c.users.users.viki.extraGroups
       && !c.security.pinpam.masterKey.enable;
     slowUnlock = builtins.elem "x-systemd.device-timeout=0" c.fileSystems."/".options;
