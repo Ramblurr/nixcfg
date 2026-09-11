@@ -8,6 +8,7 @@ let
   instance = import ../../config/immich-home.nix;
   credentials = instance.machineLearning.credentials;
   address = network: host: builtins.head config.site.net.${network}.hosts4.${host};
+  apiClientAddress = address instance.workerNetwork "immich-home";
   credentialDirectory = "/run/credentials/immich-ml-server-proxy.service";
   expiryCredentialDirectory = "/run/credentials/immich-ml-server-proxy-certificate-expiry.service";
 in
@@ -31,6 +32,7 @@ in
 
   modules.services.onepassword-systemd-credentials = {
     enable = true;
+    connectHost = "http://${address instance.workerNetwork "dewey"}:8080";
     consumers.immich-ml-server-proxy = {
       "ca.pem" = "${credentials.ca}/ca-certificate";
       "certificate.pem" = "${credentials.server}/certificate";
@@ -56,7 +58,7 @@ in
     listenAddress = address "prim" instance.machineLearning.host;
     serverName = "immich-ml.${instance.machineLearning.host}.${config.site.net.prim.domainName}";
     inherit (instance.machineLearning) port;
-    allowedSourceAddresses = [ (address "svc" "immich-home") ];
+    allowedSourceAddresses = [ apiClientAddress ];
     loadCredentials = false;
     credentials = {
       ca = "${credentialDirectory}/ca.pem";
@@ -86,6 +88,10 @@ in
     {
       assertion = instance.workerHost == config.networking.hostName;
       message = "Peirce must remain the selected Immich background worker host.";
+    }
+    {
+      assertion = config.modules.services.immich-ml-proxy.allowedSourceAddresses == [ apiClientAddress ];
+      message = "Peirce must admit the Immich API caller on the network used to reach its ML proxy.";
     }
     {
       assertion =

@@ -9,6 +9,11 @@ let
   address = network: host: builtins.head config.site.net.${network}.hosts4.${host};
   apiAddress = address "svc" config.networking.hostName;
   workerAddress = address instance.workerNetwork instance.workerHost;
+  stateAddresses = lib.unique [
+    apiAddress
+    workerStateAddress
+  ];
+  workerStateAddress = address instance.workerNetwork config.networking.hostName;
   machineLearningAddress = builtins.head config.site.net.prim.hosts4.${instance.machineLearning.host};
   machineLearningServerName = "immich-ml.${instance.machineLearning.host}.${config.site.net.prim.domainName}";
   hostSecrets = "/run/host-secrets";
@@ -56,7 +61,7 @@ in
   services.postgresql = {
     package = pkgs.postgresql_18;
     enableTCPIP = true;
-    settings.listen_addresses = lib.mkForce apiAddress;
+    settings.listen_addresses = lib.mkForce (lib.concatStringsSep "," stateAddresses);
     authentication = lib.mkForce ''
       local all postgres peer
       local immich immich peer
@@ -80,6 +85,7 @@ in
   };
   services.redis.servers.immich = {
     requirePassFile = "${instance.secretsDirectory}/redis-password";
+    bind = lib.mkForce (lib.concatStringsSep " " stateAddresses);
     settings = {
       appendonly = "yes";
       appendfsync = "everysec";
@@ -103,6 +109,6 @@ in
 
   networking.firewall.extraInputRules = ''
     ip saddr ${address "svc" "dewey"} ip daddr ${apiAddress} tcp dport 2283 accept
-    ip saddr ${workerAddress} ip daddr ${apiAddress} tcp dport { 5432, 6379 } accept
+    ip saddr ${workerAddress} ip daddr ${workerStateAddress} tcp dport { 5432, 6379 } accept
   '';
 }

@@ -2,16 +2,17 @@
 let
   instance = import ./immich-home.nix;
   address = net: host: builtins.head config.site.net.${net}.hosts4.${host};
-  apiAddress = address "svc" "immich-home";
+  stateAddress = address instance.workerNetwork "immich-home";
+  storageAddress = address instance.workerNetwork "mali";
 in
 {
   modules.services.immich-worker.enable = true;
   services.immich = {
     inherit (instance) mediaLocation;
     secretsFile = "${instance.secretsDirectory}/environment";
-    database.host = apiAddress;
+    database.host = stateAddress;
     redis = {
-      host = apiAddress;
+      host = stateAddress;
       port = 6379;
     };
     environment.IMMICH_MACHINE_LEARNING_URL = lib.mkForce "http://127.0.0.1:${toString instance.machineLearning.rawPort}";
@@ -20,9 +21,10 @@ in
   users.users.immich.uid = instance.uid;
   users.groups.immich.gid = instance.gid;
   fileSystems.${instance.mediaLocation} = {
-    device = "${address "data" "mali"}:${instance.mediaExport}";
+    device = "${storageAddress}:${instance.mediaExport}";
     fsType = "nfs";
     options = [
+      "addr=${storageAddress}"
       "vers=4.2"
       "hard"
       "_netdev"

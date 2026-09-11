@@ -7,6 +7,7 @@ let
   networks = [
     "svc"
     "data"
+    "prim"
   ];
 in
 {
