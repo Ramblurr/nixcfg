@@ -1,4 +1,7 @@
 { lib, pkgs }:
+assert lib.assertMsg (
+  pkgs.stdenv.hostPlatform.system == "x86_64-linux"
+) "The Pascal reranker binaries require x86_64-linux";
 let
   ml = pkgs.callPackage ./immich-machine-learning-pascal.nix { };
   # The cu126 wheel uses CUDA-12 SONAMEs; reuse the native 12.9 runtime from Immich.
@@ -12,8 +15,17 @@ let
         url = "https://files.pythonhosted.org/packages/b5/09/6ea3ea725f82e1e76684f0708bbedd871fc96da89945adeba65c3835a64c/nvidia_nvshmem_cu12-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl";
         sha256 = "042f2500f24c021db8a06c5eec2539027d57460e1c1a762055a6554f72c369bd";
       };
-      nativeBuildInputs = [ pkgs.unzip pkgs.autoPatchelfHook pkgs.autoAddDriverRunpath ];
-      buildInputs = [ pkgs.stdenv.cc.cc.lib pkgs.rdma-core pkgs.openmpi cuda.cuda_cudart ];
+      nativeBuildInputs = [
+        pkgs.unzip
+        pkgs.autoPatchelfHook
+        pkgs.autoAddDriverRunpath
+      ];
+      buildInputs = [
+        pkgs.stdenv.cc.cc.lib
+        pkgs.rdma-core
+        pkgs.openmpi
+        cuda.cuda_cudart
+      ];
       autoPatchelfIgnoreMissingDeps = [ "libcuda.so.1" ];
       unpackPhase = ''unzip -q "$src"'';
       installPhase = ''
@@ -22,6 +34,8 @@ let
       '';
       dontBuild = true;
       meta.license = lib.licenses.unfreeRedistributable;
+      meta.platforms = [ "x86_64-linux" ];
+      meta.sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
     };
   };
   python = pkgs.python312.override {
@@ -37,10 +51,16 @@ let
         };
         nativeBuildInputs = [ pkgs.autoPatchelfHook ];
         buildInputs = [ pkgs.stdenv.cc.cc.lib ];
-        runtimeDependencies = map lib.getLib [ cuda.cuda_cudart cuda.cuda_nvrtc cuda.libnvjitlink ];
+        runtimeDependencies = map lib.getLib [
+          cuda.cuda_cudart
+          cuda.cuda_nvrtc
+          cuda.libnvjitlink
+        ];
         dependencies = [ final.cuda-pathfinder ];
         pythonImportsCheck = [ "cuda.bindings" ];
         meta.license = lib.licenses.asl20;
+        meta.platforms = [ "x86_64-linux" ];
+        meta.sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
       };
       torch = (prev.torch-bin.override { cudaPackages = cuda; }).overridePythonAttrs (old: {
         version = "2.14.0";
@@ -52,19 +72,41 @@ let
         # Eager inference only: no torch.compile or distributed training.
         dependencies = [
           final.cuda-bindings
-          final.filelock final.fsspec final.jinja2 final.networkx final.numpy
-          final.pyyaml final.requests final.setuptools final.sympy final.typing-extensions
+          final.filelock
+          final.fsspec
+          final.jinja2
+          final.networkx
+          final.numpy
+          final.pyyaml
+          final.requests
+          final.setuptools
+          final.sympy
+          final.typing-extensions
         ];
         pythonRemoveDeps = [
-          "triton" "cuda-toolkit"
-          "nvidia-cuda-nvrtc-cu12" "nvidia-cuda-runtime-cu12" "nvidia-cuda-cupti-cu12"
-          "nvidia-cudnn-cu12" "nvidia-cublas-cu12" "nvidia-cufft-cu12" "nvidia-curand-cu12"
-          "nvidia-cusolver-cu12" "nvidia-cusparse-cu12" "nvidia-cusparselt-cu12"
-          "nvidia-nccl-cu12" "nvidia-nvtx-cu12" "nvidia-nvjitlink-cu12" "nvidia-cufile-cu12"
+          "triton"
+          "cuda-toolkit"
+          "nvidia-cuda-nvrtc-cu12"
+          "nvidia-cuda-runtime-cu12"
+          "nvidia-cuda-cupti-cu12"
+          "nvidia-cudnn-cu12"
+          "nvidia-cublas-cu12"
+          "nvidia-cufft-cu12"
+          "nvidia-curand-cu12"
+          "nvidia-cusolver-cu12"
+          "nvidia-cusparse-cu12"
+          "nvidia-cusparselt-cu12"
+          "nvidia-nccl-cu12"
+          "nvidia-nvtx-cu12"
+          "nvidia-nvjitlink-cu12"
+          "nvidia-cufile-cu12"
           "nvidia-nvshmem-cu12"
         ];
         # The inherited diagnostic describes the default CUDA-13 wheel, not this cu126 artifact.
-        meta = builtins.removeAttrs old.meta [ "problems" ];
+        meta = old.meta // {
+          platforms = [ "x86_64-linux" ];
+          problems = builtins.removeAttrs (old.meta.problems or { }) [ "unsupported-cuda-version" ];
+        };
       });
       sentence-transformers = final.buildPythonPackage {
         pname = "sentence-transformers";
@@ -75,8 +117,15 @@ let
           sha256 = "b78141da3d8137e70d965866e2ca43190b9266f3d4d8752e250ded75e7136730";
         };
         dependencies = [
-          final.huggingface-hub final.numpy final.scikit-learn final.scipy
-          final.tokenizers final.torch final.tqdm final.transformers final.typing-extensions
+          final.huggingface-hub
+          final.numpy
+          final.scikit-learn
+          final.scipy
+          final.tokenizers
+          final.torch
+          final.tqdm
+          final.transformers
+          final.typing-extensions
         ];
         pythonImportsCheck = [ "sentence_transformers" ];
         meta.license = lib.licenses.asl20;
@@ -84,4 +133,9 @@ let
     };
   };
 in
-python.withPackages (p: [ p.sentence-transformers p.fastapi p.uvicorn p.requests ])
+python.withPackages (p: [
+  p.sentence-transformers
+  p.fastapi
+  p.uvicorn
+  p.requests
+])

@@ -44,7 +44,11 @@
                 null
             ) ourPackageNames
           )
-        );
+        )
+        // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          immich-pascal-validation = pkgs.callPackage ../tests/immich-pascal-tools.nix { };
+          pascal-reranker-python = pkgs.callPackage ../pkgs/pascal-reranker-python.nix { };
+        };
 
       # Optionally, also export as legacyPackages if you want to expose
       # the entire modified pkgs set (useful for consumers who want access

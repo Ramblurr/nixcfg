@@ -3,6 +3,7 @@
 Run as immich in a writable validation directory. Arguments: public portrait,
 OCR fixture, and the Jellyfin FFmpeg bin directory used by this deployment.
 """
+import atexit
 import json
 import subprocess
 import sys
@@ -38,6 +39,21 @@ assert "PASCAL" in " ".join(result["ocr"]["text"]).upper(), result
 print(json.dumps({"http_paths": ["clip-text", "clip-image", "faces", "ocr"], "status": "passed"}), flush=True)
 
 processes = []
+
+
+@atexit.register
+def stop_encoders():
+    for _, _, log, process in processes:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+        log.close()
+
+
 for codec in ["h264", "hevc"]:
     output = Path(f"{codec}-nvenc.mp4")
     log = Path(f"{codec}-nvenc.log").open("w")

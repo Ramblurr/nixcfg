@@ -7,7 +7,7 @@
 {
   imports = [
     ./hardware.nix
-    ./immich-pascal.nix
+    ./immich.nix
     ./disk-config.nix
     ../../config
     ../../config/home-ops.nix
