@@ -76,8 +76,8 @@ assert builtins.elem "microvm-secrets-opencloud-home.service"
 assert builtins.elem "microvm-secrets-opencloud-home.service"
   d.systemd.services."microvm-virtiofsd@opencloud-home".requires;
 assert builtins.elem "microvm@opencloud-home.service" secretService.partOf;
-assert secretService.serviceConfig.User == "microvm";
-assert secretService.serviceConfig.Group == "kvm";
+assert secretService.serviceConfig.User == "root";
+assert secretService.serviceConfig.Group == "root";
 assert secretService.serviceConfig.UMask == "0077";
 assert
   secretService.serviceConfig.LoadCredential == [
