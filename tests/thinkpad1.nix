@@ -85,8 +85,36 @@ let
         builtins.elem "/dev/tpmrm0 rw"
           c.systemd.services."polkit-agent-helper@".serviceConfig.DeviceAllow
       && builtins.elem "/dev/ptmx rw" c.systemd.services."polkit-agent-helper@".serviceConfig.DeviceAllow
-      && !builtins.elem "tss" c.users.users.viki.extraGroups
-      && !c.security.pinpam.masterKey.enable;
+      && !builtins.elem "tss" c.users.users.viki.extraGroups;
+    walletPostLogin =
+      let
+        auth = c.security.pam.services.plasmalogin.rules.auth;
+      in
+      c.security.pinpam.masterKey.enable
+      && c.security.pinpam.masterKey.services == { }
+      && auth.login.control == "substack"
+      && auth.wallet-viki-only.order == auth.login.order + 1
+      && auth.wallet-viki-only.control == "[success=1 default=ignore]"
+      &&
+        auth.wallet-viki-only.args == [
+          "user"
+          "!="
+          "viki"
+          "quiet"
+        ]
+      && auth.wallet-master-key.order == auth.login.order + 2
+      && auth.wallet-master-key.control == "optional"
+      && auth.wallet-capture.order == auth.login.order + 3
+      && auth.wallet-capture.modulePath == c.security.pam.services.login.rules.auth.kwallet.modulePath
+      &&
+        lib.all (service: !lib.hasInfix "libpinpam_master_key.so" c.security.pam.services.${service}.text)
+          [
+            "login"
+            "kde"
+            "polkit-1"
+            "sshd"
+            "sudo"
+          ];
     slowUnlock = builtins.elem "x-systemd.device-timeout=0" c.fileSystems."/".options;
     bootPrompt = c.boot.plymouth.theme == "catppuccin-mocha";
     ordinarySsh = builtins.elem "--ssh=false" c.services.tailscale.extraSetFlags;

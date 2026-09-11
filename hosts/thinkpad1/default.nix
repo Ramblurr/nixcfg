@@ -42,6 +42,7 @@ in
     ./borgmatic.nix
     ./syncthing.nix
     ./pinpam.nix
+    ./kwallet.nix
     ./tpm-deploy.nix
     ./disk-config.nix
   ];
