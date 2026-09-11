@@ -35,6 +35,7 @@ let
         }
 
         issue_certificate server serverAuth DNS:immich-ml.test 1
+        issue_certificate wrong-server serverAuth DNS:wrong-name.test 1
         issue_certificate authorized-client clientAuth "" 1
         issue_certificate replacement-client clientAuth "" 1
         issue_certificate expired-client clientAuth "" 0
@@ -53,6 +54,8 @@ let
         install -m 0444 ${certificates}/ca.pem /run/immich-ml-test-certificates/ca.pem
         install -m 0444 ${certificates}/server.pem /run/immich-ml-test-certificates/server.pem
         install -m 0400 ${certificates}/server-key.pem /run/immich-ml-test-certificates/server-key.pem
+        install -m 0444 ${certificates}/wrong-server.pem /run/immich-ml-test-certificates/wrong-server.pem
+        install -m 0400 ${certificates}/wrong-server-key.pem /run/immich-ml-test-certificates/wrong-server-key.pem
         install -m 0444 ${certificates}/authorized-client.pem /run/immich-ml-test-certificates/authorized-client.pem
         install -m 0400 ${certificates}/authorized-client-key.pem /run/immich-ml-test-certificates/authorized-client-key.pem
         install -m 0444 ${certificates}/rogue-client.pem /run/immich-ml-test-certificates/rogue-client.pem
@@ -164,6 +167,22 @@ pkgs.testers.runNixOSTest {
     server.succeed("systemctl is-failed immich-ml-server-proxy-certificate-expiry.service")
 
     client.succeed("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 10 http://127.0.0.1:3004/ >/dev/null")
+
+    client.succeed("install -m 0444 /run/immich-ml-test-certificates/wrong-ca.pem /run/immich-ml-test-certificates/ca.pem")
+    client.succeed("systemctl restart immich-ml-client-proxy.service")
+    client.fail("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null")
+    client.succeed("install -m 0444 ${certificates}/ca.pem /run/immich-ml-test-certificates/ca.pem")
+    client.succeed("systemctl restart immich-ml-client-proxy.service")
+    client.wait_until_succeeds("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null", timeout=5)
+
+    server.succeed("install -m 0444 /run/immich-ml-test-certificates/wrong-server.pem /run/immich-ml-test-certificates/server.pem")
+    server.succeed("install -m 0400 /run/immich-ml-test-certificates/wrong-server-key.pem /run/immich-ml-test-certificates/server-key.pem")
+    server.succeed("systemctl restart immich-ml-server-proxy.service")
+    client.fail("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null")
+    server.succeed("install -m 0444 ${certificates}/server.pem /run/immich-ml-test-certificates/server.pem")
+    server.succeed("install -m 0400 ${certificates}/server-key.pem /run/immich-ml-test-certificates/server-key.pem")
+    server.succeed("systemctl restart immich-ml-server-proxy.service")
+    client.wait_until_succeeds("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null", timeout=5)
     client.fail("runuser -u unrelated -- curl --noproxy '*' --fail --silent --max-time 2 http://127.0.0.1:3004/ >/dev/null")
     client.fail("runuser -u unrelated -- curl --noproxy '*' --fail --silent --max-time 2 http://[::1]:3004/ >/dev/null")
 
@@ -180,6 +199,10 @@ pkgs.testers.runNixOSTest {
     server.succeed("systemctl restart immich-ml-server-proxy.service")
     client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/authorized-client.pem --key /run/immich-ml-test-certificates/authorized-client-key.pem https://immich-ml.test:3443/ >/dev/null")
     client.fail("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null")
+    client.succeed("install -m 0444 /run/immich-ml-test-certificates/replacement-client.pem /run/immich-ml-test-certificates/authorized-client.pem")
+    client.succeed("install -m 0400 /run/immich-ml-test-certificates/replacement-client-key.pem /run/immich-ml-test-certificates/authorized-client-key.pem")
+    client.succeed("systemctl restart immich-ml-client-proxy.service")
+    client.wait_until_succeeds("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null", timeout=5)
     client.succeed("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/replacement-client.pem --key /run/immich-ml-test-certificates/replacement-client-key.pem https://immich-ml.test:3443/ >/dev/null")
   '';
 }
