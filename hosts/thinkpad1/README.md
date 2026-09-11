@@ -44,9 +44,10 @@ passphrase prompt. KDE stays Latte. Encrypted Btrfs device mounts wait without a
 ## TPM login PIN
 
 Pinpam accepts a six-digit PIN for `viki` through the login PAM stack (used by
-Plasma Login Manager and console login) and the KDE screen locker. Enter the PIN
-in the existing password field. Password authentication remains available; SSH,
-sudo, polkit, and other users do not gain PIN authentication.
+Plasma Login Manager and console login), the KDE screen locker, and Polkit
+authorization prompts. Enter the PIN in the existing password field. This includes
+privileged actions authorized through Polkit. Password authentication remains
+available; SSH, sudo, and other users do not gain PIN authentication.
 
 From an administrator terminal, enroll with `sudo pinutil setup viki`.
 Five failed PIN attempts lock the PIN until an administrator deletes and recreates
