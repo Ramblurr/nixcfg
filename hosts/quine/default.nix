@@ -199,8 +199,9 @@ in
         nheko.enable = true;
         obs.enable = true;
         obs.cudaSupport = true;
-        onepassword.enable = true;
         onepassword.autostart.enable = true;
+        onepassword.enable = true;
+        opencloud.enable = true;
         owncloud.enable = true;
         signal.enable = true;
         slack.enable = false;
