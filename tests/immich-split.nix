@@ -70,9 +70,10 @@ pkgs.testers.runNixOSTest {
           ${(import ../config/immich-home.nix).workerHost} = [ nodes.worker.networking.primaryIPAddress ];
           dewey = [ nodes.api.networking.primaryIPAddress ];
         };
-        site.net.prim.hosts4.${(import ../config/immich-home.nix).workerHost} = [
-          nodes.worker.networking.primaryIPAddress
-        ];
+        site.net.prim.hosts4 = {
+          api = [ nodes.api.networking.primaryIPAddress ];
+          ${(import ../config/immich-home.nix).workerHost} = [ nodes.worker.networking.primaryIPAddress ];
+        };
         networking.nftables.enable = true;
       };
     };

@@ -45,8 +45,8 @@ assert lib.assertMsg (
   && !(cfg.systemd.services.immich-server.environment ? IMMICH_CONFIG_FILE)
 ) "Guest settings must remain UI-managed";
 assert lib.assertMsg (
-  cfg.services.postgresql.settings.listen_addresses == "172.20.20.23"
-  && cfg.services.redis.servers.immich.bind == "172.20.20.23"
+  cfg.services.postgresql.settings.listen_addresses == "172.20.20.23,10.9.4.23"
+  && cfg.services.redis.servers.immich.bind == "172.20.20.23 10.9.4.23"
   && cfg.services.redis.servers.immich.settings.appendonly == "yes"
 ) "Private state listeners and durable queue must be explicit";
 assert lib.assertMsg (
@@ -58,10 +58,14 @@ assert lib.assertMsg (
   && cfg.services.redis.servers.immich.requirePassFile == "/var/lib/immich-secrets/redis-password"
 ) "Guest credentials must be runtime file paths";
 assert lib.assertMsg (
-  links.imhome-svc.macvtap.link == "vlan-svc" && links.imhome-data.macvtap.link == "vlan-data"
+  links.imhome-svc.macvtap.link == "vlan-svc"
+  && links.imhome-data.macvtap.link == "vlan-data"
+  && links.imhome-prim.macvtap.link == "vlan-prim"
 ) "Each guest network must use its own VLAN parent";
 assert lib.assertMsg (
-  links.imhome-svc.type == "macvtap" && links.imhome-data.macvtap.mode == "bridge"
+  links.imhome-svc.type == "macvtap"
+  && links.imhome-data.macvtap.mode == "bridge"
+  && links.imhome-prim.macvtap.mode == "bridge"
 ) "Guest must share the host macvlan segment";
 assert lib.assertMsg (lib.all
   (
@@ -73,6 +77,7 @@ assert lib.assertMsg (lib.all
   [
     "svc"
     "data"
+    "prim"
   ]
 ) "Guest interface naming must precede 99-default.link so firewall interface rules match";
 assert lib.assertMsg (
