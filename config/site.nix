@@ -73,7 +73,8 @@ in
       dewey = [ "10.9.4.17" ];
       peirce = [ "10.9.4.24" ];
       mali = [ "10.9.4.10" ];
-      #quine = [ "10.9.4.3" ]; uses dhcp
+      # Quine uses DHCP with a fixed reservation.
+      quine = [ "10.9.4.3" ];
     };
     hosts6 = { };
     #hosts6.main = {

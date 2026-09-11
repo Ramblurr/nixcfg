@@ -19,6 +19,10 @@ in
     hostFQDN = "dewey.${config.site.net.mgmt.domainName}";
     autoNetSetup.enable = false;
     mounts = [ "var/lib" ];
+    hostSecrets = {
+      enable = true;
+      services = [ "immich-ml-client-proxy" ];
+    };
   };
   microvm = {
     vcpu = 2;

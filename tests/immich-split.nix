@@ -60,6 +60,7 @@ pkgs.testers.runNixOSTest {
         site.net = lib.mkOption { type = lib.types.attrs; };
       };
       config = {
+        modules.services.immich-ml-proxy.enable = lib.mkForce false;
         services.immich.secretsFile = lib.mkForce "/etc/immich-test/environment";
         services.redis.servers.immich.requirePassFile = lib.mkForce "/etc/immich-test/redis-password";
         systemd.services.postgresql-setup.serviceConfig.EnvironmentFile =
