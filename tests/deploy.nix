@@ -37,7 +37,11 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
     }'
     exit 0
   fi
-  [ "$1" = "copy" ] && exit 0
+  if [ "$1" = "copy" ]; then
+    target="''${4#ssh://}"
+    [ "$(tail -n 1 "$sshLog")" = "$target|true" ] || exit 65
+    exit 0
+  fi
   exit 64
   EOF
 
@@ -51,13 +55,16 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   printf '%s|%s\n' "$host" "$*" >> "$sshLog"
 
   case "$host:$1" in
-    debord:readlink|addams-lan:readlink|thinkpad1:readlink)
+    root@debord:readlink|root@addams-lan:readlink|root@thinkpad1:readlink)
       printf '%s\n' /nix/store/previous-system
       exit 0
       ;;
   esac
 
   case "$host:$1" in
+    root@*:true)
+      exit "''${authStatus:-0}"
+      ;;
     root@thinkpad1:"$fakeSystem/thinkpad1-tpm-deploy")
       exit 42
       ;;
@@ -126,7 +133,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
 
   PATH="$fakeBin:$PATH" ${deploy}/bin/deploy addams > "$TMPDIR/addams.stdout" 2> "$TMPDIR/addams.stderr"
   grep -F "ssh://root@addams-lan" "$nixLog"
-  grep -F "addams-lan|readlink -e /nix/var/nix/profiles/system" "$sshLog"
+  grep -Fx "root@addams-lan|readlink -e /nix/var/nix/profiles/system" "$sshLog"
   grep -F "root@addams-lan|$fakeSystem/bin/switch-to-configuration switch" "$sshLog"
   if grep -q '^addams|' "$sshLog" || grep -q '^root@addams|' "$sshLog"; then
     echo "addams deployment used its Tailscale SSH target" >&2
@@ -154,6 +161,15 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   run_expected_failure thinkpad1 "error: Failed TPM-aware activation of thinkpad1"
   if grep -q 'nix-env\|switch-to-configuration' "$sshLog"; then
     echo "TPM-aware deployment fell through to ordinary activation" >&2
+    exit 1
+  fi
+
+  : > "$sshLog"
+  : > "$nixLog"
+  export authStatus=42
+  run_expected_failure addams "error: Failed to authenticate to addams"
+  if grep -q '^copy ' "$nixLog" || grep -q 'nix-env\|switch-to-configuration' "$sshLog"; then
+    echo "authentication failure did not stop deployment before copying/activation" >&2
     exit 1
   fi
 

@@ -122,6 +122,8 @@ let
           ssh_target="''${SSH_TARGETS[$host]-$host}"
           ssh_host="root@$ssh_target"
           echo "[1;36m     Copying [m➡️ [34m$host[m"
+          # Establish the configured SSH master before Nix creates its own private socket.
+          ssh "$ssh_host" -- true || die "Failed to authenticate to $host"
           nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
         fi
         time_next
@@ -173,7 +175,7 @@ let
         else
           ssh_target="''${SSH_TARGETS[$host]-$host}"
           ssh_host="root@$ssh_target"
-          prev_system=$(ssh "$ssh_target" -- readlink -e /nix/var/nix/profiles/system)
+          prev_system=$(ssh "$ssh_host" -- readlink -e /nix/var/nix/profiles/system)
           if [[ "$host" == "thinkpad1" ]]; then
             [[ -x "$store_path/thinkpad1-tpm-deploy" ]] \
               || die "Missing TPM deployment helper for $host"
