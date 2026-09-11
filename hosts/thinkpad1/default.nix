@@ -5,6 +5,8 @@
   ...
 }:
 let
+  # Dedicated 1Password SSH identity; authorized on this laptop only.
+  laptopSshKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEnOBbCW8iP5o45Jc0Y3jpl2Xg9nd6G0SzQzglMBFJUk";
   # Choose latte, frappe, macchiato, or mocha.
   catppuccinVariant = "latte";
   # Keep the boot passphrase prompt on a dark background, including with Latte KDE.
@@ -69,6 +71,7 @@ in
   };
 
   sops.secrets.ramblurr-password.neededForUsers = true;
+  users.users.root.openssh.authorizedKeys.keys = [ laptopSshKey ];
   users.users.ramblurr = {
     isNormalUser = true;
     uid = 1001;
@@ -76,7 +79,7 @@ in
     extraGroups = [ "wheel" ];
     shell = pkgs.bashInteractive;
     hashedPasswordFile = config.sops.secrets.ramblurr-password.path;
-    openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys;
+    openssh.authorizedKeys.keys = config.repo.secrets.global.pubKeys ++ [ laptopSshKey ];
   };
   users.groups.ramblurr.gid = 1001;
 
