@@ -8,8 +8,9 @@
 }:
 let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
-  primAddress = builtins.head config.site.net.prim.hosts4.${config.networking.hostName};
-  deweyPrimAddress = builtins.head config.site.net.prim.hosts4.dewey;
+  serviceAddress = builtins.head config.site.net.svc.hosts4.${config.networking.hostName};
+  deweyServiceAddress = builtins.head config.site.net.svc.hosts4.dewey;
+  debordServiceAddress = builtins.head config.site.net.svc.hosts4.debord;
   inherit (config.modules.users.primaryUser) username;
 in
 {
@@ -144,11 +145,11 @@ in
   ];
 
   networking.firewall.extraInputRules = ''
-    iifname "prim" ip saddr { ${deweyPrimAddress} } tcp dport { ${toString config.services.ollama.port} } accept comment "Ollama for Paperless"
+    iifname "svc" ip saddr { ${deweyServiceAddress} } tcp dport { ${toString config.services.ollama.port} } accept comment "Ollama for Paperless"
   '';
 
   services.ollama = {
-    host = primAddress;
+    host = serviceAddress;
     loadModels = [ "llama3.1" ];
   };
 
@@ -271,9 +272,9 @@ in
           reranker = {
             modelId = "cross-encoder/ms-marco-MiniLM-L6-v2";
             modelRevision = "c5ee24cb16019beea0893ab7796b1df96625c6b8";
-            listenAddress = primAddress;
-            listenInterface = "prim";
-            allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
+            listenAddress = serviceAddress;
+            listenInterface = "svc";
+            allowedIPv4Ranges = [ "${debordServiceAddress}/32" ];
             maxConcurrentRequests = 512;
             maxBatchRequests = 128;
             maxBatchTokens = 32768;
@@ -283,9 +284,9 @@ in
             modelId = "sentence-transformers/all-MiniLM-L6-v2";
             modelRevision = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41";
             dataDir = "/var/lib/text-embeddings-inference-embeddings";
-            listenAddress = primAddress;
-            listenInterface = "prim";
-            allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
+            listenAddress = serviceAddress;
+            listenInterface = "svc";
+            allowedIPv4Ranges = [ "${deweyServiceAddress}/32" ];
             port = 8083;
             prometheusPort = 9083;
           };

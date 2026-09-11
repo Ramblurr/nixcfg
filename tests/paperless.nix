@@ -15,6 +15,7 @@ let
           type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           default = { };
         };
+        site.net.svc.hosts4 = lib.mkOption { type = lib.types.attrsOf (lib.types.listOf lib.types.str); };
       };
     };
 
@@ -48,6 +49,7 @@ let
           };
           system.stateVersion = "26.05";
           repo.secrets.global.nodes.mali.dataCIDR = "192.0.2.1";
+          site.net.svc.hosts4.quine = [ "192.0.2.2" ];
           modules.services.paperless = {
             enable = true;
             domain = "paperless.example.test";
@@ -109,6 +111,8 @@ assert
   !(builtins.hasAttr "PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME" disabled.services.paperless.settings);
 assert compatibilitySettings.PAPERLESS_APPS == "allauth.socialaccount.providers.openid_connect";
 assert compatibilitySettings.PAPERLESS_ACCOUNT_DEFAULT_HTTP_PROTOCOL == "https";
+assert compatibilitySettings.PAPERLESS_AI_LLM_ENDPOINT == "http://192.0.2.2:11434";
+assert compatibilitySettings.PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT == "http://192.0.2.2:8083/v1";
 assert !compatibilitySettings.PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS;
 assert !compatibilitySettings.PAPERLESS_SOCIAL_AUTO_SIGNUP;
 assert !compatibilitySettings.PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS;
