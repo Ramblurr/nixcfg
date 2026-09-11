@@ -249,13 +249,29 @@ in
       podman.enable = true;
       text-embeddings-inference = {
         enable = true;
-        listenAddress = "10.9.4.3";
-        listenInterface = "prim";
-        allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
-        maxConcurrentRequests = 512;
-        maxBatchRequests = 128;
-        maxBatchTokens = 32768;
-        maxClientBatchSize = 512;
+        instances = {
+          reranker = {
+            modelId = "cross-encoder/ms-marco-MiniLM-L6-v2";
+            modelRevision = "c5ee24cb16019beea0893ab7796b1df96625c6b8";
+            listenAddress = "10.9.4.3";
+            listenInterface = "prim";
+            allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
+            maxConcurrentRequests = 512;
+            maxBatchRequests = 128;
+            maxBatchTokens = 32768;
+            maxClientBatchSize = 512;
+          };
+          embeddings = {
+            modelId = "sentence-transformers/all-MiniLM-L6-v2";
+            modelRevision = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41";
+            dataDir = "/var/lib/text-embeddings-inference-embeddings";
+            listenAddress = "10.9.4.3";
+            listenInterface = "prim";
+            allowedIPv4Ranges = [ config.site.net.prim.subnet4 ];
+            port = 8083;
+            prometheusPort = 9083;
+          };
+        };
       };
       nomad.enable = false;
       microsocks.enable = false;
