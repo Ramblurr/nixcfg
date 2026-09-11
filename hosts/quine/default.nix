@@ -249,7 +249,7 @@ in
       docker.enableOnBoot = false;
       podman.enable = true;
       text-embeddings-inference = {
-        enable = true;
+        enable = false;
         instances = {
           reranker = {
             modelId = "cross-encoder/ms-marco-MiniLM-L6-v2";
