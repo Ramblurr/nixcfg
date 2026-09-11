@@ -4,6 +4,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -429,6 +430,97 @@ def entry_for(spec, *, default=False):
             )
             return path
     raise RuntimeError("installed boot entry missing")
+
+
+def menu_entries():
+    groups = {}
+    for path in sorted((ESP / "loader/entries").glob("*.conf")):
+        if path.name != "thinkpad1-tpm-rollback.conf" and not re.fullmatch(
+            r"nixos-(?:thinkpad1-tpm-[0-9a-f]{64}-)?generation-[0-9]+\.conf",
+            path.name,
+        ):
+            continue
+        fields = bls_fields(path)
+        version = fields.get("version", [])
+        if len(version) != 1 or not re.match(r"Generation [0-9]+ ", version[0]):
+            continue
+        # These fields only label/group menu entries; keep boot directives equal.
+        payload = tuple(
+            sorted(
+                (key, tuple(values))
+                for key, values in fields.items()
+                if key not in {"title", "version", "sort-key", "machine-id"}
+            )
+        )
+        groups.setdefault(payload, []).append((path, fields))
+    return groups
+
+
+def tidy_menu(previous):
+    groups = menu_entries()
+    loader_conf = ESP / "loader/loader.conf"
+    default = ESP / "loader/entries" / loader_config()["default"][0]
+    require(
+        any(path == default for members in groups.values() for path, _ in members),
+        "unsupported boot menu default",
+    )
+    # Keep real system-generation labels when native pruning leaves only
+    # retention-profile aliases, whose own generation counters start at one.
+    versions = {
+        payload: max(
+            members + previous.get(payload, []),
+            key=lambda item: int(item[1]["version"][0].split()[1]),
+        )[1]["version"][0]
+        for payload, members in groups.items()
+    }
+    ordered = sorted(
+        groups, key=lambda key: int(versions[key].split()[1]), reverse=True
+    )
+    duplicates = []
+    for index, payload in enumerate(ordered):
+        members = groups[payload]
+        version = versions[payload]
+        canonical = next(
+            (path for path, _ in members if path.name == "thinkpad1-tpm-rollback.conf"),
+            max(
+                members,
+                key=lambda item: (
+                    item[0].name.startswith("nixos-generation-"),
+                    int(item[1]["version"][0].split()[1]),
+                ),
+            )[0],
+        )
+        is_default = any(path == default for path, _ in members)
+        if is_default:
+            suffix = " (default)"
+        elif canonical.name == "thinkpad1-tpm-rollback.conf":
+            suffix = " (rollback)"
+        else:
+            suffix = ""
+        title = f"NixOS generation {version.split()[1]}{suffix}"
+        # Sort before machine-id grouping, even after reinstalling the root FS.
+        sort_key = "0-nixos" if is_default else f"nixos-{index:08d}"
+        # Preserve boot directives verbatim, including quoting and whitespace.
+        lines = [
+            line
+            for line in canonical.read_text().splitlines()
+            if not line.split()
+            or line.split(maxsplit=1)[0] not in {"title", "version", "sort-key"}
+        ]
+        content = f"title {title}\nversion {version}\nsort-key {sort_key}\n"
+        content += "\n".join(lines) + "\n"
+        atomic_write(canonical, content.encode())
+        if is_default:
+            content = re.sub(
+                r"(?m)^[ \t]*default[ \t]+.*$",
+                f"default {canonical.name}",
+                loader_conf.read_text(),
+            )
+            atomic_write(loader_conf, content.encode())
+        duplicates.extend(path for path, _ in members if path != canonical)
+    # All representatives and the equivalent default exist before any removal.
+    for path in duplicates:
+        path.unlink()
 
 
 def atomic_write(path, data):
@@ -861,6 +953,7 @@ def deploy(action, candidate):
         "prepared boot policy missing",
     )
     retain_contexts(state, set(state["contexts"]))
+    previous_menu = menu_entries()
     rollback_contents = entry_for(old).read_bytes()
     # Native generation pruning must not remove the selected bridge mid-install.
     rollback_entry = ESP / "loader/entries/thinkpad1-tpm-rollback.conf"
@@ -874,6 +967,7 @@ def deploy(action, candidate):
     previous_images = {
         path: path.read_bytes() if path.exists() else None for path in efi_paths
     }
+    menu_backup = {}
     try:
         atomic_write(rollback_entry, rollback_contents)
         atomic_write(loader_conf, bridge_conf)
@@ -907,6 +1001,13 @@ def deploy(action, candidate):
             end="",
         )
         entry_for(new, default=True)
+        menu_backup = {
+            path: path.read_bytes()
+            for members in menu_entries().values()
+            for path, _ in members
+        }
+        tidy_menu(previous_menu)
+        entry_for(new, default=True)
         verified.clear()
         for policy in keep:
             spec = specs[Path(state["contexts"][policy]["system"])]
@@ -932,6 +1033,10 @@ def deploy(action, candidate):
                     spec[key], cache
                 ):
                     atomic_write(path, Path(spec[key]).read_bytes())
+        # Restoring a previous default that used the bridge must not strand the
+        # booted system whose equivalent native entries cleanup just removed.
+        for path, content in menu_backup.items():
+            atomic_write(path, content)
         atomic_write(rollback_entry, rollback_contents)
         atomic_write(loader_conf, bridge_conf)
         for path, content in previous_images.items():
