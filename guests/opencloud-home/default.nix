@@ -85,7 +85,7 @@ in
         "opencloud-home"
         "opencloud-home-office"
       ]
-      (container: {
+      (_container: {
         containerConfig.AddHost = map (name: "${name}:${deweyAddress}") ingressNames;
       });
 

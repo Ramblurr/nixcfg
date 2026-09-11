@@ -38,39 +38,51 @@ in
     };
 
     assertions = lib.optional (host != null) {
-      assertion = let cids = map (guest: guest.cid) (builtins.attrValues host.guests);
-        in builtins.length cids == builtins.length (lib.unique cids);
+      assertion =
+        let
+          cids = map (guest: guest.cid) (builtins.attrValues host.guests);
+        in
+        builtins.length cids == builtins.length (lib.unique cids);
       message = "Host-owned MicroVM SSH requires unique VSOCK CIDs on each host.";
     };
     environment.systemPackages = lib.optional (host != null) (lib.hiPrio verifiedMicrovm);
     programs.ssh = lib.mkIf (host != null) {
-      extraConfig = lib.mkBefore (lib.concatStringsSep "\n" (lib.mapAttrsToList (name: guest: ''
-        Host vsock/${toString guest.cid} vsock-mux/${config.microvm.stateDir}/${name}/notify.vsock
-          User root
-          IdentityFile ${identity}
-          IdentityAgent none
-          IdentitiesOnly yes
-          BatchMode yes
-          HostKeyAlias microvm-${name}
-          StrictHostKeyChecking yes
-          UserKnownHostsFile /dev/null
-      '') host.guests));
-      knownHosts = lib.mapAttrs' (name: guest: lib.nameValuePair "microvm-${name}" {
-        hostNames = [ "microvm-${name}" ];
-        publicKeyFile = guest.hostKeyFile;
-      }) host.guests;
+      extraConfig = lib.mkBefore (
+        lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (name: guest: ''
+            Host vsock/${toString guest.cid} vsock-mux/${config.microvm.stateDir}/${name}/notify.vsock
+              User root
+              IdentityFile ${identity}
+              IdentityAgent none
+              IdentitiesOnly yes
+              BatchMode yes
+              HostKeyAlias microvm-${name}
+              StrictHostKeyChecking yes
+              UserKnownHostsFile /dev/null
+          '') host.guests
+        )
+      );
+      knownHosts = lib.mapAttrs' (
+        name: guest:
+        lib.nameValuePair "microvm-${name}" {
+          hostNames = [ "microvm-${name}" ];
+          publicKeyFile = guest.hostKeyFile;
+        }
+      ) host.guests;
     };
 
     # create the state directory for our microvms
     # this doesn't get its own zfs dataset, because the vm shares themselves will
     # be mounted under here
-    environment.persistence."/persist".directories = [ "/var/lib/microvms" ]
-      ++ lib.optional (host != null) {
-        directory = "/var/lib/microvm-ssh";
-        user = "root";
-        group = "root";
-        mode = "0700";
-      };
+    environment.persistence."/persist".directories = [
+      "/var/lib/microvms"
+    ]
+    ++ lib.optional (host != null) {
+      directory = "/var/lib/microvm-ssh";
+      user = "root";
+      group = "root";
+      mode = "0700";
+    };
     systemd.tmpfiles.rules = [ "d /persist/var/lib/microvms 0770 microvm kvm" ];
 
     # allow microvm access to zvol

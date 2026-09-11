@@ -7,7 +7,7 @@ let
   # Reuse the cached CUDA 12.9 libraries instead of building a second CUDA runtime.
   # The cu126 wheel uses CUDA 12 library names. GPU tests verified this combination.
   cuda = pkgs.cudaPackages_12_9 // {
-    cudnn = ml.cudnn;
+    inherit (ml) cudnn;
     # Match the cu126 wheel's redistribution instead of compiling all NVSHMEM GPU targets.
     libnvshmem = pkgs.stdenv.mkDerivation {
       pname = "libnvshmem-bin";

@@ -15,8 +15,10 @@ in
   config = mkIf cfg.enable {
 
     myhm = {
-      home.packages = [ pkgs.opencloud-desktop ]
-        ++ lib.optional config.modules.desktop.kde.enable pkgs.desktop-shell-integration-dolphin;
+      home.packages = [
+        pkgs.opencloud-desktop
+      ]
+      ++ lib.optional config.modules.desktop.kde.enable pkgs.desktop-shell-integration-dolphin;
       systemd.user.services.opencloud-desktop = {
         Unit = {
           Description = "OpenCloud Desktop Client";

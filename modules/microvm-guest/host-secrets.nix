@@ -59,9 +59,9 @@ in
 
     microvm.shares = [
       {
-        source = cfg.source;
-        mountPoint = cfg.mountPoint;
-        tag = cfg.tag;
+        inherit (cfg) source;
+        inherit (cfg) mountPoint;
+        inherit (cfg) tag;
         proto = "virtiofs";
         readOnly = true;
         cache = "never";
