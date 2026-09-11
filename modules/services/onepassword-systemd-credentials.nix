@@ -58,7 +58,7 @@ let
       script = ''
         set -eu
         directory=${lib.escapeShellArg directory}
-        ${pkgs.coreutils}/bin/install -d -m 0700 "$directory"
+        ${pkgs.coreutils}/bin/install -d -m 0700 -o root -g root "$directory"
         ${pkgs.coreutils}/bin/rm -f "$directory"/*
         trap '${pkgs.coreutils}/bin/rm -f "$directory"/*.new' EXIT
         ${lib.concatMapStringsSep "\n" (credential: ''
