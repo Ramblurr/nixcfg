@@ -12,6 +12,7 @@ let
   expiryServiceName = "${serviceName}-certificate-expiry";
   expiryCredentialDirectory = "/run/credentials/${expiryServiceName}.service";
   expiryCredentialPath = name: "${expiryCredentialDirectory}/${name}";
+  monitoredCertificateNames = builtins.attrNames cfg.monitoredCertificates;
   expiryCredentialLoads = lib.mapAttrsToList (
     name: source: "${name}:${source}"
   ) cfg.monitoredCertificates;
@@ -21,7 +22,10 @@ let
   expiryCheck = pkgs.writeShellScript "${expiryServiceName}" ''
     set -eu
     failed=0
-    for certificate in "$CREDENTIALS_DIRECTORY"/*; do
+    for certificate_name in ${
+      lib.concatMapStringsSep " " lib.escapeShellArg monitoredCertificateNames
+    }; do
+      certificate="$CREDENTIALS_DIRECTORY/$certificate_name"
       if ! ${lib.getExe' pkgs.openssl "openssl"} x509 -checkend ${
         toString (cfg.certificateExpiryWarningDays * 24 * 60 * 60)
       } -noout -in "$certificate"; then
