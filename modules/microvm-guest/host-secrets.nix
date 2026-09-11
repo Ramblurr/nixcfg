@@ -64,8 +64,16 @@ in
         tag = cfg.tag;
         proto = "virtiofs";
         readOnly = true;
+        cache = "never";
         socket = "${config.modules.microvm-guest.mountBase}/${cfg.tag}.socket";
       }
+    ];
+
+    fileSystems.${cfg.mountPoint}.options = [
+      "ro"
+      "nodev"
+      "nosuid"
+      "noexec"
     ];
 
     systemd.services = lib.genAttrs cfg.services (_: {
