@@ -110,6 +110,9 @@ let
       channel = "unstable";
       role = "laptop";
       board = "Framework 13 (AMD 7040 series)"; # hosts/witt/hardware.nix
+      cpu = "AMD Ryzen 5 7640U";
+      ramMiB = 32768;
+      gpu = "AMD Radeon 760M";
     };
     wyoming-satellite-bedroom = {
       purpose = "Bedroom voice satellite";

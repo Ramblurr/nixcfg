@@ -18,7 +18,7 @@
 | [peirce](./hosts/peirce/) | Home production server | Gigabyte Z390 I AORUS PRO WIFI-CF | Intel Core i5-9600K | Unknown | NVIDIA GeForce GTX 1070 Ti | unstable | <span title="Bare-metal server">&#x1F5C4;&#xFE0F;</span> | <span title="NixOS">&#x2744;&#xFE0F;</span> |
 | [quine](./hosts/quine/) | [Primary workstation](https://notes.binaryelysium.com/HomeOps/PrimaryWorkstation/) | ASUS ProArt X670E-CREATOR WIFI | AMD Ryzen 9 7950X3D | 64 GiB | NVIDIA GeForce RTX 4090 | unstable | <span title="Desktop">&#x1F5A5;&#xFE0F;</span> | <span title="NixOS">&#x2744;&#xFE0F;</span> |
 | [thinkpad1](./hosts/thinkpad1/) | Family laptop | Lenovo ThinkPad X13 Yoga Gen 1 | Intel Core i5-10310U | 16 GiB | Intel UHD Graphics | stable | <span title="Laptop">&#x1F4BB;&#xFE0F;</span> | <span title="NixOS">&#x2744;&#xFE0F;</span> |
-| [witt](./hosts/witt/) | Travel laptop | Framework 13 (AMD 7040 series) | Unknown | Unknown | Unknown | unstable | <span title="Laptop">&#x1F4BB;&#xFE0F;</span> | <span title="NixOS">&#x2744;&#xFE0F;</span> |
+| [witt](./hosts/witt/) | Travel laptop | Framework 13 (AMD 7040 series) | AMD Ryzen 5 7640U | 32 GiB | AMD Radeon 760M | unstable | <span title="Laptop">&#x1F4BB;&#xFE0F;</span> | <span title="NixOS">&#x2744;&#xFE0F;</span> |
 
 **Roles**
 
