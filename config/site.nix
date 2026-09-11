@@ -417,6 +417,10 @@ in
           type = "bridge";
           parent = "bond0";
         };
+        svc = {
+          type = "bridge";
+          parent = "bond0";
+        };
       };
     };
   };
