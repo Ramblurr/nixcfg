@@ -46,7 +46,7 @@ in
 assert pkgs.lib.all (assertion: assertion.assertion) c.assertions;
 assert c.networking.hostName == "opencloud-home";
 assert c.modules.microvm-guest.host == "dewey";
-assert c.microvm.hypervisor == "qemu";
+assert c.microvm.hypervisor == "cloud-hypervisor";
 assert builtins.isString c.microvm.declaredRunner.drvPath;
 assert builtins.length volumes == 1;
 assert (builtins.head volumes).fsType == "ext4";
