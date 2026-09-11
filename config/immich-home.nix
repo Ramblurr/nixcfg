@@ -1,5 +1,5 @@
 {
-  workerHost = "quine";
+  workerHost = "peirce";
   secretsDirectory = "/var/lib/immich-secrets";
   uid = 3024;
   gid = 3024;
