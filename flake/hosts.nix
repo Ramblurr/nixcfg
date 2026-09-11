@@ -67,6 +67,10 @@
         # set guest overrides
         # hello-world = { system ...};
       };
+      guestHosts = {
+        immich-home = "dewey";
+        opencloud-home = "mali";
+      };
     in
     {
       lib.nixcfg = {
@@ -74,6 +78,7 @@
           hosts
           hostInventory
           guests
+          guestHosts
           mkHost
           mkGuest
           mkHosts
