@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   instance = import ../../config/immich-home.nix;
   address = network: host: builtins.head config.site.net.${network}.hosts4.${host};
@@ -54,6 +59,15 @@ in
       "worker-client.pem" = "${expiryCredentialDirectory}/worker-client.pem";
     };
   };
+
+  site.gatus.heartbeats.immich-ml-certificate-expiry =
+    lib.mkIf config.site.gatus.heartbeatToken.available
+      {
+        service = "immich-ml-server-proxy-certificate-expiry";
+        name = "Immich ML Certificate Expiry";
+        group = config.site.gatus.groups.infrastructure;
+        interval = "36h";
+      };
 
   systemd.services.immich-ml-server-proxy = {
     requires = [ "immich-machine-learning.service" ];
