@@ -34,6 +34,19 @@ let
       && c.users.users.viki.password == null
       && c.users.users.viki.hashedPasswordFile != null;
     stable = c.system.nixos.release == "26.05";
+    fingerprintSeparation =
+      c.services.fprintd.enable
+      && !c.security.pam.services.login.fprintAuth
+      && !lib.hasInfix "pam_fprintd.so" c.security.pam.services.login.text
+      && lib.hasInfix "substack login" c.security.pam.services.plasmalogin.text
+      && !lib.hasInfix "pam_fprintd.so" c.security.pam.services.kde.text
+      && lib.hasInfix "pam_fprintd.so" c.security.pam.services.kde-fingerprint.text
+      && lib.hasInfix "pam_fprintd.so" c.security.pam.services.polkit-1.text;
+    onePasswordAutostart =
+      hm.xdg.configFile."autostart/1password.desktop".enable
+      &&
+        toString hm.xdg.configFile."autostart/1password.desktop".source
+        == "${c.programs._1password-gui.package}/share/applications/1password.desktop";
     pinLogin =
       c.security.pinpam.enable
       &&
