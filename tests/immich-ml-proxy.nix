@@ -10,11 +10,15 @@ let
         openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
           -subj /CN=immich-ml-test-ca \
           -keyout "$out/ca-key.pem" -out "$out/ca.pem" >/dev/null 2>&1
+        openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+          -subj /CN=wrong-immich-ml-test-ca \
+          -keyout "$out/wrong-ca-key.pem" -out "$out/wrong-ca.pem" >/dev/null 2>&1
 
         issue_certificate() {
           name=$1
           extended_key_usage=$2
           subject_alt_name=$3
+          validity_days=$4
           openssl req -newkey rsa:2048 -nodes -subj "/CN=$name" \
             -keyout "$out/$name-key.pem" -out "$out/$name.csr" >/dev/null 2>&1
           {
@@ -25,20 +29,25 @@ let
               printf 'subjectAltName=%s\n' "$subject_alt_name"
             fi
           } > "$out/$name.ext"
-          openssl x509 -req -days 1 -sha256 \
+          openssl x509 -req -days "$validity_days" -sha256 \
             -in "$out/$name.csr" -CA "$out/ca.pem" -CAkey "$out/ca-key.pem" \
             -CAcreateserial -extfile "$out/$name.ext" -out "$out/$name.pem" >/dev/null 2>&1
         }
 
-        issue_certificate server serverAuth DNS:immich-ml.test
-        issue_certificate authorized-client clientAuth ""
-        issue_certificate rogue-client clientAuth ""
+        issue_certificate server serverAuth DNS:immich-ml.test 1
+        issue_certificate authorized-client clientAuth "" 1
+        issue_certificate replacement-client clientAuth "" 1
+        issue_certificate expired-client clientAuth "" 0
+        issue_certificate rogue-client clientAuth "" 1
       '';
   provisionCertificates = serviceName: {
     systemd.services.immich-ml-test-certificates = {
       wantedBy = [ "multi-user.target" ];
       before = [ "${serviceName}.service" ];
-      serviceConfig.Type = "oneshot";
+      serviceConfig = {
+        RemainAfterExit = true;
+        Type = "oneshot";
+      };
       script = ''
         install -d -m 0700 /run/immich-ml-test-certificates
         install -m 0444 ${certificates}/ca.pem /run/immich-ml-test-certificates/ca.pem
@@ -48,6 +57,11 @@ let
         install -m 0400 ${certificates}/authorized-client-key.pem /run/immich-ml-test-certificates/authorized-client-key.pem
         install -m 0444 ${certificates}/rogue-client.pem /run/immich-ml-test-certificates/rogue-client.pem
         install -m 0400 ${certificates}/rogue-client-key.pem /run/immich-ml-test-certificates/rogue-client-key.pem
+        install -m 0444 ${certificates}/replacement-client.pem /run/immich-ml-test-certificates/replacement-client.pem
+        install -m 0400 ${certificates}/replacement-client-key.pem /run/immich-ml-test-certificates/replacement-client-key.pem
+        install -m 0444 ${certificates}/expired-client.pem /run/immich-ml-test-certificates/expired-client.pem
+        install -m 0400 ${certificates}/expired-client-key.pem /run/immich-ml-test-certificates/expired-client-key.pem
+        install -m 0444 ${certificates}/wrong-ca.pem /run/immich-ml-test-certificates/wrong-ca.pem
       '';
     };
     systemd.services.${serviceName} = {
@@ -92,6 +106,8 @@ pkgs.testers.runNixOSTest {
           };
           authorizedClientCertificates."authorized-client.pem" =
             "/run/immich-ml-test-certificates/authorized-client.pem";
+          authorizedClientCertificates."expired-client.pem" =
+            "/run/immich-ml-test-certificates/expired-client.pem";
           monitoredCertificates = {
             "server.pem" = "/run/immich-ml-test-certificates/server.pem";
             "authorized-client.pem" = "/run/immich-ml-test-certificates/authorized-client.pem";
@@ -153,8 +169,17 @@ pkgs.testers.runNixOSTest {
 
     client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem https://immich-ml.test:3443/ >/dev/null")
     client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/rogue-client.pem --key /run/immich-ml-test-certificates/rogue-client-key.pem https://immich-ml.test:3443/ >/dev/null")
+    client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to wrong-name.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/authorized-client.pem --key /run/immich-ml-test-certificates/authorized-client-key.pem https://wrong-name.test:3443/ >/dev/null")
+    client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/wrong-ca.pem --cert /run/immich-ml-test-certificates/authorized-client.pem --key /run/immich-ml-test-certificates/authorized-client-key.pem https://immich-ml.test:3443/ >/dev/null")
+    client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/expired-client.pem --key /run/immich-ml-test-certificates/expired-client-key.pem https://immich-ml.test:3443/ >/dev/null")
     client.succeed("ip address add 192.168.1.3/24 dev eth1")
     client.fail("curl --interface 192.168.1.3 --noproxy '*' --fail --silent --max-time 2 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/authorized-client.pem --key /run/immich-ml-test-certificates/authorized-client-key.pem https://immich-ml.test:3443/ >/dev/null")
     client.succeed("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/authorized-client.pem --key /run/immich-ml-test-certificates/authorized-client-key.pem https://immich-ml.test:3443/ >/dev/null")
+
+    server.succeed("install -m 0444 /run/immich-ml-test-certificates/replacement-client.pem /run/immich-ml-test-certificates/authorized-client.pem")
+    server.succeed("systemctl restart immich-ml-server-proxy.service")
+    client.fail("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/authorized-client.pem --key /run/immich-ml-test-certificates/authorized-client-key.pem https://immich-ml.test:3443/ >/dev/null")
+    client.fail("runuser -u immich -- curl --noproxy '*' --fail --silent --max-time 5 http://127.0.0.1:3004/ >/dev/null")
+    client.succeed("curl --noproxy '*' --fail --silent --max-time 5 --connect-to immich-ml.test:3443:192.168.1.2:3443 --cacert /run/immich-ml-test-certificates/ca.pem --cert /run/immich-ml-test-certificates/replacement-client.pem --key /run/immich-ml-test-certificates/replacement-client-key.pem https://immich-ml.test:3443/ >/dev/null")
   '';
 }
