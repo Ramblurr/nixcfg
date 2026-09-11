@@ -219,6 +219,24 @@ as this bridge. Its name keeps it outside native generation pruning. It remains
 available as a rollback entry, with its system and policy retained. Do not edit it.
 The helper flushes the EFI filesystem before retiring transition-only policies.
 
+The default appears first and is labeled `(default)`. Other ordinary NixOS
+configurations are listed newest-first. The helper removes duplicate menu files
+for equivalent boot payloads, including aliases created by retention profiles.
+It keeps the protected bridge when that bridge represents the same configuration.
+Generation labels survive native pruning; retention-profile counters are not shown
+as new system generations. Custom and specialisation entries are left alone.
+This changes menu metadata, not kernel arguments, kernel/initrd files, or PCR policies.
+An older historical entry outside the retained policy set may still need the recovery
+passphrase; not every generation in the menu is guaranteed to unlock automatically.
+
+Complete queued firmware updates before deploying NixOS. A firmware update may
+use an EFI launcher under `EFI/nixos`, where ordinary NixOS boot-file cleanup can
+remove it. The helper refuses firmware overrides such as a pending `BootNext`;
+do not clear the override merely to force deployment through. Let the update finish,
+check its reported result and versions, and obtain a normal Linux boot before
+resuming deployment. Keep the recovery passphrase available: firmware updates can
+change boot measurements or require additional reboots.
+
 The journal is `/var/lib/thinkpad1-tpm-deploy/state.json`. It records enrollment
 intent and fingerprints of owned tokens and slots. Recovery slot 0 and unmanaged
 credentials are never retired. After a successful installation, the helper retains

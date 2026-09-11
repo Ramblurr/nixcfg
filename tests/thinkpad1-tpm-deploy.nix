@@ -84,6 +84,12 @@ pkgs.testers.runNixOSTest {
           exit 42
         '';
       };
+      specialisation.failedMenu.configuration = {
+        imports = [ encryptedConfig ];
+        boot.loader.systemd-boot.extraInstallCommands = ''
+          printf broken > /boot/EFI/systemd/systemd-bootx64.efi
+        '';
+      };
       specialisation.duplicateOptions.configuration = entryOverride "options unexpected=1";
       specialisation.duplicateLinux.configuration = entryOverride "linux /EFI/BOOT/other.efi";
       specialisation.alternateEntry.configuration = entryOverride "efi /EFI/BOOT/other.efi";
@@ -132,6 +138,7 @@ pkgs.testers.runNixOSTest {
       settings3 = nodes.machine.specialisation.settings3.configuration.system.build.toplevel;
       failedInstall = nodes.machine.specialisation.failedInstall.configuration.system.build.toplevel;
       failedLoader = nodes.machine.specialisation.failedLoader.configuration.system.build.toplevel;
+      failedMenu = nodes.machine.specialisation.failedMenu.configuration.system.build.toplevel;
       duplicateOptions =
         nodes.machine.specialisation.duplicateOptions.configuration.system.build.toplevel;
       duplicateLinux = nodes.machine.specialisation.duplicateLinux.configuration.system.build.toplevel;
@@ -156,6 +163,7 @@ pkgs.testers.runNixOSTest {
           settings3
           failedInstall
           failedLoader
+          failedMenu
           duplicateOptions
           duplicateLinux
           alternateEntry
@@ -182,6 +190,21 @@ pkgs.testers.runNixOSTest {
               "loader": machine.succeed("cat /boot/loader/loader.conf"),
               "efi": machine.succeed("sha256sum /boot/EFI/systemd/systemd-bootx64.efi /boot/EFI/BOOT/BOOTX64.EFI"),
           }
+
+      def check_boot_menu():
+          entries = [entry for entry in json.loads(machine.succeed("bootctl list --json=short"))
+                     if entry.get("options", "").startswith("init=")
+                     and "-specialisation-" not in entry["id"]
+                     and (entry["id"].startswith("nixos-") or entry["id"] == "thinkpad1-tpm-rollback.conf")]
+          default = next(line.split()[1] for line in snapshot()["loader"].splitlines()
+                         if line.startswith("default "))
+          assert entries[0]["id"] == default, "default is not the first NixOS menu entry"
+          assert "(default)" in entries[0]["title"], "default label is unclear"
+          assert len({entry["options"] for entry in entries}) == len(entries), f"duplicate NixOS menu entries: {entries}"
+          generations = [int(entry["version"].split()[1]) for entry in entries[1:]]
+          assert generations == sorted(generations, reverse=True), "rollback entries are not newest-first"
+          assert any(entry["id"] == "thinkpad1-tpm-rollback.conf" for entry in entries), "protected bridge missing"
+          return entries
 
       def refused(message, candidate="${settings3}"):
           before = snapshot()
@@ -266,12 +289,15 @@ pkgs.testers.runNixOSTest {
               assert machine.succeed("readlink -f /nix/var/nix/profiles/system") == before_profile
               assert machine.succeed("cat /boot/loader/loader.conf") == before_loader
       with subtest("repeat deployment preserves encrypted boot"):
+          machine.succeed("cp /boot/loader/entries/$(awk '$1 == \"default\" {print $2}' /boot/loader/loader.conf) /boot/loader/entries/zzz-custom.conf")
+          custom_entry = machine.succeed("sha256sum /boot/loader/entries/zzz-custom.conf")
           before = snapshot()
           started = time.monotonic()
           output = machine.succeed("${encrypted}/thinkpad1-tpm-deploy boot ${encrypted}")
           print(f"No-op preparation and installation: {time.monotonic() - started:.2f}s")
           assert "Preparing next-boot TPM enrollment" not in output
           after = snapshot()
+          menu_before = machine.succeed("sha256sum /boot/loader/entries/*.conf")
           assert after["luks"] == before["luks"], "no-op changed LUKS metadata"
           assert after["profile"] == before["profile"], "no-op changed profile target"
           # The first install reconciles the bootstrap ESP's generation number
@@ -281,9 +307,13 @@ pkgs.testers.runNixOSTest {
           print(f"Warm no-op preparation and installation: {time.monotonic() - started:.2f}s")
           assert "Preparing next-boot TPM enrollment" not in output
           assert snapshot() == after, "warm no-op changed enrollment/profile/default"
+          assert machine.succeed("sha256sum /boot/loader/entries/*.conf") == menu_before, "warm no-op changed menu"
+          assert machine.succeed("sha256sum /boot/loader/entries/zzz-custom.conf") == custom_entry, "custom entry changed"
+          machine.succeed("rm /boot/loader/entries/zzz-custom.conf")
           stats = json.loads(next(line.split(": ", 1)[1] for line in output.splitlines() if line.startswith("TPM timings (seconds): ")))
           assert stats["enrollment"] == 0 and stats["authorization"] > 0
           print(f"Warm no-op phases: {stats}")
+          original_menu_version = check_boot_menu()[0]["version"]
           started = time.monotonic()
           machine.succeed("nix-env --profile /nix/var/nix/profiles/system --set ${encrypted}; ${encrypted}/bin/switch-to-configuration boot")
           print(f"Ordinary no-op profile/boot installation baseline: {time.monotonic() - started:.2f}s")
@@ -293,11 +323,13 @@ pkgs.testers.runNixOSTest {
           machine.succeed("findmnt -n -o SOURCE / | grep /dev/mapper/cryptroot")
       with subtest("settings-changing deployment prepares unattended unlock"):
           machine.succeed("${settings}/thinkpad1-tpm-deploy switch ${settings}")
+          check_boot_menu()
           machine.succeed("grep 'settings changed' /etc/tpm-deploy-example")
           for candidate in ["${settings2}", "${settings}"] * 4:
               started = time.monotonic()
               output = machine.succeed(f"{candidate}/thinkpad1-tpm-deploy boot {candidate}")
               elapsed = time.monotonic() - started
+              check_boot_menu()
               stats = json.loads(next(line.split(": ", 1)[1] for line in output.splitlines() if line.startswith("TPM timings (seconds): ")))
               assert stats["enrollment"] > 0
               # Reinstall the same, already-covered candidate for a safe baseline.
@@ -316,10 +348,40 @@ pkgs.testers.runNixOSTest {
       with subtest("known-good rollback survives ordinary generation pruning"):
           machine.succeed("nix-env --profile /nix/var/nix/profiles/system --delete-generations old")
           machine.succeed("${settings2}/thinkpad1-tpm-deploy boot ${settings2}")
-          entries = json.loads(machine.succeed("bootctl list --json=short"))
+          entries = check_boot_menu()
           rollback = [entry for entry in entries if "init=${encrypted}/init" in entry.get("options", "").split()]
           assert rollback, "known-good rollback entry was pruned"
+          assert rollback[0]["version"] == original_menu_version, "pruning lost the system generation label"
           machine.succeed("bootctl set-oneshot " + rollback[0]["id"])
+          machine.succeed("sync")
+          machine.crash()
+          machine.wait_for_unit("multi-user.target")
+          machine.succeed("grep -F 'init=${encrypted}/init' /proc/cmdline")
+      with subtest("menu cleanup failure preserves rollback when the previous default is the bridge"):
+          machine.succeed("${encrypted}/thinkpad1-tpm-deploy boot ${encrypted}")
+          entries = check_boot_menu()
+          assert entries[0]["id"] == "thinkpad1-tpm-rollback.conf"
+          other = next(entry for entry in entries if "init=${settings}/init" in entry.get("options", "").split())
+          machine.succeed("bootctl set-oneshot " + other["id"])
+          machine.succeed("sync")
+          machine.crash()
+          machine.wait_for_unit("multi-user.target")
+          machine.succeed("grep -F 'init=${settings}/init' /proc/cmdline")
+          before = snapshot()
+          status, output = machine.execute("${failedMenu}/thinkpad1-tpm-deploy boot ${failedMenu} 2>&1")
+          assert status != 0 and "bootloader changed during installation" in output, output
+          after = snapshot()
+          assert all(after[key] == before[key] for key in ["profile", "loader", "efi"]), "previous boot default was not restored"
+          for section in ["keyslots", "tokens"]:
+              assert all(after["luks"][section].get(key) == value for key, value in before["luks"][section].items()), "existing credentials changed"
+          entries = json.loads(machine.succeed("bootctl list --json=short"))
+          rollback = [entry for entry in entries if "init=${settings}/init" in entry.get("options", "").split()]
+          assert rollback, "restoring the previous default stranded the booted rollback"
+          machine.succeed("bootctl set-oneshot " + rollback[0]["id"])
+          machine.succeed("sync")
+          machine.crash()
+          machine.wait_for_unit("multi-user.target")
+          machine.succeed("grep -F 'init=${settings}/init' /proc/cmdline")
           machine.succeed("sync")
           machine.crash()
           machine.wait_for_unit("multi-user.target")
@@ -331,7 +393,8 @@ pkgs.testers.runNixOSTest {
           machine.succeed("efibootmgr -N")
       with subtest("cached source measurements never hide ESP changes"):
           machine.succeed("${settings2}/thinkpad1-tpm-deploy boot ${settings2}")
-          entry = machine.succeed("cat /boot/loader/entries/" + rollback[0]["id"])
+          check_boot_menu()
+          entry = machine.succeed("cat /boot/loader/entries/thinkpad1-tpm-rollback.conf")
           initrd = "/boot" + next(line.split()[1] for line in entry.splitlines() if line.startswith("initrd "))
           machine.succeed(f"cp {initrd} /tmp/saved-initrd; printf changed >> {initrd}")
           refused("installed initrd differs from immutable source")
@@ -521,6 +584,7 @@ pkgs.testers.runNixOSTest {
       with subtest("power loss on both sides of loader replacement boots the prepared bridge"):
           for phase in ["entry-pruning", "before", "after"]:
               machine.succeed("${encrypted}/thinkpad1-tpm-deploy boot ${encrypted}")
+              generation = machine.succeed("basename $(readlink /nix/var/nix/profiles/system)").strip().split("-")[1]
               machine.succeed("sync")
               machine.crash()
               machine.wait_for_unit("multi-user.target")
@@ -532,8 +596,10 @@ pkgs.testers.runNixOSTest {
               fallback = machine.succeed("sha256sum /boot/EFI/BOOT/BOOTX64.EFI | cut -d ' ' -f1").strip()
               desired = machine.succeed("sha256sum ${changedBootloader}/systemd/lib/systemd/boot/efi/systemd-bootx64.efi | cut -d ' ' -f1").strip()
               if phase == "entry-pruning":
-                  old_entry = machine.succeed("grep -l 'init=${encrypted}/init' /boot/loader/entries/nixos-generation-*.conf | LC_ALL=C sort | head -n1").strip()
-                  assert old_entry
+                  # Successful cleanup removed native duplicates of the bridge.
+                  # Recreate one orphan generation to exercise native pruning.
+                  old_entry = f"/boot/loader/entries/nixos-generation-{generation}.conf"
+                  machine.succeed(f"test ! -e {old_entry} && cp /boot/loader/entries/thinkpad1-tpm-rollback.conf {old_entry}")
                   machine.succeed("nix-env --profile /nix/var/nix/profiles/system --delete-generations old")
                   trace = f"-e trace=unlink -e inject=unlink:signal=SIGSTOP:when=1+ -P {old_entry}"
               else:
