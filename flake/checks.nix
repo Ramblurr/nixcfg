@@ -17,7 +17,9 @@
         calibre = import ../tests/calibre.nix { inherit inputs pkgs; };
         database-zfs-readiness = import ../tests/database-zfs-readiness.nix { inherit inputs pkgs; };
         databasus = import ../tests/databasus.nix { inherit inputs pkgs; };
+        databasus-vm = import ../tests/databasus-vm.nix { inherit pkgs; };
         firewall = import ../tests/firewall.nix { inherit inputs pkgs; };
+        firewall-vm = import ../tests/firewall-vm.nix { inherit pkgs; };
         git-archive = import ../tests/git-archive.nix { inherit inputs pkgs; };
         gatus-heartbeats = import ../tests/gatus-heartbeats.nix { inherit inputs pkgs; };
         gatus-heartbeats-vm = import ../tests/gatus-heartbeats-vm.nix { inherit inputs pkgs; };

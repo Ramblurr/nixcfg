@@ -50,6 +50,9 @@ in
       };
       nftables = {
         enable = true;
+        # NixOS otherwise flushes runtime tables on hosts with stateVersion < 23.11.
+        # Manage only our declared tables; preserve Podman NAT and other services.
+        flushRuleset = false;
         tables = lib.mkMerge [
           (lib.mkIf (useTailscale && useMullvad) {
             "mullvad-tailscale-exclude" = {

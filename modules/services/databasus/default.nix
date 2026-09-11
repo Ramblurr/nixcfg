@@ -60,7 +60,9 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [ "d ${cfg.dataDir} 0750 root root -" ];
+    # The pinned image runs Databasus as UID 65532 and PostgreSQL as UID 999,
+    # sharing GID 999. Tmpfiles also runs during activation, while both are live.
+    systemd.tmpfiles.rules = [ "d ${cfg.dataDir} 0750 65532 999 -" ];
 
     systemd.services.podman-databasus = {
       requires = [ "zfs-datasets.service" ];
@@ -79,7 +81,7 @@ in
         IS_DISABLE_ANONYMOUS_TELEMETRY = "true";
       };
       extraOptions = [
-        "--health-cmd=databasus healthcheck"
+        "--health-cmd=pg_isready -h 127.0.0.1 -p 5437 -U postgres -d databasus && databasus healthcheck"
         "--health-interval=30s"
         "--health-timeout=5s"
         "--health-start-period=60s"

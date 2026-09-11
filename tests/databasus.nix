@@ -66,7 +66,10 @@ assert
     DATABASUS_URL = "https://databasus.example.test";
     IS_DISABLE_ANONYMOUS_TELEMETRY = "true";
   };
-assert builtins.elem "--health-cmd=databasus healthcheck" container.extraOptions;
+assert builtins.elem "d /var/lib/databasus 0750 65532 999 -" cfg.systemd.tmpfiles.rules;
+assert builtins.elem
+  "--health-cmd=pg_isready -h 127.0.0.1 -p 5437 -U postgres -d databasus && databasus healthcheck"
+  container.extraOptions;
 assert builtins.elem "zfs-datasets.service" unit.requires;
 assert builtins.elem "zfs-datasets.service" unit.after;
 assert unit.unitConfig.RequiresMountsFor == [ "/var/lib/databasus" ];
