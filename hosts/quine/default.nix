@@ -9,6 +9,7 @@
 let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
   primAddress = builtins.head config.site.net.prim.hosts4.${config.networking.hostName};
+  deweyPrimAddress = builtins.head config.site.net.prim.hosts4.dewey;
   inherit (config.modules.users.primaryUser) username;
 in
 {
@@ -135,6 +136,15 @@ in
     }
   ];
 
+  networking.firewall.extraInputRules = ''
+    iifname "prim" ip saddr { ${deweyPrimAddress} } tcp dport { ${toString config.services.ollama.port} } accept comment "Ollama for Paperless"
+  '';
+
+  services.ollama = {
+    host = primAddress;
+    loadModels = [ "llama3.1" ];
+  };
+
   modules = {
     nix.pruneAgedGcroots.enable = true;
     desktop = {
@@ -249,7 +259,7 @@ in
       docker.enableOnBoot = false;
       podman.enable = true;
       text-embeddings-inference = {
-        enable = false;
+        enable = true;
         instances = {
           reranker = {
             modelId = "cross-encoder/ms-marco-MiniLM-L6-v2";
