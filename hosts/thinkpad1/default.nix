@@ -186,7 +186,8 @@ in
       ColorScheme=Catppuccin${catppuccinName}${catppuccinAccentName}
     '';
   };
-  services.onedrive.enable = true;
+  # disabled temporarily until entra id admin allows the app
+  services.onedrive.enable = false;
   # create config file in ~/.config
   myhm = {
     xdg.configFile."onedrive/config".text = ''
