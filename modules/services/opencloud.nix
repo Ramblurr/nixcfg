@@ -315,6 +315,7 @@ let
                 OC_EXCLUDE_RUN_SERVICES = "idp";
                 OC_ADD_RUN_SERVICES = "collaboration";
                 OC_OIDC_ISSUER = i.oidc.issuer;
+                PROXY_OIDC_REWRITE_WELLKNOWN = "true";
                 WEB_OIDC_CLIENT_ID = i.oidc.clientId;
                 PROXY_TLS = "false";
                 PROXY_HTTP_ADDR = "0.0.0.0:9200";
