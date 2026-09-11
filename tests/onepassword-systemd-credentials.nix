@@ -184,6 +184,7 @@ assert microvmSecretService.serviceConfig.Type == "oneshot";
 assert microvmSecretService.serviceConfig.User == "root";
 assert microvmSecretService.serviceConfig.Group == "root";
 assert microvmSecretService.serviceConfig.UMask == "0077";
+assert lib.hasInfix "install -d -m 0700 -o root -g root" microvmSecretService.script;
 assert
   microvmSecretService.serviceConfig.LoadCredential == [
     "API_TOKEN:${microvmConfig.modules.services.onepassword-systemd-credentials.socketPath}"

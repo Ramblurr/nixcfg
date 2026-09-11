@@ -95,7 +95,15 @@ pkgs.runCommand "opencloud-home-hosts" { } ''
   printf '%064d' 2 > "$CREDENTIALS_DIRECTORY/JWT_SECRET"
   renderer=${
     pkgs.writeShellScript "opencloud-secret-renderer" (
-      pkgs.lib.replaceStrings [ "/run/microvms/secrets/opencloud-home" ] [ "$TMPDIR/source" ]
+      pkgs.lib.replaceStrings
+        [
+          "/run/microvms/secrets/opencloud-home"
+          " -o root -g root"
+        ]
+        [
+          "$TMPDIR/source"
+          ""
+        ]
         secretService.script
     )
   }
