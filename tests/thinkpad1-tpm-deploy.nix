@@ -611,7 +611,8 @@ pkgs.testers.runNixOSTest {
                       machine.wait_until_succeeds(f"test ! -e {old_entry}", timeout=90)
                   if phase != "before":
                       machine.wait_until_succeeds(f"test $(sha256sum {primary} | cut -d ' ' -f1) = {desired}", timeout=90)
-                  machine.wait_until_succeeds("ps -eo stat,args | grep -E '^[Tt].*(bootctl|python)'", timeout=90)
+                  # A ptrace stop can occur during preparation, before bridge selection.
+                  machine.wait_until_succeeds("test \"$(awk '$1 == \"default\" {print $2}' /boot/loader/loader.conf)\" = thinkpad1-tpm-rollback.conf", timeout=90)
                   machine.succeed(f"test $(sha256sum {primary} | cut -d ' ' -f1) = {original if phase == 'before' else desired}")
                   machine.succeed(f"test $(sha256sum /boot/EFI/BOOT/BOOTX64.EFI | cut -d ' ' -f1) = {desired if phase == 'entry-pruning' else fallback}")
                   if phase == "entry-pruning":
