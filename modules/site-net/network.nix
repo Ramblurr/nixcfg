@@ -27,7 +27,7 @@ let
     keys (filter (_: iface: iface.type == "bridge") hostConfig.interfaces)
   );
   hostGres = keys (filter (_: iface: iface.type == "gre") hostConfig.interfaces);
-  hasStatic4 = net: (nets.${net}.hosts4 ? ${hostName});
+  hasStatic4 = net: (nets.${net}.hosts4 ? ${hostName}) && !hostConfig.interfaces.${net}.dhcp4;
   hasStatic6 = net: (some (v: containsKey v hostName) (vals nets.${net}.hosts6));
   defaultBridgeParent = first hostPhysicals;
 

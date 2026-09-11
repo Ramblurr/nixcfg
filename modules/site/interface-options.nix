@@ -75,6 +75,11 @@ _: {
       default = false;
       description = "To use the router for this net as the default IPv4 gateway";
     };
+    dhcp4 = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Use DHCPv4 even when the host has a reserved address in site.net.<network>.hosts4";
+    };
     gw6 = mkOption {
       type = types.bool;
       default = false;
