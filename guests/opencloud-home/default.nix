@@ -38,7 +38,7 @@ in
   };
   microvm = {
     # Host supplies credentials through the read-only virtiofs share.
-    hypervisor = "qemu";
+    hypervisor = "cloud-hypervisor";
     mem = 8192;
     vcpu = 4;
     volumes = [
