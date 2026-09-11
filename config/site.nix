@@ -73,6 +73,8 @@ in
       dewey = [ "10.9.4.17" ];
       peirce = [ "10.9.4.24" ];
       mali = [ "10.9.4.10" ];
+      # Quine receives this reserved address through DHCP.
+      quine = [ "10.9.4.3" ];
     };
     hosts6 = { };
     #hosts6.main = {
@@ -372,6 +374,7 @@ in
         lan0.type = "phys";
         prim = {
           type = "bridge";
+          dhcp4 = true;
           routes = [
             {
               Destination = "192.168.8.0/22";

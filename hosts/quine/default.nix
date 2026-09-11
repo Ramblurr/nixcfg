@@ -8,9 +8,7 @@
 }:
 let
   inherit (config.repo.secrets.global) domain lanVpnGateway;
-  # Quine's primary address is DHCP-reserved; site.net.prim.hosts4 means static addressing.
-  # Keep this listener address separate so evaluating it does not disable DHCP/default routes.
-  primAddress = "10.9.4.3";
+  primAddress = builtins.head config.site.net.prim.hosts4.${config.networking.hostName};
   deweyPrimAddress = builtins.head config.site.net.prim.hosts4.dewey;
   inherit (config.modules.users.primaryUser) username;
 in
