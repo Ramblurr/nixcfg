@@ -8,29 +8,26 @@ let
     modules = [
       inputs.microvm.nixosModules.host
       inputs.impermanence.nixosModules.impermanence
-      ../modules/microvm-host/ssh-access.nix
-      ({ lib, ... }: {
-        options.modules.microvm-host.enable = lib.mkEnableOption "MicroVM host test";
-        config = {
-          modules.microvm-host.enable = true;
-          networking.hostName = "dewey";
-          system.stateVersion = "26.05";
-        };
-      })
-    ];
-  }).config;
-  guest = name: (inputs.nixpkgs.lib.nixosSystem {
-    system = pkgs.stdenv.hostPlatform.system;
-    modules = [
-      inputs.microvm.nixosModules.microvm
-      ../modules/microvm-guest/options.nix
-      ../modules/microvm-guest/ssh-access.nix
+      ../modules/microvm-host
       {
-        networking.hostName = name;
-        modules.microvm-guest = { enable = true; host = "dewey"; };
+        modules.microvm-host = { enable = true; baseZfsDataset = "rpool/test"; };
+        networking.hostName = "dewey";
         system.stateVersion = "26.05";
       }
     ];
+  }).config;
+  # Exercise the shared guest module using existing secret fixtures.
+  guest = name: (inputs.self.lib.nixcfg.mkGuest "immich-home" {
+    extraModules = [ {
+      networking.hostName = lib.mkForce name;
+      modules.microvm-guest.autoNetSetup.enable = lib.mkForce false;
+      services.resolved.settings.Resolve.FallbackDNS = lib.mkForce [ ];
+      repo.secretFiles = {
+        global = lib.mkForce ./fixtures/immich/global.nix;
+        site = lib.mkForce ./fixtures/immich/site.nix;
+        local = lib.mkForce ./fixtures/immich/local.nix;
+      };
+    } ];
   }).config;
   registered = builtins.attrNames registry.dewey.guests;
   checkGuest = name:
@@ -44,7 +41,7 @@ let
   helper = builtins.head (builtins.filter (p: (p.name or "") == "microvm-verified-ssh") host.environment.systemPackages);
 in
 assert lib.assertMsg (lib.all checkGuest registered) "Both guests must use standard root authorized keys without a custom VSOCK override";
-assert lib.assertMsg ((guest "unregistered").users.users.root.openssh.authorizedKeys.keyFiles == [ ]) "Unregistered guests must not acquire host access";
+assert lib.assertMsg (!(builtins.elem registry.dewey.publicKeyFile (guest "unregistered").users.users.root.openssh.authorizedKeys.keyFiles)) "Unregistered guests must not acquire host access";
 assert lib.assertMsg (lib.all (name: host.programs.ssh.knownHosts."microvm-${name}".publicKeyFile == registry.dewey.guests.${name}.hostKeyFile) registered) "Guest host identities must be pinned";
 pkgs.runCommand "microvm-ssh-check" {
   nativeBuildInputs = [ pkgs.openssh pkgs.python3 pkgs.bash ];

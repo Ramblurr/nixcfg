@@ -8,6 +8,9 @@
 let
   inherit (config.networking) hostName;
   cfg = config.modules.microvm-guest;
+  registry = import ../../config/microvm-ssh.nix;
+  sshHost = registry.${cfg.host} or null;
+  sshGuest = if sshHost == null then null else sshHost.guests.${hostName} or null;
   nets = builtins.attrNames (
     lib.filterAttrs (
       _:
@@ -38,6 +41,10 @@ in
       neededForBoot = true;
     });
     microvm = {
+      vsock = lib.mkIf (sshGuest != null) {
+        cid = sshGuest.cid;
+        ssh.enable = true;
+      };
       writableStoreOverlay = lib.mkIf cfg.writableStoreOverlay.enable "/nix/.rw-store";
       hypervisor = lib.mkDefault "cloud-hypervisor";
       deflateOnOOM = false;
@@ -242,6 +249,8 @@ in
     users = {
       mutableUsers = false;
       users."root" = {
+        # Standard root authorization applies to both VSOCK and TCP SSH.
+        openssh.authorizedKeys.keyFiles = lib.mkIf (sshGuest != null) [ sshHost.publicKeyFile ];
         createHome = true;
         home = lib.mkForce "/home/root";
       };
