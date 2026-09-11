@@ -69,7 +69,7 @@
       };
       guestHosts = {
         immich-home = "dewey";
-        opencloud-home = "mali";
+        opencloud-home = "dewey";
       };
     in
     {

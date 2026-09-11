@@ -13,7 +13,8 @@ let
       guest = configurations.${guestName};
       attachedGuest = configurations.${hostName}.config.microvm.vms.${guestName};
     in
-    attachedGuest.evaluatedConfig.config.networking.hostName == guest.config.networking.hostName;
+    attachedGuest.evaluatedConfig.config.networking.hostName == guest.config.networking.hostName
+    && guest.config.modules.microvm-guest.host == hostName;
   placementHasMacvtapParents =
     guestName:
     let
@@ -32,7 +33,7 @@ let
     lib.all (parent: builtins.elem parent hostNetdevNames) macvtapParents;
 in
 assert lib.assertMsg (lib.all placementUsesSecretAwareOutput placements)
-  "Every public guest placement must use its secret-aware guest output";
+  "Every public guest placement must target the guest-declared host and use its secret-aware output";
 assert lib.assertMsg (lib.all placementHasMacvtapParents placements)
   "Every guest MACVTAP parent must be generated on its host";
 pkgs.runCommand "check-guest-host-wiring" { } "touch $out"
