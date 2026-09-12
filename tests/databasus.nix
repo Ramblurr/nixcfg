@@ -83,4 +83,15 @@ assert
       "100.64.0.0/10"
     ];
   };
+assert
+  cfg.site.gatus.endpoints == [
+    {
+      name = "Databasus";
+      group = cfg.site.gatus.groups.infrastructure;
+      url = "https://databasus.example.test/api/v1/system/health";
+      interval = "5m";
+      conditions = [ "[STATUS] == 200" ];
+      alerts = [ { type = "pushover"; } ];
+    }
+  ];
 pkgs.runCommand "databasus-evaluation" { } "touch $out"

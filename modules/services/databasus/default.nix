@@ -93,7 +93,7 @@ in
       {
         name = "Databasus";
         group = config.site.gatus.groups.infrastructure;
-        url = "https://${cfg.domain}/";
+        url = "https://${cfg.domain}/api/v1/system/health";
       }
     ];
 
