@@ -8,14 +8,14 @@ let
       name = "${modules.name}-stable-check";
     });
   });
-  mismatchedVersion = builtins.tryEval (
-    (pkgs.callPackage ../pkgs/caddy/package.nix {
-      caddy = pkgs.caddy.overrideAttrs (_: {
-        version = "0.0.0";
-        __intentionallyOverridingVersion = true;
-      });
-    }).drvPath
-  );
+  mismatchedVersion =
+    builtins.tryEval
+      (pkgs.callPackage ../pkgs/caddy/package.nix {
+        caddy = pkgs.caddy.overrideAttrs (_: {
+          version = "0.0.0";
+          __intentionallyOverridingVersion = true;
+        });
+      }).drvPath;
 in
 assert !mismatchedVersion.success;
 pkgs.runCommand "caddy-package-check" { } ''

@@ -1,6 +1,9 @@
 { inputs, pkgs }:
 let
-  cfg = (inputs.self.lib.nixcfg.mkGuest "dev1" { }).config;
+  cfg =
+    (inputs.self.lib.nixcfg.mkGuest "dev1" {
+      extraModules = [ { modules.microvm-guest.host = "dewey"; } ];
+    }).config;
 in
 assert !cfg.services.nginx.enable;
 assert !(builtins.hasAttr "nginx" cfg.systemd.services);

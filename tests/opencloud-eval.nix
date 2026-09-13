@@ -58,7 +58,8 @@ assert c.users.users.opencloud-beta.uid == 3102;
 assert c.users.users.opencloud-alpha.linger;
 assert c.virtualisation.quadlet.containers.opencloud-alpha.uid == 3101;
 assert c.virtualisation.quadlet.containers.opencloud-beta.uid == 3102;
-assert builtins.elem "PROXY_OIDC_REWRITE_WELLKNOWN=true" c.virtualisation.quadlet.containers.opencloud-alpha.containerConfig.Environment;
+assert builtins.elem "PROXY_OIDC_REWRITE_WELLKNOWN=true"
+  c.virtualisation.quadlet.containers.opencloud-alpha.containerConfig.Environment;
 assert builtins.elem "opencloud-alpha-office.service" (
   c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig.Requires or [ ]
 );
