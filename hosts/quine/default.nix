@@ -58,6 +58,15 @@ in
 
   time.timeZone = "Europe/Berlin";
 
+  systemd.services.sops-install-secrets.before =
+    lib.mkIf config.modules.desktop.services.ha-mqtt.enable
+      [
+        "user@${toString config.users.users.${username}.uid}.service"
+      ];
+  sops.secrets.homeassistant-mqtt-password = {
+    owner = username;
+    mode = "0400";
+  };
   sops.secrets.HASS_TOKEN = {
     owner = username;
     mode = "0400";
@@ -173,7 +182,12 @@ in
       };
       gaming.enable = false;
       services = {
-        ha-shutdown.enable = false;
+        ha-mqtt = {
+          enable = false; # Broker listener details and deployment approval are still required.
+          mqtt.username = "quine";
+          mqtt.passwordFile = config.sops.secrets.homeassistant-mqtt-password.path;
+          shutdown.enable = false;
+        };
         hacompanion = {
           enable = true;
           environmentFile = config.sops.templates.hacompanion-env.path;

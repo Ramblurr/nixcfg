@@ -45,7 +45,7 @@
     ./desktop/programs/yubico.nix
     ./desktop/random-apps.nix
     ./desktop/services/hacompanion.nix
-    ./desktop/services/ha-shutdown.nix
+    ./desktop/services/ha-mqtt
     ./desktop/services/swhkd.nix
     ./desktop/wayland.nix
     ./desktop/greetd

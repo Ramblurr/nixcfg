@@ -1,0 +1,12 @@
+diff --git a/cli/src/lib/pub.ts b/cli/src/lib/pub.ts
+--- a/cli/src/lib/pub.ts
++++ b/cli/src/lib/pub.ts
+@@ -81,0 +82 @@
++  let published = false
+@@ -96,0 +98 @@
++        published = true
+@@ -109,0 +112,4 @@
++  client.on('close', () => {
++    if (!published) process.exitCode = 1
++  })
++

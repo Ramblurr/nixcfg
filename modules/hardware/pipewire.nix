@@ -8,30 +8,13 @@ let
   cfg = config.modules.hardware.pipewire;
   inherit (config.modules.users.primaryUser) username;
 
-  speaker-mute = pkgs.writeShellScriptBin "speaker-mute" ''
-    #!${pkgs.runtimeShell}
-    ${pkgs.alsa-utils}/bin/amixer -D pipewire set Master mute
-  '';
   mic-mute = pkgs.writeShellScriptBin "mic-mute" ''
     #!${pkgs.runtimeShell}
     ${pkgs.alsa-utils}/bin/amixer -D pipewire set Capture nocap
   '';
-  speaker-unmute = pkgs.writeShellScriptBin "speaker-unmute" ''
-    #!${pkgs.runtimeShell}
-    ${pkgs.alsa-utils}/bin/amixer -D pipewire set Master unmute
-  '';
   mic-unmute = pkgs.writeShellScriptBin "mic-unmute" ''
     #!${pkgs.runtimeShell}
     ${pkgs.alsa-utils}/bin/amixer -D pipewire set Capture cap
-  '';
-
-  speaker-get-mute = pkgs.writeShellScriptBin "speaker-get-mute" ''
-    #!${pkgs.runtimeShell}
-    if ${pkgs.alsa-utils}/bin/amixer -D pipewire get Master | grep -q '\[off\]'; then
-      echo "1"
-    else
-      echo "0"
-    fi
   '';
 
   mic-get-mute = pkgs.writeShellScriptBin "mic-get-mute" ''
@@ -40,15 +23,6 @@ let
       echo "1"
     else
       echo "0"
-    fi
-  '';
-
-  speaker-toggle = pkgs.writeShellScriptBin "speaker-toggle" ''
-    #!${pkgs.runtimeShell}
-    if ${pkgs.alsa-utils}/bin/amixer -D pipewire get Master | grep -q '\[off\]'; then
-      ${pkgs.alsa-utils}/bin/amixer -D pipewire set Master unmute
-    else
-      ${pkgs.alsa-utils}/bin/amixer -D pipewire set Master mute
     fi
   '';
 
@@ -90,11 +64,7 @@ in
     home-manager.users."${username}" =
       { pkgs, ... }:
       {
-        home.packages = [
-          speaker-mute
-          speaker-unmute
-          speaker-get-mute
-          speaker-toggle
+        home.packages = (import ./speaker-actions.nix { inherit pkgs; }) ++ [
           mic-mute
           mic-unmute
           mic-get-mute
