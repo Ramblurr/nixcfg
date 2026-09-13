@@ -26,7 +26,7 @@ in
       description = "The config path that hacompanion uses";
       type = types.path;
       default = pkgs.writeText "hacompanion-config" (
-        lib.std.serde.toTOML (cfg.settings // cfg.settingsDefault)
+        lib.std.serde.toTOML (lib.recursiveUpdate cfg.settingsDefault cfg.settings)
       );
     };
     settings = mkOption {
@@ -117,6 +117,11 @@ in
       path = [
         cfg.package
         pkgs.coreutils
+        pkgs.alsa-utils # amixer: audio volume and mute state
+        pkgs.lm_sensors # sensors: CPU temperature
+        pkgs.kmod # lsmod: webcam monitoring
+        pkgs.libnotify # notify-send: desktop notifications
+        pkgs.iputils # ping: optional online-check mode
       ];
       serviceConfig = {
         Type = "simple";
