@@ -175,7 +175,7 @@ in
       services = {
         ha-shutdown.enable = false;
         hacompanion = {
-          enable = false;
+          enable = true;
           environmentFile = config.sops.templates.hacompanion-env.path;
           unitAfter = [ "sops-nix.service" ];
           listenPort = 6669;
