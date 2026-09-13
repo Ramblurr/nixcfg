@@ -43,7 +43,7 @@
     libro-fm-cli.inputs.devshell.follows = "devshell";
     libro-fm-cli.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use llm-agents' nixpkgs for their cache
-    llm-agents.url = "github:numtide/llm-agents.nix";
+    llm-agents.url = "github:Ramblurr/llm-agents.nix/fix/collie-cli-runtime";
     microvm.url = "github:microvm-nix/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs";
     nad-api.url = "github:ramblurr/nad-api";

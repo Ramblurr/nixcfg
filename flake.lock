@@ -2321,15 +2321,16 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1789273433,
-        "narHash": "sha256-0081Ls2K8u3BrQtGe9qXDIE1L8Iu/ti66athTMrA1z4=",
-        "owner": "numtide",
+        "lastModified": 1789299608,
+        "narHash": "sha256-mPPs4pXuvzReyCV39SUkP73SgY0AnMOrniYT+IQmbeo=",
+        "owner": "Ramblurr",
         "repo": "llm-agents.nix",
-        "rev": "3058fbe106199fd207e0e14f969783d88da4a8e9",
+        "rev": "ea489cbdff66f38c960d5440d658544bdf1bac0a",
         "type": "github"
       },
       "original": {
-        "owner": "numtide",
+        "owner": "Ramblurr",
+        "ref": "fix/collie-cli-runtime",
         "repo": "llm-agents.nix",
         "type": "github"
       }
