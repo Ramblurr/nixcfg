@@ -12,6 +12,7 @@
         immich-ml-proxy = import ../tests/immich-ml-proxy.nix { inherit pkgs; };
         immich-worker = import ../tests/immich-worker.nix { inherit inputs pkgs; };
         immich-split = import ../tests/immich-split.nix { inherit pkgs; };
+        immich-storage = import ../tests/immich-storage.nix { inherit pkgs; };
         atuin-postgresql = import ../tests/atuin-postgresql.nix { inherit inputs pkgs; };
         borgmatic = import ../tests/borgmatic.nix { inherit inputs pkgs; };
         caddy-package = import ../tests/caddy-package.nix { inherit inputs pkgs; };

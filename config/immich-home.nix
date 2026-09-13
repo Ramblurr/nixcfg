@@ -7,6 +7,11 @@
   mediaLocation = "/var/lib/immich";
   mediaExport = "/mnt/tank2/services/immich-home";
   mediaDataset = "tank2/services/immich-home";
+  derivedDataset = "fast/services/immich-derived";
+  derivedDirectories = [
+    "thumbs"
+    "encoded-video"
+  ];
   machineLearning = {
     credentials = {
       ca = "op://home-ops-prod/Immich ML CA";
