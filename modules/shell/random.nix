@@ -17,6 +17,7 @@ in
     services.pcscd.enable = true;
     myhm = _hm: {
       home.packages = with pkgs; [
+        immich-cli
         inputs.libro-fm-cli.packages.${pkgs.stdenv.hostPlatform.system}.default
         fh
         internetarchive
