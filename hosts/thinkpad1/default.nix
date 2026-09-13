@@ -93,6 +93,8 @@ in
       krohnkite.enable = false;
     };
     services = {
+      printing.enable = true;
+      printing.drivers = [ pkgs.cups-brother-mfcl2750dw ];
       flatpak = {
         enable = true;
         autoUpdate.enable = false;
