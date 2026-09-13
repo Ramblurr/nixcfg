@@ -79,6 +79,7 @@ let
       role = "server";
       board = "Gigabyte Z390 I AORUS PRO WIFI-CF";
       cpu = "Intel Core i5-9600K";
+      ramMiB = 65536;
       gpu = "NVIDIA GeForce GTX 1070 Ti";
     };
     quine = {
