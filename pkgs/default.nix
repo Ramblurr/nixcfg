@@ -6,9 +6,7 @@ inputs: [
       pkgs-lib = prev.callPackage ../lib/pkgs.nix { flake-inputs = inputs; };
     in
     {
-      caddy-with-security = prev.callPackage ./caddy/package.nix {
-        buildPkgs = inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system};
-      };
+      caddy-with-security = prev.callPackage ./caddy/package.nix { };
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
         kernelPackages = prev.linuxPackages;
       };

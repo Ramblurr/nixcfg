@@ -14,6 +14,7 @@
         immich-split = import ../tests/immich-split.nix { inherit pkgs; };
         atuin-postgresql = import ../tests/atuin-postgresql.nix { inherit inputs pkgs; };
         borgmatic = import ../tests/borgmatic.nix { inherit inputs pkgs; };
+        caddy-package = import ../tests/caddy-package.nix { inherit inputs pkgs; };
         calibre = import ../tests/calibre.nix { inherit inputs pkgs; };
         database-zfs-readiness = import ../tests/database-zfs-readiness.nix { inherit inputs pkgs; };
         databasus = import ../tests/databasus.nix { inherit inputs pkgs; };
