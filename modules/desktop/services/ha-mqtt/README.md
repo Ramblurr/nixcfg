@@ -14,12 +14,12 @@ modules.desktop.services.ha-mqtt = {
     host = "<confirmed MQTT broker hostname>";
     port = 8883;
     tls.enable = true;
-    username = "quine";
-    passwordFile = config.sops.secrets.homeassistant-mqtt-password.path;
+    username = config.networking.hostName;
+    passwordFile = config.sops.secrets.mqtt-password.path;
   };
   shutdown.enable = false;
 };
-sops.secrets.homeassistant-mqtt-password = {
+sops.secrets.mqtt-password = {
   owner = config.modules.users.primaryUser.username;
   mode = "0400";
 };
@@ -41,14 +41,11 @@ store-bound Nix configuration, or logs. MQTTX diagnostics are discarded; the
 bridge logs fixed outcome names rather than exceptions or received payloads.
 Do not enable MQTTX debug logging when investigating credentials.
 
-Quine now declares the existing SOPS key `homeassistant-mqtt-password` and username
-`quine`, but **both bridge and shutdown remain disabled**. No secret value was
-read or changed. Its reference in 1Password is
-`op://home-ops-prod/6z5e5mp2pvskanpppohsggpme4/password`; Quine uses SOPS, not
-1Password Connect or a CLI lookup. Dewey has a separate account; do not reuse it.
+Use a separate broker account for each host. Without TLS, credentials cross the
+network without transport encryption.
 
-System-level secret delivery must precede the desktop user manager. Quine orders
-`sops-install-secrets.service` before that manager when the bridge is enabled.
+System-level secret delivery must precede the desktop user manager. For SOPS
+systemd activation, order `sops-install-secrets.service` before that manager.
 For user-manager credential delivery, set `credentialUnits` to the delivering
 units; they become `Requires` and `After` dependencies. Do not put system-manager
 unit names in that option. A password rotation takes effect on bridge restart.
@@ -69,8 +66,8 @@ For prefix `P`:
 
 The desktop client needs subscribe permission only on its exact command topic
 and publish permission only on its exact state topic. For Mosquitto, a host ACL
-can use `topic read ha-mqtt/quine/command` and
-`topic write ha-mqtt/quine/speaker/muted` under `user quine`. HA needs the converse
+can use `topic read ha-mqtt/desktop/command` and
+`topic write ha-mqtt/desktop/speaker/muted` under `user desktop`. HA needs the converse
 permissions. Enforce these on the broker; account creation alone is not proof of
 ACL isolation. This implementation does not modify the production broker.
 
@@ -109,14 +106,14 @@ masquerade as unmuted or drive a toggle decision.
 ## Home Assistant scripts
 
 Each entry below can be used as a script invoked by a dashboard button. Replace
-`quine` if using a different hostname or topic prefix.
+the example prefix `ha-mqtt/desktop` with the configured topic prefix.
 
 ```yaml
 speaker_mute:
   sequence:
     - action: mqtt.publish
       data:
-        topic: ha-mqtt/quine/command
+        topic: ha-mqtt/desktop/command
         payload: speaker-mute
         qos: 0
         retain: false
@@ -124,7 +121,7 @@ speaker_unmute:
   sequence:
     - action: mqtt.publish
       data:
-        topic: ha-mqtt/quine/command
+        topic: ha-mqtt/desktop/command
         payload: speaker-unmute
         qos: 0
         retain: false
@@ -132,7 +129,7 @@ speaker_toggle:
   sequence:
     - action: mqtt.publish
       data:
-        topic: ha-mqtt/quine/command
+        topic: ha-mqtt/desktop/command
         payload: speaker-toggle
         qos: 0
         retain: false
@@ -140,7 +137,7 @@ speaker_get_mute:
   sequence:
     - action: mqtt.publish
       data:
-        topic: ha-mqtt/quine/command
+        topic: ha-mqtt/desktop/command
         payload: speaker-get-mute
         qos: 0
         retain: false
@@ -148,7 +145,7 @@ desktop_shutdown:
   sequence:
     - action: mqtt.publish
       data:
-        topic: ha-mqtt/quine/command
+        topic: ha-mqtt/desktop/command
         payload: shutdown
         qos: 0
         retain: false
@@ -197,8 +194,8 @@ or changes the normal notification daemon.
 Before deployment: confirm the broker listener and host ACLs, review the runtime
 secret permissions, use dry-run shutdown, and obtain operational approval. Commit
 public changes, refresh only the private wrapper's `nixcfg` input, re-enter its
-devshell, and use the repository's `build quine` / approved `deploy` wrappers.
-No deployment, production MQTT test, or actual poweroff is part of this ticket.
+devshell, and use the repository's `build <host>` / approved `deploy` wrappers.
+Never use actual poweroff as an incidental validation step.
 
 The legacy HTTP service, Python helper, token-delivery declaration, and port-5001
 firewall contribution are retired. The operator should remove any obsolete

@@ -183,7 +183,10 @@ in
       gaming.enable = false;
       services = {
         ha-mqtt = {
-          enable = false; # Broker listener details and deployment approval are still required.
+          enable = true;
+          mqtt.host = "home.int.${domain.home}";
+          mqtt.port = 1883;
+          mqtt.tls.enable = false;
           mqtt.username = "quine";
           mqtt.passwordFile = config.sops.secrets.homeassistant-mqtt-password.path;
           shutdown.enable = false;
