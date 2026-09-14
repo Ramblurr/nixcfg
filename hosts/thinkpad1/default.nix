@@ -211,12 +211,15 @@ in
   services.onedrive.enable = true;
   services.onedrive.package = unstable.onedrive;
   # create config file in ~/.config
-  myhm = {
-    xdg.configFile."autostart/1password.desktop".source =
-      "${config.programs._1password-gui.package}/share/applications/1password.desktop";
-    xdg.configFile."onedrive/config".text = ''
-      sync_dir = "/home/viki/OneDrive"
-      skip_file = "~*|.~*|*.tmp"
-    '';
-  };
+  myhm =
+    { config, osConfig, ... }:
+    {
+      home.sessionVariables.CODEX_HOME = "${config.xdg.configHome}/codex";
+      xdg.configFile."autostart/1password.desktop".source =
+        "${osConfig.programs._1password-gui.package}/share/applications/1password.desktop";
+      xdg.configFile."onedrive/config".text = ''
+        sync_dir = "/home/viki/OneDrive"
+        skip_file = "~*|.~*|*.tmp"
+      '';
+    };
 }
