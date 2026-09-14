@@ -2321,16 +2321,15 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1789299608,
-        "narHash": "sha256-mPPs4pXuvzReyCV39SUkP73SgY0AnMOrniYT+IQmbeo=",
-        "owner": "Ramblurr",
+        "lastModified": 1789387663,
+        "narHash": "sha256-35S1VbQZgCzo5vd0dHZ2mpzEwDPlXkS3E02kd8pohcY=",
+        "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "ea489cbdff66f38c960d5440d658544bdf1bac0a",
+        "rev": "8789d35418faa994adf0f46b2e76933cf41a5854",
         "type": "github"
       },
       "original": {
-        "owner": "Ramblurr",
-        "ref": "fix/collie-cli-runtime",
+        "owner": "numtide",
         "repo": "llm-agents.nix",
         "type": "github"
       }
@@ -3539,11 +3538,11 @@
     },
     "nixpkgs_9": {
       "locked": {
-        "lastModified": 1788982683,
-        "narHash": "sha256-PJCTsE4I20CrJJPcye9/z6brRFysG5+aygr/dZK097k=",
+        "lastModified": 1789073787,
+        "narHash": "sha256-xfX/toC2QV707s06GbP4II/TxYF0fNQj7s5/LClNDKc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "5052d7ccbcfb7e4ae1586cb2ecf95a2e3707dce9",
+        "rev": "aff8a0b28396750446e5537a96461bc4facdb287",
         "type": "github"
       },
       "original": {
