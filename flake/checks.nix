@@ -5,6 +5,7 @@
     {
       checks = {
         ha-mqtt = import ../tests/ha-mqtt.nix { inherit inputs pkgs; };
+        thunderbird-cli = import ../tests/thunderbird-cli.nix { inherit inputs pkgs; };
         host-inventory = import ../tests/host-inventory.nix { inherit inputs pkgs; };
         peirce-boot = import ../tests/peirce-boot.nix { inherit inputs pkgs; };
         immich-guest = import ../tests/immich-guest.nix { inherit inputs pkgs; };
