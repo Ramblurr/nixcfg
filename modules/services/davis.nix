@@ -169,11 +169,7 @@ in
       adminPasswordFile = onepassword.creds.davis-env-setup.ADMIN_PASSWORD;
       appSecretFile = onepassword.creds.davis-env-setup.APP_SECRET;
       config = {
-        IMAP_AUTH_URL = home-ops.mail.imapAuthUrlNew;
-        IMAP_ENCRYPTION_METHOD = "ssl";
-        IMAP_CERTIFICATE_VALIDATION = true;
-        AUTH_METHOD = "IMAP";
-        IMAP_AUTH_USER_AUTOCREATE = false;
+        AUTH_METHOD = "Basic";
       };
       nginx = null;
       poolConfig = {
