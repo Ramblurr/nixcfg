@@ -190,7 +190,7 @@ in
     '';
   };
   # disabled temporarily until entra id admin allows the app
-  services.onedrive.enable = false;
+  services.onedrive.enable = true;
   # create config file in ~/.config
   myhm = {
     xdg.configFile."autostart/1password.desktop".source =
