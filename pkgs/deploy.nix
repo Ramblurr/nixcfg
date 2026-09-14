@@ -1,5 +1,6 @@
 {
   bc,
+  coreutils,
   jq,
   lib,
   writeShellApplication,
@@ -10,7 +11,7 @@ let
     text = ''
       set -euo pipefail
       shopt -s lastpipe # allow cmd | readarray
-      localTargetHost=$(hostname)
+      localTargetHost=$(${coreutils}/bin/uname -n)
       declare -A SSH_TARGETS=([addams]="addams-lan")
 
       function die() { echo "error: $*" >&2; exit 1; }
