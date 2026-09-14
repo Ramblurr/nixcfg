@@ -25,6 +25,14 @@ in
     directWan = false;
     webSockets = true;
     requestBodyMaxSize = null;
+    # Retire idle upstream connections before Immich's advertised five-second timeout.
+    handlerConfig = ''
+      reverse_proxy ${apiAddress}:2283 {
+        transport http {
+          keepalive 2s
+        }
+      }
+    '';
   };
   networking.firewall.extraInputRules = ''
     iifname "prim" ip saddr ${workerAddress} ip daddr ${connectAddress} tcp dport 8080 accept
