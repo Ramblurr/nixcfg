@@ -215,6 +215,8 @@ in
     { config, osConfig, ... }:
     {
       home.sessionVariables.CODEX_HOME = "${config.xdg.configHome}/codex";
+      programs.bash.enable = true;
+      systemd.user.sessionVariables.CODEX_HOME = config.home.sessionVariables.CODEX_HOME;
       xdg.configFile."autostart/1password.desktop".source =
         "${osConfig.programs._1password-gui.package}/share/applications/1password.desktop";
       xdg.configFile."onedrive/config".text = ''
