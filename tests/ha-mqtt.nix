@@ -20,6 +20,10 @@ let
             networking.hostName = "test-host";
             networking.firewall.allowedTCPPorts = [ 1234 ];
             system.stateVersion = "26.05";
+            services.pipewire = {
+              enable = true;
+              pulse.enable = true;
+            };
             modules.desktop.services.ha-mqtt = settings;
           };
         })
@@ -67,6 +71,8 @@ assert service.serviceConfig.KillMode == "control-group";
 assert service.environment.XDG_RUNTIME_DIR == "%t";
 assert lib.hasInfix "mqttx-cli" service.environment.PATH;
 assert lib.hasInfix "speaker-get-mute" service.environment.PATH;
+assert lib.hasInfix "pulseaudio" service.environment.PATH;
+assert lib.elem "pipewire-pulse.service" service.after;
 assert lib.all invalid [
   ""
   "prefix/"

@@ -13,6 +13,15 @@ args = sys.argv[2:]
 mode = (root / "mode").read_text() if (root / "mode").exists() else ""
 with (root / "calls").open("a") as out:
     out.write(json.dumps([name, *args]) + "\n")
+if name == "pactl":
+    assert args == ["subscribe"]
+    assert os.environ["LC_ALL"] == "C"
+    (root / "monitor-pid").write_text(str(os.getpid()))
+    # A FIFO models the blocking event stream without touching the live audio server.
+    with (root / "events").open() as events:
+        for event in events:
+            print(event, end="", flush=True)
+    sys.exit(0)
 if name == "amixer":
     assert args[:2] == ["-D", "pipewire"]
     assert args[3] == "Master"

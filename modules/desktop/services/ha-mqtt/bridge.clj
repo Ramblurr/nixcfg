@@ -100,15 +100,40 @@
   ["mqttx-cli" kind "--load-options" (str (:file options))
    "--client-id" (str "ha-mqtt-" kind "-" (random-uuid))])
 
-(defn publish-state! [lifecycle config options]
-  (let [state (str/trim (run! lifecycle ["speaker-get-mute"] 5000))]
-    (when-not (#{"0" "1"} state) (throw (ex-info "invalid speaker state" {})))
-    ;; QoS 1 waits for the broker acknowledgement; command subscriptions remain QoS 0.
-    (run! lifecycle (into (mqtt-argv options "pub")
-                          ["--topic" (str (:topicPrefix config) "/speaker/muted")
-                           "--message" state "--qos" "1" "--retain"])
-          5000)
-    (log! "speaker-state-published")))
+(defn publish-state!
+  ([lifecycle config options]
+   (publish-state! lifecycle config options true))
+  ([lifecycle config options force?]
+   ;; Serialize reads and publications so an older observation cannot arrive last.
+   (locking options
+     (let [state (str/trim (run! lifecycle ["speaker-get-mute"] 5000))]
+       (when-not (#{"0" "1"} state) (throw (ex-info "invalid speaker state" {})))
+       (when (or force? (not= state (:published-state @lifecycle)))
+         ;; Remember only broker-acknowledged state; failed publications remain retryable.
+         (run! lifecycle (into (mqtt-argv options "pub")
+                               ["--topic" (str (:topicPrefix config) "/speaker/muted")
+                                "--message" state "--qos" "1" "--retain"])
+               5000)
+         (swap! lifecycle assoc :published-state state)
+         (log! "speaker-state-published"))))))
+
+(defn watch-speaker! [lifecycle config options]
+  (while (not (:stopping? @lifecycle))
+    (try
+      (let [child (start-child! lifecycle ["pactl" "subscribe"]
+                                {:extra-env {"LC_ALL" "C"}})]
+        (try
+          (publish-state! lifecycle config options)
+          (log! "speaker-monitor-started")
+          (with-open [reader (io/reader (:out child))]
+            (doseq [event (line-seq reader)
+                    :when (re-find #"^Event '(?:new|change|remove)' on (?:sink|server) #" event)]
+              (publish-state! lifecycle config options false)))
+          (finally (stop-child! lifecycle child))))
+      (catch Exception _ (log! "speaker-monitor-failed")))
+    (when-not (:stopping? @lifecycle)
+      (log! "speaker-monitor-restarting")
+      (Thread/sleep 3000))))
 
 (defn shutdown! [lifecycle config pending]
   (cond
@@ -166,6 +191,8 @@
                             {})]
     (try
       ;; Parse successive JSON values, not lines or human-oriented MQTTX logs.
+      (try (publish-state! lifecycle config options)
+           (catch Exception _ (log! "speaker-refresh-failed")))
       (with-open [reader (io/reader (:out child))]
         (doseq [message (json/parsed-seq reader true)]
           (dispatch! lifecycle config options pending message)))
@@ -186,6 +213,7 @@
             hook (Thread. cleanup)]
         (.addShutdownHook (Runtime/getRuntime) hook)
         (try
+          (future (watch-speaker! lifecycle config options))
           (while (not (:stopping? @lifecycle))
             (try (subscribe! lifecycle config options pending)
                  (catch Exception _ (log! "subscription-failed")))

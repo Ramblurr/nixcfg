@@ -16,6 +16,7 @@ pkgs.buildEnv {
   paths = speakers ++ [
     (desktop "dunstify")
     (desktop "systemctl")
+    (desktop "pactl")
     pkgs.babashka
     (import ../modules/desktop/services/ha-mqtt/mqttx.nix { inherit pkgs; })
     pkgs.mosquitto

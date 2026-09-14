@@ -29,6 +29,7 @@ class BridgeTest(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         self.children = []
+        self.event_fds = {}
         self.addCleanup(self.stop_all)
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
@@ -74,6 +75,11 @@ class BridgeTest(unittest.TestCase):
         root = self.root / name
         root.mkdir(exist_ok=True)
         (root / "state").write_text("0")
+        if not (root / "events").exists():
+            os.mkfifo(root / "events")
+        if name not in self.event_fds:
+            self.event_fds[name] = os.open(root / "events", os.O_RDWR)
+            self.addCleanup(os.close, self.event_fds[name])
         credentials = root / "password"
         credentials.write_text("fixture-password\n")
         credentials.chmod(0o600)
@@ -113,16 +119,16 @@ class BridgeTest(unittest.TestCase):
             .count("Received SUBSCRIBE from ha-mqtt-sub-")
             > subscriptions
         )
-        self.query_ready(name)
+        wait_for(lambda: "speaker-monitor-started" in self.log(name))
+        wait_for(lambda: self.log(name).count("speaker-state-published") >= 2)
+        self.assertEqual("0", self.observed(name))
         return child
 
     def log(self, name="a"):
         return (self.root / name / "bridge.log").read_text()
 
-    def query_ready(self, name="a"):
-        before = self.log(name).count("speaker-state-published")
-        self.publish("speaker-get-mute", name)
-        wait_for(lambda: self.log(name).count("speaker-state-published") > before)
+    def audio_event(self, event="Event 'change' on sink #1", name="a"):
+        os.write(self.event_fds[name], (event + "\n").encode())
 
     def publish(self, payload, name="a", retain=False):
         subprocess.run(
@@ -176,6 +182,49 @@ class BridgeTest(unittest.TestCase):
 
     def mode(self, value):
         (self.state / "mode").write_text(value)
+
+    def test_local_mute_and_default_output_changes(self):
+        before = self.log().count("speaker-state-published")
+        (self.state / "state").write_text("1")
+        self.audio_event()
+        wait_for(lambda: self.log().count("speaker-state-published") > before)
+        self.assertEqual("1", self.observed())
+        before = self.log().count("speaker-state-published")
+        self.audio_event()
+        self.audio_event("Event 'change' on sink-input #2")
+        self.audio_event("Event 'new' on client #3")
+        time.sleep(0.5)
+        self.assertEqual(before, self.log().count("speaker-state-published"))
+        (self.state / "state").write_text("0")
+        self.audio_event("Event 'change' on server #4294967295")
+        wait_for(lambda: self.log().count("speaker-state-published") > before)
+        self.assertEqual("0", self.observed())
+        self.assertNotIn('"set"', self.calls())
+
+    def test_monitor_death_refreshes_state_and_resumes_events(self):
+        pid = int((self.state / "monitor-pid").read_text())
+        os.kill(pid, signal.SIGKILL)
+        (self.state / "state").write_text("1")
+        wait_for(lambda: int((self.state / "monitor-pid").read_text()) != pid)
+        wait_for(lambda: self.log().count("speaker-monitor-started") >= 2)
+        self.assertEqual("1", self.observed())
+        before = self.log().count("speaker-state-published")
+        (self.state / "state").write_text("0")
+        self.audio_event()
+        wait_for(lambda: self.log().count("speaker-state-published") > before)
+        self.assertEqual("0", self.observed())
+
+    def test_local_query_failure_recovers_without_fabricating_state(self):
+        self.mode("audio-failure")
+        before = self.log().count("speaker-state-published")
+        (self.state / "state").write_text("1")
+        self.audio_event()
+        wait_for(lambda: "speaker-monitor-failed" in self.log())
+        self.assertEqual(before, self.log().count("speaker-state-published"))
+        self.assertEqual("0", self.observed())
+        self.mode("")
+        wait_for(lambda: self.log().count("speaker-state-published") > before)
+        self.assertEqual("1", self.observed())
 
     def test_speakers_and_host_isolation(self):
         self.start_bridge("override")
@@ -335,6 +384,8 @@ class BridgeTest(unittest.TestCase):
             .count("Received SUBSCRIBE from ha-mqtt-sub-")
             > subscriptions
         )
+        wait_for(lambda: self.log().count("speaker-state-published") > before)
+        self.assertEqual("1", self.observed())
         self.action("speaker-get-mute", "1")
         self.assertFalse((self.state / "poweroff").exists())
 
@@ -410,11 +461,13 @@ class BridgeTest(unittest.TestCase):
         self.mode("notification-hang")
         self.publish("shutdown")
         wait_for(lambda: "shutdown-pending" in self.log())
+        monitor_pid = int((self.state / "monitor-pid").read_text())
         # Stop only Babashka: its own shutdown hook must clean up the children.
         self.bridge.terminate()
         self.bridge.wait(timeout=5)
         time.sleep(2)
         self.assertFalse((self.state / "poweroff").exists())
+        self.assertFalse(Path(f"/proc/{monitor_pid}").exists())
 
     def test_shutdown_disabled_and_dry_run(self):
         self.stop(self.bridge)

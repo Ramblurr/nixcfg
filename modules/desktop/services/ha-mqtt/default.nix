@@ -17,6 +17,7 @@ let
     (import ./mqttx.nix { inherit pkgs; })
     pkgs.dunst
     pkgs.systemd
+    pkgs.pulseaudio
   ]
   ++ (import ../../../hardware/speaker-actions.nix { inherit pkgs; });
 in
@@ -89,8 +90,8 @@ in
         message = "ha-mqtt.mqtt.passwordFile must be an absolute runtime path outside the Nix store.";
       }
       {
-        assertion = config.modules.hardware.pipewire.enable;
-        message = "ha-mqtt requires the PipeWire desktop module.";
+        assertion = config.modules.hardware.pipewire.enable && config.services.pipewire.pulse.enable;
+        message = "ha-mqtt requires the PipeWire desktop module and its PulseAudio service.";
       }
     ];
     systemd.user.services.ha-mqtt = {
@@ -100,6 +101,7 @@ in
       after = [
         "graphical-session.target"
         "pipewire.service"
+        "pipewire-pulse.service"
       ]
       ++ cfg.credentialUnits;
       requires = cfg.credentialUnits;

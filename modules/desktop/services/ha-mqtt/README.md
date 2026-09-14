@@ -93,11 +93,18 @@ nonzero exit when its connection closes before publication succeeds. Unpatched
 1.12.1 returns zero even on connection refusal. The bridge does not parse its
 human-readable publication logs. Recheck this patch when updating MQTTX.
 
-State is **last observed**, not continuously synchronized. Keyboard/desktop
-changes are not watched. Initial/reconnect publication is not implemented;
-publish `speaker-get-mute` before relying on freshness. Failed actions, failed
-queries, unparseable state, and failed publication leave the prior retained state
-untouched and log `speaker-action-or-publish-failed`.
+Local mute and default-output changes are watched through `pactl subscribe` on
+PipeWire's PulseAudio service. Sink/server events trigger an observed-state query;
+unchanged state is not republished. This is event-driven, not periodic polling.
+State is also refreshed at startup, MQTT subscription reconnection, and audio
+watcher reconnection. The watcher retries after three seconds on EOF or failure.
+
+The retained value is still **last observed**, not an availability signal. Failed
+or unparseable queries and failed publication leave it untouched. MQTT commands
+log `speaker-action-or-publish-failed`; watcher failures log
+`speaker-monitor-failed`/`speaker-monitor-restarting`. `speaker-get-mute` remains
+available for an explicit refresh. The service requires PipeWire's PulseAudio
+compatibility service and includes `pactl` in its runtime tools.
 
 The four speaker CLI commands remain installed by the PipeWire module. Shared
 helpers use `amixer -D pipewire` and the Master control. Failed queries no longer
