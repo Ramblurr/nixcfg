@@ -1,7 +1,9 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
+  unstable,
   ...
 }:
 let
@@ -172,6 +174,8 @@ in
     systemPackages = [
       kdeTheme
       pkgs.maliit-keyboard
+      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.chatgpt
+      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex
     ];
     # KWin handles the Yoga's tablet-mode switch; select its Wayland keyboard.
     # Defaults only: users can still change these in Plasma System Settings.
@@ -191,6 +195,7 @@ in
   };
   # disabled temporarily until entra id admin allows the app
   services.onedrive.enable = true;
+  services.onedrive.package = unstable.onedrive;
   # create config file in ~/.config
   myhm = {
     xdg.configFile."autostart/1password.desktop".source =
