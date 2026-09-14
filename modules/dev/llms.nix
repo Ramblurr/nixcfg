@@ -87,14 +87,14 @@ in
           spel
           glimpseui
           #dirge
-          piper-tts
-          espeak
-          jujutsu
+          #piper-tts
+          #espeak
+          #jujutsu
           #mcp-inspector
           llmWithPlugins
-          pkgs.github-mcp-server
           inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
           llm-agents.opencode
+          llm-agents.opencode-desktop
           llm-agents.opencode2
           #llm-agents.vix
           #llm-agents.mistral-vibe
@@ -104,7 +104,7 @@ in
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
           dotool # handy (speech to text) uses this for clipboard access
           wtype # handy (speech to text) uses this for clipboard access
-          llm-agents.annot
+          #llm-agents.annot
           llm-agents.herdr
           llm-agents.collie
           llm-agents.claude-code
