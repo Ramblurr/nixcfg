@@ -9,6 +9,12 @@ let
   backupDir = "/mnt/tank2/backups/borg_repos";
 in
 {
+  # Preserve port 22 for existing clients; bypass Tailscale SSH on port 2222.
+  services.openssh.ports = [ 22 2222 ];
+  modules.services.sshd.openFirewall = false;
+  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 2222 ];
+
   # Preserve repository ownership across impermanent-root boots that rebuild accounts with userborn.
   users.groups."${backupUser}".gid = 999;
   users.users."${backupUser}".uid = 999;
