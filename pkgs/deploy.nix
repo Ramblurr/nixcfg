@@ -5,13 +5,12 @@
   writeShellApplication,
 }:
 let
-  localTargetHost = "quine";
-
   deploy = writeShellApplication {
     name = "deploy";
     text = ''
       set -euo pipefail
       shopt -s lastpipe # allow cmd | readarray
+      localTargetHost=$(hostname)
       declare -A SSH_TARGETS=([addams]="addams-lan")
 
       function die() { echo "error: $*" >&2; exit 1; }
@@ -116,7 +115,7 @@ let
       for host in "''${HOSTS[@]}"; do
         [[ -z "''${GUEST_HOSTS[$host]-}" ]] || continue
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
-        if [[ "$host" == "${localTargetHost}" ]]; then
+        if [[ "$host" == "$localTargetHost" ]]; then
           echo "[1;36m     Copying [m[34m$host[m skipped; target is local"
         else
           ssh_target="''${SSH_TARGETS[$host]-$host}"
@@ -161,14 +160,21 @@ let
           continue
         fi
         echo "[1;36m    Applying [m⚙️ [34m$host[m"
-        if [[ "$host" == "${localTargetHost}" ]]; then
+        if [[ "$host" == "$localTargetHost" ]]; then
           prev_system=$(readlink -e /nix/var/nix/profiles/system)
-          if [[ "$ACTION" != "dry-activate" ]]; then
-            sudo /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
-              || die "Failed to set system profile"
+          if [[ "$host" == "thinkpad1" ]]; then
+            [[ -x "$store_path/thinkpad1-tpm-deploy" ]] \
+              || die "Missing TPM deployment helper for $host"
+            sudo "$store_path/thinkpad1-tpm-deploy" "$ACTION" "$store_path" \
+              || die "Failed TPM-aware activation of $host"
+          else
+            if [[ "$ACTION" != "dry-activate" ]]; then
+              sudo /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
+                || die "Failed to set system profile"
+            fi
+            sudo "$store_path"/bin/switch-to-configuration "$ACTION" \
+              || die "Failed to activate $host"
           fi
-          sudo "$store_path"/bin/switch-to-configuration "$ACTION" \
-            || die "Failed to activate $host"
           if [[ -n "$prev_system" ]]; then
             nvd --color always diff "$prev_system" "$store_path" || true
           fi
