@@ -216,6 +216,16 @@ in
     {
       home.sessionVariables.CODEX_HOME = "${config.xdg.configHome}/codex";
       programs.bash.enable = true;
+      programs.bash.profileExtra = ''
+        if [ -n "''${SUDO_USER:-}" ]; then
+          runtime_dir="/run/user/$(id -u)"
+          if [ -O "$runtime_dir" ] && [ -S "$runtime_dir/bus" ]; then
+            export XDG_RUNTIME_DIR="$runtime_dir"
+            export DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus"
+          fi
+          unset runtime_dir
+        fi
+      '';
       systemd.user.sessionVariables.CODEX_HOME = config.home.sessionVariables.CODEX_HOME;
       systemd.user.services.laptop-admin-update = {
         Unit.Description = "Fast-forward laptop administration docs and skills";
