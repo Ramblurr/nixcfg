@@ -244,7 +244,7 @@ in
         thunderbird.enable = true;
         thunderbird.autostart.enable = true;
         thunderbird.work.enable = true;
-        thunderbird.workProxy = "${lanVpnGateway}:1081";
+        thunderbird.work.proxy = "${lanVpnGateway}:1081";
         voxtype = {
           enable = true;
           autostart.enable = true;

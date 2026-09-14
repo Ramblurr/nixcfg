@@ -6,18 +6,20 @@
 let
   cfg = config.modules.desktop.programs.thunderbird;
 
-  proxyParts = lib.splitString ":" cfg.workProxy;
+  proxyParts = lib.splitString ":" cfg.work.proxy;
   proxyAddr = builtins.elemAt proxyParts 0;
-  proxyPort = builtins.elemAt proxyParts 1;
+  proxyPort = lib.toInt (builtins.elemAt proxyParts 1);
 in
 {
   options.modules.desktop.programs.thunderbird = {
     enable = lib.mkEnableOption "";
     autostart.enable = lib.mkEnableOption "";
-    work.enable = lib.mkEnableOption "";
-    workProxy = lib.mkOption {
-      type = lib.types.str;
-      description = "The proxy server to use for the work profile";
+    work = {
+      enable = lib.mkEnableOption "the work Thunderbird profile";
+      proxy = lib.mkOption {
+        type = lib.types.str;
+        description = "SOCKS proxy for the work profile, as host:port";
+      };
     };
   };
   config = lib.mkIf cfg.enable {
