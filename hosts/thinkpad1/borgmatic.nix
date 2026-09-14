@@ -1,8 +1,7 @@
 { lib, ... }:
 {
   modules.services.borgmatic = {
-    # Enable after provisioning both repositories and adding the SOPS credentials.
-    enable = false;
+    enable = true;
     name = "thinkpad1";
     repositories = [
       {
@@ -16,6 +15,7 @@
     ];
     exclude-patterns = [
       "sh:home/.snapshots"
+      "sh:home/*/OneDrive"
       "sh:home/*/.cache"
       "sh:home/*/.local/share/Trash"
       "sh:home/*/.local/share/flatpak/repo"
@@ -25,7 +25,7 @@
     ];
   };
 
-  # This host has a persistent root, not quine's /persist layout.
+  # This host has a persistent root, no impermanence here.
   services.borgmatic.settings.source_directories = lib.mkForce [
     "/home"
     "/etc"
