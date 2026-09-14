@@ -91,6 +91,10 @@ in
     users.enable = true;
     desktop.programs.onepassword.enable = true;
     desktop.programs.opencloud.enable = true;
+    desktop.programs.thunderbird-cli = {
+      enable = true;
+      flatpak.profile = "i1noqonc.default-release";
+    };
     desktop.kde = {
       enable = true;
       krohnkite.enable = false;
