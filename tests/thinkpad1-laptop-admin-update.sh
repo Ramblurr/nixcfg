@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run against the evaluated laptop-admin-update service executable.
+# Run against the evaluated laptop-admin-update service's first ExecStart.
 set -euo pipefail
 updater=$(realpath "${1:?usage: $0 /nix/store/.../bin/laptop-admin-update}")
 root=$(mktemp -d)
@@ -22,68 +22,79 @@ git -C "$root/publisher" push --quiet origin main
 latest=$(git -C "$root/publisher" rev-parse HEAD)
 
 checkout() {
-  git clone --quiet "$root/origin" "$root/$1"
-  git -C "$root/$1" reset --quiet --hard "$base"
+  mkdir "$root/$1"
+  for repo in laptop-admin skills; do
+    git clone --quiet "$root/origin" "$root/$1/$repo"
+    git -C "$root/$1/$repo" reset --quiet --hard "$base"
+  done
   cd "$root/$1"
+}
+
+expect_failure() {
+  if "$updater"; then
+    echo 'Expected updater to fail for unsafe checkout or failed fetch' >&2
+    exit 1
+  fi
 }
 
 checkout clean
 "$updater"
-test "$(git rev-parse HEAD)" = "$latest"
-test "$(cat AGENTS.md)" = updated
 "$updater"
-test -z "$(git status --porcelain)"
+for repo in laptop-admin skills; do
+  test "$(git -C "$repo" rev-parse HEAD)" = "$latest"
+  test "$(cat "$repo/AGENTS.md")" = updated
+  test -z "$(git -C "$repo" status --porcelain)"
+done
 
-checkout dirty
-printf 'local edit\n' >> AGENTS.md
-before=$(git diff)
-"$updater"
-test "$(git rev-parse HEAD)" = "$base"
-test "$(git diff)" = "$before"
-git add AGENTS.md
-before=$(git diff --cached)
-"$updater"
-test "$(git diff --cached)" = "$before"
-test "$(git rev-parse HEAD)" = "$base"
+for target in laptop-admin skills; do
+  checkout "$target-dirty"
+  printf 'local edit\n' >> "$target/AGENTS.md"
+  before=$(git -C "$target" diff)
+  expect_failure
+  test "$(git -C "$target" rev-parse HEAD)" = "$base"
+  test "$(git -C "$target" diff)" = "$before"
+  git -C "$target" add AGENTS.md
+  before=$(git -C "$target" diff --cached)
+  expect_failure
+  test "$(git -C "$target" diff --cached)" = "$before"
+  test "$(git -C "$target" rev-parse HEAD)" = "$base"
 
-checkout untracked
-printf 'keep me\n' > notes.txt
-"$updater"
-test "$(git rev-parse HEAD)" = "$base"
-test "$(cat notes.txt)" = 'keep me'
+  checkout "$target-untracked"
+  printf 'keep me\n' > "$target/notes.txt"
+  expect_failure
+  test "$(git -C "$target" rev-parse HEAD)" = "$base"
+  test "$(cat "$target/notes.txt")" = 'keep me'
 
-checkout branch
-git switch --quiet -c work
-"$updater"
-test "$(git symbolic-ref --short HEAD)" = work
-test "$(git rev-parse HEAD)" = "$base"
-git switch --quiet --detach
-"$updater"
-test "$(git rev-parse HEAD)" = "$base"
+  checkout "$target-branch"
+  git -C "$target" switch --quiet -c work
+  expect_failure
+  test "$(git -C "$target" symbolic-ref --short HEAD)" = work
+  test "$(git -C "$target" rev-parse HEAD)" = "$base"
+  git -C "$target" switch --quiet --detach
+  expect_failure
+  test "$(git -C "$target" rev-parse HEAD)" = "$base"
 
-checkout diverged
-printf 'local commit\n' > local.txt
-git add local.txt
-git commit --quiet -m local
-local_head=$(git rev-parse HEAD)
-"$updater"
-test "$(git rev-parse HEAD)" = "$local_head"
-test -z "$(git status --porcelain)"
+  checkout "$target-diverged"
+  printf 'local commit\n' > "$target/local.txt"
+  git -C "$target" add local.txt
+  git -C "$target" commit --quiet -m local
+  local_head=$(git -C "$target" rev-parse HEAD)
+  expect_failure
+  test "$(git -C "$target" rev-parse HEAD)" = "$local_head"
+  test -z "$(git -C "$target" status --porcelain)"
 
-checkout ahead
-git merge --quiet --ff-only origin/main
-printf 'local commit\n' > local.txt
-git add local.txt
-git commit --quiet -m local
-local_head=$(git rev-parse HEAD)
-"$updater"
-test "$(git rev-parse HEAD)" = "$local_head"
+  checkout "$target-ahead"
+  git -C "$target" merge --quiet --ff-only origin/main
+  printf 'local commit\n' > "$target/local.txt"
+  git -C "$target" add local.txt
+  git -C "$target" commit --quiet -m local
+  local_head=$(git -C "$target" rev-parse HEAD)
+  expect_failure
+  test "$(git -C "$target" rev-parse HEAD)" = "$local_head"
 
-checkout unavailable
-git remote set-url origin "$root/nonexistent"
-if "$updater"; then
-  echo 'Expected fetch failure to remain visible to systemd' >&2
-  exit 1
-fi
-test "$(git rev-parse HEAD)" = "$base"
-printf 'PASS: fast-forward, repeat run, unstaged/staged/untracked changes, branch, detached HEAD, divergence, local-ahead, and fetch failure\n'
+  checkout "$target-unavailable"
+  git -C "$target" remote set-url origin "$root/nonexistent"
+  expect_failure
+  test "$(git -C "$target" rev-parse HEAD)" = "$base"
+done
+printf 'PASS: both repositories fast-forward; dirty/staged/untracked, branch/detached, divergence/local-ahead and fetch errors fail without discarding work\n'

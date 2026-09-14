@@ -218,48 +218,59 @@ in
       programs.bash.enable = true;
       systemd.user.sessionVariables.CODEX_HOME = config.home.sessionVariables.CODEX_HOME;
       systemd.user.services.laptop-admin-update = {
-        Unit = {
-          Description = "Fast-forward the laptop administration documentation";
-          ConditionPathIsDirectory = "${config.home.homeDirectory}/Projects/laptop-admin/.git";
-        };
+        Unit.Description = "Fast-forward laptop administration docs and skills";
         Service = {
           Type = "oneshot";
-          WorkingDirectory = "${config.home.homeDirectory}/Projects/laptop-admin";
-          Environment = [ "GIT_TERMINAL_PROMPT=0" ];
+          WorkingDirectory = "${config.home.homeDirectory}/Projects";
+          Environment = [
+            "GIT_TERMINAL_PROMPT=0"
+            "CODEX_HOME=${config.home.sessionVariables.CODEX_HOME}"
+          ];
           TimeoutStartSec = "2min";
-          ExecStart = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "laptop-admin-update";
-              runtimeInputs = [ pkgs.git ];
-              text = ''
-                branch=$(git symbolic-ref --quiet --short HEAD) || {
-                  echo "Skipping update: detached HEAD."
-                  exit 0
-                }
-                status=$(git status --porcelain)
-                if [[ "$branch" != main || -n "$status" ]]; then
-                  echo "Skipping update: not on a clean main branch."
-                  exit 0
-                fi
-                git fetch --no-tags origin main
-                if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
-                  echo "Skipping update: main has local commits or divergent history."
-                  exit 0
-                fi
-                branch=$(git symbolic-ref --quiet --short HEAD) || exit 0
-                status=$(git status --porcelain)
-                if [[ "$branch" != main || -n "$status" ]]; then
-                  echo "Skipping update: branch or worktree changed during fetch."
-                  exit 0
-                fi
-                git -c merge.autostash=false merge --ff-only --no-edit refs/remotes/origin/main
-              '';
-            }
-          );
+          ExecStart = [
+            (lib.getExe (
+              pkgs.writeShellApplication {
+                name = "laptop-admin-update";
+                runtimeInputs = [ pkgs.git ];
+                text = ''
+                  for repo in laptop-admin skills; do
+                    (
+                      echo "Updating $repo"
+                      cd "$repo"
+                      branch=$(git symbolic-ref --quiet --short HEAD) || {
+                        echo "$repo: detached HEAD; manual recovery required." >&2
+                        exit 1
+                      }
+                      status=$(git status --porcelain)
+                      if [[ "$branch" != main || -n "$status" ]]; then
+                        echo "$repo: not on a clean main branch; manual recovery required." >&2
+                        exit 1
+                      fi
+                      git fetch --no-tags origin main
+                      if ! git merge-base --is-ancestor HEAD refs/remotes/origin/main; then
+                        echo "$repo: local commits or divergent history; manual recovery required." >&2
+                        exit 1
+                      fi
+                      branch=$(git symbolic-ref --quiet --short HEAD) || exit 1
+                      status=$(git status --porcelain)
+                      if [[ "$branch" != main || -n "$status" ]]; then
+                        echo "$repo: branch or worktree changed during fetch." >&2
+                        exit 1
+                      fi
+                      git -c merge.autostash=false merge --ff-only --no-edit refs/remotes/origin/main
+                    )
+                  done
+                '';
+              }
+            ))
+            "${
+              lib.getExe inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex
+            } plugin add skills@viki-skills"
+          ];
         };
       };
       systemd.user.timers.laptop-admin-update = {
-        Unit.Description = "Check for laptop administration documentation updates";
+        Unit.Description = "Check for laptop administration docs and skills updates";
         Timer = {
           OnStartupSec = "1min";
           OnUnitActiveSec = "5min";
