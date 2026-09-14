@@ -18,9 +18,16 @@ in
   config = lib.mkIf cfg.enable {
     myhm = {
       home.packages = [
-        pkgs.thunderbird-cli
-        pkgs.thunderbird-cli-bridge
-        pkgs.thunderbird-cli-mcp
+        # The npm workspaces share conflicting lib/node_modules paths.
+        (pkgs.buildEnv {
+          name = "thunderbird-cli-tools";
+          paths = [
+            pkgs.thunderbird-cli
+            pkgs.thunderbird-cli-bridge
+            pkgs.thunderbird-cli-mcp
+          ];
+          pathsToLink = [ "/bin" ];
+        })
       ];
 
       systemd.user.services.tb-bridge = {
