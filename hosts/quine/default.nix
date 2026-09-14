@@ -241,6 +241,7 @@ in
         owncloud.enable = true;
         signal.enable = true;
         slack.enable = false;
+        thunderbird-cli.enable = true;
         thunderbird.enable = true;
         thunderbird.autostart.enable = true;
         thunderbird.work.enable = true;
