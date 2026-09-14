@@ -21,7 +21,6 @@ in
   };
   modules.services.caddy.routes.immich-home = {
     publicHost = "photos.${home-ops.homeDomain}";
-    upstream = "${apiAddress}:2283";
     directWan = false;
     webSockets = true;
     requestBodyMaxSize = null;
