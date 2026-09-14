@@ -39,6 +39,7 @@
     ./desktop/programs/signal.nix
     ./desktop/programs/slack.nix
     ./desktop/programs/thunderbird.nix
+    ./desktop/programs/thunderbird-cli.nix
     ./desktop/programs/voxtype.nix
     ./desktop/programs/waydroid.nix
     ./desktop/programs/wezterm/default.nix

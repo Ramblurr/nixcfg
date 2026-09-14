@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -30,6 +31,11 @@ in
           personal = {
             isDefault = true;
             withExternalGnupg = true;
+            extensions = [
+              pkgs.betterunsubscribe
+            ]
+            ++ lib.optional config.modules.desktop.programs.thunderbird-cli.enable pkgs.thunderbird-ai-bridge;
+            settings."extensions.autoDisableScopes" = 0;
           };
           work = lib.mkIf cfg.work.enable {
             withExternalGnupg = true;

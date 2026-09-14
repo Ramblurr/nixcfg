@@ -53,6 +53,8 @@ inputs: [
       #java-mission-control = prev.callPackage ./java-mission-control { };
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
+      betterunsubscribe = prev.callPackage ./betterunsubscribe.nix { };
+      thunderbird-ai-bridge = prev.callPackage ./thunderbird-ai-bridge.nix { };
       pi-web = prev.callPackage ./pi-web/package.nix { };
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
       pi-hashline-edit-pro = prev.callPackage ./pi/pi-hashline-edit-pro/package.nix { };
