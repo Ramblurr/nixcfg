@@ -8,6 +8,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   export fakeSystem="$TMPDIR/fake-system"
   export sshLog="$TMPDIR/ssh.log"
   export nixLog="$TMPDIR/nix.log"
+  export localHost="$(${pkgs.coreutils}/bin/uname -n)"
   mkdir -p "$fakeBin" "$workRoot" "$fakeSystem/bin"
   touch "$workRoot/flake.nix" "$sshLog" "$nixLog"
 
@@ -34,7 +35,8 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
       "quine":{"guest":false,"buildAttribute":"nixosConfigurations.quine.config.system.build.toplevel"},
       "addams":{"guest":false,"buildAttribute":"nixosConfigurations.addams.config.system.build.toplevel"},
       "thinkpad1":{"guest":false,"buildAttribute":"nixosConfigurations.thinkpad1.config.system.build.toplevel"}
-    }'
+    }' | ${pkgs.jq}/bin/jq --arg host "$localHost" \
+      '. + {($host): {guest: false, buildAttribute: ("nixosConfigurations." + $host + ".config.system.build.toplevel")}}'
     exit 0
   fi
   if [ "$1" = "copy" ]; then
@@ -129,7 +131,11 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   }
 
   run_expected_failure debord "error: Failed to activate debord"
-  run_expected_failure quine "error: Failed to activate quine"
+  run_expected_failure "$localHost" "error: Failed to activate $localHost"
+  if grep -q "^root@$localHost|" "$sshLog"; then
+    echo "local deployment unexpectedly used SSH" >&2
+    exit 1
+  fi
 
   PATH="$fakeBin:$PATH" ${deploy}/bin/deploy addams > "$TMPDIR/addams.stdout" 2> "$TMPDIR/addams.stderr"
   grep -F "ssh://root@addams-lan" "$nixLog"
