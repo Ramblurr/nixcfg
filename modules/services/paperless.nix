@@ -11,7 +11,7 @@ let
   localPath = "/mnt/mali/${cfg.nfsShare}";
   quineServiceAddress = builtins.head config.site.net.svc.hosts4.quine;
   paperlessPasswordFile = "/run/paperless-secrets/admin-password";
-  paperlessOidcEnvironmentFile = "/run/paperless-secrets/oidc.env";
+  paperlessEnvironmentFile = "/run/paperless-secrets/paperless.env";
   paperlessServices = [
     "paperless-consumer"
     "paperless-scheduler"
@@ -69,6 +69,7 @@ in
 
     modules.services.onepassword-systemd-credentials.consumers.paperless-secrets-setup = {
       admin-password = "op://home-ops-prod/paperless/admin-password";
+      mistral-api-key = "op://home-ops-prod/paperless/mistral-api-key";
     }
     // lib.optionalAttrs cfg.oidc.enable {
       oidc-provider = "op://home-ops-prod/paperless/oidc-provider";
@@ -89,11 +90,21 @@ in
           script = ''
             install -m0400 -o ${config.services.paperless.user} -g ${cfg.group.name} \
               "$CREDENTIALS_DIRECTORY/admin-password" ${paperlessPasswordFile}
+            ${pkgs.python3}/bin/python - <<'PY' > ${paperlessEnvironmentFile}
+            import os
+            from pathlib import Path
+
+            key = (Path(os.environ["CREDENTIALS_DIRECTORY"]) / "mistral-api-key").read_text().rstrip("\n")
+            if not key or any(c in key for c in "\r\n\0"):
+                raise ValueError("Mistral API key must be a nonempty single line")
+            key = key.replace("\\", "\\\\").replace('"', '\\"')
+            print('PAPERLESS_AI_LLM_API_KEY="' + key + '"')
+            PY
             ${lib.optionalString cfg.oidc.enable ''
               printf "PAPERLESS_SOCIALACCOUNT_PROVIDERS='%s'\n" \
-                "$(cat "$CREDENTIALS_DIRECTORY/oidc-provider")" > ${paperlessOidcEnvironmentFile}
-              chown ${config.services.paperless.user}:${cfg.group.name} ${paperlessOidcEnvironmentFile}
+                "$(cat "$CREDENTIALS_DIRECTORY/oidc-provider")" >> ${paperlessEnvironmentFile}
             ''}
+            chown ${config.services.paperless.user}:${cfg.group.name} ${paperlessEnvironmentFile}
           '';
         };
         paperless-secret-key = {
@@ -151,7 +162,7 @@ in
       passwordFile = paperlessPasswordFile;
       port = cfg.ports.http;
       user = cfg.user.name;
-      environmentFile = lib.mkIf cfg.oidc.enable paperlessOidcEnvironmentFile;
+      environmentFile = paperlessEnvironmentFile;
       settings = {
         PAPERLESS_EXPORT_DIR = "${localPath}/export";
         PAPERLESS_DBENGINE = "postgresql";
@@ -174,14 +185,14 @@ in
         PAPERLESS_ACCOUNT_ALLOW_SIGNUPS = "false";
 
         PAPERLESS_AI_ENABLED = true;
-        PAPERLESS_AI_LLM_BACKEND = "ollama";
-        PAPERLESS_AI_LLM_MODEL = "llama3.1";
-        PAPERLESS_AI_LLM_ENDPOINT = "http://${quineServiceAddress}:11434";
+        PAPERLESS_AI_LLM_BACKEND = "openai-like";
+        PAPERLESS_AI_LLM_MODEL = "mistral-small-latest";
+        PAPERLESS_AI_LLM_ENDPOINT = "https://api.mistral.ai/v1";
+        PAPERLESS_AI_LLM_CONTEXT_SIZE = 16384;
         PAPERLESS_AI_LLM_EMBEDDING_BACKEND = "openai-like";
         PAPERLESS_AI_LLM_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2";
         PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT = "http://${quineServiceAddress}:8083/v1";
         PAPERLESS_AI_LLM_EMBEDDING_CHUNK_SIZE = 256;
-        PAPERLESS_AI_LLM_API_KEY = "paperless-local";
         PAPERLESS_AI_LLM_ALLOW_INTERNAL_ENDPOINTS = true;
       }
       // lib.optionalAttrs cfg.oidc.enable {

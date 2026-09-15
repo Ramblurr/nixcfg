@@ -85,6 +85,7 @@ let
   enforcedSettings = enforced.services.paperless.settings;
   paperlessCredentials = {
     admin-password = "op://home-ops-prod/paperless/admin-password";
+    mistral-api-key = "op://home-ops-prod/paperless/mistral-api-key";
     oidc-provider = "op://home-ops-prod/paperless/oidc-provider";
   };
   provider = compatibility.modules.services.onepassword-systemd-credentials;
@@ -102,6 +103,7 @@ assert !(builtins.hasAttr "PAPERLESS_APPS" disabled.services.paperless.settings)
 assert
   disabled.modules.services.onepassword-systemd-credentials.consumers.paperless-secrets-setup == {
     admin-password = "op://home-ops-prod/paperless/admin-password";
+    mistral-api-key = "op://home-ops-prod/paperless/mistral-api-key";
   };
 assert !(builtins.hasAttr "paperless/adminPassword" disabled.sops.secrets);
 assert !(builtins.hasAttr "paperless/oidcProvider" disabled.sops.secrets);
@@ -111,7 +113,12 @@ assert
   !(builtins.hasAttr "PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME" disabled.services.paperless.settings);
 assert compatibilitySettings.PAPERLESS_APPS == "allauth.socialaccount.providers.openid_connect";
 assert compatibilitySettings.PAPERLESS_ACCOUNT_DEFAULT_HTTP_PROTOCOL == "https";
-assert compatibilitySettings.PAPERLESS_AI_LLM_ENDPOINT == "http://192.0.2.2:11434";
+assert compatibilitySettings.PAPERLESS_AI_LLM_BACKEND == "openai-like";
+assert compatibilitySettings.PAPERLESS_AI_LLM_MODEL == "mistral-small-latest";
+assert compatibilitySettings.PAPERLESS_AI_LLM_CONTEXT_SIZE == 16384;
+assert compatibilitySettings.PAPERLESS_AI_LLM_ENDPOINT == "https://api.mistral.ai/v1";
+assert !(builtins.hasAttr "PAPERLESS_AI_LLM_API_KEY" compatibilitySettings);
+assert disabled.services.paperless.environmentFile == "/run/paperless-secrets/paperless.env";
 assert compatibilitySettings.PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT == "http://192.0.2.2:8083/v1";
 assert !compatibilitySettings.PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS;
 assert !compatibilitySettings.PAPERLESS_SOCIAL_AUTO_SIGNUP;
@@ -120,7 +127,7 @@ assert !compatibilitySettings.PAPERLESS_DISABLE_REGULAR_LOGIN;
 assert !compatibilitySettings.PAPERLESS_REDIRECT_LOGIN_TO_SSO;
 assert enforcedSettings.PAPERLESS_DISABLE_REGULAR_LOGIN;
 assert enforcedSettings.PAPERLESS_REDIRECT_LOGIN_TO_SSO;
-assert compatibility.services.paperless.environmentFile == "/run/paperless-secrets/oidc.env";
+assert compatibility.services.paperless.environmentFile == "/run/paperless-secrets/paperless.env";
 assert compatibility.services.paperless.passwordFile == "/run/paperless-secrets/admin-password";
 assert provider.consumers.paperless-secrets-setup == paperlessCredentials;
 assert builtins.elem "paperless-web.service" setupService.requiredBy;
@@ -136,7 +143,7 @@ assert lib.all (
   service: builtins.elem "postgresql.service" service.after
 ) postgresDependentServices;
 assert !(builtins.hasAttr "paperless-copy-password" compatibility.systemd.services);
-assert builtins.elem "/run/paperless-secrets/oidc.env" (
+assert builtins.elem "/run/paperless-secrets/paperless.env" (
   lib.toList webService.serviceConfig.EnvironmentFile
 );
 assert !(builtins.hasAttr "paperless/adminPassword" compatibility.sops.secrets);
