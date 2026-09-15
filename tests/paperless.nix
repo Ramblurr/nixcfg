@@ -187,7 +187,7 @@ assert sidecarService.serviceConfig.StateDirectoryMode == "0700";
 assert builtins.elem "paperless-gpt-proxy" sidecar.users.users.caddy.extraGroups;
 assert
   sidecar.modules.services.onepassword-systemd-credentials.consumers.paperless-gpt == {
-    paperless-api-token = "op://home-ops-prod/paperless paperless-gpt/api-token";
+    paperless-api-token = "op://home-ops-prod/paperless-gpt/api-token";
     mistral-api-key = "op://home-ops-prod/paperless/mistral-api-key";
   };
 assert
