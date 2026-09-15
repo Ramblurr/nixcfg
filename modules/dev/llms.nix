@@ -69,6 +69,7 @@ in
         PLANNOTATOR_GLIMPSE = "0";
         PLANNOTATOR_SHARE = "disabled";
         PASEO_HOME = "$XDG_STATE_HOME/paseo";
+        UCP_HOME = "$XDG_STATE_HOME/ucp";
         SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
         SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
       };
