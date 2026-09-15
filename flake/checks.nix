@@ -95,6 +95,7 @@
         opencloud-eval = import ../tests/opencloud-eval.nix { inherit inputs pkgs; };
         opencloud = import ../tests/opencloud.nix { inherit inputs pkgs; };
         paperless = import ../tests/paperless.nix { inherit inputs pkgs; };
+        paperless-gpt = pkgs.paperless-gpt.tests.unix-socket;
         roon-server = import ../tests/roon-server.nix { inherit inputs pkgs; };
         linux-voice-assistant = import ../tests/linux-voice-assistant.nix {
           inherit inputs pkgs;

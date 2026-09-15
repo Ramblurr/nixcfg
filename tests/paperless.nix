@@ -29,6 +29,7 @@ let
         ../modules/services/onepassword-systemd-credentials.nix
         ../modules/site/gatus.nix
         ../modules/services/paperless.nix
+        ../modules/services/paperless-gpt.nix
         testOptions
         {
           nixpkgs.pkgs = pkgs;
@@ -80,6 +81,19 @@ let
       enable = true;
       mode = "enforced";
     }).config;
+  sidecar =
+    ((mkSystem { enable = false; }).extendModules {
+      modules = [
+        {
+          modules.services.paperless-gpt = {
+            enable = true;
+            domain = "paperless-gpt.example.test";
+          };
+          modules.services.caddy.auth.issuerURL = "https://id.example.test";
+        }
+      ];
+    }).config;
+  sidecarService = sidecar.systemd.services.paperless-gpt;
 
   compatibilitySettings = compatibility.services.paperless.settings;
   enforcedSettings = enforced.services.paperless.settings;
@@ -119,7 +133,10 @@ assert compatibilitySettings.PAPERLESS_AI_LLM_CONTEXT_SIZE == 16384;
 assert compatibilitySettings.PAPERLESS_AI_LLM_ENDPOINT == "https://api.mistral.ai/v1";
 assert !(builtins.hasAttr "PAPERLESS_AI_LLM_API_KEY" compatibilitySettings);
 assert disabled.services.paperless.environmentFile == "/run/paperless-secrets/paperless.env";
-assert compatibilitySettings.PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT == "http://192.0.2.2:8083/v1";
+assert compatibilitySettings.PAPERLESS_AI_LLM_EMBEDDING_BACKEND == "openai-like";
+assert compatibilitySettings.PAPERLESS_AI_LLM_EMBEDDING_MODEL == "mistral-embed";
+assert compatibilitySettings.PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT == "https://api.mistral.ai/v1";
+assert !compatibilitySettings.PAPERLESS_AI_LLM_ALLOW_INTERNAL_ENDPOINTS;
 assert !compatibilitySettings.PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS;
 assert !compatibilitySettings.PAPERLESS_SOCIAL_AUTO_SIGNUP;
 assert !compatibilitySettings.PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS;
@@ -153,6 +170,31 @@ assert lib.hasInfix "/var/lib/paperless/nixos-paperless-secret-key.env"
   compatibility.systemd.services.paperless-secret-key.script;
 assert compatibility.services.caddy.enable;
 assert compatibility.modules.services.caddy.routes.paperless.publicHost == "paperless.example.test";
+assert !(builtins.hasAttr "paperless-gpt" disabled.systemd.services);
+assert sidecarService.environment.LISTEN_SOCKET == "/run/paperless-gpt/http.sock";
+assert !(builtins.hasAttr "LISTEN_INTERFACE" sidecarService.environment);
+assert sidecarService.environment.PAPERLESS_BASE_URL == "http://127.0.0.1:28981";
+assert sidecarService.environment.OCR_PROVIDER == "mistral_ocr";
+assert sidecarService.environment.OCR_PROCESS_MODE == "whole_pdf";
+assert sidecarService.environment.MISTRAL_MODEL == "mistral-ocr-latest";
+assert sidecarService.environment.PDF_REPLACE == "false";
+assert !(builtins.hasAttr "MISTRAL_API_KEY" sidecarService.environment);
+assert !(builtins.hasAttr "PAPERLESS_API_TOKEN" sidecarService.environment);
+assert sidecarService.serviceConfig.DynamicUser;
+assert sidecarService.serviceConfig.UMask == "0007";
+assert sidecarService.serviceConfig.RuntimeDirectoryMode == "0750";
+assert sidecarService.serviceConfig.StateDirectoryMode == "0700";
+assert builtins.elem "paperless-gpt-proxy" sidecar.users.users.caddy.extraGroups;
+assert
+  sidecar.modules.services.onepassword-systemd-credentials.consumers.paperless-gpt == {
+    paperless-api-token = "op://home-ops-prod/paperless paperless-gpt/api-token";
+    mistral-api-key = "op://home-ops-prod/paperless/mistral-api-key";
+  };
+assert
+  sidecar.modules.services.caddy.protectedRoutes.paperless-gpt.upstream
+  == "unix//run/paperless-gpt/http.sock";
+assert sidecar.modules.services.caddy.protectedRoutes.paperless-gpt.bypassPathPrefixes == [ ];
+assert builtins.all (assertion: assertion.assertion) sidecar.assertions;
 pkgs.runCommand "paperless-oidc-module-test" { } ''
   touch "$out"
 ''

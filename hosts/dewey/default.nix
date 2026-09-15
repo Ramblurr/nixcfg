@@ -96,6 +96,10 @@ in
     enable = true;
     mode = "enforced";
   };
+  modules.services.paperless-gpt = {
+    enable = true;
+    domain = "paperless-gpt.${config.repo.secrets.home-ops.homeDomain}";
+  };
 
   environment.persistence."/persist".users.${username}.directories = [ "work" ];
 

@@ -54,6 +54,7 @@ inputs: [
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       mcp-inspector = prev.callPackage ./mcp-inspector.nix { };
       betterunsubscribe = prev.callPackage ./betterunsubscribe.nix { };
+      paperless-gpt = prev.callPackage ./paperless-gpt/package.nix { };
       thunderbird-ai-bridge = prev.callPackage ./thunderbird-ai-bridge.nix { };
       pi-web = prev.callPackage ./pi-web/package.nix { };
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };

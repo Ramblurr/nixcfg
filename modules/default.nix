@@ -129,6 +129,7 @@
     ./services/onepassword-systemd-credentials.nix
     ./services/pi-web.nix
     ./services/paperless.nix
+    ./services/paperless-gpt.nix
     ./services/podman.nix
     ./services/text-embeddings-inference.nix
     ./services/postgresql.nix

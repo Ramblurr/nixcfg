@@ -9,7 +9,6 @@ let
   cfg = config.modules.services.paperless;
   onepassword = config.modules.services.onepassword-systemd-credentials;
   localPath = "/mnt/mali/${cfg.nfsShare}";
-  quineServiceAddress = builtins.head config.site.net.svc.hosts4.quine;
   paperlessPasswordFile = "/run/paperless-secrets/admin-password";
   paperlessEnvironmentFile = "/run/paperless-secrets/paperless.env";
   paperlessServices = [
@@ -90,16 +89,9 @@ in
           script = ''
             install -m0400 -o ${config.services.paperless.user} -g ${cfg.group.name} \
               "$CREDENTIALS_DIRECTORY/admin-password" ${paperlessPasswordFile}
-            ${pkgs.python3}/bin/python - <<'PY' > ${paperlessEnvironmentFile}
-            import os
-            from pathlib import Path
-
-            key = (Path(os.environ["CREDENTIALS_DIRECTORY"]) / "mistral-api-key").read_text().rstrip("\n")
-            if not key or any(c in key for c in "\r\n\0"):
-                raise ValueError("Mistral API key must be a nonempty single line")
-            key = key.replace("\\", "\\\\").replace('"', '\\"')
-            print('PAPERLESS_AI_LLM_API_KEY="' + key + '"')
-            PY
+            set +x
+            printf 'PAPERLESS_AI_LLM_API_KEY=%s\n' \
+              "$(cat "$CREDENTIALS_DIRECTORY/mistral-api-key")" > ${paperlessEnvironmentFile}
             ${lib.optionalString cfg.oidc.enable ''
               printf "PAPERLESS_SOCIALACCOUNT_PROVIDERS='%s'\n" \
                 "$(cat "$CREDENTIALS_DIRECTORY/oidc-provider")" >> ${paperlessEnvironmentFile}
@@ -190,10 +182,10 @@ in
         PAPERLESS_AI_LLM_ENDPOINT = "https://api.mistral.ai/v1";
         PAPERLESS_AI_LLM_CONTEXT_SIZE = 16384;
         PAPERLESS_AI_LLM_EMBEDDING_BACKEND = "openai-like";
-        PAPERLESS_AI_LLM_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2";
-        PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT = "http://${quineServiceAddress}:8083/v1";
+        PAPERLESS_AI_LLM_EMBEDDING_MODEL = "mistral-embed";
+        PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT = "https://api.mistral.ai/v1";
         PAPERLESS_AI_LLM_EMBEDDING_CHUNK_SIZE = 256;
-        PAPERLESS_AI_LLM_ALLOW_INTERNAL_ENDPOINTS = true;
+        PAPERLESS_AI_LLM_ALLOW_INTERNAL_ENDPOINTS = false;
       }
       // lib.optionalAttrs cfg.oidc.enable {
         PAPERLESS_APPS = "allauth.socialaccount.providers.openid_connect";

@@ -1,0 +1,25 @@
+diff --git a/main.go b/main.go
+--- a/main.go
++++ b/main.go
+@@ -534,7 +534,14 @@
+-	if listenInterface == "" {
+-		listenInterface = ":8080"
+-	}
+-	log.Infoln("Server started on interface", listenInterface)
+-	if err := router.Run(listenInterface); err != nil {
+-		log.Fatalf("Failed to run server: %v", err)
+-	}
++	var serveErr error
++	if socket := os.Getenv("LISTEN_SOCKET"); socket != "" {
++		log.Infoln("Server started on Unix socket", socket)
++		serveErr = router.RunUnix(socket)
++	} else {
++		if listenInterface == "" {
++			listenInterface = ":8080"
++		}
++		log.Infoln("Server started on interface", listenInterface)
++		serveErr = router.Run(listenInterface)
++	}
++	if serveErr != nil {
++		log.Fatalf("Failed to run server: %v", serveErr)
++	}
