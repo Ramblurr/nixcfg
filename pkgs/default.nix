@@ -73,6 +73,8 @@ inputs: [
       pi-sexp-edit = prev.callPackage ./pi/pi-sexp-edit/package.nix { };
       pi-matrix-relay = prev.callPackage ./pi/pi-matrix-relay/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };
+      ucp-cli = prev.callPackage ./ucp-cli/package.nix { };
+      link-cli = prev.callPackage ./link-cli/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
       spel = prev.callPackage ./spel/package.nix {

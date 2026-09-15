@@ -113,6 +113,8 @@ in
           #llm-agents.jscpd
           llm-agents.plannotator
           pkgs.hindsight-cli
+          pkgs.ucp-cli
+          pkgs.link-cli
           #ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           universal-ctags
