@@ -132,12 +132,17 @@ in
         p11Auth = false;
       };
     };
+    # Pass the graphical session environment to the wallet started by PAM.
+    systemd.packages = [ pkgs.kdePackages.kwallet-pam ];
+    systemd.user.services.plasma-kwallet-pam.wantedBy = [ "graphical-session.target" ];
     environment.sessionVariables = {
       XDG_MENU_PREFIX = "plasma-";
     };
     environment.systemPackages = [
       plasmaApplicationMenuData
       pkgs.kdePackages.kservice
+      pkgs.kdePackages.kwallet
+      pkgs.kdePackages.kwalletmanager
       pkgs.kdePackages.okular
       pkgs.kdePackages.dolphin
       pkgs.kdePackages.ark

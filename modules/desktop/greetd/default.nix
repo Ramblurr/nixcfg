@@ -92,10 +92,12 @@ in
 
     security = {
       polkit.enable = true;
-      # unlock keyring on login
-      pam.services.greetd.kwallet = {
+      # Greetd delegates authentication and session setup to the login PAM stack.
+      pam.services.login.kwallet = {
         enable = true;
         package = pkgs.kdePackages.kwallet-pam;
+        # Greetd authenticates before the Wayland session is available.
+        forceRun = true;
       };
     };
 
