@@ -487,6 +487,7 @@ in
   environment.systemPackages = [
     pkgs.kdePackages.okular
     pkgs.kdePackages.dolphin
+    pkgs.kdePackages.merkuro
   ];
 
   myhm = _: {
