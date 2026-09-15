@@ -22,6 +22,10 @@ let
             type = lib.types.attrs;
             default = { };
           };
+          modules.services.caddy.routes = lib.mkOption {
+            type = lib.types.attrs;
+            default = { };
+          };
           modules.services.caddy.protectedRoutes = lib.mkOption {
             type = lib.types.attrs;
             default = { };
@@ -75,6 +79,7 @@ let
   zfsServiceUnits = downloadServiceUnits ++ [
     quiUnit
     recyclarrUnit
+    services.seerr
   ];
   nfsServiceUnits = map (name: services.${name}) [
     "prowlarr"
@@ -119,4 +124,17 @@ assert lib.all (
 ) downloadServiceUnits;
 assert quiUnit.unitConfig.RequiresMountsFor == [ "/var/lib/private/home-dl" ];
 assert recyclarrUnit.unitConfig.RequiresMountsFor == [ "/var/lib/private/home-dl" ];
+assert services.seerr.unitConfig.AssertPathIsMountPoint == [ "/var/lib/private/home-dl" ];
+assert services.seerr.serviceConfig.StateDirectory == "home-dl/seerr";
+assert evaluated.config.services.seerr.configDir == "/var/lib/home-dl/seerr";
+assert evaluated.config.services.seerr.enable && !evaluated.config.services.seerr.openFirewall;
+assert !(builtins.elem nfsMount (dependencyNames services.seerr));
+assert
+  evaluated.config.modules.services.caddy.routes.seerr == {
+    publicHost = "requests.example.test";
+    upstream = "http://127.0.0.1:5055";
+  };
+assert builtins.any (
+  endpoint: endpoint.name == "Seerr" && endpoint.url == "https://requests.example.test/api/v1/status"
+) evaluated.config.site.gatus.endpoints;
 pkgs.runCommand "home-dl-zfs-readiness-evaluation" { } "touch $out"

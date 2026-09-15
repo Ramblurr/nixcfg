@@ -53,6 +53,7 @@ let
   stateServices = downloadServices ++ [
     "qui"
     "recyclarr"
+    "seerr"
   ];
   sharedSystemdService = {
     after = [ "network.target" ] ++ nfsMountDeps;
@@ -104,6 +105,12 @@ in
     subnet = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
+
+    services.seerr = {
+      enable = true;
+      configDir = "${stateDirEffective}/seerr";
+    };
+    systemd.services.seerr.serviceConfig.StateDirectory = lib.mkForce "home-dl/seerr";
 
     fileSystems."${mediaLocalPath}" = {
       device = "${lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR}:/mnt/${cfg.mediaNfsShare}";
@@ -259,6 +266,11 @@ in
     };
     site.gatus.endpoints = [
       {
+        name = "Seerr";
+        group = config.site.gatus.groups.media;
+        url = "https://requests.${cfg.baseDomain}/api/v1/status";
+      }
+      {
         name = "Prowlarr";
         group = config.site.gatus.groups.media;
         url = "https://${ingresses.prowlarr.domain}/_health/gatus";
@@ -279,6 +291,12 @@ in
         url = "https://${ingresses.sonarr.domain}/_health/gatus";
       }
     ];
+
+    # Seerr authenticates against Jellyfin itself, like the Jellyfin ingress.
+    modules.services.caddy.routes.seerr = {
+      publicHost = "requests.${cfg.baseDomain}";
+      upstream = "http://127.0.0.1:${toString config.services.seerr.port}";
+    };
 
     modules.services.caddy.protectedRoutes = lib.mapAttrs (_name: ingress: {
       inherit (ingress) healthCheckPath;
