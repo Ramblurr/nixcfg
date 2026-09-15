@@ -149,7 +149,10 @@ in
   programs = {
     firefox.enable = true;
     chromium.enable = true;
-    kde-pim.enable = false;
+    kde-pim = {
+      enable = true;
+      merkuro = true;
+    };
     kdeconnect.enable = true;
     appimage = {
       enable = true;
