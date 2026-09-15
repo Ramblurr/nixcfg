@@ -133,8 +133,16 @@ in
       };
     };
     # Pass the graphical session environment to the wallet started by PAM.
-    systemd.packages = [ pkgs.kdePackages.kwallet-pam ];
-    systemd.user.services.plasma-kwallet-pam.wantedBy = [ "graphical-session.target" ];
+    systemd.user.services.plasma-kwallet-pam = {
+      description = "Unlock KWallet from PAM credentials";
+      wantedBy = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+    };
     environment.sessionVariables = {
       XDG_MENU_PREFIX = "plasma-";
     };
