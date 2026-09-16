@@ -488,6 +488,7 @@ in
     pkgs.kdePackages.okular
     pkgs.kdePackages.dolphin
     pkgs.kdePackages.merkuro
+    pkgs.kdePackages.krdc
   ];
 
   myhm = _: {
