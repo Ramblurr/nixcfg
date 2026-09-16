@@ -10,7 +10,10 @@ let
 in
 {
   # Preserve port 22 for existing clients; bypass Tailscale SSH on port 2222.
-  services.openssh.ports = [ 22 2222 ];
+  services.openssh.ports = [
+    22
+    2222
+  ];
   modules.services.sshd.openFirewall = false;
   networking.firewall.allowedTCPPorts = [ 22 ];
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 2222 ];

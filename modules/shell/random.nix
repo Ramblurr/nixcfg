@@ -31,6 +31,7 @@ in
         graphviz
         magic-wormhole-rs
         nix-update
+        nix-fast-build
         psmisc
         #pkgs.pkgsCuda.whisper-cpp
         #openai-whisper
