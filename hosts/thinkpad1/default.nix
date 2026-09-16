@@ -47,6 +47,7 @@ in
     ./pinpam.nix
     ./kwallet.nix
     ./tpm-deploy.nix
+    ./remote-desktop.nix
     ./disk-config.nix
   ];
 

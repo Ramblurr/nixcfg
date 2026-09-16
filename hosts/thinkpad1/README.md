@@ -30,6 +30,28 @@ Never copy that data or plaintext secrets into this repository.
 - SSH accepts keys only, permits root and the administrator, and is reachable only
   through the trusted Tailscale interface. Enroll with `sudo tailscale up` locally.
 
+## Remote desktop over Tailscale
+
+KRDP shares Viki's existing Plasma session on `thinkpad1:3389`. Connect with
+Remmina (RDP) or FreeRDP over Tailscale, using username `viki` and her account
+password. KRDP uses the existing `login` PAM stack, including its PIN policy;
+this is not a separate remote-support account. No password is stored in Nix.
+
+`remote-desktop.nix` manages the configuration and Viki's user service. It grants
+the desktop portal permission and generates a persistent, private TLS key at
+first start in `~/.local/share/krdpserver/`. Verify the self-signed certificate
+fingerprint over SSH before trusting it in the client:
+
+```sh
+ssh thinkpad1 'sudo -u viki openssl x509 -in /home/viki/.local/share/krdpserver/krdp.crt -noout -fingerprint -sha256'
+```
+
+The service starts with Viki's Plasma session, not at the greeter; the laptop
+must be awake and Viki must already be logged in. Connecting may expose the
+desktop on the physical display. Autologin is not enabled. Port 3389 is not
+opened globally: the existing trusted `tailscale0` interface provides access.
+Tailnet access policy therefore controls which peers can reach it.
+
 ## Theme variant
 
 Change `catppuccinVariant` in `default.nix` to `latte`, `frappe`, `macchiato`, or
