@@ -34,6 +34,7 @@ in
     "home.${home}"
     "books.${home}"
     "requests.${home}"
+    "photos.${home}"
     "files.${home}"
     "data.${home}"
     "euro-office.${home}"
