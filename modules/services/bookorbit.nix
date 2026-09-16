@@ -55,6 +55,7 @@ in
     modules.services.onepassword-systemd-credentials.consumers.bookorbit = {
       JWT_SECRET = "op://home-ops-prod/bookorbit/JWT_SECRET";
       SETUP_BOOTSTRAP_TOKEN = "op://home-ops-prod/bookorbit/SETUP_BOOTSTRAP_TOKEN";
+      BOOK_REQUEST_ENCRYPTION_KEY = "op://home-ops-prod/bookorbit/BOOK_REQUEST_ENCRYPTION_KEY";
     };
 
     systemd.services.bookorbit = {
@@ -72,6 +73,7 @@ in
               set -eu
               export JWT_SECRET="$(cat "$CREDENTIALS_DIRECTORY/JWT_SECRET")"
               export SETUP_BOOTSTRAP_TOKEN="$(cat "$CREDENTIALS_DIRECTORY/SETUP_BOOTSTRAP_TOKEN")"
+              export BOOK_REQUEST_ENCRYPTION_KEY="$(cat "$CREDENTIALS_DIRECTORY/BOOK_REQUEST_ENCRYPTION_KEY")"
               exec ${lib.getExe config.services.bookorbit.package}
             ''
           )

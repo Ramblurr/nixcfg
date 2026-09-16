@@ -16,7 +16,11 @@ assert service.environment.LIBRARY_BROWSE_ROOT == library;
 assert builtins.elem library unit.serviceConfig.ReadOnlyPaths;
 assert builtins.elem "media" unit.serviceConfig.SupplementaryGroups;
 assert builtins.elem "bookorbit-migrate.service" unit.requires;
-assert builtins.length unit.serviceConfig.LoadCredential == 2;
+assert builtins.length unit.serviceConfig.LoadCredential == 3;
+assert
+  config.modules.services.onepassword-systemd-credentials.consumers.bookorbit.BOOK_REQUEST_ENCRYPTION_KEY
+  == "op://home-ops-prod/bookorbit/BOOK_REQUEST_ENCRYPTION_KEY";
+assert !(service.environment ? BOOK_REQUEST_ENCRYPTION_KEY);
 assert !(service.environment ? JWT_SECRET);
 assert !(service.environment ? SETUP_BOOTSTRAP_TOKEN);
 assert !(builtins.elem service.environment.PORT config.networking.firewall.allowedTCPPorts);
