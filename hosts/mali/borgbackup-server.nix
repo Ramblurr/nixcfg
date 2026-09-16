@@ -14,7 +14,7 @@ in
     22
     2222
   ];
-  modules.services.sshd.openFirewall = false;
+  services.openssh.openFirewall = lib.mkForce false;
   networking.firewall.allowedTCPPorts = [ 22 ];
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 2222 ];
 
