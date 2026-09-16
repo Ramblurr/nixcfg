@@ -20,7 +20,7 @@
   ;; - My primary REPL setup for development
   :repl/dev
   {:extra-deps {djblue/portal                 {:mvn/version "0.67.0"}
-                clj-commons/clj-yaml          {:mvn/version "1.0.29"} ; portal yaml support (optional)
+                clj-commons/clj-yaml          {:mvn/version "1.0.30"} ; portal yaml support (optional)
                 io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
                 nrepl/nrepl                   {:mvn/version "1.7.0"}
                 cider/cider-nrepl             {:mvn/version "0.62.2"}
@@ -73,7 +73,7 @@
   :portal/cli
   {:main-opts  ["-m" "portal.main"]
    :extra-deps {djblue/portal        {:mvn/version "0.67.0"}
-                clj-commons/clj-yaml {:mvn/version "1.0.29"}}}
+                clj-commons/clj-yaml {:mvn/version "1.0.30"}}}
 
   ;; -------------------------------------
 
