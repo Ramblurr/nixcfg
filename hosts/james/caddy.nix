@@ -80,6 +80,10 @@ let
     file_server
   '';
   routes = {
+    home = {
+      hosts = [ home ];
+      handler = "redir https://id.${home}/ 302";
+    };
     binary-elysium = {
       hosts = [
         be
@@ -226,8 +230,8 @@ in
   config = {
     assertions = [
       {
-        assertion = builtins.length certificateHosts == 23;
-        message = "James Caddy must preserve its 23 exact certificate hosts";
+        assertion = builtins.length certificateHosts == 24;
+        message = "James Caddy must preserve its 24 exact certificate hosts";
       }
       {
         assertion = builtins.length (lib.unique certificateHosts) == builtins.length certificateHosts;

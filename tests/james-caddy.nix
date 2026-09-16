@@ -79,6 +79,7 @@ let
     "www.${domains.et}"
     "id.${domains.work}"
     "id.${domains.home}"
+    domains.home
     "logs.${domains.work}"
     domains.ov
     "www.${domains.ov}"
@@ -111,8 +112,10 @@ assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
 assert lib.all (host: lib.hasInfix "https://${host}" caddy.extraConfig) expectedCertificateHosts;
-assert builtins.length expectedCertificateHosts == 23;
-assert builtins.length (lib.unique expectedCertificateHosts) == 23;
+assert builtins.length expectedCertificateHosts == 24;
+assert builtins.length (lib.unique expectedCertificateHosts) == 24;
+assert lib.hasInfix "@plain_home host home.example.test" caddy.extraConfig;
+assert lib.hasInfix "redir https://id.home.example.test/ 302" caddy.extraConfig;
 assert caddy.enable;
 assert caddy.package == pkgs.caddy-with-security;
 assert !caddy.openFirewall;
@@ -229,7 +232,7 @@ pkgs.runCommand "james-caddy-source-test"
       [.apps.http.servers[].listener_wrappers[].wrapper] == ["proxy_protocol", "tls"]
     ' "$TMPDIR/caddy.json"
     jq -e '
-      [.. | objects | .host? // empty | .[]] | unique | length == 23
+      [.. | objects | .host? // empty | .[]] | unique | length == 24
     ' "$TMPDIR/caddy.json"
     jq -e '
       [.. | objects | .host? // empty | .[]] | unique | all(startswith("*.") | not)
