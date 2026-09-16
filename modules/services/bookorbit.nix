@@ -20,6 +20,7 @@ in
 
   options.modules.services.bookorbit = {
     enable = lib.mkEnableOption "BookOrbit";
+    disableLocalAuth = lib.mkEnableOption "OIDC-only login after provider setup and administrator linking";
     domain = lib.mkOption { type = lib.types.str; };
     ports.http = lib.mkOption { type = lib.types.port; };
     mediaNfsShare = lib.mkOption { type = lib.types.str; };
@@ -42,6 +43,7 @@ in
         APP_DATA_PATH = stateDir;
         LIBRARY_BROWSE_ROOT = libraryPath;
         TRUST_PROXY = "127.0.0.1";
+        DISABLE_LOCAL_AUTH = lib.boolToString cfg.disableLocalAuth;
       };
     };
 

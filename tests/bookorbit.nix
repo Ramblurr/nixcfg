@@ -10,6 +10,7 @@ assert config.home-ops.apps.bookorbit.enable;
 assert service.enable;
 assert service.package.version == "2.10.0";
 assert service.environment.HOST == "127.0.0.1";
+assert service.environment.DISABLE_LOCAL_AUTH == "true";
 assert service.environment.APP_URL == "https://${domain}";
 assert service.environment.LIBRARY_BROWSE_ROOT == library;
 assert builtins.elem library unit.serviceConfig.ReadOnlyPaths;

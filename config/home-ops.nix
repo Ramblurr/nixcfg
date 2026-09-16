@@ -452,6 +452,7 @@ in
 
     modules.services.bookorbit = lib.mkIf cfg.apps.bookorbit.enable {
       enable = true;
+      disableLocalAuth = true;
       domain = "books2.${home-ops.homeDomain}";
       ports.http = 3082;
       mediaNfsShare = "tank2/media";
