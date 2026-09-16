@@ -268,7 +268,7 @@ in
       {
         name = "Seerr";
         group = config.site.gatus.groups.media;
-        url = "https://requests.${cfg.baseDomain}/api/v1/status";
+        url = "https://requests.${cfg.baseDomain}/_health/gatus";
       }
       {
         name = "Prowlarr";
@@ -292,16 +292,18 @@ in
       }
     ];
 
-    # Seerr authenticates against Jellyfin itself, like the Jellyfin ingress.
-    modules.services.caddy.routes.seerr = {
-      publicHost = "requests.${cfg.baseDomain}";
-      upstream = "http://127.0.0.1:${toString config.services.seerr.port}";
-    };
-
-    modules.services.caddy.protectedRoutes = lib.mapAttrs (_name: ingress: {
-      inherit (ingress) healthCheckPath;
-      publicHost = ingress.domain;
-      upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
-    }) ingresses;
+    modules.services.caddy.protectedRoutes =
+      lib.mapAttrs (_name: ingress: {
+        inherit (ingress) healthCheckPath;
+        publicHost = ingress.domain;
+        upstream = "http://${lib.my.cidrToIp cfg.subnet.nsAddr}:${toString ingress.port}";
+      }) ingresses
+      // {
+        seerr = {
+          publicHost = "requests.${cfg.baseDomain}";
+          upstream = "http://127.0.0.1:${toString config.services.seerr.port}";
+          healthCheckPath = "/api/v1/status";
+        };
+      };
   };
 }

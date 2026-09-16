@@ -130,11 +130,13 @@ assert evaluated.config.services.seerr.configDir == "/var/lib/home-dl/seerr";
 assert evaluated.config.services.seerr.enable && !evaluated.config.services.seerr.openFirewall;
 assert !(builtins.elem nfsMount (dependencyNames services.seerr));
 assert
-  evaluated.config.modules.services.caddy.routes.seerr == {
+  evaluated.config.modules.services.caddy.protectedRoutes.seerr == {
     publicHost = "requests.example.test";
     upstream = "http://127.0.0.1:5055";
+    healthCheckPath = "/api/v1/status";
   };
+assert !(evaluated.config.modules.services.caddy.routes ? seerr);
 assert builtins.any (
-  endpoint: endpoint.name == "Seerr" && endpoint.url == "https://requests.example.test/api/v1/status"
+  endpoint: endpoint.name == "Seerr" && endpoint.url == "https://requests.example.test/_health/gatus"
 ) evaluated.config.site.gatus.endpoints;
 pkgs.runCommand "home-dl-zfs-readiness-evaluation" { } "touch $out"

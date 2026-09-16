@@ -33,6 +33,7 @@ in
     "dav.${home}"
     "home.${home}"
     "books.${home}"
+    "requests.${home}"
     "files.${home}"
     "data.${home}"
     "euro-office.${home}"
