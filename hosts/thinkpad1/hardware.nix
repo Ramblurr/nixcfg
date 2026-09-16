@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 {
   # Facts supplied from nixos-generate-config on the ThinkPad X13 Yoga Gen 1.
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
@@ -23,6 +23,7 @@
     cpu.intel.updateMicrocode = true;
     enableRedistributableFirmware = true;
     graphics.enable = true;
+    graphics.extraPackages = [ pkgs.intel-media-driver ];
   };
   services.libinput.enable = true;
 }
