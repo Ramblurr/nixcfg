@@ -33,6 +33,7 @@ in
     "dav.${home}"
     "home.${home}"
     "books.${home}"
+    "audiobookshelf.${home}"
     "requests.${home}"
     "photos.${home}"
     "files.${home}"
