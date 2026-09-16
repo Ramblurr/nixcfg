@@ -134,6 +134,10 @@ assert
     publicHost = "requests.example.test";
     upstream = "http://127.0.0.1:5055";
     healthCheckPath = "/api/v1/status";
+    requiredGroups = [
+      "admins"
+      "media_watch"
+    ];
   };
 assert !(evaluated.config.modules.services.caddy.routes ? seerr);
 assert builtins.any (

@@ -303,6 +303,10 @@ in
           publicHost = "requests.${cfg.baseDomain}";
           upstream = "http://127.0.0.1:${toString config.services.seerr.port}";
           healthCheckPath = "/api/v1/status";
+          requiredGroups = [
+            "admins"
+            "media_watch"
+          ];
         };
       };
   };
