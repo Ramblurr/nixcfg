@@ -999,11 +999,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789346487,
-        "narHash": "sha256-clBYJA6CBu37digMpYeK8EwMhffAHnivaGHn3TPPwi4=",
+        "lastModified": 1789520592,
+        "narHash": "sha256-nrSFm29JuN1g+L95jsF7m3Q6djEb76syKje8tlcLz6M=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "6d87087e4bddcb1bf9d52ebd37fb8f14564e2f52",
+        "rev": "6fc883d0a0463615de4c08249979094903ec90ea",
         "type": "github"
       },
       "original": {
@@ -2198,11 +2198,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789363876,
-        "narHash": "sha256-n3sVzWP7tdeLHFXZkSooY5WhAQHB1izJKv+1xCfgFVw=",
+        "lastModified": 1789536522,
+        "narHash": "sha256-5udNthuZT0sXhXWYktVDfB5wuVAYXkQ+FrE/a5m9SYs=",
         "ref": "refs/heads/main",
-        "rev": "9a7cb1782a61040e3b227ad52246db6d6348ab12",
-        "revCount": 3305,
+        "rev": "58b174a9442980defadc7ed2e857134e125e7771",
+        "revCount": 3387,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/jolt-lang/jolt"
@@ -2321,11 +2321,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1789387663,
-        "narHash": "sha256-35S1VbQZgCzo5vd0dHZ2mpzEwDPlXkS3E02kd8pohcY=",
+        "lastModified": 1789552626,
+        "narHash": "sha256-uLUOUASz1t+YvEu6e1l71d/5eTnWC7psI+rRxTpj514=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "8789d35418faa994adf0f46b2e76933cf41a5854",
+        "rev": "cbfe11b1e27e0bfde1ce9f221fcc9c88940f0602",
         "type": "github"
       },
       "original": {
@@ -3050,10 +3050,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1787726150,
-        "narHash": "sha256-xN9kV/xqPZI+N8H7ttkXD5I4QReFaoYhEFdvAFP9pmo=",
+        "lastModified": 1789411782,
+        "narHash": "sha256-Z/v3FtuvyArRHchyGYWXWOT1lJ/VGljPVOXH1UxqSGU=",
         "ref": "channel/personal-master",
-        "rev": "333da8838f583273bfc9995a9004ff9e15e7dbd1",
+        "rev": "1092afdaf5719f6c8c8a4e81bc8234eeb7a633ab",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
@@ -3733,11 +3733,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789199425,
-        "narHash": "sha256-09j2dStLAjJz6DkKXXMd+AwQRsOo1y3q+2kkgUJa0J4=",
+        "lastModified": 1789512498,
+        "narHash": "sha256-OXA80wigRG0JkLBgnLDBCmzkUUqIne5PMug8v4UlEuE=",
         "owner": "getpaseo",
         "repo": "paseo",
-        "rev": "d1b705a0cd91617a5707fae25d80cb0be3057950",
+        "rev": "0eac75be7dd11a6623abb763b3a44d23e711c550",
         "type": "github"
       },
       "original": {
