@@ -193,6 +193,10 @@ assert lib.hasInfix "server thingstead thingstead.moot.home.example.test:443"
   cfg.services.haproxy.config;
 assert builtins.elem "caddy.service" cfg.systemd.services.haproxy.after;
 assert builtins.elem "caddy.service" cfg.systemd.services.haproxy.wants;
+assert builtins.elem cfg.environment.etc."haproxy.cfg".source
+  cfg.systemd.services.haproxy.reloadTriggers;
+assert lib.hasInfix "use_backend bk_dewey if { req.ssl_sni -i requests.home.example.test }"
+  cfg.services.haproxy.config;
 assert builtins.elem "caddy.service" goaccessService.after;
 assert goaccessService.unitConfig.ConditionPathExists == "/var/log/caddy/access.log";
 assert goaccessService.serviceConfig.User == "caddy";

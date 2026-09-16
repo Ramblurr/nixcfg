@@ -96,6 +96,7 @@ in
     systemd.services.haproxy = {
       after = [ "caddy.service" ];
       wants = [ "caddy.service" ];
+      reloadTriggers = [ config.environment.etc."haproxy.cfg".source ];
     };
 
     systemd.services.haproxy.serviceConfig = {
