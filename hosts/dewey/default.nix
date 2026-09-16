@@ -77,6 +77,7 @@ in
       home-dl.enable = true;
       calibre.enable = true;
       calibre-web.enable = true;
+      bookorbit.enable = true;
       koreader-sync.enable = true;
       #archivebox.enable = true;
       matrix-synapse.enable = true;

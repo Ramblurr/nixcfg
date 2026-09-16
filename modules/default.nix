@@ -90,6 +90,7 @@
     #./services/archivebox.nix
     ./services/atuin-sync.nix
     ./services/borgmatic.nix
+    ./services/bookorbit.nix
     ./services/calibre.nix
     ./services/koreader-sync.nix
     ./services/calibre-web.nix

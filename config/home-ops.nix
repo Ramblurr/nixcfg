@@ -42,6 +42,7 @@ in
       calibre.enable = lib.mkEnableOption "Calibre";
       koreader-sync.enable = lib.mkEnableOption "Koreader-Sync";
       calibre-web.enable = lib.mkEnableOption "Calibre Web";
+      bookorbit.enable = lib.mkEnableOption "BookOrbit";
       roon-server.enable = lib.mkEnableOption "Roon Server";
       archivebox.enable = lib.mkEnableOption "Archivebox";
       matrix-synapse.enable = lib.mkEnableOption "Matrix-Synapse";
@@ -447,6 +448,13 @@ in
       mediaNfsShare = "tank2/media";
       user = home-ops.users.books;
       group = home-ops.groups.books;
+    };
+
+    modules.services.bookorbit = lib.mkIf cfg.apps.bookorbit.enable {
+      enable = true;
+      domain = "books2.${home-ops.homeDomain}";
+      ports.http = 3082;
+      mediaNfsShare = "tank2/media";
     };
 
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {

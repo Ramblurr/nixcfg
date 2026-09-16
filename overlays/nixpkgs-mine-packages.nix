@@ -16,6 +16,7 @@ in
   #gemini-cli = nixpkgs-mine.gemini-cli;
   #crush = nixpkgs-mine.crush;
   #inherit (nixpkgs-mine) llm;
+  inherit (nixpkgs-mine) bookorbit;
   inherit (nixpkgs-mine) clojure-lsp;
   inherit (nixpkgs-mine) davis;
   inherit (nixpkgs-mine) emacs-pgtk;
