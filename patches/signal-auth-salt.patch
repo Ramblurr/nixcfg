@@ -13,7 +13,7 @@ diff --git a/ts/services/groupCredentialFetcher.preload.ts b/ts/services/groupCr
  
        authCredential = clientZKAuthOperations.receiveAuthCredentialWithoutPni(
          toAciObject(aci),
-@@ -364,3 +365,32 @@
+@@ -364,3 +365,48 @@
  function sortCredentials(data: CredentialsDataType): CredentialsDataType {
    return sortBy(data, (item: GroupCredentialType) => item.redemptionTime);
  }
@@ -22,6 +22,22 @@ diff --git a/ts/services/groupCredentialFetcher.preload.ts b/ts/services/groupCr
 +// JSON persistence turns its Uint8Array into an object with numeric keys.
 +// Remove this when upstream repairs serialization and migrates existing values.
 +function restoreAuthCredentialSalt(value: unknown): Uint8Array<ArrayBuffer> {
++  // Diagnostic only: never log the value, its bytes, or arbitrary property names.
++  const record = value != null && typeof value === 'object'
++    ? (value as Record<string, unknown>) : undefined;
++  const keys = record ? Object.keys(record) : [];
++  log.warn('[DEBUG-signal-salt-shape] ' + JSON.stringify({
++    valueType: typeof value,
++    isNull: value == null,
++    isUint8Array: value instanceof Uint8Array,
++    isArray: Array.isArray(value),
++    keyCount: keys.length,
++    allKeysNumeric: keys.length > 0 && keys.every(key => /^(0|[1-9][0-9]*)$/.test(key)),
++    isBufferJson: record?.type === 'Buffer',
++    dataIsArray: Array.isArray(record?.data),
++    dataLength: Array.isArray(record?.data) ? record.data.length : null,
++    typedLength: value instanceof Uint8Array ? value.length : null,
++  }));
 +  if (value instanceof Uint8Array && value.buffer instanceof ArrayBuffer) {
 +    strictAssert(value.length === 16, 'Invalid auth credential salt length');
 +    return value;

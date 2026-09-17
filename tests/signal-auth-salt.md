@@ -83,7 +83,19 @@ nix build --impure --no-link --print-out-paths --expr '
 
 Output: `/nix/store/0iy46hf0m78ac4a5jrv9q7sz4cwhav2n-signal-desktop-8.26.0`.
 
-Not deployed or launched. Live validation still requires approval to deploy,
-then restarting Work Signal and checking that credential refresh and call-link
-lobby opening succeed, including after another restart. Do not infer call success
-from the package build or synthetic test alone.
+## Live validation and diagnostic follow-up (2026-09-17)
+
+The candidate was deployed as public commit 12624d0c. After restarting Work,
+credential refresh failed with `Invalid stored auth credential salt bytes`, and
+call-link lobby opening still failed. The synthetic reproduction is valid but
+does not describe the live stored value completely. The fix is not confirmed.
+
+The operator approved a diagnostic build. `[DEBUG-signal-salt-shape]` logs only
+fixed type/shape metadata: null/array/Uint8Array flags, key count, whether all
+keys are numeric, a Buffer-JSON marker flag, and array lengths. It never logs
+credential values, bytes, arbitrary property names, messages, or call links.
+Tests assert the permitted metadata and check that sentinel secrets are absent.
+
+The diagnostic change does not broaden accepted data or mutate the database.
+After obtaining the live shape, reproduce that representation, correct the
+candidate, and remove the diagnostic marker before declaring the issue fixed.
