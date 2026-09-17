@@ -65,8 +65,9 @@ in
       ];
       serviceConfig = {
         SupplementaryGroups = [ "media" ];
-        # Calibre owns this library. BookOrbit may scan/read, but must not modify it.
-        ReadOnlyPaths = [ libraryPath ];
+        ReadWritePaths = [ libraryPath ];
+        # Override upstream's private-file mask for shared library writes.
+        UMask = lib.mkForce "0002";
         ExecStart = lib.mkForce (
           lib.getExe (
             pkgs.writeShellScriptBin "bookorbit-start" ''

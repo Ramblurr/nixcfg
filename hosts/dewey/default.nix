@@ -33,6 +33,17 @@ in
   ];
   users.users.${username}.linger = true;
 
+  # Preserve retired service data independently of their disabled modules.
+  modules.zfs.datasets.properties = {
+    "rpool/encrypted/safe/svc/calibre" = {
+      mountpoint = "/var/lib/calibre";
+      "com.sun:auto-snapshot" = "false";
+    };
+    "rpool/encrypted/safe/svc/calibre-web".mountpoint = "/var/lib/calibre-web";
+    # DynamicUser stores the real state here, not at its /var/lib symlink.
+    "rpool/encrypted/safe/svc/koreader-syncd".mountpoint = "/var/lib/private/koreader-syncd";
+  };
+
   modules.vpn.tailscale.enable = true;
   modules.networking.systemd-netns-private.namespaces.home-dl.egress = {
     source = home-ops.subnets.home-dl.hostAddr;
@@ -75,10 +86,10 @@ in
       ocis-work.enable = true;
       jellyfin.enable = true;
       home-dl.enable = true;
-      calibre.enable = true;
-      calibre-web.enable = true;
+      calibre.enable = false;
+      calibre-web.enable = false;
       bookorbit.enable = true;
-      koreader-sync.enable = true;
+      koreader-sync.enable = false;
       #archivebox.enable = true;
       matrix-synapse.enable = true;
       influxdb.enable = true;

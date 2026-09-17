@@ -453,9 +453,16 @@ in
     modules.services.bookorbit = lib.mkIf cfg.apps.bookorbit.enable {
       enable = true;
       disableLocalAuth = true;
-      domain = "books2.${home-ops.homeDomain}";
+      domain = "books.${home-ops.homeDomain}";
       ports.http = 3082;
       mediaNfsShare = "tank2/media";
+    };
+
+    modules.services.caddy.routes.bookorbit-legacy = lib.mkIf cfg.apps.bookorbit.enable {
+      publicHost = "books2.${home-ops.homeDomain}";
+      handlerConfig = ''
+        redir https://books.${home-ops.homeDomain}{uri} permanent
+      '';
     };
 
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
