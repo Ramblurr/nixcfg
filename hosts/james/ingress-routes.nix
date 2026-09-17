@@ -33,7 +33,6 @@ in
     "dav.${home}"
     "home.${home}"
     "books.${home}"
-    "books2.${home}"
     "audiobookshelf.${home}"
     "requests.${home}"
     "photos.${home}"

@@ -458,13 +458,6 @@ in
       mediaNfsShare = "tank2/media";
     };
 
-    modules.services.caddy.routes.bookorbit-legacy = lib.mkIf cfg.apps.bookorbit.enable {
-      publicHost = "books2.${home-ops.homeDomain}";
-      handlerConfig = ''
-        redir https://books.${home-ops.homeDomain}{uri} permanent
-      '';
-    };
-
     #modules.services.archivebox = lib.mkIf cfg.apps.archivebox.enable {
     #  enable = true;
     #  domain = "archive.${home-ops.homeDomain}";

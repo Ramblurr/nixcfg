@@ -49,12 +49,7 @@ assert !(config.systemd.services ? podman-calibre);
 assert !(config.systemd.services ? calibre-web);
 assert !(config.systemd.services ? koreader-syncd);
 assert config.fileSystems."/mnt/mali/tank2/media".fsType == "nfs";
-assert
-  config.modules.services.caddy.routes.bookorbit-legacy.publicHost
-  == "books2.${config.repo.secrets.home-ops.homeDomain}";
-assert
-  config.modules.services.caddy.routes.bookorbit-legacy.handlerConfig
-  == "redir https://${domain}{uri} permanent\n";
+assert !(config.modules.services.caddy.routes ? bookorbit-legacy);
 assert builtins.all (
   endpoint:
   !(builtins.elem endpoint.name [
