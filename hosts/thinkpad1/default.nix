@@ -296,6 +296,7 @@ in
       xdg.configFile."onedrive/config".text = ''
         sync_dir = "/home/viki/OneDrive"
         skip_file = "~*|.~*|*.tmp"
+        sync_business_shared_items = "true"
       '';
     };
 }
