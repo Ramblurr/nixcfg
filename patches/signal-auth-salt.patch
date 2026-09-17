@@ -13,31 +13,15 @@ diff --git a/ts/services/groupCredentialFetcher.preload.ts b/ts/services/groupCr
  
        authCredential = clientZKAuthOperations.receiveAuthCredentialWithoutPni(
          toAciObject(aci),
-@@ -364,3 +365,48 @@
+@@ -364,3 +365,39 @@
  function sortCredentials(data: CredentialsDataType): CredentialsDataType {
    return sortBy(data, (item: GroupCredentialType) => item.redemptionTime);
  }
 +
 +// Temporary compatibility for authCredentialSalt missing from SQL ITEM_SPECS.
-+// JSON persistence turns its Uint8Array into an object with numeric keys.
++// JSON persistence produces numeric-key objects or Buffer { type, data } objects.
 +// Remove this when upstream repairs serialization and migrates existing values.
 +function restoreAuthCredentialSalt(value: unknown): Uint8Array<ArrayBuffer> {
-+  // Diagnostic only: never log the value, its bytes, or arbitrary property names.
-+  const record = value != null && typeof value === 'object'
-+    ? (value as Record<string, unknown>) : undefined;
-+  const keys = record ? Object.keys(record) : [];
-+  log.warn('[DEBUG-signal-salt-shape] ' + JSON.stringify({
-+    valueType: typeof value,
-+    isNull: value == null,
-+    isUint8Array: value instanceof Uint8Array,
-+    isArray: Array.isArray(value),
-+    keyCount: keys.length,
-+    allKeysNumeric: keys.length > 0 && keys.every(key => /^(0|[1-9][0-9]*)$/.test(key)),
-+    isBufferJson: record?.type === 'Buffer',
-+    dataIsArray: Array.isArray(record?.data),
-+    dataLength: Array.isArray(record?.data) ? record.data.length : null,
-+    typedLength: value instanceof Uint8Array ? value.length : null,
-+  }));
 +  if (value instanceof Uint8Array && value.buffer instanceof ArrayBuffer) {
 +    strictAssert(value.length === 16, 'Invalid auth credential salt length');
 +    return value;
@@ -47,7 +31,14 @@ diff --git a/ts/services/groupCredentialFetcher.preload.ts b/ts/services/groupCr
 +    value != null && typeof value === 'object' && !Array.isArray(value),
 +    'Invalid stored auth credential salt'
 +  );
-+  const entries = Object.entries(value);
++  const record = value as Record<string, unknown>;
++  const isBufferJson = record.type === 'Buffer' &&
++    Object.keys(record).length === 2 && Array.isArray(record.data);
++  const entries = isBufferJson ? Object.entries(record.data as unknown[]) : Object.entries(record);
++  strictAssert(
++    !isBufferJson || (record.data as unknown[]).length === 16,
++    'Invalid stored auth credential salt length'
++  );
 +  strictAssert(
 +    entries.length === 16 &&
 +      entries.every(

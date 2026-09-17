@@ -51,10 +51,9 @@ try {
   const patched = fs.readFileSync(path.join(temporary, relative), 'utf8');
   assert.ok(patched.includes("const salt = restoreAuthCredentialSalt(\n        itemStorage.get('authCredentialSalt')"));
   const helper = patched.slice(patched.indexOf('function restoreAuthCredentialSalt('));
-  const diagnostics = [];
-  const restore = Function('strictAssert', 'log',
-    stripTypeScriptTypes(helper) + '\nreturn restoreAuthCredentialSalt;')(
-      assert.ok, { warn: message => diagnostics.push(message) });
+  assert.ok(!patched.includes('[DEBUG-signal-salt-shape]'));
+  const restore = Function('strictAssert',
+    stripTypeScriptTypes(helper) + '\nreturn restoreAuthCredentialSalt;')(assert.ok);
   assert.equal(restore(salt), salt);
   assert.deepEqual(restore(loaded), salt);
   assert.deepEqual(receive(restore(loaded)), expected);
@@ -66,18 +65,22 @@ try {
     Object.fromEntries(Object.entries(loaded).filter(([key]) => key !== '0'))]) {
     assert.throws(() => restore(invalid));
   }
-  const bufferJson = { type: 'Buffer', data: Array.from(salt) };
-  assert.throws(() => restore(bufferJson));
-  const shape = JSON.parse(diagnostics.at(-1).split('[DEBUG-signal-salt-shape] ')[1]);
-  assert.deepEqual(shape, {
-    valueType: 'object', isNull: false, isUint8Array: false, isArray: false,
-    keyCount: 2, allKeysNumeric: false, isBufferJson: true, dataIsArray: true,
-    dataLength: 16, typedLength: null,
-  });
-  assert.throws(() => restore({ secretSentinel: 'DO_NOT_LOG_THIS_SECRET' }));
-  assert.ok(diagnostics.every(message => !message.includes('secretSentinel') &&
-    !message.includes('DO_NOT_LOG_THIS_SECRET')));
-  console.log('PASS: diagnostics contain only the permitted structural metadata');
+  const bufferJson = JSON.parse(JSON.stringify(Buffer.from(salt)));
+  assert.throws(() => receive(bufferJson), /failed to downcast any to Uint8Array/);
+  assert.deepEqual(receive(restore(bufferJson)), expected);
+  assert.deepEqual(receive(restore(JSON.parse(JSON.stringify(restore(bufferJson))))), expected);
+  console.log('PASS: observed Buffer JSON representation restores valid native credentials');
+  for (const invalid of [
+    { type: 'Buffer', data: Array(15).fill(0) },
+    { type: 'Buffer', data: Array(17).fill(0) },
+    { type: 'Buffer', data: [...Array(15).fill(0), 256] },
+    { type: 'Buffer', data: [...Array(15).fill(0), -1] },
+    { type: 'Buffer', data: [...Array(15).fill(0), 0.5] },
+    { type: 'Buffer', data: [...Array(15).fill(0), '1'] },
+    { type: 'Buffer', data: new Array(16) },
+    { type: 'Other', data: Array(16).fill(0) },
+    { type: 'Buffer', data: Array(16).fill(0), extra: true },
+  ]) assert.throws(() => restore(invalid));
   console.log('PASS: malformed salts rejected; no profile or network access');
 } finally {
   fs.rmSync(temporary, { recursive: true });
