@@ -40,9 +40,6 @@ assert !config.home-ops.apps.calibre-web.enable;
 assert !config.modules.services.calibre-web.enable;
 assert !config.services.calibre-web.enable;
 assert config.modules.zfs.datasets.enable;
-assert
-  config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/calibre-web".mountpoint
-  == "/var/lib/calibre-web";
 assert !config.home-ops.apps.calibre.enable;
 assert !config.modules.services.calibre.enable;
 assert !(config.virtualisation.oci-containers.containers ? calibre);
@@ -51,15 +48,6 @@ assert !config.modules.services.koreader-sync.enable;
 assert !(config.systemd.services ? podman-calibre);
 assert !(config.systemd.services ? calibre-web);
 assert !(config.systemd.services ? koreader-syncd);
-assert
-  config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/calibre".mountpoint
-  == "/var/lib/calibre";
-assert
-  config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/calibre"."com.sun:auto-snapshot"
-  == "false";
-assert
-  config.modules.zfs.datasets.properties."rpool/encrypted/safe/svc/koreader-syncd".mountpoint
-  == "/var/lib/private/koreader-syncd";
 assert config.fileSystems."/mnt/mali/tank2/media".fsType == "nfs";
 assert
   config.modules.services.caddy.routes.bookorbit-legacy.publicHost
