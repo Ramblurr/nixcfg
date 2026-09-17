@@ -1,0 +1,48 @@
+diff --git a/ts/services/groupCredentialFetcher.preload.ts b/ts/services/groupCredentialFetcher.preload.ts
+--- a/ts/services/groupCredentialFetcher.preload.ts
++++ b/ts/services/groupCredentialFetcher.preload.ts
+@@ -231,8 +231,9 @@
+           new AuthCredentialWithPniResponse(Bytes.fromBase64(item.credential))
+         );
+     } else {
+-      const salt = itemStorage.get('authCredentialSalt');
+-      strictAssert(salt != null, 'Missing auth credential salt');
++      const salt = restoreAuthCredentialSalt(
++        itemStorage.get('authCredentialSalt')
++      );
+ 
+       authCredential = clientZKAuthOperations.receiveAuthCredentialWithoutPni(
+         toAciObject(aci),
+@@ -364,3 +365,32 @@
+ function sortCredentials(data: CredentialsDataType): CredentialsDataType {
+   return sortBy(data, (item: GroupCredentialType) => item.redemptionTime);
+ }
++
++// Temporary compatibility for authCredentialSalt missing from SQL ITEM_SPECS.
++// JSON persistence turns its Uint8Array into an object with numeric keys.
++// Remove this when upstream repairs serialization and migrates existing values.
++function restoreAuthCredentialSalt(value: unknown): Uint8Array<ArrayBuffer> {
++  if (value instanceof Uint8Array && value.buffer instanceof ArrayBuffer) {
++    strictAssert(value.length === 16, 'Invalid auth credential salt length');
++    return value;
++  }
++
++  strictAssert(
++    value != null && typeof value === 'object' && !Array.isArray(value),
++    'Invalid stored auth credential salt'
++  );
++  const entries = Object.entries(value);
++  strictAssert(
++    entries.length === 16 &&
++      entries.every(
++        ([key, byte], index) =>
++          key === String(index) &&
++          typeof byte === 'number' &&
++          Number.isInteger(byte) &&
++          byte >= 0 &&
++          byte <= 255
++      ),
++    'Invalid stored auth credential salt bytes'
++  );
++  return Uint8Array.from(entries.map(([, byte]) => byte));
++}

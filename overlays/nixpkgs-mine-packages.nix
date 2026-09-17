@@ -28,7 +28,9 @@ in
   inherit (nixpkgs-mine) qbittorrent-nox;
   inherit (nixpkgs-mine) qui;
   inherit (nixpkgs-mine) roon-server;
-  inherit (nixpkgs-mine) signal-desktop;
+  signal-desktop = nixpkgs-mine.signal-desktop.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ../patches/signal-auth-salt.patch ];
+  });
   inherit (nixpkgs-mine) sprite;
   #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
