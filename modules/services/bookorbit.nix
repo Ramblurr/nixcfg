@@ -59,6 +59,8 @@ in
     };
 
     systemd.services.bookorbit = {
+      # Kobo metadata fetching invokes a Python cloudscraper helper.
+      path = [ (pkgs.python3.withPackages (pythonPackages: [ pythonPackages.cloudscraper ])) ];
       unitConfig.RequiresMountsFor = [
         stateDir
         libraryPath
