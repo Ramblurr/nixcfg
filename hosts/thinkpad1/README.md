@@ -71,10 +71,8 @@ authorization prompts. Enter the PIN in the existing password field. This includ
 privileged actions authorized through Polkit. Password authentication remains
 available; SSH, sudo, and other users do not gain PIN authentication.
 
-Initial and console login use PIN/password only: Plasma Login Manager cannot run
-fingerprint authentication in parallel, so enabling it there delays typed input
-until the fingerprint timeout. KDE screen unlocking retains its separate fingerprint
-path. Polkit remains unchanged and may wait for fingerprint before accepting a PIN.
+Fingerprint authentication is disabled; login, screen unlocking, and Polkit prompts
+use PIN/password authentication only.
 
 From an administrator terminal, enroll with `sudo pinutil setup viki`.
 Five failed PIN attempts lock the PIN until an administrator deletes and recreates

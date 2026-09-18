@@ -132,7 +132,6 @@ in
     timesyncd.enable = true;
     # Use ordinary OpenSSH over the VPN, not Tailscale SSH's separate user policy.
     tailscale.extraSetFlags = [ "--ssh=false" ];
-    fprintd.enable = true;
     fwupd.enable = true;
     power-profiles-daemon.enable = true;
     displayManager = {

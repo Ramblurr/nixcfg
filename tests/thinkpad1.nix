@@ -34,14 +34,12 @@ let
       && c.users.users.viki.password == null
       && c.users.users.viki.hashedPasswordFile != null;
     stable = c.system.nixos.release == "26.05";
-    fingerprintSeparation =
-      c.services.fprintd.enable
-      && !c.security.pam.services.login.fprintAuth
-      && !lib.hasInfix "pam_fprintd.so" c.security.pam.services.login.text
-      && lib.hasInfix "substack login" c.security.pam.services.plasmalogin.text
-      && !lib.hasInfix "pam_fprintd.so" c.security.pam.services.kde.text
-      && lib.hasInfix "pam_fprintd.so" c.security.pam.services.kde-fingerprint.text
-      && lib.hasInfix "pam_fprintd.so" c.security.pam.services.polkit-1.text;
+    fingerprintDisabled =
+      !c.services.fprintd.enable
+      && lib.all (pam: !lib.hasInfix "pam_fprintd.so" pam.text) (
+        builtins.attrValues c.security.pam.services
+      )
+      && lib.hasInfix "substack login" c.security.pam.services.plasmalogin.text;
     onePasswordAutostart =
       hm.xdg.configFile."autostart/1password.desktop".enable
       &&
