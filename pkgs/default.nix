@@ -7,6 +7,14 @@ inputs: [
     in
     {
       caddy-with-security = prev.callPackage ./caddy/package.nix { };
+      # Work item 065: ML uploads retained one image buffer per request on Node 24.19.
+      # Notes: .scratch-org/065-immich/philip-import-records/ml-upload-retention-fix.org
+      # Node 24.20 fixes this upstream: https://github.com/nodejs/node/pull/63577
+      # Temporary until primary nixpkgs includes that fix. Then remove both overrides,
+      # switch tests/immich-blob-retention.nix to pkgs.nodejs, and require the
+      # immich-blob-retention check to pass with the unoverridden Immich package.
+      immich-nodejs = inputs.nixpkgs-mine.legacyPackages.${prev.stdenv.hostPlatform.system}.nodejs_24;
+      immich = prev.immich.override { nodejs = _final.immich-nodejs; };
       nvidia = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nvidia/package.nix {
         kernelPackages = prev.linuxPackages;
       };
