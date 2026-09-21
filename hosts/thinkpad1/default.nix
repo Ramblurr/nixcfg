@@ -165,6 +165,9 @@ in
     pkgs.dejavu_fonts
   ];
 
+  # Trial newer i915/MST resume recovery without changing the graphics userspace.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   boot.plymouth = {
     enable = true;
     theme = "catppuccin-${plymouthVariant}";
