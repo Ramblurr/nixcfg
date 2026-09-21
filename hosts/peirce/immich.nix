@@ -50,6 +50,8 @@ in
     gpu = true;
     port = instance.machineLearning.rawPort;
     package = pkgs.callPackage ../../pkgs/immich-machine-learning-pascal.nix { };
+    # Selected with database-managed Smart Search/Face Detection/OCR queues at 1/1/2.
+    environment.MACHINE_LEARNING_REQUEST_THREADS = "2";
   };
 
   modules.services.immich-ml-proxy = {
