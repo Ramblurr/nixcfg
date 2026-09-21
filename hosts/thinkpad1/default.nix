@@ -89,6 +89,7 @@ in
 
   modules = {
     users.enable = true;
+    shell.tmux.enable = true;
     desktop.programs.onepassword.enable = true;
     desktop.programs.opencloud.enable = true;
     desktop.programs.thunderbird-cli = {
