@@ -71,6 +71,8 @@ inputs: [
       epimetheus = prev.callPackage ./pi/epimetheus/package.nix { };
       pi-mcp-adapter = prev.callPackage ./pi/pi-mcp-adapter/package.nix { };
       pi-link = prev.callPackage ./pi/pi-link/package.nix { };
+      pi-lens = prev.callPackage ./pi/pi-lens/package.nix { };
+      pi-goal-x = prev.callPackage ./pi/pi-goal-x/package.nix { };
       pi-reload = prev.callPackage ./pi/pi-reload/package.nix { };
       pi-heartbeat = prev.callPackage ./pi/pi-heartbeat/package.nix { };
       pi-ghost = prev.callPackage ./pi/pi-ghost/package.nix { };

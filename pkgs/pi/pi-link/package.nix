@@ -6,20 +6,23 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "pi-link";
-  version = "0.2.0-unstable-2026-08-04";
+  version = "0.5.0";
 
   src = fetchFromGitHub {
-    owner = "Ramblurr";
+    owner = "alvivar";
     repo = "pi-link";
-    rev = "f873410575a8e2af5618f8e4adb93eac1dc67820";
-    hash = "sha256-VLBzjbseKnRruAgxeaF1eEaHcf8MekDrM4GPsySMwRU=";
+    rev = "aff9d5a8f9fa43cc101ef6ee75d239c215e36069";
+    hash = "sha256-j+BaegjJ+6Pb0feEaCIkpXketxyAiiWqCcpL6BVu2bU=";
   };
+
+  # Native link_control tool, rebased from Ramblurr/feat/pi-link-control-tool.
+  patches = [ ./link-control.patch ];
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-CF2NuBJRUpgsIGnvDKMDycwxD7jwrug4g43HbS+mLoE=";
+  npmDepsHash = "sha256-gISETDw+XPG4IiWClJs+pRL0p++qdpvvEixPcMYGMa8=";
   npmInstallFlags = [ "--omit=dev" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;

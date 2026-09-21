@@ -36,6 +36,8 @@ let
       pkgs.pi-nono-sandbox
       pkgs.pi-matrix-relay
       pkgs.pi-link
+      pkgs.pi-lens
+      pkgs.pi-goal-x
     ];
     npmCommand = [ "pnpm" ];
     hideThinkingBlock = true;
