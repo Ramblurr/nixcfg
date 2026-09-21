@@ -7,7 +7,6 @@
   ...
 }:
 let
-  chatgpt = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.chatgpt;
   # Dedicated 1Password SSH identity; authorized on this laptop only.
   laptopSshKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEnOBbCW8iP5o45Jc0Y3jpl2Xg9nd6G0SzQzglMBFJUk";
   # Choose latte, frappe, macchiato, or mocha.
@@ -182,16 +181,7 @@ in
     systemPackages = [
       kdeTheme
       pkgs.maliit-keyboard
-      # Remove once the llm-agents input includes https://github.com/numtide/llm-agents.nix/pull/9282.
-      (chatgpt.override {
-        chatgpt-unwrapped = chatgpt.unwrapped.overrideAttrs (old: {
-          postFixup = (old.postFixup or "") + ''
-            wrapProgram "$out/lib/chatgpt/ChatGPT" \
-              --unset QT_PLUGIN_PATH \
-              --unset QT_QPA_PLATFORM_PLUGIN_PATH
-          '';
-        });
-      })
+      pkgs.chatgpt
       inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex
     ];
     # KWin handles the Yoga's tablet-mode switch; select its Wayland keyboard.

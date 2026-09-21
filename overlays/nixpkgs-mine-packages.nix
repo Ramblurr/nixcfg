@@ -6,8 +6,26 @@ let
     inherit (final.stdenv.hostPlatform) system;
     inherit (final) config;
   };
+  chatgpt = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.chatgpt;
 in
 {
+  # Remove once llm-agents includes upstream PRs #9282 (Qt) and #9624 (runtime tools).
+  chatgpt = chatgpt.override {
+    chatgpt-unwrapped = chatgpt.unwrapped.overrideAttrs (old: {
+      postFixup = (old.postFixup or "") + ''
+        wrapProgram "$out/lib/chatgpt/ChatGPT" \
+          --unset QT_PLUGIN_PATH \
+          --unset QT_QPA_PLATFORM_PLUGIN_PATH \
+          --prefix PATH : ${
+            final.lib.makeBinPath [
+              final.bubblewrap
+              final.gitMinimal
+            ]
+          }
+      '';
+    });
+  };
+
   # Packages that should come from nixpkgs-mine instead of regular nixpkgs
   # claude-code = (nixpkgs-mine.claude-code.override { nodejs_20 = nixpkgs-mine.nodejs_24; });
   #claude-code = nixpkgs-mine.claude-code;
