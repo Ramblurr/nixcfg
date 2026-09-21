@@ -9,13 +9,11 @@ let
   chatgpt = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.chatgpt;
 in
 {
-  # Remove once llm-agents includes upstream PRs #9282 (Qt) and #9624 (runtime tools).
+  # Remove once llm-agents includes https://github.com/numtide/llm-agents.nix/pull/9624.
   chatgpt = chatgpt.override {
     chatgpt-unwrapped = chatgpt.unwrapped.overrideAttrs (old: {
       postFixup = (old.postFixup or "") + ''
         wrapProgram "$out/lib/chatgpt/ChatGPT" \
-          --unset QT_PLUGIN_PATH \
-          --unset QT_QPA_PLATFORM_PLUGIN_PATH \
           --prefix PATH : ${
             final.lib.makeBinPath [
               final.bubblewrap
