@@ -11,10 +11,18 @@
 (require '[scripts.cat-url-markdown-auto :as auto])
 
 (test/deftest safe-filenames
-  (test/is (= "idiomatic-clojure-errors.md"
-              (auto/filename "  idiomatic-clojure-errors\n")))
-  (doseq [output ["" "../escape" "/tmp/escape" "Title" "two--hyphens"
-                  "slug.md" "slug\nexplanation" "`slug`" (apply str (repeat 121 "a"))]]
+  (doseq [[output expected] [["  idiomatic-clojure-errors\n" "idiomatic-clojure-errors.md"]
+                             ["../Bad title/part" "___bad_title_part.md"]
+                             ["/tmp/escape" "_tmp_escape.md"]
+                             ["a\\b\u0000c\nd\te" "a_b_c_d_e.md"]
+                             ["Title: \"hello\"?*<>|" "title___hello______.md"]
+                             ["über" "_ber.md"]]]
+    (test/is (= expected (auto/filename output))))
+  (doseq [length [136 137 138 140 200]]
+    (let [result (auto/filename (apply str (repeat length "a")))]
+      (test/is (= (str (apply str (repeat (min 137 length) "a")) ".md") result))
+      (test/is (<= (count (.getBytes result "UTF-8")) 140))))
+  (doseq [output ["" " \n\t" "../" "\u0000"]]
     (test/is (thrown? Exception (auto/filename output)))))
 
 (test/deftest saves-once-and-preserves-existing-files

@@ -14,11 +14,11 @@
        "Keep it under 120 characters."))
 
 (defn filename [output]
-  (let [slug (str/trim output)]
-    (when-not (and (<= (count slug) 120)
-                  (re-matches #"[a-z0-9]+(?:-[a-z0-9]+)*" slug))
-      (throw (ex-info "Pi returned an invalid filename slug." {})))
-    (str slug ".md")))
+  (let [slug (-> output str/trim str/lower-case (str/replace #"[^a-z0-9_-]" "_"))
+        stem (subs slug 0 (min 137 (count slug)))]
+    (when-not (re-find #"[a-z0-9]" stem)
+      (throw (ex-info "Pi returned an empty or unusable filename slug." {})))
+    (str stem ".md")))
 
 (defn save-markdown [url dest-dir]
   (when-not (re-matches #"https?://[^\s]+" url)
