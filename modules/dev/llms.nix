@@ -35,6 +35,17 @@ let
     fi
     curl -sSL --output - $(printf "https://r.jina.ai/%s" $1)
   '';
+  cat-url-markdown-auto = pkgs.writeShellApplication {
+    name = "cat-url-markdown-auto";
+    runtimeInputs = [
+      pkgs.babashka
+      cat-url-markdown
+      pkgs.curl
+    ];
+    text = ''
+      exec bb ${../../scripts/cat_url_markdown_auto.clj} "$@"
+    '';
+  };
 in
 {
   imports = [
@@ -102,6 +113,7 @@ in
           #codex
           #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           cat-url-markdown
+          cat-url-markdown-auto
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
           dotool # handy (speech to text) uses this for clipboard access
           wtype # handy (speech to text) uses this for clipboard access
