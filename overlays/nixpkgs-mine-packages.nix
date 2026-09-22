@@ -6,23 +6,9 @@ let
     inherit (final.stdenv.hostPlatform) system;
     inherit (final) config;
   };
-  chatgpt = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.chatgpt;
 in
 {
-  # Remove once llm-agents includes https://github.com/numtide/llm-agents.nix/pull/9624.
-  chatgpt = chatgpt.override {
-    chatgpt-unwrapped = chatgpt.unwrapped.overrideAttrs (old: {
-      postFixup = (old.postFixup or "") + ''
-        wrapProgram "$out/lib/chatgpt/ChatGPT" \
-          --prefix PATH : ${
-            final.lib.makeBinPath [
-              final.bubblewrap
-              final.gitMinimal
-            ]
-          }
-      '';
-    });
-  };
+  chatgpt = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.chatgpt;
 
   # Packages that should come from nixpkgs-mine instead of regular nixpkgs
   # claude-code = (nixpkgs-mine.claude-code.override { nodejs_20 = nixpkgs-mine.nodejs_24; });
