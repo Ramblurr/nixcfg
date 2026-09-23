@@ -305,7 +305,7 @@ in
             listenAddress = serviceAddress;
             listenInterface = "svc";
             allowedIPv4Ranges = [ "${deweyServiceAddress}/32" ];
-            port = 8083;
+            port = 4083;
             prometheusPort = 9083;
           };
         };
