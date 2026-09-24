@@ -83,6 +83,8 @@ in
         UCP_HOME = "$XDG_STATE_HOME/ucp";
         SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
         SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
+        PI_LENS_DISABLE_LSP_INSTALL = "1";
+        PI_LENS_DISABLE_TOOL_INSTALL = "1";
       };
       xdg.configFile."spel/config.json".text = builtins.toJSON {
         contentBoundaries = true;

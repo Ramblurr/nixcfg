@@ -68,6 +68,72 @@
              (kill-buffer buffer))))
        (delete-directory ,root t))))
 
+(ert-deftest my-project-scratch-agenda-todo-saves-and-refreshes ()
+  (project-scratch-test--with-project (root)
+    (let ((file (project-scratch-test--write
+                 root ".scratch-org/001-alpha/issues/01-ready.org"
+                 "#+TODO: READY-FOR-AGENT(r) IN-PROGRESS(i) | RESOLVED(d)\n* READY-FOR-AGENT Change me\n")))
+      (my/project-scratch-agenda)
+      (goto-char (point-min))
+      (search-forward "Change me")
+      (let ((org-use-fast-todo-selection t)
+            (unread-command-events (list ?i)))
+        (call-interactively (key-binding (kbd "t"))))
+      (should (derived-mode-p 'org-agenda-mode))
+      (should (string-match-p "IN-PROGRESS +Change me" (buffer-string)))
+      (with-temp-buffer
+        (insert-file-contents file)
+        (should (search-forward "* IN-PROGRESS Change me" nil t)))
+      (my/project-scratch-agenda-refresh)
+      (should (string-match-p "IN-PROGRESS +Change me" (buffer-string))))))
+
+(ert-deftest my-project-scratch-agenda-todo-saves-log-note-before-refresh ()
+  (project-scratch-test--with-project (root)
+    (let ((file (project-scratch-test--write
+                 root ".scratch-org/001-alpha/issues/01-ready.org"
+                 "#+TODO: READY-FOR-AGENT(r) IN-PROGRESS(i@) | RESOLVED(d)\n* READY-FOR-AGENT Note me\n")))
+      (my/project-scratch-agenda)
+      (goto-char (point-min))
+      (search-forward "Note me")
+      (let ((org-use-fast-todo-selection t)
+            (unread-command-events (list ?i)))
+        (call-interactively (key-binding (kbd "t"))))
+      (with-current-buffer "*Org Note*"
+        (goto-char (point-max))
+        (insert "Started by the human")
+        (funcall org-finish-function))
+      (with-temp-buffer
+        (insert-file-contents file)
+        (should (search-forward "* IN-PROGRESS Note me" nil t))
+        (should (search-forward "Started by the human" nil t)))
+      (with-current-buffer org-agenda-buffer-name
+        (should (string-match-p "IN-PROGRESS +Note me" (buffer-string)))))))
+
+(ert-deftest my-project-scratch-agenda-todo-rejects-stale-source ()
+  (project-scratch-test--with-project (root)
+    (let ((file (project-scratch-test--write
+                 root ".scratch-org/001-alpha/issues/01-ready.org"
+                 "* READY-FOR-AGENT Original\n")))
+      (my/project-scratch-agenda)
+      (goto-char (point-min))
+      (search-forward "Original")
+      (with-temp-file file (insert "* READY-FOR-AGENT Agent edit\n"))
+      (set-file-times file (time-add (current-time) 2))
+      (should-error (my/org-agenda-todo "IN-PROGRESS") :type 'user-error)
+      (with-temp-buffer
+        (insert-file-contents file)
+        (should (equal (buffer-string) "* READY-FOR-AGENT Agent edit\n"))))))
+
+(ert-deftest my-project-scratch-agenda-todo-rejects-section-heading ()
+  (project-scratch-test--with-project (root)
+    (project-scratch-test--write
+     root ".scratch-org/001-alpha/issues/01-ready.org"
+     "* READY-FOR-AGENT Ticket\n")
+    (my/project-scratch-agenda)
+    (goto-char (point-min))
+    (search-forward "Ready")
+    (should-error (my/org-agenda-todo "IN-PROGRESS") :type 'user-error)))
+
 (ert-deftest my-project-scratch-agenda-opens-work-item-spec-with-button ()
   (project-scratch-test--with-project (root)
     (let ((spec

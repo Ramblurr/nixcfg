@@ -119,6 +119,7 @@
   "Return agenda entries read from FILE once using SCRATCH-BUFFER."
   (let* ((visited (find-buffer-visiting file))
          (buffer (or visited scratch-buffer))
+         (modtime (file-attribute-modification-time (file-attributes file)))
          entries)
     (with-current-buffer buffer
       (let ((buffer-file-name (if visited buffer-file-name file)))
@@ -141,6 +142,7 @@
                              :scheduled (org-entry-get nil "SCHEDULED")
                              :deadline (org-entry-get nil "DEADLINE")
                              :file file
+                             :modtime modtime
                              :position (line-beginning-position))
                        entries))))
                 nil
@@ -214,6 +216,7 @@
      start
      (point)
      `(my/agenda-source-file ,(plist-get entry :file)
+                             my/agenda-source-modtime ,(plist-get entry :modtime)
                              my/agenda-source-position ,(plist-get entry :position)
                              keymap ,my/project-scratch-agenda-entry-map
                              mouse-face highlight))))
@@ -367,6 +370,56 @@
       (find-file file))
     (goto-char position)
     (org-show-context)))
+
+(defun my/org-agenda-todo (&optional arg)
+  "Change and save the project issue's TODO state, then refresh from disk.
+Use the ordinary agenda command outside the project issue view.
+ARG is passed to `org-todo'."
+  (interactive "P")
+  (if (not (equal org-agenda-name "Project issues"))
+      (org-agenda-todo arg)
+    (let* ((file (org-get-at-bol 'my/agenda-source-file))
+           (position (org-get-at-bol 'my/agenda-source-position))
+           (modtime (org-get-at-bol 'my/agenda-source-modtime))
+           (agenda (current-buffer)))
+      (unless (and file position)
+        (user-error "No project issue at point"))
+      (unless (equal modtime
+                     (file-attribute-modification-time (file-attributes file)))
+        (user-error "Issue changed on disk; refresh the agenda first"))
+      (let* ((source (find-file-noselect file))
+             (finish
+              (lambda ()
+                (with-current-buffer source (save-buffer))
+                (when (buffer-live-p agenda)
+                  (with-current-buffer agenda
+                    (my/project-scratch-agenda-refresh))))))
+        (with-current-buffer source
+          (when (buffer-modified-p)
+            (user-error "Issue has unsaved edits; save or revert it first"))
+          (unless (verify-visited-file-modtime source)
+            (revert-buffer t t t))
+          (save-excursion
+            (save-restriction
+              (widen)
+              (goto-char position)
+              (unless (org-at-heading-p)
+                (user-error "Issue heading moved; refresh the agenda first"))
+              (let ((current-prefix-arg arg)
+                    (org-loop-over-headlines-in-active-region nil))
+                (call-interactively #'org-todo))
+              ;; Flush timestamp logs before saving.  Note prompts finish later.
+              (if (and org-log-setup (eq org-log-note-how 'note))
+                  (progn
+                    (org-add-log-note)
+                    (with-current-buffer "*Org Note*"
+                      (let ((store-note org-finish-function))
+                        (setq-local org-finish-function
+                                    (lambda ()
+                                      (funcall store-note)
+                                      (funcall finish))))))
+                (when org-log-setup (org-add-log-note))
+                (funcall finish)))))))))
 
 (defun my/org-agenda-preview-at-point ()
   "Preview the project agenda source at point in another window."
@@ -659,6 +712,7 @@ Other work-item documents use the work-item number and basename, such as
   (add-hook 'org-agenda-finalize-hook #'my/org-agenda-insert-work-items)
 
   (define-key org-agenda-mode-map (kbd "r") #'my/org-agenda-redo)
+  (define-key org-agenda-mode-map [remap org-agenda-todo] #'my/org-agenda-todo)
 
   (map! :map org-agenda-mode-map
         :localleader
