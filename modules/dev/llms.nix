@@ -125,6 +125,7 @@ in
           llm-agents.codex
           #llm-agents.jscpd
           llm-agents.plannotator
+          llm-agents.plannotator-tui
           pkgs.hindsight-cli
           pkgs.ucp-cli
           pkgs.link-cli
