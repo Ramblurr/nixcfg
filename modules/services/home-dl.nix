@@ -59,6 +59,10 @@ let
     after = [ "network.target" ] ++ nfsMountDeps;
     bindsTo = nfsMountDeps;
   };
+  externalAuthSystemdService = sharedSystemdService // {
+    after = sharedSystemdService.after ++ [ "nftables.service" ];
+    requires = [ "nftables.service" ];
+  };
   sharedServiceConfig = {
     UMask = 77;
     DynamicUser = true;
@@ -155,8 +159,27 @@ in
         ];
       };
     };
+    # External auth trusts Caddy, not a user-supplied identity header. Only the
+    # host (Caddy/Seerr) and same-namespace clients may reach these UI ports.
+    networking.nftables.enable = true;
+    networking.nftables.tables.home-dl-auth = {
+      family = "inet";
+      content = ''
+        chain forward {
+          type filter hook forward priority -10; policy accept;
+          oifname "home-dl-host" tcp dport { 7878, 8989 } counter drop
+        }
+      '';
+    };
+
     systemd.services.sonarr = {
       description = "Sonarr";
+      # Override mutable config.xml without changing credentials or API keys.
+      environment = {
+        SONARR__AUTH__ENABLED = "false";
+        SONARR__AUTH__METHOD = "External";
+        SONARR__AUTH__REQUIRED = "Enabled";
+      };
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
@@ -170,9 +193,14 @@ in
       }
       // sharedServiceConfig;
     }
-    // sharedSystemdService;
+    // externalAuthSystemdService;
     systemd.services.radarr = {
       description = "Radarr";
+      environment = {
+        RADARR__AUTH__ENABLED = "false";
+        RADARR__AUTH__METHOD = "External";
+        RADARR__AUTH__REQUIRED = "Enabled";
+      };
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "simple";
@@ -186,7 +214,7 @@ in
       }
       // sharedServiceConfig;
     }
-    // sharedSystemdService;
+    // externalAuthSystemdService;
     systemd.services.sabnzbd = {
       description = "sabnzbd server";
       wantedBy = [ "multi-user.target" ];

@@ -143,4 +143,30 @@ assert !(evaluated.config.modules.services.caddy.routes ? seerr);
 assert builtins.any (
   endpoint: endpoint.name == "Seerr" && endpoint.url == "https://requests.example.test/_health/gatus"
 ) evaluated.config.site.gatus.endpoints;
+# External UI authentication must be paired with backend isolation and SSO routes.
+assert lib.all
+  (
+    name:
+    let
+      service = services.${name};
+      prefix = lib.toUpper name;
+      route = evaluated.config.modules.services.caddy.protectedRoutes.${name};
+    in
+    service.environment."${prefix}__AUTH__ENABLED" == "false"
+    && service.environment."${prefix}__AUTH__METHOD" == "External"
+    && service.environment."${prefix}__AUTH__REQUIRED" == "Enabled"
+    && builtins.elem "nftables.service" service.requires
+    && builtins.elem "nftables.service" service.after
+    && route.publicHost == "${name}.example.test"
+    && !(evaluated.config.modules.services.caddy.routes ? ${name})
+    && (route.bypassPathPrefixes or [ ]) == [ ]
+  )
+  [
+    "sonarr"
+    "radarr"
+  ];
+assert evaluated.config.networking.nftables.enable;
+assert evaluated.config.networking.nftables.tables.home-dl-auth.family == "inet";
+assert lib.hasInfix ''oifname "home-dl-host" tcp dport { 7878, 8989 } counter drop''
+  evaluated.config.networking.nftables.tables.home-dl-auth.content;
 pkgs.runCommand "home-dl-zfs-readiness-evaluation" { } "touch $out"
