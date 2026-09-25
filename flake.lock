@@ -999,11 +999,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790255339,
-        "narHash": "sha256-BPq/kaqc+QgxxzcRfqFUDO/F/0zoUEA+4vx6TW5XBXQ=",
+        "lastModified": 1790295405,
+        "narHash": "sha256-6dkeknsWFeiYeh32Ovgf20BuE4Q/XpEaJMKn9b/809M=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "e7e0c4e63450bc14fd0d00ec0aad53d24f510335",
+        "rev": "81068324ebfd550c784bd4142fea70867862586f",
         "type": "github"
       },
       "original": {
@@ -2198,11 +2198,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790254959,
-        "narHash": "sha256-nOR60lruubDoleBdy7s30osCXPFj2EPjY12jjv674nw=",
+        "lastModified": 1790304106,
+        "narHash": "sha256-Rckhk7r2ySN4q/DdBDDZTsk0JRyhTuz9jAPimZzFNAc=",
         "ref": "refs/heads/main",
-        "rev": "6a224b0b6809371425b42851588427171b274253",
-        "revCount": 3663,
+        "rev": "fe2a4ab2b450dc74d2e833824d02105f5d8ec0e3",
+        "revCount": 3708,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/jolt-lang/jolt"
@@ -2321,11 +2321,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1790255433,
-        "narHash": "sha256-a/tZWRpZsIIh6mY16bR57/8hbkCFDASasOxrQjMTekY=",
+        "lastModified": 1790311386,
+        "narHash": "sha256-bOexMr1RcAS6PFcMnEfwe5apsEoaLmSUUxlqUftd2uU=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "c2d669b6ed4001f1f7c2a45cf14724467387cbe0",
+        "rev": "1446b3cb242c8cd24619b58054112cc2d870e591",
         "type": "github"
       },
       "original": {
@@ -3538,11 +3538,11 @@
     },
     "nixpkgs_9": {
       "locked": {
-        "lastModified": 1790178388,
-        "narHash": "sha256-kK3t7gwoz4Nx8RF46cs1Xz/skKNcK7y3KYP+gGqX6W8=",
+        "lastModified": 1790238896,
+        "narHash": "sha256-ym4BG18Pu2awiJIehla1Lo9xiB2QYRcCzW3SB74gEBY=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "00455b0a3690d3f5dc61e9aef4277dc86235b73f",
+        "rev": "34ca302a9572963c02e385c056be37c85ff51b77",
         "type": "github"
       },
       "original": {
@@ -3733,11 +3733,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790246817,
-        "narHash": "sha256-uUy+6LT7X3D+WnbdH9aWxjP6MYTki5GGfXB42X8SV5I=",
+        "lastModified": 1790312068,
+        "narHash": "sha256-Zq7sTVqJ1pMbpXpWWiiDIhI82Cp5jm1dzpgD1m+HdFQ=",
         "owner": "getpaseo",
         "repo": "paseo",
-        "rev": "e3c853df58bd38f0c29553454c1cbe49cc391c09",
+        "rev": "bf4dc22c2fa340e02f70bb2f70b94f5334ed4338",
         "type": "github"
       },
       "original": {
