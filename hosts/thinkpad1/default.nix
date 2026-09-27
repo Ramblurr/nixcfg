@@ -122,11 +122,36 @@ in
     hardware.pipewire.enable = true;
   };
 
-  hardware.printers.ensureDefaultPrinter = "BrotherMFC-L2750DW";
+  hardware.printers = {
+    ensureDefaultPrinter = "BrotherMFC-L2750DW";
+    ensurePrinters = [
+      {
+        name = "BrotherMFC-L2750DW";
+        description = "MFC-L2750DW";
+        deviceUri = "lpd://10.9.5.1/BINARY_P1";
+        model = "brother-MFCL2750DW-cups-en.ppd";
+        ppdOptions = {
+          PageSize = "Letter";
+          BrMediaType = "PLAIN";
+          Resolution = "600dpi";
+          InputSlot = "TRAY1";
+          Duplex = "None";
+          BRPassword = "False";
+          TonerSaveMode = "OFF";
+          printer-is-shared = "true";
+        };
+      }
+    ];
+  };
   # Keep discovery elsewhere, but avoid duplicating the working Brother driver queue.
   services.printing.browsedConf = ''
     BrowseFilter NOT EXACT name Brother_MFC_L2750DW_series
   '';
+  # CUPS installs cups-browsed.conf in preStart; discovery must read the new file.
+  systemd.services.cups-browsed = {
+    wants = [ "cups.service" ];
+    after = [ "cups.service" ];
+  };
 
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
