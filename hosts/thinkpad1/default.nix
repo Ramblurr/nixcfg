@@ -71,7 +71,10 @@ in
     shell = pkgs.bashInteractive;
     passwordSecretKey = "viki-password";
     authorizedKeys = [ ];
-    extraGroups = [ "networkmanager" ];
+    extraGroups = [
+      "networkmanager"
+      "lpadmin"
+    ];
   };
 
   sops.secrets.ramblurr-password.neededForUsers = true;
@@ -118,6 +121,12 @@ in
     security.default.enable = true;
     hardware.pipewire.enable = true;
   };
+
+  hardware.printers.ensureDefaultPrinter = "BrotherMFC-L2750DW";
+  # Keep discovery elsewhere, but avoid duplicating the working Brother driver queue.
+  services.printing.browsedConf = ''
+    BrowseFilter NOT EXACT name Brother_MFC_L2750DW_series
+  '';
 
   networking.networkmanager.enable = true;
   hardware.bluetooth.enable = true;
