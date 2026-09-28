@@ -34,6 +34,7 @@ in
     patches = (old.patches or [ ]) ++ [ ../patches/signal-auth-salt.patch ];
   });
   inherit (nixpkgs-mine) sprite;
+  inherit (nixpkgs-mine) libation;
   #inherit (nixpkgs-mine) yt-dlp;
   #chromium = nixpkgs-mine.chromium;
   #chromedriver = nixpkgs-mine.chromedriver;
