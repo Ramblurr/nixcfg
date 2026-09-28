@@ -64,6 +64,10 @@ buildNpmPackage (finalAttrs: {
     cp -r root/lib root/public "$appRoot/root/"
     cp desktop/{main.js,preload.js,package.json,xdg.cjs} "$appRoot/desktop/"
     cp -r node_modules/{better-sqlite3,bindings,file-uri-to-path} "$appRoot/desktop/node_modules/"
+    cp ${./server.cjs} "$appRoot/server.cjs"
+    makeWrapper ${lib.getExe nodejs_24} "$out/bin/keybr" \
+      --add-flags "$appRoot/server.cjs" \
+      --set NODE_PATH "$appRoot/desktop/node_modules"
     find "$appRoot" -name '*.map' -delete
     makeWrapper ${lib.getExe electron} "$out/bin/keybr-standalone" \
       --add-flags "$appRoot/desktop" \
@@ -112,6 +116,11 @@ buildNpmPackage (finalAttrs: {
         done
         touch "$out"
       '';
+
+  passthru.tests.server = runCommand "keybr-server-test" { } ''
+    ${lib.getExe nodejs_24} ${./server-test.cjs} ${finalAttrs.finalPackage}/bin/keybr
+    touch "$out"
+  '';
 
   meta = {
     description = "Offline Keybr typing practice desktop application";
