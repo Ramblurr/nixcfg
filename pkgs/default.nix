@@ -8,6 +8,7 @@ inputs: [
     {
       caddy-with-security = prev.callPackage ./caddy/package.nix { };
       konveyor = prev.callPackage ./konveyor.nix { };
+      keybr-standalone = prev.callPackage ./keybr-standalone/package.nix { };
       # Work item 065: ML uploads retained one image buffer per request on Node 24.19.
       # Notes: .scratch-org/065-immich/philip-import-records/ml-upload-retention-fix.org
       # Node 24.20 fixes this upstream: https://github.com/nodejs/node/pull/63577

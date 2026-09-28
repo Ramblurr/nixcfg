@@ -485,6 +485,7 @@ in
     };
   };
   environment.systemPackages = [
+    pkgs.keybr-standalone
     pkgs.kdePackages.okular
     pkgs.kdePackages.dolphin
     pkgs.kdePackages.merkuro

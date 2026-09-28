@@ -42,7 +42,10 @@ in
   };
 
   home.nix-lan-cache.enable = true;
-  environment.systemPackages = [ pkgs.konveyor ];
+  environment.systemPackages = [
+    pkgs.konveyor
+    pkgs.keybr-standalone
+  ];
 
   modules = {
     nix.pruneAgedGcroots.enable = true;
