@@ -1,6 +1,8 @@
 {
   config,
   lib,
+  options,
+  pkgs,
   ...
 }:
 with lib;
@@ -17,11 +19,20 @@ in
     };
   };
   config = mkIf cfg.enable {
-    services.mullvad-vpn = mkIf cfg.enable {
+    services.mullvad-vpn = {
       enable = true;
-      gui.enable = true;
       enableExcludeWrapper = true;
-    };
+    }
+    // (
+      if options.services.mullvad-vpn ? gui then
+        {
+          gui.enable = true;
+        }
+      else
+        {
+          package = pkgs.mullvad-vpn;
+        }
+    );
 
     sops.secrets.mullvad-account = lib.mkIf cfg.autoLogin.enable { };
     systemd.services.mullvad-daemon = lib.mkIf cfg.autoLogin.enable {
