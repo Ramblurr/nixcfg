@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 with lib;
@@ -20,7 +19,7 @@ in
   config = mkIf cfg.enable {
     services.mullvad-vpn = mkIf cfg.enable {
       enable = true;
-      package = pkgs.mullvad-vpn;
+      gui.enable = true;
       enableExcludeWrapper = true;
     };
 
@@ -37,7 +36,7 @@ in
           account="$(<"$CREDENTIALS_DIRECTORY/account")"
           current_account="$(${mullvad}/bin/mullvad account get | grep "account:" | sed 's/.* //')"
           if [[ "$current_account" != "$account" ]]; then
-            ${pkgs.mullvad}/bin/mullvad account login "$account"
+            ${mullvad}/bin/mullvad account login "$account"
           fi
         '';
     };
