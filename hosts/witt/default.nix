@@ -49,7 +49,10 @@ in
     boot.zfs.enable = true;
     boot.zfs.usePlymouth = false;
     boot.zfs.scrubPools = [ "rpool" ];
-    #vpn.mullvad.enable = true;
+    vpn.mullvad = {
+      enable = true;
+      autoLogin.enable = false;
+    };
     vpn.tailscale.enable = true;
     firewall.enable = true;
     security.default.enable = true;
@@ -82,7 +85,7 @@ in
       programs = {
         #cad.enable = true;
         #junction.enable = true;
-        #kdeconnect.enable = true;
+        kdeconnect.enable = true;
         ghostty.enable = true;
         #element.enable = true;
         nextcloud.enable = true;
@@ -148,9 +151,9 @@ in
       clojure.enable = true;
       #janet.enable = true;
       #jetbrains.enable = true;
-      #node.enable = true;
-      #python.enable = true;
-      #random.enable = true;
+      node.enable = true;
+      python.enable = true;
+      random.enable = true;
       llms.enable = true;
     };
     hardware.keyboardio.enable = true;

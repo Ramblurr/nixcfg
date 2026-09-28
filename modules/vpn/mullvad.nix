@@ -11,6 +11,11 @@ in
 {
   options.modules.vpn.mullvad = {
     enable = lib.mkEnableOption "";
+    autoLogin.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Automatically log in using the SOPS-managed Mullvad account.";
+    };
   };
   config = mkIf cfg.enable {
     services.mullvad-vpn = mkIf cfg.enable {
@@ -19,8 +24,8 @@ in
       enableExcludeWrapper = true;
     };
 
-    sops.secrets.mullvad-account = { };
-    systemd.services.mullvad-daemon = {
+    sops.secrets.mullvad-account = lib.mkIf cfg.autoLogin.enable { };
+    systemd.services.mullvad-daemon = lib.mkIf cfg.autoLogin.enable {
       serviceConfig.LoadCredential = [ "account:${config.sops.secrets.mullvad-account.path}" ];
       postStart =
         let
