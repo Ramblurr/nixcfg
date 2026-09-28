@@ -42,6 +42,7 @@ in
   };
 
   home.nix-lan-cache.enable = true;
+  environment.systemPackages = [ pkgs.konveyor ];
 
   modules = {
     nix.pruneAgedGcroots.enable = true;
