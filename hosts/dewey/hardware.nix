@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   modulesPath,
   ...
 }:
@@ -8,6 +9,13 @@
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.graphics = {
+    enable = true;
+    extraPackages = [
+      pkgs.intel-media-driver
+      pkgs.intel-compute-runtime-legacy1
+    ];
+  };
 
   boot = {
     zfs.devNodes = lib.mkForce "/dev/disk/by-partuuid";
