@@ -93,7 +93,7 @@ in
       user = cfg.user.name;
       group = cfg.group.name;
       hardwareAcceleration.enable = true;
-      hardwareAcceleration.type = "qsv";
+      hardwareAcceleration.type = "vaapi";
       hardwareAcceleration.device = "/dev/dri/renderD128";
       transcoding.enableHardwareEncoding = true;
     };
