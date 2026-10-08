@@ -257,7 +257,7 @@ in
     postgresImage = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "docker.io/pgvector/pgvector:0.8.5-pg18@sha256:12a379b47ad65289572ea0756efc11b7c241a6662833e8af7038cd3b73d647e0";
+      default = "docker.io/pgvector/pgvector:0.8.7-pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11";
       description = "PostgreSQL container image with pgvector installed.";
     };
 
