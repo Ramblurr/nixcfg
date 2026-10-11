@@ -87,6 +87,8 @@ in
     };
 
     modules.services.caddy.routes.bookorbit = {
+      # Work around Firefox HTTP/3 failures without changing other public routes.
+      http3 = false;
       publicHost = cfg.domain;
       upstream = "http://127.0.0.1:${toString cfg.ports.http}";
     };
