@@ -1,4 +1,39 @@
 final: prev: {
+  bookorbit = prev.bookorbit.overrideAttrs (
+    finalAttrs: oldAttrs: {
+      version = "3.3.0";
+      # Disable Nest's spinner, which loops on Nix's zero-width build terminal.
+      env = (oldAttrs.env or { }) // {
+        CI = "true";
+      };
+      # SWC's native loader rejects the Nix sandbox root's ownership.
+      buildPhase = builtins.replaceStrings
+        [ "pnpm --filter server run build" ]
+        [ "pnpm --filter server run build --builder tsc" ]
+        oldAttrs.buildPhase;
+      # Keep tsc's output layout compatible with the service and migration wrappers.
+      postPatch = (oldAttrs.postPatch or "") + ''
+        substituteInPlace server/tsconfig.build.json \
+          --replace-fail '"extends": "./tsconfig.json",' \
+            '"extends": "./tsconfig.json", "compilerOptions": { "rootDir": "./src" }, "include": ["src/**/*.ts"],'
+      '';
+      postInstall = (oldAttrs.postInstall or "") + ''
+        test -f "$out/lib/dist/main.js"
+        test -f "$out/lib/dist/scripts/migrate.js"
+      '';
+      src = final.fetchFromGitHub {
+        owner = "bookorbit";
+        repo = "bookorbit";
+        tag = "v${finalAttrs.version}";
+        hash = "sha256-cvTI1riCQpJDtlbZH+BKcIJnoXU+cufVD9BuZtK0qPc=";
+      };
+      pnpmDeps = oldAttrs.pnpmDeps.override {
+        inherit (finalAttrs) version src;
+        hash = "sha256-VW5h6WRizzJg88BZgYd8xR5l9n+hxtyHOldC9ojbiZ0=";
+      };
+    }
+  );
+
   roon-server = prev.roon-server.overrideAttrs (
     _old:
     let
