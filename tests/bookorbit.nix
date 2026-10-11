@@ -5,17 +5,26 @@ let
   unit = config.systemd.services.bookorbit;
   domain = "books.${config.repo.secrets.home-ops.homeDomain}";
   library = "/mnt/mali/tank2/media/books";
+  audiobooks = "/mnt/mali/tank2/media/misc/Audiobooks";
+  absUnit = config.systemd.services.audiobookshelf;
 in
 assert config.home-ops.apps.bookorbit.enable;
 assert service.enable;
-assert service.package.version == "2.10.0";
+assert service.package.version == "3.3.0";
 assert service.environment.HOST == "127.0.0.1";
 assert service.environment.DISABLE_LOCAL_AUTH == "true";
 assert service.environment.APP_URL == "https://${domain}";
-assert service.environment.LIBRARY_BROWSE_ROOT == library;
+assert service.environment.LIBRARY_BROWSE_ROOT == "/mnt/mali/tank2/media";
 assert config.modules.services.bookorbit.domain == domain;
 assert builtins.elem library unit.serviceConfig.ReadWritePaths;
 assert !(builtins.elem library (unit.serviceConfig.ReadOnlyPaths or [ ]));
+assert builtins.elem audiobooks unit.serviceConfig.ReadWritePaths;
+assert !(builtins.elem audiobooks (unit.serviceConfig.ReadOnlyPaths or [ ]));
+assert builtins.elem audiobooks unit.unitConfig.RequiresMountsFor;
+assert config.services.audiobookshelf.enable;
+assert builtins.elem audiobooks absUnit.serviceConfig.ReadWritePaths;
+assert builtins.elem "media" absUnit.serviceConfig.SupplementaryGroups;
+assert absUnit.serviceConfig.UMask == "0002";
 assert unit.serviceConfig.UMask == "0002";
 assert unit.serviceConfig.ProtectSystem == "full";
 assert builtins.elem "media" unit.serviceConfig.SupplementaryGroups;

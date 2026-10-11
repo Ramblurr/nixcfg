@@ -7,7 +7,9 @@
 }:
 let
   cfg = config.modules.services.bookorbit;
-  libraryPath = "/mnt/mali/${cfg.mediaNfsShare}/books";
+  mediaPath = "/mnt/mali/${cfg.mediaNfsShare}";
+  libraryPath = "${mediaPath}/books";
+  audiobookPath = "${mediaPath}/misc/Audiobooks";
   stateDir = "/var/lib/bookorbit";
   dataset = "rpool/encrypted/safe/svc/bookorbit";
 in
@@ -41,7 +43,7 @@ in
         PORT = cfg.ports.http;
         APP_URL = "https://${cfg.domain}";
         APP_DATA_PATH = stateDir;
-        LIBRARY_BROWSE_ROOT = libraryPath;
+        LIBRARY_BROWSE_ROOT = mediaPath;
         TRUST_PROXY = "127.0.0.1";
         DISABLE_LOCAL_AUTH = lib.boolToString cfg.disableLocalAuth;
       };
@@ -64,10 +66,14 @@ in
       unitConfig.RequiresMountsFor = [
         stateDir
         libraryPath
+        audiobookPath
       ];
       serviceConfig = {
         SupplementaryGroups = [ "media" ];
-        ReadWritePaths = [ libraryPath ];
+        ReadWritePaths = [
+          libraryPath
+          audiobookPath
+        ];
         # Override upstream's private-file mask for shared library writes.
         UMask = lib.mkForce "0002";
         ExecStart = lib.mkForce (
