@@ -7,10 +7,11 @@ final: prev: {
         CI = "true";
       };
       # SWC's native loader rejects the Nix sandbox root's ownership.
-      buildPhase = builtins.replaceStrings
-        [ "pnpm --filter server run build" ]
-        [ "pnpm --filter server run build --builder tsc" ]
-        oldAttrs.buildPhase;
+      buildPhase =
+        builtins.replaceStrings
+          [ "pnpm --filter server run build" ]
+          [ "pnpm --filter server run build --builder tsc" ]
+          oldAttrs.buildPhase;
       # Keep tsc's output layout compatible with the service and migration wrappers.
       postPatch = (oldAttrs.postPatch or "") + ''
         substituteInPlace server/tsconfig.build.json \
