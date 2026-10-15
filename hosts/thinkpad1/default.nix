@@ -181,6 +181,7 @@ in
   # Avoid the shared XDG module's personal directory layout and browser profiles.
   xdg.portal.xdgOpenUsePortal = true;
   programs = {
+    atop.enable = true;
     firefox.enable = true;
     chromium.enable = true;
     kde-pim = {
@@ -192,6 +193,11 @@ in
       enable = true;
       binfmt = true;
     };
+  };
+  # Keep a week of process history for investigating school-day battery drain.
+  systemd.services.atop.environment = {
+    LOGINTERVAL = "60";
+    LOGGENERATIONS = "7";
   };
   fonts.packages = [
     pkgs.noto-fonts
@@ -259,9 +265,25 @@ in
       '';
       systemd.user.sessionVariables.CODEX_HOME = config.home.sessionVariables.CODEX_HOME;
       systemd.user.services.laptop-admin-update = {
-        Unit.Description = "Fast-forward laptop administration docs and skills";
+        Unit = {
+          Description = "Fast-forward laptop administration docs and skills";
+          ConditionACPower = true;
+        };
         Service = {
           Type = "oneshot";
+          StateDirectory = "laptop-admin-update";
+          # Persist the limit across reboots; failed attempts also wait 24 hours.
+          ExecCondition = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "laptop-admin-update-due";
+              runtimeInputs = [ pkgs.coreutils ];
+              text = ''
+                stamp="$STATE_DIRECTORY/last-attempt"
+                [[ ! -e "$stamp" ]] || (( $(date +%s) - $(stat -c %Y "$stamp") >= 86400 ))
+              '';
+            }
+          );
+          ExecStartPre = "${pkgs.coreutils}/bin/touch \"%S/laptop-admin-update/last-attempt\"";
           WorkingDirectory = "${config.home.homeDirectory}/Projects";
           Environment = [
             "GIT_TERMINAL_PROMPT=0"
@@ -313,8 +335,10 @@ in
       systemd.user.timers.laptop-admin-update = {
         Unit.Description = "Check for laptop administration docs and skills updates";
         Timer = {
-          OnStartupSec = "1min";
-          OnUnitActiveSec = "5min";
+          # Retry eligibility hourly while awake, without waking the laptop.
+          OnStartupSec = "5min";
+          OnCalendar = "hourly";
+          Persistent = true;
         };
         Install.WantedBy = [ "timers.target" ];
       };
