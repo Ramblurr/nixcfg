@@ -6,16 +6,16 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "pi-link";
-  version = "0.5.1-unstable-2026-09-23";
+  version = "0.5.2-unstable-2026-10-18";
 
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "pi-link";
-    rev = "62df3f2571024b462c13dc1a5c4f1d7f7ddeca80";
-    hash = "sha256-DsqBLvFW7IWPgQej8dkVvazpIfmaJjLaCdkTjMdEtes=";
+    rev = "9d54b86e5c0f50b8c1aae6f1e9172fa015effcc1";
+    hash = "sha256-yIsahLCotGf+DRhXMin8grCmV3tEt+6CMhRWSOs4qoc=";
   };
 
-  npmDepsHash = "sha256-/HmWipqHnaIMBPdgLX44xPrlkFaNeUNYOHJ2Z8rvMmA=";
+  npmDepsHash = "sha256-RlJliSkHPApKMNwO+aQjkqtw1LWyPx1EKEawV33YEqY=";
   npmInstallFlags = [ "--omit=dev" ];
   npmRebuildFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;
