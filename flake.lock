@@ -999,11 +999,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792033329,
-        "narHash": "sha256-bDNHvdkbEb3zHT7VWObDnLLfMTUWtSA88rp8vXpSUjY=",
+        "lastModified": 1792502290,
+        "narHash": "sha256-z9BNMXudHaOHweFqV79ZH9z5+6W+O4R+epebINu8bcE=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "4b5b7f856c668912a81dc1ffc8f43f1abcae7592",
+        "rev": "bde3736f749dc832f09517b084cc121e43dfae6f",
         "type": "github"
       },
       "original": {
@@ -2190,29 +2190,6 @@
         "type": "github"
       }
     },
-    "jolt": {
-      "inputs": {
-        "makes": "makes",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1792041427,
-        "narHash": "sha256-91lW5UBcJoFHo08gz/nwwcBilfg22Nqny8SFUszm1RA=",
-        "ref": "refs/heads/main",
-        "rev": "9c26613e2b1034a35efd78f9089428e325ff4f84",
-        "revCount": 4398,
-        "submodules": true,
-        "type": "git",
-        "url": "https://github.com/jolt-lang/jolt"
-      },
-      "original": {
-        "submodules": true,
-        "type": "git",
-        "url": "https://github.com/jolt-lang/jolt"
-      }
-    },
     "koreader-syncd": {
       "inputs": {
         "fenix": "fenix",
@@ -2241,11 +2218,11 @@
         "nixpkgs-lib": "nixpkgs-lib"
       },
       "locked": {
-        "lastModified": 1791918177,
-        "narHash": "sha256-be9RzKYvzN3zIRaz0rAOWTIcDbfy9mMWNTg6ySzLZ7I=",
+        "lastModified": 1792337748,
+        "narHash": "sha256-waXoPT/TqUGfGhsl5WhHrXDsqs7Q3i0LH+Osw/LF4Ig=",
         "owner": "nix-community",
         "repo": "lib-aggregate",
-        "rev": "f30c3bff9d6f045170072eef1cf8df025a6ce948",
+        "rev": "eb687781742af519e132faba4a6b856f7ef3f7e6",
         "type": "github"
       },
       "original": {
@@ -2321,11 +2298,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1792038949,
-        "narHash": "sha256-RCSQSli+LZ77orMbtqZDqm8iy43fnTw6K25td0xj4pU=",
+        "lastModified": 1792490949,
+        "narHash": "sha256-vGjr+2nzejufjFvsqgGhvEEO6yN+fRj6ukKUItAULZ8=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "09aee45133d3dfce34e4873ac1c9003d284b695e",
+        "rev": "06419f6a482c5a4d38d703f4b88b128740d3124e",
         "type": "github"
       },
       "original": {
@@ -2351,23 +2328,6 @@
       "original": {
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "type": "github"
-      }
-    },
-    "makes": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1785480273,
-        "narHash": "sha256-/g8O4PW0v3NNChKyrWw/EqpEAUCKiI9/KFE2EiXoUlA=",
-        "owner": "makeplus",
-        "repo": "makes",
-        "rev": "d14cb578c2f04e6f9d00e01c7c4e416a9baf94e9",
-        "type": "github"
-      },
-      "original": {
-        "owner": "makeplus",
-        "repo": "makes",
-        "rev": "d14cb578c2f04e6f9d00e01c7c4e416a9baf94e9",
         "type": "github"
       }
     },
@@ -2780,11 +2740,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791629704,
-        "narHash": "sha256-4zOW6nfXR6a9Q/eD9ioa71wvUPdUqx412Z4h32Qh+ZQ=",
+        "lastModified": 1792282151,
+        "narHash": "sha256-tU4OsJZTWo+TYQwTFN+5oreAkkkoyN8gggWxNuI5yww=",
         "owner": "Mic92",
         "repo": "nixbot",
-        "rev": "3c432d5932bd274dfd36530d7c486bde83418194",
+        "rev": "d020013fa0db4ec40ddd0593b9bfce65fedbff64",
         "type": "github"
       },
       "original": {
@@ -2993,11 +2953,11 @@
     },
     "nixpkgs-lib": {
       "locked": {
-        "lastModified": 1791688290,
-        "narHash": "sha256-1ghAsUduGsb0L6CX1YYHkVL5P/2BXcDOw6FQwqVt4Yk=",
+        "lastModified": 1792290253,
+        "narHash": "sha256-Kgup1sH+/4qilwusTsSZ4PVjvVABEu5mrgWcZqZ7ePw=",
         "owner": "nix-community",
         "repo": "nixpkgs.lib",
-        "rev": "73d1c6823d4563707fc913314c8bd780903ff17d",
+        "rev": "d0f596215fbb1603854039023c281b7c2ed1fd33",
         "type": "github"
       },
       "original": {
@@ -3538,11 +3498,11 @@
     },
     "nixpkgs_9": {
       "locked": {
-        "lastModified": 1791637130,
-        "narHash": "sha256-TuvwvSjJrpqyIYdjhQ7Wu+ADVfeOpO2Um21/V7TOubw=",
+        "lastModified": 1792116957,
+        "narHash": "sha256-EjZqHKObBfIOeHZnMRVV87HB3pPq/WBkmRJWyFxmZu8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ca1659429c950a11a565b5764e37a1b704e17ec8",
+        "rev": "f20cd90e28fe0403873f473b29e42662cd86e8c4",
         "type": "github"
       },
       "original": {
@@ -3929,7 +3889,6 @@
         "home-manager": "home-manager",
         "home-manager-stable": "home-manager-stable",
         "impermanence": "impermanence",
-        "jolt": "jolt",
         "koreader-syncd": "koreader-syncd",
         "libro-fm-cli": "libro-fm-cli",
         "llm-agents": "llm-agents",
