@@ -1,0 +1,11 @@
+name: local/docs-pagefind-static
+description: Classify successful docs search assets as static without whitelisting clients.
+filter: >-
+  evt.Meta.log_type == 'http_access-log' &&
+  evt.Meta.target_fqdn == 'docs.outskirtslabs.com' &&
+  evt.Meta.http_verb == 'GET' &&
+  evt.Meta.http_status in ['200', '304'] &&
+  evt.Meta.http_path matches '^/pagefind/(fragment/[A-Za-z0-9_-]+[.]pf_fragment|index/[A-Za-z0-9_-]+[.]pf_index|pagefind[.][A-Za-z0-9_-]+[.]pf_meta|wasm[.][A-Za-z0-9_-]+[.]pagefind)$'
+statics:
+  - parsed: static_ressource
+    value: 'true'

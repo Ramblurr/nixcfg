@@ -173,6 +173,12 @@ assert !(builtins.elem "firewall.service" bouncer.after);
 assert !(builtins.elem "firewall.service" bouncer.wants);
 assert !(builtins.elem "firewall.service" bouncer.partOf);
 assert parserCleanup.type == "r";
+assert
+  cfg.systemd.tmpfiles.settings."10-crowdsec-local-parsers"."/etc/crowdsec/parsers/s02-enrich/zz-docs-pagefind-static.yaml".link.type
+  == "L+";
+assert
+  cfg.systemd.tmpfiles.settings."10-crowdsec-local-parsers"."/etc/crowdsec/parsers/s02-enrich/zz-docs-pagefind-static.yaml".link.argument
+  == "${../hosts/james/crowdsec-pagefind.yaml}";
 pkgs.runCommand "james-crowdsec-module-test" { nativeBuildInputs = [ pkgs.jq ]; } ''
   cat > "$TMPDIR/caddy-access.json" <<'JSON'
   {"level":"info","ts":1786816800.0,"logger":"http.log.access","msg":"handled request","request":{"remote_ip":"198.51.100.25","remote_port":"4242","client_ip":"198.51.100.25","proto":"HTTP/2.0","method":"GET","host":"work.example.test","uri":"/login","headers":{"User-Agent":["representative-agent"]}},"bytes_read":0,"duration":0.001,"size":123,"status":404}

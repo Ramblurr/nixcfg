@@ -79,6 +79,14 @@ in
     "/etc/crowdsec/parsers/s02-enrich/*-parsers-s02-enrich.yaml".r = { };
   };
 
+  # Run after http-logs.yaml, which initializes static_ressource to false.
+  systemd.tmpfiles.settings."10-crowdsec-local-parsers" = {
+    "/etc/crowdsec/parsers/s02-enrich/zz-docs-pagefind-static.yaml".link = {
+      type = "L+";
+      argument = "${./crowdsec-pagefind.yaml}";
+    };
+  };
+
   site.gatus.heartbeats.crowdsec-update-hub = {
     service = "crowdsec-update-hub";
     name = "CrowdSec Hub Update";
