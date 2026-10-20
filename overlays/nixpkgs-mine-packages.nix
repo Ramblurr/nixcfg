@@ -19,6 +19,7 @@ in
   #crush = nixpkgs-mine.crush;
   #inherit (nixpkgs-mine) llm;
   inherit (nixpkgs-mine) bookorbit;
+  inherit (nixpkgs-mine) babashka;
   inherit (nixpkgs-mine) clojure-lsp;
   inherit (nixpkgs-mine) davis;
   inherit (nixpkgs-mine) emacs-pgtk;
