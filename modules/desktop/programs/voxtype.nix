@@ -61,7 +61,9 @@ let
         postFixup = (oldAttrs.postFixup or "") + ''
           wrapProgram $out/bin/voxtype \
             --set ORT_DYLIB_PATH "${onnxruntime}/lib/libonnxruntime.so" \
-            --prefix LD_LIBRARY_PATH : "${onnxruntime}/lib"
+            --prefix LD_LIBRARY_PATH : "${
+              lib.makeLibraryPath ([ onnxruntime ] ++ lib.optionals cfg.cudaSupport [ cudaPackages.cuda_cudart ])
+            }"
         '';
       });
 in
