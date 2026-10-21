@@ -23,6 +23,6 @@ writeShellApplication {
     else
       builder=nix
     fi
-    "$builder" build --no-link --print-out-paths --show-trace "''${targets[@]}"
+    "$builder" build --keep-going --no-link --print-out-paths --show-trace "''${targets[@]}"
   '';
 }
