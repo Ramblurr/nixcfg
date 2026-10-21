@@ -25,6 +25,14 @@ let
     nodejs = nodejs_22;
     npmDepsHash = "sha256-7PxH8kS28x8Sv5tD+Kohdv1CakKh8gIA9e9LGcWA960=";
     npm_config_ignore_scripts = "true";
+    # The default React SWC plugin uses esbuild for production, but importing it
+    # loads SWC's native cache loader, which rejects Nix's sandbox ownership.
+    postPatch = ''
+      substituteInPlace vite.config.ts \
+        --replace-fail "import react from '@vitejs/plugin-react-swc';" "" \
+        --replace-fail "plugins: [react()]," \
+          'esbuild: { jsx: "automatic", jsxImportSource: "react", tsconfigRaw: { compilerOptions: { useDefineForClassFields: true } } },'
+    '';
     installPhase = ''
       runHook preInstall
       cp -r dist "$out"
