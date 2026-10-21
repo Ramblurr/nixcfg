@@ -150,7 +150,10 @@
         highlight_base_name = true;
       };
     };
-    iotop.enable = true;
+    iotop = {
+      enable = true;
+      package = pkgs.iotop-c;
+    };
     mtr.enable = true;
     tcpdump.enable = true;
     tmux = {
