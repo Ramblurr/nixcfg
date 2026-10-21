@@ -44,7 +44,7 @@ Run `go get` with explicit selected versions. For example, these are the current
 pins; change only the version(s) you intend to update:
 
 ```sh
-go get github.com/caddyserver/caddy/v2@v2.11.4 \
+go get github.com/caddyserver/caddy/v2@v2.11.7 \
   github.com/caddy-dns/desec@v1.1.0 \
   github.com/greenpau/caddy-security@v1.1.64
 go mod tidy
