@@ -7,7 +7,7 @@
   nix-update,
   python3,
   runCommand,
-  writeShellScript,
+  writeShellScriptBin,
 }:
 let
   pname = "paperless-gpt";
@@ -64,7 +64,7 @@ buildGoModule (finalAttrs: {
       ${python3}/bin/python ${./test-unix-socket.py} ${finalAttrs.finalPackage}
       touch "$out"
     '';
-    updateScript = writeShellScript "update-paperless-gpt" ''
+    updateScript = writeShellScriptBin "update-paperless-gpt" ''
       set -euo pipefail
       exec ${lib.getExe nix-update} --flake --version=branch=main \
         --subpackage frontend paperless-gpt "$@"
