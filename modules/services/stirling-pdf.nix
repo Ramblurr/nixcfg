@@ -28,7 +28,7 @@ in
       environment = {
         SERVER_PORT = cfg.ports.http;
         SYSTEM_DEFAULTLOCALE = "en-US";
-        INSTALL_BOOK_AND_ADVANCED_HTML_OPS = "true";
+        INSTALL_BOOK_AND_ADVANCED_HTML_OPS = "false";
       };
     };
     site.gatus.endpoints = [
