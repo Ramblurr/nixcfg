@@ -69,7 +69,7 @@
             help = "Explain why two Nix derivations differ";
           }
           {
-            package = (pkgs.extend (import ../overlays/last-known-good.nix)).nix-output-monitor;
+            package = pkgs.nix-output-monitor;
             help = "Nix Output Monitor (a drop-in alternative for `nix` which shows a build graph)";
           }
           {

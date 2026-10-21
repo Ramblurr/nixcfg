@@ -25,7 +25,12 @@
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
         config.allowUnfree = true;
-        overlays = ourOverlays ++ [ inputs.nixos-extra-modules.overlays.default ];
+        overlays = ourOverlays ++ [
+          (final: prev: {
+            inherit ((import ../overlays/last-known-good.nix) final prev) nix-output-monitor;
+          })
+          inputs.nixos-extra-modules.overlays.default
+        ];
       };
 
       # Export packages for flake consumers
