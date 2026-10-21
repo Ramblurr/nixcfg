@@ -1,6 +1,6 @@
 {
   lib,
-  buildGoModule,
+  buildGo127Module,
   buildNpmPackage,
   fetchFromGitHub,
   nodejs_22,
@@ -11,19 +11,19 @@
 }:
 let
   pname = "paperless-gpt";
-  version = "0.27.0-unstable-2026-09-11";
+  version = "0.31.0-unstable-2026-10-16";
   src = fetchFromGitHub {
     owner = "icereed";
     repo = "paperless-gpt";
-    rev = "7e736115b567ae2a95afbe6022e553a6ec2ab33a";
-    hash = "sha256-1QPS7m5LNEb+wtvSFZjEaK8KDYmz8P2juT/QH9AzaJY=";
+    rev = "1d07cedfe83b2a06994d535d2c64e256e6fd8a3e";
+    hash = "sha256-OFKmKotOMSrz/Z0KQUhfF7j0AcjN7YJh0gFN2ekrPrg=";
   };
   frontend = buildNpmPackage {
     pname = "${pname}-frontend";
     inherit version src;
     sourceRoot = "${src.name}/web-app";
     nodejs = nodejs_22;
-    npmDepsHash = "sha256-7PxH8kS28x8Sv5tD+Kohdv1CakKh8gIA9e9LGcWA960=";
+    npmDepsHash = "sha256-6ZkO5pVQfJKYGpgUEKS/AXy/bfuot8cOJ2o+Z087HWM=";
     npm_config_ignore_scripts = "true";
     # The default React SWC plugin uses esbuild for production, but importing it
     # loads SWC's native cache loader, which rejects Nix's sandbox ownership.
@@ -40,9 +40,9 @@ let
     '';
   };
 in
-buildGoModule (finalAttrs: {
+buildGo127Module (finalAttrs: {
   inherit pname version src;
-  vendorHash = "sha256-81a3B16v4rF8ut2HcT0w/KgT8XaZahQ3GPv/oEenXPk=";
+  vendorHash = "sha256-PAGZjn8xOsEVNi+JbdgILmDLo1GjK4bBbri/gDKGEh0=";
   patches = [ ./unix-socket.patch ];
   subPackages = [ "." ];
   ldflags = [
