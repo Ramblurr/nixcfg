@@ -5,7 +5,7 @@
  ;; Project deps.edn file superceeds this setting
  :paths ["src"]
 
- :deps {org.clojure/clojure {:mvn/version "1.12.5"}}
+ :deps {org.clojure/clojure {:mvn/version "1.12.6"}}
 
  ;; do not use ~/.m2
  :mvn/local-repo "@cacheDirectory@/maven/repository"
@@ -19,11 +19,11 @@
 
   ;; - My primary REPL setup for development
   :repl/dev
-  {:extra-deps {djblue/portal                 {:mvn/version "0.67.0"}
-                clj-commons/clj-yaml          {:mvn/version "1.0.29"} ; portal yaml support (optional)
+  {:extra-deps {djblue/portal                 {:mvn/version "0.68.1"}
+                clj-commons/clj-yaml          {:mvn/version "1.0.30"} ; portal yaml support (optional)
                 io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
-                nrepl/nrepl                   {:mvn/version "1.7.0"}
-                cider/cider-nrepl             {:mvn/version "0.62.2"}
+                nrepl/nrepl                   {:mvn/version "1.8.0"}
+                cider/cider-nrepl             {:mvn/version "0.63.1"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}
                 com.github.gnl/playback       {:mvn/version "0.5.4"}
                 jedi-time/jedi-time           {:mvn/version "0.2.1"}
@@ -33,7 +33,7 @@
                                                :git/tag "v0.1"
                                                :git/url "https://github.com/Datomic/dev.datafy.git"}
                 etaoin/etaoin                 {:mvn/version "1.1.43"}
-                my/dev-repl                   {:git/sha "c43694eaffeb9f5afefc376d4df340ac77a2611f"
+                my/dev-repl                   {:git/sha "f053984effdc6c78b1d1ce8a8878b00639854db8"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -41,10 +41,10 @@
 
   ;; - A secondary REPL setup for development, with less dependencies
   :repl/lite
-  {:extra-deps {nrepl/nrepl                   {:mvn/version "1.7.0"}
-                cider/cider-nrepl             {:mvn/version "0.62.2"}
+  {:extra-deps {nrepl/nrepl                   {:mvn/version "1.8.0"}
+                cider/cider-nrepl             {:mvn/version "0.63.1"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}
-                my/dev-repl                   {:git/sha "c43694eaffeb9f5afefc376d4df340ac77a2611f"
+                my/dev-repl                   {:git/sha "f053984effdc6c78b1d1ce8a8878b00639854db8"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -58,8 +58,8 @@
 
   :repl/clerk
   {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1158"}
-                nrepl/nrepl                   {:mvn/version "1.7.0"}
-                cider/cider-nrepl             {:mvn/version "0.62.2"}
+                nrepl/nrepl                   {:mvn/version "1.8.0"}
+                cider/cider-nrepl             {:mvn/version "0.63.1"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}}
    :main-opts  ["--eval" "(require '[nextjournal.clerk])(nextjournal.clerk/show! 'nextjournal.clerk.tap)(nextjournal.clerk/serve! {:browse? true})"
                 "-m" "nrepl.cmdline"
@@ -72,8 +72,8 @@
 
   :portal/cli
   {:main-opts  ["-m" "portal.main"]
-   :extra-deps {djblue/portal        {:mvn/version "0.67.0"}
-                clj-commons/clj-yaml {:mvn/version "1.0.29"}}}
+   :extra-deps {djblue/portal        {:mvn/version "0.68.1"}
+                clj-commons/clj-yaml {:mvn/version "1.0.30"}}}
 
   ;; -------------------------------------
 
@@ -82,7 +82,7 @@
   :deps/outdated
   {:replace-paths ["."]
    :replace-deps  {com.github.liquidz/antq {:mvn/version "2.11.1276"}
-                   org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}}
+                   org.slf4j/slf4j-nop     {:mvn/version "2.0.20"}}
    :exec-fn       antq.tool/outdated
    :exec-args     {:directory        ["."]         ; default
                    :exclude          ["org.clojure/tools.deps.alpha"
@@ -100,7 +100,7 @@
   :deps/outdated-upgrade
   {:replace-paths ["."]
    :replace-deps  {com.github.liquidz/antq {:mvn/version "2.11.1276"}
-                   org.slf4j/slf4j-nop     {:mvn/version "2.0.18"}}
+                   org.slf4j/slf4j-nop     {:mvn/version "2.0.20"}}
    :exec-fn       antq.tool/outdated
    :exec-args     {:directory        ["."]         ; default
                    :exclude          ["org.clojure/tools.deps.alpha"
@@ -122,7 +122,7 @@
   ;; cd project-directory && clojure -T:fmt/ns-fix
   :fmt/ns-fix
   {:replace-deps {com.github.clojure-lsp/clojure-lsp
-                  {:mvn/version "2026.05.05-12.58.26"}}
+                  {:mvn/version "2026.10.15-11.42.38"}}
    :exec-fn      clojure-lsp.api/clean-ns!
    :exec-args    {:dry? false}}
 
@@ -131,7 +131,7 @@
   ;; - report namespaces whos requires+imports are unused and not well sorted
   ;; cd project-directory && clojure -T:fmt/ns-check
   :fmt/ns-check
-  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:mvn/version "2026.05.05-12.58.26"}}
+  {:replace-deps {com.github.clojure-lsp/clojure-lsp {:mvn/version "2026.10.15-11.42.38"}}
    :exec-fn      clojure-lsp.api/clean-ns!
    :exec-args    {:dry? true}}
 
