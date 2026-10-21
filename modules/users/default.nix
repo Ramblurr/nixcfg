@@ -78,10 +78,6 @@ in
     modules.users.root.enable = lib.mkDefault true;
     services.userborn.enable = cfg.userborn.enable;
     services.pcscd.enable = true;
-    systemd.services.sops-install-secrets = {
-      after = [ "pcscd.service" ];
-      requires = [ "pcscd.service" ];
-    };
     sops = {
       age = {
         sshKeyPaths = [
