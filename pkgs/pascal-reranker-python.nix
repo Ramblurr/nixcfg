@@ -42,27 +42,30 @@ let
   python = pkgs.python312.override {
     packageOverrides = final: prev: {
       fastapi = ml.python.pkgs.fastapi;
-      cuda-bindings = final.buildPythonPackage {
-        pname = "cuda-bindings";
-        version = "12.9.4";
-        format = "wheel";
-        src = pkgs.fetchurl {
-          url = "https://files.pythonhosted.org/packages/a9/c1/dabe88f52c3e3760d861401bb994df08f672ec893b8f7592dc91626adcf3/cuda_bindings-12.9.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl";
-          sha256 = "fda147a344e8eaeca0c6ff113d2851ffca8f7dfc0a6c932374ee5c47caa649c8";
-        };
-        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-        buildInputs = [ pkgs.stdenv.cc.cc.lib ];
-        runtimeDependencies = map lib.getLib [
-          cuda.cuda_cudart
-          cuda.cuda_nvrtc
-          cuda.libnvjitlink
-        ];
-        dependencies = [ final.cuda-pathfinder ];
-        pythonImportsCheck = [ "cuda.bindings" ];
-        meta.license = lib.licenses.asl20;
-        meta.platforms = [ "x86_64-linux" ];
-        meta.sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-      };
+      cuda-bindings = lib.makeOverridable (
+        { cudaPackages }:
+        final.buildPythonPackage {
+          pname = "cuda-bindings";
+          version = "12.9.4";
+          format = "wheel";
+          src = pkgs.fetchurl {
+            url = "https://files.pythonhosted.org/packages/a9/c1/dabe88f52c3e3760d861401bb994df08f672ec893b8f7592dc91626adcf3/cuda_bindings-12.9.4-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl";
+            sha256 = "fda147a344e8eaeca0c6ff113d2851ffca8f7dfc0a6c932374ee5c47caa649c8";
+          };
+          nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+          buildInputs = [ pkgs.stdenv.cc.cc.lib ];
+          runtimeDependencies = map lib.getLib [
+            cudaPackages.cuda_cudart
+            cudaPackages.cuda_nvrtc
+            cudaPackages.libnvjitlink
+          ];
+          dependencies = [ final.cuda-pathfinder ];
+          pythonImportsCheck = [ "cuda.bindings" ];
+          meta.license = lib.licenses.asl20;
+          meta.platforms = [ "x86_64-linux" ];
+          meta.sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
+        }
+      ) { cudaPackages = cuda; };
       torch = (prev.torch-bin.override { cudaPackages = cuda; }).overridePythonAttrs (old: {
         version = "2.14.0";
         src = pkgs.fetchurl {
