@@ -11,17 +11,17 @@
 }:
 
 let
-  rev = "c09b67d15a2e9f90a2eeac1b71ce0d216e03aaa8";
+  rev = "v1.202610.5";
 in
 buildNpmPackage rec {
   pname = "pi-web";
-  version = "1.202607.3-unstable-2026-07-30";
+  version = "1.202610.5";
 
   src = fetchFromGitHub {
     owner = "jmfederico";
     repo = "pi-web";
     inherit rev;
-    hash = "sha256-iJP8okEklCNi6lVg5JhYGLrUBUy32oj57YPevaEfhx0=";
+    hash = "sha256-xsaU6LZhlRNlJTVBnedWYFhnnEL2RDrCtBxuorBU5G4=";
   };
 
   postPatch = ''
@@ -32,7 +32,7 @@ buildNpmPackage rec {
     sed -i '/node_modules\/\@earendil-works\/pi-coding-agent\/node_modules\/\@earendil-works\/pi-tui/,+2 s#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.82.1.tgz",#"resolved": "https://registry.npmjs.org/@earendil-works/pi-tui/-/pi-tui-0.82.1.tgz",\n      "integrity": "sha512-9yN8hALfKaxZq7n54EMxqhFCWnMi6LHkraMJ/1YjHiATq75XrI6XDMVppn9EDtiK7Fks8hUe1SDXUTrIvwRWfQ==",#' package-lock.json
   '';
 
-  npmDepsHash = "sha256-IHTNEXtfh4Q1UcqWCugVC4ybXPA0hcKybKNAqjnoJJ0=";
+  npmDepsHash = "sha256-C5QNOfLppfMDp75M5dwbYwH+LCkd6BActMp2HKpqTIU=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
 
