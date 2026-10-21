@@ -26,9 +26,16 @@ _final: prev:
     })
   ];
 
-  # TODO: Remove once Synapse's integer mapping-ID test uses a valid JWT subject.
+  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575253 reaches our pin.
+  # https://github.com/NixOS/nixpkgs/issues/575220 tracks the Authlib compatibility failure.
+  # Backport https://github.com/element-hq/synapse/pull/20330 without changing its regression test.
   matrix-synapse-unwrapped = prev.matrix-synapse-unwrapped.overridePythonAttrs (old: {
-    patches = (old.patches or [ ]) ++ [ ./patches/synapse-oidc-integer-user-id.patch ];
+    patches = (old.patches or [ ]) ++ [
+      (prev.fetchurl {
+        url = "https://github.com/element-hq/synapse/commit/a4cfd7d7420409c1ab22e83c4f9d196644f02c83.patch";
+        hash = "sha256-g96q69atwo2bFr6a+E2KQ+S1mOGubQ4rzxBnLxfz3Vw=";
+      })
+    ];
   });
 
   # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575801 reaches our pin.
