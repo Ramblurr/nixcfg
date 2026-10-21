@@ -34,9 +34,9 @@ in
           DEPS_CLJ_TOOLS_DIR = "$XDG_DATA_HOME/deps.clj";
           GITLIBS = "$XDG_CACHE_HOME/clojure-gitlibs";
         };
-        home.file."vendor/jdks/openjdk25".source = pkgs.jdk25;
-        home.file."vendor/jdks/graalvm-ce".source = pkgs.graalvmPackages.graalvm-ce;
-        home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
+        #home.file."vendor/jdks/openjdk25".source = pkgs.jdk25;
+        #home.file."vendor/jdks/graalvm-ce".source = pkgs.graalvmPackages.graalvm-ce;
+        #home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
         home.packages = with pkgs; [
           flutter
           jdk25
