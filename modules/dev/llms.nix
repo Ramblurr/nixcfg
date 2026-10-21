@@ -23,11 +23,11 @@ let
     llm-openai-plugin = true;
     llm-pdf-to-images = true;
   };
-  paseo-cli = inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  paseo-wrapper = pkgs.writeShellScriptBin "paseo" ''
-    export PASEO_PASSWORD="$(<${cfg.paseo.passwordFile})"
-    exec ${paseo-cli}/bin/paseo "$@"
-  '';
+  #paseo-cli = inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  #paseo-wrapper = pkgs.writeShellScriptBin "paseo" ''
+  #  export PASEO_PASSWORD="$(<${cfg.paseo.passwordFile})"
+  #  exec ${paseo-cli}/bin/paseo "$@"
+  #'';
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
       echo "usage: $(basename "$0") URL [FILENAME]"
@@ -106,7 +106,7 @@ in
           #jujutsu
           #mcp-inspector
           llmWithPlugins
-          inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
+          #inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
           llm-agents.opencode
           llm-agents.opencode-desktop
           llm-agents.opencode2
@@ -139,9 +139,9 @@ in
           nushell
           llm-agents.nono
         ]
-        ++ lib.optionals (cfg.paseo.passwordFile != null) [
-          paseo-wrapper
-        ]
+        #++ lib.optionals (cfg.paseo.passwordFile != null) [
+        #  paseo-wrapper
+        #]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
         ];
