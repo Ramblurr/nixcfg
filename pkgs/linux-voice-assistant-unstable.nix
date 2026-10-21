@@ -94,7 +94,7 @@ let
     };
   };
 
-  # LVA 1.1.13 uses ESPHome's multi-channel audio API from aioesphomeapi 45.3.1.
+  # LVA 1.1.15 uses ESPHome's multi-channel audio API from aioesphomeapi 45.3.1.
   # Pin it here because stable nixpkgs still carries the incompatible 44.x API.
   aioesphomeapi = python3Packages.aioesphomeapi.overridePythonAttrs rec {
     version = "45.3.1";
