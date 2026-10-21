@@ -20,10 +20,13 @@
     links = {
       "10-lan0" = {
         matchConfig.MACAddress = config.repo.secrets.local.lan0.mac;
+        # VLANs inherit the MAC, but do not have this physical PCI path.
+        matchConfig.Path = "pci-0000:09:00.0";
         linkConfig.Name = "lan0";
       };
       "10-lan1" = {
         matchConfig.MACAddress = config.repo.secrets.local.lan1.mac;
+        matchConfig.Path = "pci-0000:0a:00.0";
         linkConfig.Name = "lan1";
       };
     };
