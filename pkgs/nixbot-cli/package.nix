@@ -12,13 +12,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "nixbot-cli";
-  version = "0-unstable-2026-08-12";
+  version = "0-unstable-2026-08-28";
 
   src = fetchFromGitHub {
     owner = "outskirtslabs";
     repo = "nixbot-cli";
-    rev = "f9c1a0622830c90120042dd6c910bee6dab12555";
-    hash = "sha256-zUVOhKUmyzlyLd/GfR2+ag8b4hnBzoUF47g6Ag7NTJ8=";
+    rev = "30a91411c015f62bcf65281f8c0500c8f31a0024";
+    hash = "sha256-2f1klHmdYLUtJPGjpIjhOiyhOOd1whHH5viRCUVjQbM=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
