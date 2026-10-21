@@ -14,6 +14,18 @@ _final: prev:
     ];
   });
 
+  # TODO: Remove once pyopenjtalk-plus accepts Cython's newer TypeError wording.
+  pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
+    (_pythonFinal: pythonPrev: {
+      pyopenjtalk-plus = pythonPrev.pyopenjtalk-plus.overridePythonAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace tests/test_frontend.py \
+            --replace-fail 'match="must be str"' 'match="must be str|Expected str"'
+        '';
+      });
+    })
+  ];
+
   # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575801 reaches our pin.
   open-webui = prev.open-webui.overridePythonAttrs {
     makeWrapperArgs = [
