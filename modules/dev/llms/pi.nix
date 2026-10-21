@@ -20,19 +20,19 @@ let
       "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
     ];
     packages = [
-      #pkgs.pi-reload
+      pkgs.pi-reload
       #pkgs.pi-heartbeat
       #pkgs.pi-ghost
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-      #pkgs.brepl-balance
+      pkgs.brepl-balance
       #pkgs.pi-sexp-edit
       #pkgs.pi-nrepl
       pkgs.pi-hashline-edit-pro
       pkgs.plannotator-pi-extension
       #pkgs.epimetheus
       #pkgs.pi-mcp-adapter
-      #pkgs.pi-openai-fast
+      pkgs.pi-openai-fast
       #pkgs.pi-nono-sandbox
       #pkgs.pi-matrix-relay
       pkgs.pi-link
