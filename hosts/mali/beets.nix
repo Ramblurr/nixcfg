@@ -22,12 +22,8 @@ in
         #package = pkgs.beets-unstable.override {
         package = unstable.python3Packages.beets.override {
           pluginOverrides = {
-            #  https://github.com/gtronset/beets-filetote/issues/211
-            #  https://github.com/NixOS/nixpkgs/pull/481370
-            # filetote = {
-            #   enable = true;
-            #   propagatedBuildInputs = [ unstable.python3Packages.beets-filetote ];
-            # };
+            # Nixpkgs' python314Packages.beets-filetote is marked broken with Beets 2.14+.
+            # See https://github.com/gtronset/beets-filetote/issues/402; leave disabled until fixed.
             #dynamicrange = {
             #  enable = true;
             #  propagatedBuildInputs = [ pkgs.beets-dynamicrange ];

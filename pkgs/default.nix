@@ -118,10 +118,6 @@ inputs: [
       #  #beets = prev.beetsPackages.beets-minimal;
       #  beets = prev.beets-minimal;
       #};
-      #beets-filetote = prev.callPackage ./beets-filetote.nix {
-      #  #beets = prev.beetsPackages.beets-minimal;
-      #  beets = prev.beets-minimal;
-      #};
     }
   )
 ]
