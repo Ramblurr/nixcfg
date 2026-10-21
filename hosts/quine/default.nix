@@ -218,7 +218,7 @@ in
         #aseprite.enable = true;
         #calibre.enable = true;
         cad.enable = true;
-        discord.enable = false;
+        discord.enable = true;
         #element.enable = true;
         #element.work.enable = true;
         #element.workProxy = "${lanVpnGateway}:1081";
