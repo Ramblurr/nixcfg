@@ -3,6 +3,15 @@
 _final: prev:
 
 {
+  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575801 reaches our pin.
+  open-webui = prev.open-webui.overridePythonAttrs {
+    makeWrapperArgs = [
+      "--set"
+      "FRONTEND_BUILD_DIR"
+      "${prev.open-webui.frontend}/share/open-webui"
+    ];
+  };
+
   # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/576411 reaches our pin.
   # Qt 6.12's generated QML code must be excluded from MuseScore's unity builds.
   musescore = prev.musescore.overrideAttrs (old: {
