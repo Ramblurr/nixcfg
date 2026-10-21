@@ -1,6 +1,7 @@
 {
   lib,
   inputs,
+  pkgs,
   ...
 }:
 {
@@ -19,6 +20,20 @@
   };
 
   boot = {
+    # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575818 reaches our pin.
+    kernelPackages = pkgs.linuxPackages.extend (
+      _final: prev: {
+        framework-laptop-kmod = prev.framework-laptop-kmod.overrideAttrs (old: {
+          makeFlags = old.makeFlags ++ [
+            "INSTALL_MOD_PATH=${placeholder "out"}"
+            "INSTALL_MOD_DIR=extra"
+            "DEPMOD=true"
+          ];
+          installPhase = null;
+          installTargets = [ "modules_install" ];
+        });
+      }
+    );
     zfs.devNodes = lib.mkForce "/dev/disk/by-partuuid";
     loader = {
       efi = {
