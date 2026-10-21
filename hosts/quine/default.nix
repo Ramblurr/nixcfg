@@ -259,7 +259,7 @@ in
         #handy.autostart.enable = true;
         #waydroid.enable = true;
         yubico.enable = true;
-        yubico.sshFidoAgent.enable = true;
+        #yubico.sshFidoAgent.enable = true;
       };
     };
     shell = {
