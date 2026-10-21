@@ -161,6 +161,10 @@ in
     host = serviceAddress;
     loadModels = [ "llama3.1" ];
   };
+  systemd.services.ollama = {
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+  };
 
   modules = {
     nix.pruneAgedGcroots.enable = true;
