@@ -26,6 +26,11 @@ _final: prev:
     })
   ];
 
+  # TODO: Remove once Synapse's integer mapping-ID test uses a valid JWT subject.
+  matrix-synapse-unwrapped = prev.matrix-synapse-unwrapped.overridePythonAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ./patches/synapse-oidc-integer-user-id.patch ];
+  });
+
   # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575801 reaches our pin.
   open-webui = prev.open-webui.overridePythonAttrs {
     makeWrapperArgs = [

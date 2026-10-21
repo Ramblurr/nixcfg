@@ -1,0 +1,25 @@
+diff --git a/tests/handlers/test_oidc.py b/tests/handlers/test_oidc.py
+--- a/tests/handlers/test_oidc.py
++++ b/tests/handlers/test_oidc.py
+@@ -94,7 +94,7 @@ class TestMappingProvider:
+         pass
+ 
+     def get_remote_user_id(self, userinfo: "UserInfo") -> str:
+-        return userinfo["sub"]
++        return userinfo.get("user_id", userinfo["sub"])
+ 
+     async def map_user_attributes(
+         self, userinfo: "UserInfo", token: "Token"
+@@ -1155,9 +1155,10 @@ class OidcHandlerTestCase(HomeserverTestCase):
+         )
+         self.reset_mocks()
+ 
+-        # Some providers return an integer ID.
++        # Mapping providers can return an integer ID, but JWT sub must be a string.
+         userinfo = {
+-            "sub": 1234,
++            "sub": "1234",
++            "user_id": 1234,
+             "username": "test_user_2",
+         }
+         request, _ = self.start_authorization(userinfo)
