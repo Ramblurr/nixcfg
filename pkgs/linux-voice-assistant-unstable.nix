@@ -140,7 +140,7 @@ let
 in
 python3Packages.buildPythonPackage rec {
   pname = "linux-voice-assistant";
-  version = "1.1.13";
+  version = "1.1.15";
   pyproject = true;
 
   disabled = python3Packages.pythonOlder "3.11";
@@ -149,7 +149,7 @@ python3Packages.buildPythonPackage rec {
     owner = "OHF-Voice";
     repo = "linux-voice-assistant";
     rev = "v${version}";
-    hash = "sha256-1M1INDXhJJvkDhZD96yMe7xsuxmHELs6sMQ9fdd18Q0=";
+    hash = "sha256-n/d5+hwivoInpjrx5Wnv7WGPnyH9xmXFLD4Nvdc3M5A=";
   };
 
   # Upstream output-only mode still imports SoundCard and opens a microphone.
