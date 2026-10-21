@@ -101,11 +101,20 @@ in
     davis-env-setup.enable = lib.mkForce false;
     invoiceninja-env-setup.enable = lib.mkForce false;
   };
-  systemd.user.services = {
-    invoiceninja-app.enable = lib.mkForce false;
-    invoiceninja-scheduler.enable = lib.mkForce false;
-    invoiceninja-worker.enable = lib.mkForce false;
-  };
+  virtualisation.quadlet.containers =
+    lib.genAttrs
+      [
+        "invoiceninja-app"
+        "invoiceninja-scheduler"
+        "invoiceninja-worker"
+      ]
+      (_: {
+        autoStart = lib.mkForce false;
+        unitConfig = {
+          ConditionPathExists = "/run/php-emergency-explicitly-approved";
+          RefuseManualStart = true;
+        };
+      });
   modules.services.paperless.oidc = {
     enable = true;
     mode = "enforced";
