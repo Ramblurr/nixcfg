@@ -14,6 +14,15 @@ _final: prev:
     ];
   });
 
+  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575319 reaches our pin.
+  hplip = prev.hplip.overrideAttrs (old: {
+    preFixup =
+      builtins.replaceStrings
+        [ ''$makeWrapperArgs "''${gappsWrapperArgs[@]}"'' ]
+        [ (prev.lib.escapeShellArgs old.makeWrapperArgs) ]
+        old.preFixup;
+  });
+
   # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/576063 reaches our pin.
   pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
     (_pythonFinal: pythonPrev: {
