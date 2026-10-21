@@ -8,7 +8,13 @@
 
 let
   cfg = config.modules.desktop.programs.voxtype;
-  onnxruntime = if cfg.cudaSupport then pkgs.pkgsCuda.onnxruntime else pkgs.onnxruntime;
+  # CUDA 13.4's sanitizer binaries currently crash patchelf during fixup.
+  cudaPackages = pkgs.cudaPackages_12_9;
+  onnxruntime =
+    if cfg.cudaSupport then
+      pkgs.pkgsCuda.onnxruntime.override { inherit cudaPackages; }
+    else
+      pkgs.onnxruntime;
   # Pin feat/elevenlabs-developer-backend so builds remain reproducible.
   voxtypeSrc = pkgs.fetchFromGitHub {
     owner = "Ramblurr";
@@ -40,14 +46,14 @@ let
         nativeBuildInputs =
           (oldAttrs.nativeBuildInputs or [ ])
           ++ lib.optionals cfg.cudaSupport [
-            pkgs.cudaPackages.cuda_nvcc
+            cudaPackages.cuda_nvcc
           ];
         buildInputs =
           (oldAttrs.buildInputs or [ ])
           ++ [ onnxruntime ]
           ++ lib.optionals cfg.cudaSupport [
-            pkgs.cudaPackages.cudatoolkit
-            pkgs.cudaPackages.cudnn
+            cudaPackages.cudatoolkit
+            cudaPackages.cudnn
           ];
         env = (oldAttrs.env or { }) // {
           ORT_LIB_LOCATION = "${onnxruntime}/lib";
