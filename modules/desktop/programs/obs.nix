@@ -15,7 +15,16 @@ in
     cudaSupport = lib.mkEnableOption "";
   };
   config = mkIf cfg.enable {
-    boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
+    boot.extraModulePackages = [
+      # TODO: Remove override once nixpkgs includes https://github.com/NixOS/nixpkgs/pull/575861.
+      (config.boot.kernelPackages.v4l2loopback.overrideAttrs {
+        preBuild = "";
+        installFlags = [
+          "DEPMOD=true"
+          "INSTALL_MOD_PATH=${builtins.placeholder "out"}"
+        ];
+      })
+    ];
 
     environment.systemPackages = with pkgs; [
       v4l-utils
