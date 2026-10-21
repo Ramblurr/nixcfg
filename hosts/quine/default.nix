@@ -350,7 +350,7 @@ in
       clojure.enable = true;
       janet.enable = true;
       #fennel.enable = true;
-      jetbrains.enable = true;
+      #jetbrains.enable = true;
       node.enable = true;
       python.enable = true;
       random.enable = true;
