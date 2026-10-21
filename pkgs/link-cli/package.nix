@@ -51,8 +51,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     mkdir -p "$out/lib/link-cli/packages/cli"
     cp -r node_modules "$out/lib/link-cli/"
     cp -r packages/cli/{dist,node_modules,package.json} "$out/lib/link-cli/packages/cli/"
-    # The SDK is bundled; pnpm retains these unused workspace links after pruning.
-    rm "$out/lib/link-cli/node_modules/.pnpm/node_modules/@stripe/"{link-sdk,link-typescript-config}
+    # Drop dangling workspace links for packages not included in this CLI-only output.
+    find "$out/lib/link-cli" -type l ! -exec test -e {} \; -delete
     cp README.md LICENSE "$out/lib/link-cli/"
     makeWrapper ${lib.getExe nodejs} "$out/bin/link-cli" \
       --add-flags "$out/lib/link-cli/packages/cli/dist/cli.js" \
