@@ -14,7 +14,7 @@ _final: prev:
     ];
   });
 
-  # TODO: Remove once pyopenjtalk-plus accepts Cython's newer TypeError wording.
+  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/576063 reaches our pin.
   pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
     (_pythonFinal: pythonPrev: {
       pyopenjtalk-plus = pythonPrev.pyopenjtalk-plus.overridePythonAttrs (old: {
