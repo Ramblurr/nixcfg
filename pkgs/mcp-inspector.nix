@@ -4,6 +4,10 @@
   fetchFromGitHub,
   nodejs,
   jq,
+  git,
+  nix,
+  nix-update,
+  writeShellScriptBin,
   ...
 }:
 # Source: https://github.com/andoriyu/flakes/blob/501a8d446c40e914a9e1b27f3cd40484807a6848/packages/mcp-inspector/default.nix
@@ -39,6 +43,22 @@ buildNpmPackage rec {
   npmDepsHash = "sha256-QuG+RLsduOplFEY92sQC4R7w04Pk/nIIvaQaEHYLzXU=";
 
   doCheck = false;
+
+  passthru.updateScript = writeShellScriptBin "update-mcp-inspector" ''
+    set -euo pipefail
+    cd "$(${lib.getExe git} rev-parse --show-toplevel)"
+    export PATH="${
+      lib.makeBinPath [
+        git
+        nix
+        nix-update
+      ]
+    }:$PATH"
+    exec ${lib.getExe nix-update} mcp-inspector --flake \
+      --override-filename pkgs/mcp-inspector.nix \
+      --version=stable --use-github-releases \
+      --url https://github.com/modelcontextprotocol/inspector "$@"
+  '';
 
   meta = with lib; {
     description = "Visual testing tool for MCP servers";

@@ -4,6 +4,10 @@
   fetchFromGitHub,
   makeWrapper,
   nodejs,
+  git,
+  nix,
+  nix-update,
+  writeShellScriptBin,
 }:
 
 let
@@ -58,6 +62,23 @@ buildNpmPackage rec {
       --add-flags "$out/lib/node_modules/pi-web/dist/server/sessiond.js"
 
     runHook postInstall
+  '';
+
+  passthru.updateScript = writeShellScriptBin "update-pi-web" ''
+    set -euo pipefail
+    cd "$(${lib.getExe git} rev-parse --show-toplevel)"
+    export PATH="${
+      lib.makeBinPath [
+        git
+        nix
+        nix-update
+      ]
+    }:$PATH"
+    exec ${lib.getExe nix-update} pi-web --flake \
+      --override-filename pkgs/pi-web/package.nix \
+      --version=stable --use-github-releases \
+      --version-regex '^v(.*)$' \
+      --url https://github.com/jmfederico/pi-web "$@"
   '';
 
   meta = {

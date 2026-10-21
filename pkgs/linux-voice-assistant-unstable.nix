@@ -5,6 +5,10 @@
   python3Packages,
   fetchFromGitHub,
   fetchPypi,
+  git,
+  nix,
+  nix-update,
+  writeShellScriptBin,
   ...
 }:
 
@@ -221,6 +225,23 @@ python3Packages.buildPythonPackage rec {
   doCheck = !stdenv.hostPlatform.isAarch64;
 
   pythonImportsCheck = [ "linux_voice_assistant" ];
+
+  passthru.updateScript = writeShellScriptBin "update-linux-voice-assistant" ''
+    set -euo pipefail
+    cd "$(${lib.getExe git} rev-parse --show-toplevel)"
+    export PATH="${
+      lib.makeBinPath [
+        git
+        nix
+        nix-update
+      ]
+    }:$PATH"
+    exec ${lib.getExe nix-update} linux-voice-assistant-unstable --flake \
+      --override-filename pkgs/linux-voice-assistant-unstable.nix \
+      --version=stable --use-github-releases \
+      --version-regex '^v(.*)$' \
+      --url https://github.com/OHF-Voice/linux-voice-assistant "$@"
+  '';
 
   meta = {
     changelog = "https://github.com/OHF-Voice/linux-voice-assistant/releases/tag/v${version}";

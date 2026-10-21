@@ -7,6 +7,10 @@
   pnpm_10,
   nodejs,
   makeWrapper,
+  git,
+  nix,
+  nix-update,
+  writeShellScriptBin,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ucp-cli";
@@ -56,6 +60,22 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     "$out/bin/ucp" --version | grep -F '${finalAttrs.version}'
     "$out/bin/ucp" --help > /dev/null
     runHook postInstallCheck
+  '';
+
+  passthru.updateScript = writeShellScriptBin "update-ucp-cli" ''
+    set -euo pipefail
+    cd "$(${lib.getExe git} rev-parse --show-toplevel)"
+    export PATH="${
+      lib.makeBinPath [
+        git
+        nix
+        nix-update
+      ]
+    }:$PATH"
+    exec ${lib.getExe nix-update} ucp-cli --flake \
+      --override-filename pkgs/ucp-cli/package.nix \
+      --version=stable --use-github-releases \
+      --url https://github.com/Shopify/ucp-cli "$@"
   '';
 
   meta = {

@@ -1,0 +1,1 @@
+import ../mcp-inspector.nix

@@ -7,6 +7,10 @@
   pnpm_10,
   nodejs,
   makeWrapper,
+  git,
+  nix,
+  nix-update,
+  writeShellScriptBin,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "link-cli";
@@ -62,6 +66,23 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     "$out/bin/link-cli" --version | grep -F '${finalAttrs.version}'
     "$out/bin/link-cli" --help > /dev/null
     runHook postInstallCheck
+  '';
+
+  passthru.updateScript = writeShellScriptBin "update-link-cli" ''
+    set -euo pipefail
+    cd "$(${lib.getExe git} rev-parse --show-toplevel)"
+    export PATH="${
+      lib.makeBinPath [
+        git
+        nix
+        nix-update
+      ]
+    }:$PATH"
+    exec ${lib.getExe nix-update} link-cli --flake \
+      --override-filename pkgs/link-cli/package.nix \
+      --version=stable --use-github-releases \
+      --version-regex '@stripe/link-cli@(.*)' \
+      --url https://github.com/stripe/link-cli "$@"
   '';
 
   meta = {
