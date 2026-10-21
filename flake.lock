@@ -2408,11 +2408,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783668320,
-        "narHash": "sha256-PPo97FCfg8l7JNVYOYFRpDy4JjCKHsQBUO7gIvcksRI=",
+        "lastModified": 1792576653,
+        "narHash": "sha256-Co3CDZ11+xJEvRHenjndWJbdaAxxpQFMRiuK72PZ5q8=",
         "owner": "ramblurr",
         "repo": "nad-api",
-        "rev": "a6a517f9853261bb0c3722723bf2b710b310d76a",
+        "rev": "201b8da3b851c0b1d6d116dfb8253852c0d16bd0",
         "type": "github"
       },
       "original": {
