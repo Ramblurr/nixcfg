@@ -2,6 +2,7 @@
 
 (ns update
   (:require [babashka.cli :as cli]
+            [babashka.fs :as fs]
             [babashka.process :refer [shell sh]]
             [cheshire.core :as json]
             [clojure.string :as str]))
@@ -21,6 +22,7 @@
 
 (defn get-packages-with-update-script []
   (->> (get-all-packages)
+       (filter #(fs/exists? (str "pkgs/" % "/package.nix")))
        (filter has-update-script?)
        vec))
 
