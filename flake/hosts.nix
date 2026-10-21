@@ -34,7 +34,17 @@
           inputs.nixos-nftables-firewall.nixosModules.default
         ];
         quine = {
-          hostOverlays = [ ];
+          hostOverlays = [
+            (final: prev: {
+              # Keep CUDA/ONNX on the cached stack without pinning the NVIDIA driver.
+              # TODO: Revisit with cudaKnownGood in ../overlays/last-known-good.nix once
+              # nixpkgs PR #575979 is included and replacement CUDA/ONNX closures are in Flox.
+              cudaPackages = final.cudaKnownGood.cudaPackages_12_9;
+              inherit (final.cudaKnownGood) cudaPackages_12_9;
+              onnxruntime =
+                if prev.config.cudaSupport then final.cudaKnownGood.onnxruntime else prev.onnxruntime;
+            })
+          ];
           hostExtraModules = [
             inputs.automatic-ripping-machine.nixosModules.default
             inputs.paseo.nixosModules.default

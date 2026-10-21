@@ -3,6 +3,27 @@
 _final: prev:
 
 {
+  # Quine's running CUDA/ONNX stack; these exact outputs are available in Flox.
+  # TODO: wait for https://github.com/NixOS/nixpkgs/pull/575979
+  # (CUDA patchelf workaround) only after verifying the exact CUDA/ONNX outputs and
+  # their full closures are available in https://cache.flox.dev.
+  # Root-cause fix: https://github.com/NixOS/patchelf/pull/672.
+  cudaKnownGood =
+    import
+      (prev.fetchFromGitHub {
+        owner = "ramblurr";
+        repo = "nixpkgs";
+        rev = "1eb89746d905ef0991bd6c776c6e2018adc66fb3";
+        hash = "sha256-6hpi98s1lW47sN846OUQY+WPV25VbdFW03ii3LMwq3M=";
+      })
+      {
+        inherit (prev.stdenv.hostPlatform) system;
+        config = {
+          allowUnfree = true;
+          cudaSupport = true;
+        };
+      };
+
   # Standalone ghostty terminfo derivation that avoids building the full
   # ghostty GUI app (which pulls in gtk4, libadwaita, gstreamer, etc.).
   # Parses the terminfo definition from ghostty's Zig source and compiles
