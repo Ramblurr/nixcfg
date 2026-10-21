@@ -14,13 +14,13 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ucp-cli";
-  version = "0.9.0";
+  version = "0.9.1";
 
   src = fetchFromGitHub {
     owner = "Shopify";
     repo = "ucp-cli";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-X/H2fGqX8eS1tTFsidp4AsWX0IYQAQltjELlM1zqPb0=";
+    hash = "sha256-r3J1QSBUPwOrVQDnFhqGp57T15UeRM/L2CUkYpCdbXo=";
   };
 
   pnpmDeps = fetchPnpmDeps {
