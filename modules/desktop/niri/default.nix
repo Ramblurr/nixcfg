@@ -137,6 +137,8 @@ in
       description = "Unlock KWallet from PAM credentials";
       wantedBy = [ "graphical-session.target" ];
       partOf = [ "graphical-session.target" ];
+      # Niri imports its display environment before its readiness notification.
+      after = [ "niri.service" ];
       serviceConfig = {
         ExecStart = "${pkgs.kdePackages.kwallet-pam}/libexec/pam_kwallet_init";
         Type = "oneshot";
