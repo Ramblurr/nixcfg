@@ -22,7 +22,6 @@
     home.packages = with pkgs; [
       appimage-run
       musescore
-      audacity
       pavucontrol
       brightnessctl
       meld

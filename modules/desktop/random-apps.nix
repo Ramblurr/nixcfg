@@ -31,7 +31,8 @@ in
           xournalpp
           libreoffice
           appimage-run
-          audacity
+          # TODO: re-add audacity after https://github.com/NixOS/nixpkgs/issues/572942
+          #audacity
           pavucontrol
           prusa-slicer
           #eagle
