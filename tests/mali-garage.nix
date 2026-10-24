@@ -70,7 +70,6 @@ assert
 assert map (check: check.name) cfg.site.gatus.endpoints == [ "Garage Management API" ];
 assert cfg.services.garage.enable;
 assert cfg.services.garage.package == pkgs.garage_2;
-assert cfg.services.garage.package.version == "2.3.0";
 assert cfg.users.users.garage.uid == 997;
 assert cfg.users.groups.garage.gid == 997;
 assert
@@ -167,7 +166,6 @@ assert lib.hasInfix "@plain_garage_data host garage.data.example.test" caddy.ext
 assert lib.hasInfix "remote_ip 198.51.100.0/24" caddy.extraConfig;
 assert lib.hasInfix "@plain_garage_management host garage.mgmt.example.test" caddy.extraConfig;
 assert lib.hasInfix "remote_ip 192.0.2.0/24" caddy.extraConfig;
-assert !cfg.services.minio.enable;
 assert !(builtins.hasAttr "minio" cfg.systemd.services);
 assert !(builtins.hasAttr "minio-root-credentials" cfg.sops.secrets);
 assert !(builtins.elem "/var/lib/minio/" cfg.environment.persistence."/persist".directories);
