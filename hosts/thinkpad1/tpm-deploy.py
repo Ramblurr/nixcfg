@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 from pathlib import Path
 from uuid import UUID
 
@@ -98,6 +99,25 @@ def firmware_target(option):
     return UUID(bytes_le=signature), filename, (number, start, size)
 
 
+def check_esp_mount(device):
+    require(
+        device == ESP.stat().st_dev,
+        "mounted ESP differs from firmware boot partition",
+    )
+    mounts = [
+        line.split()
+        for line in Path("/proc/self/mountinfo").read_text().splitlines()
+        if line.split()[4] == str(ESP)
+    ]
+    require(
+        len(mounts) == 1
+        and mounts[0][3] == "/"
+        and mounts[0][mounts[0].index("-") + 1] == "vfat"
+        and "rw" in mounts[0][5].split(","),
+        "mounted ESP must expose a writable FAT partition root without stacked mounts",
+    )
+
+
 def firmware_check():
     def variable(name, guid=GLOBAL_GUID):
         return (EFI / f"{name}-{guid}").read_bytes()[4:]
@@ -133,21 +153,7 @@ def firmware_check():
         "firmware boot target differs from observed direct boot",
     )
     device = (Path("/dev/disk/by-partuuid") / str(partition_id)).stat().st_rdev
-    require(
-        device == ESP.stat().st_dev,
-        "mounted ESP differs from firmware boot partition",
-    )
-    mounts = [
-        line.split()
-        for line in Path("/proc/self/mountinfo").read_text().splitlines()
-        if line.split()[4] == str(ESP)
-    ]
-    require(
-        len(mounts) == 1
-        and mounts[0][3] == "/"
-        and mounts[0][mounts[0].index("-") + 1] == "vfat",
-        "mounted ESP must expose a FAT partition root without stacked mounts",
-    )
+    check_esp_mount(device)
     partition = Path(f"/sys/dev/block/{os.major(device)}:{os.minor(device)}").resolve(
         strict=True
     )
@@ -738,6 +744,7 @@ def prepare_policy(device, state, context, future, authorization_token):
 
 def deploy(action, candidate):
     firmware_check()
+    esp_device = ESP.stat().st_dev
     booted = Path("/run/booted-system").resolve(strict=True)
     old, new = bootspec(booted), bootspec(candidate)
     loader_conf = ESP / "loader/loader.conf"
@@ -1000,6 +1007,9 @@ def deploy(action, candidate):
             ),
             end="",
         )
+        # A systemd package switch can stop boot.mount while reloading devices.
+        run("systemctl", "start", "boot.mount")
+        check_esp_mount(esp_device)
         entry_for(new, default=True)
         menu_backup = {
             path: path.read_bytes()
@@ -1025,6 +1035,9 @@ def deploy(action, candidate):
         # Publish durable EFI files/default before retiring transition-only policies.
         run("sync", "-f", ESP)
     except BaseException:
+        # Never restore files into the bare /boot directory after a failed switch.
+        run("systemctl", "start", "boot.mount")
+        check_esp_mount(esp_device)
         # Restore a bridge covered under both loader versions before reverting EFI.
         for spec in (old, previous_spec):
             for key in ("kernel", "initrd"):
@@ -1083,6 +1096,7 @@ if __name__ == "__main__":
         KeyError,
     ) as error:
         print(f"TPM deployment failed: {error}", file=sys.stderr)
+        traceback.print_exception(error)
         sys.exit(1)
     finally:
         if TIMINGS:

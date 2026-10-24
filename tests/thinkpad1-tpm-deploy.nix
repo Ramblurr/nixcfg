@@ -5,6 +5,15 @@ pkgs.testers.runNixOSTest {
   nodes.machine =
     { lib, pkgs, ... }:
     let
+      # Change the real EFI payload without mixing newer systemd/udev daemons
+      # with the stable NixOS modules (which rely on removed udev lookup paths).
+      bootloaderSystemd = pkgs.systemd.overrideAttrs (old: {
+        postFixup = (old.postFixup or "") + ''
+          if [ -d "$out/lib/systemd/boot/efi" ]; then
+            cp -f ${alternateSystemd}/lib/systemd/boot/efi/*.efi "$out/lib/systemd/boot/efi/"
+          fi
+        '';
+      });
       encryptedConfig = {
         imports = [ ../hosts/thinkpad1/tpm-deploy.nix ];
         boot.initrd.luks.devices = lib.mkVMOverride {
@@ -80,6 +89,8 @@ pkgs.testers.runNixOSTest {
       specialisation.failedInstall.configuration = {
         imports = [ encryptedConfig ];
         boot.loader.systemd-boot.extraInstallCommands = ''
+          # Recovery must remount the real ESP, not write into the bare directory.
+          systemctl stop boot.mount
           echo "deliberate boot installation failure" >&2
           exit 42
         '';
@@ -109,11 +120,11 @@ pkgs.testers.runNixOSTest {
       };
       specialisation.changedBootloader.configuration = {
         imports = [ encryptedConfig ];
-        systemd.package = alternateSystemd;
+        systemd.package = bootloaderSystemd;
       };
       specialisation.failedLoader.configuration = {
         imports = [ encryptedConfig ];
-        systemd.package = alternateSystemd;
+        systemd.package = bootloaderSystemd;
         boot.loader.systemd-boot.extraInstallCommands = ''
           echo "deliberate failure after loader replacement" >&2
           exit 42
@@ -502,6 +513,7 @@ pkgs.testers.runNixOSTest {
               output = machine.succeed(f"{candidate}/thinkpad1-tpm-deploy {action} {candidate}")
               print(f"Artifact deployment {candidate}: {time.monotonic() - started:.2f}s")
               if action == "switch":
+                  machine.succeed("findmnt --mountpoint /boot --types vfat")
                   machine.succeed(f"test $(readlink -f /run/current-system) = {candidate}")
               assert len(snapshot()["luks"]["keyslots"]) <= 8
               contexts = json.loads(machine.succeed("cat /var/lib/thinkpad1-tpm-deploy/state.json"))["contexts"]
