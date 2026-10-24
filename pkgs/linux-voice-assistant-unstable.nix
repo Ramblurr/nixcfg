@@ -188,6 +188,9 @@ python3Packages.buildPythonPackage rec {
     # Read-only data is installed below; writable paths come from CLI arguments.
     substituteInPlace linux_voice_assistant/__main__.py \
       --replace-fail '_REPO_DIR = _MODULE_DIR.parent' '_REPO_DIR = Path("@out@/share/linux-voice-assistant")'
+
+    # Catch patch drift before packaging or starting the VM integration test.
+    ${python3Packages.python.interpreter} -m compileall -q linux_voice_assistant
   '';
 
   postInstall = ''

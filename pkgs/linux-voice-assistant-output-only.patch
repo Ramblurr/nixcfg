@@ -1,11 +1,26 @@
 --- a/linux_voice_assistant/__main__.py
 +++ b/linux_voice_assistant/__main__.py
-@@ -15 +14,0 @@
+@@ -12,7 +12,6 @@
+ from typing import List, Optional, Union
+ 
+ import numpy as np
 -import soundcard as sc
-@@ -244,0 +244,2 @@
+ from aioesphomeapi.api_pb2 import NumberStateResponse  # type: ignore  # pylint: disable=no-name-in-module
+ from getmac import get_mac_address  # type: ignore
+ from pymicro_wakeword import MicroWakeWord, MicroWakeWordFeatures
+@@ -260,6 +259,8 @@
+ 
+     _LOGGER.debug(args)
+     if args.list_input_devices:
 +        import soundcard as sc
 +
-@@ -317,10 +318,14 @@
+         print("Audio Input devices:")
+         print("=" * 13)
+         for idx, mic in enumerate(sc.all_microphones()):
+@@ -329,16 +330,20 @@
+     args.download_dir = Path(args.download_dir)
+     args.download_dir.mkdir(parents=True, exist_ok=True)
+ 
 -    # Resolve microphone
 -    if args.audio_input_device is not None:
 -        try:
@@ -30,7 +45,13 @@
 +            mic = sc.get_microphone(args.audio_input_device)
 +        else:
 +            mic = sc.default_microphone()
-@@ -526,6 +531,8 @@
+ 
+     # Load available wake words
+     wake_word_dirs = [Path(ww_dir) for ww_dir in args.wake_word_dir]
+@@ -538,12 +543,14 @@
+     # ------------------------------------------------------------------
+     # Audio processing thread
+     # ------------------------------------------------------------------
 -    process_audio_thread = threading.Thread(
 -        target=process_audio,
 -        args=(state, mic, args.audio_input_block_size),
@@ -45,9 +66,18 @@
 +            daemon=True,
 +        )
 +        process_audio_thread.start()
-@@ -570,2 +577,3 @@
+ 
+     # Auto discovery (zeroconf, mDNS)
+     discovery = HomeAssistantZeroconf(
+@@ -582,8 +589,9 @@
+     except KeyboardInterrupt:
+         pass
+     finally:
 -        state.audio_queue.put_nowait(None)
 -        process_audio_thread.join()
 +        if process_audio_thread is not None:
 +            state.audio_queue.put_nowait(None)
 +            process_audio_thread.join()
+         if peripheral_api is not None:
+             await peripheral_api.stop()
+ 
