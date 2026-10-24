@@ -60,6 +60,12 @@ in
         home.activation.piSettings = hm.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${syncSettings}
         '';
+        xdg.configFile."pi/agent/pi-fff.json".text = builtins.toJSON {
+          # FFF replaces find/grep and supplies @ file completion.
+          mode = "override";
+          enableHomeDirScanning = false;
+          enableFsRootScanning = false;
+        };
         home.packages = [ pi ];
       };
   };

@@ -28,7 +28,7 @@ let
       pkgs.brepl-balance
       #pkgs.pi-sexp-edit
       #pkgs.pi-nrepl
-      pkgs.pi-hashline-edit-pro
+      #pkgs.pi-hashline-edit-pro
       pkgs.plannotator-pi-extension
       #pkgs.epimetheus
       #pkgs.pi-mcp-adapter
@@ -37,6 +37,7 @@ let
       #pkgs.pi-matrix-relay
       pkgs.pi-link
       pkgs.pi-lens
+      pkgs.pi-fff
       #pkgs.pi-goal-x
     ];
     npmCommand = [ "pnpm" ];
