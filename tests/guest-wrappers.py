@@ -148,7 +148,7 @@ class Wrappers(unittest.TestCase):
 
     def test_mixed_build(self):
         commands = self.run_wrapper(BUILD, "host", "guest")
-        self.assertEqual(commands[-1], ["nom", "build", "--no-link", "--print-out-paths", "--show-trace",
+        self.assertEqual(commands[-1], ["nom", "build", "--keep-going", "--no-link", "--print-out-paths", "--show-trace",
                          ".#nixosConfigurations.host.config.system.build.toplevel",
                          ".#nixosConfigurations.guest.config.microvm.declaredRunner"])
         self.assertFalse(any(c[0] == "ssh" for c in commands))
