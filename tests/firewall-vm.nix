@@ -101,8 +101,14 @@ pkgs.testers.runNixOSTest {
         machine.succeed("systemctl reload nftables.service")
         machine.succeed(published)
 
-    with subtest("legacy deletion state needs one publication repair, then reloads stay safe"):
-        machine.succeed("printf 'flush ruleset\\n' > /var/lib/nftables/deletions.nft")
+    with subtest("legacy persistent deletion state is no longer consumed"):
+        machine.succeed("mkdir -p /var/lib/nftables; printf 'flush ruleset\\n' > /var/lib/nftables/deletions.nft")
+        machine.succeed("systemctl reload nftables.service")
+        machine.succeed(published)
+        assert machine.succeed("podman inspect --format '{{.Id}}' probe").strip() == container_id
+
+    with subtest("stale runtime deletion state needs one publication repair, then reloads stay safe"):
+        machine.succeed("printf 'flush ruleset\\n' > /run/nftables/deletions.nft")
         machine.succeed("systemctl reload nftables.service")
         machine.fail(published)
         machine.succeed("podman network reload probe")
