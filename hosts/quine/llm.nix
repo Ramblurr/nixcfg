@@ -1,15 +1,8 @@
 {
   pkgs,
-  config,
-  lib,
   inputs,
   ...
 }:
-let
-  tailscaleIp4 = "100.93.18.79";
-  primAddress = "10.9.4.3";
-  homeDomain = config.repo.secrets.global.domain.home;
-in
 {
   environment.systemPackages = [ inputs.smolvm.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 

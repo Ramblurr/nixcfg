@@ -41,8 +41,7 @@
               # nixpkgs PR #575979 is included and replacement CUDA/ONNX closures are in Flox.
               cudaPackages = final.cudaKnownGood.cudaPackages_12_9;
               inherit (final.cudaKnownGood) cudaPackages_12_9;
-              onnxruntime =
-                if prev.config.cudaSupport then final.cudaKnownGood.onnxruntime else prev.onnxruntime;
+              onnxruntime = if prev.config.cudaSupport then final.cudaKnownGood.onnxruntime else prev.onnxruntime;
             })
           ];
           hostExtraModules = [
