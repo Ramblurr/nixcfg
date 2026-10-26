@@ -45,7 +45,6 @@
       ];
       kernelModules = [ ];
       systemd = {
-        enable = true;
         # No raw /dev/mapper/cryptkey: systemd must see a regular key file
         # before ZFS import. See work item 004 and the quine/mali migrations.
         services.peirce-zfs-key = {

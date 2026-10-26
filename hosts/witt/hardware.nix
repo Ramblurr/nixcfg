@@ -55,7 +55,7 @@
         "sd_mod"
       ];
       kernelModules = [ ];
-      postDeviceCommands = lib.mkAfter ''
+      systemd.services.rollback.script = lib.mkForce ''
         zfs rollback -r rpool/encrypted/local/root@blank && \
         echo "rollback complete"
       '';

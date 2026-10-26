@@ -205,7 +205,7 @@ in
 
     boot = {
       loader.grub.enable = false;
-      initrd.systemd.enable = true;
+      initrd.systemd.enable = lib.mkIf (lib.versionOlder config.system.nixos.release "26.11") true;
       initrd.kernelModules = [
         # required for net.netfilter.nf_conntrack_max appearing in sysfs early at boot
         "nf_conntrack"

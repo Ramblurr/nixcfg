@@ -42,7 +42,11 @@
         "sdhci_pci"
       ];
       kernelModules = [ ];
-      postDeviceCommands = lib.mkAfter ''
+      systemd.services.zfs-import-rpool = {
+        requires = [ "dev-disk-by\\x2dpartlabel-cryptkey.device" ];
+        after = [ "dev-disk-by\\x2dpartlabel-cryptkey.device" ];
+      };
+      systemd.services.rollback.script = lib.mkForce ''
         zfs rollback -r rpool/encrypted/local/root@blank && \
         zfs rollback -r rpool/encrypted/vms@blank && \
         echo "rollback complete"

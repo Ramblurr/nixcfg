@@ -107,7 +107,6 @@
       };
 
       systemd = {
-        enable = true;
 
         mounts = [
           {

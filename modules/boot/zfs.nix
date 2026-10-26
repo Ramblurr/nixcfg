@@ -68,19 +68,18 @@ in
         plymouth.enable = cfg.usePlymouth;
         initrd = {
           supportedFilesystems = [ "zfs" ];
-          # Keep the legacy initrd default here; hosts that opt into systemd initrd use the rollback service below.
-          systemd.enable = lib.mkDefault false;
-          systemd.services.rollback = mkIf config.boot.initrd.systemd.enable {
+          # Scripted initrd was removed in NixOS 26.11; stable hosts opt in separately.
+          systemd.services.rollback = lib.mkIf config.modules.impermanence.enable {
             description = "Rollback ZFS datasets to a pristine state";
-            wantedBy = [ "initrd.target" ];
-            after = [ "zfs-import.target" ];
+            requiredBy = [ "sysroot.mount" ];
+            requires = [ "zfs-import-${cfg.rootPool}.service" ];
+            after = [ "zfs-import-${cfg.rootPool}.service" ];
             before = [ "sysroot.mount" ];
-            path = with pkgs; [ zfs ];
+            path = [ config.boot.zfs.package ];
             unitConfig.DefaultDependencies = "no";
             serviceConfig.Type = "oneshot";
             #cryptsetup close /dev/mapper/cryptkey && \
-            script = mkIf config.modules.impermanence.enable (
-              if cfg.encrypted then
+            script = if cfg.encrypted then
                 ''
                   zfs rollback -r ${cfg.rootPool}/encrypted/local/root@blank && \
                   zfs rollback -r ${cfg.rootPool}/encrypted/local/home@blank && \
@@ -91,21 +90,12 @@ in
                   zfs rollback -r ${cfg.rootPool}/local/root@blank && \
                   zfs rollback -r ${cfg.rootPool}/local/home@blank && \
                   echo "rollback complete"
-                ''
-            );
+                '';
           };
         };
         extraModulePackages = [ ];
         kernelParams = mkIf cfg.skipMitigations [ "mitigations=off" ];
       };
-
-      ## LEGACYBOOT - we use stage-1/systemd so have a fallback ###############
-      #specialisation."legacyboot" = lib.mkIf (config.boot.initrd.systemd.enable) {
-      #  inheritParentConfig = true;
-      #  configuration = {
-      #    boot.initrd.systemd.enable = lib.mkForce false;
-      #  };
-      #};
 
       services.fwupd.enable = true;
       services.udisks2.enable = true;
