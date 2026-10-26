@@ -16,12 +16,23 @@ caddy.overrideAttrs (_: {
   vendorHash = "sha256-tASojfW7FJb10IuifF9zLBARxZ0lkhP9F7mRO48uYRk=";
   subPackages = [ "." ];
 
+  # Use only system CAs, matching nixpkgs, but patch our vendored Caddy source.
+  # https://github.com/NixOS/nixpkgs/commit/43a7ae3f9e374f1fde09022c81d4fb1326a67f60
+  postConfigure = ''
+    chmod u+w vendor/github.com/caddyserver/caddy/v2/cmd
+    rm vendor/github.com/caddyserver/caddy/v2/cmd/x509rootsfallback.go
+  '';
+
   # Retain nixpkgs's packaging, version hook and build tags; verify our plugins too.
   doInstallCheck = true;
   installCheckPhase = ''
     runHook preInstallCheck
 
     $out/bin/caddy build-info > build-info
+    if grep -Fq 'golang.org/x/crypto/x509roots/fallback' build-info; then
+      echo "Caddy must use system CAs, not the embedded fallback bundle" >&2
+      exit 1
+    fi
     for module in github.com/caddyserver/caddy/v2 github.com/caddy-dns/desec github.com/greenpau/caddy-security; do
       version=$(awk -v module="$module" '$1 == module { print $2 }' ${./src/go.mod})
       test -n "$version"
