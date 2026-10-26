@@ -2,8 +2,43 @@
 let
   inherit (pkgs) lib;
   diskConfig = import ../hosts/peirce/disk-config.nix { inherit lib pkgs; };
+  # toFile needs materialized store references, including with lazy source trees.
+  diskoSource = builtins.path {
+    path = inputs.disko-unstable;
+    name = "disko-test-source";
+  };
+  # TODO: Remove this harness adaptation once Disko supports the removed initrd option.
+  # Related upstream issue: https://github.com/nix-community/disko/issues/1303
+  # Rewrite in memory to avoid import-from-derivation during check evaluation.
+  diskoTestLib =
+    import
+      (builtins.toFile "disko-systemd-initrd-tests.nix" (
+        lib.replaceStrings
+          [
+            "../."
+            "../module.nix"
+            "config.boot.initrd.systemd.enable"
+          ]
+          [
+            "${diskoSource}/."
+            "${diskoSource}/module.nix"
+            ''(lib.versionAtLeast config.system.nixos.release "26.11" || config.boot.initrd.systemd.enable)''
+          ]
+          (builtins.readFile "${diskoSource}/lib/tests.nix")
+      ))
+      {
+        inherit lib;
+        makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
+        eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
+        qemu-common-lib =
+          pkgs:
+          import (pkgs.path + "/nixos/lib/qemu-common.nix") {
+            inherit lib;
+            inherit (pkgs) stdenv;
+          };
+      };
 in
-inputs.disko-unstable.lib.testLib.makeDiskoTest {
+diskoTestLib.makeDiskoTest {
   inherit pkgs;
   name = "peirce-mirrored-boot";
   disko-config = diskConfig;
