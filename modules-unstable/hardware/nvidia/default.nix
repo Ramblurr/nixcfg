@@ -107,28 +107,13 @@ in
         inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) nvidia;
       in
       {
-        package =
-          (config.boot.kernelPackages.nvidiaPackages.mkDriver {
-            inherit (nvidia) version;
-            sha256_64bit = nvidia.src.outputHash;
-            openSha256 = nvidia.open.src.outputHash;
-            useSettings = false;
-            usePersistenced = false;
-          }).overrideAttrs
-            (old: {
-              # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/576397 reaches our pin.
-              # Split the RPATH/interpreter edits to avoid corrupting nvidia-smi's ELF mappings.
-              builder = pkgs.runCommand "nvidia-builder.sh" { nativeBuildInputs = [ pkgs.patch ]; } ''
-                cp ${old.builder} "$out"
-                chmod u+w "$out"
-                patch "$out" ${
-                  pkgs.fetchurl {
-                    url = "https://github.com/NixOS/nixpkgs/commit/70ec0449ae1b034051030931d0163a4790738266.patch";
-                    hash = "sha256-2L2g/dio8e4pU3vT2evscgE8Bo4UZKmWw/SlJ1TmIWo=";
-                  }
-                }
-              '';
-            });
+        package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+          inherit (nvidia) version;
+          sha256_64bit = nvidia.src.outputHash;
+          openSha256 = nvidia.open.src.outputHash;
+          useSettings = false;
+          usePersistenced = false;
+        };
         # Power management is nearly always required to get nvidia GPUs to
         # behave on suspend, due to firmware bugs.
         powerManagement.enable = true;
