@@ -51,7 +51,7 @@ pkgs.testers.runNixOSTest {
 
   testScript = ''
     start_all()
-    machine.wait_for_unit("postgresql.service")
+    machine.wait_for_unit("postgresql.target")
     sql = "sudo -u postgres psql -p 5437 -d databasus -v ON_ERROR_STOP=1 -c "
     machine.succeed(sql + '"CREATE TABLE probe (value integer); INSERT INTO probe VALUES (1); CHECKPOINT;"')
     invocation = machine.succeed("systemctl show postgresql -p InvocationID --value").strip()
