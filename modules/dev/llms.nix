@@ -66,7 +66,8 @@ in
       enable = true;
       package = pkgs.ollama-cuda;
     };
-    services.open-webui.enable = cfg.ollama.enable;
+    # TODO: Re-enable when ChromaDB's PostHog dependency is fixed: https://github.com/NixOS/nixpkgs/pull/578265
+    services.open-webui.enable = false;
     services.open-webui.port = 11180;
     myhm = {
       home.sessionVariables = {
