@@ -53,17 +53,6 @@ _final: prev:
     ];
   };
 
-  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/576411 reaches our pin.
-  # Qt 6.12's generated QML code must be excluded from MuseScore's unity builds.
-  musescore = prev.musescore.overrideAttrs (old: {
-    patches = (old.patches or [ ]) ++ [
-      (prev.fetchurl {
-        url = "https://raw.githubusercontent.com/NixOS/nixpkgs/1fb46d447369b06d38d12325b4bca4310ad2cfe5/pkgs/by-name/mu/musescore/qmlcachegen-unity-build.diff";
-        hash = "sha256-cYZ5bh+BV81M+ycG2YUmRifBaFZMBF2LCf7+UpIWxT8=";
-      })
-    ];
-  });
-
   # Quine's running CUDA/ONNX stack; these exact outputs are available in Flox.
   # TODO: wait for https://github.com/NixOS/nixpkgs/pull/575979
   # (CUDA patchelf workaround) only after verifying the exact CUDA/ONNX outputs and
