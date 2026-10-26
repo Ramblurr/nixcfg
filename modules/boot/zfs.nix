@@ -79,7 +79,8 @@ in
             unitConfig.DefaultDependencies = "no";
             serviceConfig.Type = "oneshot";
             #cryptsetup close /dev/mapper/cryptkey && \
-            script = if cfg.encrypted then
+            script =
+              if cfg.encrypted then
                 ''
                   zfs rollback -r ${cfg.rootPool}/encrypted/local/root@blank && \
                   zfs rollback -r ${cfg.rootPool}/encrypted/local/home@blank && \
