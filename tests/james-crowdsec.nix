@@ -112,9 +112,13 @@ let
     }
   ];
 in
-assert cfg.services.crowdsec.settings.general.api.server.enable == false;
+assert cfg.services.crowdsec.settings.config.api.server.enable == false;
+assert cfg.services.crowdsec.settings.config.config_paths.data_dir == "/var/lib/crowdsec/state";
 assert
-  cfg.services.crowdsec.settings.lapi.credentialsFile == "/run/secrets/crowdsec/lapiCredentials";
+  cfg.services.crowdsec.settings.config.db_config.db_path == "/var/lib/crowdsec/state/crowdsec.db";
+assert
+  cfg.services.crowdsec.settings.config.api.client.credentials_path
+  == "/run/secrets/crowdsec/lapiCredentials";
 assert builtins.hasAttr "crowdsec/lapi-password" cfg.sops.secrets;
 assert builtins.hasAttr "crowdsec/lapi-login" cfg.sops.secrets;
 assert builtins.hasAttr "crowdsec/lapi-url" cfg.sops.secrets;
@@ -130,7 +134,7 @@ assert
     login: @CROWDSEC_LAPI_LOGIN@
     password: @CROWDSEC_LAPI_PASSWORD@
   '';
-assert cfg.services.crowdsec.localConfig.acquisitions == expectedAcquisitions;
+assert cfg.services.crowdsec.settings.acquisitions == expectedAcquisitions;
 assert
   cfg.services.crowdsec.hub.collections == [
     "crowdsecurity/linux"

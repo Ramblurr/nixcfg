@@ -64,7 +64,7 @@ in
     hub.parsers = [
       "crowdsecurity/iptables-logs"
     ];
-    localConfig.acquisitions =
+    settings.acquisitions =
       (lib.optionals config.services.openssh.enable [
         {
           source = "journalctl";
@@ -79,7 +79,7 @@ in
           labels.type = "kernel";
         }
       ];
-    settings.general = {
+    settings.config = {
       api.server = {
         enable = true;
         # Listen on loopback and addams' Tailscale IPv4 so local consumers and
@@ -99,8 +99,8 @@ in
     };
     # Required while api.server.enable = true; otherwise upstream setup script
     # attempts to stringify a null credentials path.
-    settings.lapi.credentialsFile = lapiCredentialsPath;
-    settings.capi.credentialsFile = capiCredentialsPath;
+    settings.config.api.client.credentials_path = lapiCredentialsPath;
+    settings.config.api.server.online_client.credentials_path = capiCredentialsPath;
   };
 
   system.activationScripts.crowdsecParserCleanup.text = ''
@@ -118,7 +118,7 @@ in
     after = [ "dnsdist.service" ];
     requires = [ "dnsdist.service" ];
     serviceConfig = {
-      Restart = "on-failure";
+      Restart = lib.mkForce "on-failure";
       RestartSec = lib.mkForce "5s";
       RestartSteps = 5;
       RestartMaxDelaySec = "60s";

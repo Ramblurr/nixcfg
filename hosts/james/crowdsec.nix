@@ -27,14 +27,13 @@ in
 
   services.crowdsec = {
     enable = true;
-    openFirewall = false;
     autoUpdateService = true;
     hub.collections = [
       "crowdsecurity/linux"
     ]
     ++ lib.optionals config.services.openssh.enable [ "crowdsecurity/sshd" ]
     ++ webCollections;
-    localConfig.acquisitions =
+    settings.acquisitions =
       (lib.optionals config.services.openssh.enable [
         {
           source = "journalctl";
@@ -56,7 +55,7 @@ in
           labels.type = "caddy";
         }
       ];
-    localConfig.parsers.s02Enrich = [
+    settings.parsers.s02Enrich = [
       {
         name = "local/whitelist-trusted-networks";
         description = "Whitelist site LAN and Tailscale source ranges.";
@@ -66,11 +65,13 @@ in
         };
       }
     ];
-    settings.general = {
+    settings.config = {
+      # Preserve the existing state directory across the upstream module migration.
+      config_paths.data_dir = "/var/lib/crowdsec/state";
       api.server.enable = false;
       cscli.output = "human";
     };
-    settings.lapi.credentialsFile = config.sops.templates."crowdsec/lapiCredentials".path;
+    settings.config.api.client.credentials_path = config.sops.templates."crowdsec/lapiCredentials".path;
   };
 
   # The module uses content-addressed filenames for local parsers, so remove
@@ -102,7 +103,7 @@ in
       after = [ "tailscaled.service" ];
       wants = [ "tailscaled.service" ];
       serviceConfig = {
-        Restart = "on-failure";
+        Restart = lib.mkForce "on-failure";
         RestartSec = lib.mkForce "5s";
         RestartSteps = 5;
         RestartMaxDelaySec = "60s";
