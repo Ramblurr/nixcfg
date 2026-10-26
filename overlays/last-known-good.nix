@@ -5,13 +5,22 @@ _final: prev:
 {
   # TODO: Remove once nixpkgs includes https://github.com/maralorn/nix-output-monitor/pull/321.
   nix-output-monitor = prev.nix-output-monitor.overrideAttrs (old: {
-    patches = (old.patches or [ ]) ++ [
-      (prev.fetchpatch {
-        url = "https://github.com/maralorn/nix-output-monitor/compare/c40cb120262d9e9b1b988898708b124f6ffc0913..d48ff7935da72a5a5764ee8c5358d38417b0f337.diff";
-        stripLen = 1;
-        hash = "sha256-JPC3AXycs5oTXe9J1g7DWNBEYYr60AM78R3sajP9cgo=";
-      })
-    ];
+    patches =
+      (old.patches or [ ])
+      ++
+        prev.lib.optionals
+          (
+            !(builtins.any (
+              patch: prev.lib.hasInfix "d48ff7935da72a5a5764ee8c5358d38417b0f337" (toString patch)
+            ) (old.patches or [ ]))
+          )
+          [
+            (prev.fetchpatch {
+              url = "https://github.com/maralorn/nix-output-monitor/compare/c40cb120262d9e9b1b988898708b124f6ffc0913..d48ff7935da72a5a5764ee8c5358d38417b0f337.diff";
+              stripLen = 1;
+              hash = "sha256-JPC3AXycs5oTXe9J1g7DWNBEYYr60AM78R3sajP9cgo=";
+            })
+          ];
   });
 
   # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575319 reaches our pin.
