@@ -60,6 +60,14 @@ in
         home.activation.piSettings = hm.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           ${syncSettings}
         '';
+        xdg.configFile."pi/agent/models.json".text = builtins.toJSON {
+          providers = {
+            anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
+            typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
+            openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
+            openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
+          };
+        };
         xdg.configFile."pi/agent/pi-fff.json".text = builtins.toJSON {
           # FFF replaces find/grep and supplies @ file completion.
           mode = "override";
