@@ -25,6 +25,7 @@ let
       #pkgs.pi-ghost
       "${home}/src/github.com/ramblurr/pi-extensions/handoff"
       "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
+      "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
       pkgs.brepl-balance
       #pkgs.pi-sexp-edit
       #pkgs.pi-nrepl
