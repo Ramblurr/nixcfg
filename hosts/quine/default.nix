@@ -87,10 +87,6 @@ in
     owner = username;
     mode = "0400";
   };
-  sops.secrets.paseo_password = {
-    owner = username;
-    mode = "0400";
-  };
   sops.templates."nix.conf".owner = username;
   sops.templates."nix.conf".content = ''
     access-tokens = github.com=${config.sops.placeholder."github_token"}
@@ -360,7 +356,6 @@ in
       random.enable = true;
       llms.enable = true;
       llms.ollama.enable = true;
-      llms.paseo.passwordFile = config.sops.secrets.paseo_password.path;
     };
 
     editors = {

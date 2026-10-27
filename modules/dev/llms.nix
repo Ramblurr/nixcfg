@@ -23,11 +23,6 @@ let
     llm-openai-plugin = true;
     llm-pdf-to-images = true;
   };
-  #paseo-cli = inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  #paseo-wrapper = pkgs.writeShellScriptBin "paseo" ''
-  #  export PASEO_PASSWORD="$(<${cfg.paseo.passwordFile})"
-  #  exec ${paseo-cli}/bin/paseo "$@"
-  #'';
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
       echo "usage: $(basename "$0") URL [FILENAME]"
@@ -55,11 +50,6 @@ in
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
-    paseo.passwordFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "File containing the Paseo CLI password.";
-    };
   };
   config = lib.mkIf cfg.enable {
     services.ollama = lib.mkIf cfg.ollama.enable {
@@ -80,7 +70,6 @@ in
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
         PLANNOTATOR_SHARE = "disabled";
-        PASEO_HOME = "$XDG_STATE_HOME/paseo";
         UCP_HOME = "$XDG_STATE_HOME/ucp";
         SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
         SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
@@ -107,7 +96,6 @@ in
           #jujutsu
           #mcp-inspector
           llmWithPlugins
-          #inputs.paseo.packages.${pkgs.stdenv.hostPlatform.system}.desktop
           llm-agents.opencode
           llm-agents.opencode-desktop
           llm-agents.opencode2
@@ -140,9 +128,6 @@ in
           nushell
           llm-agents.nono
         ]
-        #++ lib.optionals (cfg.paseo.passwordFile != null) [
-        #  paseo-wrapper
-        #]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda
         ];

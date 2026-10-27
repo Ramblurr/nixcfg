@@ -129,7 +129,6 @@ in
   modules.services.ingress-home-assistant.enable = true;
   modules.services.ingress-octoprint.enable = true;
   modules.services.ingress-nixbot.enable = true;
-  modules.services.ingress-paseo.enable = true;
   modules.services.ingress-phoniebox.enable = true;
 
   inherit (config.repo.secrets.site) site;
