@@ -14,7 +14,10 @@
 let
   version = "0.9.33-unstable-2026-08-27";
   rev = "bd40aee84dc4c4037c1f348eb826a11d2d033f9f";
-  playwrightVersion = "1.61.0";
+  # Java 1.64.0 and JS 1.64.1 use the same browser revisions.
+  # https://github.com/microsoft/playwright-java/releases/tag/v1.64.0
+  playwrightBrowserVersion = "1.64.1";
+  playwrightVersion = "1.64.0";
   driverPlatform =
     if stdenv.hostPlatform.isLinux then
       if stdenv.hostPlatform.isAarch64 then "linux-arm64" else "linux"
@@ -31,6 +34,9 @@ let
   src = runCommand "spel-${version}-source" { } ''
     cp -r ${upstreamSrc}/. $out
     chmod -R u+w $out
+    substituteInPlace $out/deps.edn \
+      --replace-fail 'com.microsoft.playwright/playwright {:mvn/version "1.61.0"}' \
+        'com.microsoft.playwright/playwright {:mvn/version "${playwrightVersion}"}'
     cp ${./deps.lock.json} $out/deps.lock.json
   '';
   lockerPkgs = pkgs // {
@@ -41,6 +47,8 @@ let
     lockfile = "deps.lock.json";
   };
 in
+assert lib.assertMsg (playwright-driver.version == playwrightBrowserVersion)
+  "Spel's Playwright ${playwrightVersion} bindings require the validated ${playwrightBrowserVersion} browser registry";
 stdenv.mkDerivation {
   pname = "spel";
   inherit version src;

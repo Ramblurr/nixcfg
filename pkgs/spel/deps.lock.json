@@ -268,26 +268,26 @@
     "com/jcraft/jsch/0.1.55/jsch-0.1.55.pom": {
       "sha256": "747c748d1f01071ea3d0f8476f68d4a823a313b772701d8551c93eaaa57f9f99"
     },
-    "com/microsoft/playwright/driver-bundle/1.61.0/driver-bundle-1.61.0.jar": {
-      "sha256": "580bcdb873414c8f710b2ded90f3d0022c104b8a50296069b365ea45fbe27f99"
+    "com/microsoft/playwright/driver-bundle/1.64.0/driver-bundle-1.64.0.jar": {
+      "sha256": "c04dce9bd95e758c2c5784dfb9b508ba8f4b7601aa1a4f738ae269e5c0bd49a9"
     },
-    "com/microsoft/playwright/driver-bundle/1.61.0/driver-bundle-1.61.0.pom": {
-      "sha256": "4898d10ece47ffadbd7a1f3c4ef7fdc8f5839042393af021795fad040c2b2c49"
+    "com/microsoft/playwright/driver-bundle/1.64.0/driver-bundle-1.64.0.pom": {
+      "sha256": "48f53e7ca7f2f108b255cda0276d25f663dc3bf3e3f03e7c8ebe5419414374a2"
     },
-    "com/microsoft/playwright/driver/1.61.0/driver-1.61.0.jar": {
-      "sha256": "3b110c01734e64cf312684c6114b557efb2b81e6b7333c14e910887522c86d90"
+    "com/microsoft/playwright/driver/1.64.0/driver-1.64.0.jar": {
+      "sha256": "116badd0cfc74d85bc58fef74fe492e63da72035d4ec8569ad88188332b839c5"
     },
-    "com/microsoft/playwright/driver/1.61.0/driver-1.61.0.pom": {
-      "sha256": "1b7438f7737e1e6ae28e9506226aee973047ed1197bc99e8f4bd6c35da46079f"
+    "com/microsoft/playwright/driver/1.64.0/driver-1.64.0.pom": {
+      "sha256": "6305228b5c176607a35c01e0d638eebfe37c1c3278dc7c31a3250af0981febed"
     },
-    "com/microsoft/playwright/parent-pom/1.61.0/parent-pom-1.61.0.pom": {
-      "sha256": "7947ddd2c79aa50c9f471354424745e1f451e789ddd5205d550f86b255ceacb5"
+    "com/microsoft/playwright/parent-pom/1.64.0/parent-pom-1.64.0.pom": {
+      "sha256": "e54855c42e251d3931d8a27070cf12518a37e4d2e0ce148dcbb31ba201480b0a"
     },
-    "com/microsoft/playwright/playwright/1.61.0/playwright-1.61.0.jar": {
-      "sha256": "0b48ae42c24c999c12c29486c50c40f67bfd40437e036f26fadd70d84f91bc15"
+    "com/microsoft/playwright/playwright/1.64.0/playwright-1.64.0.jar": {
+      "sha256": "b4a40f4af4b8e0b8aec0b461c2f475aed6a5e6693bdbf65de2fee6d31cd17c7b"
     },
-    "com/microsoft/playwright/playwright/1.61.0/playwright-1.61.0.pom": {
-      "sha256": "ea625e1aa8ffa65906ab35a5c66ad2ebed26ba1397794bb467be83d957111326"
+    "com/microsoft/playwright/playwright/1.64.0/playwright-1.64.0.pom": {
+      "sha256": "3c11c81b2c5ad4a10f393a2529c8b6d24d6695ff4ca986027051054bfd8c996a"
     },
     "com/noahbogart/sinker/0.1.0/sinker-0.1.0.jar": {
       "sha256": "2598c11cd0645e677e305c1e16eecd3cdce5067252ec552c1b87953e3cad2460"
@@ -948,6 +948,12 @@
     },
     "org/codehaus/plexus/plexus/8/plexus-8.pom": {
       "sha256": "ffa349db04e7abf65885bdc5a2062f4197c0ff9d3f1f4e2aa5720b77233f742c"
+    },
+    "org/jspecify/jspecify/1.0.1/jspecify-1.0.1.jar": {
+      "sha256": "070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66"
+    },
+    "org/jspecify/jspecify/1.0.1/jspecify-1.0.1.pom": {
+      "sha256": "55b38bf1a7b1d8ea518cf2f4f3ae9aaa236e61bbf0b6bd31ffb49753a059dd5e"
     },
     "org/junit/junit-bom/5.10.2/junit-bom-5.10.2.pom": {
       "sha256": "169dd904a4b0f6520cffe658cc62292bfe9f3c14a989fa92120724cde43a9968"

@@ -95,6 +95,9 @@ inputs: [
       spel = prev.callPackage ./spel/package.nix {
         clojureNixLocker = inputs.clojure-nix-locker;
         pkgs = prev;
+        # Keep the Java bindings paired with the same browsers on both channels.
+        playwright-driver =
+          inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system}.playwright-driver;
       };
       spdx-util = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./spdx-util/package.nix { };
       nixbot-cli = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nixbot-cli/package.nix { };
