@@ -64,6 +64,7 @@ in
           providers = {
             anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
             typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
+            subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
             openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
             openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
           };
