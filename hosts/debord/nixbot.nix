@@ -58,6 +58,10 @@ let
   '';
 in
 {
+  # Keep persistent state ownership stable when impermanent root rebuilds accounts.
+  users.users.nixbot.uid = 996;
+  users.groups.nixbot.gid = 997;
+
   assertions = [
     {
       assertion = config.modules.services.onepassword-systemd-credentials.enable;
@@ -261,6 +265,8 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
       User = "nixbot";
+      StateDirectory = "nixbot";
+      StateDirectoryMode = "0700";
       ExecStart = pkgs.writeShellScript "nixbot-ssh-keygen" ''
         if [ ! -f /var/lib/nixbot/.ssh/id_ed25519 ]; then
           mkdir -p /var/lib/nixbot/.ssh

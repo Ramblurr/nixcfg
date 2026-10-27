@@ -11,6 +11,8 @@ let
   stateDir = "/var/lib/opencloud-home-vm";
 in
 {
+  # The existing VM disk keeps its numeric owner across impermanent-root boots.
+  users.users.microvm.uid = 995;
   microvm.vms.opencloud-home.evaluatedConfig = nodes.opencloud-home;
 
   modules = {
@@ -40,7 +42,10 @@ in
       };
     };
   };
-  systemd.tmpfiles.rules = [ "d ${stateDir} 0700 microvm kvm - -" ];
+  systemd.tmpfiles.rules = [
+    "d ${stateDir} 0700 microvm kvm - -"
+    "z ${stateDir}/var.img 0644 microvm kvm - -"
+  ];
   assertions = [
     {
       assertion = config.modules.services.onepassword-systemd-credentials.enable;
