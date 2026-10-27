@@ -6,6 +6,11 @@
       # Import our overlays once
       ourOverlays = import ../pkgs/default.nix inputs;
 
+      floxPkgs = import inputs.nixpkgs-flox {
+        inherit system;
+        config.allowUnfree = true;
+      };
+
       # Extract package names from all overlays
       getOverlayPackages =
         overlay:
@@ -52,7 +57,7 @@
         )
         // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
           immich-pascal-validation = pkgs.callPackage ../tests/immich-pascal-tools.nix { };
-          pascal-reranker-python = pkgs.callPackage ../pkgs/pascal-reranker-python.nix { };
+          pascal-reranker-python = floxPkgs.callPackage ../pkgs/pascal-reranker-python.nix { };
         };
 
       # Optionally, also export as legacyPackages if you want to expose

@@ -74,6 +74,8 @@
     # do not follow nixpkgs: use nixos-raspberrypi's nixpkgs for their cache
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi";
     nixpkgs.url = "github:ramblurr/nixpkgs/channel/personal-unstable";
+    # Independent ML package set for matching Flox and NixOS binary-cache outputs.
+    nixpkgs-flox.url = "github:flox/nixpkgs/unstable";
     nixpkgs-mine.url = "git+https://github.com/ramblurr/nixpkgs?shallow=1&ref=channel/personal-master";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-26.05";
     nur.url = "github:nix-community/NUR";
