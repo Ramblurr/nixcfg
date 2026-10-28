@@ -177,7 +177,7 @@ pkgs.testers.runNixOSTest {
         james.fail(f"{rsync} /tmp/site-upload/ preview-publish@localhost:../other/")
         james.fail(f"{rsync} /tmp/site-upload/ preview-publish@localhost:/var/lib/static-sites/other/")
         james.fail(f"{rsync} preview-publish@localhost:. /tmp/stolen/")
-        james.succeed("ln -s /etc/passwd /tmp/site-upload/escape; printf 'touch /tmp/shell-escaped' > /tmp/site-upload/.bashrc")
+        james.succeed("printf 'OUTSIDE_STATIC_SITE_PROBE' > /tmp/outside-static-site.txt; ln -s /tmp/outside-static-site.txt /tmp/site-upload/escape; printf 'touch /tmp/shell-escaped' > /tmp/site-upload/.bashrc")
         james.succeed(f"{rsync} /tmp/site-upload/ preview-publish@localhost:.")
         james.succeed(f"{rsync} /tmp/site-upload/ preview-publish@localhost:.")
         james.fail("test -e /tmp/shell-escaped")
@@ -216,7 +216,8 @@ pkgs.testers.runNixOSTest {
         assert headers("stardustdb.guide/other/special.txt")["cache-control"] == "no-store"
         assert "cache-control" not in headers("stardustdb.guide/epsilon/missing")
         assert "cache-control" not in headers("stardustdb.guide/epsilon")
-        james.succeed(f"{curl} https://preview.example.test/escape | grep -v 'root:x:'")
+        body = james.succeed(f"{curl} -f https://preview.example.test/escape")
+        assert body == "preview-ok", body
 
     with subtest("content survives reboot"):
         james.shutdown()
