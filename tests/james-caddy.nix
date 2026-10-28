@@ -121,7 +121,7 @@ assert builtins.length (lib.unique expectedCertificateHosts) == 26;
 assert lib.hasInfix "redir https://data-star.dev/ 301" caddy.extraConfig;
 assert lib.hasInfix "redir https://stardustdb.com/ 301" caddy.extraConfig;
 assert lib.hasInfix "handle_path /epsilon/*" caddy.extraConfig;
-assert lib.hasInfix "redir /epsilon/ 301" caddy.extraConfig;
+assert lib.hasInfix "redir * /epsilon/ 301" caddy.extraConfig;
 assert lib.hasInfix "root * /var/lib/static-web/stardustdb.guide/epsilon" caddy.extraConfig;
 assert cfg.users.users.epsilon-deploy.home == "/var/lib/static-web/stardustdb.guide/epsilon";
 assert cfg.users.users.epsilon-deploy.group == "epsilon-deploy";
@@ -136,7 +136,7 @@ assert caddy.enable;
 assert caddy.package == pkgs.caddy-with-security;
 assert !caddy.openFirewall;
 assert lib.hasInfix "admin 127.0.0.1:2019" caddy.globalConfig;
-assert lib.hasInfix "servers unix//run/caddy/james-ingress.sock|0660" caddy.globalConfig;
+assert lib.hasInfix "servers {" caddy.globalConfig;
 assert lib.hasInfix "listener_wrappers" caddy.globalConfig;
 assert lib.hasInfix "proxy_protocol" caddy.globalConfig;
 assert lib.hasInfix "protocols h1 h2" caddy.globalConfig;
@@ -205,6 +205,10 @@ assert
   ];
 assert builtins.elem "casey.example.test" cfg.users.users.caddy.extraGroups;
 assert builtins.elem "docs.work.example.test" cfg.users.users.caddy.extraGroups;
+assert lib.hasInfix "server james-guides 127.0.0.1:8443 send-proxy" cfg.services.haproxy.config;
+assert lib.hasInfix
+  "use_backend bk_james_guides if { req.ssl_sni -i data-star.guide stardustdb.guide }"
+  cfg.services.haproxy.config;
 assert lib.hasInfix "server james-local /run/caddy/james-ingress.sock send-proxy"
   cfg.services.haproxy.config;
 assert lib.hasInfix "server dewey dewey.prim.home.example.test:443" cfg.services.haproxy.config;
@@ -228,6 +232,7 @@ assert lib.hasInfix "--log-format=CADDY" goaccessService.serviceConfig.ExecStart
 assert goaccessTimer.wantedBy == [ "timers.target" ];
 pkgs.runCommand "james-caddy-source-test"
   {
+    passthru.config = cfg;
     nativeBuildInputs = [
       pkgs.caddy-with-security
       pkgs.jq
@@ -242,10 +247,10 @@ pkgs.runCommand "james-caddy-source-test"
 
     jq -e '.admin.listen == "127.0.0.1:2019"' "$TMPDIR/caddy.json"
     jq -e '
-      [.apps.http.servers[].listen[]] == ["unix//run/caddy/james-ingress.sock|0660"]
+      [.apps.http.servers[].listen[]] | sort == ["127.0.0.1:8443", "unix//run/caddy/james-ingress.sock|0660"]
     ' "$TMPDIR/caddy.json"
     jq -e '
-      [.apps.http.servers[].listener_wrappers[].wrapper] == ["proxy_protocol", "tls"]
+      .apps.http.servers | all([.listener_wrappers[].wrapper] == ["proxy_protocol", "tls"])
     ' "$TMPDIR/caddy.json"
     jq -e '
       [.. | objects | .host? // empty | .[]] | unique | length == 26
@@ -259,9 +264,11 @@ pkgs.runCommand "james-caddy-source-test"
       | ([$policies[].subjects[]] | sort) == ["data-star.guide", "stardustdb.guide"]
         and ($policies | all(.issuers | all(
           .module == "acme"
+          and .challenges.bind_host == "127.0.0.1"
+          and .challenges["tls-alpn"].alternate_port == 8443
           and .challenges.http.disabled == true
           and (.challenges.dns // null) == null
-          and (.challenges.tlsalpn.disabled // false) == false
+          and (.challenges["tls-alpn"].disabled // false) == false
         )))
     ' "$TMPDIR/caddy.json"
     grep -Fq '"token":"{env.DESEC_API_TOKEN}"' "$TMPDIR/caddy.json"

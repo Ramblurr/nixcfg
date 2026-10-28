@@ -35,6 +35,7 @@ let
         dir https://acme-v02.api.letsencrypt.org/directory
         email ${email.acme}
         disable_http_challenge
+        alt_tlsalpn_port 8443
       }
     }
   '';
@@ -92,6 +93,8 @@ let
   routes = {
     data-star-guide = {
       hosts = [ "data-star.guide" ];
+      bind = "127.0.0.1";
+      port = ":8443";
       tlsConfig = tlsAlpn;
       handler = ''
         handle / {
@@ -104,13 +107,15 @@ let
     };
     stardustdb-guide = {
       hosts = [ "stardustdb.guide" ];
+      bind = "127.0.0.1";
+      port = ":8443";
       tlsConfig = tlsAlpn;
       handler = ''
         handle / {
           redir https://stardustdb.com/ 301
         }
         handle /epsilon {
-          redir /epsilon/ 301
+          redir * /epsilon/ 301
         }
         handle_path /epsilon/* {
           root * /var/lib/static-web/stardustdb.guide/epsilon
@@ -246,11 +251,13 @@ let
     name: route:
     let
       matcher = "@plain_${routeId name}";
-      addresses = lib.concatStringsSep ", " (map (host: "https://${host}") route.hosts);
+      addresses = lib.concatStringsSep ", " (
+        map (host: "https://${host}${route.port or ""}") route.hosts
+      );
     in
     ''
       ${addresses} {
-        bind ${socketAddress}
+        bind ${route.bind or socketAddress}
         ${route.tlsConfig or ""}
         ${mkAccessLog}
         route {
@@ -319,7 +326,7 @@ in
           resolvers ns.desec.ch:53 ns.desec.cz:53 ns.desec.li:53 ns1.desec.io:53 ns2.desec.org:53
         }
         admin 127.0.0.1:2019
-        servers ${socketAddress} {
+        servers {
           protocols h1 h2
           strict_sni_host on
           listener_wrappers {

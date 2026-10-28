@@ -77,6 +77,7 @@ in
           tcp-request inspect-delay 5s
           tcp-request content accept if { req.ssl_hello_type 1 }
           default_backend bk_james_local
+          use_backend bk_james_guides if { req.ssl_sni -i data-star.guide stardustdb.guide }
           ${frontendRules}
 
         backend bk_dewey
@@ -86,6 +87,10 @@ in
         backend bk_thingstead
           mode tcp
           server thingstead ${routes.haproxyBackends.thingstead.host}:${toString routes.haproxyBackends.thingstead.port} resolvers tailscale init-addr libc,none
+
+        backend bk_james_guides
+          mode tcp
+          server james-guides 127.0.0.1:8443 send-proxy
 
         backend bk_james_local
           mode tcp

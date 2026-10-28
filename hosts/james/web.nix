@@ -23,7 +23,7 @@ in
   environment.systemPackages = [ pkgs.rsync ];
 
   systemd.tmpfiles.rules = [
-    "d /var/lib/static-web/stardustdb.guide 0755 root root - -"
+    "d /var/lib/static-web/stardustdb.guide 0755 ${caddyUser} ${caddyGroup} - -"
     "d /var/lib/static-web/stardustdb.guide/epsilon 0755 epsilon-deploy epsilon-deploy - -"
     "d '/var/lib/static-web' 0751 ${caddyUser} ${caddyGroup} - -"
     "Z '${partnerPath}' - ${caddyUser} ${caddyGroup} - -"
