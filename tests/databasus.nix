@@ -65,8 +65,10 @@ assert
   container.environment == {
     DATABASUS_URL = "https://databasus.example.test";
     IS_DISABLE_ANONYMOUS_TELEMETRY = "true";
+    PUID = "999";
+    PGID = "999";
   };
-assert builtins.elem "d /var/lib/databasus 0750 999 999 -" cfg.systemd.tmpfiles.rules;
+assert builtins.elem "d /var/lib/databasus 0770 999 999 -" cfg.systemd.tmpfiles.rules;
 assert builtins.elem
   "--health-cmd=pg_isready -h 127.0.0.1 -p 5437 -U postgres -d databasus && databasus healthcheck"
   container.extraOptions;

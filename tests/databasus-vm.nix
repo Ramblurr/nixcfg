@@ -29,7 +29,7 @@ pkgs.testers.runNixOSTest {
           domain = "databasus.example.test";
         };
         # Exercise the production tmpfiles rule with real PostgreSQL and the
-        # pinned image's numeric identities, without pulling an OCI image or ZFS.
+        # explicitly configured runtime identity, without pulling an OCI image or ZFS.
         modules.zfs.datasets.enable = lib.mkForce false;
         virtualisation.oci-containers.containers.databasus.autoStart = lib.mkForce false;
         virtualisation.memorySize = 1024;
@@ -57,20 +57,26 @@ pkgs.testers.runNixOSTest {
     invocation = machine.succeed("systemctl show postgresql -p InvocationID --value").strip()
 
     def check_access():
-        assert machine.succeed("stat -c '%u:%g:%a' /var/lib/databasus").strip() == "999:999:750"
+        assert machine.succeed("stat -c '%u:%g:%a' /var/lib/databasus").strip() == "999:999:770"
         machine.succeed("setpriv --reuid=999 --regid=999 --clear-groups test -w /var/lib/databasus")
         machine.succeed("sudo -u postgres test -r /var/lib/databasus/pgdata/global/pg_control")
         machine.fail("setpriv --reuid=65534 --regid=65534 --clear-groups test -x /var/lib/databasus")
         machine.succeed(sql + '"INSERT INTO probe VALUES (2); CHECKPOINT; SELECT * FROM probe;"')
         assert machine.succeed("systemctl show postgresql -p InvocationID --value").strip() == invocation
 
-    with subtest("fresh installation grants both container identities access, not other users"):
+    with subtest("fresh installation grants the fixed runtime identity access, not other users"):
         check_access()
 
     with subtest("activation repairs legacy ownership without restarting PostgreSQL"):
         machine.succeed("chown 0:0 /var/lib/databasus")
         machine.fail("sudo -u postgres test -r /var/lib/databasus/pgdata/global/pg_control")
         machine.succeed("systemctl start systemd-tmpfiles-resetup.service")
+        check_access()
+
+    with subtest("activation repairs the former application UID without changing PGDATA"):
+        machine.succeed("chown 65532:999 /var/lib/databasus && chmod 0750 /var/lib/databasus")
+        machine.fail("setpriv --reuid=999 --regid=999 --clear-groups test -w /var/lib/databasus")
+        machine.succeed("systemctl restart systemd-tmpfiles-resetup.service")
         check_access()
 
     with subtest("a NixOS switch preserves database access and process identity"):

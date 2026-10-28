@@ -6,6 +6,9 @@
 let
   cfg = config.modules.services.databasus;
   upstream = "http://127.0.0.1:${toString cfg.port}";
+  # Persistent storage identity, independent of image defaults or mount inference.
+  runtimeUid = 999;
+  runtimeGid = 999;
 in
 {
   options.modules.services.databasus = {
@@ -60,9 +63,11 @@ in
       };
     };
 
-    # Databasus and its embedded PostgreSQL now share UID/GID 999.
-    # Tmpfiles also runs during activation, while both are live.
-    systemd.tmpfiles.rules = [ "d ${cfg.dataDir} 0750 999 999 -" ];
+    # Keep activation-time ownership aligned with the entrypoint's explicit identity.
+    # Do not recursively chown live PostgreSQL or backup files during activation.
+    systemd.tmpfiles.rules = [
+      "d ${cfg.dataDir} 0770 ${toString runtimeUid} ${toString runtimeGid} -"
+    ];
 
     systemd.services.podman-databasus = {
       requires = [ "zfs-datasets.service" ];
@@ -79,6 +84,8 @@ in
       environment = {
         DATABASUS_URL = "https://${cfg.domain}";
         IS_DISABLE_ANONYMOUS_TELEMETRY = "true";
+        PUID = toString runtimeUid;
+        PGID = toString runtimeGid;
       };
       extraOptions = [
         "--health-cmd=pg_isready -h 127.0.0.1 -p 5437 -U postgres -d databasus && databasus healthcheck"
