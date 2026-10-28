@@ -93,13 +93,6 @@ in
       stirling-pdf.enable = true;
     };
   };
-  # Davis remains contained pending patched-runtime verification and approval.
-  # Keep its storage, accounts and database intact.
-  systemd.services = {
-    phpfpm-davis.enable = lib.mkForce false;
-    davis-db-migrate.enable = lib.mkForce false;
-    davis-env-setup.enable = lib.mkForce false;
-  };
   modules.services.paperless.oidc = {
     enable = true;
     mode = "enforced";
