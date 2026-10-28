@@ -241,7 +241,7 @@ in
           autoStart = false;
           containerConfig = {
             # renovate: docker-image
-            Image = "ghcr.io/ramblurr/invoiceninja-octane:5.12.69@sha256:81a45bcd9b1040b96ddf7ab1cbe27c7d5936c0aec4269d364b9737016e84cbfb";
+            Image = "ghcr.io/ramblurr/invoiceninja-octane:5.13.50@sha256:24653bbbaeb30e58a3c98b9ad8081e93bee7317d65b049d03a821cbc7d34761c";
             Exec = "app --port=${containerPort} --workers=2 --log-level=info";
             PublishPort = [ "${toString cfg.ports.http}:${containerPort}" ];
             ContainerName = "app";
