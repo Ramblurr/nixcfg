@@ -74,6 +74,12 @@ in
   ];
   imports = [ inputs.nix-tarmac.nixosModules.default ];
 
+  # The provider delivers the effects JSON directly as a systemd credential.
+  modules.services.onepassword-systemd-credentials.consumers.nixbot = {
+    "effects-secret__gitea_colon_stardustdb_slash_epsilon" =
+      "op://home-ops-prod/epsilon-deploy/effects-json";
+  };
+
   modules.services.onepassword-systemd-credentials.consumers.databasus-nixbot-role = {
     POSTGRES_PASSWORD = "op://home-ops-prod/databasus-nixbot/password";
   };
@@ -120,6 +126,8 @@ in
       topic = null;
       # Existing GitHub admin login manages this integration until Gitea OAuth is configured.
     };
+    effects.perRepoSecretFiles."gitea:stardustdb/epsilon" =
+      config.modules.services.onepassword-systemd-credentials.socketPath;
     postBuildSteps = [
       {
         name = "Upload to Mali Attic";
