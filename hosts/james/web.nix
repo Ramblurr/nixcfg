@@ -26,6 +26,8 @@ in
     "d /var/lib/static-web/stardustdb.guide 0755 ${caddyUser} ${caddyGroup} - -"
     "d /var/lib/static-web/stardustdb.guide/epsilon 0755 epsilon-deploy epsilon-deploy - -"
     "d '/var/lib/static-web' 0751 ${caddyUser} ${caddyGroup} - -"
+    # rsync 3.5 opens each destination ancestor for reading, not just traversal.
+    "a+ /var/lib/static-web - - - - u:epsilon-deploy:r-x"
     "Z '${partnerPath}' - ${caddyUser} ${caddyGroup} - -"
   ];
 }
