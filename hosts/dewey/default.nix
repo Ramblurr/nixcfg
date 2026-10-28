@@ -93,28 +93,13 @@ in
       stirling-pdf.enable = true;
     };
   };
-  # Emergency PHP containment. Keep storage, accounts and databases intact;
-  # only restore these units after explicit approval to re-enable PHP services.
+  # Davis remains contained pending patched-runtime verification and approval.
+  # Keep its storage, accounts and database intact.
   systemd.services = {
     phpfpm-davis.enable = lib.mkForce false;
     davis-db-migrate.enable = lib.mkForce false;
     davis-env-setup.enable = lib.mkForce false;
-    invoiceninja-env-setup.enable = lib.mkForce false;
   };
-  virtualisation.quadlet.containers =
-    lib.genAttrs
-      [
-        "invoiceninja-app"
-        "invoiceninja-scheduler"
-        "invoiceninja-worker"
-      ]
-      (_: {
-        autoStart = lib.mkForce false;
-        unitConfig = {
-          ConditionPathExists = "/run/php-emergency-explicitly-approved";
-          RefuseManualStart = true;
-        };
-      });
   modules.services.paperless.oidc = {
     enable = true;
     mode = "enforced";
