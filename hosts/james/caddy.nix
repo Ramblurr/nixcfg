@@ -29,6 +29,16 @@ let
   workHookSocket = "unix//var/lib/static-web/${work}/.run/github-work-site-deploy-${work}.sock";
   caseyLinkSocket = "unix//var/lib/${caseyLink}/.run/site.sock";
 
+  tlsAlpn = ''
+    tls {
+      issuer acme {
+        dir https://acme-v02.api.letsencrypt.org/directory
+        email ${email.acme}
+        disable_http_challenge
+      }
+    }
+  '';
+
   canonicalRedirect = ''
     redir https://${work}{http.request.uri} 301
   '';
@@ -80,6 +90,37 @@ let
     file_server
   '';
   routes = {
+    data-star-guide = {
+      hosts = [ "data-star.guide" ];
+      tlsConfig = tlsAlpn;
+      handler = ''
+        handle / {
+          redir https://data-star.dev/ 301
+        }
+        handle {
+          respond 404
+        }
+      '';
+    };
+    stardustdb-guide = {
+      hosts = [ "stardustdb.guide" ];
+      tlsConfig = tlsAlpn;
+      handler = ''
+        handle / {
+          redir https://stardustdb.com/ 301
+        }
+        handle /epsilon {
+          redir /epsilon/ 301
+        }
+        handle_path /epsilon/* {
+          root * /var/lib/static-web/stardustdb.guide/epsilon
+          file_server
+        }
+        handle {
+          respond 404
+        }
+      '';
+    };
     home = {
       hosts = [ home ];
       handler = "redir https://id.${home}/ 302";
@@ -210,6 +251,7 @@ let
     ''
       ${addresses} {
         bind ${socketAddress}
+        ${route.tlsConfig or ""}
         ${mkAccessLog}
         route {
           ${matcher} host ${lib.concatStringsSep " " route.hosts}
@@ -230,8 +272,8 @@ in
   config = {
     assertions = [
       {
-        assertion = builtins.length certificateHosts == 24;
-        message = "James Caddy must preserve its 24 exact certificate hosts";
+        assertion = builtins.length certificateHosts == 26;
+        message = "James Caddy must have 26 exact certificate hosts";
       }
       {
         assertion = builtins.length (lib.unique certificateHosts) == builtins.length certificateHosts;

@@ -21,6 +21,7 @@ let
       ../modules/services/caddy.nix
       ../modules/services/onepassword-systemd-credentials.nix
       ../hosts/james/caddy.nix
+      ../hosts/james/web.nix
       ../hosts/james/ingress-haproxy.nix
       ../hosts/james/goaccess.nix
       inputs.impermanence.nixosModules.impermanence
@@ -29,6 +30,7 @@ let
         { lib, ... }:
         {
           options.repo.secrets = lib.mkOption { type = lib.types.attrs; };
+          options.modules.zfs.datasets.properties = lib.mkOption { type = lib.types.attrs; };
         }
       )
       {
@@ -65,6 +67,8 @@ let
   goaccessService = cfg.systemd.services.goaccess-report;
   goaccessTimer = cfg.systemd.timers.goaccess-report;
   expectedCertificateHosts = [
+    "data-star.guide"
+    "stardustdb.guide"
     domains.be
     "www.${domains.be}"
     domains."casey.link"
@@ -112,8 +116,20 @@ assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
 assert lib.all (host: lib.hasInfix "https://${host}" caddy.extraConfig) expectedCertificateHosts;
-assert builtins.length expectedCertificateHosts == 24;
-assert builtins.length (lib.unique expectedCertificateHosts) == 24;
+assert builtins.length expectedCertificateHosts == 26;
+assert builtins.length (lib.unique expectedCertificateHosts) == 26;
+assert lib.hasInfix "redir https://data-star.dev/ 301" caddy.extraConfig;
+assert lib.hasInfix "redir https://stardustdb.com/ 301" caddy.extraConfig;
+assert lib.hasInfix "handle_path /epsilon/*" caddy.extraConfig;
+assert lib.hasInfix "redir /epsilon/ 301" caddy.extraConfig;
+assert lib.hasInfix "root * /var/lib/static-web/stardustdb.guide/epsilon" caddy.extraConfig;
+assert cfg.users.users.epsilon-deploy.home == "/var/lib/static-web/stardustdb.guide/epsilon";
+assert cfg.users.users.epsilon-deploy.group == "epsilon-deploy";
+assert cfg.users.users.epsilon-deploy.isSystemUser;
+assert builtins.elem pkgs.rsync cfg.environment.systemPackages;
+assert builtins.elem
+  "d /var/lib/static-web/stardustdb.guide/epsilon 0755 epsilon-deploy epsilon-deploy - -"
+  cfg.systemd.tmpfiles.rules;
 assert lib.hasInfix "@plain_home host home.example.test" caddy.extraConfig;
 assert lib.hasInfix "redir https://id.home.example.test/ 302" caddy.extraConfig;
 assert caddy.enable;
@@ -232,10 +248,21 @@ pkgs.runCommand "james-caddy-source-test"
       [.apps.http.servers[].listener_wrappers[].wrapper] == ["proxy_protocol", "tls"]
     ' "$TMPDIR/caddy.json"
     jq -e '
-      [.. | objects | .host? // empty | .[]] | unique | length == 24
+      [.. | objects | .host? // empty | .[]] | unique | length == 26
     ' "$TMPDIR/caddy.json"
     jq -e '
       [.. | objects | .host? // empty | .[]] | unique | all(startswith("*.") | not)
+    ' "$TMPDIR/caddy.json"
+    jq -e '
+      [.apps.tls.automation.policies[]
+        | select(.subjects | index("data-star.guide") or index("stardustdb.guide"))] as $policies
+      | ([$policies[].subjects[]] | sort) == ["data-star.guide", "stardustdb.guide"]
+        and ($policies | all(.issuers | all(
+          .module == "acme"
+          and .challenges.http.disabled == true
+          and (.challenges.dns // null) == null
+          and (.challenges.tlsalpn.disabled // false) == false
+        )))
     ' "$TMPDIR/caddy.json"
     grep -Fq '"token":"{env.DESEC_API_TOKEN}"' "$TMPDIR/caddy.json"
     ! grep -Fq 'test-desec-token' "$TMPDIR/caddy.json"

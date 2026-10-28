@@ -14,6 +14,8 @@ let
     ;
   caseyLink = config.repo.secrets.global.domain."casey.link";
   localBaseDomains = [
+    "data-star.guide"
+    "stardustdb.guide"
     work
     work2
     caseylink
