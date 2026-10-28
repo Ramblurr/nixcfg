@@ -27,7 +27,7 @@
     (when-not (or (.isDirectory directory) (.mkdirs directory))
       (throw (ex-info "Cannot create destination directory." {})))
     (let [markdown (:out (process/shell {:out :string :in ""}
-                                       "cat-url-markdown" url))]
+                                        "cat-url-markdown" url))]
       (when (str/blank? markdown)
         (throw (ex-info "cat-url-markdown returned empty Markdown." {})))
       (let [prompt (str "Choose a filename for this page.\n"
@@ -38,7 +38,7 @@
                                   "--no-approve" "--no-tools" "--no-extensions"
                                   "--no-session" "--no-context-files" "--no-skills"
                                   "--no-prompt-templates"
-                                  "--model" "gpt-5.6-luna" "--thinking" "low"
+                                  "--model" "openai-codex/gpt-6-luna" "--thinking" "low"
                                   "-p" prompt)
             target (io/file directory (filename (:out result)))]
         (Files/write (.toPath target) (.getBytes markdown "UTF-8")
