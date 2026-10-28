@@ -3,6 +3,7 @@ nixbot-github-app-key: ENC[AES256_GCM,data:Kqjxf+/R8CcrLa5NGHBTF1cxw+G46Wuwk1CFU
 nixbot-github-webhook-secret: ENC[AES256_GCM,data:VR4Tiv32+Wronq1uoD4eVTV2I0fZaLakEFVTJ6WKequDuE+8W3OAgjingWACjFXtHIk/6VEBzvXL/GddgGv/Mw==,iv:rjJ+1bEO3HfTco3AAJbriil4upaRq5T7geJfBWs6MPg=,tag:KaEx3tUPksYhdYF7DXw3fw==,type:str]
 nixbot-github-oauth-secret: ENC[AES256_GCM,data:PYMOizBEbecmSVfWmTrCuLFK2s0nDgVciRhP2CfStyAzxsplbixCQg==,iv:WmU/Bwee41A4gtDY55VhjQWoq+VabhK8NiynmmAND+I=,tag:FcWNZ7r+C3mCa/H0EG9ipA==,type:str]
 attic-nixbot-token: ENC[AES256_GCM,data:fEopdiK4QKAdfenjb7mxINAhSlS81XK3LPQMiRxlncjrryVhAkLVoi4XzjaWDU7ZlgCld4x5di/kLrgBcGZPAMw8hHc0YNBVp2uNA6RZ7VxaqAcIS0Idfa6rAtiI1DOeuGlJUbuQdgnywCwfYIWfaDYd6FQeKaODC5Lk9BP33v1c8FgDKY6MleHaYMo8qZqq+jrfMMphq8G+RWit2MI6D9PEi6McYKHkXJMeGtKvJdCddpJBs0NWFKERkVoSAPcpWxOIxRWuLbjZD/FUwGkXbxa0LlViPbmHtw34qlzR24gHv4DcmOUODRAMjEfYuQ8=,iv:Oc8Fu7palwS+VpW8VvZ3jAPYts8TX2O/uZLyGzBjpzY=,tag:DZL9Z0GXMBI1zW/zV5JzJA==,type:str]
+nixbot-bitflip-token: ENC[AES256_GCM,data:KzRw6sBu8tuizTRdNO4LKq64KEKalSEAvRA3I5Ac1Jcuk9XfCgPDQw==,iv:pdarjFelq4s3eALL+ElSrC+yv5xfk4W7E4xNQopVRCU=,tag:c3I4fGUdfvFYmeOoh5R/CQ==,type:str]
 sops:
     age:
         - enc: |
@@ -74,7 +75,7 @@ sops:
             2KvNbG2nU2iEAsyujIu5SdUijIeCkerc+rscXw53PLSHpFyPAiT9WA==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1ns0hnk5n6sw9uqdn7v4rynumjk0zd8zfsjhegka74xw55nnluy4qtju5um
-    lastmodified: "2026-06-11T09:48:20Z"
-    mac: ENC[AES256_GCM,data:zOFCgqN7u0enwtJS0JTieL0rz9xrAbymR7jbGhQbA8mPqyJGyzgTT4hG5nLewECqvinrfwWXF9xlMw4H3b/FX2XFxG30Mp7Fz87tJ+Vv4CYpFVqQmLEw/8+npbgdCsP5qNYdMubie5jRPlnatGaDqGIRM1aqUmABVp3JuksR8HQ=,iv:9+zukhHMvI7avVpAjYLYQB7GMnIewbauCep7Br3NV4c=,tag:C0wJksc1Q7MB4EFjNCt66Q==,type:str]
+    lastmodified: "2026-10-28T15:41:14Z"
+    mac: ENC[AES256_GCM,data:SQgsOsNFlo8aMYo9XpA7PxVKV464J/hnm92u7WpTOQnbmZgX8Ykq9yV58Uk7lC4fMthXe0WmCwB9pvwKscdiqF6jveU8n3m/ffZlNfuDBNYjP086Y/kWLJfvRNO1ikzfhleWOWR5VzWHaSv456x98VdbP9UAJFCJ/Dh8b1QlYv8=,iv:ICMteZJY+fQ+kTrfW1++R7gHWNvVBzgmMBZh7OO/U3M=,tag:J6/PjwZ00qakdchL/7ubzg==,type:str]
     unencrypted_suffix: _unencrypted
-    version: 3.13.1
+    version: 3.13.3

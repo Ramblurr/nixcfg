@@ -111,6 +111,15 @@ in
       # empty database; afterwards projects are managed in the web UI.
       topic = "nixbot";
     };
+    gitea = {
+      enable = true;
+      instanceUrl = "https://git.bitflip.ai";
+      tokenFile = config.sops.secrets."nixbot-bitflip-token".path;
+      repoAllowlist = [ "stardustdb/epsilon" ];
+      # Enable the repository explicitly after discovery, not by topic import.
+      topic = null;
+      # Existing GitHub admin login manages this integration until Gitea OAuth is configured.
+    };
     postBuildSteps = [
       {
         name = "Upload to Mali Attic";
@@ -132,6 +141,10 @@ in
     sopsFile = ./nixbot.sops.yaml;
   };
   sops.secrets."nixbot-github-oauth-secret" = {
+    sopsFile = ./nixbot.sops.yaml;
+  };
+  # Provision this key before deploying the Gitea integration.
+  sops.secrets."nixbot-bitflip-token" = {
     sopsFile = ./nixbot.sops.yaml;
   };
   sops.secrets."attic-nixbot-token" = {
