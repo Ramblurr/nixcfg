@@ -56,7 +56,7 @@ let
       ports.office = lib.mkOption { type = lib.types.port; };
       image = lib.mkOption {
         type = lib.types.str;
-        default = "docker.io/opencloudeu/opencloud-rolling:7.5.0@sha256:6db1cfb06d430a663f16e9f33dcd4596d82a4875be0b4df233c26ce5f667ea74";
+        default = "docker.io/opencloudeu/opencloud-rolling:9.0.0@sha256:bd57f039d0dd3df510fb25f178beefdf0b1f049097285feead607824460e6506";
       };
       environmentFile = lib.mkOption {
         type = lib.types.str;

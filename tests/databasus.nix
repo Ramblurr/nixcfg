@@ -48,7 +48,7 @@ let
 in
 assert
   service.image
-  == "docker.io/databasus/databasus:v3.53.0@sha256:ed017f58674a18173a924cc7fd8059121adbd0aa6171d68357c4398fa14e0763";
+  == "docker.io/databasus/databasus:v3.64.0@sha256:a4bbf8b285c54f76c61a997d604cb22d7f53a01fe72b644a8abdb9b5b4cc82a5";
 assert cfg.modules.services.podman.enable;
 assert cfg.virtualisation.oci-containers.backend == "podman";
 assert cfg.modules.zfs.datasets.enable;
@@ -66,7 +66,7 @@ assert
     DATABASUS_URL = "https://databasus.example.test";
     IS_DISABLE_ANONYMOUS_TELEMETRY = "true";
   };
-assert builtins.elem "d /var/lib/databasus 0750 65532 999 -" cfg.systemd.tmpfiles.rules;
+assert builtins.elem "d /var/lib/databasus 0750 999 999 -" cfg.systemd.tmpfiles.rules;
 assert builtins.elem
   "--health-cmd=pg_isready -h 127.0.0.1 -p 5437 -U postgres -d databasus && databasus healthcheck"
   container.extraOptions;

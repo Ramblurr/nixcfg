@@ -250,14 +250,14 @@ in
     image = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "ghcr.io/vectorize-io/hindsight:0.8.6@sha256:ffa391a77284e49f6b55e32c86f33529ac4257831407b14038a72b6a0a232039";
+      default = "ghcr.io/vectorize-io/hindsight:1.1.0@sha256:50311d02b4d5d2b7c5242bd336edf8735df8374eaad496a92f49c83b37d2aa06";
       description = "Hindsight standalone container image.";
     };
 
     postgresImage = lib.mkOption {
       type = lib.types.str;
       # renovate: docker-image
-      default = "docker.io/pgvector/pgvector:0.8.5-pg18@sha256:12a379b47ad65289572ea0756efc11b7c241a6662833e8af7038cd3b73d647e0";
+      default = "docker.io/pgvector/pgvector:0.8.7-pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11";
       description = "PostgreSQL container image with pgvector installed.";
     };
 
@@ -503,11 +503,13 @@ in
               "127.0.0.1:${toString cfg.ports.api}:8888"
               "127.0.0.1:${toString cfg.ports.controlPlane}:9999"
             ];
-            HealthCmd = "curl --fail http://127.0.0.1:8888/health";
+            # Upstream runtime images no longer ship curl.
+            HealthCmd = "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8888/health', timeout=5).close()\"";
             HealthInterval = "30s";
             HealthTimeout = "10s";
             HealthRetries = 5;
-            HealthStartPeriod = "120s";
+            # Startup runs schema migrations, including large-table index rebuilds.
+            HealthStartPeriod = "900s";
             HealthOnFailure = "kill";
           };
         };

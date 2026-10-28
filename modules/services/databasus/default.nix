@@ -13,7 +13,7 @@ in
 
     image = lib.mkOption {
       type = lib.types.nonEmptyStr;
-      default = "docker.io/databasus/databasus:v3.53.0@sha256:ed017f58674a18173a924cc7fd8059121adbd0aa6171d68357c4398fa14e0763";
+      default = "docker.io/databasus/databasus:v3.64.0@sha256:a4bbf8b285c54f76c61a997d604cb22d7f53a01fe72b644a8abdb9b5b4cc82a5";
       description = "Databasus container image.";
     };
 
@@ -60,9 +60,9 @@ in
       };
     };
 
-    # The pinned image runs Databasus as UID 65532 and PostgreSQL as UID 999,
-    # sharing GID 999. Tmpfiles also runs during activation, while both are live.
-    systemd.tmpfiles.rules = [ "d ${cfg.dataDir} 0750 65532 999 -" ];
+    # Databasus and its embedded PostgreSQL now share UID/GID 999.
+    # Tmpfiles also runs during activation, while both are live.
+    systemd.tmpfiles.rules = [ "d ${cfg.dataDir} 0750 999 999 -" ];
 
     systemd.services.podman-databasus = {
       requires = [ "zfs-datasets.service" ];

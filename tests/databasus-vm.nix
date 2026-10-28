@@ -57,8 +57,8 @@ pkgs.testers.runNixOSTest {
     invocation = machine.succeed("systemctl show postgresql -p InvocationID --value").strip()
 
     def check_access():
-        assert machine.succeed("stat -c '%u:%g:%a' /var/lib/databasus").strip() == "65532:999:750"
-        machine.succeed("setpriv --reuid=65532 --regid=999 --clear-groups test -w /var/lib/databasus")
+        assert machine.succeed("stat -c '%u:%g:%a' /var/lib/databasus").strip() == "999:999:750"
+        machine.succeed("setpriv --reuid=999 --regid=999 --clear-groups test -w /var/lib/databasus")
         machine.succeed("sudo -u postgres test -r /var/lib/databasus/pgdata/global/pg_control")
         machine.fail("setpriv --reuid=65534 --regid=65534 --clear-groups test -x /var/lib/databasus")
         machine.succeed(sql + '"INSERT INTO probe VALUES (2); CHECKPOINT; SELECT * FROM probe;"')

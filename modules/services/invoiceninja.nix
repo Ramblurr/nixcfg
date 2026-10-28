@@ -219,7 +219,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "public.ecr.aws/docker/library/redis:8.8.0-alpine@sha256:9d317178eceac8454a2284a9e6df2466b93c745529947f0cd42a0fa9609d7005";
+            Image = "public.ecr.aws/docker/library/redis:8.8.4-alpine@sha256:be8dfdf58574d626e0abe03073ce9178509e0e9564a316e34e71d2289b8370e1";
             Network = "app.network";
             Volume = [ "${rootDir}/redis:/data:rw" ];
             HealthCmd = "redis-cli ping";
