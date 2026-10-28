@@ -90,7 +90,7 @@ let
     root * ${workRoot}
     file_server
   '';
-  routes = {
+  baseRoutes = {
     data-star-guide = {
       hosts = [ "data-star.guide" ];
       bind = "127.0.0.1";
@@ -113,13 +113,6 @@ let
       handler = ''
         handle / {
           redir https://stardustdb.com/ 301
-        }
-        handle /epsilon {
-          redir * /epsilon/ 301
-        }
-        handle_path /epsilon/* {
-          root * /var/lib/static-web/stardustdb.guide/epsilon
-          file_server
         }
         handle {
           respond 404
@@ -234,7 +227,44 @@ let
     };
   };
 
-  routeId = name: lib.replaceStrings [ "-" ] [ "_" ] name;
+  staticHandlers = config.modules.services.staticSites.handlersByDomain;
+  staticDomains = builtins.attrNames staticHandlers;
+  baseHosts = lib.concatMap (route: route.hosts) (builtins.attrValues baseRoutes);
+  routes =
+    lib.filterAttrs (_: route: route.hosts != [ ]) (
+      lib.mapAttrs (
+        _: route:
+        route
+        // {
+          hosts = lib.filter (host: !builtins.elem host staticDomains) route.hosts;
+        }
+      ) baseRoutes
+    )
+    // lib.mapAttrs' (
+      domain: handler:
+      let
+        existing = lib.findFirst (route: builtins.elem domain route.hosts) { handler = "respond 404"; } (
+          builtins.attrValues baseRoutes
+        );
+      in
+      lib.nameValuePair "static-${domain}" (
+        existing
+        // {
+          hosts = [ domain ];
+          bind = "127.0.0.1";
+          port = ":8443";
+          tlsConfig = tlsAlpn;
+          handler = ''
+            ${handler}
+            handle {
+              ${existing.handler}
+            }
+          '';
+        }
+      )
+    ) staticHandlers;
+
+  routeId = name: lib.replaceStrings [ "-" "." ] [ "_" "_" ] name;
   certificateHosts = lib.concatMap (route: route.hosts) (builtins.attrValues routes);
   mkAccessLog = ''
     log {
@@ -279,8 +309,10 @@ in
   config = {
     assertions = [
       {
-        assertion = builtins.length certificateHosts == 26;
-        message = "James Caddy must have 26 exact certificate hosts";
+        assertion = lib.all (
+          site: !site.enable || site.path != "/" || !builtins.elem site.domain baseHosts
+        ) (builtins.attrValues config.modules.services.staticSites.sites);
+        message = "A static root mount must not replace an existing James route; use a subpath or a new hostname";
       }
       {
         assertion = builtins.length (lib.unique certificateHosts) == builtins.length certificateHosts;

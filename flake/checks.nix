@@ -89,6 +89,7 @@
         };
         james-caddy = import ../tests/james-caddy.nix { inherit inputs pkgs; };
         james-guide-acme = import ../tests/james-guide-acme.nix { inherit inputs pkgs; };
+        static-sites = import ../tests/static-sites.nix { inherit inputs pkgs; };
         james-crowdsec = import ../tests/james-crowdsec.nix { inherit inputs pkgs; };
         james-pocket-id = import ../tests/james-pocket-id.nix { inherit inputs pkgs; };
         james-webhook = import ../tests/james-webhook.nix { inherit inputs pkgs; };

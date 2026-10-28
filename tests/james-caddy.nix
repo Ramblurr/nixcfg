@@ -19,6 +19,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       ../modules/services/caddy.nix
+      ../modules/services/static-sites.nix
       ../modules/services/onepassword-systemd-credentials.nix
       ../hosts/james/caddy.nix
       ../hosts/james/web.nix
@@ -120,10 +121,12 @@ assert builtins.length expectedCertificateHosts == 26;
 assert builtins.length (lib.unique expectedCertificateHosts) == 26;
 assert lib.hasInfix "redir https://data-star.dev/ 301" caddy.extraConfig;
 assert lib.hasInfix "redir https://stardustdb.com/ 301" caddy.extraConfig;
-assert lib.hasInfix "handle_path /epsilon/*" caddy.extraConfig;
-assert lib.hasInfix "redir * /epsilon/ 301" caddy.extraConfig;
-assert lib.hasInfix "root * /var/lib/static-web/stardustdb.guide/epsilon" caddy.extraConfig;
-assert cfg.users.users.epsilon-deploy.home == "/var/lib/static-web/stardustdb.guide/epsilon";
+assert lib.hasInfix ''handle_path "/epsilon/*"'' caddy.extraConfig;
+assert lib.hasInfix ''redir * "/epsilon/" 301'' caddy.extraConfig;
+assert lib.hasInfix ''root * "/var/lib/static-web/stardustdb.guide/epsilon"'' caddy.extraConfig;
+assert cfg.users.users.epsilon-deploy.home == "/var/empty";
+assert lib.hasInfix "-wo -munge -absolute /var/lib/static-web/stardustdb.guide/epsilon"
+  cfg.services.openssh.extraConfig;
 assert cfg.users.users.epsilon-deploy.group == "epsilon-deploy";
 assert cfg.users.users.epsilon-deploy.isSystemUser;
 assert builtins.elem pkgs.rsync cfg.environment.systemPackages;
@@ -186,13 +189,13 @@ assert
 assert lib.hasPrefix "/run/" caddy.environmentFile;
 assert !lib.hasPrefix "/nix/store/" caddy.environmentFile;
 assert builtins.elem "/var/lib/caddy" persistedDirectories;
-assert
-  caddyService.unitConfig.RequiresMountsFor == [
-    "/var/lib/caddy"
-    "/var/lib/goaccess"
-    "/var/lib/static-web"
-    "/var/lib/casey.example.test"
-  ];
+assert lib.all (path: builtins.elem path caddyService.unitConfig.RequiresMountsFor) [
+  "/var/lib/caddy"
+  "/var/lib/goaccess"
+  "/var/lib/static-web"
+  "/var/lib/casey.example.test"
+  "/var/lib/static-web/stardustdb.guide/epsilon"
+];
 assert caddyService.serviceConfig.RuntimeDirectory == "caddy";
 assert caddyService.serviceConfig.RuntimeDirectoryMode == "0750";
 assert caddyService.serviceConfig.AmbientCapabilities == [ ];
@@ -232,7 +235,10 @@ assert lib.hasInfix "--log-format=CADDY" goaccessService.serviceConfig.ExecStart
 assert goaccessTimer.wantedBy == [ "timers.target" ];
 pkgs.runCommand "james-caddy-source-test"
   {
-    passthru.config = cfg;
+    passthru = {
+      config = cfg;
+      inherit evaluated;
+    };
     nativeBuildInputs = [
       pkgs.caddy-with-security
       pkgs.jq

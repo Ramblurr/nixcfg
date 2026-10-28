@@ -7,6 +7,14 @@
 let
   caddySocket = "/run/caddy/james-ingress.sock";
   routes = import ./ingress-routes.nix { inherit config; };
+  staticDomains = builtins.attrNames config.modules.services.staticSites.handlersByDomain;
+  tcpLocalDomains = lib.unique (
+    [
+      "data-star.guide"
+      "stardustdb.guide"
+    ]
+    ++ staticDomains
+  );
 
   splitServices = domains: {
     exact = builtins.filter (domain: !(lib.hasPrefix "." domain)) domains;
@@ -34,6 +42,17 @@ let
 in
 {
   config = {
+    assertions = [
+      {
+        assertion = lib.all (
+          domain:
+          !lib.any (remote: domain == remote || (lib.hasPrefix "." remote && lib.hasSuffix remote domain)) (
+            routes.deweyServices ++ routes.thingsteadServices
+          )
+        ) staticDomains;
+        message = "Static sites on James must not shadow a Dewey or Thingstead ingress route";
+      }
+    ];
     networking.firewall.allowedTCPPorts = [
       80
       443
@@ -77,7 +96,7 @@ in
           tcp-request inspect-delay 5s
           tcp-request content accept if { req.ssl_hello_type 1 }
           default_backend bk_james_local
-          use_backend bk_james_guides if { req.ssl_sni -i data-star.guide stardustdb.guide }
+          use_backend bk_james_guides if { req.ssl_sni -i ${lib.concatStringsSep " " tcpLocalDomains} }
           ${frontendRules}
 
         backend bk_dewey

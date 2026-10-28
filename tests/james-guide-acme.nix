@@ -1,7 +1,42 @@
 { inputs, pkgs }:
 let
   inherit (pkgs) lib;
-  cfg = (import ./james-caddy.nix { inherit inputs pkgs; }).config;
+  base = import ./james-caddy.nix { inherit inputs pkgs; };
+  testSites = {
+    preview = {
+      domain = "preview.example.test";
+      deployUser = "preview-publish";
+      authorizedKeys = base.config.modules.services.staticSites.sites.epsilon.authorizedKeys;
+      spaFallback = true;
+      cacheControlByMimeType = {
+        "text/*" = "public, max-age=60";
+        "text/html" = "public, max-age=0, must-revalidate";
+        "text/css" = "public, max-age=120";
+        "image/*" = "public, max-age=600";
+      };
+      cacheControlByPath = {
+        "/assets/*" = "public, max-age=31536000, immutable";
+        "/assets/deep/*" = "public, max-age=300";
+        "/assets/deep/config.json" = "no-store";
+      };
+    };
+    other = {
+      domain = "stardustdb.guide";
+      path = "/other/";
+      authorizedKeys = base.config.modules.services.staticSites.sites.epsilon.authorizedKeys;
+      cacheControl = null;
+      cacheControlByPath."/special.txt" = "no-store";
+    };
+    disabled = {
+      enable = false;
+      domain = "disabled.example.test";
+      authorizedKeys = base.config.modules.services.staticSites.sites.epsilon.authorizedKeys;
+    };
+  };
+  cfg =
+    (base.evaluated.extendModules {
+      modules = [ { modules.services.staticSites.sites = testSites; } ];
+    }).config;
   pebbleConfig = pkgs.writeText "pebble.json" (
     builtins.toJSON {
       pebble = {
@@ -18,14 +53,24 @@ in
 pkgs.testers.runNixOSTest {
   name = "james-guide-acme";
   nodes.james = { ... }: {
-    imports = [ ../hosts/james/web.nix ];
+    imports = [
+      ../hosts/james/web.nix
+      ../modules/services/static-sites.nix
+      inputs.impermanence.nixosModules.impermanence
+    ];
     options = {
       repo.secrets = lib.mkOption { type = lib.types.attrs; };
       modules.zfs.datasets.properties = lib.mkOption { type = lib.types.attrs; };
     };
     config = {
       repo.secrets.global.domain.partner = "partner.example.test";
-      networking.extraHosts = "127.0.0.1 data-star.guide stardustdb.guide";
+      modules.services.staticSites.sites = testSites;
+      environment.persistence."/persist".directories = [ "/var/lib/nixos" ];
+      services.openssh.authorizedKeysFiles = [
+        "/etc/ssh/authorized_keys.d/%u"
+        "/run/test-keys/%u"
+      ];
+      networking.extraHosts = "127.0.0.1 data-star.guide stardustdb.guide preview.example.test";
       networking.firewall.enable = false;
       environment.systemPackages = [
         pkgs.curl
@@ -88,11 +133,16 @@ pkgs.testers.runNixOSTest {
   testScript = ''
     start_all()
     james.wait_for_unit("haproxy.service")
-    james.wait_for_unit("caddy.service")
+    try:
+        james.wait_for_unit("caddy.service")
+    except Exception:
+        print(james.succeed("journalctl -u caddy --no-pager"))
+        print(james.execute("${lib.getExe pkgs.caddy-with-security} validate --config /etc/caddy/caddy_config --adapter caddyfile 2>&1"))
+        raise
 
     with subtest("tmpfiles creates a persistent deploy directory"):
         james.succeed("test -d /var/lib/static-web/stardustdb.guide/epsilon")
-        james.succeed("su -s /bin/sh epsilon-deploy -c 'echo epsilon-ok > ~/index.html'")
+        james.succeed("su -s /bin/sh epsilon-deploy -c 'echo epsilon-ok > /var/lib/static-web/stardustdb.guide/epsilon/index.html'")
         james.succeed("su -s /bin/sh caddy -c 'cat /var/lib/static-web/stardustdb.guide/epsilon/index.html'")
         james.succeed("chown root:root /var/lib/static-web/stardustdb.guide")
         james.succeed("systemd-tmpfiles --create --prefix=/var/lib/static-web/stardustdb.guide")
@@ -112,10 +162,67 @@ pkgs.testers.runNixOSTest {
         james.succeed("curl -ksSI --resolve code.work.example.test:443:127.0.0.1 https://code.work.example.test/ | grep -i 'location: https://code.example.test/work'")
         james.fail("curl --max-time 10 -ksS --resolve stardustdb.guide:8443:127.0.0.1 https://stardustdb.guide:8443/epsilon/")
 
+    with subtest("restricted SSH deployments"):
+        james.wait_for_unit("sshd.service")
+        james.succeed("mkdir -p /run/test-keys /tmp/site-upload/assets/deep; ssh-keygen -q -t ed25519 -N \"\" -f /root/deploy-key")
+        james.succeed("cp /root/deploy-key.pub /run/test-keys/preview-publish; cp /root/deploy-key.pub /run/test-keys/disabled-deploy")
+        james.succeed("printf 'preview-ok' > /tmp/site-upload/index.html; printf 'body {}' > /tmp/site-upload/style.css; printf 'note' > /tmp/site-upload/readme.txt; printf '{}' > /tmp/site-upload/assets/deep/config.json; printf '{}' > /tmp/site-upload/assets/deep/data.json; printf 'body {}' > /tmp/site-upload/assets/hashed.css")
+        ssh = "ssh -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -i /root/deploy-key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes"
+        rsync = f"rsync --timeout=20 -a --chmod=D755,F644 -e '{ssh}'"
+        james.succeed(f"{rsync} --delete /tmp/site-upload/ preview-publish@localhost:.")
+        james.succeed(f"{rsync} /tmp/site-upload/ preview-publish@localhost:/var/lib/static-sites/preview/")
+        james.fail(f"{ssh} -n preview-publish@localhost id")
+        james.fail(f"{ssh} -n disabled-deploy@localhost id")
+        james.fail(f"{ssh} -n other-deploy@localhost id")
+        james.fail(f"{rsync} /tmp/site-upload/ preview-publish@localhost:../other/")
+        james.fail(f"{rsync} /tmp/site-upload/ preview-publish@localhost:/var/lib/static-sites/other/")
+        james.fail(f"{rsync} preview-publish@localhost:. /tmp/stolen/")
+        james.succeed("ln -s /etc/passwd /tmp/site-upload/escape; printf 'touch /tmp/shell-escaped' > /tmp/site-upload/.bashrc")
+        james.succeed(f"{rsync} /tmp/site-upload/ preview-publish@localhost:.")
+        james.succeed(f"{rsync} /tmp/site-upload/ preview-publish@localhost:.")
+        james.fail("test -e /tmp/shell-escaped")
+        james.fail("su -s /bin/sh preview-publish -c 'touch /var/lib/static-sites/other/forbidden'")
+        james.succeed("test $(getent passwd preview-publish | cut -d: -f6) = /var/empty")
+        james.succeed("test -d /var/lib/static-sites/disabled")
+
+    with subtest("cache precedence, validators, and SPA fallback"):
+        james.wait_until_succeeds(f"{curl} -f https://preview.example.test/ | grep preview-ok")
+        def headers(url, extra=""):
+            output = james.succeed(f"{curl} -D - -o /dev/null {extra} https://{url}")
+            return {k.lower(): v.strip() for line in output.splitlines() if ': ' in line for k, v in [line.split(': ', 1)]}
+        prefix = "preview.example.test"
+        expected = {
+            "/": "public, max-age=0, must-revalidate",
+            "/client/route": "public, max-age=0, must-revalidate",
+            "/assets/missing.css": "public, max-age=0, must-revalidate",
+            "/style.css": "public, max-age=120",
+            "/readme.txt": "public, max-age=60",
+            "/assets/hashed.css": "public, max-age=31536000, immutable",
+            "/assets/deep/data.json": "public, max-age=300",
+            "/assets/deep/config.json": "no-store",
+        }
+        for path, policy in expected.items():
+            actual = headers(prefix + path)
+            assert actual.get("cache-control") == policy, (path, actual)
+        epsilon = headers("stardustdb.guide/epsilon/")
+        assert epsilon["cache-control"] == "public, max-age=0, must-revalidate", epsilon
+        assert "etag" in epsilon and "last-modified" in epsilon, epsilon
+        etag = epsilon["etag"]
+        result = james.succeed(f"{curl} -o /dev/null -w '%{{http_code}}' -H 'If-None-Match: {etag}' https://stardustdb.guide/epsilon/")
+        assert result == "304", result
+        james.succeed("su -s /bin/sh other-deploy -c 'echo other-ok > /var/lib/static-sites/other/index.html'")
+        assert "cache-control" not in headers("stardustdb.guide/other/")
+        james.succeed("su -s /bin/sh other-deploy -c 'echo special > /var/lib/static-sites/other/special.txt'")
+        assert headers("stardustdb.guide/other/special.txt")["cache-control"] == "no-store"
+        assert "cache-control" not in headers("stardustdb.guide/epsilon/missing")
+        assert "cache-control" not in headers("stardustdb.guide/epsilon")
+        james.succeed(f"{curl} https://preview.example.test/escape | grep -v 'root:x:'")
+
     with subtest("content survives reboot"):
         james.shutdown()
         james.start()
         james.wait_for_unit("caddy.service")
         james.wait_until_succeeds(f"{curl} -f https://stardustdb.guide/epsilon/ | grep epsilon-ok")
+        james.wait_until_succeeds(f"{curl} -f https://preview.example.test/ | grep preview-ok")
   '';
 }

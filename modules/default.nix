@@ -139,6 +139,7 @@
     ./services/sshd.nix
     ./services/pocket-id.nix
     ./services/stirling-pdf.nix
+    ./services/static-sites.nix
     ./services/tautulli.nix
     ./services/tubearchivist.nix
     ./services/udpbroadcastrelay.nix
