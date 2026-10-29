@@ -85,7 +85,7 @@ assert rejects {
 assert rejects {
   modules.services.staticSites.sites.bad = site // {
     domain = "stardustdb.guide";
-    path = "/epsilon/child/";
+    path = "/dust/child/";
   };
 } "URL mounts";
 assert rejects {
