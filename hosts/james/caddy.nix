@@ -113,7 +113,7 @@ let
       handler = ''
         @epsilon path /epsilon /epsilon/*
         handle @epsilon {
-          redir /dust/ 301
+          redir * /dust/ 301
         }
         handle / {
           redir https://stardustdb.com/ 301

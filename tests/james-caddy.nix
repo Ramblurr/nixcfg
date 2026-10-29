@@ -122,7 +122,7 @@ assert builtins.length (lib.unique expectedCertificateHosts) == 26;
 assert lib.hasInfix "redir https://data-star.dev/ 301" caddy.extraConfig;
 assert lib.hasInfix "redir https://stardustdb.com/ 301" caddy.extraConfig;
 assert lib.hasInfix "@epsilon path /epsilon /epsilon/*" caddy.extraConfig;
-assert lib.hasInfix "redir /dust/ 301" caddy.extraConfig;
+assert lib.hasInfix "redir * /dust/ 301" caddy.extraConfig;
 assert lib.hasInfix ''handle_path "/dust/*"'' caddy.extraConfig;
 assert lib.hasInfix ''redir * "/dust/" 301'' caddy.extraConfig;
 assert lib.hasInfix ''root * "/var/lib/static-web/stardustdb.guide/epsilon"'' caddy.extraConfig;
