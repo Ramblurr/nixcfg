@@ -151,16 +151,21 @@ pkgs.testers.runNixOSTest {
     with subtest("real TLS-ALPN issuance through HAProxy"):
         james.succeed("curl --cacert /var/lib/pebble/cert.pem -fsS https://localhost:15000/roots/0 > /var/lib/pebble/root.pem")
         curl = "curl --cacert /var/lib/pebble/root.pem -sS"
-        james.wait_until_succeeds(f"{curl} -f https://stardustdb.guide/epsilon/ | grep epsilon-ok", timeout=120)
+        james.wait_until_succeeds(f"{curl} -f https://stardustdb.guide/dust/ | grep epsilon-ok", timeout=120)
         james.wait_until_succeeds(f"{curl} -I https://data-star.guide/ | grep -i 'location: https://data-star.dev/'")
         james.succeed(f"{curl} -I https://stardustdb.guide/ | grep -i 'location: https://stardustdb.com/'")
-        headers = james.succeed(f"{curl} -I https://stardustdb.guide/epsilon")
-        assert "HTTP/2 301" in headers and "location: /epsilon/" in headers.lower(), headers
+        headers = james.succeed(f"{curl} -I https://stardustdb.guide/dust")
+        assert "HTTP/2 301" in headers and "location: /dust/" in headers.lower(), headers
         james.succeed(f"test $({curl} -o /dev/null -w '%{{http_code}}' https://stardustdb.guide/missing) = 404")
+
+    with subtest("legacy epsilon URLs redirect to the dust root"):
+        for path in ["/epsilon", "/epsilon/", "/epsilon/index.html", "/epsilon/foobar", "/epsilon/foobar/"]:
+            headers = james.succeed(f"{curl} -I https://stardustdb.guide{path}")
+            assert "HTTP/2 301" in headers and "location: /dust/" in headers.lower().splitlines(), headers
 
     with subtest("existing Unix-socket routes still work"):
         james.succeed("curl -ksSI --resolve code.work.example.test:443:127.0.0.1 https://code.work.example.test/ | grep -i 'location: https://code.example.test/work'")
-        james.fail("curl --max-time 10 -ksS --resolve stardustdb.guide:8443:127.0.0.1 https://stardustdb.guide:8443/epsilon/")
+        james.fail("curl --max-time 10 -ksS --resolve stardustdb.guide:8443:127.0.0.1 https://stardustdb.guide:8443/dust/")
 
     with subtest("restricted SSH deployments"):
         james.wait_for_unit("sshd.service")
@@ -204,18 +209,18 @@ pkgs.testers.runNixOSTest {
         for path, policy in expected.items():
             actual = headers(prefix + path)
             assert actual.get("cache-control") == policy, (path, actual)
-        epsilon = headers("stardustdb.guide/epsilon/")
+        epsilon = headers("stardustdb.guide/dust/")
         assert epsilon["cache-control"] == "public, max-age=0, must-revalidate", epsilon
         assert "etag" in epsilon and "last-modified" in epsilon, epsilon
         etag = epsilon["etag"]
-        result = james.succeed(f"{curl} -o /dev/null -w '%{{http_code}}' -H 'If-None-Match: {etag}' https://stardustdb.guide/epsilon/")
+        result = james.succeed(f"{curl} -o /dev/null -w '%{{http_code}}' -H 'If-None-Match: {etag}' https://stardustdb.guide/dust/")
         assert result == "304", result
         james.succeed("su -s /bin/sh other-deploy -c 'echo other-ok > /var/lib/static-sites/other/index.html'")
         assert "cache-control" not in headers("stardustdb.guide/other/")
         james.succeed("su -s /bin/sh other-deploy -c 'echo special > /var/lib/static-sites/other/special.txt'")
         assert headers("stardustdb.guide/other/special.txt")["cache-control"] == "no-store"
-        assert "cache-control" not in headers("stardustdb.guide/epsilon/missing")
-        assert "cache-control" not in headers("stardustdb.guide/epsilon")
+        assert "cache-control" not in headers("stardustdb.guide/dust/missing")
+        assert "cache-control" not in headers("stardustdb.guide/dust")
         body = james.succeed(f"{curl} -f https://preview.example.test/escape")
         assert body == "preview-ok", body
 
@@ -223,7 +228,7 @@ pkgs.testers.runNixOSTest {
         james.shutdown()
         james.start()
         james.wait_for_unit("caddy.service")
-        james.wait_until_succeeds(f"{curl} -f https://stardustdb.guide/epsilon/ | grep epsilon-ok")
+        james.wait_until_succeeds(f"{curl} -f https://stardustdb.guide/dust/ | grep epsilon-ok")
         james.wait_until_succeeds(f"{curl} -f https://preview.example.test/ | grep preview-ok")
   '';
 }

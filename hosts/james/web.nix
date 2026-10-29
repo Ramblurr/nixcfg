@@ -12,7 +12,7 @@ in
 
   modules.services.staticSites.sites.epsilon = {
     domain = "stardustdb.guide";
-    path = "/epsilon/";
+    path = "/dust/";
     directory = "/var/lib/static-web/stardustdb.guide/epsilon";
     authorizedKeys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF6c85Vp8lcCzW02rxJX8qvZDA56Sx00sCUMZZHpzNns"
