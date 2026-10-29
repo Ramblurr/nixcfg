@@ -4,6 +4,7 @@ nixbot-github-webhook-secret: ENC[AES256_GCM,data:VR4Tiv32+Wronq1uoD4eVTV2I0fZaL
 nixbot-github-oauth-secret: ENC[AES256_GCM,data:PYMOizBEbecmSVfWmTrCuLFK2s0nDgVciRhP2CfStyAzxsplbixCQg==,iv:WmU/Bwee41A4gtDY55VhjQWoq+VabhK8NiynmmAND+I=,tag:FcWNZ7r+C3mCa/H0EG9ipA==,type:str]
 attic-nixbot-token: ENC[AES256_GCM,data:fEopdiK4QKAdfenjb7mxINAhSlS81XK3LPQMiRxlncjrryVhAkLVoi4XzjaWDU7ZlgCld4x5di/kLrgBcGZPAMw8hHc0YNBVp2uNA6RZ7VxaqAcIS0Idfa6rAtiI1DOeuGlJUbuQdgnywCwfYIWfaDYd6FQeKaODC5Lk9BP33v1c8FgDKY6MleHaYMo8qZqq+jrfMMphq8G+RWit2MI6D9PEi6McYKHkXJMeGtKvJdCddpJBs0NWFKERkVoSAPcpWxOIxRWuLbjZD/FUwGkXbxa0LlViPbmHtw34qlzR24gHv4DcmOUODRAMjEfYuQ8=,iv:Oc8Fu7palwS+VpW8VvZ3jAPYts8TX2O/uZLyGzBjpzY=,tag:DZL9Z0GXMBI1zW/zV5JzJA==,type:str]
 nixbot-bitflip-token: ENC[AES256_GCM,data:KzRw6sBu8tuizTRdNO4LKq64KEKalSEAvRA3I5Ac1Jcuk9XfCgPDQw==,iv:pdarjFelq4s3eALL+ElSrC+yv5xfk4W7E4xNQopVRCU=,tag:c3I4fGUdfvFYmeOoh5R/CQ==,type:str]
+nixbot-bitflip-oauth-secret: ENC[AES256_GCM,data:s+AX1am+suCM9FvsVH+X73ylTcQP2MZmGM0UNhXUVqqgPc2xImaeZ1+lKIai7NZm5xZty7KNHws=,iv:V1J5+japFIsoYEe7/ILDA6rif+QVvEda5OmunBMk6HA=,tag:Z/qCYhUXtN6jvbQht99JFg==,type:str]
 sops:
     age:
         - enc: |
@@ -75,7 +76,7 @@ sops:
             2KvNbG2nU2iEAsyujIu5SdUijIeCkerc+rscXw53PLSHpFyPAiT9WA==
             -----END AGE ENCRYPTED FILE-----
           recipient: age1ns0hnk5n6sw9uqdn7v4rynumjk0zd8zfsjhegka74xw55nnluy4qtju5um
-    lastmodified: "2026-10-28T15:41:14Z"
-    mac: ENC[AES256_GCM,data:SQgsOsNFlo8aMYo9XpA7PxVKV464J/hnm92u7WpTOQnbmZgX8Ykq9yV58Uk7lC4fMthXe0WmCwB9pvwKscdiqF6jveU8n3m/ffZlNfuDBNYjP086Y/kWLJfvRNO1ikzfhleWOWR5VzWHaSv456x98VdbP9UAJFCJ/Dh8b1QlYv8=,iv:ICMteZJY+fQ+kTrfW1++R7gHWNvVBzgmMBZh7OO/U3M=,tag:J6/PjwZ00qakdchL/7ubzg==,type:str]
+    lastmodified: "2026-10-29T17:37:56Z"
+    mac: ENC[AES256_GCM,data:5gWuX4fhOLrZsM0wLKuadZgNeiPsdvEL2hIHpX+kIsEbqS/XcNPWZJdDFZ0hxMlUmbuzVaSSi6tRzZBE27HHzO2xKMpgp53SM7H22+a7gsUoxz1YUwGwDpbujnk0ILYCJv/G+BGZdkp7YzgpS1W05ZB5CIH+BdTzD93mdwTYnpI=,iv:l6Q2ULOoJDp3mDNN/DlzhuGKiCcNJ01zqdsfNwT+Bh0=,tag:OH8sqM+bikgtCrsqPeHC5A==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.13.3

@@ -121,10 +121,11 @@ in
       enable = true;
       instanceUrl = "https://git.bitflip.ai";
       tokenFile = config.sops.secrets."nixbot-bitflip-token".path;
+      oauthId = "190b408f-63d0-45ee-b68c-03d764ace860";
+      oauthSecretFile = config.sops.secrets."nixbot-bitflip-oauth-secret".path;
       repoAllowlist = [ "stardustdb/epsilon" ];
       # Enable the repository explicitly after discovery, not by topic import.
       topic = null;
-      # Existing GitHub admin login manages this integration until Gitea OAuth is configured.
     };
     effects.perRepoSecretFiles."gitea:stardustdb/epsilon" =
       config.modules.services.onepassword-systemd-credentials.socketPath;
@@ -153,6 +154,9 @@ in
   };
   # Provision this key before deploying the Gitea integration.
   sops.secrets."nixbot-bitflip-token" = {
+    sopsFile = ./nixbot.sops.yaml;
+  };
+  sops.secrets."nixbot-bitflip-oauth-secret" = {
     sopsFile = ./nixbot.sops.yaml;
   };
   sops.secrets."attic-nixbot-token" = {
