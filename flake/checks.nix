@@ -71,6 +71,10 @@
           inherit (pkgs) deploy;
         };
         deploy-user = import ../tests/deploy-user.nix { inherit inputs pkgs; };
+        userborn-persistence = import ../tests/userborn-persistence.nix { inherit pkgs; };
+        userborn-persistence-stable = import ../tests/userborn-persistence.nix {
+          pkgs = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+        };
         thinkpad1-wallet = import ../tests/thinkpad1-wallet.nix {
           inherit inputs;
           pkgs = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
