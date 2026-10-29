@@ -195,7 +195,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "docker.io/1password/connect-api:1.8.2@sha256:e915c0c843972f02b0e7e2de502bda8bd4a092288b3f1866098a857bd715a281";
+            Image = "docker.io/1password/connect-api:1.8.4@sha256:0f74924c55c9156b8116f59f485223b2c2d30a5148d362562aa27838159bdffa";
             Environment = [
               "XDG_DATA_HOME=/config"
               "OP_BUS_PORT=11220"
@@ -219,7 +219,7 @@ in
           };
           containerConfig = {
             # renovate: docker-image
-            Image = "docker.io/1password/connect-sync:1.8.2@sha256:6297ca6136c0f0fb096bc64c49e1bc8df2aab35282ebff8c7bb60745ef176d0d";
+            Image = "docker.io/1password/connect-sync:1.8.4@sha256:ca34850f2a20ca302e688a9347cdb696f29ce3bfc011d2554eff338e315c9089";
             Environment = [
               "XDG_DATA_HOME=/config"
               "OP_BUS_PORT=11221"
