@@ -51,7 +51,43 @@ diskoTestLib.makeDiskoTest {
     ];
   };
   extraSystemConfig = {
-    imports = [ ../hosts/peirce/hardware.nix ];
+    imports = [
+      ../hosts/peirce/hardware.nix
+      ../modules/boot/zfs.nix
+      ../modules/impermanence
+      inputs.impermanence.nixosModules.impermanence
+      {
+        # No external monitoring integration is needed for this boot fixture.
+        options.site.gatus = {
+          heartbeatToken.available = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+          };
+          heartbeats = lib.mkOption {
+            type = lib.types.attrs;
+            default = { };
+          };
+        };
+      }
+    ];
+    modules.boot.zfs = {
+      enable = true;
+      usePlymouth = false;
+      autoSnapshot.enable = false;
+    };
+    modules.impermanence.enable = true;
+    environment.persistence."/persist".directories = [ "/var/lib/nixos" ];
+    # Exercise a native early bind alongside impermanence's early log/state binds.
+    fileSystems."/var/lib/early-bind-proof" = {
+      device = "/persist/var/lib/early-bind-proof";
+      fsType = "none";
+      options = [ "bind" ];
+      neededForBoot = true;
+    };
+    # Observe the actual rollback, without replacing its script or dependencies.
+    boot.initrd.systemd.services.rollback.preStart = ''
+      echo rollback >> /run/rollback-invocations
+    '';
     networking.hostId = "8ab491d2";
     boot.loader.systemd-boot.enable = lib.mkForce false;
     boot.loader.grub.devices = lib.mkForce [ ];
@@ -65,12 +101,24 @@ diskoTestLib.makeDiskoTest {
   extraTestScript = ''
     import subprocess
 
+    early_bind_paths = ["/var/log", "/var/lib/nixos", "/var/lib/early-bind-proof"]
+
+    def check_early_binds(machine):
+        # /run survives switch-root but not a cold boot. A second invocation
+        # during initrd isolation must fail even if the mount table looks valid.
+        assert machine.succeed("cat /run/rollback-invocations").splitlines() == ["rollback"]
+        for path in early_bind_paths:
+            machine.succeed(f"test {path} -ef /persist{path}")
+
     with subtest("both disks boot through EFI and unlock ZFS unattended"):
         machine.wait_for_unit("multi-user.target")
         machine.succeed("test $(zpool list -H -o health rpool) = ONLINE")
         machine.succeed("test $(zfs get -H -o value keystatus rpool/encrypted) = available")
         machine.succeed("mountpoint /boot/crucial; mountpoint /boot/samsung")
         machine.succeed("test -f /boot/crucial/EFI/BOOT/BOOTX64.EFI; test -f /boot/samsung/EFI/BOOT/BOOTX64.EFI")
+        check_early_binds(machine)
+        for path in early_bind_paths:
+            machine.succeed(f"echo persistent > {path}/early-bind-sentinel; test {path}/early-bind-sentinel -ef /persist{path}/early-bind-sentinel")
         machine.succeed("echo persistent > /persist/boot-proof; touch /root-must-disappear")
         machine.succeed("sync")
         machine.shutdown()
@@ -96,6 +144,9 @@ diskoTestLib.makeDiskoTest {
             machine.succeed("test $(zpool list -H -o health rpool) = DEGRADED")
             machine.succeed("test $(zfs get -H -o value keystatus rpool/encrypted) = available")
             machine.succeed(f"mountpoint /boot/{survivor}")
+            check_early_binds(machine)
+            for path in early_bind_paths:
+                machine.succeed(f"grep -qx persistent {path}/early-bind-sentinel; test {path}/early-bind-sentinel -ef /persist{path}/early-bind-sentinel")
             machine.succeed("grep -qx persistent /persist/boot-proof; test ! -e /root-must-disappear")
             machine.succeed("test $(stat -c %a /run/peirce-zfs.key) = 400")
             machine.shutdown()

@@ -27,6 +27,9 @@ in
         in
         {
           config = lib.mkIf (enabled && nativeSubids && config.isNormalUser && config.uid != null) {
+            # These preserved explicit ranges replace automatic allocation. Combining
+            # both makes Userborn append duplicate ranges for container service users.
+            autoSubUidGidRange = lib.mkForce false;
             subUidRanges = lib.mkDefault [
               {
                 startUid = range.start;

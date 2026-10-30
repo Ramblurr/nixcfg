@@ -77,7 +77,11 @@ in
             before = [ "sysroot.mount" ];
             path = [ config.boot.zfs.package ];
             unitConfig.DefaultDependencies = "no";
-            serviceConfig.Type = "oneshot";
+            serviceConfig = {
+              Type = "oneshot";
+              # Initrd isolation can pull this dependency again after root is mounted.
+              RemainAfterExit = true;
+            };
             #cryptsetup close /dev/mapper/cryptkey && \
             script =
               if cfg.encrypted then

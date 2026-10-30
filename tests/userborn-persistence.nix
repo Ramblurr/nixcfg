@@ -68,6 +68,8 @@ let
           invoiceninja2 = {
             isNormalUser = true;
             uid = 3015;
+            # Container modules request this; preserved explicit ranges must win.
+            autoSubUidGidRange = true;
           };
         };
         specialisation.persistent.configuration.modules.impermanence.enable = true;
@@ -96,8 +98,7 @@ pkgs.testers.runNixOSTest {
     original_gid = machine.succeed("id -g zservice").strip()
     retired_uid = machine.succeed("id -u retired").strip()
     ranges = machine.succeed("sort /etc/subuid")
-    assert "alice:65636000:65536" in ranges
-    assert "invoiceninja2:362144:65536" in ranges
+    assert ranges == "alice:65636000:65536\ninvoiceninja2:362144:65536\n", ranges
     assert machine.succeed("sort /etc/subgid") == ranges
     machine.succeed("mkdir -p /persist; touch /persist/owned; chown zservice:zservice /persist/owned; chmod 0600 /persist/owned")
 
