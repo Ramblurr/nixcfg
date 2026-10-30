@@ -58,7 +58,8 @@
     niri-scratchpad.inputs.nixpkgs.follows = "nixpkgs";
     nix-doom-emacs-unstraightened.url = "github:marienz/nix-doom-emacs-unstraightened";
     nix-doom-emacs-unstraightened.inputs.nixpkgs.follows = "nixpkgs";
-    nixbot.url = "github:Mic92/nixbot";
+    # Temporary fix for https://github.com/Mic92/nixbot/issues/279.
+    nixbot.url = "github:Ramblurr/nixbot/fix/restart-fetch-credentials";
     nixbot.inputs.nixpkgs.follows = "nixpkgs";
     nixbot.inputs.treefmt-nix.follows = "treefmt-nix";
     nix-gaming.url = "github:fufexan/nix-gaming";
