@@ -6,19 +6,19 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "pi-mcp-adapter";
-  version = "5.3.2";
+  version = "7.0.0";
 
   src = fetchFromGitHub {
     owner = "nicobailon";
     repo = "pi-mcp-adapter";
-    rev = "v5.3.2";
-    hash = "sha256-syx9/d3IGyTExenHwwaVFuFN5jZvM8gVn8/+W8bJ8jk=";
+    rev = "v7.0.0";
+    hash = "sha256-x2qh8hFRg4agNOCyroyAxz/ny3iwCp5x4xsisn/TrKk=";
   };
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
-  npmDepsHash = "sha256-08GZ2liRdDFjBATgT8AMVh1oNw1qp42j5sAfbx+M3JA=";
+  npmDepsHash = "sha256-UXz6AaU/jZJvNfSOOPz0FMb84n0hEmsLDoINEFjLjUM=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
   npmInstallFlags = [ "--omit=dev" ];

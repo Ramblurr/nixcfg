@@ -6,13 +6,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "pi-goal-x";
-  version = "0.32.3";
+  version = "0.34.1";
 
   src = fetchFromGitHub {
     owner = "tmonk";
     repo = "pi-goal-x";
-    rev = "64c5ace87f3400c0b55ef87f2d2912167f53dbaa";
-    hash = "sha256-d0IRFiK5JH/VDimVEdJFE/+5i4lDlPLXITvcbCpixt0=";
+    rev = "b0fc15ebb658a1e9ea60ae65496717a780080f37";
+    hash = "sha256-dU4Dk/Q+FroU9WDQbhqRv7qw+pwQRouZX6XM6efxT9o=";
   };
 
   # Runtime dependencies are peers supplied by Pi; TypeScript loads directly.
