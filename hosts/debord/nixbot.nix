@@ -163,6 +163,12 @@ in
     sopsFile = ./nixbot.sops.yaml;
   };
 
+  systemd.services.nixbot.environment = {
+    GIT_CONFIG_COUNT = "1";
+    GIT_CONFIG_KEY_0 = "url.https://git.bitflip.ai/.insteadOf";
+    GIT_CONFIG_VALUE_0 = "ssh://gitea@git.bitflip.ai/";
+  };
+
   systemd.services.nixbot.serviceConfig.LoadCredential = [
     "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"
   ];
