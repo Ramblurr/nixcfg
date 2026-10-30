@@ -8,20 +8,6 @@ let
     test "$3" = op://home-ops-prod/gatus/borgmatic_external_endpoint_token
     printf %s heartbeat-test-token
   '';
-  testCertificate =
-    pkgs.runCommand "gatus-heartbeat-test-certificate"
-      {
-        nativeBuildInputs = [ pkgs.openssl ];
-      }
-      ''
-        mkdir -p "$out"
-        openssl req -x509 -newkey rsa:2048 -nodes \
-          -keyout "$out/key.pem" \
-          -out "$out/cert.pem" \
-          -days 1 \
-          -subj /CN=status.example.test \
-          -addext subjectAltName=DNS:status.example.test
-      '';
 in
 pkgs.testers.runNixOSTest {
   name = "gatus-heartbeats";
@@ -70,6 +56,13 @@ pkgs.testers.runNixOSTest {
         wantedBy = [ "multi-user.target" ];
         serviceConfig.Restart = "on-failure";
         script = ''
+          mkdir -p /run/gatus-heartbeat-test
+          ${pkgs.openssl}/bin/openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout /run/gatus-heartbeat-test/key.pem \
+            -out /run/gatus-heartbeat-test/cert.pem \
+            -days 1 \
+            -subj /CN=status.example.test \
+            -addext subjectAltName=DNS:status.example.test 2>/dev/null
           ${pkgs.python3}/bin/python - <<'PY'
           import ssl
           from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -94,7 +87,7 @@ pkgs.testers.runNixOSTest {
 
           server = HTTPServer(("0.0.0.0", 443), Handler)
           context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-          context.load_cert_chain("${testCertificate}/cert.pem", "${testCertificate}/key.pem")
+          context.load_cert_chain("/run/gatus-heartbeat-test/cert.pem", "/run/gatus-heartbeat-test/key.pem")
           server.socket = context.wrap_socket(server.socket, server_side=True)
           server.serve_forever()
           PY
@@ -102,7 +95,7 @@ pkgs.testers.runNixOSTest {
       };
 
       systemd.services.heartbeat-job = {
-        environment.CURL_CA_BUNDLE = "${testCertificate}/cert.pem";
+        environment.CURL_CA_BUNDLE = "/run/gatus-heartbeat-test/cert.pem";
         serviceConfig = {
           Type = "oneshot";
           DynamicUser = true;
