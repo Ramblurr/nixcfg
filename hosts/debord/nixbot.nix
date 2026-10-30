@@ -156,6 +156,19 @@ in
   sops.secrets."nixbot-bitflip-token" = {
     sopsFile = ./nixbot.sops.yaml;
   };
+  sops.secrets."nixbot-bitflip-username" = {
+    sopsFile = ./nixbot.sops.yaml;
+  };
+  sops.templates."nixbot-netrc" = {
+    path = "/var/lib/nixbot/.netrc";
+    owner = "nixbot";
+    mode = "0400";
+    content = ''
+      machine git.bitflip.ai
+      login ${config.sops.placeholder."nixbot-bitflip-username"}
+      password ${config.sops.placeholder."nixbot-bitflip-token"}
+    '';
+  };
   sops.secrets."nixbot-bitflip-oauth-secret" = {
     sopsFile = ./nixbot.sops.yaml;
   };
