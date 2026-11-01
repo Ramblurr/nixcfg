@@ -109,7 +109,7 @@ in
       tubearchivist-es = {
         autoStart = true;
         # renovate: docker-image
-        image = "docker.io/bbilly1/tubearchivist-es:8.19.0@sha256:9da63fb1973ec3d57daf6916be948eddd0d8a404cc8e447c938480c85fe2c554";
+        image = "docker.io/bbilly1/tubearchivist-es:9.5.5@sha256:9513a22cd332402cb6fd6ef69844f4f78717190ba9e2e08cb72b3288839d84fa";
         environment = {
           ELASTIC_PASSWORD = "tubearchivist";
           ES_JAVA_OPTS = "-Xms1g -Xmx1g";
