@@ -5,11 +5,11 @@
 }:
 stdenvNoCC.mkDerivation {
   pname = "thunderbird-ai-bridge";
-  version = "2.0.0";
+  version = "2.1.0";
 
   src = fetchurl {
-    url = "https://github.com/vitalio-sh/thunderbird-cli/releases/download/v1.0.2/thunderbird_ai_bridge-2.0.0-tb.xpi";
-    hash = "sha256-+s32NlRhmi5cpTn3IUwaY2mIP1ojQ42WYyXY+EIktsw=";
+    url = "https://github.com/vitalio-sh/thunderbird-cli/releases/download/v1.1.0/thunderbird_ai_bridge-2.1.0-tb.xpi";
+    hash = "sha256-mZo+9VAVPUmUYAc3UQk3nTxp0BcB5e4vXfKjq0Pzvck=";
   };
 
   dontUnpack = true;
