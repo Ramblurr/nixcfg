@@ -16,13 +16,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "waytray";
-  version = "unstable-2026-01-06";
+  version = "unstable-2026-03-20";
 
   src = fetchFromGitHub {
     owner = "destructatron";
     repo = "waytray";
-    rev = "ccd6ac471754ff951af128e5df4033702cf2cbe1";
-    hash = "sha256-qf6t5Y9gA9uF6Ku/J6zdsJ0oohX5xCjdyZiPlJPPln0=";
+    rev = "8e7ac948a582c9bd0c6e4c8a8a30cc27aa7763a6";
+    hash = "sha256-FoKX/O5Rae3LP7MsJuzryF7QJfstXYVpoHHYcK0L7sM=";
   };
 
   cargoLock = {
