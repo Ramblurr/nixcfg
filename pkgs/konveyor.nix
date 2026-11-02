@@ -15,14 +15,14 @@ let
 in
 stdenv.mkDerivation {
   pname = "konveyor";
-  version = "0.1.0-unstable-2026-10-20";
+  version = "0.1.0-unstable-2026-11-01";
 
   src = fetchFromGitHub {
     owner = "DevL0rd";
     repo = "Konveyor";
     # KWin 6.8 compatibility: https://github.com/DevL0rd/Konveyor/issues/53
-    rev = "159e28b086b12a6a9735a3ac5fe9bf53c2409a9f";
-    hash = "sha256-y9UQcAuJF8BG2tRWlZn8T4t+pB91M3ZfP1rtjVJHbJI=";
+    rev = "2df614e990995a539ef7fe3d0d54f03246de7fd3";
+    hash = "sha256-vr0+iNcGlPo0fqEUHS5/Eouf6DKCn2Bt5r00R4Wb0ws=";
   };
 
   nativeBuildInputs = [
