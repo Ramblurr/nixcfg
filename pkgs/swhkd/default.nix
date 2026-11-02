@@ -7,17 +7,17 @@
 }:
 rustPlatform.buildRustPackage {
   name = "swhkd";
-  version = "unstable-2024-09-23";
+  version = "unstable-2026-04-26";
   src = fetchFromGitHub {
     owner = "waycrate";
     repo = "swhkd";
-    rev = "f2bee30146eda2b7f10347ce93f3c2236f73ae93";
-    hash = "sha256-0b0vod0CxLLMFS+28kbpfYxLjyok3lioz3oiKSUTzoU=";
+    rev = "cbbfc4a981aa263155e3216a42549c9a3ae645fe";
+    hash = "sha256-Q1EaYUfSMKkwKq+GfBDPIjfe4oS0rhwpPD1sS9nvKpI=";
   };
   cargoLock = {
     lockFile = ./Cargo.lock;
     outputHashes = {
-      "sweet-0.3.0" = "sha256-swSE1CE39cGojp8HAziw0Bzjr+s4XaVU+4OqQDO60fE=";
+      "sweet-0.4.0" = "sha256-Ky2afQ5HyO1a6YT8Jjl6az1jczq+MBKeuRmFwmcvg6U=";
     };
   };
 
