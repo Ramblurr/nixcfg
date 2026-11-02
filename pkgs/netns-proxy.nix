@@ -7,13 +7,13 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "netns-proxy";
-  version = "unstable-2023-09-17";
+  version = "0.2.1-unstable-2026-10-22";
 
   src = fetchFromGitHub {
     owner = "fooker";
     repo = "netns-proxy";
-    rev = "6d9ccbfde4375cd614735ea5f6ee5aba2b6cfd2b";
-    sha256 = "sha256-N+my6cTuA7yNoYxocpRiLNcy7OwrJLvO2cGLJGv8a/I=";
+    rev = "20e010e8a9d9dc2c7d6eec010c5df83fb299cfe0";
+    sha256 = "sha256-KBFr+eXQGiSDN3oPsj794p4oC2kJ4l+iVurIY9fp2NA=";
   };
 
   cargoLock = {
