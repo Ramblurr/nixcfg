@@ -12,8 +12,8 @@
   pkgs,
 }:
 let
-  version = "0.9.33-unstable-2026-08-27";
-  rev = "bd40aee84dc4c4037c1f348eb826a11d2d033f9f";
+  version = "0.9.52";
+  rev = "v0.9.52";
   # Java 1.64.0 and JS 1.64.1 use the same browser revisions.
   # https://github.com/microsoft/playwright-java/releases/tag/v1.64.0
   playwrightBrowserVersion = "1.64.1";
@@ -29,7 +29,7 @@ let
     owner = "Blockether";
     repo = "spel";
     inherit rev;
-    hash = "sha256-X4D3jVxM7WyN5eP4405Y7/K9jJRF8cGVJ4VKeKc1yu8=";
+    hash = "sha256-NkJ/JXyBttOgh3ROl7jaErpU5WmHcOVhs3mn+u4/KzI=";
   };
   src = runCommand "spel-${version}-source" { } ''
     cp -r ${upstreamSrc}/. $out
@@ -65,7 +65,9 @@ stdenv.mkDerivation {
 
     source ${locked.shellEnv}
     unset CLJ_CACHE CLJ_CONFIG XDG_CACHE_HOME XDG_CONFIG_HOME XDG_DATA_HOME
-    clojure -T:build native-image
+    clojure -J-Xmx2g \
+      "-J-Dplaywright.native.extra-args=-J-Xmx6g --parallelism=$NIX_BUILD_CORES" \
+      -T:build native-image
 
     runHook postBuild
   '';
