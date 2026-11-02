@@ -14,20 +14,20 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "link-cli";
-  version = "0.29.0";
+  version = "1.0.1";
 
   src = fetchFromGitHub {
     owner = "stripe";
     repo = "link-cli";
     tag = "@stripe/link-cli@${finalAttrs.version}";
-    hash = "sha256-ueUBqVp9peGK+Qot0sI8dWGhay6Cw0AOycgKR8KM3q8=";
+    hash = "sha256-Dus+yjR9jDHbjANDctwkoJDc6gMP7g59LPl0MkMxLRw=";
   };
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
     fetcherVersion = 3;
-    hash = "sha256-q7RNmboqJ43UlVnn5blu32UcYOSEoRlhcxnwC+IZ0ng=";
+    hash = "sha256-ubL/3U9XHyv7GMD+wt6T8oSaetHnW0E9Ba+Hl4ZBaCg=";
   };
 
   nativeBuildInputs = [
