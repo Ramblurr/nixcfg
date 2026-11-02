@@ -6,19 +6,19 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "pi-lens";
-  version = "4.4.7";
+  version = "4.4.8";
 
   # The npm release includes compiled code and grammars; no prepare script needed.
   src = fetchurl {
-    url = "https://registry.npmjs.org/pi-lens/-/pi-lens-4.4.7.tgz";
-    hash = "sha256-qB00vG8maA6080N72y+HPbF61UpmlPUuIqCIyxZaw8U=";
+    url = "https://registry.npmjs.org/pi-lens/-/pi-lens-4.4.8.tgz";
+    hash = "sha256-G0w8WNpKzeAuiSk6u3k1aXyHIRb8NH/ly397AabBYGA=";
   };
   sourceRoot = "package";
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
-  npmDepsHash = "sha256-BnJ1/HTWi7IZqQypgc9hK8J4nyj2B6x0FLbK5dlV7uo=";
+  npmDepsHash = "sha256-5iP3Ln0h4Xu1Oilq8UqYrvGxqI02p4OMmauxV7Bmku0=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
   npmInstallFlags = [ "--omit=dev" ];
