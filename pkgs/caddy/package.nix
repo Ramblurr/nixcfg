@@ -13,7 +13,7 @@ assert lib.assertMsg (
 caddy.overrideAttrs (_: {
   # Keep module generation out of builds: Go patch upgrades must not rewrite go.mod.
   src = ./src;
-  vendorHash = "sha256-tASojfW7FJb10IuifF9zLBARxZ0lkhP9F7mRO48uYRk=";
+  vendorHash = "sha256-XMMqXUtcNriCAclFr7g7CC3AeD+DTNAiLUSYSSvEwl0=";
   subPackages = [ "." ];
 
   # Use only system CAs, matching nixpkgs, but patch our vendored Caddy source.
