@@ -115,11 +115,11 @@ let
       });
       sentence-transformers = final.buildPythonPackage {
         pname = "sentence-transformers";
-        version = "5.7.0";
+        version = "6.2.0";
         format = "wheel";
         src = pkgs.fetchurl {
-          url = "https://files.pythonhosted.org/packages/e8/c8/f63d99e354532f5b83e735dd1e001bda92495fbfde934f65d924abf2b071/sentence_transformers-5.7.0-py3-none-any.whl";
-          sha256 = "b78141da3d8137e70d965866e2ca43190b9266f3d4d8752e250ded75e7136730";
+          url = "https://files.pythonhosted.org/packages/66/ae/aac4fcaf7aa27daee96aa15d74770b38bb5ff50b1d31ccf12becd68c6e8b/sentence_transformers-6.2.0-py3-none-any.whl";
+          sha256 = "ffb51ccfef65427cfa61776d0eeeb257600b0099cf0c7533ae9a6856d31e4665";
         };
         dependencies = [
           final.huggingface-hub
