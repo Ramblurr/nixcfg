@@ -41,11 +41,11 @@ let
     };
   };
 
-  # pymicro-wakeword v2.1.0
+  # pymicro-wakeword v2.5.0
   # Must use wheel to get bundled libtensorflowlite_c.so for each platform
   pymicro-wakeword = python3Packages.buildPythonPackage rec {
     pname = "pymicro-wakeword";
-    version = "2.1.0";
+    version = "2.5.0";
     format = "wheel";
 
     src = fetchPypi {
@@ -59,9 +59,9 @@ let
         if stdenv.hostPlatform.isAarch64 then "manylinux_2_35_aarch64" else "manylinux_2_35_x86_64";
       hash =
         if stdenv.hostPlatform.isAarch64 then
-          "sha256-XueUjgQKvouj527V5ke47+NGN7e0hsgITSGDWI+UC8Y="
+          "sha256-bHW3fJNu/Rm4w1oJTLfj/b1OvND2NjWghRzlkZkIKfI="
         else
-          "sha256-VZlPhQN4LXskrn0Fzl5jiu3S1MV36KOIeMyJSg2wyus=";
+          "sha256-OGn1NkArElTjvjVJ06Ri7NbtIc4sPnfsjrUBw8cAQXw=";
     };
 
     nativeBuildInputs = [ autoPatchelfHook ];
@@ -81,20 +81,19 @@ let
     };
   };
 
-  # aioesphomeapi 45.3.1 requires zeroconf 0.149.16, which is newer than
-  # the version in stable nixpkgs.
+  # Keep zeroconf above aioesphomeapi's minimum on stable nixpkgs too.
   zeroconf = python3Packages.zeroconf.overridePythonAttrs rec {
-    version = "0.149.16";
+    version = "0.153.0";
 
     src = fetchFromGitHub {
       owner = "jstasiak";
       repo = "python-zeroconf";
       rev = version;
-      hash = "sha256-l/F+Cz0HEtsgfQj01ayl+FQYoQbZVpMfRhNs27BqThI=";
+      hash = "sha256-6jxhL1fwzcYt7g6fNqMVNzFZLjfS0cErt4cjS1YQJxU=";
     };
   };
 
-  # LVA 1.1.15 uses ESPHome's multi-channel audio API from aioesphomeapi 45.3.1.
+  # LVA 1.1.18 requires exactly aioesphomeapi 45.3.1.
   # Pin it here because stable nixpkgs still carries the incompatible 44.x API.
   aioesphomeapi = python3Packages.aioesphomeapi.overridePythonAttrs rec {
     version = "45.3.1";
@@ -140,7 +139,7 @@ let
 in
 python3Packages.buildPythonPackage rec {
   pname = "linux-voice-assistant";
-  version = "1.1.15";
+  version = "1.1.18";
   pyproject = true;
 
   disabled = python3Packages.pythonOlder "3.11";
@@ -149,7 +148,7 @@ python3Packages.buildPythonPackage rec {
     owner = "OHF-Voice";
     repo = "linux-voice-assistant";
     rev = "v${version}";
-    hash = "sha256-n/d5+hwivoInpjrx5Wnv7WGPnyH9xmXFLD4Nvdc3M5A=";
+    hash = "sha256-QFg0mWZB6o/19fSaRfdfCF82Or7fWHK6m5DWwqdIYBc=";
   };
 
   # Upstream output-only mode still imports SoundCard and opens a microphone.

@@ -1,14 +1,14 @@
 --- a/linux_voice_assistant/__main__.py
 +++ b/linux_voice_assistant/__main__.py
 @@ -12,7 +12,6 @@
- from typing import List, Optional, Union
+ from typing import Any, List, Optional, Union
  
  import numpy as np
 -import soundcard as sc
  from aioesphomeapi.api_pb2 import NumberStateResponse  # type: ignore  # pylint: disable=no-name-in-module
- from getmac import get_mac_address  # type: ignore
  from pymicro_wakeword import MicroWakeWord, MicroWakeWordFeatures
-@@ -260,6 +259,8 @@
+ from pyopen_wakeword import OpenWakeWord, OpenWakeWordFeatures
+@@ -276,6 +275,8 @@
  
      _LOGGER.debug(args)
      if args.list_input_devices:
@@ -17,7 +17,7 @@
          print("Audio Input devices:")
          print("=" * 13)
          for idx, mic in enumerate(sc.all_microphones()):
-@@ -329,16 +330,20 @@
+@@ -349,23 +350,27 @@
      args.download_dir = Path(args.download_dir)
      args.download_dir.mkdir(parents=True, exist_ok=True)
  
@@ -27,14 +27,20 @@
 -            args.audio_input_device = int(args.audio_input_device)
 -        except ValueError:
 -            pass
--
--        mic = sc.get_microphone(args.audio_input_device)
--    else:
--        mic = sc.default_microphone()
 +    mic = None
 +    if not args.output_only:
 +        import soundcard as sc
-+
+ 
+-        try:
+-            mic = sc.get_microphone(args.audio_input_device)
+-        except IndexError:
+-            _LOGGER.error("Audio input device %r not found.", args.audio_input_device)
+-            _LOGGER.error("Available input devices:")
+-            for idx, available_mic in enumerate(sc.all_microphones()):
+-                _LOGGER.error("  [%d] %s", idx, available_mic.name)
+-            sys.exit(1)
+-    else:
+-        mic = sc.default_microphone()
 +        # Resolve microphone
 +        if args.audio_input_device is not None:
 +            try:
@@ -42,13 +48,20 @@
 +            except ValueError:
 +                pass
 +
-+            mic = sc.get_microphone(args.audio_input_device)
++            try:
++                mic = sc.get_microphone(args.audio_input_device)
++            except IndexError:
++                _LOGGER.error("Audio input device %r not found.", args.audio_input_device)
++                _LOGGER.error("Available input devices:")
++                for idx, available_mic in enumerate(sc.all_microphones()):
++                    _LOGGER.error("  [%d] %s", idx, available_mic.name)
++                sys.exit(1)
 +        else:
 +            mic = sc.default_microphone()
  
-     # Load available wake words
-     wake_word_dirs = [Path(ww_dir) for ww_dir in args.wake_word_dir]
-@@ -538,12 +543,14 @@
+     # Validate output devices, mpv silently accepts unknown names
+     for output_device in (args.audio_output_device, args.music_output_device):
+@@ -589,12 +594,14 @@
      # ------------------------------------------------------------------
      # Audio processing thread
      # ------------------------------------------------------------------
@@ -69,15 +82,34 @@
  
      # Auto discovery (zeroconf, mDNS)
      discovery = HomeAssistantZeroconf(
-@@ -582,8 +589,9 @@
+@@ -633,7 +640,8 @@
      except KeyboardInterrupt:
          pass
      finally:
--        state.audio_queue.put_nowait(None)
 -        process_audio_thread.join()
 +        if process_audio_thread is not None:
-+            state.audio_queue.put_nowait(None)
 +            process_audio_thread.join()
          if peripheral_api is not None:
              await peripheral_api.stop()
  
+@@ -991,6 +999,8 @@
+         """Look up the microphone again, because the device object can be stale after a suspend or replug."""
+         mic_id = getattr(self._mic, "id", None)
+         if mic_id is not None:
++            import soundcard as sc
++
+             self._mic = sc.get_microphone(mic_id)
+ 
+ 
+--- a/tests/unit/test_main.py
++++ b/tests/unit/test_main.py
+@@ -284,7 +284,8 @@
+         monkeypatch.setitem(sys.modules, "soundcard", MagicMock())
+         from linux_voice_assistant import __main__ as main_mod
+ 
+-        monkeypatch.setattr(main_mod, "sc", MagicMock())
++        # The output-only patch imports soundcard lazily; patch that same module.
++        monkeypatch.setattr(main_mod, "sc", sys.modules["soundcard"], raising=False)
+ 
+     @staticmethod
+     def _make_mic(*recorders):
