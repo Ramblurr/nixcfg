@@ -29,7 +29,10 @@ pkgs.testers.runNixOSTest {
             "factory.name" = "support.null-audio-sink";
             "node.name" = "test-output";
             "media.class" = "Audio/Sink";
-            "audio.position" = [ "FL" "FR" ];
+            "audio.position" = [
+              "FL"
+              "FR"
+            ];
           };
         }
       ];
