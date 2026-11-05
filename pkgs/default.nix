@@ -79,6 +79,7 @@ inputs: [
       pi-fff = prev.callPackage ./pi/pi-fff/package.nix { };
       pi-goal-x = prev.callPackage ./pi/pi-goal-x/package.nix { };
       pi-reload = prev.callPackage ./pi/pi-reload/package.nix { };
+      pi-speak = prev.callPackage ./pi/pi-speak/package.nix { };
       pi-heartbeat = prev.callPackage ./pi/pi-heartbeat/package.nix { };
       pi-ghost = prev.callPackage ./pi/pi-ghost/package.nix { };
       brepl-balance = prev.callPackage ./pi/brepl-balance/package.nix { };
