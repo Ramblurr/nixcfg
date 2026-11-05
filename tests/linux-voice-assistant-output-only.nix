@@ -21,6 +21,18 @@ pkgs.testers.runNixOSTest {
       pulse.enable = false;
       systemWide = true;
       wireplumber.enable = true;
+      # The VM has no sound card; LVA validates that an output sink exists.
+      extraConfig.pipewire."99-test-sink"."context.objects" = [
+        {
+          factory = "adapter";
+          args = {
+            "factory.name" = "support.null-audio-sink";
+            "node.name" = "test-output";
+            "media.class" = "Audio/Sink";
+            "audio.position" = [ "FL" "FR" ];
+          };
+        }
+      ];
     };
 
     services.linux-voice-assistant = {

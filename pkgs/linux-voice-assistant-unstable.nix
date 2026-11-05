@@ -82,7 +82,7 @@ let
   };
 
   # Keep zeroconf above aioesphomeapi's minimum on stable nixpkgs too.
-  zeroconf = python3Packages.zeroconf.overridePythonAttrs rec {
+  zeroconf = python3Packages.zeroconf.overridePythonAttrs (old: rec {
     version = "0.153.0";
 
     src = fetchFromGitHub {
@@ -91,7 +91,14 @@ let
       rev = version;
       hash = "sha256-6jxhL1fwzcYt7g6fNqMVNzFZLjfS0cErt4cjS1YQJxU=";
     };
-  };
+
+    # Default multicast interfaces are unavailable in the Nix build sandbox (ENODEV).
+    disabledTests = (old.disabledTests or [ ]) ++ [
+      "test_open_and_close_cleanly"
+      "test_context_manager_marks_done"
+      "test_default_interface_warns_when_ipv6_requested"
+    ];
+  });
 
   # LVA 1.1.18 requires exactly aioesphomeapi 45.3.1.
   # Pin it here because stable nixpkgs still carries the incompatible 44.x API.
