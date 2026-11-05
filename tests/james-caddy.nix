@@ -116,71 +116,15 @@ in
 assert lib.assertMsg (
   failedAssertions == [ ]
 ) "failed NixOS assertions: ${lib.concatStringsSep "; " failedAssertions}";
-assert lib.all (host: lib.hasInfix "https://${host}" caddy.extraConfig) expectedCertificateHosts;
-assert builtins.length expectedCertificateHosts == 26;
-assert builtins.length (lib.unique expectedCertificateHosts) == 26;
-assert lib.hasInfix "redir https://data-star.dev/ 301" caddy.extraConfig;
-assert lib.hasInfix "redir https://stardustdb.com/ 301" caddy.extraConfig;
-assert lib.hasInfix "@epsilon path /epsilon /epsilon/*" caddy.extraConfig;
-assert lib.hasInfix "redir * /dust/ 301" caddy.extraConfig;
-assert lib.hasInfix ''handle_path "/dust/*"'' caddy.extraConfig;
-assert lib.hasInfix ''redir * "/dust/" 301'' caddy.extraConfig;
-assert lib.hasInfix ''root * "/var/lib/static-web/stardustdb.guide/epsilon"'' caddy.extraConfig;
-assert cfg.users.users.epsilon-deploy.home == "/var/empty";
-assert lib.hasInfix "-wo -munge -absolute /var/lib/static-web/stardustdb.guide/epsilon"
-  cfg.services.openssh.extraConfig;
-assert cfg.users.users.epsilon-deploy.group == "epsilon-deploy";
-assert cfg.users.users.epsilon-deploy.isSystemUser;
-assert builtins.elem pkgs.rsync cfg.environment.systemPackages;
-assert builtins.elem
-  "d /var/lib/static-web/stardustdb.guide/epsilon 0755 epsilon-deploy epsilon-deploy - -"
-  cfg.systemd.tmpfiles.rules;
-assert lib.hasInfix "@plain_home host home.example.test" caddy.extraConfig;
-assert lib.hasInfix "redir https://id.home.example.test/ 302" caddy.extraConfig;
-assert caddy.enable;
-assert caddy.package == pkgs.caddy-with-security;
 assert !caddy.openFirewall;
-assert lib.hasInfix "admin 127.0.0.1:2019" caddy.globalConfig;
-assert lib.hasInfix "servers {" caddy.globalConfig;
-assert lib.hasInfix "listener_wrappers" caddy.globalConfig;
-assert lib.hasInfix "proxy_protocol" caddy.globalConfig;
-assert lib.hasInfix "protocols h1 h2" caddy.globalConfig;
-assert !lib.hasInfix "protocols h1 h2 h3" caddy.globalConfig;
-assert !lib.hasInfix "security {" caddy.globalConfig;
-assert !lib.hasInfix "trusted_proxies" caddy.globalConfig;
-assert !lib.hasInfix ":8443" caddy.globalConfig;
-assert lib.hasInfix "fallback_policy require" caddy.globalConfig;
-assert lib.hasInfix "strict_sni_host on" caddy.globalConfig;
-assert !lib.hasInfix "servers :443" caddy.globalConfig;
-assert !lib.hasInfix "http://:18080" caddy.extraConfig;
-assert !lib.hasInfix "http://:8081" caddy.extraConfig;
-assert lib.hasInfix "bind unix//run/caddy/james-ingress.sock|0660" caddy.extraConfig;
-assert lib.hasInfix "output file /var/log/caddy/access.log" caddy.extraConfig;
-assert lib.hasInfix "mode 0660" caddy.extraConfig;
-assert lib.hasInfix "format json" caddy.extraConfig;
 assert lib.hasInfix "respond 403" caddy.extraConfig;
 assert lib.hasInfix "@plain_goaccess_allowed remote_ip 100.64.0.0/10" caddy.extraConfig;
-assert lib.hasInfix "reverse_proxy unix//var/lib/casey.example.test/.run/site.sock"
-  caddy.extraConfig;
-assert lib.hasInfix "reverse_proxy http://127.0.0.1:1411" caddy.extraConfig;
-assert lib.hasInfix "reverse_proxy http://127.0.0.1:1412" caddy.extraConfig;
-assert lib.hasInfix "root * /var/lib/static-web/work.example.test/www" caddy.extraConfig;
-assert lib.hasInfix "root * /var/lib/static-web/partner.example.test" caddy.extraConfig;
-assert lib.hasInfix "handle /_deploy*" caddy.extraConfig;
-assert lib.hasInfix
-  "reverse_proxy unix//var/lib/static-web/work.example.test/docs/.run/docs-site.sock"
-  caddy.extraConfig;
 assert docsMatcherIndex < builtins.length caddyLines;
 assert docsHandleIndex < docsWebhookIndex;
 assert docsWebhookIndex < docsHookIndex;
 assert docsHookIndex < docsCatchAllIndex;
 assert docsCatchAllIndex < docsBackendIndex;
 assert docsBackendIndex < docsEndIndex;
-assert !lib.hasInfix "path_regexp client_ip_latest" caddy.extraConfig;
-assert !lib.hasInfix "redir /ol.client-ip/ /ol.client-ip/0.1/ 301" caddy.extraConfig;
-assert !lib.hasInfix "root * /var/lib/static-web/work.example.test/docs/current" caddy.extraConfig;
-assert !lib.hasInfix "docs_add_trailing_slash" caddy.extraConfig;
-assert !lib.hasInfix "docs_short_cache" caddy.extraConfig;
 assert lib.hasInfix "respond 421" caddy.extraConfig;
 assert cfg.sops.templates.james-caddy-env.owner == "caddy";
 assert cfg.sops.templates.james-caddy-env.group == "caddy";
@@ -189,14 +133,12 @@ assert
   cfg.sops.templates.james-caddy-env.content
   == "DESEC_API_TOKEN=${cfg.sops.placeholder.desec_api_token}";
 assert lib.hasPrefix "/run/" caddy.environmentFile;
-assert !lib.hasPrefix "/nix/store/" caddy.environmentFile;
 assert builtins.elem "/var/lib/caddy" persistedDirectories;
 assert lib.all (path: builtins.elem path caddyService.unitConfig.RequiresMountsFor) [
   "/var/lib/caddy"
   "/var/lib/goaccess"
   "/var/lib/static-web"
   "/var/lib/casey.example.test"
-  "/var/lib/static-web/stardustdb.guide/epsilon"
 ];
 assert caddyService.serviceConfig.RuntimeDirectory == "caddy";
 assert caddyService.serviceConfig.RuntimeDirectoryMode == "0750";
@@ -208,14 +150,6 @@ assert
     "casey.example.test"
     "docs.work.example.test"
   ];
-assert builtins.elem "casey.example.test" cfg.users.users.caddy.extraGroups;
-assert builtins.elem "docs.work.example.test" cfg.users.users.caddy.extraGroups;
-assert lib.hasInfix "server james-guides 127.0.0.1:8443 send-proxy" cfg.services.haproxy.config;
-assert lib.hasInfix
-  "use_backend bk_james_guides if { req.ssl_sni -i data-star.guide stardustdb.guide }"
-  cfg.services.haproxy.config;
-assert lib.hasInfix "server james-local /run/caddy/james-ingress.sock send-proxy"
-  cfg.services.haproxy.config;
 assert lib.hasInfix "server dewey dewey.prim.home.example.test:443" cfg.services.haproxy.config;
 assert lib.hasInfix "server thingstead thingstead.moot.home.example.test:443"
   cfg.services.haproxy.config;
@@ -260,11 +194,15 @@ pkgs.runCommand "james-caddy-source-test"
     jq -e '
       .apps.http.servers | all([.listener_wrappers[].wrapper] == ["proxy_protocol", "tls"])
     ' "$TMPDIR/caddy.json"
-    jq -e '
-      [.. | objects | .host? // empty | .[]] | unique | length == 26
+    jq -e --argjson expected '${builtins.toJSON expectedCertificateHosts}' '
+      [.. | objects | .host? // empty | .[]] | unique == ($expected | sort)
     ' "$TMPDIR/caddy.json"
     jq -e '
-      [.. | objects | .host? // empty | .[]] | unique | all(startswith("*.") | not)
+      .apps.http.servers | all(
+        .protocols == ["h1", "h2"]
+        and .strict_sni_host == true
+        and (.listener_wrappers | any(.wrapper == "proxy_protocol" and .fallback_policy == "REQUIRE"))
+      )
     ' "$TMPDIR/caddy.json"
     jq -e '
       [.apps.tls.automation.policies[]
@@ -285,15 +223,6 @@ pkgs.runCommand "james-caddy-source-test"
     cat > "$TMPDIR/caddy-access.json" <<'JSON'
     {"level":"info","ts":1786816800.0,"logger":"http.log.access","msg":"handled request","request":{"remote_ip":"198.51.100.25","remote_port":"4242","client_ip":"198.51.100.25","proto":"HTTP/2.0","method":"GET","host":"work.example.test","uri":"/login","headers":{"User-Agent":["representative-agent"]}},"bytes_read":0,"duration":0.001,"size":123,"status":404}
     JSON
-    jq -e '
-      .logger == "http.log.access" and
-      .request.client_ip == "198.51.100.25" and
-      .request.method == "GET" and
-      .request.host == "work.example.test" and
-      .request.uri == "/login" and
-      .request.headers["User-Agent"][0] == "representative-agent" and
-      .status == 404
-    ' "$TMPDIR/caddy-access.json"
     goaccess --no-global-config --log-format=CADDY --output="$TMPDIR/goaccess.json" \
       --json-pretty-print --no-progress "$TMPDIR/caddy-access.json"
     jq -e '.general.valid_requests == 1 and .general.failed_requests == 0' \

@@ -1,7 +1,15 @@
 { inputs, pkgs }:
 let
   inherit (pkgs) lib;
-  base = (import ./james-caddy.nix { inherit inputs pkgs; }).evaluated;
+  base = (import ./james-caddy.nix { inherit inputs pkgs; }).evaluated.extendModules {
+    modules = [
+      {
+        modules.services.staticSites.sites.primary = site // {
+          path = "/docs/";
+        };
+      }
+    ];
+  };
   site = {
     domain = "static.example.test";
     authorizedKeys = [ "ssh-ed25519 AAAATEST" ];
@@ -40,7 +48,7 @@ let
     (base.extendModules {
       modules = [
         {
-          modules.services.staticSites.sites.epsilon.enable = false;
+          modules.services.staticSites.sites.primary.enable = false;
         }
       ];
     }).config;
@@ -79,13 +87,12 @@ assert rejects {
 } "directory beneath";
 assert rejects {
   modules.services.staticSites.sites.bad = site // {
-    directory = "/var/lib/static-web/stardustdb.guide";
+    directory = "/var/lib/static-sites/primary/child";
   };
 } "directories must not overlap";
 assert rejects {
   modules.services.staticSites.sites.bad = site // {
-    domain = "stardustdb.guide";
-    path = "/dust/child/";
+    path = "/docs/child/";
   };
 } "URL mounts";
 assert rejects {
@@ -109,10 +116,9 @@ assert rejects {
   };
 } "cache overrides";
 assert disabled.modules.services.staticSites.handlersByDomain == { };
-assert disabled.users.users.epsilon-deploy.openssh.authorizedKeys.keys == [ ];
+assert disabled.users.users.primary-deploy.openssh.authorizedKeys.keys == [ ];
 assert lib.hasInfix (builtins.unsafeDiscardStringContext "ForceCommand ${pkgs.coreutils}/bin/false")
   disabled.services.openssh.extraConfig;
-assert builtins.elem
-  "d /var/lib/static-web/stardustdb.guide/epsilon 0755 epsilon-deploy epsilon-deploy - -"
+assert builtins.elem "d /var/lib/static-sites/primary 0755 primary-deploy primary-deploy - -"
   disabled.systemd.tmpfiles.rules;
 pkgs.runCommand "static-sites-eval-test" { } "touch $out"
