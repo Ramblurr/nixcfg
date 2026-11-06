@@ -19,8 +19,8 @@ let
   voxtypeSrc = pkgs.fetchFromGitHub {
     owner = "Ramblurr";
     repo = "voxtype";
-    rev = "649079819d9b8c669f7f8022c4cfcd4c66bf8db3";
-    hash = "sha256-tJtW5PWpgG5bihfmxsXyJuw5ZNFTJZM+nHYUBA7FZTg=";
+    rev = "deabf1e4106d8522b91d6eb0b7bba9dccad61a5a";
+    hash = "sha256-vXLV0LlPG4ogIl8A5CS2NPmvNmacfptfYQfAcmQEuQc=";
   };
   # llm-agents packages only Voxtype's default Whisper backend. Enable the fork's
   # ElevenLabs backend and match upstream's ONNX package for Parakeet and Cohere,
@@ -29,9 +29,16 @@ let
     inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.voxtype.overrideAttrs
       (oldAttrs: {
         src = voxtypeSrc;
-        cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
-          src = voxtypeSrc;
-          hash = "sha256-82aa6CyD+1b5H18AwOcwg77hVSi+VuxxhlulUfN+ouQ=";
+        # Match upstream's lockfile importer: fetchCargoVendor follows a recursive
+        # symlink in the OpenVINO git dependency and fails while copying it.
+        cargoDeps = pkgs.rustPlatform.importCargoLock {
+          lockFile = "${voxtypeSrc}/Cargo.lock";
+          outputHashes = {
+            "openvino-finder-0.11.0" = "sha256-nQWeHNdLlRk+owh3B6VpArAG2dr66HeBI2RHfDhyvvU=";
+            "openvino-genai-0.11.0" = "sha256-nQWeHNdLlRk+owh3B6VpArAG2dr66HeBI2RHfDhyvvU=";
+            "openvino-genai-sys-0.11.0" = "sha256-nQWeHNdLlRk+owh3B6VpArAG2dr66HeBI2RHfDhyvvU=";
+            "openvino-sys-0.11.0" = "sha256-nQWeHNdLlRk+owh3B6VpArAG2dr66HeBI2RHfDhyvvU=";
+          };
         };
         cargoBuildFeatures =
           (oldAttrs.cargoBuildFeatures or [ ])
