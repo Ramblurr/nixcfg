@@ -14,13 +14,13 @@
 # Modified to set PATH to include node (See https://github.com/andoriyu/flakes/pull/258)
 buildNpmPackage rec {
   pname = "mcp-inspector";
-  version = "2.13.0";
+  version = "2.14.0";
 
   src = fetchFromGitHub {
     owner = "modelcontextprotocol";
     repo = "inspector";
     rev = version;
-    hash = "sha256-eUPx16AfEtI+F3mrrte5DyVZFwHeso3iXmydQC9KoJ4=";
+    hash = "sha256-iCf/hVWYjgAjfHJKjBXtgA39NL87StgnJjwjAmrukWM=";
   };
 
   makeWrapperArgs = [
@@ -31,7 +31,7 @@ buildNpmPackage rec {
     }"
   ];
 
-  npmDepsHash = "sha256-haDdCwR9QmRiEd9IPzD+07DUtajctrbc916zrS2PyG4=";
+  npmDepsHash = "sha256-EcmIdl7L+3GM8VOag5r+nGmQgE4sjGffnP2pY8LRWtE=";
 
   # Each v2 client has its own lockfile; install it without the postinstall cascade.
   # The launcher has no dependencies and uses the root package's build tools.
@@ -51,7 +51,7 @@ buildNpmPackage rec {
         cli = "sha256-Q/Fgk+lerQXLobJYpLjOFGVk0Sc61deqSeJQG67MYyU=";
         mcpdo = "sha256-ZSsYxDSQTrLSd37tJ90ZChB+IvtPxYpktimSFBEkXgU=";
         tui = "sha256-DEWTLEbnC0XNuAtEhCmE+ZyvMLlwFfP89+GvwX6irfY=";
-        web = "sha256-8pvmARCvPfRrM581nE4P4Rmx8jCsIrm5aM3gU4hqRDc=";
+        web = "sha256-0AwMjW4RxIhC0ZLpD5oV+DgyFIiZZKu+lpiWLwIRBbs=";
       };
   postConfigure = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (client: deps: ''
