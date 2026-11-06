@@ -86,9 +86,15 @@ in
   services.redis.servers.immich = {
     requirePassFile = "${instance.secretsDirectory}/redis-password";
     bind = lib.mkForce (lib.concatStringsSep " " stateAddresses);
-    settings = {
-      appendonly = "yes";
-      appendfsync = "everysec";
+    appendOnly = false;
+    save = [ ];
+  };
+  systemd.services.redis-immich = {
+    # Retry the API dependency start when Redis recovers, too.
+    wants = [ "immich-server.service" ];
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "5s";
     };
   };
   systemd.services.immich-server = {

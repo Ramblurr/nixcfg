@@ -47,8 +47,17 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   cfg.services.postgresql.settings.listen_addresses == "172.20.20.23,10.9.4.23"
   && cfg.services.redis.servers.immich.bind == "172.20.20.23 10.9.4.23"
-  && cfg.services.redis.servers.immich.settings.appendonly == "yes"
-) "Private state listeners and durable queue must be explicit";
+) "Private state listeners must be explicit";
+assert lib.assertMsg (
+  !cfg.services.redis.servers.immich.appendOnly
+  && cfg.services.redis.servers.immich.save == [ ]
+  && cfg.services.redis.servers.immich.settings.save == ''""''
+) "Redis queue persistence must be disabled";
+assert lib.assertMsg (
+  cfg.systemd.services.redis-immich.serviceConfig.Restart == "on-failure"
+  && cfg.systemd.services.redis-immich.serviceConfig.RestartSec == "5s"
+  && builtins.elem "immich-server.service" cfg.systemd.services.redis-immich.wants
+) "Redis recovery must retry the dependent API";
 assert lib.assertMsg (
   builtins.elem "var-lib-immich.mount" cfg.systemd.services.immich-server.bindsTo
   && cfg.systemd.services.immich-server.serviceConfig.StateDirectory == ""
@@ -81,7 +90,7 @@ assert lib.assertMsg (lib.all
   ]
 ) "Guest interface naming must precede 99-default.link so firewall interface rules match";
 assert lib.assertMsg (
-  cfg.microvm.mem == 4096 && cfg.microvm.vcpu == 2
+  cfg.microvm.mem == 8192 && cfg.microvm.vcpu == 2
 ) "Guest resource budget changed";
 assert lib.assertMsg (
   cfg.fileSystems."/var/lib".neededForBoot && cfg.fileSystems."/var/lib/immich".fsType == "nfs"
