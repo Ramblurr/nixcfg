@@ -79,6 +79,16 @@ in
     enable = lib.mkEnableOption "";
     autostart.enable = lib.mkEnableOption "";
     cudaSupport = lib.mkEnableOption "CUDA acceleration for the Parakeet backend";
+    environmentFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Runtime environment file for Voxtype credentials; never put secrets in the Nix store.";
+    };
+    extraArgs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Extra global arguments for the Voxtype daemon. Do not pass credentials here.";
+    };
   };
   config = lib.mkIf cfg.enable {
     myhm = {
@@ -100,14 +110,16 @@ in
           };
           Service = {
             Type = "simple";
-            ExecStart = "${voxtype}/bin/voxtype daemon";
+            ExecStart = "${voxtype}/bin/voxtype${
+              lib.optionalString (cfg.extraArgs != [ ]) " ${lib.escapeShellArgs cfg.extraArgs}"
+            } daemon";
             #ExecStart = "/home/ramblurr/src/github.com/peteonrails/voxtype/target/debug/voxtype daemon";
             Restart = "on-failure";
             RestartSec = 5;
             Environment = [
               "VOXTYPE_OSD_QML_PATH=${voxtype.src}/quickshell"
             ];
-            #EnvironmentFile = "/home/ramblurr/.llm-keys";
+            EnvironmentFile = lib.mkIf (cfg.environmentFile != null) cfg.environmentFile;
           };
           Install.WantedBy = [ "graphical-session.target" ];
         };

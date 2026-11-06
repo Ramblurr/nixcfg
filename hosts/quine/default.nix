@@ -59,13 +59,25 @@ in
   time.timeZone = "Europe/Berlin";
 
   systemd.services.sops-install-secrets.before =
-    lib.mkIf config.modules.desktop.services.ha-mqtt.enable
+    lib.mkIf
+      (
+        config.modules.desktop.services.ha-mqtt.enable
+        || config.modules.desktop.programs.voxtype.autostart.enable
+      )
       [
         "user@${toString config.users.users.${username}.uid}.service"
       ];
   sops.secrets.homeassistant-mqtt-password = {
     owner = username;
     mode = "0400";
+  };
+  sops.secrets.mistral-api-key-quine.owner = "root";
+  sops.templates.voxtype-env = {
+    owner = username;
+    mode = "0400";
+    content = ''
+      VOXTYPE_WHISPER_API_KEY=${config.sops.placeholder.mistral-api-key-quine}
+    '';
   };
   sops.secrets.HASS_TOKEN = {
     owner = username;
@@ -250,6 +262,17 @@ in
           enable = true;
           autostart.enable = true;
           cudaSupport = true;
+          environmentFile = config.sops.templates.voxtype-env.path;
+          extraArgs = [
+            "--engine"
+            "whisper"
+            "--whisper-mode"
+            "remote"
+            "--remote-endpoint"
+            "https://api.mistral.ai"
+            "--remote-model"
+            "voxtral-mini-transcribe-3-0"
+          ];
         };
         #handy.enable = true;
         #handy.autostart.enable = true;
