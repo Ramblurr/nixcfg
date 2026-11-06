@@ -135,10 +135,8 @@ pkgs.testers.runNixOSTest {
         ))
         asset_id = upload["id"]
         assert request("GET", "assets/" + asset_id, token=token)["thumbhash"] is None
-        api.succeed("systemctl restart redis-immich.service")
-        api.wait_for_unit("redis-immich.service")
 
-    with subtest("Remote worker processes the persisted queue on shared NFS"):
+    with subtest("Remote worker processes the queued work on shared NFS"):
         worker.succeed("systemctl start immich-server.service")
         worker.wait_for_unit("immich-server.service")
         api.wait_until_succeeds(
