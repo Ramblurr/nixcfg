@@ -348,6 +348,7 @@ in
     };
     dev = {
       clojure.enable = true;
+      clojure.jdk = pkgs.temurin-bin-27;
       janet.enable = true;
       #fennel.enable = true;
       #jetbrains.enable = true;

@@ -12,12 +12,20 @@ in
 {
   options.modules.dev.clojure = {
     enable = lib.mkEnableOption "";
+    jdk = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.jdk25;
+      description = "JDK package used by Java and Clojure in the development shell.";
+    };
   };
 
   config = mkIf cfg.enable {
     myhm =
       hm:
       let
+
+        my-jdk = cfg.jdk;
+        clojure = pkgs.clojure.override { jdk = my-jdk; };
         devSDKs = with pkgs; {
           #openjfx = javaPackages.openjfx24;
           #gtk3 = gtk3;
@@ -39,7 +47,7 @@ in
         #home.file."vendor/jdks/graalvm-oracle".source = pkgs.graalvmPackages.graalvm-oracle;
         home.packages = with pkgs; [
           flutter
-          jdk25
+          my-jdk
           neil
           maven
           gradle
