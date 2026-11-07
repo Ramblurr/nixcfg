@@ -27,7 +27,7 @@
 # Usage:
 #   repo                # pick repo, cd into it
 #   repo -p             # print selected full path
-#   repo -c             # copy selected full path to clipboard (wl-copy)
+#   repo -c, --copy     # copy selected full path to clipboard (wl-copy)
 #   repo -o             # open selected repo in $EDITOR
 #   repo -A             # alphabetical sort
 #   repo -F             # frecent sort (zoxide)
@@ -158,6 +158,8 @@ repo() {
   for arg in "$@"; do
     if [[ "$arg" == "--refresh" ]]; then
       refresh_cache=1
+    elif [[ "$arg" == "--copy" ]]; then
+      args+=("-c")
     else
       args+=("$arg")
     fi
