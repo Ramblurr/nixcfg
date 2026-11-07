@@ -5,6 +5,7 @@
   unzip,
   fetchFromGitHub,
   makeWrapper,
+  nodejs,
   playwright-driver,
   clojure,
   graalvmPackages,
@@ -79,9 +80,9 @@ stdenv.mkDerivation {
     mkdir -p "$driverDir" driver-unpack
     unzip -q ${locked.homeDirectory}/.m2/repository/com/microsoft/playwright/driver/${playwrightVersion}/driver-${playwrightVersion}.jar -d driver-unpack
     cp -r driver-unpack/driver/. "$driverDir/"
-    unzip -p ${locked.homeDirectory}/.m2/repository/com/microsoft/playwright/driver-bundle/${playwrightVersion}/driver-bundle-${playwrightVersion}.jar \
-      driver/${driverPlatform}/node > "$driverDir/node"
-    chmod +x "$driverDir/node"
+    # Spel launches its daemon with this path directly, even when
+    # PLAYWRIGHT_NODEJS_PATH is set. Use a runtime that works in the Nix sandbox.
+    ln -s ${nodejs}/bin/node "$driverDir/node"
     install -Dm755 target/spel $out/bin/spel
     wrapProgram $out/bin/spel \
       --set-default PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers} \
