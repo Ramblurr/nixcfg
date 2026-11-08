@@ -19,7 +19,7 @@ buildNpmPackage {
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
-  npmDepsHash = "sha256-UJd9CU5LrKdrJsLbYo7JT6fhNO5nT04KUC3QT9VBaw0=";
+  npmDepsHash = "sha256-/Z8O0qKU+WJ0c9m2Om4EPJfzoOtgccGmWitJsO9uhKs=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
   npmInstallFlags = [
