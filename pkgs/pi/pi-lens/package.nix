@@ -21,7 +21,10 @@ buildNpmPackage (_finalAttrs: {
   npmDepsHash = "sha256-aIOe/JYQsY1rYf8q2GHiHMX85n4Gqe/hK6gniFKiBEI=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
-  npmInstallFlags = [ "--omit=dev" "--ignore-scripts" ];
+  npmInstallFlags = [
+    "--omit=dev"
+    "--ignore-scripts"
+  ];
   npmRebuildFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;
 
