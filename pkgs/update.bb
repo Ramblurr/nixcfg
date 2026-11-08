@@ -20,9 +20,15 @@
                    "nix" "eval" "--raw" (str ".#" pkg ".passthru.updateScript.type"))]
     (zero? (:exit result))))
 
+(defn package-file [pkg]
+  (let [provider (str/replace-first (name pkg) #"^terraform-provider-" "")]
+    (if (str/starts-with? (name pkg) "terraform-provider-")
+      (str "pkgs/terraform-providers/" provider ".nix")
+      (str "pkgs/" (name pkg) "/package.nix"))))
+
 (defn get-packages-with-update-script []
   (->> (get-all-packages)
-       (filter #(fs/exists? (str "pkgs/" % "/package.nix")))
+       (filter #(fs/exists? (package-file %)))
        (filter has-update-script?)
        vec))
 
@@ -53,15 +59,24 @@
           (str/replace-first old-version #"^v" "")
           (str/replace-first new-version #"^v" "")))
 
-(defn commit-changes [pkg old-version new-version no-commit]
-  (shell "git" "add" "-u" "pkgs/")
-  (if (zero? (:exit (sh {:continue true} "git" "diff" "--cached" "--quiet")))
-    (log :warning "No changes to stage")
+(defn commit-changes [path message no-commit]
+  (shell "git" "add" "-u" "--" path)
+  (if (zero? (:exit (sh {:continue true} "git" "diff" "--cached" "--quiet" "--" path)))
+    (log :warning (str "No changes to stage in " path))
     (if no-commit
-      (log :info "Changes staged (not committed)")
-      (let [message (commit-message pkg old-version new-version)]
+      (log :info (str "Changes staged in " path " (not committed)"))
+      (do
         (log :info (str "Committing changes: " message))
-        (shell "git" "commit" "-m" message)))))
+        (shell "git" "commit" "-m" message "--" path)))))
+
+(defn run-pi-updates [no-commit]
+  (shell "bb" "pkgs/pi/update.bb")
+  (doseq [dir (->> (fs/list-dir "pkgs/pi")
+                   (filter fs/directory?)
+                   sort)]
+    (let [path (str dir)
+          pkg  (str (fs/file-name dir))]
+      (commit-changes path (str pkg ": update package") no-commit))))
 
 (defn -main [& args]
   (let [changes (tracked-file-changes)]
@@ -83,10 +98,16 @@
     (doseq [pkg packages-to-update]
       (let [old-version (fetch-package-version pkg)]
         (if (run-update-script pkg)
-          (commit-changes pkg old-version (fetch-package-version pkg) no-commit)
+          (commit-changes (if (str/starts-with? (name pkg) "terraform-provider-")
+                            (package-file pkg)
+                            (str "pkgs/" (name pkg)))
+                          (commit-message pkg old-version (fetch-package-version pkg))
+                          no-commit)
           (do
             (log :error (str "Aborting: failed to update " pkg))
-            (System/exit 1)))))))
+            (System/exit 1)))))
+    (when (empty? packages-arg)
+      (run-pi-updates no-commit))))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))

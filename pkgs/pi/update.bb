@@ -32,6 +32,18 @@
                   :owner "nicobailon"
                   :repo  "pi-mcp-adapter"
                   :mode  :release}}
+   "pi-fff"
+   {:nix-name    "pi-fff"
+    :package-file "pkgs/pi/pi-fff/package.nix"
+    :lock-file   "pkgs/pi/pi-fff/package-lock.json"
+    :source      {:kind :npm
+                  :name "@ff-labs/pi-fff"}}
+   "pi-lens"
+   {:nix-name    "pi-lens"
+    :package-file "pkgs/pi/pi-lens/package.nix"
+    :lock-file   "pkgs/pi/pi-lens/package-lock.json"
+    :source      {:kind :npm
+                  :name "pi-lens"}}
    "pi-nrepl"
    {:nix-name    "pi-nrepl"
     :package-file "pkgs/pi/pi-nrepl/package.nix"
