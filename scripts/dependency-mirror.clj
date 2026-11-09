@@ -543,17 +543,17 @@
   (static-css
    "body{font:14px/1.4 system-ui;max-width:1440px;margin:1rem auto;padding:0 .8rem;background:#f8fafc;color:#172033}
     h1{font-size:1.5rem;margin:0 0 .2rem}p{margin:.35rem 0 .6rem}a{color:#174ca0}
-    table{width:100%;border-collapse:collapse;margin:.6rem 0}th,td{text-align:left;padding:.45rem .5rem;border-bottom:1px solid #ccd4df;vertical-align:middle}
-    th{font-size:.8rem;color:#586579}td:first-child{overflow-wrap:anywhere}td small{display:block}
+    table{width:100%;border-collapse:collapse;margin:.6rem 0}th,td{text-align:left;padding:3px 6px;border-bottom:1px solid #ccd4df;vertical-align:middle}tbody tr{height:32px}
+    th{font-size:.8rem;color:#586579}.upstream{max-width:0;width:100%}.upstream>div{display:flex;align-items:center;gap:.5rem}.upstream a,.upstream small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.upstream a{min-width:0}.upstream small{max-width:110px;flex-shrink:0;font-size:10px}
     input[type=url]{box-sizing:border-box;width:min(65%,850px);padding:.35rem .45rem;margin:.25rem .6rem .35rem 0}
     button,select{font:inherit;padding:.25rem .5rem}button{cursor:pointer}button:disabled{cursor:default}
     fieldset{border:1px solid #ccd4df;border-radius:4px;margin:.8rem 0;padding:.55rem .7rem}
     label[for=url]{display:block}.toolbar,.actions{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
     .message{padding:.5rem .7rem;background:#fff3ce}.muted,small{color:#586579}
     .options{display:flex;flex-wrap:wrap;gap:.3rem .8rem;margin:.3rem 0}.options label{white-space:nowrap}
-    .extras{min-width:290px}.extras .options{display:grid;grid-template-columns:repeat(3,max-content);gap:.15rem .6rem}
-    form{margin:0}.actions{min-width:150px}code{overflow-wrap:anywhere}
-    @media(max-width:800px){body{padding:0 .5rem}input[type=url]{width:100%}table{display:block;overflow-x:auto}.extras{min-width:250px}}"))
+    .extras form,.extras .options{display:flex;align-items:center;flex-wrap:nowrap;gap:.4rem;margin:0}.extras{font-size:11px;white-space:nowrap}.extras input{width:12px;height:12px;margin:0;vertical-align:middle}td button{font-size:12px;padding:2px 6px;line-height:20px}
+    form{margin:0}.actions{flex-wrap:nowrap;white-space:nowrap;font-size:12px}table{min-width:860px}code{overflow-wrap:anywhere}
+    @media(max-width:800px){body{padding:0 .5rem}input[type=url]{width:100%}table{display:block;overflow-x:auto;min-width:0}.upstream{min-width:220px}}"))
 
 (defn csrf-field [context]
   [:input {:type "hidden" :name "csrf" :value (:csrf context)}])
@@ -580,39 +580,6 @@
            [:a {:href cgit-url} "Browse cgit"]
            [:a {:href (str base-path "/")} "Refresh"]
            (when @busy_ [:span "Sync running"])]
-          [:table
-           [:thead [:tr [:th "Upstream / selection"] [:th "Extras"] [:th "Actions"]]]
-           [:tbody
-            (for [entry (:repos (load-inventory state-dir))
-                  :let [{:keys [id owner? path provider]} (repository entry)]]
-              [:tr
-               [:td [:a {:href (:url entry) :rel "noreferrer"} (escape-html (:url entry))]
-                [:small (if owner? (if (:include entry) (escape-html (str/join ", " (:include entry)))
-                                       "All repositories") "Single repository")]]
-               [:td.extras
-                (if (some #(get-in providers [provider (first %)]) extra-options)
-                  [:form {:method "post" :action (str base-path "/update")}
-                   (csrf-field context)
-                   [:input {:type "hidden" :name "id" :value id}]
-                   [:div.options
-                    (for [[key field label] extra-options
-                          :when (get-in providers [provider key])]
-                      [:label [:input {:name field :type "checkbox"
-                                       :checked (get entry key (= key :exclude-forks?))}]
-                       (str " " label)])]
-                   [:button {:type "submit"} "Save"]]
-                  [:span.muted "Git only"])]
-               [:td [:div.actions
-                     [:a {:href (if owner? cgit-url (str cgit-url path "/"))} "cgit"]
-                     [:form {:method "post" :action (str base-path "/sync")}
-                      (csrf-field context)
-                      [:input {:type "hidden" :name "id" :value id}]
-                      [:button {:type "submit" :disabled @busy_} "Sync"]]
-                     [:form {:method "post" :action (str base-path "/delete")
-                             :data-on:submit "if (confirm('Delete this inventory entry? Mirrored files will be kept.')) el.submit()"}
-                      (csrf-field context)
-                      [:input {:type "hidden" :name "id" :value id}]
-                      [:button {:type "submit"} "Delete"]]]]])]]
           [:fieldset
            [:legend "Add a repository or owner"]
            [:form {:method "post" :action (str base-path "/add")
@@ -645,6 +612,42 @@
                 (str " " label)])]
             [:p.muted "For self-hosted forges, select the provider. Credentials, if needed, come from the service—not this form."]
             [:button {:type "submit"} "Add"]]]
+          [:table
+           [:thead [:tr [:th "Upstream / selection"] [:th "Extras"] [:th "Actions"]]]
+           [:tbody
+            (for [entry (sort-by (comp str/lower-case :url) (:repos (load-inventory state-dir)))
+                  :let [{:keys [id owner? path provider]} (repository entry)]]
+              [:tr
+               [:td.upstream
+                [:div
+                 [:a {:href (:url entry) :title (:url entry) :rel "noreferrer"} (escape-html (:url entry))]
+                 (when owner?
+                   [:small {:title (if (:include entry) (str/join ", " (:include entry)) "All repositories")}
+                    (if (:include entry) (escape-html (str/join ", " (:include entry))) "All")])]]
+               [:td.extras
+                (if (some #(get-in providers [provider (first %)]) extra-options)
+                  [:form {:method "post" :action (str base-path "/update")}
+                   (csrf-field context)
+                   [:input {:type "hidden" :name "id" :value id}]
+                   [:div.options
+                    (for [[key field label] extra-options
+                          :when (get-in providers [provider key])]
+                      [:label {:title label} [:input {:name field :type "checkbox"
+                                                      :checked (get entry key (= key :exclude-forks?))}]
+                       (str " " (case key :contributed? "Contrib." :exclude-forks? "No forks" label))])]
+                   [:button {:type "submit"} "Save"]]
+                  [:span.muted "Git only"])]
+               [:td [:div.actions
+                     [:a {:href (if owner? cgit-url (str cgit-url path "/"))} "cgit"]
+                     [:form {:method "post" :action (str base-path "/sync")}
+                      (csrf-field context)
+                      [:input {:type "hidden" :name "id" :value id}]
+                      [:button {:type "submit" :disabled @busy_} "Sync"]]
+                     [:form {:method "post" :action (str base-path "/delete")
+                             :data-on:submit "if (confirm('Delete this inventory entry? Mirrored files will be kept.')) el.submit()"}
+                      (csrf-field context)
+                      [:input {:type "hidden" :name "id" :value id}]
+                      [:button {:type "submit"} "Delete"]]]]])]]
           [:p.muted "Git history is mirrored in full. LFS objects, release assets and implicit submodules are not downloaded. Removing an inventory entry does not delete its mirror."]]])))
 
 (defn form-params [body]
@@ -893,6 +896,14 @@
                        :form (str/includes? (:body response) "action=\"/add\"")
                        :list (str/includes? (:body response) "<tbody><tr>")}))))
       (test/is (= {:repos [entry]} (load-inventory dir))))))
+
+(test/deftest inventory-display-order
+  (fs/with-temp-dir [dir]
+    (save-inventory! dir {:repos [{:url "https://github.com/zebra"} {:url "https://github.com/alpha"}]})
+    (let [html (page {:state-dir dir :csrf "test" :cgit-url "/" :busy_ (atom false)} nil)]
+      (test/is (< (str/index-of html "action=\"/add\"") (str/index-of html "<table")))
+      (test/is (< (str/index-of html "https://github.com/alpha") (str/index-of html "https://github.com/zebra")))
+      (test/is (= "https://github.com/zebra" (get-in (load-inventory dir) [:repos 0 :url]))))))
 
 (test/deftest prefixed-editor
   (fs/with-temp-dir [dir]
