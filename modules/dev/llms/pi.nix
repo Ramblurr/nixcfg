@@ -10,111 +10,113 @@ let
   cfg = config.modules.dev.llms;
 in
 {
-  myhm =
-    hm:
-    let
-      home = hm.config.home.homeDirectory;
-    in
-    {
-      imports = [ ./pi-nix.nix ];
+  config = lib.mkIf cfg.enable {
+    myhm =
+      hm:
+      let
+        home = hm.config.home.homeDirectory;
+      in
+      {
+        imports = [ ./pi-nix.nix ];
 
-      programs.pi = lib.mkIf cfg.enable {
-        enable = true;
-        # pi-hashline-edit-pro imports node:sqlite, unavailable in Bun's standalone runtime.
-        package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
-          useBun = false;
-        };
-        instances = {
-          pi = {
-            settings = {
-              defaultProvider = "openai-codex";
-              defaultModel = "gpt-6-astra";
-              defaultThinkingLevel = "medium";
-              skills = [
-                "${home}/src/github.com/ramblurr/nix-devenv/skills/pi"
-                "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
-                "${home}/src/github.com/ramblurr/nix-devenv/skills/engineering"
-                "${home}/src/github.com/backnotprop/plannotator/apps/skills/core"
-                "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
-              ];
-              packages = map toString [
-                pkgs.pi-reload
-                pkgs.pi-speak
-                #pkgs.pi-heartbeat
-                #pkgs.pi-ghost
-                "${home}/src/github.com/ramblurr/pi-extensions/handoff"
-                "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-                "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
-                pkgs.brepl-balance
-                #pkgs.pi-sexp-edit
-                #pkgs.pi-nrepl
-                #pkgs.pi-hashline-edit-pro
-                pkgs.plannotator-pi-extension
-                #pkgs.epimetheus
-                #pkgs.pi-mcp-adapter
-                pkgs.pi-openai-fast
-                #pkgs.pi-nono-sandbox
-                #pkgs.pi-matrix-relay
-                pkgs.pi-link
-                pkgs.pi-lens
-                pkgs.pi-fff
-                #pkgs.pi-goal-x
-              ];
-              npmCommand = [ "pnpm" ];
-              hideThinkingBlock = true;
-              theme = "dark";
-              steeringMode = "all";
-              showCacheMissNotices = true;
-              shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
-            };
-            models.providers = {
-              anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
-              typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
-              subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
-              openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
-              openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
-            };
-            fff = {
-              mode = "override";
-              enableHomeDirScanning = false;
-              enableFsRootScanning = false;
-            };
+        programs.pi = {
+          enable = true;
+          # pi-hashline-edit-pro imports node:sqlite, unavailable in Bun's standalone runtime.
+          package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
+            useBun = false;
           };
-          pi-t3 = {
-            settings = {
-              defaultProvider = "openai-codex";
-              defaultModel = "gpt-6-astra";
-              defaultThinkingLevel = "medium";
-              skills = [
-                "${home}/src/github.com/ramblurr/nix-devenv/skills/t3"
-                "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
-                "${home}/src/github.com/ramblurr/nix-devenv/skills/engineering"
-              ];
-              packages = map toString [
-                pkgs.pi-reload
-                pkgs.pi-speak
-                "${home}/src/github.com/ramblurr/pi-extensions/handoff"
-                "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-                "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
-                pkgs.brepl-balance
-                pkgs.pi-openai-fast
-                pkgs.pi-lens
-                pkgs.pi-fff
-              ];
-              npmCommand = [ "pnpm" ];
-              hideThinkingBlock = true;
-              theme = "dark";
-              steeringMode = "all";
-              showCacheMissNotices = true;
-              shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
+          instances = {
+            pi = {
+              settings = {
+                defaultProvider = "openai-codex";
+                defaultModel = "gpt-6-astra";
+                defaultThinkingLevel = "medium";
+                skills = [
+                  "${home}/src/github.com/ramblurr/nix-devenv/skills/pi"
+                  "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
+                  "${home}/src/github.com/ramblurr/nix-devenv/skills/engineering"
+                  "${home}/src/github.com/backnotprop/plannotator/apps/skills/core"
+                  "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
+                ];
+                packages = map toString [
+                  pkgs.pi-reload
+                  pkgs.pi-speak
+                  #pkgs.pi-heartbeat
+                  #pkgs.pi-ghost
+                  "${home}/src/github.com/ramblurr/pi-extensions/handoff"
+                  "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
+                  "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
+                  pkgs.brepl-balance
+                  #pkgs.pi-sexp-edit
+                  #pkgs.pi-nrepl
+                  #pkgs.pi-hashline-edit-pro
+                  pkgs.plannotator-pi-extension
+                  #pkgs.epimetheus
+                  #pkgs.pi-mcp-adapter
+                  pkgs.pi-openai-fast
+                  #pkgs.pi-nono-sandbox
+                  #pkgs.pi-matrix-relay
+                  pkgs.pi-link
+                  pkgs.pi-lens
+                  pkgs.pi-fff
+                  #pkgs.pi-goal-x
+                ];
+                npmCommand = [ "pnpm" ];
+                hideThinkingBlock = true;
+                theme = "dark";
+                steeringMode = "all";
+                showCacheMissNotices = true;
+                shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
+              };
+              models.providers = {
+                anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
+                typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
+                subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
+                openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
+                openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
+              };
+              fff = {
+                mode = "override";
+                enableHomeDirScanning = false;
+                enableFsRootScanning = false;
+              };
             };
-            fff = {
-              mode = "override";
-              enableHomeDirScanning = false;
-              enableFsRootScanning = false;
+            pi-t3 = {
+              settings = {
+                defaultProvider = "openai-codex";
+                defaultModel = "gpt-6-astra";
+                defaultThinkingLevel = "medium";
+                skills = [
+                  "${home}/src/github.com/ramblurr/nix-devenv/skills/t3"
+                  "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
+                  "${home}/src/github.com/ramblurr/nix-devenv/skills/engineering"
+                ];
+                packages = map toString [
+                  pkgs.pi-reload
+                  pkgs.pi-speak
+                  "${home}/src/github.com/ramblurr/pi-extensions/handoff"
+                  "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
+                  "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
+                  pkgs.brepl-balance
+                  pkgs.pi-openai-fast
+                  pkgs.pi-lens
+                  pkgs.pi-fff
+                ];
+                npmCommand = [ "pnpm" ];
+                hideThinkingBlock = true;
+                theme = "dark";
+                steeringMode = "all";
+                showCacheMissNotices = true;
+                shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
+              };
+              fff = {
+                mode = "override";
+                enableHomeDirScanning = false;
+                enableFsRootScanning = false;
+              };
             };
           };
         };
       };
-    };
+  };
 }
