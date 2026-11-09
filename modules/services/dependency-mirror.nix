@@ -29,9 +29,14 @@ in
 {
   options.modules.services.dependency-mirror = {
     enable = lib.mkEnableOption "Gickup dependency mirrors with an EDN editor and cgit";
+    domain = lib.mkOption {
+      type = lib.types.str;
+      description = "Private ingress hostname for cgit and the editor";
+    };
     listenAddress = lib.mkOption {
       type = lib.types.str;
-      description = "Tailscale IPv4 address used by the editor and cgit";
+      default = "127.0.0.1";
+      description = "Loopback address used by the editor and cgit backends";
     };
     port = lib.mkOption {
       type = lib.types.port;
@@ -76,14 +81,14 @@ in
     systemd.services.dependency-mirror = {
       description = "Dependency mirror inventory editor";
       wantedBy = [ "multi-user.target" ];
-      wants = [ "tailscaled.service" ];
+      wants = [ "network-online.target" ];
       after = [
         "tailscaled.service"
         "network-online.target"
       ];
       unitConfig.RequiresMountsFor = [ stateDir ];
       serviceConfig = serviceConfig // {
-        ExecStart = "${lib.getExe package} serve --state-dir ${stateDir} --bind ${cfg.listenAddress} --port ${toString cfg.port} --cgit-url http://${cfg.listenAddress}:${toString cfg.cgitPort}/";
+        ExecStart = "${lib.getExe package} serve --state-dir ${stateDir} --bind ${cfg.listenAddress} --port ${toString cfg.port} --cgit-url https://${cfg.domain}/ --base-path /edit --public-origin https://${cfg.domain}";
         Restart = "on-failure";
         RestartSec = 10;
       };
@@ -110,10 +115,18 @@ in
         Persistent = true;
       };
     };
-    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-      cfg.port
-      cfg.cgitPort
-    ];
+    modules.services.caddy.routes.dependency-mirror = {
+      publicHost = cfg.domain;
+      handlerConfig = ''
+        @editor path /edit /edit/*
+        handle @editor {
+          reverse_proxy ${cfg.listenAddress}:${toString cfg.port}
+        }
+        handle {
+          reverse_proxy ${cfg.listenAddress}:${toString cfg.cgitPort}
+        }
+      '';
+    };
     services.cgit.dependency-mirror = {
       enable = true;
       group = "dependency-mirror";

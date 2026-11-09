@@ -560,25 +560,25 @@
 
 (defn encode [s] (URLEncoder/encode s "UTF-8"))
 
-(defn page [{:keys [state-dir cgit-url busy_] :as context} message]
+(defn page [{:keys [state-dir cgit-url busy_ base-path] :as context} message]
   (str "<!doctype html>"
        (hp/html
         [:html {:lang "en"}
          [:head [:meta {:charset "UTF-8"}]
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
           [:title "Dependency mirrors"]
-          [:link {:rel "stylesheet" :href css}]
-          [:script {:type "module" :src datastar-js}]]
+          [:link {:rel "stylesheet" :href (str base-path css)}]
+          [:script {:type "module" :src (str base-path datastar-js)}]]
          [:body
           [:h1 "Dependency mirrors"]
           [:p.muted "Offline source repositories. Add a repository or a forge user/organization."]
           (when message [:p.message {:role "status"} (escape-html message)])
           [:div.toolbar
-           [:form {:method "post" :action "/sync"}
+           [:form {:method "post" :action (str base-path "/sync")}
             (csrf-field context)
             [:button {:type "submit" :disabled @busy_} "Sync All"]]
            [:a {:href cgit-url} "Browse cgit"]
-           [:a {:href "/"} "Refresh"]
+           [:a {:href (str base-path "/")} "Refresh"]
            (when @busy_ [:span "Sync running"])]
           [:table
            [:thead [:tr [:th "Upstream / selection"] [:th "Extras"] [:th "Actions"]]]
@@ -591,7 +591,7 @@
                                        "All repositories") "Single repository")]]
                [:td.extras
                 (if (some #(get-in providers [provider (first %)]) extra-options)
-                  [:form {:method "post" :action "/update"}
+                  [:form {:method "post" :action (str base-path "/update")}
                    (csrf-field context)
                    [:input {:type "hidden" :name "id" :value id}]
                    [:div.options
@@ -604,18 +604,18 @@
                   [:span.muted "Git only"])]
                [:td [:div.actions
                      [:a {:href (if owner? cgit-url (str cgit-url path "/"))} "cgit"]
-                     [:form {:method "post" :action "/sync"}
+                     [:form {:method "post" :action (str base-path "/sync")}
                       (csrf-field context)
                       [:input {:type "hidden" :name "id" :value id}]
                       [:button {:type "submit" :disabled @busy_} "Sync"]]
-                     [:form {:method "post" :action "/delete"
+                     [:form {:method "post" :action (str base-path "/delete")
                              :data-on:submit "if (confirm('Delete this inventory entry? Mirrored files will be kept.')) el.submit()"}
                       (csrf-field context)
                       [:input {:type "hidden" :name "id" :value id}]
                       [:button {:type "submit"} "Delete"]]]]])]]
           [:fieldset
            [:legend "Add a repository or owner"]
-           [:form {:method "post" :action "/add"
+           [:form {:method "post" :action (str base-path "/add")
                    :data-signals (json/generate-string {:url "" :providerOverride "auto"})
                    :data-computed:provider
                    (str "$providerOverride !== 'auto' ? $providerOverride : (() => {try {return ("
@@ -661,7 +661,7 @@
              "Content-Security-Policy" "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"}
    :body (page context message)})
 
-(defn handler [context request]
+(defn app-handler [context request]
   (let [{:keys [request-method uri headers]} request]
     (try
       (require! (contains? (:hosts context) (get headers "host")) "Unexpected Host header.")
@@ -671,7 +671,7 @@
         [:post "/add"]
         (let [params (form-params (:body request))]
           (require! (and (= (get params "csrf") (:csrf context))
-                         (= (get headers "origin") (str "http://" (get headers "host")))
+                         (= (get headers "origin") (or (:public-origin context) (str "http://" (get headers "host"))))
                          (not= "cross-site" (get headers "sec-fetch-site")))
                     "Cross-origin request rejected.")
           (let [provider (get params "provider" "auto")
@@ -679,35 +679,35 @@
                         (not= provider "auto") (assoc :provider (keyword provider)))
                 entry (form-extras entry params)]
             (add-repository! (:state-dir context) entry))
-          {:status 303 :headers {"Location" "/"} :body ""})
+          {:status 303 :headers {"Location" (str (:base-path context) "/")} :body ""})
         [:post "/update"]
         (let [params (form-params (:body request))]
           (require! (and (= (get params "csrf") (:csrf context))
-                         (= (get headers "origin") (str "http://" (get headers "host")))
+                         (= (get headers "origin") (or (:public-origin context) (str "http://" (get headers "host"))))
                          (not= "cross-site" (get headers "sec-fetch-site")))
                     "Cross-origin request rejected.")
           (update-repository! (:state-dir context) (get params "id") params)
-          {:status 303 :headers {"Location" "/"} :body ""})
+          {:status 303 :headers {"Location" (str (:base-path context) "/")} :body ""})
         [:post "/delete"]
         (let [params (form-params (:body request))]
           (require! (and (= (get params "csrf") (:csrf context))
-                         (= (get headers "origin") (str "http://" (get headers "host")))
+                         (= (get headers "origin") (or (:public-origin context) (str "http://" (get headers "host"))))
                          (not= "cross-site" (get headers "sec-fetch-site")))
                     "Cross-origin request rejected.")
           (delete-repository! (:state-dir context) (get params "id"))
-          {:status 303 :headers {"Location" "/"} :body ""})
+          {:status 303 :headers {"Location" (str (:base-path context) "/")} :body ""})
         [:post "/sync"]
         (let [params (form-params (:body request))
               id (not-empty (get params "id"))]
           (require! (and (= (get params "csrf") (:csrf context))
-                         (= (get headers "origin") (str "http://" (get headers "host")))
+                         (= (get headers "origin") (or (:public-origin context) (str "http://" (get headers "host"))))
                          (not= "cross-site" (get headers "sec-fetch-site")))
                     "Cross-origin request rejected.")
           (when id
             (require! (some #(= id (:id (repository %))) (:repos (load-inventory (:state-dir context))))
                       "Unknown repository selection."))
           (start-sync! context id)
-          {:status 303 :headers {"Location" "/"} :body ""})
+          {:status 303 :headers {"Location" (str (:base-path context) "/")} :body ""})
         (if (= request-method :get) (static-asset-handler request) {:status 405 :body "Method not allowed"}))
       (catch Exception e
         (let [fallback {:status 400
@@ -721,16 +721,36 @@
               (catch Exception _ fallback))
             fallback))))))
 
-(defn start-server! [{:keys [state-dir bind port cgit-url]}]
+(defn handler [context request]
+  (let [base-path (or (:base-path context) "")
+        uri (:uri request)]
+    (cond
+      (and (seq base-path) (= uri base-path))
+      {:status 308 :headers {"Location" (str base-path "/")} :body ""}
+      (str/starts-with? uri (str base-path "/"))
+      (app-handler context (update request :uri subs (count base-path)))
+      :else {:status 404 :body "Not found"})))
+
+(defn start-server! [{:keys [state-dir bind port cgit-url base-path public-origin]}]
+  (require! (or (nil? base-path) (= "" base-path) (re-matches #"(?:/[A-Za-z0-9_-]+)+" base-path))
+            "Base path must contain path segments without a trailing slash.")
+  (when public-origin
+    (let [uri (URI. public-origin)]
+      (require! (and (#{"http" "https"} (.getScheme uri)) (.getHost uri)
+                     (str/blank? (.getPath uri)) (nil? (.getUserInfo uri))
+                     (nil? (.getQuery uri)) (nil? (.getFragment uri)))
+                "Public origin must be an HTTP(S) origin without a path.")))
   (fs/create-dirs state-dir)
   (with-file-lock state-dir "inventory.lock"
     #(when-not (fs/exists? (fs/path state-dir "repos.edn"))
        (save-inventory! state-dir {:repos []})))
   (load-inventory state-dir)
-  (let [context {:state-dir state-dir :cgit-url (str (str/replace cgit-url #"/+$" "") "/")
+  (let [context {:base-path (or base-path "") :public-origin public-origin
+                 :state-dir state-dir :cgit-url (str (str/replace cgit-url #"/+$" "") "/")
                  :busy_ (atom false) :csrf (random-unguessable-uid)
                  :hosts (cond-> #{(str bind ":" port)}
-                          (= bind "127.0.0.1") (conj (str "localhost:" port)))}]
+                          (= bind "127.0.0.1") (conj (str "localhost:" port))
+                          public-origin (conj (.getAuthority (URI. public-origin))))}]
     {:context context
      :stop (srv/run-server (partial handler context)
                            {:ip bind :port port :max-body 16384
@@ -874,6 +894,28 @@
                        :list (str/includes? (:body response) "<tbody><tr>")}))))
       (test/is (= {:repos [entry]} (load-inventory dir))))))
 
+(test/deftest prefixed-editor
+  (fs/with-temp-dir [dir]
+    (let [context {:state-dir dir :csrf "test-csrf" :hosts #{"src.example.test"}
+                   :base-path "/edit" :public-origin "https://src.example.test"
+                   :cgit-url "https://src.example.test/" :busy_ (atom false)}
+          request {:request-method :get :uri "/edit/" :headers {"host" "src.example.test"}}
+          response (handler context request)]
+      (test/is (str/includes? (:body response) "action=\"/edit/add\""))
+      (test/is (str/includes? (:body response) (str "src=\"/edit" datastar-js "\"")))
+      (test/is (= 200 (:status (handler context (assoc request :uri (str "/edit" datastar-js))))))
+      (test/is (= {:status 308 :headers {"Location" "/edit/"} :body ""}
+                  (handler context (assoc request :uri "/edit"))))
+      (test/is (= 404 (:status (handler context (assoc request :uri "/")))))
+      (doseq [[origin expected] [["http://src.example.test" 400] ["https://src.example.test" 303]]]
+        (let [result (handler context
+                              {:request-method :post :uri "/edit/add"
+                               :headers {"host" "src.example.test" "origin" origin}
+                               :body (java.io.StringReader. "csrf=test-csrf&url=https%3A%2F%2Fgithub.com%2Fexample")})]
+          (test/is (= expected (:status result)))
+          (when (= expected 303)
+            (test/is (= "/edit/" (get-in result [:headers "Location"])))))))))
+
 (test/deftest request-protection
   (fs/with-temp-dir [dir]
     (let [context {:state-dir dir :csrf "test-csrf" :hosts #{"127.0.0.1:8084"}
@@ -891,8 +933,8 @@
          args args]
     (if (empty? args) options
         (let [[key value & more] args]
-          (require! (and value (contains? #{"--state-dir" "--bind" "--port" "--cgit-url" "--id"} key))
-                    "Usage: dependency-mirror [serve|sync|--test] [--state-dir DIR] [--bind IP] [--port PORT] [--cgit-url URL] [--id ID]")
+          (require! (and value (contains? #{"--state-dir" "--bind" "--port" "--cgit-url" "--id" "--base-path" "--public-origin"} key))
+                    "Usage: dependency-mirror [serve|sync|--test] [--state-dir DIR] [--bind IP] [--port PORT] [--cgit-url URL] [--base-path /PATH] [--public-origin ORIGIN] [--id ID]")
           (recur (assoc options (keyword (subs key 2)) (if (= key "--port") (parse-long value) value)) more)))))
 
 (defn -main [& args]

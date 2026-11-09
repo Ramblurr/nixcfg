@@ -1,8 +1,10 @@
 # Maintain dependency mirrors
 
-Use the editor at <http://100.64.18.17:8084/> on the tailnet. Browse and clone
-mirrors through cgit at <http://100.64.18.17:8085/>. Both listeners bind only to
-Peirce's Tailscale address; tailnet policy controls access. There is no app login.
+Use `https://src.<work-domain>/edit/` for the editor and
+`https://src.<work-domain>/` for cgit. The hostname comes from Peirce's configured
+work domain. LAN and Tailscale DNS point directly to Peirce; there is no public DNS
+record or public ingress route. Caddy serves HTTPS, with both backends bound to
+loopback. There is no app login. The `/edit` namespace is reserved for the editor.
 This service is separate from personal GitHub backups and Forgejo.
 
 ## Select and update repositories
@@ -62,8 +64,8 @@ status. A successful unit alone is not proof that every repository updated.
 Copy the clone URL from cgit. For the example above:
 
 ```sh
-git ls-remote http://100.64.18.17:8085/github.com/cooperspencer/gickup.git
-git clone http://100.64.18.17:8085/github.com/cooperspencer/gickup.git
+git ls-remote https://src.<work-domain>/github.com/cooperspencer/gickup.git
+git clone https://src.<work-domain>/github.com/cooperspencer/gickup.git
 ```
 
 HTTP access is read-only. LFS objects, release assets, and implicit submodules are
@@ -92,7 +94,10 @@ state=$(mktemp -d)
 bb scripts/dependency-mirror.clj serve --state-dir "$state" --bind 127.0.0.1 --port 8084
 ```
 
-This starts only the editor, not cgit. The Nix-packaged `dependency-mirror` command
+This starts only the editor, not cgit. To test a proxy mount, add
+`--base-path /edit --public-origin http://127.0.0.1:8084`; forms and assets retain
+the prefix. The production origin is explicit: forwarded headers cannot change
+the accepted Host or Origin. The Nix-packaged `dependency-mirror` command
 bundles runtime dependencies and browser assets for offline startup.
 Run `dependency-mirror --test` for the embedded tests, including a local Git
 clone/update fixture when Gickup is available.

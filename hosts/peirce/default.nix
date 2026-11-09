@@ -31,7 +31,7 @@
 
   modules.services.dependency-mirror = {
     enable = true;
-    listenAddress = "100.64.18.17";
+    domain = "src.${config.repo.secrets.home-ops.workDomain}";
   };
 
   modules.services.forgejo = {
@@ -43,7 +43,10 @@
   };
   modules.services.caddy.defaultRequestBodyMaxSize = "100MB";
   modules.services.caddy.edge = {
-    certificateHosts = [ config.modules.services.forgejo.domain ];
+    certificateHosts = [
+      config.modules.services.forgejo.domain
+      config.modules.services.dependency-mirror.domain
+    ];
     acmeEmail = config.repo.secrets.global.email.acme;
   };
 
