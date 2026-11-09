@@ -1,46 +1,74 @@
 {
-  cfg,
-  inputs,
+  config,
   lib,
   pkgs,
-  settings,
+  ...
 }:
 
 let
-  llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  # pi-hashline-edit-pro imports node:sqlite, which Bun's standalone runtime does not provide.
-  piPackage = llmAgents.pi.override { useBun = false; };
+  cfg = config.programs.pi;
+  jsonFormat = pkgs.formats.json { };
+  instances = lib.filterAttrs (_: instance: instance.enable) cfg.instances;
 in
 {
-  config = lib.mkIf cfg.enable {
-    myhm =
-      hm:
-      let
-        piSettings = settings hm.config.home.homeDirectory;
-      in
-      {
-        xdg.configFile."pi/agent/settings.json".text = builtins.toJSON (
-          piSettings
-          // {
-            packages = map toString piSettings.packages;
+  options.programs.pi = {
+    enable = lib.mkEnableOption "declarative Pi agent instances";
+    package = lib.mkOption {
+      type = lib.types.nullOr lib.types.package;
+      default = null;
+      description = "Pi package to install; null manages configuration only.";
+    };
+    instances = lib.mkOption {
+      default = { };
+      description = "Independent Pi agent directories. Select one using PI_CODING_AGENT_DIR.";
+      type = lib.types.attrsOf (
+        lib.types.submodule (
+          { name, ... }: {
+            options = {
+              enable = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Whether to manage this instance.";
+              };
+              configDir = lib.mkOption {
+                type = lib.types.str;
+                default = "${config.xdg.configHome}/${name}/agent";
+                description = "Agent directory, absolute or relative to the home directory.";
+              };
+              settings = lib.mkOption {
+                inherit (jsonFormat) type;
+                default = { };
+                description = "Contents of settings.json. Use strings for package store paths.";
+              };
+              models = lib.mkOption {
+                type = lib.types.nullOr jsonFormat.type;
+                default = null;
+                description = "Contents of models.json; null leaves it unmanaged. Use credential references, not secrets.";
+              };
+              fff = lib.mkOption {
+                type = lib.types.nullOr jsonFormat.type;
+                default = null;
+                description = "Contents of pi-fff.json; null leaves it unmanaged.";
+              };
+            };
           }
-        );
-        xdg.configFile."pi/agent/models.json".text = builtins.toJSON {
-          providers = {
-            anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
-            typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
-            subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
-            openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
-            openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
-          };
+        )
+      );
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    home.packages = lib.optional (cfg.package != null) cfg.package;
+    home.file = lib.mkMerge (
+      lib.mapAttrsToList (_: instance: {
+        "${instance.configDir}/settings.json".text = builtins.toJSON instance.settings;
+        "${instance.configDir}/models.json" = lib.mkIf (instance.models != null) {
+          text = builtins.toJSON instance.models;
         };
-        xdg.configFile."pi/agent/pi-fff.json".text = builtins.toJSON {
-          # FFF replaces find/grep and supplies @ file completion.
-          mode = "override";
-          enableHomeDirScanning = false;
-          enableFsRootScanning = false;
+        "${instance.configDir}/pi-fff.json" = lib.mkIf (instance.fff != null) {
+          text = builtins.toJSON instance.fff;
         };
-        home.packages = [ piPackage ];
-      };
+      }) instances
+    );
   };
 }
