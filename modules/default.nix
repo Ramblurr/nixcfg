@@ -106,6 +106,7 @@
     ./site/gatus-heartbeats-onepassword.nix
     ./services/gatus.nix
     ./services/git-archive.nix
+    ./services/dependency-mirror.nix
     ./services/github-runner.nix
     ./services/haproxy.nix
     ./services/home-dl.nix

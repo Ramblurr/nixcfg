@@ -29,6 +29,11 @@
   modules.boot.zfs.extraPools = lib.mkForce [ ];
   modules.vpn.tailscale.enable = true;
 
+  modules.services.dependency-mirror = {
+    enable = true;
+    listenAddress = "100.64.18.17";
+  };
+
   modules.services.forgejo = {
     enable = true;
     domain = "git.${config.repo.secrets.home-ops.workDomain}";
