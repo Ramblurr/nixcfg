@@ -136,6 +136,7 @@ in
         root-title = "Dependency mirrors";
         root-desc = "Read-only vendor and dependency repositories";
         enable-http-clone = true;
+        clone-url = "https://${cfg.domain}/$CGIT_REPO_URL";
         cache-scanrc-ttl = 0;
         cache-root-ttl = 0;
         section-from-path = 2;
