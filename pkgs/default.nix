@@ -68,6 +68,7 @@ inputs: [
       betterunsubscribe = prev.callPackage ./betterunsubscribe.nix { };
       paperless-gpt = prev.callPackage ./paperless-gpt/package.nix { };
       thunderbird-ai-bridge = prev.callPackage ./thunderbird-ai-bridge.nix { };
+      ol-skills = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./ol-skills/package.nix { };
       pi-web = prev.callPackage ./pi-web/package.nix { };
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
       pi-hashline-edit-pro = prev.callPackage ./pi/pi-hashline-edit-pro/package.nix { };
