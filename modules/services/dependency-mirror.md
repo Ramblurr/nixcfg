@@ -68,6 +68,13 @@ git ls-remote https://src.<work-domain>/github.com/cooperspencer/gickup.git
 git clone https://src.<work-domain>/github.com/cooperspencer/gickup.git
 ```
 
+The cgit About tab reads the first matching README from the selected/default
+branch. Markdown, AsciiDoc (`.adoc` and `.asciidoc`), and plain text are supported.
+The packaged filter uses Python Markdown and Asciidoctor, sanitizes their HTML,
+and disables AsciiDoc includes. Rendering is limited to one million characters;
+use the tree view for larger files. It never checks out repository content or
+runs repository-provided code.
+
 HTTP access is read-only. LFS objects, release assets, and implicit submodules are
 not downloaded. Issues and wikis follow Gickup's adapter behavior; issue JSON is
 stored alongside the mirrors, not displayed as a cgit issue tracker.

@@ -9,6 +9,7 @@ let
   stateDir = "/var/lib/dependency-mirror";
   dataset = "rpool/encrypted/safe/svc/dependency-mirror";
   package = pkgs.callPackage ../../pkgs/dependency-mirror.nix { };
+  aboutFilter = pkgs.callPackage ../../pkgs/dependency-mirror-about.nix { };
   serviceConfig = {
     User = "dependency-mirror";
     Group = "dependency-mirror";
@@ -137,6 +138,20 @@ in
         root-desc = "Read-only vendor and dependency repositories";
         enable-http-clone = true;
         clone-url = "https://${cfg.domain}/$CGIT_REPO_URL";
+        about-filter = "${aboutFilter}/bin/dependency-mirror-about";
+        readme = [
+          ":README.md"
+          ":readme.md"
+          ":README.adoc"
+          ":readme.adoc"
+          ":README.asciidoc"
+          ":readme.asciidoc"
+          ":README.markdown"
+          ":README.txt"
+          ":readme.txt"
+          ":README"
+          ":readme"
+        ];
         cache-scanrc-ttl = 0;
         cache-root-ttl = 0;
         section-from-path = 2;
