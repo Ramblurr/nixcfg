@@ -81,6 +81,15 @@ in
         ++ lib.optional cfg.desktop.enable (agents.t3code-desktop.override { t3code = package; });
         home.sessionVariables.T3CODE_HOME = t3Home;
 
+        xdg.desktopEntries.t3code = lib.mkIf cfg.desktop.enable {
+          name = "T3 Code";
+          comment = "Control surface for coding agents";
+          exec = ''${pkgs.coreutils}/bin/env "T3CODE_HOME=${hm.config.xdg.configHome}/t3-desktop" ${package.desktop}/bin/t3code-desktop %U'';
+          icon = "t3code";
+          categories = [ "Development" ];
+          settings.StartupWMClass = "t3code";
+        };
+
         # Preserve UI changes to unmanaged settings; declared values win on activation.
         home.activation.t3codeSettings = hm.lib.hm.dag.entryAfter [ "linkGeneration" ] (
           hm.lib.hm.generators.mkImpureConfigMerger {
