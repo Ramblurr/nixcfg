@@ -10,6 +10,10 @@ in
 {
   options.modules.services.forgejo = {
     enable = lib.mkEnableOption "forgejo";
+    appName = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      description = "Display name of the Forgejo instance";
+    };
     domain = lib.mkOption {
       type = lib.types.str;
       example = "code.example.com";
@@ -31,7 +35,7 @@ in
       enable = true;
       database.type = "sqlite3";
       settings = {
-        DEFAULT.APP_NAME = "Cozy Code Cabin";
+        DEFAULT.APP_NAME = cfg.appName;
         log.LEVEL = "Warn";
         database.LOG_SQL = false;
         server = {
@@ -63,7 +67,7 @@ in
 
     site.gatus.endpoints = [
       {
-        name = "Forgejo";
+        name = "Forgejo (${cfg.domain})";
         group = config.site.gatus.groups.work;
         url = "https://${cfg.domain}/";
       }

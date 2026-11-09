@@ -25,6 +25,18 @@
   modules.boot.zfs.extraPools = lib.mkForce [ ];
   modules.vpn.tailscale.enable = true;
 
+  modules.services.forgejo = {
+    enable = true;
+    domain = "git.${config.repo.secrets.home-ops.workDomain}";
+    appName = "Outskirts Labs";
+    user = config.repo.secrets.home-ops.users.forgejo;
+    group = config.repo.secrets.home-ops.groups.forgejo;
+  };
+  modules.services.caddy.edge = {
+    certificateHosts = [ config.modules.services.forgejo.domain ];
+    acmeEmail = config.repo.secrets.global.email.acme;
+  };
+
   # Use the existing untagged prim connection, matched by the physical NIC.
   systemd.network.links."10-prim" = {
     matchConfig.PermanentMACAddress = config.repo.secrets.local.lan0.hwaddr;

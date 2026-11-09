@@ -541,6 +541,7 @@ in
     modules.services.forgejo = lib.mkIf cfg.apps.forgejo.enable {
       enable = true;
       domain = "git.${home-ops.homeDomain}";
+      appName = "Cozy Code Cabin";
       user = home-ops.users.forgejo;
       group = home-ops.groups.forgejo;
     };
