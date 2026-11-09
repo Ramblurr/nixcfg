@@ -32,9 +32,9 @@ in
                 defaultModel = "gpt-6-astra";
                 defaultThinkingLevel = "medium";
                 skills = [
-                  "${home}/src/github.com/ramblurr/nix-devenv/skills/pi"
-                  "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
-                  "${home}/src/github.com/ramblurr/nix-devenv/skills/engineering"
+                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/pi"
+                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/mine"
+                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/engineering"
                   "${home}/src/github.com/backnotprop/plannotator/apps/skills/core"
                   "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
                 ];
@@ -87,9 +87,9 @@ in
                 defaultModel = "gpt-6-astra";
                 defaultThinkingLevel = "medium";
                 skills = [
-                  "${home}/src/github.com/ramblurr/nix-devenv/skills/t3"
-                  "${home}/src/github.com/ramblurr/nix-devenv/skills/mine"
-                  "${home}/src/github.com/ramblurr/nix-devenv/skills/engineering"
+                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/t3"
+                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/mine"
+                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/engineering"
                 ];
                 packages = map toString [
                   pkgs.pi-reload
