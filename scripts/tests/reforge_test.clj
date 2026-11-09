@@ -24,11 +24,22 @@
         (doseq [file (reverse (file-seq dir))] (io/delete-file file))))))
 
 (deftest cli-options
-  (is (= {:exclude #{"a" "b"} :rename {"old" "new"} :apply true :branches "all"}
+  (is (= {:exclude #{"a" "b"} :rename {"old" "new"} :apply true :branches "all" :owner-type "org"}
          (#'scripts.reforge/options ["--exclude" "a" "--exclude" "b"
                                      "--rename" "old=new" "--apply" "--branches" "all"])))
   (is (thrown? Exception (#'scripts.reforge/options ["--unknown" "value"])))
   (is (thrown? Exception (#'scripts.reforge/options ["unexpected"]))))
+
+(deftest personal-account
+  (with-repo
+    (fn [dir]
+      (let [entry (#'scripts.reforge/repo-plan (assoc opts :owner-type "user") dir)]
+        (is (= ["fj" "-H" "forge.example" "repo" "create" (.getName dir) "--private"]
+               (first (:commands entry)))))))
+  (with-redefs [scripts.reforge/capture (constantly "currently signed into wrong@forge.example")]
+    (is (thrown-with-msg? Exception #"must match the authenticated fj user"
+                          (#'scripts.reforge/plan (assoc opts :owner-type "user" :dir ".")))))
+  (is (thrown? Exception (#'scripts.reforge/options ["--owner-type" "invalid"]))))
 
 (deftest source-names
   (is (= [".github" "project" "project" nil]
@@ -58,6 +69,7 @@
   (with-repo
     (fn [dir]
       (#'scripts.reforge/git dir "remote" "add" "origin" "https://github.com/source/project.git")
+      (#'scripts.reforge/git dir "checkout" "--detach" "HEAD")
       (let [capture @#'scripts.reforge/capture]
         (doseq [private? [true false]]
           (with-redefs [scripts.reforge/capture
@@ -91,6 +103,10 @@
 (deftest conflicts-are-rejected
   (with-repo
     (fn [dir]
+      (#'scripts.reforge/git dir "remote" "add" "y" "https://github.com/source/project.git")
+      (is (thrown-with-msg? Exception #"remotes exist but none is named origin or upstream"
+                            (#'scripts.reforge/repo-plan opts dir)))
+      (#'scripts.reforge/git dir "remote" "remove" "y")
       (#'scripts.reforge/git dir "remote" "add" "origin" "https://github.com/source/project.git")
       (#'scripts.reforge/git dir "remote" "add" "upstream" "https://github.com/other/project.git")
       (is (thrown-with-msg? Exception #"upstream already exists"

@@ -10,10 +10,11 @@
 
 (def usage
   "Usage: bb scripts/reforge.clj --dir DIR --source-owner OWNER
-       --host HOST --owner ORGANIZATION --branches current|all [OPTIONS]
+       --host HOST --owner OWNER --branches current|all [OPTIONS]
 
 Dry-run by default: reads local Git and GitHub metadata, then prints commands.
 --apply                     Execute the complete preflighted plan; stop on error.
+--owner-type org|user       Destination type (default org); user must match fj login.
 --exclude DIRECTORY         Exclude an immediate child directory; repeatable.
 --rename SOURCE=DESTINATION  Override a destination repository name; repeatable.
 --unpublished private|public Required for repos with no origin or upstream.
@@ -28,7 +29,7 @@ branch copies, LFS migration, issues or releases. 'all' pushes LOCAL branches an
 tags only; 'current' pushes only the checked-out branch. Uncommitted files stay
 local. Unpublished repos get an origin, not a fictitious GitHub upstream.
 
-Creation uses fj org repo create. If creation succeeds but a later step fails,
+Creation uses fj org repo create or fj repo create. If creation succeeds but a later step fails,
 inspect the partial state before retrying; existing targets are not overwritten.")
 
 (defn- fail [message]
@@ -40,6 +41,7 @@ inspect the partial state before retrying; existing targets are not overwritten.
           :source-owner {:coerce :string}
           :host {:coerce :string}
           :owner {:coerce :string}
+          :owner-type {:coerce :string :default "org" :validate #{"org" "user"}}
           :branches {:coerce :string}
           :unpublished {:coerce :string}
           :exclude {:coerce []}
@@ -88,7 +90,7 @@ inspect the partial state before retrying; existing targets are not overwritten.
 
 (defn- repo-plan [opts dir]
   (let [{:keys [host owner source-owner branches unpublished]} opts
-        remotes (set (str/split-lines (git dir "remote")))
+        remotes (set (remove str/blank? (str/split-lines (git dir "remote"))))
         origin (remote-url dir remotes "origin")
         upstream (remote-url dir remotes "upstream")
         source (or origin upstream)
@@ -97,6 +99,8 @@ inspect the partial state before retrying; existing targets are not overwritten.
     (if (and origin (str/starts-with? origin target-prefix))
       {:directory (str dir) :skip "already has a destination origin"}
       (do
+        (when (and (nil? source) (seq remotes))
+          (fail (str dir ": remotes exist but none is named origin or upstream")))
         (when-not repo (fail (str dir ": not a GitHub remote for " source-owner)))
         (when (and origin upstream)
           (fail (str dir ": upstream already exists; rename it first")))
@@ -114,7 +118,7 @@ inspect the partial state before retrying; existing targets are not overwritten.
               _ (when (and (nil? source) (nil? unpublished))
                   (fail (str dir ": no GitHub remote; choose --unpublished private|public")))
               private? (if source (:isPrivate metadata) (= "private" unpublished))
-              branch (git dir "symbolic-ref" "--short" "HEAD")
+              branch (when (= branches "current") (git dir "symbolic-ref" "--short" "HEAD"))
               _ (git dir "rev-parse" "--verify" "HEAD")
               target-name (get (:rename opts) repo repo)
               target (str target-prefix target-name ".git")
@@ -125,14 +129,17 @@ inspect the partial state before retrying; existing targets are not overwritten.
                      ["refs/heads/*:refs/heads/*" "refs/tags/*:refs/tags/*"]
                      [(str "refs/heads/" branch ":refs/heads/" branch)])
               default-branch (if (= branches "current") branch
-                                 (or (get-in metadata [:defaultBranchRef :name]) branch))]
+                                 (or (get-in metadata [:defaultBranchRef :name])
+                                     (git dir "symbolic-ref" "--short" "HEAD")))]
           (git dir "show-ref" "--verify" (str "refs/heads/" default-branch))
           {:directory (str dir)
            :repo target-name
            :visibility (if private? "private" "public")
            :commands
            (vec (concat
-                 [(cond-> (into fj ["org" "repo" "create" owner target-name])
+                 [(cond-> (into fj (if (= "user" (:owner-type opts))
+                                     ["repo" "create" target-name]
+                                     ["org" "repo" "create" owner target-name]))
                     private? (conj "--private"))]
                  [(into git-cmd (concat ["push" "--atomic" target] refs))
                   (into fj ["repo" "edit" full-name "--default-branch" default-branch])]
@@ -152,6 +159,10 @@ inspect the partial state before retrying; existing targets are not overwritten.
     (fail "--branches must be current or all"))
   (when-not (contains? #{nil "private" "public"} (:unpublished opts))
     (fail "--unpublished must be private or public"))
+  (when (= "user" (:owner-type opts))
+    (when-not (= (str "currently signed into " (:owner opts) "@" (:host opts))
+                 (capture ["fj" "-H" (:host opts) "whoami"]))
+      (fail "--owner must match the authenticated fj user on --host")))
   (let [root (.getCanonicalFile (io/file (:dir opts)))]
     (when-not (.isDirectory root) (fail "--dir is not a directory"))
     (let [entries
