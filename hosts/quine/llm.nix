@@ -4,6 +4,7 @@ _: {
 
   modules.dev.llms.t3 = {
     enable = true;
+    desktop.enable = true;
     tailscaleServePort = 8443;
   };
 }
