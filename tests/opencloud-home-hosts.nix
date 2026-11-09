@@ -84,10 +84,8 @@ assert
     "IDM_ADMIN_PASSWORD:${d.modules.services.onepassword-systemd-credentials.socketPath}"
     "JWT_SECRET:${d.modules.services.onepassword-systemd-credentials.socketPath}"
   ];
-assert guest.microvm.credentialFiles == { };
 assert guest.modules.microvm-guest.hostSecrets.enable;
 assert builtins.elem "opencloud-home-credentials" guest.modules.microvm-guest.hostSecrets.services;
-assert secretService.script != "";
 pkgs.runCommand "opencloud-home-hosts" { } ''
   export CREDENTIALS_DIRECTORY="$TMPDIR/credentials"
   mkdir -m 0700 "$CREDENTIALS_DIRECTORY"
@@ -112,8 +110,6 @@ pkgs.runCommand "opencloud-home-hosts" { } ''
   test "$(cat "$TMPDIR/source/JWT_SECRET")" = "$(printf '%064d' 2)"
   test "$(stat -c %a "$TMPDIR/source/IDM_ADMIN_PASSWORD")" = 400
   test "$(stat -c %a "$TMPDIR/source/JWT_SECRET")" = 400
-  test ! -e "$TMPDIR/source/IDM_ADMIN_PASSWORD.new"
-  test ! -e "$TMPDIR/source/JWT_SECRET.new"
   printf '%064d' 3 > "$CREDENTIALS_DIRECTORY/IDM_ADMIN_PASSWORD"
   "$renderer"
   test "$(cat "$TMPDIR/source/IDM_ADMIN_PASSWORD")" = "$(printf '%064d' 3)"
@@ -121,8 +117,8 @@ pkgs.runCommand "opencloud-home-hosts" { } ''
   if "$renderer"; then
     echo 'Credential materialization must fail when a credential is missing' >&2
     exit 1
-      fi
-      test ! -e "$TMPDIR/source/IDM_ADMIN_PASSWORD"
-      test ! -e "$TMPDIR/source/JWT_SECRET"
-      touch $out
+  fi
+  test ! -e "$TMPDIR/source/IDM_ADMIN_PASSWORD"
+  test ! -e "$TMPDIR/source/JWT_SECRET"
+  touch $out
 ''

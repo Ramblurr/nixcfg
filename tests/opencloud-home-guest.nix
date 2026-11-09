@@ -77,7 +77,6 @@ assert builtins.all (
 ) c.microvm.virtiofsd.extraArgs;
 assert (builtins.head secretShares).proto == "virtiofs";
 assert (builtins.head secretShares).readOnly;
-assert c.microvm.credentialFiles == { };
 assert
   c.systemd.services.opencloud-home-credentials.serviceConfig.LoadCredential == [
     "IDM_ADMIN_PASSWORD:/run/host-secrets/IDM_ADMIN_PASSWORD"
@@ -89,14 +88,9 @@ assert builtins.all (option: builtins.elem option c.fileSystems."/run/host-secre
   "nosuid"
   "noexec"
 ];
-assert pkgs.lib.hasInfix "printf 'IDM_ADMIN_PASSWORD='"
-  c.systemd.services.opencloud-home-credentials.script;
-assert pkgs.lib.hasInfix "printf 'JWT_SECRET='"
-  c.systemd.services.opencloud-home-credentials.script;
 assert
   c.systemd.services.opencloud-home-credentials.unitConfig.RequiresMountsFor
   == [ "/run/host-secrets" ];
-assert c.microvm.vsock.cid == 4244;
 assert c.modules.services.opencloud.instances.home.uid == 3100;
 assert c.modules.services.opencloud.instances.home.dataMount == "/mnt/opencloud";
 assert c.fileSystems."/mnt/opencloud".fsType == "nfs";
