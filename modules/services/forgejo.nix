@@ -76,7 +76,7 @@ in
     modules.services.caddy.routes.forgejo = {
       publicHost = cfg.domain;
       upstream = "unix/${config.services.forgejo.settings.server.HTTP_ADDR}";
-      requestBodyMaxSize = "10MB";
+      requestBodyMaxSize = "1GB";
     };
   };
 }

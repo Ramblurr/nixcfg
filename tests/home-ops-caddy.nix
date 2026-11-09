@@ -60,6 +60,7 @@ let
           connectHost = "http://127.0.0.1:8080";
         };
         modules.services.caddy = {
+          defaultRequestBodyMaxSize = "100MB";
           edge = {
             certificateDomains = [ "example.test" ];
             acmeEmail = "admin@example.test";
@@ -70,6 +71,11 @@ let
           };
           auth.issuerURL = "https://id.example.test";
           routes = {
+            forgejo = {
+              publicHost = "git.example.test";
+              upstream = "http://127.0.0.1:3000";
+              requestBodyMaxSize = "1GB";
+            };
             jellyfin = {
               publicHost = "jelly.example.test";
               aliases = [ "media.example.test" ];
@@ -178,6 +184,12 @@ assert (findCheck "OctoPrint").url == "https://octoprint.example.test/online.txt
 assert (findCheck "OctoPrint").conditions == [ "[STATUS] == 200" ];
 assert findCheck "Phoniebox" == null;
 assert caddy.enable;
+assert lib.hasInfix
+  "@default_body_limit not host git.example.test jelly.example.test media.example.test"
+  caddy.extraConfig;
+assert lib.hasInfix "max_size 100MB" caddy.extraConfig;
+assert lib.hasInfix "max_size 1GB" caddy.extraConfig;
+assert !lib.hasInfix "@default_body_limit" maliCaddy.extraConfig;
 assert caddy.environmentFile == "/run/caddy-env/caddy.env";
 assert provider.consumers.caddy-env-setup == expectedCredentials;
 assert setupService.requiredBy == [ "caddy.service" ];
@@ -230,6 +242,7 @@ pkgs.runCommand "home-ops-caddy-test"
     nativeBuildInputs = [
       pkgs.caddy-with-security
       pkgs.gnugrep
+      pkgs.jq
     ];
   }
   ''
@@ -250,6 +263,8 @@ pkgs.runCommand "home-ops-caddy-test"
     ! grep -Fq 'minio.data.example.test' "$TMPDIR/mali-caddy.json"
     ! grep -Fq 's3.data.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq 'nix-cache.int.example.test' "$TMPDIR/mali-caddy.json"
+    jq -e '[.. | objects | select(.handler? == "request_body") | .max_size] | index(100000000) != null and index(1000000000) != null and index(10000000) != null' "$TMPDIR/caddy.json"
+    jq -e '[.. | objects | select(.handle? != null) | select(any(.handle[]; .handler? == "request_body" and .max_size == 100000000)) | .match[0].not[0].host] | any(.[]; index("git.example.test") != null)' "$TMPDIR/caddy.json"
     grep -Fq '"jelly.example.test"' "$TMPDIR/caddy.json"
     grep -Fq '"media.example.test"' "$TMPDIR/caddy.json"
     grep -Fq '"alpha.example.test"' "$TMPDIR/caddy.json"

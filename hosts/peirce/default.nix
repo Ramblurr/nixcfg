@@ -36,6 +36,7 @@
     user = config.repo.secrets.home-ops.users.forgejo;
     group = config.repo.secrets.home-ops.groups.forgejo;
   };
+  modules.services.caddy.defaultRequestBodyMaxSize = "100MB";
   modules.services.caddy.edge = {
     certificateHosts = [ config.modules.services.forgejo.domain ];
     acmeEmail = config.repo.secrets.global.email.acme;

@@ -414,6 +414,9 @@ let
   mkRouteConfig =
     routeAttrs: applicationAttrs: rejectHttp3Hosts: fallback:
     let
+      bodyLimitOverrideHosts = lib.concatMap routeHosts (
+        lib.filter (route: route.requestBodyMaxSize != null) (builtins.attrValues routeAttrs)
+      );
       errorHandlerConfig = lib.concatStringsSep "\n" (
         lib.mapAttrsToList (
           _: route: lib.optionalString (route.errorHandlerConfig != null) route.errorHandlerConfig
@@ -421,6 +424,14 @@ let
       );
     in
     ''
+      ${lib.optionalString (cfg.defaultRequestBodyMaxSize != null) ''
+        ${lib.optionalString (bodyLimitOverrideHosts != [ ]) ''
+          @default_body_limit not host ${lib.concatStringsSep " " bodyLimitOverrideHosts}
+        ''}
+        request_body ${lib.optionalString (bodyLimitOverrideHosts != [ ]) "@default_body_limit"} {
+          max_size ${cfg.defaultRequestBodyMaxSize}
+        }
+      ''}
       ${lib.optionalString (rejectHttp3Hosts != [ ]) ''
         @reject_http3 {
           protocol http/3
@@ -554,6 +565,11 @@ let
 in
 {
   options.modules.services.caddy = {
+    defaultRequestBodyMaxSize = lib.mkOption {
+      type = lib.types.nullOr lib.types.nonEmptyStr;
+      default = null;
+      description = "Default request body limit for Caddy sites; explicit route limits take precedence";
+    };
     routes = lib.mkOption {
       type = lib.types.attrsOf routeType;
       default = { };
