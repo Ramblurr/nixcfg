@@ -66,6 +66,7 @@ in
         CODEX_HOME = "$XDG_CONFIG_HOME/codex";
         HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
+        T3CODE_HOME = "$XDG_CONFIG_HOME/t3";
         VIBE_HOME = "$XDG_CONFIG_HOME/vibe";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
         PLANNOTATOR_GLIMPSE = "0";
