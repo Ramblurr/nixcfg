@@ -194,10 +194,10 @@ in
       binfmt = true;
     };
   };
-  # Keep a week of process history for investigating school-day battery drain.
+  # Keep 60 days of process history for investigating school-day battery drain.
   systemd.services.atop.environment = {
     LOGINTERVAL = "60";
-    LOGGENERATIONS = "7";
+    LOGGENERATIONS = "60";
   };
   fonts.packages = [
     pkgs.noto-fonts
