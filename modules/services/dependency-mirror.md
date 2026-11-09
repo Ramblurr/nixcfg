@@ -19,6 +19,45 @@ at 04:30 in the host's timezone, with up to 15 minutes of jitter and catch-up af
 downtime. Changes made during a sync apply to the next run. Deleting an entry stops
 future selection; it does not delete existing mirrors or cancel an active sync.
 
+## Agent HTTP API
+
+All paths below are relative to `/edit`. Access uses the same private ingress as
+the editor; there is no separate API credential. Do not expose this service publicly.
+
+- `GET /api/repos`: JSON object keyed by canonical URL, with options as values.
+  Read the `X-CSRF-Token` response header and send it on every mutation.
+- `PATCH /api/repos`: `Content-Type: application/merge-patch+json`.
+  JSON Merge Patch: `{ "https://github.com/example/project": {} }` inserts an
+  entry or leaves an existing one unchanged. Option fields merge; `null` removes
+  an option. Arrays such as `include` replace the whole array. A URL mapped to
+  `null` removes that inventory entry, retaining mirrored files.
+- `DELETE /api/repos`: `Content-Type: application/json`, body
+  `{ "url": "https://github.com/example/project" }`. Same removal semantics;
+  deleting an absent URL is a no-op.
+- `POST /api/sync`: `Content-Type: application/json`, body
+  `{ "url": "https://github.com/example/project" }` for one existing entry or
+  `{ "all": true }` for all entries. Returns `202` on acceptance, not completion.
+
+Options use the EDN field names as JSON strings, including question marks:
+`"issues?"`, `"wiki?"`, `"exclude-forks?"`, `"contributed?"`, `"gists?"`,
+`"organization?"`, `"include"`, `"provider"`, `"scope"`. Provider/scope values are
+strings without a colon. Do not include `url` inside an options object.
+Use canonical URLs from GET: no trailing slash or forge `.git` suffix; GitHub
+paths are lowercase. Generic Git URLs can retain `.git`.
+
+Patches validate the complete resulting inventory and write atomically under the
+same inventory lock as the UI. One invalid entry rejects the whole batch; omitted
+entries/options survive. Requests are limited to 16 KiB. Split larger batches;
+atomicity applies per request. Writes do not trigger syncs. Concurrent edits to
+the same field use the last committed value; this API has no revision precondition.
+
+Command-line clients may omit `Origin`. If supplied, it must match the configured
+public origin. Cross-site requests and missing/stale CSRF tokens return `403`;
+refetch the token after an editor restart. No CORS access is granted. Wrong media
+types return `415`, validation failures `400`, and an already-running editor sync
+`409`. Scheduled syncs share the filesystem lock; check the journal for completion
+or lock contention after `202`, just as for UI syncs.
+
 ## Edit the inventory directly
 
 The source of truth is `/var/lib/dependency-mirror/repos.edn`; changes need no Nix

@@ -531,7 +531,8 @@
                              (or (System/getenv "GICKUP_BIN") "gickup") config))))))))
 
 (defn start-sync! [{:keys [state-dir busy_]} id]
-  (require! (compare-and-set! busy_ false true) "A sync is already running.")
+  (when-not (compare-and-set! busy_ false true)
+    (throw (ex-info "A sync is already running." {:status 409})))
   (future
     (try
       (sync-repositories! state-dir id)
@@ -664,12 +665,83 @@
              "Content-Security-Policy" "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"}
    :body (page context message)})
 
+(defn merge-patch [target patch]
+  (if (map? patch)
+    (reduce-kv (fn [result key value]
+                 (if (nil? value)
+                   (dissoc result key)
+                   (assoc result key (merge-patch (get result key) value))))
+               (if (map? target) target {}) patch)
+    patch))
+
+(defn api-repos [document]
+  (json/parse-string
+   (json/generate-string (into (sorted-map) (map (fn [entry] [(:url entry) (dissoc entry :url)]) (:repos document))))))
+
+(defn patch-repositories! [dir patch]
+  (require! (map? patch) "Patch must be an object keyed by canonical repository URL.")
+  (with-file-lock dir "inventory.lock"
+    #(let [current (api-repos (load-inventory dir))
+           merged (merge-patch current patch)
+           entries (mapv (fn [[url options]]
+                           (require! (and (map? options) (not (contains? options "url")))
+                                     "Repository options must be an object without a url field.")
+                           (let [entry (reduce-kv (fn [entry key value]
+                                                    (assoc entry (keyword key)
+                                                           (if (and (#{"provider" "scope"} key) (string? value))
+                                                             (keyword value) value)))
+                                                  {:url url} options)
+                                 parsed (repository entry)]
+                             (require! (= url (get-in parsed [:entry :url])) "Use canonical URLs (see GET /api/repos).")
+                             (:entry parsed)))
+                         (sort-by key merged))]
+       (save-inventory! dir {:repos entries}))))
+
+(defn json-response [status data]
+  {:status status
+   :headers {"Content-Type" "application/json; charset=utf-8"
+             "Cache-Control" "no-store" "X-Content-Type-Options" "nosniff"}
+   :body (json/generate-string data)})
+
+(defn api-handler [{:keys [state-dir csrf public-origin] :as context}
+                   {:keys [request-method uri headers body]}]
+  (try
+    (if (= :get request-method)
+      (assoc-in (json-response 200 (api-repos (load-inventory state-dir))) [:headers "X-CSRF-Token"] csrf)
+      (let [expected-type (if (= :patch request-method) "application/merge-patch+json" "application/json")]
+        (when-not (and (= csrf (get headers "x-csrf-token"))
+                       (not= "cross-site" (get headers "sec-fetch-site"))
+                       (or (nil? (get headers "origin"))
+                           (= (get headers "origin") (or public-origin (str "http://" (get headers "host"))))))
+          (throw (ex-info "Invalid CSRF token or origin." {:status 403})))
+        (when-not (= expected-type (some-> (get headers "content-type") (str/split #";" 2) first str/trim str/lower-case))
+          (throw (ex-info (str "Expected Content-Type: " expected-type) {:status 415})))
+        (let [data (json/parse-string (slurp body))]
+          (case [request-method uri]
+            [:patch "/api/repos"] (json-response 200 (api-repos (patch-repositories! state-dir data)))
+            [:delete "/api/repos"]
+            (do (require! (and (map? data) (= #{"url"} (set (keys data))) (string? (get data "url")))
+                          "Delete requires exactly a url string.")
+                (json-response 200 (api-repos (patch-repositories! state-dir {(get data "url") nil}))))
+            [:post "/api/sync"]
+            (let [all? (= {"all" true} data)
+                  url (get data "url")
+                  entry (when (string? url) (some #(when (= url (:url %)) %) (:repos (load-inventory state-dir))))]
+              (require! (or all? (and (map? data) (= #{"url"} (set (keys data))) entry))
+                        "Sync requires {\"all\":true} or an existing canonical {\"url\":\"...\"}.")
+              (start-sync! context (when-not all? (:id (repository entry))))
+              (json-response 202 {:status "accepted" :selection (if all? "all" url)}))))))
+    (catch Exception e
+      (json-response (or (:status (ex-data e)) 400) {:error (ex-message e)}))))
+
 (defn app-handler [context request]
   (let [{:keys [request-method uri headers]} request]
     (try
       (require! (contains? (:hosts context) (get headers "host")) "Unexpected Host header.")
       (case [request-method uri]
         [:get "/health"] {:status 200 :body "ok"}
+        ([:get "/api/repos"] [:patch "/api/repos"] [:delete "/api/repos"] [:post "/api/sync"])
+        (api-handler context request)
         [:get "/"] (html-response context nil 200)
         [:post "/add"]
         (let [params (form-params (:body request))]
@@ -896,6 +968,75 @@
                        :form (str/includes? (:body response) "action=\"/add\"")
                        :list (str/includes? (:body response) "<tbody><tr>")}))))
       (test/is (= {:repos [entry]} (load-inventory dir))))))
+
+(test/deftest merge-patch-inventory
+  (fs/with-temp-dir [dir]
+    (let [a "https://github.com/example/a"
+          b "https://github.com/example/b"
+          patch {a {"issues?" true} b {}}
+          expected {:repos [{:url a :issues? true} {:url b}]}]
+      (test/is (= expected (patch-repositories! dir patch)))
+      (test/is (= expected (patch-repositories! dir patch)))
+      (test/is (= {:repos [{:url a :wiki? true} {:url b}]}
+                  (patch-repositories! dir {a {"issues?" nil "wiki?" true}})))
+      (let [before (slurp (str (fs/path dir "repos.edn")))]
+        (doseq [invalid [{a nil "http://invalid/repo" {}}
+                         {a {"unknown" true}} {a {"issues?" "true"}}
+                         {a {"url" b}} {a []} []
+                         {"https://github.com/Example/A.git" {}}]]
+          (test/is (thrown? Exception (patch-repositories! dir invalid)))
+          (test/is (= before (slurp (str (fs/path dir "repos.edn")))))))
+      (fs/create-dirs (fs/path dir "repos" "keep.git"))
+      (test/is (= {:repos [{:url b}]} (patch-repositories! dir {a nil})))
+      (test/is (fs/exists? (fs/path dir "repos" "keep.git"))))))
+
+(test/deftest json-api
+  (fs/with-temp-dir [dir]
+    (let [context {:state-dir dir :csrf "test" :busy_ (atom false) :base-path "/edit"
+                   :public-origin "https://src.example.test" :hosts #{"src.example.test"}}
+          headers {"host" "src.example.test" "x-csrf-token" "test" "content-type" "application/merge-patch+json"}
+          request (fn [method path data extra]
+                    (handler context {:request-method method :uri (str "/edit/api/" path)
+                                      :headers (merge headers extra)
+                                      :body (java.io.StringReader. (json/generate-string data))}))
+          url "https://github.com/example/a"]
+      (test/is (= 200 (:status (request :patch "repos" {url {}} {}))))
+      (let [response (request :get "repos" nil {})]
+        (test/is (= {:status 200 :body (json/generate-string {url {}})
+                     :headers {"Content-Type" "application/json; charset=utf-8"
+                               "Cache-Control" "no-store" "X-Content-Type-Options" "nosniff" "X-CSRF-Token" "test"}}
+                    response)))
+      (doseq [[extra status] [[{"x-csrf-token" nil} 403]
+                              [{"origin" "https://evil.example"} 403]
+                              [{"sec-fetch-site" "cross-site"} 403]
+                              [{"content-type" "text/plain"} 415]
+                              [{"host" "evil.example"} 400]]]
+        (test/is (= status (:status (request :patch "repos" {url nil} extra))))
+        (test/is (= {:repos [{:url url}]} (load-inventory dir))))
+      (test/is (= 400 (:status (request :post "sync" {} {"content-type" "application/json"}))))
+      (reset! (:busy_ context) true)
+      (test/is (= 409 (:status (request :post "sync" {"all" true} {"content-type" "application/json"}))))
+      (test/is (= 200 (:status (request :delete "repos" {"url" url} {"content-type" "application/json"}))))
+      (test/is (= {:repos []} (load-inventory dir))))))
+
+(test/deftest api-sync-selection
+  (doseq [[body expected] [[{"url" "https://github.com/example/a"} [["a"]]]
+                           [{"all" true} [["a"] ["b"]]]]]
+    (fs/with-temp-dir [dir]
+      (save-inventory! dir {:repos [{:url "https://github.com/example/a"} {:url "https://github.com/example/b"}]})
+      (let [captured (promise)
+            finished (promise)
+            context {:state-dir dir :csrf "test" :busy_ (atom false)}]
+        (add-watch (:busy_ context) ::finished (fn [_ _ _ busy?] (when-not busy? (deliver finished true))))
+        (with-redefs [process/shell (fn [_options _binary config]
+                                      (deliver captured (json/parse-string (slurp config) true)))]
+          (let [response (api-handler context {:request-method :post :uri "/api/sync"
+                                               :headers {"x-csrf-token" "test" "content-type" "application/json"}
+                                               :body (java.io.StringReader. (json/generate-string body))})
+                config (deref captured 3000 {})
+                done? (deref finished 3000 false)]
+            (test/is (= [202 expected true]
+                        [(:status response) (mapv :include (get-in config [:source :github])) done?]))))))))
 
 (test/deftest inventory-display-order
   (fs/with-temp-dir [dir]
