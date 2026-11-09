@@ -43,6 +43,16 @@ in
     }
   ];
 
+  # Upstream user@.service delegates cpu/memory/pids but not cpuset. Without it,
+  # benchmark scopes accept AllowedCPUs yet still run on every CPU. Delegate at
+  # the user-manager boundary so agents can pin benchmarks with cpuset for
+  # reliable measurements.
+  systemd.services."user@${toString config.modules.users.primaryUser.uid}" = {
+    overrideStrategy = "asDropin";
+    restartIfChanged = false;
+    serviceConfig.Delegate = "cpu cpuset memory pids";
+  };
+
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.secrets.gatus-heartbeat-token = { };
