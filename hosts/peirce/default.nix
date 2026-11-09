@@ -19,8 +19,12 @@
 
   home-ops = {
     enable = true;
-    # Replication will be configured when the data network is connected.
-    zrepl.enable = lib.mkForce false;
+    # Use encrypted Tailscale transport until the data network is connected.
+    zrepl = {
+      enable = true;
+      sourceAddress = "100.64.18.17";
+      receiverAddress = "100.114.104.114";
+    };
   };
   modules.boot.zfs.extraPools = lib.mkForce [ ];
   modules.vpn.tailscale.enable = true;

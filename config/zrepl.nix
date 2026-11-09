@@ -12,6 +12,16 @@ in
 {
   options.home-ops.zrepl = {
     enable = lib.mkEnableOption "Enable zrepl";
+    sourceAddress = lib.mkOption {
+      type = lib.types.str;
+      default = cidrToIp nodeSettings.dataCIDR;
+      description = "Address on which the replication source listens";
+    };
+    receiverAddress = lib.mkOption {
+      type = lib.types.str;
+      default = lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR;
+      description = "Address of the Mali receiver allowed to pull snapshots";
+    };
   };
   config = lib.mkIf config.home-ops.zrepl.enable {
     # zrepl - ZFS snapshotting and replication
@@ -46,10 +56,10 @@ in
             type = "source";
             serve = {
               type = "tcp";
-              listen = "${cidrToIp nodeSettings.dataCIDR}:${toString home-ops.ports.zrepl-source}";
+              listen = "${config.home-ops.zrepl.sourceAddress}:${toString home-ops.ports.zrepl-source}";
               listen_freebind = true;
               clients = {
-                "${lib.my.cidrToIp config.repo.secrets.global.nodes.mali.dataCIDR}" = "mali";
+                "${config.home-ops.zrepl.receiverAddress}" = "mali";
               };
             };
             filesystems = {

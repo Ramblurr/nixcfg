@@ -57,14 +57,14 @@ in
           nodesWithZReplSources = lib.filterAttrs (
             _name: node: node ? zreplSource && node.zreplSource
           ) config.repo.secrets.global.nodes;
-          mkNodePullJob = name: node: {
+          mkNodePullJob = name: address: {
             name = "${name}";
             type = "pull";
             interval = "1h";
             root_fs = "tank2/replication/${name}";
             connect = {
               type = "tcp";
-              address = "${cidrToIp node.dataCIDR}:${toString config.repo.secrets.home-ops.ports.zrepl-source}";
+              address = "${address}:${toString config.repo.secrets.home-ops.ports.zrepl-source}";
               dial_timeout = "10s";
             };
             recv = {
@@ -123,7 +123,12 @@ in
               };
             };
           };
-          nodeJobs = lib.mapAttrsToList mkNodePullJob nodesWithZReplSources;
+          nodeJobs =
+            lib.mapAttrsToList (name: node: mkNodePullJob name (cidrToIp node.dataCIDR)) (
+              builtins.removeAttrs nodesWithZReplSources [ "peirce" ]
+            )
+            # Peirce has no data-network interface; use encrypted Tailscale transport.
+            ++ [ (mkNodePullJob "peirce" "100.64.18.17") ];
         in
         nodeJobs
         ++ [
