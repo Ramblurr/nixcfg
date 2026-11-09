@@ -13,6 +13,7 @@ let
   serviceConfig = {
     User = "dependency-mirror";
     Group = "dependency-mirror";
+    Environment = lib.optional (cfg.githubTokenReference != null) "GITHUB_TOKEN_FILE=%d/github-token";
     UMask = "0027";
     WorkingDirectory = stateDir;
     NoNewPrivileges = true;
@@ -34,6 +35,11 @@ in
       type = lib.types.str;
       description = "Private ingress hostname for cgit and the editor";
     };
+    githubTokenReference = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "1Password reference for the GitHub runtime credential";
+    };
     listenAddress = lib.mkOption {
       type = lib.types.str;
       default = "127.0.0.1";
@@ -52,6 +58,11 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
+        assertion =
+          cfg.githubTokenReference == null || config.modules.services.onepassword-systemd-credentials.enable;
+        message = "Dependency mirror credentials require the 1Password credential provider.";
+      }
+      {
         assertion = config.services.tailscale.enable;
         message = "The dependency mirror requires Tailscale for authenticated network access.";
       }
@@ -60,6 +71,12 @@ in
         message = "The dependency mirror editor and cgit need distinct ports.";
       }
     ];
+    modules.services.onepassword-systemd-credentials.consumers =
+      lib.mkIf (cfg.githubTokenReference != null)
+        {
+          dependency-mirror.github-token = cfg.githubTokenReference;
+          dependency-mirror-sync.github-token = cfg.githubTokenReference;
+        };
     users.users.dependency-mirror = {
       isSystemUser = true;
       group = "dependency-mirror";

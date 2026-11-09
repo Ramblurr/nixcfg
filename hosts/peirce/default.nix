@@ -32,6 +32,7 @@
   modules.services.dependency-mirror = {
     enable = true;
     domain = "src.${config.repo.secrets.home-ops.workDomain}";
+    githubTokenReference = "op://home-ops-prod/gickup/ol-git-archive";
   };
 
   modules.services.forgejo = {

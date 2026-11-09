@@ -41,11 +41,15 @@ owner. Nested GitLab group paths cannot be distinguished from repository paths
 by URL alone. The UI handles ordinary owner/repository paths; use EDN for these
 ambiguous selections.
 
-For credentials, supply `<PROVIDER>_TOKEN_FILE` (for example `GITHUB_TOKEN_FILE`)
-to **both** systemd services, pointing at a runtime secret readable by
-`dependency-mirror`. Use the existing secret-delivery machinery. Never put tokens
-in URLs, EDN, or Nix literals. Providers may require API credentials even for
-public repositories. No credentials are provisioned by this module by default.
+For GitHub credentials, set `modules.services.dependency-mirror.githubTokenReference`
+to an `op://...` reference. The systemd credential provider delivers it to both
+services; `GITHUB_TOKEN_FILE` points at each unit's private runtime credential.
+Peirce uses `op://home-ops-prod/gickup/ol-git-archive`. Restart the editor after
+rotating the token; scheduled syncs load it at each start.
+
+Other providers use `<PROVIDER>_TOKEN_FILE` on both services, pointing at a runtime
+secret readable by `dependency-mirror`. Never put tokens in URLs, EDN, or Nix
+literals. Providers may require API credentials even for public repositories.
 
 ## Verify a sync
 
