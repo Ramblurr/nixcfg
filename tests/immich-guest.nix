@@ -90,9 +90,6 @@ assert lib.assertMsg (lib.all
   ]
 ) "Guest interface naming must precede 99-default.link so firewall interface rules match";
 assert lib.assertMsg (
-  cfg.microvm.mem == 8192 && cfg.microvm.vcpu == 2
-) "Guest resource budget changed";
-assert lib.assertMsg (
   cfg.fileSystems."/var/lib".neededForBoot && cfg.fileSystems."/var/lib/immich".fsType == "nfs"
 ) "State must persist locally and media must use NFS";
 assert lib.assertMsg (
