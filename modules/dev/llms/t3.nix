@@ -120,7 +120,7 @@ in
             ]
             ++
               lib.optional (cfg.tailscaleServePort != null)
-                "PATH=${
+                "PATH=/run/wrappers/bin:${
                   lib.makeBinPath [ config.services.tailscale.package ]
                 }:${hm.config.home.profileDirectory}/bin:/run/current-system/sw/bin";
             Restart = "on-failure";
