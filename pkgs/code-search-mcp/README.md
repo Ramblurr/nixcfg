@@ -37,7 +37,7 @@ With a mirror root configured, all ten tools are available:
 
 - `grep`: Zoekt query syntax, bounded matches and context.
 - `list_repos`: published mirror/index observations and freshness warnings;
-  its optional query is a literal repository-ID substring. In search-only mode,
+  its optional query is a literal repository-ID substring and its limit defaults to 50. In search-only mode,
   it retains Neogrok's indexed-repository list and Zoekt query semantics.
 - `glob`: case-sensitive `*` and `?` within path components; a whole `**`
   component spans zero or more directories. Other punctuation is literal.

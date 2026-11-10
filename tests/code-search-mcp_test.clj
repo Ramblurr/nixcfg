@@ -606,6 +606,7 @@
               (doseq [[tool args key expected]
                       [["grep" {:query "main"} :files :present]
                        ["list_repos" {} :repositories :present]
+                       ["list_repos" {:query "EXAMPLE/Repo"} :repositories :present]
                        ["glob" {:repository "example/repo" :pattern "**/*.clj"} :matches ["src/core.clj"]]
                        ["read_file" {:repository "example/repo" :path "src/core.clj"} :lines ["old" "line two"]]
                        ["list_tree" {:repository "example/repo" :path "src"} :entries :present]

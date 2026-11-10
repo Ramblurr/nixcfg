@@ -424,7 +424,7 @@
   "List published mirror and index observations, with distinct freshness warnings."
   [catalog query]
   (->> (sqlite/query (:db catalog) "SELECT * FROM repositories ORDER BY id")
-       (filter #(or (nil? query) (str/includes? (:id %) query)))
+       (filter #(or (nil? query) (str/includes? (str/lower-case (:id %)) (str/lower-case query))))
        (mapv #(update % :indexed (fn [value] (when value (json/parse-string value)))))))
 
 (defn list-catalog-branches
@@ -647,7 +647,7 @@
     [["grep" "Search indexed source with Zoekt syntax; returned indexed revisions may lag mirror HEAD."
       {"query" (assoc text :maxLength 4096) "contextLines" context
        "files" (assoc limit :maximum 100) "matches" limit} ["query"]]
-     ["list_repos" "List mirror/catalog freshness with optional literal ID substring and limit. In search-only mode, query is Zoekt syntax."
+     ["list_repos" "Find repositories by literal ID substring (preferred; pass query) or list the catalog. Default limit 50; truncated is set when more exist. In search-only mode, query is Zoekt syntax."
       {"query" (assoc text :maxLength 4096) "limit" limit} []]
      ["glob" "Case-sensitive file glob: *, ? within components; whole-component ** spans directories. Other punctuation is literal."
       (merge common {"pattern" (assoc text :maxLength 256) "limit" limit}) ["repository" "pattern"]]
@@ -702,11 +702,10 @@
                              "contextLines" (get args :context-lines 2)
                              "files" (get args :files 20)
                              "matches" (get args :matches 100)})
-    "list_repos" (let [result (neogrok-request base "list" (select-keys args [:query]))]
-                   (if-let [limit (:limit args)]
-                     (assoc result "repositories" (vec (take limit (get result "repositories")))
-                            "truncated" (> (count (get result "repositories")) limit))
-                     result))))
+    "list_repos" (let [result (neogrok-request base "list" (select-keys args [:query]))
+                       limit (get args :limit 50)]
+                   (assoc result "repositories" (vec (take limit (get result "repositories")))
+                          "truncated" (> (count (get result "repositories")) limit)))))
 
 (defn execute-tool
   "Execute a validated tool through shared operations, independent of MCP transport."
@@ -716,7 +715,7 @@
     "grep" (execute-search base tool args)
     "list_repos" (if catalog
                    (let [rows (list-catalog-repos catalog (:query args))
-                         limit (get args :limit 1000)]
+                         limit (get args :limit 50)]
                      {:repositories (vec (take limit rows)) :truncated (> (count rows) limit)})
                    (execute-search base tool args))
     "glob" (glob-repository catalog args)
