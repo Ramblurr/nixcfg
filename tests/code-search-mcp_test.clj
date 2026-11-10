@@ -808,7 +808,7 @@
                          {:status (:status response)
                           :is-error (boolean (get-in response [:message :result :isError]))
                           :value (if (= expected :present) (boolean (seq (get result key))) (get result key))})
-                      [tool fmt text])))
+                      (str tool " " fmt " " text))))
               (doseq [args [{:repository "example/repo" :path "../outside"}
                             {:repository "example/repo" :path "src/core.clj" :endLine 501}]]
                 (is (= -32602 (get-in (call-http origin :post {:jsonrpc "2.0" :id (str (random-uuid)) :method "tools/call"

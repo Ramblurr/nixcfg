@@ -26,7 +26,7 @@ assert lib.assertMsg (lib.versionAtLeast babashka.version "1.13.226")
   "code-search-mcp requires Babashka 1.13.226 or newer";
 stdenvNoCC.mkDerivation {
   pname = "code-search-mcp";
-  version = "0.1.0";
+  version = "0.2.0";
   src = dependencySource;
   nativeBuildInputs = [
     clojure

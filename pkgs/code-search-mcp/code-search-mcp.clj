@@ -12,7 +12,7 @@
 #_{:clj-kondo/ignore [:namespace-name-mismatch]}
 (ns ^{:clj-kondo/config '{:lint-as {babashka.sqlite/with-conn clojure.core/let}}}
  code-search.mcp
-  "Read-only Streamable HTTP MCP over the existing Neogrok search service."
+  "Streamable HTTP MCP over Neogrok search, bare Git mirrors and the mirror inventory editor."
   (:require [babashka.fs :as fs]
             [babashka.http-client :as client]
             [babashka.process :as process]

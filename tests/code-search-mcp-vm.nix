@@ -1,4 +1,7 @@
 { pkgs }:
+let
+  editor = pkgs.callPackage ../pkgs/dependency-mirror.nix { };
+in
 pkgs.testers.runNixOSTest {
   name = "code-search-mcp-private-service";
   nodes = {
@@ -18,6 +21,10 @@ pkgs.testers.runNixOSTest {
           cgitPort = lib.mkOption {
             type = lib.types.port;
             default = 8085;
+          };
+          listenAddress = lib.mkOption {
+            type = lib.types.str;
+            default = "127.0.0.1";
           };
         };
         caddy.routes = lib.mkOption {
@@ -51,6 +58,15 @@ pkgs.testers.runNixOSTest {
           isSystemUser = true;
           group = "dependency-mirror";
         };
+        # The real inventory editor, so add_repos and sync_repos use its agent API.
+        systemd.services.dependency-mirror = {
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            User = "dependency-mirror";
+            Group = "dependency-mirror";
+            ExecStart = "${lib.getExe editor} serve --state-dir /var/lib/dependency-mirror --bind 127.0.0.1 --port 8084 --cgit-url http://src.example.test/ --base-path /edit --public-origin http://src.example.test";
+          };
+        };
         systemd.tmpfiles.rules = [
           "d /var/lib/dependency-mirror 0750 dependency-mirror dependency-mirror -"
           "d /var/lib/dependency-mirror/repos 0750 dependency-mirror dependency-mirror -"
@@ -61,7 +77,7 @@ pkgs.testers.runNixOSTest {
             http://src.example.test {
               ${config.modules.services.caddy.routes.dependency-mirror.handlerConfig}
               handle /edit/* {
-                respond "editor fixture"
+                reverse_proxy 127.0.0.1:8084
               }
               handle {
                 respond "cgit fixture"
@@ -86,7 +102,7 @@ pkgs.testers.runNixOSTest {
     server.wait_for_unit("multi-user.target")
     server.succeed("mkdir -p /tmp/work /var/lib/dependency-mirror/repos/github.com/test")
     server.succeed("git -C /tmp/work init -q -b main; git -C /tmp/work config user.name Fixture; git -C /tmp/work config user.email fixture@example.test")
-    server.succeed("printf 'package main\\nfunc DemoSymbol() {}\\n' > /tmp/work/main.go; git -C /tmp/work add main.go; git -C /tmp/work commit -qm initial")
+    server.succeed("printf 'package main\\nfunc DemoSymbol() {}\\n' > /tmp/work/main.go; git -C /tmp/work add main.go; git -C /tmp/work commit -qm initial; git -C /tmp/work tag v1.0.0")
     server.succeed("git clone -q --bare /tmp/work /var/lib/dependency-mirror/repos/github.com/test/demo.git; chown -R dependency-mirror:dependency-mirror /var/lib/dependency-mirror")
     revision = server.succeed("git --git-dir=/var/lib/dependency-mirror/repos/github.com/test/demo.git rev-parse HEAD").strip()
     server.succeed("systemctl start neogrok-index.service")
@@ -95,10 +111,12 @@ pkgs.testers.runNixOSTest {
     server.succeed("systemctl start code-search-mcp.service")
     server.wait_for_open_port(3082)
     server.wait_for_unit("caddy.service")
+    server.wait_for_unit("dependency-mirror.service")
+    server.wait_for_open_port(8084)
     server.succeed("${pkgs.python3}/bin/python ${./code-search-mcp-client.py} http://src.example.test github.com/test/demo " + revision)
     # Existing route shapes still work. The search route uses the real frontend.
     server.succeed("curl -fsS http://src.example.test/ | grep 'cgit fixture'")
-    server.succeed("curl -fsS http://src.example.test/edit/ | grep 'editor fixture'")
+    server.succeed("curl -fsS http://src.example.test/edit/ >/dev/null")
     server.succeed("curl -fsSL http://src.example.test/search/ >/dev/null")
     # A different VM is outside the allowlist; forwarded headers cannot bypass it.
     client.succeed("test $(curl -s -o /dev/null -w '%{http_code}' -H 'Host: src.example.test' -H 'X-Forwarded-For: 127.0.0.1' http://server/mcp) = 403")
