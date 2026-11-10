@@ -95,7 +95,7 @@ in
           #piper-tts
           #espeak
           #jujutsu
-          #mcp-inspector
+          mcp-inspector
           llmWithPlugins
           llm-agents.opencode
           llm-agents.opencode-desktop
