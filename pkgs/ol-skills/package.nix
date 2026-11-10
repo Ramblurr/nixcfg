@@ -32,7 +32,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = pkgs-lib.writeUpdateScript {
     packageToUpdate = "ol-skills";
-    utils = [ git nix ast-grep ];
+    utils = [
+      git
+      nix
+      ast-grep
+    ];
     script = ./update.bb;
   };
 
