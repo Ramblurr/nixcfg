@@ -732,6 +732,40 @@
      :warnings (when (some #(get % "revisionWarning") files)
                  ["Some results lack an immutable revision; they have no cite."])}))
 
+(def facet-files 500)
+
+(defn- escape-regex [text]
+  (str/replace text #"[\\.^$|?*+()\[\]{}]" "\\\\$0"))
+
+(defn- facet-group [counts token]
+  (->> counts
+       (sort-by (fn [[value n]] [(- n) value]))
+       (take 8)
+       (mapv (fn [[value n]] (cond-> [value n] (token value) (conj (token value)))))))
+
+(defn search-facets
+  "Count matching files by repository, language, top-level directory and extension.
+
+  Uses one extra file-name-only (type:file) search over at most [[facet-files]]
+  files. Each value
+  carries a Zoekt exclusion token that removes that bucket when appended to
+  the query."
+  [results]
+  (let [files (get results "files")
+        paths (map #(get-in % ["fileName" "text"] "") files)
+        dirs (map #(if (str/includes? % "/") (str (first (str/split % #"/")) "/") "(root)") paths)
+        exts (keep #(second (re-find #"\.([^./]+)$" %)) paths)
+        quote-value #(if (re-find #"\s" %) (str "\"" % "\"") %)]
+    {:facets {:repo (facet-group (frequencies (keep #(get % "repository") files))
+                                 #(str "-repo:^" (escape-regex %) "$"))
+              :lang (facet-group (frequencies (keep #(not-empty (get % "language")) files))
+                                 #(str "-lang:" (quote-value (str/lower-case %))))
+              :dir (facet-group (frequencies dirs)
+                                #(when (not= "(root)" %) (str "-f:^" (escape-regex %))))
+              :ext (facet-group (frequencies exts) #(str "-f:\\." (escape-regex %) "$"))}
+     :facet-coverage {:files (count files)
+                      :of (or (get-in results ["zoektStats" "fileCount"]) (count files))}}))
+
 (defn- repo-row [{:keys [id head warning index_warning indexed]}]
   (let [indexed (if (string? indexed) (json/parse-string indexed) indexed)
         branch (some #(when (= "HEAD" (get % "name")) %) (get indexed "branches"))
@@ -982,9 +1016,10 @@
                 "match in a file; `or`, parentheses and leading `-` negation work; quote phrases. Filters: "
                 "repo: (r:), file: (f:), content: (c:), lang:, sym:, branch: (b:), "
                 "case:yes|no (default: case-sensitive only if the query has uppercase). "
-                "Indexed revisions may lag mirror HEAD.")
+                "facets=true adds file counts by repo, language, top-level directory and extension, each "
+                "with an exclusion token to append to the query. Indexed revisions may lag mirror HEAD.")
            {"query" (assoc text :maxLength 4096) "contextLines" context
-            "files" (assoc limit :maximum 100) "matches" limit
+            "files" (assoc limit :maximum 100) "matches" limit "facets" {:type "boolean"}
             "maxChars" {:type "integer" :minimum 1000 :maximum 200000}}
            ["query"] :core true)
      (spec "list_repos"
@@ -1115,8 +1150,18 @@
   [base catalog tool args]
   (validate-arguments tool args)
   (case tool
-    "grep" (present-search (execute-search base tool args)
-                           {:context? (pos? (get args :context-lines 0)) :repo? true})
+    "grep" (let [result (present-search (execute-search base tool args)
+                                        {:context? (pos? (get args :context-lines 0)) :repo? true})]
+             (if-not (:facets args)
+               result
+               (try
+                 (merge result
+                        ;; type:file returns file names without line chunks, so 500 files stay small.
+                        (search-facets (neogrok-request base "search" {"query" (str "type:file (" (:query args) ")")
+                                                                       "contextLines" 0
+                                                                       "files" facet-files "matches" facet-files})))
+                 (catch clojure.lang.ExceptionInfo e
+                   (update result :warnings (fnil conj []) (str "Facets unavailable: " (ex-message e)))))))
     "list_repos" (present-repos
                   (if catalog
                     (list-catalog-repos catalog (when-not (#{"" "*"} (:query args)) (:query args)))

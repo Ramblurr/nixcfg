@@ -623,6 +623,17 @@
                                [#"repository and path, or cite" "read_file" {:path "b"}]]]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo pattern (sut/validate-arguments tool args)))))
 
+(deftest grep-facets-carry-exclusion-tokens
+  (is (= {:facets {:repo [["github.com/a/b" 2 "-repo:^github\\.com/a/b$"] ["x/y" 1 "-repo:^x/y$"]]
+                   :lang [["Go" 2 "-lang:go"] ["Emacs Lisp" 1 "-lang:\"emacs lisp\""]]
+                   :dir [["(root)" 1] ["cmd/" 1 "-f:^cmd/"] ["lisp/" 1 "-f:^lisp/"]]
+                   :ext [["el" 1 "-f:\\.el$"] ["go" 1 "-f:\\.go$"] ["md" 1 "-f:\\.md$"]]}
+          :facet-coverage {:files 3 :of 10}}
+         (sut/search-facets {"zoektStats" {"fileCount" 10}
+                             "files" [{"repository" "github.com/a/b" "language" "Go" "fileName" {"text" "cmd/main.go"}}
+                                      {"repository" "github.com/a/b" "language" "Go" "fileName" {"text" "README.md"}}
+                                      {"repository" "x/y" "language" "Emacs Lisp" "fileName" {"text" "lisp/a.el"}}]}))))
+
 (deftest lean-git-tools-and-cite-round-trip
   (git-fixture
    (fn [{:keys [catalog head]}]
@@ -704,6 +715,7 @@
                                              [:message :result :tools])))))
               (doseq [[tool args key expected]
                       [["grep" {:query "main"} :results :present]
+                       ["grep" {:query "main" :facets true} :facets :present]
                        ["list_repos" {:query ""} :results :present]
                        ["list_repos" {:query "EXAMPLE/Repo"} :results :present]
                        ["glob" {:repository "example/repo" :pattern "**/*.clj"} :results ["src/core.clj"]]
