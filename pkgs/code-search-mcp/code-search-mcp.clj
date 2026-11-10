@@ -653,6 +653,10 @@
   (when (< end total-lines)
     (str "Lines shown end at " end " of " total-lines "; continue with startLine=" (inc end) ".")))
 
+(defn- budget-hint-for [value]
+  (let [hint (:hint value)]
+    (if (and hint (not (str/starts-with? hint budget-hint))) (str budget-hint " " hint) (or hint budget-hint))))
+
 (defn- shrink
   "Return a smaller result scaled by `ratio`, or nil when nothing can be dropped."
   [value ratio]
@@ -660,7 +664,7 @@
         lines (:lines value)]
     (cond
       (> (count rows) 1)
-      (let [trimmed (-> value (update :results take-fraction ratio) (assoc :has-more true :hint budget-hint))]
+      (let [trimmed (-> value (update :results take-fraction ratio) (assoc :has-more true :hint (budget-hint-for value)))]
         ;; Paged results must resume after the last row actually returned.
         (if (contains? value :files-changed)
           (let [next (str (+ (or (:offset value) 0) (count (:results trimmed))))]
@@ -670,8 +674,10 @@
       (let [kept (take-fraction (:lines (first rows)) ratio)]
         (-> value
             (assoc-in [:results 0 :lines] kept)
-            (update-in [:results 0] #(cond-> % (:cite %) (update :cite retarget-cite kept)))
-            (assoc :has-more true :hint budget-hint)))
+            (update-in [:results 0] #(cond-> %
+                                       (:cite %) (update :cite retarget-cite kept)
+                                       (:matched %) (update :matched (fn [ns] (filterv (set (map first kept)) ns)))))
+            (assoc :has-more true :hint (budget-hint-for value))))
       (> (count lines) 1)
       (let [kept (take-fraction lines ratio)
             trimmed (assoc value :lines kept :end (+ (:start value) (count kept) -1))]
@@ -735,7 +741,10 @@
 (def facet-files 500)
 
 (defn- escape-regex [text]
-  (str/replace text #"[\\.^$|?*+()\[\]{}]" "\\\\$0"))
+  ;; Whitespace becomes \s so a token stays one Zoekt term without quoting.
+  (-> text
+      (str/replace #"[\\.^$|?*+()\[\]{}]" "\\\\$0")
+      (str/replace #"\s" "\\\\s")))
 
 (defn- facet-group [counts token]
   (->> counts
@@ -797,7 +806,7 @@
   "Parse `repo:path@revision[:start-end]` into read_file arguments."
   [cite]
   (if-let [[_ repo path revision start end]
-           (re-matches #"([^:@\s]+):(.+)@([^@:\s]+)(?::(\d{1,7})-(\d{1,7}))?" cite)]
+           (re-matches #"(?s)([^:@\s]+):(.+)@([^@:\s]+)(?::(\d{1,7})-(\d{1,7}))?" cite)]
     (cond-> {:repository repo :path path :revision revision}
       start (assoc :start-line (parse-long start)
                    :end-line (min (parse-long end) (+ (parse-long start) 499))))
@@ -949,6 +958,36 @@
       (str (subs body 0 max-patch-chars) "\n[patch truncated; " (- (count body) max-patch-chars) " more characters]")
       body)))
 
+(def max-patch-lines 20000)
+
+(defn- diff-sections [repo base head paths]
+  (let [text (git-text repo (into (diff-command base head "--unified=3") paths))]
+    (vec (rest (str/split (str "\n" text) #"\ndiff --git ")))))
+
+(defn- page-patches
+  "Return one hunk string per `page` file, in page order.
+
+  A literal pathspec also matches files below a directory of the same name, so
+  a path that is a directory prefix of another changed path (a file replaced
+  by a directory, or a removed submodule) is diffed on its own; Git sorts its
+  own section first. Patches over [[max-patch-lines]] changed lines are omitted."
+  [repo base head files page]
+  (let [prefix? (fn [path] (some #(str/starts-with? (:path %) (str path "/")) files))
+        huge? (fn [{:keys [added deleted]}] (> (+ (or added 0) (or deleted 0)) max-patch-lines))
+        batch (vec (remove #(or (huge? %) (prefix? (:path %))) page))
+        batched (if (seq batch) (diff-sections repo base head (map :path batch)) [])
+        _ (when-not (= (count batched) (count batch))
+            (throw (ex-info "Unexpected Git diff output" {})))
+        by-path (zipmap (map :path batch) batched)]
+    (mapv (fn [{:keys [path added deleted] :as file}]
+            (cond
+              (huge? file) (str "[patch omitted: " (+ (or added 0) (or deleted 0))
+                                " changed lines; use read_file for this path]")
+              (contains? by-path path) (hunks-only (get by-path path))
+              :else (hunks-only (or (first (diff-sections repo base head [path]))
+                                    (throw (ex-info "Unexpected Git diff output" {}))))))
+          page)))
+
 (defn compare-revisions
   "Compare two resolved commits, paging changed files with their patches.
 
@@ -974,15 +1013,7 @@
                              #(changed-files @mirror before target))
         page (vec (take page-size (drop offset files)))
         patches (cached-result catalog ["compare-patches" repo before target offset page-size]
-                               (fn []
-                                 (if (empty? page)
-                                   []
-                                   (let [text (git-text @mirror (into (diff-command before target "--unified=3")
-                                                                      (map :path page)))
-                                         sections (vec (rest (str/split (str "\n" text) #"\ndiff --git ")))]
-                                     (when-not (= (count sections) (count page))
-                                       (throw (ex-info "Unexpected Git diff output" {})))
-                                     (mapv hunks-only sections)))))
+                               #(page-patches @mirror before target files page))
         next-offset (+ offset (count page))]
     {:repo repo :base before :head target :files-changed (count files) :offset (when (pos? offset) offset)
      :results (mapv #(assoc %1 :patch %2) page patches)
@@ -1006,35 +1037,56 @@
                       {:status (:status response)})))
     {:data data :csrf (get-in response [:headers "x-csrf-token"])}))
 
-(defn canonical-url
-  "Normalize a repository URL toward the editor's canonical form.
+(def ^:private host-providers
+  ;; Mirrors scripts/dependency-mirror.clj; the editor rejects non-canonical URLs.
+  {"github.com" "github" "gitlab.com" "gitlab" "codeberg.org" "gitea"
+   "gitea.com" "gitea" "bitbucket.org" "bitbucket" "git.sr.ht" "sourcehut"})
 
-  Trailing slashes are removed. For github.com, gitlab.com and codeberg.org a
-  .git suffix is removed, and github.com paths are lowercased."
-  [url]
-  (let [url (str/replace (str/trim url) #"/+$" "")
-        host (some-> (re-find #"^https?://([^/]+)" url) second str/lower-case)]
-    (cond-> url
-      (#{"github.com" "gitlab.com" "codeberg.org"} host) (str/replace #"\.git$" "")
-      (= "github.com" host) str/lower-case)))
+(defn canonical-url
+  "Normalize a repository URL to the dependency-mirror editor's canonical form.
+
+  The host is lowercased and trailing slashes are removed. A final .git is
+  removed except for plain Git URLs (unknown host and no `provider`), and
+  github.com paths are lowercased. URLs the editor would reject anyway (other
+  schemes, credentials, ports, queries) are returned trimmed but unchanged."
+  ([url] (canonical-url url nil))
+  ([url provider]
+   (let [url (str/trim url)
+         uri (try (URI. url) (catch Exception _ nil))
+         host (some-> uri .getHost str/lower-case)]
+     (if-not (and host (nil? (.getUserInfo uri)) (nil? (.getRawQuery uri))
+                  (nil? (.getRawFragment uri)) (= -1 (.getPort uri)))
+       url
+       (let [provider (or provider (get host-providers host) "any")
+             path (str/replace (.getRawPath uri) #"^/+|/+$" "")
+             plain-git? (and (= "any" provider) (str/ends-with? path ".git"))
+             path (str/replace path #"\.git$" "")
+             path (if (= "github" provider) (str/lower-case path) path)]
+         (str (.getScheme uri) "://" host "/" path (when plain-git? ".git")))))))
 
 (defn add-repos
   "Insert repositories into the mirror inventory; leave existing entries unchanged.
 
   Each entry has `:url` and optional `:include`, `:provider`, `:scope` and
   `:organization`. Patches are split below the editor's request limit; each
-  request is atomic. Return added and already-present canonical URLs."
+  request is atomic. Return added and already-present canonical URLs. The
+  inventory read and the patches are separate requests: an entry another
+  client adds in between is merged with these options rather than reported
+  as existing."
   [editor repos]
   (let [{current :data csrf :csrf} (editor-request editor :get "/api/repos" {} nil)
         entries (into (sorted-map)
                       (map (fn [{:keys [url include provider scope organization]}]
-                             [(canonical-url url)
+                             [(canonical-url url provider)
                               (cond-> {}
                                 include (assoc "include" include)
                                 provider (assoc "provider" provider)
                                 scope (assoc "scope" scope)
                                 organization (assoc "organization?" organization))]))
                       repos)
+        _ (doseq [[url options] entries]
+            (when (> (alength (.getBytes (json/generate-string {url options}) "UTF-8")) max-patch-bytes)
+              (throw (ex-info (str "Repository entry is too large for one editor request: " url) {}))))
         existing (filterv #(contains? current %) (keys entries))
         fresh (into (sorted-map) (remove (fn [[url _]] (contains? current url))) entries)
         chunks (reduce (fn [chunks [url options]]
@@ -1051,9 +1103,10 @@
                         {"content-type" "application/merge-patch+json" "x-csrf-token" csrf}
                         (json/generate-string chunk))
         (swap! added into (keys chunk)))
-      (catch clojure.lang.ExceptionInfo e
-        (throw (ex-info (str (ex-message e) (when (seq @added) (str " (already added: " (str/join ", " @added) ")")))
-                        (ex-data e)))))
+      (catch Exception e
+        (throw (ex-info (str (or (ex-message e) "Mirror editor request failed")
+                             (when (seq @added) (str " (already added: " (str/join ", " @added) ")")))
+                        (or (ex-data e) {})))))
     {:added @added :existing existing
      :hint (when (seq @added) "Call sync_repos to fetch them; they become searchable after sync and indexing.")}))
 
@@ -1072,7 +1125,7 @@
 ;; Tool definitions. :core marks tools served on /mcp; every tool is on /mcp/all.
 (def instructions
   (str "Code search over mirrored dependency repositories. Workflow: list_repos(query) to find "
-       "repository IDs, then grep (Zoekt syntax) or list_files/glob, then read_file. "
+       "repository IDs, then grep (Zoekt syntax) or list_files, then read_file. "
        "Results are EDN by default; pass format=\"json\" for JSON. When a result has has-more, "
        "its hint names the argument to change. Pass a result's cite to read_file to read those lines. "
        "Zoekt queries are regex: escape ( [ . + * ? to match them literally."))

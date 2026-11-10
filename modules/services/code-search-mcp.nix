@@ -28,10 +28,25 @@ in
       description = "Direct client networks permitted on /mcp and /mcp/all; no forwarded-IP trust or agent token";
     };
     disabledTools = lib.mkOption {
-      type = lib.types.listOf (lib.types.strMatching "[a-z_]+");
+      type = lib.types.listOf (
+        lib.types.enum [
+          "grep"
+          "list_repos"
+          "glob"
+          "read_file"
+          "list_files"
+          "list_refs"
+          "commit_search"
+          "compare_revisions"
+          "find_symbol_definitions"
+          "find_symbol_references"
+          "add_repos"
+          "sync_repos"
+        ]
+      );
       default = [ ];
       example = [ "sync_repos" ];
-      description = "MCP tool names removed from every endpoint; unknown names stop the service at start";
+      description = "MCP tool names removed from every endpoint";
     };
   };
 

@@ -103,17 +103,21 @@ lines. Argument errors name the offending argument.
   Per-repository failures become warnings. Date-free queries are cached.
 - `compare_revisions`: changed files between two revisions with status,
   added/deleted counts and hunks; pages with `first` and `after`. Patches over
-  20,000 characters are cut with a note. External diff drivers, textconv and
+  20,000 characters are cut with a note, and files with more than 20,000 changed
+  lines get a placeholder instead of a patch. A path that is also a directory
+  prefix of another changed path is diffed on its own. External diff drivers, textconv and
   rename detection are disabled.
 - `find_symbol_definitions`: exact, case-sensitive Ctags names.
 - `find_symbol_references`: case-sensitive textual name occurrences with
   identifier boundaries. These are not semantic references.
 - `add_repos`: inserts repository or owner URLs into the dependency-mirror
   inventory through the editor's agent API. Existing entries are left alone;
-  the result lists added and existing URLs. URLs for github.com, gitlab.com
-  and codeberg.org lose a trailing `.git`, github.com paths are lowercased, and
-  trailing slashes are removed. Patches are split below the editor's 16 KiB
-  request limit; each request is atomic.
+  the result lists added and existing URLs. URLs are normalized like the
+  editor does: the host is lowercased, trailing slashes are removed, a final
+  `.git` is removed except for plain Git URLs (an unknown host with no
+  `provider`), and github.com paths are lowercased. Patches are split below the
+  editor's 16 KiB request limit; each request is atomic, but the inventory read
+  and the patches are separate requests.
 - `sync_repos`: starts a background sync for one inventory URL or `all: true`.
   It returns when the editor accepts; a running sync is reported as busy.
 
@@ -145,8 +149,9 @@ payload files have a 16 MiB aggregate budget, a 1 MiB per-entry limit and a
 that payload budget. Cache writes are serialized; simultaneous cold misses may
 compute twice. File contents are not cached.
 
-Requests share four work slots. Git, backend and editor requests and
-glob/metadata walks use a ten-second request budget; SQLite calls also have
+Requests share four work slots. Git, backend requests and glob/metadata walks
+use a ten-second request budget; each mirror editor request has its own
+ten-second timeout; SQLite calls also have
 their own bounded busy wait, so this is not a hard wall-clock limit for every
 database operation. Git stdout is capped at 8 MiB, stderr at 8 KiB; backend and
 tool-result payloads at 2 MiB. Over-limit work fails rather than caching a

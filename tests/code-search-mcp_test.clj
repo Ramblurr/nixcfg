@@ -597,10 +597,10 @@
     (is (= (sut/compact value) (edn/read-string (sut/encode-result (sut/compact value) "edn"))))
     (is (= {:hasMore true :totalLines 3} (json/parse-string (sut/encode-result {:has-more true :total-lines 3} "json") true))))
   (let [rows (mapv (fn [i] {:path (str "f" i) :lines [[i (apply str (repeat 100 "x"))]]}) (range 50))
-        text (sut/fit-budget {:results rows} "edn" 1000)
+        text (sut/fit-budget {:results rows :hint "Raise files."} "edn" 1000)
         value (edn/read-string text)]
     (is (<= (count text) 1000))
-    (is (= [true sut/budget-hint] [(:has-more value) (:hint value)]))
+    (is (= [true (str sut/budget-hint " Raise files.")] [(:has-more value) (:hint value)]))
     (is (< 0 (count (:results value)) 50)))
   (let [row {:path "p" :cite "r:p@abc:1-40" :lines (mapv (fn [i] [i (apply str (repeat 80 "y"))]) (range 1 41))}
         value (edn/read-string (sut/fit-budget {:results [row]} "edn" 1500))
@@ -615,6 +615,7 @@
   (is (= {:repository "github.com/a/b" :path "dir/x@y.go" :revision "main" :start-line 3 :end-line 9}
          (sut/parse-cite "github.com/a/b:dir/x@y.go@main:3-9")))
   (is (= {:repository "a/b" :path "p" :revision "abc"} (sut/parse-cite "a/b:p@abc")))
+  (is (= "line\nbreak.txt" (:path (sut/parse-cite "a/b:line\nbreak.txt@abc:1-2"))))
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid cite" (sut/parse-cite "nonsense")))
   (doseq [[pattern tool args] [[#"Unknown argument: bogusArg" "grep" {:query "x" :bogus-arg 1}]
                                [#"Missing required argument: query" "list_repos" {}]
@@ -632,7 +633,9 @@
          (sut/search-facets {"zoektStats" {"fileCount" 10}
                              "files" [{"repository" "github.com/a/b" "language" "Go" "fileName" {"text" "cmd/main.go"}}
                                       {"repository" "github.com/a/b" "language" "Go" "fileName" {"text" "README.md"}}
-                                      {"repository" "x/y" "language" "Emacs Lisp" "fileName" {"text" "lisp/a.el"}}]}))))
+                                      {"repository" "x/y" "language" "Emacs Lisp" "fileName" {"text" "lisp/a.el"}}]})))
+  (is (= [["Sample Projects/" 1 "-f:^Sample\\sProjects/"]]
+         (get-in (sut/search-facets {"files" [{"fileName" {"text" "Sample Projects/a"}}]}) [:facets :dir]))))
 
 (deftest lean-git-tools-and-cite-round-trip
   (git-fixture
@@ -735,6 +738,13 @@
    (fn [{:keys [editor inventory patches syncs busy]}]
      (is (= "https://github.com/new/repo" (sut/canonical-url " https://github.com/New/Repo.git/ ")))
      (is (= "https://git.example.test/x.git" (sut/canonical-url "https://git.example.test/x.git/")))
+     (doseq [[expected url provider] [["https://gitlab.com/X/Y" "https://GitLab.com/X/Y.git" nil]
+                                      ["https://bitbucket.org/a/b" "https://bitbucket.org/a/b.git/" nil]
+                                      ["https://git.sr.ht/~u/r" "https://git.sr.ht/~u/r.git" nil]
+                                      ["https://git.example.test/o/r" "https://GIT.example.test/o/r.git" "gitea"]
+                                      ["https://github.com:8443/A/b" "https://github.com:8443/A/b" nil]
+                                      ["not a url" " not a url " nil]]]
+       (is (= expected (sut/canonical-url url provider)) url))
      (is (= {:added ["https://example.test/owner" "https://github.com/new/repo"]
              :existing ["https://github.com/existing/repo"]}
             (dissoc (sut/execute-tool nil nil "add_repos"
@@ -764,6 +774,34 @@
      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid argument: repos"
                            (sut/validate-arguments "add_repos" {:repos [{:url "https://github.com/a/b" :bogus 1}]})))
      (is (contains? @inventory "https://github.com/a/two")))))
+
+(deftest compare-handles-directory-prefixes-and-huge-patches
+  (git-fixture
+   (fn [{:keys [catalog work mirror]}]
+     (spit (str (fs/path work "docs")) "x\n")
+     (fixture-git! work "add" ".")
+     (fixture-git! work "commit" "-m" "docs file")
+     (fixture-git! work "push" (str mirror) "main:main")
+     (sut/refresh-catalog! catalog {})
+     (let [base (:head (first (sqlite/query (:db catalog) "SELECT head FROM repositories")))]
+       (fs/delete (fs/path work "docs"))
+       (fs/create-dirs (fs/path work "docs"))
+       (spit (str (fs/path work "docs/a")) "a\n")
+       (spit (str (fs/path work "docs/b")) "b\n")
+       (fixture-git! work "add" "-A")
+       (fixture-git! work "commit" "-m" "docs directory")
+       (fixture-git! work "push" (str mirror) "main:main")
+       (sut/refresh-catalog! catalog {})
+       (let [compare #(sut/compare-revisions catalog (merge {:repo "example/repo" :base base :head "main"} %))
+             expected [{:path "docs" :status "D" :patch "@@ -1 +0,0 @@\n-x"}
+                       {:path "docs/a" :status "A" :patch "@@ -0,0 +1 @@\n+a"}
+                       {:path "docs/b" :status "A" :patch "@@ -0,0 +1 @@\n+b"}]]
+         (is (= expected (map #(select-keys % [:path :status :patch]) (:results (compare {})))))
+         (is (= (take 1 expected) (map #(select-keys % [:path :status :patch]) (:results (compare {:first 1})))))
+         (is (= (drop 1 expected) (map #(select-keys % [:path :status :patch]) (:results (compare {:first 2 :after "1"}))))))
+       (with-redefs [sut/max-patch-lines 0]
+         (is (= "[patch omitted: 1 changed lines; use read_file for this path]"
+                (:patch (first (:results (sut/compare-revisions catalog {:repo "example/repo" :base base :head "main" :first 1 :after "2"})))))))))))
 
 (deftest all-tools-over-real-http
   (fixture

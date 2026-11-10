@@ -88,6 +88,8 @@ assert added["added"] == ["https://github.com/example/added"], added
 with urllib.request.urlopen(base + "/edit/api/repos", timeout=15) as response:
     assert "https://github.com/example/added" in json.load(response)
 assert tool("add_repos", {"repos": [{"url": "https://github.com/example/added"}]})["existing"] == ["https://github.com/example/added"]
+# Normalization matches the editor's canonical form for other forges too.
+assert tool("add_repos", {"repos": [{"url": "https://Codeberg.org/Some/Repo.git/"}]})["added"] == ["https://codeberg.org/Some/Repo"]
 assert tool("sync_repos", {"url": "https://github.com/example/added"})["status"] == "accepted"
 
 # Sessions are bound to their endpoint; untrusted origins are rejected.
