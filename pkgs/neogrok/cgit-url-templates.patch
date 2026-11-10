@@ -1,0 +1,47 @@
+--- a/src/lib/url-templates.ts
++++ b/src/lib/url-templates.ts
+@@ -3,7 +3,7 @@
+ //
+ // These functions handle both the old and new versions of the templates.
+ 
+-const urlJoinPathTemplate = /^{{\s*URLJoinPath\s+(?<args>.*?)\s*}}$/;
++const urlJoinPathTemplate = /^{{\s*URLJoinPath\s+(?<args>.*?)\s*}}(?<suffix>.*)$/;
+ 
+ export const evaluateFileUrlTemplate = (
+   template: string,
+@@ -12,7 +12,7 @@
+ ): string => {
+   const match = template.match(urlJoinPathTemplate);
+   if (match?.groups) {
+-    const { args } = match.groups;
++    const { args, suffix } = match.groups;
+     return args
+       .split(/\s+/)
+       .map((s) => {
+@@ -25,7 +25,7 @@
+           return JSON.parse(s);
+         }
+       })
+-      .join("/");
++      .join("/") + suffix.replaceAll("{{.Version}}", () => encodeURIComponent(version));
+   } else {
+     return (
+       template
+@@ -44,7 +44,7 @@
+ ): string => {
+   const match = template.match(urlJoinPathTemplate);
+   if (match?.groups) {
+-    const { args } = match.groups;
++    const { args, suffix } = match.groups;
+     return args
+       .split(/\s+/)
+       .map((s) => {
+@@ -55,7 +55,7 @@
+           return JSON.parse(s);
+         }
+       })
+-      .join("/");
++      .join("/") + suffix.replaceAll("{{.Version}}", () => encodeURIComponent(version));
+   } else {
+     // We use the function version of replaceAll because it interprets a
+     // variety of characters in strings specially. Only functions guarantee

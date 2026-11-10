@@ -5,6 +5,7 @@
     {
       checks = {
         bb-module = import ../tests/bb-module.nix { inherit inputs pkgs; };
+        neogrok = import ../tests/neogrok.nix { inherit pkgs; };
         ha-mqtt = import ../tests/ha-mqtt.nix { inherit inputs pkgs; };
         thunderbird-cli = import ../tests/thunderbird-cli.nix { inherit inputs pkgs; };
         pi = import ../tests/pi.nix { inherit inputs pkgs; };
