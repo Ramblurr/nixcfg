@@ -296,8 +296,11 @@
           (try
             (let [repo (mirror-path catalog id)
                   head (str/trim (git-text repo ["rev-parse" "--verify" "HEAD^{commit}"]))
-                  refs (mapv #(str/split % #"\u0000" 2)
-                             (remove str/blank? (str/split-lines (git-text repo ["for-each-ref" "--format=%(refname)%00%(objectname)" "refs/heads/"]))))
+                  ;; Annotated tags are published as the object they point at.
+                  refs (mapv (fn [line]
+                               (let [[name object peeled] (str/split line #"\u0000" 3)]
+                                 [name (if (str/blank? peeled) object peeled)]))
+                             (remove str/blank? (str/split-lines (git-text repo ["for-each-ref" "--format=%(refname)%00%(objectname)%00%(*objectname)" "refs/heads/" "refs/tags/"]))))
                   previous (first (sqlite/query db ["SELECT head,tree_oid,indexed FROM repositories WHERE id=?" id]))
                   tree-oid (if (and (= head (:head previous)) (:tree_oid previous))
                              (:tree_oid previous)
@@ -385,7 +388,7 @@
         value))))
 
 (defn resolve-revision
-  "Resolve HEAD or a published branch to an immutable commit, never arbitrary Git syntax."
+  "Resolve HEAD, a published branch or tag, or a full commit ID; never arbitrary Git syntax."
   [catalog repository revision]
   (when-not (or (nil? revision) (and (string? revision) (<= 1 (count revision) 512)))
     (throw (ex-info "Invalid revision" {})))
@@ -394,10 +397,15 @@
         resolved (cond
                    (= "HEAD" revision) (:head row)
                    (re-matches #"(?:[0-9a-f]{40}|[0-9a-f]{64})" revision) revision
-                   :else (:revision (first (sqlite/query (:db catalog)
-                                                         ["SELECT revision FROM refs WHERE repo=? AND name=?"
-                                                          repository (if (str/starts-with? revision "refs/heads/")
-                                                                       revision (str "refs/heads/" revision))]))))]
+                   :else (let [names (if (re-find #"^refs/(heads|tags)/" revision)
+                                       [revision]
+                                       [(str "refs/heads/" revision) (str "refs/tags/" revision)])]
+                           ;; Branches win over tags with the same short name.
+                           (some (fn [name]
+                                   (:revision (first (sqlite/query (:db catalog)
+                                                                   ["SELECT revision FROM refs WHERE repo=? AND name=?"
+                                                                    repository name]))))
+                                 names)))]
     (when-not row (throw (ex-info "Unknown repository" {})))
     (when-not resolved (throw (ex-info (str "Unknown revision: " revision " (or incomplete mirror snapshot)") {})))
     (assoc row :revision resolved)))
@@ -427,17 +435,38 @@
        (filter #(or (nil? query) (str/includes? (str/lower-case (:id %)) (str/lower-case query))))
        (mapv #(update % :indexed (fn [value] (when value (json/parse-string value)))))))
 
-(defn list-catalog-branches
-  "Return a coherent published branch snapshot and its refresh timestamp."
-  ([catalog repository] (list-catalog-branches catalog repository 1000))
-  ([catalog repository limit]
-   (let [rows (sqlite/query (:db catalog)
-                            ["SELECT repositories.refreshed,repositories.warning,refs.name,refs.revision FROM repositories LEFT JOIN refs ON repositories.id=refs.repo WHERE repositories.id=? ORDER BY refs.name LIMIT ?"
-                             repository (inc limit)])]
-     (when (empty? rows) (throw (ex-info "Unknown repository" {})))
-     {:repository repository :refreshed (:refreshed (first rows)) :warning (:warning (first rows))
-      :branches (mapv #(select-keys % [:name :revision]) (take limit (filter :name rows)))
-      :truncated (> (count rows) limit)})))
+(defn list-catalog-refs
+  "Return published branches and tags from one coherent snapshot.
+
+  `:contains-commit`, when given, keeps refs whose history contains that
+  resolved commit; this runs one bounded `git for-each-ref --contains`."
+  [catalog {:keys [repository heads-only tags-only contains-commit limit] :or {limit 100}}]
+  (let [patterns (cond (and heads-only (not tags-only)) ["refs/heads/%"]
+                       (and tags-only (not heads-only)) ["refs/tags/%"]
+                       :else ["refs/heads/%" "refs/tags/%"])
+        rows (sqlite/query (:db catalog)
+                           (into [(str "SELECT repositories.refreshed,repositories.warning,refs.name,refs.revision "
+                                       "FROM repositories LEFT JOIN refs ON repositories.id=refs.repo "
+                                       "AND (" (str/join " OR " (repeat (count patterns) "refs.name LIKE ?")) ") "
+                                       "WHERE repositories.id=? ORDER BY refs.name")]
+                                 (conj patterns repository)))
+        _ (when (empty? rows) (throw (ex-info "Unknown repository" {})))
+        containing (when contains-commit
+                     (let [commit (:revision (resolve-revision catalog repository contains-commit))
+                           repo (mirror-path catalog repository)]
+                       (assert-commit! repo commit)
+                       (set (str/split-lines (git-text repo ["for-each-ref" "--format=%(refname)"
+                                                             (str "--contains=" commit)
+                                                             "refs/heads/" "refs/tags/"])))))
+        refs (cond->> (filter :name rows) containing (filter #(contains? containing (:name %))))
+        refs (vec refs)]
+    {:repository repository :refreshed (:refreshed (first rows)) :warning (:warning (first rows))
+     :refs (mapv (fn [{:keys [name revision]}]
+                   {:name (str/replace name #"^refs/(heads|tags)/" "")
+                    :type (if (str/starts-with? name "refs/tags/") "tag" "branch")
+                    :rev revision})
+                 (take limit refs))
+     :truncated (> (count refs) limit)}))
 
 (defn list-repository-files
   "List entries below a literal directory at an exact resolved revision.
@@ -560,76 +589,6 @@
     {:repository repository :revision commit
      :matches (vec (take limit matches)) :truncated (> (count matches) limit)}))
 
-(defn list-repository-commits
-  "Return bounded commit metadata, cached by immutable start commit and options.
-
-  | Key | Meaning |
-  |-----|---------|
-  | `:repository` | Discovered repository ID. |
-  | `:revision` | HEAD, published branch or full commit ID; defaults to HEAD. |
-  | `:path` | Optional literal file path filter. |
-  | `:limit` | Maximum commits; defaults to 20. |"
-  [catalog {:keys [repository revision path limit] :or {limit 20}}]
-  (when path (safe-path path))
-  (let [commit (:revision (resolve-revision catalog repository revision))
-        value (cached-result
-               catalog ["commits" repository commit path limit]
-               (fn []
-                 (let [repo (mirror-path catalog repository)
-                       _ (assert-commit! repo commit)
-                       ids (str/split-lines (git-text repo (cond-> ["log" "--no-color" "--no-notes" "--no-patch"
-                                                                    "--format=%H" (str "--max-count=" (inc limit)) commit "--"]
-                                                             (seq path) (conj path))))]
-                   {:truncated (> (count ids) limit)
-                    :commits (mapv (fn [id]
-                                     (when-not (re-matches #"(?:[0-9a-f]{40}|[0-9a-f]{64})" id)
-                                       (throw (ex-info "Invalid Git history output" {})))
-                                     (let [[headers message] (str/split (git-text repo ["cat-file" "commit" id]) #"\n\n" 2)
-                                           message (or message "")
-                                           parents (vec (take 257 (map second (re-seq #"(?m)^parent ([0-9a-f]+)$" headers))))
-                                           author (or (second (re-find #"(?m)^author (.*)$" headers)) "")]
-                                       {:revision id
-                                        :parents (vec (take 256 parents))
-                                        :parents-truncated (> (count parents) 256)
-                                        :author (subs author 0 (min 1024 (count author)))
-                                        :author-truncated (> (count author) 1024)
-                                        :message (subs message 0 (min 4096 (count message)))
-                                        :message-truncated (> (count message) 4096)}))
-                                   (take limit ids))})))]
-    (assoc value :repository repository :revision commit)))
-
-(defn diff-repository
-  "Return a bounded, literal-path Git diff with external drivers and textconv disabled.
-
-  | Key | Meaning |
-  |-----|---------|
-  | `:repository` | Discovered repository ID. |
-  | `:from` | Original branch or full commit ID. |
-  | `:to` | Target branch or full commit ID. |
-  | `:path` | Optional literal path filter. |
-  | `:context-lines` | Context lines; defaults to 3. |"
-  [catalog {:keys [repository from to path context-lines] :or {context-lines 3}}]
-  (when path (safe-path path))
-  (let [[before after]
-        (sqlite/with-conn [conn (:db catalog)]
-          ;; A deferred read transaction pins both names without blocking WAL writers.
-          (sqlite/execute! conn "BEGIN")
-          (try
-            (let [snapshot (assoc catalog :db conn)]
-              [(:revision (resolve-revision snapshot repository from))
-               (:revision (resolve-revision snapshot repository to))])
-            ;; Nothing was written. Release the snapshot before cache or Git work.
-            (finally (sqlite/execute! conn "ROLLBACK"))))
-        diff (cached-result catalog ["diff" repository before after path context-lines]
-                            (fn []
-                              (let [repo (mirror-path catalog repository)]
-                                (assert-commit! repo before)
-                                (assert-commit! repo after)
-                                {:patch (git-text repo (cond-> ["diff" "--no-color" "--no-ext-diff" "--no-textconv"
-                                                                "--no-renames" (str "--unified=" context-lines) before after "--"]
-                                                         (seq path) (conj path)))})))]
-    (assoc diff :repository repository :from before :to after)))
-
 (defn search-symbol
   "Search exact Ctags definitions or textual name occurrences, never semantic references.
 
@@ -701,7 +660,12 @@
         lines (:lines value)]
     (cond
       (> (count rows) 1)
-      (-> value (update :results take-fraction ratio) (assoc :has-more true :hint budget-hint))
+      (let [trimmed (-> value (update :results take-fraction ratio) (assoc :has-more true :hint budget-hint))]
+        ;; Paged results must resume after the last row actually returned.
+        (if (contains? value :files-changed)
+          (let [next (str (+ (or (:offset value) 0) (count (:results trimmed))))]
+            (assoc trimmed :next next :hint (str "Output trimmed to maxChars; continue with after=" next ".")))
+          trimmed))
       (and (= 1 (count rows)) (> (count (:lines (first rows))) 1))
       (let [kept (take-fraction (:lines (first rows)) ratio)]
         (-> value
@@ -814,6 +778,183 @@
         (merge (dissoc args :cite) (parse-cite cite)))
     args))
 
+(defn- resolve-pair
+  "Resolve two revision names against one published generation."
+  [catalog repository from to]
+  (sqlite/with-conn [conn (:db catalog)]
+    ;; A deferred read transaction pins both names without blocking WAL writers.
+    (sqlite/execute! conn "BEGIN")
+    (try
+      (let [snapshot (assoc catalog :db conn)]
+        [(:revision (resolve-revision snapshot repository from))
+         (:revision (resolve-revision snapshot repository to))])
+      ;; Nothing was written. Release the snapshot before cache or Git work.
+      (finally (sqlite/execute! conn "ROLLBACK")))))
+
+(def ^:private commit-id #"(?:[0-9a-f]{40}|[0-9a-f]{64})")
+;; Git silently ignores dates it cannot parse, so accept only forms it reads reliably.
+(def ^:private date-filter
+  #"(?:\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:?\d{2})?)?|\d{1,4} (?:second|minute|hour|day|week|month|year)s? ago|yesterday|today)")
+
+(defn- git-date
+  "Validate a date filter; pass absolute dates to Git as epoch seconds.
+
+  Git silently ignores some absolute dates (for example year 2100), so ISO dates
+  and times are parsed here. Relative forms are left to Git's parser."
+  [date]
+  (when-not (re-matches date-filter date)
+    (throw (ex-info "Invalid date; use YYYY-MM-DD, an ISO time, \"N days ago\", yesterday or today" {})))
+  (if (re-find #"^\d{4}-" date)
+    (try
+      (let [text (str/replace date " " "T")
+            instant (cond
+                      (re-matches #"\d{4}-\d{2}-\d{2}" text)
+                      (.toInstant (.atStartOfDay (java.time.LocalDate/parse text) java.time.ZoneOffset/UTC))
+                      (re-find #"(?:Z|[+-]\d{2}:?\d{2})$" text)
+                      (.toInstant (java.time.OffsetDateTime/parse (str/replace text #"([+-]\d{2})(\d{2})$" "$1:$2")))
+                      :else (.toInstant (.atOffset (java.time.LocalDateTime/parse text) java.time.ZoneOffset/UTC)))]
+        (str "@" (.getEpochSecond ^java.time.Instant instant)))
+      (catch java.time.DateTimeException _
+        (throw (ex-info (str "Invalid date: " date) {}))))
+    date))
+
+(defn- escape-ere [text]
+  (str/replace text #"[\\.\[\]{}()*+?^$|]" "\\\\$0"))
+
+(defn- search-repository-commits
+  "Run one bounded, cached git log for `repository` and return parsed rows."
+  [catalog repository {:keys [message-terms authors content-terms files after before revisions count]}]
+  (doseq [path files] (safe-path path))
+  (let [after (some-> after git-date)
+        before (some-> before git-date)
+        starts (vec (distinct (map #(:revision (resolve-revision catalog repository %))
+                                   (or (seq revisions) ["HEAD"]))))
+        compute (fn []
+                  (let [repo (mirror-path catalog repository)
+                        _ (doseq [start starts] (assert-commit! repo start))
+                        output (git-text repo (-> ["log" "--no-color" "--no-notes" "--no-patch"
+                                                   "--fixed-strings" "--regexp-ignore-case" "--all-match"
+                                                   "--format=%H%x00%at%x00%an%x00%s"
+                                                   (str "--max-count=" (inc count))]
+                                                  (into (map #(str "--grep=" %) message-terms))
+                                                  (into (map #(str "--author=" %) authors))
+                                                  (cond->
+                                                   (seq content-terms) (conj (str "-G" (str/join "|" (map escape-ere content-terms))))
+                                                   after (conj (str "--since=" after))
+                                                   before (conj (str "--until=" before)))
+                                                  (conj "--end-of-options")
+                                                  (into starts)
+                                                  (conj "--")
+                                                  (into files)))]
+                    (mapv (fn [line]
+                            (let [[id time author subject] (str/split line #"\u0000" 4)]
+                              (when-not (and (re-matches commit-id (or id "")) (re-matches #"\d+" (or time "")))
+                                (throw (ex-info "Invalid Git history output" {})))
+                              {:repo repository :rev id :time (parse-long time)
+                               :author (subs (or author "") 0 (min 256 (clojure.core/count (or author ""))))
+                               :subject (cut-line (or subject ""))}))
+                          (remove str/blank? (str/split-lines output)))))]
+    ;; Relative dates move with the clock, so only date-free queries are cached.
+    (if (or after before)
+      (compute)
+      (cached-result catalog ["commit-search" repository starts message-terms authors content-terms files count] compute))))
+
+(defn commit-search
+  "Search commit history across repositories with Sourcegraph-style filters.
+
+  | Key | Meaning |
+  |-----|---------|
+  | `:repos` | Discovered repository IDs, 1-10. |
+  | `:message-terms` | Literal terms that must all occur in the message (case-insensitive). |
+  | `:authors` | Author name or email fragments; any may match (case-insensitive). |
+  | `:content-terms` | Literal text added or removed by the commit; any may match. |
+  | `:files` | Literal paths the commit must touch. |
+  | `:after` / `:before` | Git date expressions, e.g. 2026-01-01 or \"2 weeks ago\". |
+  | `:revisions` | Published branches, tags or full commits to start from; default HEAD. |
+  | `:count` | Maximum commits overall; defaults to 50. |
+
+  Per-repository failures become warnings. Rows are newest first."
+  [catalog {:keys [repos count] :or {count 50} :as args}]
+  (let [outcomes (mapv (fn [repository]
+                         (try {:rows (search-repository-commits catalog repository (assoc args :count count))}
+                              (catch clojure.lang.ExceptionInfo e
+                                {:warning (str repository ": " (ex-message e))})))
+                       (distinct repos))
+        rows (sort-by (juxt (comp - :time) :repo) (mapcat :rows outcomes))
+        more? (> (clojure.core/count rows) count)]
+    {:results (mapv (fn [{:keys [repo rev time author subject]}]
+                      {:repo repo :rev rev :author author :subject subject
+                       :date (subs (str (java.time.Instant/ofEpochSecond time)) 0 10)})
+                    (take count rows))
+     :has-more more?
+     :hint (when more? "More commits match; raise count or add filters.")
+     :warnings (keep :warning outcomes)}))
+
+(defn- diff-command [base head & extra]
+  (-> ["diff" "--no-color" "--no-ext-diff" "--no-textconv" "--no-renames"]
+      (into extra)
+      (into [base head "--"])))
+
+(defn- changed-files [repo base head]
+  (let [status (partition 2 (str/split (git-text repo (diff-command base head "--name-status" "-z")) #"\u0000"))
+        counts (into {} (map (fn [record]
+                               (let [[added deleted path] (str/split record #"\t" 3)]
+                                 [path [(parse-long added) (parse-long deleted)]])))
+                     (remove str/blank? (str/split (git-text repo (diff-command base head "--numstat" "-z")) #"\u0000")))]
+    (mapv (fn [[kind path]]
+            (let [[added deleted] (get counts path)]
+              {:path path :status kind :added added :deleted deleted}))
+          (remove #(str/blank? (first %)) status))))
+
+(def max-patch-chars 20000)
+
+(defn- hunks-only [section]
+  (let [lines (str/split-lines section)
+        body (str/join "\n" (drop-while #(not (or (str/starts-with? % "@@") (str/starts-with? % "Binary files"))) lines))]
+    (if (> (count body) max-patch-chars)
+      (str (subs body 0 max-patch-chars) "\n[patch truncated; " (- (count body) max-patch-chars) " more characters]")
+      body)))
+
+(defn compare-revisions
+  "Compare two resolved commits, paging changed files with their patches.
+
+  | Key | Meaning |
+  |-----|---------|
+  | `:repo` | Discovered repository ID. |
+  | `:base` / `:head` | Branch, tag, HEAD or full commit ID. |
+  | `:first` | Maximum files per page; defaults to 50. |
+  | `:after` | Cursor from a previous page's `:next`. |
+
+  External diff drivers, textconv and rename detection are disabled."
+  [catalog {:keys [repo base head after] page-size :first :or {page-size 50}}]
+  (let [offset (if after
+                 (or (some-> (re-matches #"\d{1,6}" after) parse-long)
+                     (throw (ex-info "Invalid cursor" {})))
+                 0)
+        [before target] (resolve-pair catalog repo base head)
+        mirror (delay (let [path (mirror-path catalog repo)]
+                        (assert-commit! path before)
+                        (assert-commit! path target)
+                        path))
+        files (cached-result catalog ["compare-files" repo before target]
+                             #(changed-files @mirror before target))
+        page (vec (take page-size (drop offset files)))
+        patches (cached-result catalog ["compare-patches" repo before target offset page-size]
+                               (fn []
+                                 (if (empty? page)
+                                   []
+                                   (let [text (git-text @mirror (into (diff-command before target "--unified=3")
+                                                                      (map :path page)))
+                                         sections (vec (rest (str/split (str "\n" text) #"\ndiff --git ")))]
+                                     (when-not (= (count sections) (count page))
+                                       (throw (ex-info "Unexpected Git diff output" {})))
+                                     (mapv hunks-only sections)))))
+        next-offset (+ offset (count page))]
+    {:repo repo :base before :head target :files-changed (count files) :offset (when (pos? offset) offset)
+     :results (mapv #(assoc %1 :patch %2) page patches)
+     :has-more (< next-offset (count files))
+     :next (when (< next-offset (count files)) (str next-offset))}))
+
 ;; Tool definitions. :core marks tools served on /mcp; every tool is on /mcp/all.
 (def instructions
   (str "Code search over mirrored dependency repositories. Workflow: list_repos(query) to find "
@@ -828,6 +969,8 @@
         common {"repository" text "revision" text}
         limit {:type "integer" :minimum 1 :maximum 1000}
         context {:type "integer" :minimum 0 :maximum 20}
+        budget {:type "integer" :minimum 1000 :maximum 200000}
+        array (fn [items max-items] {:type "array" :items items :minItems 1 :maxItems max-items})
         read-only {:read-only-hint true :destructive-hint false :idempotent-hint true}
         spec (fn [name description properties required & {:as options}]
                (merge {:name name :description description :annotations read-only
@@ -867,12 +1010,28 @@
                           "depth" {:type "integer" :minimum 1 :maximum 10}
                           "kind" {:type "string" :enum ["all" "files" "dirs"]}})
            ["repository"] :core true)
-     (spec "list_branches" "List the published branch snapshot with its refresh time."
-           {"repository" text "limit" limit} ["repository"])
-     (spec "list_commits" "List bounded history at a resolved revision; optional literal file path. Default 20, maximum 100."
-           (merge common {"path" path "limit" (assoc limit :maximum 100)}) ["repository"])
-     (spec "get_diff" "Compare two resolved commits with optional literal path and 0-20 context lines."
-           {"repository" text "from" text "to" text "path" path "contextLines" context} ["repository" "from" "to"])
+     (spec "list_refs"
+           (str "List published branches and tags (both by default). containsCommit keeps refs whose history "
+                "contains that commit, e.g. to find releases that include a fix.")
+           {"repository" text "headsOnly" {:type "boolean"} "tagsOnly" {:type "boolean"}
+            "containsCommit" text "limit" (assoc limit :maximum 500)}
+           ["repository"])
+     (spec "commit_search"
+           (str "Search commit history, newest first. messageTerms must all occur in the message; authors: any "
+                "name/email fragment; contentTerms: literal text any commit added or removed; files: paths "
+                "touched; after/before: dates such as 2026-01-01 or \"2 weeks ago\"; revisions: start points, "
+                "default HEAD. Default count 50, maximum 100.")
+           {"repos" (array text 10) "messageTerms" (array text 10) "authors" (array text 5)
+            "contentTerms" (array text 5) "files" (array (assoc path :minLength 1) 20)
+            "after" (assoc text :maxLength 64) "before" (assoc text :maxLength 64)
+            "revisions" (array text 10) "count" (assoc limit :maximum 100) "maxChars" budget}
+           ["repos"] :core true)
+     (spec "compare_revisions"
+           (str "Compare two revisions: changed files with status, added/deleted line counts and hunks. "
+                "Page with first (default 50, maximum 100) and after=next from the previous page.")
+           {"repo" text "base" text "head" text "first" (assoc limit :maximum 100)
+            "after" {:type "string" :minLength 1 :maxLength 16} "maxChars" budget}
+           ["repo" "base" "head"])
      (spec "find_symbol_definitions" "Find exact case-sensitive Ctags definitions in the indexed revision."
            {"repository" text "symbol" (assoc text :maxLength 256) "limit" (assoc limit :maximum 100)
             "maxChars" {:type "integer" :minimum 1000 :maximum 200000}}
@@ -884,8 +1043,10 @@
 
 (defn- tool-spec [tool] (first (filter #(= tool (:name %)) tool-specs)))
 
-(defn- valid-value? [{:keys [type minimum maximum minLength maxLength enum]} value]
+(defn- valid-value? [{:keys [type minimum maximum minLength maxLength enum items minItems maxItems]} value]
   (case type
+    "array" (and (sequential? value) (<= (or minItems 0) (count value) (or maxItems Integer/MAX_VALUE))
+                 (every? #(valid-value? items %) value))
     "string" (and (string? value) (<= (or minLength 0) (count value) (or maxLength Integer/MAX_VALUE))
                   (or (nil? enum) (boolean (some #{value} enum))))
     "integer" (and (integer? value) (<= (or minimum Long/MIN_VALUE) value (or maximum Long/MAX_VALUE)))
@@ -959,20 +1120,12 @@
                    {:repo repository :rev revision :path (not-empty (:path args)) :entries entries
                     :total total :has-more truncated
                     :hint (when truncated "More entries exist; raise limit or narrow path/depth.")})
-    "list_branches" (let [{:keys [repository refreshed warning branches truncated]}
-                          (list-catalog-branches catalog (:repository args) (get args :limit 100))]
-                      {:repo repository :refreshed refreshed :warnings (when warning [warning])
-                       :results (mapv (fn [{:keys [name revision]}] {:name (str/replace name #"^refs/heads/" "") :rev revision}) branches)
-                       :has-more truncated})
-    "list_commits" (let [{:keys [repository commits truncated]} (list-repository-commits catalog args)]
-                     {:repo repository
-                      :results (mapv (fn [{:keys [revision author message]}]
-                                       {:rev revision :author (str/replace author #"\s+<[^>]*>.*$" "")
-                                        :subject (first (str/split-lines message))})
-                                     commits)
-                      :has-more truncated})
-    "get_diff" (let [{:keys [repository from to patch]} (diff-repository catalog args)]
-                 {:repo repository :from from :to to :patch patch})
+    "list_refs" (let [{:keys [repository refreshed warning refs truncated]} (list-catalog-refs catalog args)]
+                  {:repo repository :refreshed refreshed :warnings (when warning [warning])
+                   :results refs :has-more truncated
+                   :hint (when truncated "More refs exist; raise limit or use headsOnly/tagsOnly.")})
+    "commit_search" (commit-search catalog args)
+    "compare_revisions" (compare-revisions catalog args)
     ("find_symbol_definitions" "find_symbol_references")
     (let [{:keys [kind repository symbol results]} (search-symbol base catalog tool args)]
       (merge {:kind kind :repo repository :symbol symbol}

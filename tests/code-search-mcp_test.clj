@@ -516,12 +516,12 @@
                            (sut/read-repository-file catalog {:repository "example/repo" :path "src/core.clj"
                                                               :revision (apply str (repeat 40 "a"))})))
      (let [calls (atom 0) real-git sut/run-git
-           args {:repository "example/repo" :limit 10}]
+           args {:repos ["example/repo"] :count 10}]
        (with-redefs [sut/run-git (fn [& argv] (swap! calls inc) (apply real-git argv))]
-         (let [cold (sut/list-repository-commits catalog args)
+         (let [cold (sut/commit-search catalog args)
                count-cold @calls]
-           (is (= 2 (count (:commits cold))))
-           (is (= cold (sut/list-repository-commits catalog args)))
+           (is (= 2 (count (:results cold))))
+           (is (= cold (sut/commit-search catalog args)))
            (is (= count-cold @calls))
            (is (pos? count-cold)))))
      (let [marker (fs/path work "unsafe-command-ran")
@@ -536,9 +536,9 @@
        (fixture-git! mirror "diff" head "HEAD")
        (is (fs/exists? marker))
        (fs/delete marker)
-       (let [result (sut/diff-repository catalog {:repository "example/repo" :from head :to "HEAD"})]
-         (is (str/includes? (:patch result) "-old\n+new")))
-       (sut/list-repository-commits catalog {:repository "example/repo" :limit 1})
+       (let [result (sut/compare-revisions catalog {:repo "example/repo" :base head :head "HEAD"})]
+         (is (str/includes? (get-in result [:results 0 :patch]) "-old\n+new")))
+       (sut/commit-search catalog {:repos ["example/repo"] :count 1})
        (is (not (fs/exists? marker)))))))
 
 (deftest diff-endpoints-share-one-published-generation
@@ -562,9 +562,9 @@
                            (when (compare-and-set! published? false true)
                              (sut/refresh-catalog! catalog {}))
                            result))]
-           (let [result (sut/diff-repository catalog {:repository "example/repo" :from from :to to})]
-             (is (= {:from head :to head :patch "" :published-head new-head}
-                    (assoc (select-keys result [:from :to :patch])
+           (let [result (sut/compare-revisions catalog {:repo "example/repo" :base from :head to})]
+             (is (= {:base head :head head :results [] :published-head new-head}
+                    (assoc (select-keys result [:base :head :results])
                            :published-head (:head (first (sqlite/query (:db catalog) "SELECT head FROM repositories")))))))))))))
 
 (deftest cache-budget-and-failure-recovery
@@ -641,6 +641,49 @@
      (let [read (sut/compact (sut/execute-tool nil catalog "read_file" {:repository "example/repo" :path "src/core.clj" :end-line 1}))]
        (is (= [true "Lines shown end at 1 of 2; continue with startLine=2."] [(:has-more read) (:hint read)]))))))
 
+(deftest refs-history-and-compare
+  (git-fixture
+   (fn [{:keys [catalog work mirror head]}]
+     (fixture-git! work "tag" "v1.0.0")
+     (spit (str (fs/path work "src/core.clj")) "new\nline two\n")
+     (spit (str (fs/path work "other.txt")) "added\n")
+     (fixture-git! work "add" ".")
+     (fixture-git! work "commit" "-m" "Fix parser bug")
+     (fixture-git! work "tag" "-a" "v1.1.0" "-m" "release")
+     (fixture-git! work "push" "--tags" (str mirror) "main:main")
+     (fixture-git! mirror "update-ref" "refs/pull/1/head" head)
+     (sut/refresh-catalog! catalog {})
+     (let [new-head (str/trim (fixture-git! work "rev-parse" "HEAD"))
+           refs #(->> (sut/execute-tool nil catalog "list_refs" (merge {:repository "example/repo"} %))
+                      :results (map (juxt :name :type :rev)) set)
+           names #(set (map first (refs %)))
+           search #(sut/commit-search catalog (merge {:repos ["example/repo"]} %))]
+       (is (= #{["main" "branch" new-head] ["v1.0.0" "tag" head] ["v1.1.0" "tag" new-head]} (refs {})))
+       (is (= #{"v1.0.0" "v1.1.0"} (names {:tags-only true})))
+       (is (= #{"main"} (names {:heads-only true})))
+       (is (= #{"main" "v1.0.0" "v1.1.0"} (names {:contains-commit head})))
+       (is (= #{"main" "v1.1.0"} (names {:contains-commit "v1.1.0"})))
+       (is (= ["old" "line two"] (:lines (sut/read-repository-file catalog {:repository "example/repo" :revision "v1.0.0" :path "src/core.clj"}))))
+       (is (= ["Fix parser bug"] (map :subject (:results (search {:message-terms ["parser" "FIX"]})))))
+       (is (= 2 (count (:results (search {:authors ["FIXTURE"]})))))
+       (is (= [new-head] (map :rev (:results (search {:content-terms ["added"]})))))
+       (is (= [new-head] (map :rev (:results (search {:files ["other.txt"]})))))
+       (is (= [head] (map :rev (:results (search {:revisions ["v1.0.0"]})))))
+       (is (empty? (:results (search {:after "2100-01-01"}))))
+       (is (= 2 (count (:results (search {:after "3 days ago"})))))
+       (is (= 2 (count (:results (search {:after "2001-01-01" :before "2100-01-01T00:00:00+01:00"})))))
+       (is (= ["example/repo: Invalid date: 2026-13-45"] (:warnings (search {:after "2026-13-45"}))))
+       (is (= {:has-more true :count 1} (let [r (search {:count 1})] {:has-more (:has-more r) :count (count (:results r))})))
+       (is (seq (:warnings (search {:after "x;rm -rf"}))))
+       (is (= ["missing/repo: Unknown repository"] (:warnings (sut/commit-search catalog {:repos ["missing/repo"]}))))
+       (let [page (sut/compare-revisions catalog {:repo "example/repo" :base head :head "main" :first 1})
+             rest-page (sut/compare-revisions catalog {:repo "example/repo" :base head :head "main" :first 1 :after (:next page)})]
+         (is (= {:files-changed 2 :next "1" :has-more true
+                 :results [{:path "other.txt" :status "A" :added 1 :deleted 0 :patch "@@ -0,0 +1 @@\n+added"}]}
+                (select-keys page [:files-changed :next :has-more :results])))
+         (is (= {:offset 1 :has-more false :paths ["src/core.clj"]}
+                {:offset (:offset rest-page) :has-more (:has-more rest-page) :paths (map :path (:results rest-page))})))))))
+
 (deftest all-tools-over-real-http
   (fixture
    (fn [{:keys [backend]}]
@@ -663,9 +706,9 @@
                        ["glob" {:repository "example/repo" :pattern "**/*.clj"} :results ["src/core.clj"]]
                        ["read_file" {:repository "example/repo" :path "src/core.clj"} :lines ["old" "line two"]]
                        ["list_files" {:repository "example/repo" :path "src"} :entries ["core.clj"]]
-                       ["list_branches" {:repository "example/repo"} :results :present]
-                       ["list_commits" {:repository "example/repo"} :results :present]
-                       ["get_diff" {:repository "example/repo" :from head :to "HEAD"} :patch ""]
+                       ["list_refs" {:repository "example/repo"} :results :present]
+                       ["commit_search" {:repos ["example/repo"]} :results :present]
+                       ["compare_revisions" {:repo "example/repo" :base head :head "HEAD"} :base head]
                        ["find_symbol_definitions" {:repository "example/repo" :symbol "main"} :kind "ctags-definitions"]
                        ["find_symbol_references" {:repository "example/repo" :symbol "main"} :kind "textual-occurrences-not-semantic"]]
                       fmt ["json" "edn"]]
