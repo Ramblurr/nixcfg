@@ -51,7 +51,7 @@ in
       enable = lib.mkEnableOption "the restricted bb worker ingress";
       listenPort = lib.mkOption {
         type = lib.types.port;
-        default = 38895;
+        default = 16895;
         description = "Loopback HTTP listener, behind Tailscale HTTPS.";
       };
       backendPort = lib.mkOption {
@@ -92,7 +92,7 @@ in
       };
       listenPort = lib.mkOption {
         type = lib.types.port;
-        default = 38896;
+        default = 16896;
         description = "Loopback SMOLMEG2 listener, supplied at every mediated VM start.";
       };
       denyCidrs = lib.mkOption {

@@ -60,8 +60,8 @@ let
     tokenRuntimeOnly = lib.hasInfix "--token-file" worker.systemd.services.bb-worker-egress.serviceConfig.ExecStart;
     gatewayPrivate =
       server.systemd.services.bb-worker-gateway.serviceConfig.DynamicUser
-      && !(lib.elem 38895 server.networking.firewall.allowedTCPPorts);
-    separateIngress = lib.hasInfix "--https=8445 http://127.0.0.1:38895" server.systemd.services.bb-worker-tailscale-serve.serviceConfig.ExecStart;
+      && !(lib.elem 16895 server.networking.firewall.allowedTCPPorts);
+    separateIngress = lib.hasInfix "--https=8445 http://127.0.0.1:16895" server.systemd.services.bb-worker-tailscale-serve.serviceConfig.ExecStart;
     rejectsExposedBackend = lib.any (
       a: !a.assertion && lib.hasPrefix "bbIsolation gateway requires" a.message
     ) invalid.assertions;

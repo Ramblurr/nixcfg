@@ -90,7 +90,7 @@ smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine create \
 
 SMOLVM_INTERCEPTOR_TOKEN="$(cat ~/.config/bb/isolation/interceptor-token)" \
   smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine start \
-  --name demo --mediated-egress --egress-interceptor 127.0.0.1:38896
+  --name demo --mediated-egress --egress-interceptor 127.0.0.1:16896
 
 smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine exec \
   --name demo -- curl -i https://SERVER_TAILSCALE_NAME:8445/api/v1/hosts
