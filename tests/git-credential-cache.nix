@@ -1,7 +1,6 @@
 { inputs, pkgs }:
-pkgs.testers.runNixOSTest {
-  name = "git-credential-cache";
-  nodes.machine =
+let
+  base =
     { lib, ... }:
     {
       imports = [
@@ -26,6 +25,14 @@ pkgs.testers.runNixOSTest {
         home-manager.users.alice.home.stateVersion = "26.05";
       };
     };
+in
+pkgs.testers.runNixOSTest {
+  name = "git-credential-cache";
+  nodes.machine = base;
+  nodes.unmanaged = {
+    imports = [ base ];
+    modules.shell.git.credentialCache.enable = false;
+  };
   testScript = ''
     import shlex
     import time
@@ -34,8 +41,8 @@ pkgs.testers.runNixOSTest {
     machine.wait_for_unit("user@1000.service")
     machine.wait_for_unit("home-manager-alice.service")
 
-    def as_user(command):
-        return machine.succeed(
+    def as_user(command, node=machine):
+        return node.succeed(
             "${pkgs.util-linux}/bin/runuser -u alice -- "
             "env XDG_RUNTIME_DIR=/run/user/1000 "
             "${pkgs.bash}/bin/bash -c " + shlex.quote(command)
@@ -76,5 +83,14 @@ pkgs.testers.runNixOSTest {
     as_user(helper_command("store", credential))
     assert "password=synthetic-test-only" in as_user(helper_command("get", request))
     as_user(helper_command("erase", credential))
+
+    unmanaged.start()
+    unmanaged.wait_for_unit("user@1000.service")
+    unmanaged.wait_for_unit("home-manager-alice.service")
+    helpers = as_user("${pkgs.git}/bin/git config --get-all credential.helper", unmanaged).splitlines()
+    assert helpers == ["cache --timeout 86400", "${pkgs.git-credential-oauth}/bin/git-credential-oauth"], helpers
+    assert as_user(
+        "systemctl --user show git-credential-cache.service -p LoadState --value", unmanaged
+    ).strip() == "not-found"
   '';
 }

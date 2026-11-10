@@ -20,13 +20,16 @@ in
 {
   options.modules.shell.git = {
     enable = lib.mkEnableOption "";
+    credentialCache.enable = lib.mkEnableOption "the systemd-managed Git credential cache" // {
+      default = true;
+    };
   };
   config = mkIf cfg.enable {
     home-manager.users."${username}" = {
       home.packages = with pkgs; [
         forgejo-cli
       ];
-      systemd.user.services.git-credential-cache = {
+      systemd.user.services.git-credential-cache = lib.mkIf cfg.credentialCache.enable {
         Unit.Description = "In-memory Git credential cache";
         Service = {
           Type = "exec";
@@ -63,7 +66,7 @@ in
             directory = "${homeDirectory}/src/nixcfg";
           };
           credential.helper = [
-            "${credentialCacheHelper}"
+            (if cfg.credentialCache.enable then "${credentialCacheHelper}" else "cache --timeout 86400")
             "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
           ];
           alias = {
