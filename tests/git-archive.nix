@@ -56,7 +56,7 @@ in
 assert
   credentials == {
     gatus-token = "op://home-ops-prod/gatus/borgmatic_external_endpoint_token";
-    GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/github-token-ol";
+    GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/ol-git-archive";
     GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
   };
 assert cfg.modules.zfs.datasets.services."tank/svc/git-archive" == [ "gickup" ];

@@ -60,7 +60,7 @@ in
 
     modules.services.onepassword-systemd-credentials.consumers.gickup = {
       GITHUB_TOKEN_RAMBLURR = "op://home-ops-prod/gickup/github-token-ramblurr";
-      GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/github-token-ol";
+      GITHUB_TOKEN_OL = "op://home-ops-prod/gickup/ol-git-archive";
     };
 
     systemd.timers.gickup = {
