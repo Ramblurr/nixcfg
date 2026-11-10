@@ -7,6 +7,7 @@
             [babashka.process :as process]
             [babashka.sqlite :as sqlite]
             [cheshire.core :as json]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer [deftest is run-tests]]
@@ -78,8 +79,8 @@
        (is (= 202 (:status (call-http origin :post {:jsonrpc "2.0" :method "notifications/initialized"} headers))))
        (let [listed (call-http origin :post {:jsonrpc "2.0" :id 2 :method "tools/list" :params {}} headers)]
          (is (= #{"grep" "list_repos"} (set (map :name (get-in listed [:message :result :tools]))))))
-       (doseq [[tool args] [["list_repos" {}]
-                            ["grep" {:query "sym:main" :contextLines 3 :files 4 :matches 5}]]]
+       (doseq [[tool args] [["list_repos" {:query "" :format "json"}]
+                            ["grep" {:query "sym:main" :contextLines 3 :files 4 :matches 5 :format "json"}]]]
          (let [result (call-http origin :post {:jsonrpc "2.0" :id 3 :method "tools/call"
                                                :params {:name tool :arguments args}} headers)
                value (some-> (get-in result [:message :result :content 0 :text]) (json/parse-string true))]
@@ -88,8 +89,8 @@
                   {:status (:status result)
                    :is-error (boolean (get-in result [:message :result :isError]))
                    :value (if (= tool "grep")
-                            (get-in value [:files 0 :fileName :text])
-                            (get-in value [:repositories 0 :name]))}))))
+                            (get-in value [:results 0 :path])
+                            (get-in value [:results 0 :id]))}))))
        (is (= {:path "/search/api/search" :payload {:query "sym:main" :contextLines 3 :files 4 :matches 5}}
               (last @seen)))
        (is (= 204 (:status (call-http origin :delete nil headers))))
@@ -458,14 +459,14 @@
      (fixture-git! work "commit" "-m" "new root")
      (fixture-git! work "push" "--force" (str mirror) "replacement:main")
      (sut/refresh-catalog! catalog {})
-     (sut/list-repository-tree catalog {:repository "example/repo" :revision head})
+     (sut/list-repository-files catalog {:repository "example/repo" :revision head})
      (fixture-git! mirror "reflog" "expire" "--expire=now" "--all")
      (fixture-git! mirror "gc" "--prune=now")
      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"stale"
                            (sut/read-repository-file catalog {:repository "example/repo" :revision head :path "src/core.clj"})))
      (is (= ["replacement"] (:lines (sut/read-repository-file catalog {:repository "example/repo" :path "src/core.clj"}))))
      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"not a directory"
-                           (sut/list-repository-tree catalog {:repository "example/repo" :path "src/core.clj"}))))))
+                           (sut/list-repository-files catalog {:repository "example/repo" :path "src/core.clj"}))))))
 
 (deftest cache-entry-controls
   (git-fixture
@@ -588,6 +589,58 @@
            (is (= {:value "123456"} (call 1)))
            (is (= 4 @computations))))))))
 
+(deftest result-formats-budget-and-cite
+  (let [value {:results [{:repo "r" :path "p" :lines [[1 "a"]]}] :empty [] :none nil :has-more false}]
+    (is (= {:results [{:repo "r" :path "p" :lines [[1 "a"]]}]} (sut/compact value)))
+    (is (= (sut/compact value) (edn/read-string (sut/encode-result (sut/compact value) "edn"))))
+    (is (= {:hasMore true :totalLines 3} (json/parse-string (sut/encode-result {:has-more true :total-lines 3} "json") true))))
+  (let [rows (mapv (fn [i] {:path (str "f" i) :lines [[i (apply str (repeat 100 "x"))]]}) (range 50))
+        text (sut/fit-budget {:results rows} "edn" 1000)
+        value (edn/read-string text)]
+    (is (<= (count text) 1000))
+    (is (= [true sut/budget-hint] [(:has-more value) (:hint value)]))
+    (is (< 0 (count (:results value)) 50)))
+  (let [row {:path "p" :cite "r:p@abc:1-40" :lines (mapv (fn [i] [i (apply str (repeat 80 "y"))]) (range 1 41))}
+        value (edn/read-string (sut/fit-budget {:results [row]} "edn" 1500))
+        kept (get-in value [:results 0 :lines])]
+    (is (< 0 (count kept) 40))
+    (is (= (str "r:p@abc:1-" (first (peek kept))) (get-in value [:results 0 :cite]))))
+  (let [value (edn/read-string (sut/fit-budget {:start 1 :end 100 :total-lines 300
+                                                :lines (vec (repeat 100 (apply str (repeat 50 "z"))))} "edn" 2000))]
+    (is (< (:end value) 100))
+    (is (= (count (:lines value)) (:end value)))
+    (is (str/includes? (:hint value) (str "startLine=" (inc (:end value))))))
+  (is (= {:repository "github.com/a/b" :path "dir/x@y.go" :revision "main" :start-line 3 :end-line 9}
+         (sut/parse-cite "github.com/a/b:dir/x@y.go@main:3-9")))
+  (is (= {:repository "a/b" :path "p" :revision "abc"} (sut/parse-cite "a/b:p@abc")))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid cite" (sut/parse-cite "nonsense")))
+  (doseq [[pattern tool args] [[#"Unknown argument: bogusArg" "grep" {:query "x" :bogus-arg 1}]
+                               [#"Missing required argument: query" "list_repos" {}]
+                               [#"Invalid argument: format" "grep" {:query "x" :format "xml"}]
+                               [#"either cite" "read_file" {:cite "a:b@c" :path "b"}]
+                               [#"repository and path, or cite" "read_file" {:path "b"}]]]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo pattern (sut/validate-arguments tool args)))))
+
+(deftest lean-git-tools-and-cite-round-trip
+  (git-fixture
+   (fn [{:keys [catalog head]}]
+     (sut/refresh-catalog! catalog {"example/repo" {"branches" [{"name" "HEAD" "version" "0000"}]
+                                                    "fileCount" 5 "lastCommit" "2026-11-03T09:41:16Z"}})
+     (is (= {:total 1 :results [{:id "example/repo" :last-commit "2026-11-03" :files 5
+                                 :warnings ["Index revision differs from mirror HEAD"]}]}
+            (sut/compact (sut/execute-tool nil catalog "list_repos" {:query "EXAMPLE"}))))
+     (is (= 1 (:total (sut/execute-tool nil catalog "list_repos" {:query "*" :problems true}))))
+     (is (zero? (:total (sut/execute-tool nil catalog "list_repos" {:query "absent"}))))
+     (let [files #(set (:entries (sut/execute-tool nil catalog "list_files" (merge {:repository "example/repo"} %))))]
+       (is (= #{"line\nbreak.txt" "link" "space name.txt" "src/"} (files {})))
+       (is (= #{"line\nbreak.txt" "link" "space name.txt" "src/" "src/core.clj"} (files {:depth 2})))
+       (is (= #{"src/"} (files {:kind "dirs" :depth 3})))
+       (is (= #{"core.clj"} (files {:path "src"}))))
+     (let [read (sut/execute-tool nil catalog "read_file" {:cite (str "example/repo:src/core.clj@" head ":2-2")})]
+       (is (= {:rev head :start 2 :end 2 :lines ["line two"]} (select-keys read [:rev :start :end :lines]))))
+     (let [read (sut/compact (sut/execute-tool nil catalog "read_file" {:repository "example/repo" :path "src/core.clj" :end-line 1}))]
+       (is (= [true "Lines shown end at 1 of 2; continue with startLine=2."] [(:has-more read) (:hint read)]))))))
+
 (deftest all-tools-over-real-http
   (fixture
    (fn [{:keys [backend]}]
@@ -600,29 +653,31 @@
           (try
             (let [headers (session-headers (initialize origin))]
               (call-http origin :post {:jsonrpc "2.0" :method "notifications/initialized"} headers)
-              (is (= (set (map first sut/tool-specs))
+              (is (= (set (map :name sut/tool-specs))
                      (set (map :name (get-in (call-http origin :post {:jsonrpc "2.0" :id "list" :method "tools/list"} headers)
                                              [:message :result :tools])))))
               (doseq [[tool args key expected]
-                      [["grep" {:query "main"} :files :present]
-                       ["list_repos" {} :repositories :present]
-                       ["list_repos" {:query "EXAMPLE/Repo"} :repositories :present]
-                       ["glob" {:repository "example/repo" :pattern "**/*.clj"} :matches ["src/core.clj"]]
+                      [["grep" {:query "main"} :results :present]
+                       ["list_repos" {:query ""} :results :present]
+                       ["list_repos" {:query "EXAMPLE/Repo"} :results :present]
+                       ["glob" {:repository "example/repo" :pattern "**/*.clj"} :results ["src/core.clj"]]
                        ["read_file" {:repository "example/repo" :path "src/core.clj"} :lines ["old" "line two"]]
-                       ["list_tree" {:repository "example/repo" :path "src"} :entries :present]
-                       ["list_branches" {:repository "example/repo"} :branches :present]
-                       ["list_commits" {:repository "example/repo"} :commits :present]
+                       ["list_files" {:repository "example/repo" :path "src"} :entries ["core.clj"]]
+                       ["list_branches" {:repository "example/repo"} :results :present]
+                       ["list_commits" {:repository "example/repo"} :results :present]
                        ["get_diff" {:repository "example/repo" :from head :to "HEAD"} :patch ""]
                        ["find_symbol_definitions" {:repository "example/repo" :symbol "main"} :kind "ctags-definitions"]
-                       ["find_symbol_references" {:repository "example/repo" :symbol "main"} :kind "textual-occurrences-not-semantic"]]]
-                (let [response (call-http origin :post {:jsonrpc "2.0" :id tool :method "tools/call"
-                                                        :params {:name tool :arguments args}} headers)
-                      result (some-> (get-in response [:message :result :content 0 :text]) (json/parse-string true))]
+                       ["find_symbol_references" {:repository "example/repo" :symbol "main"} :kind "textual-occurrences-not-semantic"]]
+                      fmt ["json" "edn"]]
+                (let [response (call-http origin :post {:jsonrpc "2.0" :id (str tool fmt) :method "tools/call"
+                                                        :params {:name tool :arguments (assoc args :format fmt)}} headers)
+                      text (get-in response [:message :result :content 0 :text])
+                      result (when text (if (= fmt "json") (json/parse-string text true) (edn/read-string text)))]
                   (is (= {:status 200 :is-error false :value (if (= expected :present) true expected)}
                          {:status (:status response)
                           :is-error (boolean (get-in response [:message :result :isError]))
                           :value (if (= expected :present) (boolean (seq (get result key))) (get result key))})
-                      tool)))
+                      [tool fmt text])))
               (doseq [args [{:repository "example/repo" :path "../outside"}
                             {:repository "example/repo" :path "src/core.clj" :endLine 501}]]
                 (is (= -32602 (get-in (call-http origin :post {:jsonrpc "2.0" :id (str (random-uuid)) :method "tools/call"

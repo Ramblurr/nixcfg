@@ -399,7 +399,7 @@
                                                           repository (if (str/starts-with? revision "refs/heads/")
                                                                        revision (str "refs/heads/" revision))]))))]
     (when-not row (throw (ex-info "Unknown repository" {})))
-    (when-not resolved (throw (ex-info "Unknown revision or incomplete mirror snapshot" {})))
+    (when-not resolved (throw (ex-info (str "Unknown revision: " revision " (or incomplete mirror snapshot)") {})))
     (assoc row :revision resolved)))
 
 (defn- safe-path [path]
@@ -439,29 +439,40 @@
       :branches (mapv #(select-keys % [:name :revision]) (take limit (filter :name rows)))
       :truncated (> (count rows) limit)})))
 
-(defn list-repository-tree
-  "List immediate children of a literal directory at an exact resolved revision.
+(defn list-repository-files
+  "List entries below a literal directory at an exact resolved revision.
 
   | Key | Meaning |
   |-----|---------|
   | `:repository` | Discovered repository ID. |
   | `:revision` | HEAD, published branch or full commit ID; defaults to HEAD. |
   | `:path` | Literal directory path; defaults to the root. |
-  | `:limit` | Maximum entries; defaults to 100. |"
-  [catalog {:keys [repository revision path limit] :or {path "" limit 100}}]
+  | `:depth` | Levels below `:path`; defaults to 1. |
+  | `:kind` | \"all\", \"files\" or \"dirs\"; defaults to all. |
+  | `:limit` | Maximum entries; defaults to 200. |
+
+  Entries are paths relative to `:path`; directories end in `/`."
+  [catalog {:keys [repository revision path limit depth kind] :or {path "" limit 200 depth 1 kind "all"}}]
   (safe-path path)
   (let [{commit :revision :as snapshot} (resolve-revision catalog repository revision)
-        prefix (if (empty? path) "" (str (str/replace path #"/$" "") "/"))
+        directory (str/replace path #"/$" "")
+        prefix (if (empty? directory) "" (str directory "/"))
         tree (tree-at catalog repository commit)
-        _ (when (and (seq path)
-                     (not-any? #(and (= (str/replace path #"/$" "") (:path %)) (= "tree" (:kind %))) tree))
+        _ (when (and (seq directory)
+                     (not-any? #(and (= directory (:path %)) (= "tree" (:kind %))) tree))
             (throw (ex-info "Path is not a directory at this revision" {})))
         entries (->> tree
-                     (filter #(and (str/starts-with? (:path %) prefix)
-                                   (not (str/includes? (subs (:path %) (count prefix)) "/")))))
-        selected (vec (take (inc limit) entries))]
+                     (keep (fn [{entry-path :path entry-kind :kind}]
+                             (when (str/starts-with? entry-path prefix)
+                               (let [relative (subs entry-path (count prefix))
+                                     dir? (= "tree" entry-kind)]
+                                 (when (and (seq relative)
+                                            (< (count (re-seq #"/" relative)) depth)
+                                            (case kind "files" (not dir?) "dirs" dir? true))
+                                   (if dir? (str relative "/") relative))))))
+                     vec)]
     {:repository repository :revision commit :refreshed (:refreshed snapshot)
-     :entries (vec (take limit selected)) :truncated (> (count selected) limit)}))
+     :entries (vec (take limit entries)) :total (count entries) :truncated (> (count entries) limit)}))
 
 (defn read-repository-file
   "Read UTF-8 text from an immutable Git blob; Git symlinks return link text, not targets.
@@ -638,99 +649,343 @@
      :repository repository :symbol symbol
      :results (neogrok-request base "search" {"query" query "files" limit "matches" 100 "contextLines" 2})}))
 
+;; Result presentation: lean structured data, encoded in the caller's format.
+(def default-max-chars 20000)
+(def max-line-chars 2000)
+(def budget-hint "Output trimmed to maxChars; narrow the request or raise maxChars.")
+
+(defn- cut-line [text]
+  (if (> (count text) max-line-chars) (str (subs text 0 max-line-chars) " [truncated]") text))
+
+(defn compact
+  "Drop nil, false and empty-collection values from maps, recursively."
+  [value]
+  (cond
+    (map? value) (into {} (keep (fn [[k v]]
+                                  (let [v (compact v)]
+                                    (when-not (or (nil? v) (false? v) (and (coll? v) (empty? v)))
+                                      [k v]))))
+                       value)
+    (vector? value) (mapv compact value)
+    :else value))
+
+(defn- edn-text [value]
+  (cond
+    (map? value) (str "{" (str/join " " (mapcat (fn [[k v]] [(edn-text k) (edn-text v)]) value)) "}")
+    (sequential? value) (str "[" (str/join " " (map edn-text value)) "]")
+    :else (pr-str value)))
+
+(defn encode-result
+  "Encode a lean result as comma-free EDN (default) or JSON with camelCase keys."
+  [value fmt]
+  (if (= "json" fmt)
+    (json/generate-string value {:key-fn protocol/encode-key})
+    (edn-text value)))
+
+(defn- take-fraction [items ratio]
+  (subvec (vec items) 0 (max 1 (min (dec (count items)) (int (* (count items) ratio 0.9))))))
+
+(defn- retarget-cite [cite lines]
+  (if-let [[a] (first lines)]
+    (str/replace cite #":\d+-\d+$" (str ":" a "-" (min (first (peek lines)) (+ a 199))))
+    cite))
+
+(defn- read-hint [{:keys [end total-lines]}]
+  (when (< end total-lines)
+    (str "Lines shown end at " end " of " total-lines "; continue with startLine=" (inc end) ".")))
+
+(defn- shrink
+  "Return a smaller result scaled by `ratio`, or nil when nothing can be dropped."
+  [value ratio]
+  (let [rows (:results value)
+        lines (:lines value)]
+    (cond
+      (> (count rows) 1)
+      (-> value (update :results take-fraction ratio) (assoc :has-more true :hint budget-hint))
+      (and (= 1 (count rows)) (> (count (:lines (first rows))) 1))
+      (let [kept (take-fraction (:lines (first rows)) ratio)]
+        (-> value
+            (assoc-in [:results 0 :lines] kept)
+            (update-in [:results 0] #(cond-> % (:cite %) (update :cite retarget-cite kept)))
+            (assoc :has-more true :hint budget-hint)))
+      (> (count lines) 1)
+      (let [kept (take-fraction lines ratio)
+            trimmed (assoc value :lines kept :end (+ (:start value) (count kept) -1))]
+        (assoc trimmed :has-more true :hint (read-hint trimmed)))
+      :else nil)))
+
+(defn fit-budget
+  "Encode `value`, dropping trailing rows or lines until it fits `max-chars`."
+  [value fmt max-chars]
+  (loop [value (compact value)]
+    (let [text (encode-result value fmt)]
+      (if (<= (count text) max-chars)
+        text
+        (if-let [smaller (shrink value (/ max-chars (count text)))]
+          (recur (compact smaller))
+          text)))))
+
+(defn- file-row
+  "Lean row for one Neogrok file result; `repo?` keeps the repository field.
+
+  Lines are in file order. The cite range starts at the first shown line and
+  spans at most 200 lines, so read_file returns the matches in context."
+  [file context? repo?]
+  (let [lines (->> (for [chunk (get file "chunks")
+                         [i line] (map-indexed vector (get chunk "lines"))]
+                     {:n (+ (get chunk "startLineNumber" 1) i)
+                      :text (cut-line (get line "text" ""))
+                      :match? (boolean (seq (get line "matchRanges")))})
+                   (sort-by :n) (partition-by :n) (map first) vec)
+        repo (get file "repository")
+        path (get-in file ["fileName" "text"])
+        revision (get file "revision")]
+    {:repo (when repo? repo)
+     :path path
+     :lang (not-empty (get file "language"))
+     :cite (when revision
+             (str repo ":" path "@" revision
+                  (when (seq lines)
+                    (str ":" (:n (first lines)) "-" (min (:n (peek lines)) (+ (:n (first lines)) 199))))))
+     :lines (mapv (juxt :n :text) lines)
+     :matched (when context? (mapv :n (filter :match? lines)))}))
+
+(defn present-search
+  "Map Neogrok search results to lean rows with totals, truncation and hints."
+  [results {:keys [context? repo?]}]
+  (let [files (get results "files")
+        stats (get results "zoektStats")
+        total-files (get stats "fileCount")
+        total-matches (get stats "matchCount")
+        shown (reduce + 0 (map #(get % "matchCount" 0) files))
+        more? (boolean (or (and total-files (< (count files) total-files))
+                           (and total-matches (< shown total-matches))))]
+    {:total-files total-files
+     :total-matches total-matches
+     :results (mapv #(file-row % context? repo?) files)
+     :has-more more?
+     :hint (when more? "More matches exist; raise files/matches or narrow the query with repo:, f: or lang:.")
+     :warnings (when (some #(get % "revisionWarning") files)
+                 ["Some results lack an immutable revision; they have no cite."])}))
+
+(defn- repo-row [{:keys [id head warning index_warning indexed]}]
+  (let [indexed (if (string? indexed) (json/parse-string indexed) indexed)
+        branch (some #(when (= "HEAD" (get % "name")) %) (get indexed "branches"))
+        last-commit (get indexed "lastCommit")]
+    {:id id
+     :last-commit (when (string? last-commit) (subs last-commit 0 (min 10 (count last-commit))))
+     :files (get indexed "fileCount")
+     :warnings (cond-> []
+                 warning (conj warning)
+                 index_warning (conj index_warning)
+                 (nil? indexed) (conj "Not indexed")
+                 (and branch head (not= head (get branch "version")))
+                 (conj "Index revision differs from mirror HEAD"))}))
+
+(defn present-repos
+  "Filter, sort and bound lean repository rows."
+  [rows {:keys [limit sort problems] :or {limit 50 sort "name"}}]
+  (let [rows (cond->> (map compact (map repo-row rows))
+               problems (filter :warnings)
+               (= "recent" sort) (sort-by #(or (:last-commit %) "") #(compare %2 %1)))
+        rows (vec rows)
+        more? (> (count rows) limit)]
+    {:total (count rows)
+     :results (vec (take limit rows))
+     :has-more more?
+     :hint (when more? "More repositories match; refine query or raise limit.")}))
+
+(defn parse-cite
+  "Parse `repo:path@revision[:start-end]` into read_file arguments."
+  [cite]
+  (if-let [[_ repo path revision start end]
+           (re-matches #"([^:@\s]+):(.+)@([^@:\s]+)(?::(\d{1,7})-(\d{1,7}))?" cite)]
+    (cond-> {:repository repo :path path :revision revision}
+      start (assoc :start-line (parse-long start)
+                   :end-line (min (parse-long end) (+ (parse-long start) 499))))
+    (throw (ex-info "Invalid cite; expected repo:path@revision:start-end" {}))))
+
+(defn expand-cite
+  "Replace a read_file `:cite` with the arguments it names."
+  [args]
+  (if-let [cite (:cite args)]
+    (do (when (some #(contains? args %) [:repository :path :revision :start-line :end-line])
+          (throw (ex-info "Pass either cite or repository/path arguments, not both" {})))
+        (merge (dissoc args :cite) (parse-cite cite)))
+    args))
+
+;; Tool definitions. :core marks tools served on /mcp; every tool is on /mcp/all.
+(def instructions
+  (str "Code search over mirrored dependency repositories. Workflow: list_repos(query) to find "
+       "repository IDs, then grep (Zoekt syntax) or list_files/glob, then read_file. "
+       "Results are EDN by default; pass format=\"json\" for JSON. When a result has has-more, "
+       "its hint names the argument to change. Pass a result's cite to read_file to read those lines. "
+       "Zoekt queries are regex: escape ( [ . + * ? to match them literally."))
+
 (def tool-specs
   (let [text {:type "string" :minLength 1 :maxLength 512}
         path {:type "string" :maxLength 4096}
         common {"repository" text "revision" text}
         limit {:type "integer" :minimum 1 :maximum 1000}
-        context {:type "integer" :minimum 0 :maximum 20}]
-    [["grep" "Search indexed source with Zoekt syntax; returned indexed revisions may lag mirror HEAD."
-      {"query" (assoc text :maxLength 4096) "contextLines" context
-       "files" (assoc limit :maximum 100) "matches" limit} ["query"]]
-     ["list_repos" "Find repositories by literal ID substring (preferred; pass query) or list the catalog. Default limit 50; truncated is set when more exist. In search-only mode, query is Zoekt syntax."
-      {"query" (assoc text :maxLength 4096) "limit" limit} []]
-     ["glob" "Case-sensitive file glob: *, ? within components; whole-component ** spans directories. Other punctuation is literal."
-      (merge common {"pattern" (assoc text :maxLength 256) "limit" limit}) ["repository" "pattern"]]
-     ["read_file" "Read UTF-8 text at HEAD, a published branch or full commit ID. Symlinks return link text. Maximum 500 lines; default 200."
-      (merge common {"path" (assoc path :minLength 1) "startLine" {:type "integer" :minimum 1 :maximum 1000000}
-                     "endLine" {:type "integer" :minimum 1 :maximum 1000500}}) ["repository" "path"]]
-     ["list_tree" "List immediate children at HEAD, a published branch or full commit ID. Results include exact revision and truncation status."
-      (merge common {"path" path "limit" limit}) ["repository"]]
-     ["list_branches" "List the published branch snapshot with refresh timestamp and warning; no per-request Git traversal."
-      {"repository" text "limit" limit} ["repository"]]
-     ["list_commits" "List bounded history at an exact resolved revision; optional literal file path. Default 20 commits, maximum 100."
-      (merge common {"path" path "limit" (assoc limit :maximum 100)}) ["repository"]]
-     ["get_diff" "Compare two resolved commits with optional literal path and 0–20 context lines. External diff and textconv are disabled."
-      {"repository" text "from" text "to" text "path" path "contextLines" context} ["repository" "from" "to"]]
-     ["find_symbol_definitions" "Find exact case-sensitive Ctags definitions in the indexed revision; not arbitrary branch HEAD."
-      {"repository" text "symbol" (assoc text :maxLength 256) "limit" (assoc limit :maximum 100)} ["repository" "symbol"]]
-     ["find_symbol_references" "Find case-sensitive textual name occurrences with alphanumeric/underscore boundaries. NOT semantic references."
-      {"repository" text "symbol" (assoc text :maxLength 256) "limit" (assoc limit :maximum 100)} ["repository" "symbol"]]]))
+        context {:type "integer" :minimum 0 :maximum 20}
+        read-only {:read-only-hint true :destructive-hint false :idempotent-hint true}
+        spec (fn [name description properties required & {:as options}]
+               (merge {:name name :description description :annotations read-only
+                       :properties (assoc properties "format" {:type "string" :enum ["edn" "json"]})
+                       :required required}
+                      options))]
+    [(spec "grep"
+           (str "Search indexed source with Zoekt. Everything is regex; space-separated terms must all "
+                "match in a file; `or`, parentheses and leading `-` negation work; quote phrases. Filters: "
+                "repo: (r:), file: (f:), content: (c:), lang:, sym:, branch: (b:), "
+                "case:yes|no (default: case-sensitive only if the query has uppercase). "
+                "Indexed revisions may lag mirror HEAD.")
+           {"query" (assoc text :maxLength 4096) "contextLines" context
+            "files" (assoc limit :maximum 100) "matches" limit
+            "maxChars" {:type "integer" :minimum 1000 :maximum 200000}}
+           ["query"] :core true)
+     (spec "list_repos"
+           "Find repositories by ID substring; query \"\" or \"*\" lists all. Default limit 50."
+           {"query" {:type "string" :minLength 0 :maxLength 512} "limit" limit
+            "sort" {:type "string" :enum ["name" "recent"]}
+            "problems" {:type "boolean"}}
+           ["query"] :core true)
+     (spec "glob"
+           "Case-sensitive file glob: *, ? within components; whole-component ** spans directories. Other punctuation is literal."
+           (merge common {"pattern" (assoc text :maxLength 256) "limit" limit}) ["repository" "pattern"])
+     (spec "read_file"
+           (str "Read UTF-8 text at HEAD, a published branch or full commit ID; or pass cite from a search "
+                "result. Default 200 lines, maximum 500. Symlinks return link text.")
+           (merge common {"path" (assoc path :minLength 1) "cite" {:type "string" :minLength 3 :maxLength 4800}
+                          "startLine" {:type "integer" :minimum 1 :maximum 1000000}
+                          "endLine" {:type "integer" :minimum 1 :maximum 1000500}
+                          "maxChars" {:type "integer" :minimum 1000 :maximum 200000}})
+           [] :core true)
+     (spec "list_files"
+           "List files and directories under path (default root) at a revision. Directories end in /. Default depth 1."
+           (merge common {"path" path "limit" {:type "integer" :minimum 1 :maximum 2000}
+                          "depth" {:type "integer" :minimum 1 :maximum 10}
+                          "kind" {:type "string" :enum ["all" "files" "dirs"]}})
+           ["repository"] :core true)
+     (spec "list_branches" "List the published branch snapshot with its refresh time."
+           {"repository" text "limit" limit} ["repository"])
+     (spec "list_commits" "List bounded history at a resolved revision; optional literal file path. Default 20, maximum 100."
+           (merge common {"path" path "limit" (assoc limit :maximum 100)}) ["repository"])
+     (spec "get_diff" "Compare two resolved commits with optional literal path and 0-20 context lines."
+           {"repository" text "from" text "to" text "path" path "contextLines" context} ["repository" "from" "to"])
+     (spec "find_symbol_definitions" "Find exact case-sensitive Ctags definitions in the indexed revision."
+           {"repository" text "symbol" (assoc text :maxLength 256) "limit" (assoc limit :maximum 100)
+            "maxChars" {:type "integer" :minimum 1000 :maximum 200000}}
+           ["repository" "symbol"])
+     (spec "find_symbol_references" "Find case-sensitive textual name occurrences with identifier boundaries. NOT semantic references."
+           {"repository" text "symbol" (assoc text :maxLength 256) "limit" (assoc limit :maximum 100)
+            "maxChars" {:type "integer" :minimum 1000 :maximum 200000}}
+           ["repository" "symbol"])]))
+
+(defn- tool-spec [tool] (first (filter #(= tool (:name %)) tool-specs)))
+
+(defn- valid-value? [{:keys [type minimum maximum minLength maxLength enum]} value]
+  (case type
+    "string" (and (string? value) (<= (or minLength 0) (count value) (or maxLength Integer/MAX_VALUE))
+                  (or (nil? enum) (boolean (some #{value} enum))))
+    "integer" (and (integer? value) (<= (or minimum Long/MIN_VALUE) value (or maximum Long/MAX_VALUE)))
+    "boolean" (boolean? value)
+    false))
 
 (defn validate-arguments
-  "Validate arguments against the same scalar constraints advertised to MCP clients."
+  "Validate arguments against the constraints advertised to MCP clients; name the offender."
   [tool args]
-  (let [[_ _ properties required :as spec] (first (filter #(= tool (first %)) tool-specs))
+  (let [{:keys [properties required] :as spec} (tool-spec tool)
         properties (into {} (map (fn [[k v]] [(protocol/decode-key k) v])) properties)]
-    (when-not (and spec (map? args) (every? #(contains? properties %) (keys args))
-                   (every? #(contains? args (protocol/decode-key %)) required))
-      (throw (ex-info "Missing or unexpected tool arguments" {})))
-    (doseq [[key value] args
-            :let [{:keys [type minimum maximum minLength maxLength]} (get properties key)]]
-      (when-not (case type
-                  "string" (and (string? value) (<= (or minLength 0) (count value) maxLength))
-                  "integer" (and (integer? value) (<= minimum value maximum))
-                  false)
-        (throw (ex-info (str "Invalid argument: " (name key)) {}))))
+    (when-not (and spec (map? args))
+      (throw (ex-info "Tool arguments must be an object" {})))
+    (when-let [unknown (seq (remove #(contains? properties %) (keys args)))]
+      (throw (ex-info (str "Unknown argument: " (str/join ", " (map protocol/encode-key unknown))) {})))
+    (when-let [missing (seq (remove #(contains? args (protocol/decode-key %)) required))]
+      (throw (ex-info (str "Missing required argument: " (str/join ", " missing)) {})))
+    (doseq [[key value] args]
+      (when-not (valid-value? (get properties key) value)
+        (throw (ex-info (str "Invalid argument: " (protocol/encode-key key)) {}))))
     (when (contains? args :path) (safe-path (:path args)))
     (when (= tool "glob")
       (safe-path (:pattern args))
       (glob-matches? (:pattern args) ""))
     (when (= tool "read_file")
-      (let [start (get args :start-line 1) end (get args :end-line (+ start 199))]
+      (let [args (expand-cite args)
+            start (get args :start-line 1) end (get args :end-line (+ start 199))]
+        (when-not (and (:repository args) (:path args))
+          (throw (ex-info "Missing required argument: repository and path, or cite" {})))
+        (safe-path (:path args))
         (when-not (<= start end (+ start 499))
           (throw (ex-info "Invalid line range; maximum 500 lines" {})))))
     args))
 
 (defn execute-search
-  "Execute an advertised search tool; preserve backend revision and URL evidence."
+  "Execute a raw Neogrok-backed operation; preserve backend revision evidence."
   [base tool args]
   (validate-arguments tool args)
   (case tool
     "grep" (neogrok-request base "search"
                             {"query" (:query args)
-                             "contextLines" (get args :context-lines 2)
-                             "files" (get args :files 20)
-                             "matches" (get args :matches 100)})
-    "list_repos" (let [result (neogrok-request base "list" (select-keys args [:query]))
-                       limit (get args :limit 50)]
-                   (assoc result "repositories" (vec (take limit (get result "repositories")))
-                          "truncated" (> (count (get result "repositories")) limit)))))
+                             "contextLines" (get args :context-lines 0)
+                             "files" (get args :files 10)
+                             "matches" (get args :matches 50)})
+    "list_repos" (neogrok-request base "list"
+                                  (if (#{"" "*"} (:query args)) {} (select-keys args [:query])))))
+
+(defn- present-read [{:keys [repository path revision mode start-line end-line total-lines lines]}]
+  (let [value {:repo repository :path path :rev revision :symlink (= "120000" mode)
+               :start start-line :end end-line :total-lines total-lines :lines (mapv cut-line lines)}]
+    (assoc value :has-more (< end-line total-lines) :hint (read-hint value))))
 
 (defn execute-tool
-  "Execute a validated tool through shared operations, independent of MCP transport."
+  "Execute a validated tool and return its lean result, independent of MCP transport."
   [base catalog tool args]
   (validate-arguments tool args)
   (case tool
-    "grep" (execute-search base tool args)
-    "list_repos" (if catalog
-                   (let [rows (list-catalog-repos catalog (:query args))
-                         limit (get args :limit 50)]
-                     {:repositories (vec (take limit rows)) :truncated (> (count rows) limit)})
-                   (execute-search base tool args))
-    "glob" (glob-repository catalog args)
-    "read_file" (read-repository-file catalog args)
-    "list_tree" (list-repository-tree catalog args)
-    "list_branches" (list-catalog-branches catalog (:repository args) (get args :limit 1000))
-    "list_commits" (list-repository-commits catalog args)
-    "get_diff" (diff-repository catalog args)
-    ("find_symbol_definitions" "find_symbol_references") (search-symbol base catalog tool args)))
+    "grep" (present-search (execute-search base tool args)
+                           {:context? (pos? (get args :context-lines 0)) :repo? true})
+    "list_repos" (present-repos
+                  (if catalog
+                    (list-catalog-repos catalog (when-not (#{"" "*"} (:query args)) (:query args)))
+                    (map (fn [repo] {:id (get repo "name") :indexed repo})
+                         (get (execute-search base tool args) "repositories")))
+                  args)
+    "glob" (let [{:keys [repository revision matches truncated]} (glob-repository catalog args)]
+             {:repo repository :rev revision :results matches :has-more truncated
+              :hint (when truncated "More files match; raise limit or narrow the pattern.")})
+    "read_file" (present-read (read-repository-file catalog (expand-cite args)))
+    "list_files" (let [{:keys [repository revision entries total truncated]} (list-repository-files catalog args)]
+                   {:repo repository :rev revision :path (not-empty (:path args)) :entries entries
+                    :total total :has-more truncated
+                    :hint (when truncated "More entries exist; raise limit or narrow path/depth.")})
+    "list_branches" (let [{:keys [repository refreshed warning branches truncated]}
+                          (list-catalog-branches catalog (:repository args) (get args :limit 100))]
+                      {:repo repository :refreshed refreshed :warnings (when warning [warning])
+                       :results (mapv (fn [{:keys [name revision]}] {:name (str/replace name #"^refs/heads/" "") :rev revision}) branches)
+                       :has-more truncated})
+    "list_commits" (let [{:keys [repository commits truncated]} (list-repository-commits catalog args)]
+                     {:repo repository
+                      :results (mapv (fn [{:keys [revision author message]}]
+                                       {:rev revision :author (str/replace author #"\s+<[^>]*>.*$" "")
+                                        :subject (first (str/split-lines message))})
+                                     commits)
+                      :has-more truncated})
+    "get_diff" (let [{:keys [repository from to patch]} (diff-repository catalog args)]
+                 {:repo repository :from from :to to :patch patch})
+    ("find_symbol_definitions" "find_symbol_references")
+    (let [{:keys [kind repository symbol results]} (search-symbol base catalog tool args)]
+      (merge {:kind kind :repo repository :symbol symbol}
+             (present-search results {:context? true :repo? false})))))
 
 (defn tool-result
-  "Return an MCP text result containing bounded JSON-encoded `value`."
-  [value]
-  (let [text (json/generate-string value)]
-    (when (> (alength (.getBytes text "UTF-8")) max-response-bytes)
+  "Return an MCP text result holding `value` in the requested format and budget."
+  [tool args value]
+  (let [fmt (get args :format "edn")
+        budget (when (contains? (:properties (tool-spec tool)) "maxChars")
+                 (get args :max-chars default-max-chars))
+        text (if budget (fit-budget value fmt budget) (encode-result (compact value) fmt))]
+    (when (> (alength (.getBytes ^String text "UTF-8")) max-response-bytes)
       (throw (ex-info "Result exceeds response limit; narrow the request" {})))
     {:content [{:type "text" :text text}]}))
 
@@ -744,12 +999,12 @@
   ([base slots] (search-tools base slots nil))
   ([base slots catalog]
    (mapv
-    (fn [[name description properties required]]
+    (fn [{:keys [name description properties required annotations]}]
       {:name name
        :description description
        :input-schema {:type "object" :properties properties :required required
                       :additionalProperties false}
-       :annotations {:read-only-hint true :destructive-hint false :idempotent-hint true}
+       :annotations annotations
        :tool-fn (fn [context args]
                   (let [args (if (and (nil? args) (not (contains? (get-in context [:message :params]) :arguments))) {} args)]
                     (try
@@ -760,12 +1015,12 @@
                           (try
                             (binding [*cancelled* (:is-cancelled context)
                                       *deadline* (+ (System/nanoTime) (* git-timeout-ms 1000000))]
-                              (tool-result (execute-tool base catalog name args)))
+                              (tool-result name args (execute-tool base catalog name args)))
                             (catch Exception e (tool-error (ex-message e)))
                             (finally (.release ^Semaphore slots)))))
                       (catch clojure.lang.ExceptionInfo e
                         (rpc/invalid-params-response (get-in context [:message :id]) (ex-message e))))))})
-    (if catalog tool-specs (take 2 tool-specs)))))
+    (if catalog tool-specs (filter #(#{"grep" "list_repos"} (:name %)) tool-specs)))))
 
 (defn response
   "Return a plain-text Ring response with `status` and `body`."
@@ -874,7 +1129,8 @@
                   :else
                   (let [id (str (random-uuid))
                         session (atom (assoc (mcp/create-session
-                                              {:server-info {:name "code-search" :version "0.1.0"}
+                                              {:server-info {:name "code-search" :version "0.2.0"}
+                                               :server-instructions instructions
                                                :tools tools :server-capabilities {:tools {}}
                                                :on-initialized nil :on-client-root-list-changed nil})
                                              :server-supported-protocol-versions protocol-versions))]
