@@ -1,0 +1,6 @@
+{:deps {io.github.b12n-oss/mcp-tkx
+        {:git/url "https://git.outskirtslabs.com/casey/mcp-tkx.git"
+         :git/sha "5d8056d583dcfb802140611f0dd5c626b7f6d8bd"}
+        funcool/promesa {:mvn/version "12.0.1"}
+        io.github.babashka/babashka.sqlite
+        {:git/sha "54ec86f48144f88c5fe2722ea3a8737f28cc22e7"}}}

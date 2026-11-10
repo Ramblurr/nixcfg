@@ -9,6 +9,10 @@ inputs: [
       bb-desktop = prev.callPackage ./bb-desktop/package.nix { inherit pkgs-lib; };
       caddy-with-security = prev.callPackage ./caddy/package.nix { };
       neogrok = prev.callPackage ./neogrok/package.nix { };
+      code-search-mcp = prev.callPackage ./code-search-mcp/package.nix {
+        clojureNixLocker = inputs.clojure-nix-locker;
+        pkgs = prev;
+      };
       konveyor = prev.callPackage ./konveyor.nix { };
       keybr-standalone = prev.callPackage ./keybr-standalone/package.nix { };
       # Work item 065: ML uploads retained one image buffer per request on Node 24.19.

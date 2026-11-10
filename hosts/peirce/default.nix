@@ -39,6 +39,18 @@
     enable = true;
   };
 
+  modules.services.code-search-mcp = {
+    enable = true;
+    allowedRemoteIPs = [
+      "127.0.0.1/32"
+      "::1/128"
+      "100.64.0.0/10"
+      "fd7a:115c:a1e0::/48"
+      config.site.net.prim.subnet4
+      config.site.net.mgmt.subnet4
+    ];
+  };
+
   modules.services.forgejo = {
     enable = true;
     domain = "git.${config.repo.secrets.home-ops.workDomain}";

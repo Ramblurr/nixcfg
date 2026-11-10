@@ -110,6 +110,7 @@
     ./services/git-archive.nix
     ./services/dependency-mirror.nix
     ./services/neogrok.nix
+    ./services/code-search-mcp.nix
     ./services/github-runner.nix
     ./services/haproxy.nix
     ./services/home-dl.nix
