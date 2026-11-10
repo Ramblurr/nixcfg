@@ -155,14 +155,6 @@
             "phone"
           ];
         };
-        "doom-emacs" = {
-          id = "jkuvr-ugrxv";
-          path = "/home/ramblurr/nixcfg/configs/doom";
-          devices = [ "phone2" ];
-          versioning = {
-            type = "simple";
-          };
-        };
         "SNO-Noten" = {
           id = "jfi2q-111c3";
           path = "/home/ramblurr/docs/SNO/Noten - Scores";
