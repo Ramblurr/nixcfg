@@ -36,7 +36,7 @@ in
             directory = "${homeDirectory}/src/nixcfg";
           };
           credential.helper = [
-            "cache --timeout 21600"
+            "cache --timeout 86400"
             "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
           ];
           alias = {

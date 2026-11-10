@@ -50,6 +50,7 @@ in
           "explore.DISABLE_USERS_PAGE" = false;
         };
         api.ENABLE_SWAGGER = true;
+        oauth2.ACCESS_TOKEN_EXPIRATION_TIME = 86400;
         openid = {
           ENABLE_OPENID_SIGNIN = false;
           ENABLE_OPENID_SIGNUP = false;
