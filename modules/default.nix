@@ -4,6 +4,7 @@
 
 {
   imports = [
+    ./services/bb.nix
     ./emergency-patch.nix
     ./boot/zfs.nix
     ./desktop/browser/chromium.nix

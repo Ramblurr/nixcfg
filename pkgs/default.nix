@@ -6,6 +6,7 @@ inputs: [
       pkgs-lib = prev.callPackage ../lib/pkgs.nix { flake-inputs = inputs; };
     in
     {
+      bb-desktop = prev.callPackage ./bb-desktop/package.nix { inherit pkgs-lib; };
       caddy-with-security = prev.callPackage ./caddy/package.nix { };
       konveyor = prev.callPackage ./konveyor.nix { };
       keybr-standalone = prev.callPackage ./keybr-standalone/package.nix { };
