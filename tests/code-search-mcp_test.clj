@@ -775,6 +775,25 @@
                            (sut/validate-arguments "add_repos" {:repos [{:url "https://github.com/a/b" :bogus 1}]})))
      (is (contains? @inventory "https://github.com/a/two")))))
 
+(deftest refresh-survives-too-many-tags-and-skips-unchanged-refs
+  (git-fixture
+   (fn [{:keys [catalog mirror head]}]
+     (sut/refresh-catalog! catalog {})
+     (let [rowids #(sqlite/query (:db catalog) "SELECT rowid,name FROM refs ORDER BY name")
+           before (rowids)]
+       (sut/refresh-catalog! catalog {})
+       (is (= before (rowids))))
+     (dotimes [i 30] (fixture-git! mirror "tag" (str "release-" i) head))
+     (with-redefs [sut/max-ref-bytes 1000]
+       (sut/refresh-catalog! catalog {}))
+     (is (= [{:name "refs/heads/main"}] (sqlite/query (:db catalog) "SELECT name FROM refs")))
+     (is (= [{:warning sut/tags-omitted-warning}] (sqlite/query (:db catalog) "SELECT warning FROM repositories")))
+     (is (some #{sut/tags-omitted-warning}
+               (get-in (sut/execute-tool nil catalog "list_repos" {:query "example"}) [:results 0 :warnings])))
+     (sut/refresh-catalog! catalog {})
+     (is (= 31 (:n (first (sqlite/query (:db catalog) "SELECT COUNT(*) n FROM refs")))))
+     (is (= [{:warning nil}] (sqlite/query (:db catalog) "SELECT warning FROM repositories"))))))
+
 (deftest compare-handles-directory-prefixes-and-huge-patches
   (git-fixture
    (fn [{:keys [catalog work mirror]}]

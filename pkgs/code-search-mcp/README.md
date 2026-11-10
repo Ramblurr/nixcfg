@@ -137,7 +137,9 @@ An unavailable object produces an error rather than substituting a newer commit.
 Startup prepares a catalog; one background worker refreshes it every five
 minutes. Each repository's branches, peeled tags and tree publish in one SQLite
 transaction, after Git traversal finishes. Pull-request and other refs are not
-published. Unchanged tree objects are not traversed again, including when HEAD
+published. Unchanged ref lists are not rewritten. A repository with too many
+refs to list within the 8 MiB Git output cap publishes its branches only, with
+a warning, rather than failing every refresh. Unchanged tree objects are not traversed again, including when HEAD
 changes without changing its tree. Failed refreshes retain the previous
 generation with a warning. Index observations are separate from mirror HEAD and
 can lag it.

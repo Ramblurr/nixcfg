@@ -130,8 +130,10 @@
   "Run a fixed read-only Git command in `repo`, with bounded output and lifetime.
 
   `args` is internal operation code, never a client-supplied command vector.
+  `cap` bounds stdout bytes and defaults to [[max-git-bytes]].
   Return stdout bytes; throw on cancellation, timeout, overflow or Git failure."
-  [repo args]
+  ([repo args] (run-git repo args max-git-bytes))
+  ([repo args cap]
   (when-not (contains? #{"rev-parse" "for-each-ref" "ls-tree" "cat-file" "log" "diff"} (first args))
     (throw (ex-info "Unsupported Git operation" {})))
   (let [deadline (min (or *deadline* Long/MAX_VALUE) (+ (System/nanoTime) (* git-timeout-ms 1000000)))
@@ -154,7 +156,7 @@
                              (kill-git! child)
                              (throw (ex-info "Git output limit exceeded" {})))
                            bytes)))
-        stdout (read-bounded (:out child) max-git-bytes)
+        stdout (read-bounded (:out child) cap)
         stderr (read-bounded (:err child) 8192)]
     (try
       (let [bytes (await-result stdout deadline)]
@@ -170,12 +172,12 @@
                (.close ^java.io.InputStream (:out child))
                (.close ^java.io.InputStream (:err child))
                (future-cancel stdout)
-               (future-cancel stderr)))))))
+               (future-cancel stderr))))))))
 
 (defn git-text
   "Run [[run-git]] and decode its bounded output as UTF-8."
-  [repo args]
-  (utf8-text (run-git repo args)))
+  ([repo args] (utf8-text (run-git repo args)))
+  ([repo args cap] (utf8-text (run-git repo args cap))))
 
 (defn open-catalog!
   "Initialize derived SQLite state for a configured mirror root.
@@ -192,8 +194,11 @@
                  "CREATE TABLE IF NOT EXISTS tree (repo TEXT, path TEXT, mode TEXT, kind TEXT, oid TEXT, PRIMARY KEY(repo,path))"
                  "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, bytes INTEGER, touched INTEGER)"]]
       (sqlite/execute! db sql))
-    (when-not (some #(= "tree_oid" (:name %)) (sqlite/query db "PRAGMA table_info(repositories)"))
-      (sqlite/execute! db "ALTER TABLE repositories ADD COLUMN tree_oid TEXT"))
+    (let [columns (set (map :name (sqlite/query db "PRAGMA table_info(repositories)")))]
+      (when-not (contains? columns "tree_oid")
+        (sqlite/execute! db "ALTER TABLE repositories ADD COLUMN tree_oid TEXT"))
+      (when-not (contains? columns "refs_digest")
+        (sqlite/execute! db "ALTER TABLE repositories ADD COLUMN refs_digest TEXT")))
     (fs/create-dirs (fs/path state-dir "cache"))
     (let [known (set (map #(str (:key %) ".json") (sqlite/query db "SELECT key FROM cache")))]
       (doseq [path (fs/list-dir (fs/path state-dir "cache"))
@@ -277,6 +282,36 @@
   (assert-commit! repo revision)
   (parse-tree-entries (git-text repo ["ls-tree" "-r" "-t" "-z" "--full-tree" revision])))
 
+(def max-ref-bytes max-git-bytes)
+(def tags-omitted-warning "Tags omitted: too many refs to list; branches are current")
+
+(defn- list-refs
+  "Return `[refs warning]`: published branches and peeled tags, or branches only.
+
+  A repository with too many tags to list within [[max-ref-bytes]] still
+  publishes its branches, with a warning, instead of failing every refresh."
+  [repo]
+  (let [read (fn [patterns]
+               ;; Annotated tags are published as the object they point at.
+               (mapv (fn [line]
+                       (let [[name object peeled] (str/split line #"\u0000" 3)]
+                         [name (if (str/blank? peeled) object peeled)]))
+                     (remove str/blank?
+                             (str/split-lines
+                              (git-text repo (into ["for-each-ref" "--format=%(refname)%00%(objectname)%00%(*objectname)"]
+                                                   patterns)
+                                        max-ref-bytes)))))]
+    (try
+      [(read ["refs/heads/" "refs/tags/"]) nil]
+      (catch clojure.lang.ExceptionInfo e
+        (if (= "Git output limit exceeded" (ex-message e))
+          [(read ["refs/heads/"]) tags-omitted-warning]
+          (throw e))))))
+
+(defn- refs-digest [refs]
+  (format "%064x" (java.math.BigInteger. 1 (.digest (java.security.MessageDigest/getInstance "SHA-256")
+                                                    (.getBytes (pr-str refs) "UTF-8")))))
+
 (defn refresh-catalog!
   "Atomically publish each mirror's refs and default tree; preserve failed snapshots.
 
@@ -296,12 +331,9 @@
           (try
             (let [repo (mirror-path catalog id)
                   head (str/trim (git-text repo ["rev-parse" "--verify" "HEAD^{commit}"]))
-                  ;; Annotated tags are published as the object they point at.
-                  refs (mapv (fn [line]
-                               (let [[name object peeled] (str/split line #"\u0000" 3)]
-                                 [name (if (str/blank? peeled) object peeled)]))
-                             (remove str/blank? (str/split-lines (git-text repo ["for-each-ref" "--format=%(refname)%00%(objectname)%00%(*objectname)" "refs/heads/" "refs/tags/"]))))
-                  previous (first (sqlite/query db ["SELECT head,tree_oid,indexed FROM repositories WHERE id=?" id]))
+                  [refs refs-warning] (list-refs repo)
+                  digest (refs-digest refs)
+                  previous (first (sqlite/query db ["SELECT head,tree_oid,indexed,refs_digest FROM repositories WHERE id=?" id]))
                   tree-oid (if (and (= head (:head previous)) (:tree_oid previous))
                              (:tree_oid previous)
                              (str/trim (git-text repo ["rev-parse" "--verify" (str head "^{tree}")])))
@@ -310,16 +342,19 @@
               ;; Git work has finished before the write transaction begins.
               (sqlite/with-conn [conn db]
                 (sqlite/with-transaction conn
-                  (sqlite/execute! conn ["DELETE FROM refs WHERE repo=?" id])
-                  (doseq [[name revision] refs]
-                    (sqlite/execute! conn ["INSERT INTO refs VALUES (?,?,?)" id name revision]))
+                  ;; Unchanged refs are not rewritten on every refresh.
+                  (when (not= digest (:refs_digest previous))
+                    (sqlite/execute! conn ["DELETE FROM refs WHERE repo=?" id])
+                    (doseq [[name revision] refs]
+                      (sqlite/execute! conn ["INSERT INTO refs VALUES (?,?,?)" id name revision])))
                   (when entries
                     (sqlite/execute! conn ["DELETE FROM tree WHERE repo=?" id])
                     (doseq [{:keys [path mode kind oid]} entries]
                       (when (and *cancelled* @*cancelled*) (throw (ex-info "Refresh cancelled" {})))
                       (sqlite/execute! conn ["INSERT INTO tree VALUES (?,?,?,?,?)" id path mode kind oid])))
-                  (sqlite/execute! conn ["UPDATE repositories SET head=?,tree_oid=?,refreshed=?,attempted=?,warning=NULL,indexed=?,index_warning=? WHERE id=?"
-                                         head tree-oid now now index-data (when (nil? indexed) "Index metadata unavailable") id]))))
+                  (sqlite/execute! conn ["UPDATE repositories SET head=?,tree_oid=?,refs_digest=?,refreshed=?,attempted=?,warning=?,indexed=?,index_warning=? WHERE id=?"
+                                         head tree-oid digest now now refs-warning index-data
+                                         (when (nil? indexed) "Index metadata unavailable") id]))))
             (catch Exception _
               (sqlite/execute! db ["UPDATE repositories SET attempted=?,warning=? WHERE id=?"
                                    now "Refresh failed; previous snapshot retained" id]))))
