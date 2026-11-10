@@ -84,5 +84,22 @@ pkgs.runCommand "bb-isolation-tests"
     export GATEWAY_TEMPLATE=${../modules/services/bb-isolation/Caddyfile.in}
     export CADDY=${lib.getExe pkgs.caddy}
     python ${./bb-isolation.py} -v
+    mkdir -m 700 /tmp/bb-isolation-test
+    ${pkgs.writeShellScript "bb-test-token-init" (
+      lib.replaceStrings [ "/home/developer/.config/bb/isolation" ] [ "/tmp/bb-isolation-test" ]
+        worker.systemd.services.bb-worker-egress.preStart
+    )}
+    cp /tmp/bb-isolation-test/interceptor-token original-token
+    ${pkgs.writeShellScript "bb-test-token-restart" (
+      lib.replaceStrings [ "/home/developer/.config/bb/isolation" ] [ "/tmp/bb-isolation-test" ]
+        worker.systemd.services.bb-worker-egress.preStart
+    )}
+    cmp original-token /tmp/bb-isolation-test/interceptor-token
+    python - <<'PY'
+    from pathlib import Path
+    path = Path('/tmp/bb-isolation-test/interceptor-token')
+    assert len(bytes.fromhex(path.read_text().strip())) == 32
+    assert path.stat().st_mode & 0o777 == 0o600
+    PY
     echo ${lib.escapeShellArg (builtins.toJSON tests)} > "$out"
   ''
