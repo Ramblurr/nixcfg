@@ -19,7 +19,6 @@
 
   home-ops = {
     enable = true;
-    containers.enable = true;
     # Use encrypted Tailscale transport until the data network is connected.
     zrepl = {
       enable = true;
@@ -80,6 +79,5 @@
   };
   environment.systemPackages = [
     pkgs.gptfdisk
-    pkgs.podman-compose
   ];
 }

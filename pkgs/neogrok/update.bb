@@ -47,7 +47,7 @@
             (process/shell "git" "-C" checkout "fetch" "--depth=1" "https://github.com/isker/neogrok.git" revision)
             (process/shell "git" "-C" checkout "checkout" "-q" "--detach" "FETCH_HEAD")
             (spit missing (str (command-output fetcher "missing-hashes" (str (fs/path checkout "yarn.lock"))) "\n"))
-            (let [version     (:version (json/parse-string (slurp (fs/path checkout "package.json")) true))
+            (let [version     (:version (json/parse-string (slurp (str (fs/path checkout "package.json"))) true))
                   source-hash (:hash (json/parse-string
                                       (command-output "nix" "store" "prefetch-file" "--json" "--unpack"
                                                       (str "https://github.com/isker/neogrok/archive/" revision ".tar.gz")) true))

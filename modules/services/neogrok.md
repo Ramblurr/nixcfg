@@ -2,7 +2,7 @@
 
 Peirce serves Neogrok at `http://10.9.4.24:3081/` on the LAN. Zoekt's backend
 listens only on `127.0.0.1:6070`. Neither service has application authentication;
-do not expose these listeners publicly. Sourcebot's separate trial is unchanged.
+do not expose these listeners publicly. The Sourcebot trial has been removed.
 
 ## Indexing
 
