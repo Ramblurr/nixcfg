@@ -11,7 +11,7 @@ let
 in
 {
   options.modules.services.code-search-mcp = {
-    enable = lib.mkEnableOption "read-only MCP access to dependency mirrors";
+    enable = lib.mkEnableOption "MCP access to dependency mirrors, with inventory add and sync tools";
     port = lib.mkOption {
       type = lib.types.port;
       default = 3082;
@@ -79,7 +79,7 @@ in
     '';
 
     systemd.services.code-search-mcp = {
-      description = "Read-only dependency code-search MCP";
+      description = "Dependency code-search MCP";
       wantedBy = [ "multi-user.target" ];
       wants = [ "neogrok.service" ];
       after = [
@@ -93,6 +93,8 @@ in
         NEOGROK_URL = "http://127.0.0.1:${toString config.modules.services.neogrok.port}/search";
         MIRROR_ROOT = mirrors;
         CODE_SEARCH_DISABLED_TOOLS = lib.concatStringsSep "," cfg.disabledTools;
+        # add_repos and sync_repos use the editor's agent API over loopback.
+        EDITOR_URL = "http://${config.modules.services.dependency-mirror.listenAddress}:${toString config.modules.services.dependency-mirror.port}/edit";
         HOME = stateDir;
       };
       serviceConfig = {

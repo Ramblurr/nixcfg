@@ -989,6 +989,86 @@
      :has-more (< next-offset (count files))
      :next (when (< next-offset (count files)) (str next-offset))}))
 
+;; Mirror inventory changes go through the dependency-mirror editor's agent API.
+(def max-patch-bytes 15000)
+(def editor-timeout-ms 10000)
+
+(defn- editor-request [editor method path headers body]
+  (let [response (client/request {:uri (str (str/replace editor #"/$" "") path) :method method
+                                  :headers headers :body body :throw false
+                                  :timeout editor-timeout-ms :follow-redirects :never})
+        data (try (json/parse-string (:body response)) (catch Exception _ nil))]
+    (when-not (<= 200 (:status response) 299)
+      (throw (ex-info (if (= 409 (:status response))
+                        "A sync is already running; retry later"
+                        (str "Mirror editor rejected the request: "
+                             (or (get data "error") (str "HTTP " (:status response)))))
+                      {:status (:status response)})))
+    {:data data :csrf (get-in response [:headers "x-csrf-token"])}))
+
+(defn canonical-url
+  "Normalize a repository URL toward the editor's canonical form.
+
+  Trailing slashes are removed. For github.com, gitlab.com and codeberg.org a
+  .git suffix is removed, and github.com paths are lowercased."
+  [url]
+  (let [url (str/replace (str/trim url) #"/+$" "")
+        host (some-> (re-find #"^https?://([^/]+)" url) second str/lower-case)]
+    (cond-> url
+      (#{"github.com" "gitlab.com" "codeberg.org"} host) (str/replace #"\.git$" "")
+      (= "github.com" host) str/lower-case)))
+
+(defn add-repos
+  "Insert repositories into the mirror inventory; leave existing entries unchanged.
+
+  Each entry has `:url` and optional `:include`, `:provider`, `:scope` and
+  `:organization`. Patches are split below the editor's request limit; each
+  request is atomic. Return added and already-present canonical URLs."
+  [editor repos]
+  (let [{current :data csrf :csrf} (editor-request editor :get "/api/repos" {} nil)
+        entries (into (sorted-map)
+                      (map (fn [{:keys [url include provider scope organization]}]
+                             [(canonical-url url)
+                              (cond-> {}
+                                include (assoc "include" include)
+                                provider (assoc "provider" provider)
+                                scope (assoc "scope" scope)
+                                organization (assoc "organization?" organization))]))
+                      repos)
+        existing (filterv #(contains? current %) (keys entries))
+        fresh (into (sorted-map) (remove (fn [[url _]] (contains? current url))) entries)
+        chunks (reduce (fn [chunks [url options]]
+                         (let [chunk (assoc (peek chunks) url options)]
+                           (if (and (> (count (peek chunks)) 0)
+                                    (> (alength (.getBytes (json/generate-string chunk) "UTF-8")) max-patch-bytes))
+                             (conj chunks {url options})
+                             (conj (pop chunks) chunk))))
+                       [{}] fresh)
+        added (atom [])]
+    (try
+      (doseq [chunk chunks :when (seq chunk)]
+        (editor-request editor :patch "/api/repos"
+                        {"content-type" "application/merge-patch+json" "x-csrf-token" csrf}
+                        (json/generate-string chunk))
+        (swap! added into (keys chunk)))
+      (catch clojure.lang.ExceptionInfo e
+        (throw (ex-info (str (ex-message e) (when (seq @added) (str " (already added: " (str/join ", " @added) ")")))
+                        (ex-data e)))))
+    {:added @added :existing existing
+     :hint (when (seq @added) "Call sync_repos to fetch them; they become searchable after sync and indexing.")}))
+
+(defn sync-repos
+  "Start a background mirror sync for one inventory URL or for all entries."
+  [editor {:keys [url all]}]
+  (when-not (not= (boolean all) (some? url))
+    (throw (ex-info "Pass exactly one of url or all=true" {})))
+  (let [{csrf :csrf} (editor-request editor :get "/api/repos" {} nil)
+        body (if all {"all" true} {"url" (canonical-url url)})]
+    (editor-request editor :post "/api/sync" {"content-type" "application/json" "x-csrf-token" csrf}
+                    (json/generate-string body))
+    {:status "accepted" :selection (if all "all" (get body "url"))
+     :hint "The sync runs in the background; new mirrors appear in list_repos after the next catalog refresh and indexing."}))
+
 ;; Tool definitions. :core marks tools served on /mcp; every tool is on /mcp/all.
 (def instructions
   (str "Code search over mirrored dependency repositories. Workflow: list_repos(query) to find "
@@ -1067,6 +1147,24 @@
            {"repo" text "base" text "head" text "first" (assoc limit :maximum 100)
             "after" {:type "string" :minLength 1 :maxLength 16} "maxChars" budget}
            ["repo" "base" "head"])
+     (spec "add_repos"
+           (str "Add repositories, or forge users/organizations, to the mirror inventory. Existing entries are "
+                "unchanged. include selects repositories of an owner URL; provider and scope disambiguate "
+                "self-hosted forges. Does not fetch: call sync_repos afterwards.")
+           {"repos" {:type "array" :minItems 1 :maxItems 50
+                     :items {:type "object" :required ["url"] :additionalProperties false
+                             :properties {"url" {:type "string" :minLength 8 :maxLength 2048}
+                                          "include" (array text 200)
+                                          "provider" {:type "string" :minLength 1 :maxLength 32}
+                                          "scope" {:type "string" :enum ["owner" "repo"]}
+                                          "organization" {:type "boolean"}}}}}
+           ["repos"] :core true :mutates true
+           :annotations {:read-only-hint false :destructive-hint false :idempotent-hint true})
+     (spec "sync_repos"
+           "Start a background mirror sync for one inventory URL, or all=true for every entry. Returns once accepted."
+           {"url" {:type "string" :minLength 8 :maxLength 2048} "all" {:type "boolean"}}
+           [] :core true :mutates true
+           :annotations {:read-only-hint false :destructive-hint false :idempotent-hint false})
      (spec "find_symbol_definitions" "Find exact case-sensitive Ctags definitions in the indexed revision."
            {"repository" text "symbol" (assoc text :maxLength 256) "limit" (assoc limit :maximum 100)
             "maxChars" {:type "integer" :minimum 1000 :maximum 200000}}
@@ -1089,8 +1187,12 @@
     {"/mcp" (filterv #(contains? core-tools (:name %)) tools)
      "/mcp/all" tools}))
 
-(defn- valid-value? [{:keys [type minimum maximum minLength maxLength enum items minItems maxItems]} value]
+(defn- valid-value? [{:keys [type minimum maximum minLength maxLength enum items minItems maxItems properties required]} value]
   (case type
+    "object" (let [properties (into {} (map (fn [[k v]] [(protocol/decode-key k) v])) properties)]
+               (and (map? value)
+                    (every? (fn [[k v]] (and (contains? properties k) (valid-value? (get properties k) v))) value)
+                    (every? #(contains? value (protocol/decode-key %)) required)))
     "array" (and (sequential? value) (<= (or minItems 0) (count value) (or maxItems Integer/MAX_VALUE))
                  (every? #(valid-value? items %) value))
     "string" (and (string? value) (<= (or minLength 0) (count value) (or maxLength Integer/MAX_VALUE))
@@ -1146,10 +1248,14 @@
     (assoc value :has-more (< end-line total-lines) :hint (read-hint value))))
 
 (defn execute-tool
-  "Execute a validated tool and return its lean result, independent of MCP transport."
-  [base catalog tool args]
+  "Execute a validated tool and return its lean result, independent of MCP transport.
+
+  `editor` is the mirror editor base URL, needed only by the inventory tools."
+  [base catalog tool args & [editor]]
   (validate-arguments tool args)
   (case tool
+    "add_repos" (add-repos editor (:repos args))
+    "sync_repos" (sync-repos editor args)
     "grep" (let [result (present-search (execute-search base tool args)
                                         {:context? (pos? (get args :context-lines 0)) :repo? true})]
              (if-not (:facets args)
@@ -1204,9 +1310,12 @@
   {:is-error true :content [{:type "text" :text (or message "Operation failed")}]})
 
 (defn search-tools
-  "Return implemented tools sharing a work semaphore; Git tools require a catalog."
-  ([base slots] (search-tools base slots nil))
-  ([base slots catalog]
+  "Return implemented tools sharing a work semaphore.
+
+  Git tools require a catalog; inventory tools require the mirror editor URL."
+  ([base slots] (search-tools base slots nil nil))
+  ([base slots catalog] (search-tools base slots catalog nil))
+  ([base slots catalog editor]
    (mapv
     (fn [{:keys [name description properties required annotations]}]
       {:name name
@@ -1224,12 +1333,16 @@
                           (try
                             (binding [*cancelled* (:is-cancelled context)
                                       *deadline* (+ (System/nanoTime) (* git-timeout-ms 1000000))]
-                              (tool-result name args (execute-tool base catalog name args)))
+                              (tool-result name args (execute-tool base catalog name args editor)))
                             (catch Exception e (tool-error (ex-message e)))
                             (finally (.release ^Semaphore slots)))))
                       (catch clojure.lang.ExceptionInfo e
                         (rpc/invalid-params-response (get-in context [:message :id]) (ex-message e))))))})
-    (if catalog tool-specs (filter #(#{"grep" "list_repos"} (:name %)) tool-specs)))))
+    (filter (fn [{:keys [name mutates]}]
+              (cond mutates (some? editor)
+                    (#{"grep" "list_repos"} name) true
+                    :else (some? catalog)))
+            tool-specs))))
 
 (defn response
   "Return a plain-text Ring response with `status` and `body`."
@@ -1415,8 +1528,9 @@
   | `:neogrok-url` | Trusted Neogrok base URL, including its path prefix. |
   | `:mirror-root` | Optional bare mirror root; enables catalog and Git tools. |
   | `:state-dir` | Dedicated writable state directory; required with mirror root. |
-  | `:disabled-tools` | Optional set of tool names removed from every endpoint. |"
-  [{:keys [port origin neogrok-url mirror-root state-dir disabled-tools]}]
+  | `:disabled-tools` | Optional set of tool names removed from every endpoint. |
+  | `:editor-url` | Optional mirror editor base URL; enables add_repos and sync_repos. |"
+  [{:keys [port origin neogrok-url mirror-root state-dir disabled-tools editor-url]}]
   (let [uri (URI. origin)
         _ (when-not (and (integer? port) (<= 1 port 65535)
                          (#{"http" "https"} (.getScheme uri)) (.getHost uri)
@@ -1440,7 +1554,7 @@
                                         (catch Exception _ nil)))))
         _ (when catalog (refresh))
         sessions (atom {})
-        tools (endpoint-tools (search-tools neogrok-url (Semaphore. 4) catalog) disabled)
+        tools (endpoint-tools (search-tools neogrok-url (Semaphore. 4) catalog editor-url) disabled)
         stop (http/run-server (handler origin sessions tools)
                               {:ip "127.0.0.1" :port port :max-body max-request-bytes})
         worker (when catalog
@@ -1466,6 +1580,7 @@
         stop (start! {:port port :origin origin :neogrok-url backend
                       :mirror-root (System/getenv "MIRROR_ROOT")
                       :state-dir (System/getenv "STATE_DIRECTORY")
+                      :editor-url (not-empty (System/getenv "EDITOR_URL"))
                       :disabled-tools (remove str/blank? (str/split (or (System/getenv "CODE_SEARCH_DISABLED_TOOLS") "") #","))})]
     (.addShutdownHook (Runtime/getRuntime) (Thread. ^Runnable stop))
     (binding [*out* *err*] (println "Code-search MCP listening on loopback port" port))

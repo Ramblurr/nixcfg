@@ -697,15 +697,86 @@
          (is (= {:offset 1 :has-more false :paths ["src/core.clj"]}
                 {:offset (:offset rest-page) :has-more (:has-more rest-page) :paths (map :path (:results rest-page))})))))))
 
+(defn- fake-editor [{:keys [sticky] :or {sticky true}} f]
+  (let [port (free-port)
+        inventory (atom {"https://github.com/existing/repo" {}})
+        patches (atom [])
+        syncs (atom [])
+        busy (atom false)
+        stop (http/run-server
+              (fn [{:keys [uri request-method headers body]}]
+                (let [json-response (fn [status data] {:status status :headers {"content-type" "application/json"}
+                                                       :body (json/generate-string data)})
+                      data (some-> body slurp not-empty json/parse-string)]
+                  (cond
+                    (not= (str "127.0.0.1:" port) (get headers "host")) (json-response 400 {"error" "Unexpected Host header."})
+                    (= [:get "/edit/api/repos"] [request-method uri])
+                    (assoc-in (json-response 200 @inventory) [:headers "X-CSRF-Token"] "token")
+                    (not= "token" (get headers "x-csrf-token")) (json-response 403 {"error" "Invalid CSRF token or origin."})
+                    (= [:patch "/edit/api/repos"] [request-method uri])
+                    (if (and (= "application/merge-patch+json" (get headers "content-type"))
+                             (every? #(re-matches #"https://[a-z0-9./-]+" %) (keys data)))
+                      (do (swap! patches conj data)
+                          (json-response 200 (swap! inventory merge data)))
+                      (json-response 400 {"error" "Use canonical URLs (see GET /api/repos)."}))
+                    (= [:post "/edit/api/sync"] [request-method uri])
+                    (if (compare-and-set! busy false sticky)
+                      (do (swap! syncs conj data) (json-response 202 {"status" "accepted"}))
+                      (json-response 409 {"error" "A sync is already running."}))
+                    :else (json-response 404 {"error" "Not found"}))))
+              {:ip "127.0.0.1" :port port})]
+    (try (f {:editor (str "http://127.0.0.1:" port "/edit") :inventory inventory :patches patches
+             :syncs syncs :busy busy})
+         (finally (stop :timeout 100)))))
+
+(deftest inventory-tools-use-editor-api
+  (fake-editor
+   {}
+   (fn [{:keys [editor inventory patches syncs busy]}]
+     (is (= "https://github.com/new/repo" (sut/canonical-url " https://github.com/New/Repo.git/ ")))
+     (is (= "https://git.example.test/x.git" (sut/canonical-url "https://git.example.test/x.git/")))
+     (is (= {:added ["https://example.test/owner" "https://github.com/new/repo"]
+             :existing ["https://github.com/existing/repo"]}
+            (dissoc (sut/execute-tool nil nil "add_repos"
+                                      {:repos [{:url "https://github.com/New/Repo.git/"}
+                                               {:url "https://github.com/existing/repo"}
+                                               {:url "https://example.test/owner" :include ["a" "b"]
+                                                :provider "gitea" :scope "owner" :organization true}]}
+                                      editor)
+                    :hint)))
+     (is (= [{"https://example.test/owner" {"include" ["a" "b"] "provider" "gitea" "scope" "owner" "organization?" true}
+              "https://github.com/new/repo" {}}]
+            @patches))
+     (with-redefs [sut/max-patch-bytes 40]
+       (sut/add-repos editor [{:url "https://github.com/a/one"} {:url "https://github.com/a/two"}]))
+     (is (= 3 (count @patches)))
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Use canonical URLs"
+                           (sut/add-repos editor [{:url "https://Example.test/UPPER"}])))
+     (is (= {:status "accepted" :selection "https://github.com/new/repo"}
+            (dissoc (sut/execute-tool nil nil "sync_repos" {:url "https://github.com/New/Repo"} editor) :hint)))
+     (is (= [{"url" "https://github.com/new/repo"}] @syncs))
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"already running"
+                           (sut/sync-repos editor {:all true})))
+     (reset! busy false)
+     (is (= "all" (:selection (sut/sync-repos editor {:all true}))))
+     (doseq [args [{} {:url "https://github.com/a/b" :all true}]]
+       (is (thrown-with-msg? clojure.lang.ExceptionInfo #"exactly one" (sut/sync-repos editor args))))
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid argument: repos"
+                           (sut/validate-arguments "add_repos" {:repos [{:url "https://github.com/a/b" :bogus 1}]})))
+     (is (contains? @inventory "https://github.com/a/two")))))
+
 (deftest all-tools-over-real-http
   (fixture
    (fn [{:keys [backend]}]
      (git-fixture
       (fn [{:keys [catalog root head]}]
+       (fake-editor
+        {:sticky false}
+        (fn [{:keys [editor]}]
         (let [port (free-port)
               origin (str "http://127.0.0.1:" port)
               stop (sut/start! {:port port :origin origin :neogrok-url (str backend "/search")
-                                :mirror-root root :state-dir (:state-dir catalog)})]
+                                :mirror-root root :state-dir (:state-dir catalog) :editor-url editor})]
           (try
             (binding [*endpoint* "/mcp/all"]
              (let [headers (session-headers (initialize origin))]
@@ -725,7 +796,9 @@
                        ["commit_search" {:repos ["example/repo"]} :results :present]
                        ["compare_revisions" {:repo "example/repo" :base head :head "HEAD"} :base head]
                        ["find_symbol_definitions" {:repository "example/repo" :symbol "main"} :kind "ctags-definitions"]
-                       ["find_symbol_references" {:repository "example/repo" :symbol "main"} :kind "textual-occurrences-not-semantic"]]
+                       ["find_symbol_references" {:repository "example/repo" :symbol "main"} :kind "textual-occurrences-not-semantic"]
+                       ["add_repos" {:repos [{:url "https://github.com/existing/repo"}]} :existing ["https://github.com/existing/repo"]]
+                       ["sync_repos" {:url "https://github.com/existing/repo"} :status "accepted"]]
                       fmt ["json" "edn"]]
                 (let [response (call-http origin :post {:jsonrpc "2.0" :id (str tool fmt) :method "tools/call"
                                                         :params {:name tool :arguments (assoc args :format fmt)}} headers)
@@ -741,7 +814,7 @@
                 (is (= -32602 (get-in (call-http origin :post {:jsonrpc "2.0" :id (str (random-uuid)) :method "tools/call"
                                                                :params {:name "read_file" :arguments args}} headers)
                                       [:message :error :code]))))))
-            (finally (stop)))))))))
+            (finally (stop)))))))))))
 
 (deftest endpoints-and-disabled-tools
   (fixture
@@ -755,7 +828,7 @@
               origin (str "http://127.0.0.1:" port)
               stop (sut/start! {:port port :origin origin :neogrok-url (str backend "/search")
                                 :mirror-root root :state-dir (:state-dir catalog)
-                                :disabled-tools #{"glob" "commit_search"}})
+                                :disabled-tools #{"glob" "commit_search"} :editor-url "http://127.0.0.1:1/edit"})
               listed (fn [endpoint]
                        (binding [*endpoint* endpoint]
                          (let [headers (session-headers (initialize origin))]
