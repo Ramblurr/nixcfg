@@ -61,6 +61,7 @@ in
       enable = true;
       user = username;
       gatewayAddress = config.site.hosts.quine.tailscaleIPv4;
+      gatewayHostname = "quine.${config.repo.secrets.global.domain.tailnet}";
     };
   };
 

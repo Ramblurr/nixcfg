@@ -12,7 +12,7 @@ Phone / desktop -- Tailscale HTTPS 8444 ------------------+
                                                          v
                                                  bb loopback backend
                                                          ^
-VM worker -- host egress policy -- Tailscale HTTPS 8445 -- gateway
+VM worker -- 192.0.2.1:8445 -- host broker -- Tailscale HTTPS 8445 -- gateway
                 |
                 +-- public TCP 80/443 (models, packages, Git HTTPS)
                 +-- deny other destinations and ports
@@ -29,11 +29,45 @@ bb's ordinary browser-origin checks remain enabled.
 The egress service implements SmolVM's authenticated SMOLMEG2 protocol on host
 loopback. The token is generated at runtime under `~/.config/bb/isolation`, mode
 0600, and is supplied to SmolVM by the trusted operator. It never enters the VM.
-Only the exact worker gateway address/port bypasses the private-address block.
-All other private, link-local, loopback, multicast and Tailscale destinations
-are denied, as are IPv6 transition addresses and public ports other than 80/443.
+All private, link-local, loopback, multicast and Tailscale destinations are
+denied, as are IPv6 transition addresses and public ports other than 80/443.
 `denyCidrs` can additionally block public destinations. DNS is handled by SmolVM;
 the decider evaluates the resulting TCP destination IP, not a guest hostname.
+
+### Host services through placeholders
+
+SmolVM runs with `SMOLVM_EGRESS_FLOOR=strict`. That floor refuses every private
+and CGNAT (Tailscale) destination before the decider is asked, so a VM cannot
+dial the gateway's real Tailscale IP. `allow_private` cannot reopen it under
+the strict floor, and it is not port-scoped in any mode.
+
+Instead, guests reach host-side services through placeholder addresses in
+192.0.2.0/24 (TEST-NET-1: not floored, never routed). `hostServices` lists every
+such service. The default entry is the worker gateway: `192.0.2.1:8445` goes to
+`gatewayAddress:gatewayPort`. Each VM gets one redirect rule per selected entry
+and a deny rule for the rest of 192.0.2.0/24:
+
+```json
+[{"action": "redirect", "transport": "tcp", "cidr": "192.0.2.1/32", "ports": {"start": 8445, "end": 8445}},
+ {"action": "deny", "cidr": "192.0.2.0/24"}]
+```
+
+SmolVM refuses any start of a machine with a redirect rule unless the start is
+mediated. The broker answers redirect only for listed placeholders, connects to
+the target, writes the flow's initial bytes, then carries the stream both ways.
+If the target is down, the flow is denied. The guest resolves the gateway's real
+name (`gatewayHostname`) to the placeholder, so TLS still verifies that name.
+The real Tailscale IP is never dialed by the VM.
+
+The broker does not know which VM selected which entry: the per-VM deny rule
+does that. Any other VM bound to this broker without such a rule can reach every
+listed placeholder. Add entries only for services that every mediated VM on the
+host may reach, or use a separate broker.
+
+The module also writes `/etc/bb-isolation/mediation.json` (broker address,
+token file path, service names, placeholders and hostnames; no token). Sandbox
+reads it through `:mediation` in its user `config.edn` and selects entries with
+`:network {:host-services ["bb-worker"]}`.
 
 ## Configure roles
 
@@ -51,8 +85,10 @@ On each execution host:
 services.bbIsolation.egress = {
   enable = true;
   user = "developer";
-  gatewayAddress = "100.64.1.2"; # server's Tailscale IP
+  gatewayAddress = "100.64.1.2"; # server's Tailscale IP, dialed by the broker only
+  gatewayHostname = "server.example.ts.net"; # TLS name guests resolve to 192.0.2.1
   gatewayPort = 8445;
+  # hostServices defaults to the worker gateway. Append other host services here.
   denyCidrs = [ ]; # include public addresses exposing your unrestricted bb API
 };
 ```
@@ -65,40 +101,36 @@ private to Tailscale, or explicitly deny every other address exposing it.
 
 ## Manual VM lifecycle
 
-Prerequisite: a SmolVM binary supporting mediated egress (prototype tested with
-1.32.2 on Linux/KVM). This module does not install SmolVM or manage VM lifecycle.
-Run as the configured host user, after the egress service is active. Substitute
-your server's Tailscale IP in the Smolfile. No host directory or socket is mounted.
+Prerequisite: a SmolVM 1.34.0 or newer local API with mediated egress, on
+Linux/KVM, with `SMOLVM_EGRESS_FLOOR=strict`. This module does not install
+SmolVM or manage VM lifecycle. Sandbox does this for you: set `:mediation
+"/etc/bb-isolation/mediation.json"` and select `bb-worker` in its configuration.
+Without Sandbox, use the local HTTP API as the configured host user, after the
+egress service is active. Redirect rules are not available in a Smolfile or
+on the `machine create` command line in 1.34.0.
+
+```text
+POST /api/v1/machines
+{"name": "demo", "image": "...", "network": true, "networkBackend": "virtio-net",
+ "egressRules": [
+   {"action": "redirect", "transport": "tcp", "cidr": "192.0.2.1/32", "ports": {"start": 8445, "end": 8445}},
+   {"action": "deny", "cidr": "192.0.2.0/24"}]}
+
+POST /api/v1/machines/demo/start
+{"egressInterceptor": {"address": "127.0.0.1:16896", "token": "<interceptor-token>", "mediated": true}}
+```
+
+Send the token in a request body only, never in a command-line argument or a
+guest exec argument. Then, inside the guest:
 
 ```bash
-mkdir -p ~/.config/bb/isolation/demo
-chmod 700 ~/.config/bb/isolation/demo
-cat > ~/.config/bb/isolation/demo/Smolfile <<'EOF'
-image = "ghcr.io/fgrehm/bb:img-0.11.0-worker-vm"
-net = true
-cpus = 2
-memory = 4096
-storage = 40
-overlay = 8
-[network]
-block_private = true
-allow_private = ["100.64.1.2/32"]
-EOF
-
-smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine create \
-  --name demo --smolfile "$HOME/.config/bb/isolation/demo/Smolfile"
-
-SMOLVM_INTERCEPTOR_TOKEN="$(cat ~/.config/bb/isolation/interceptor-token)" \
-  smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine start \
-  --name demo --mediated-egress --egress-interceptor 127.0.0.1:16896
-
-smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine exec \
-  --name demo -- curl -i https://SERVER_TAILSCALE_NAME:8445/api/v1/hosts
-# Expected: 403. The same host's human port 8444 must fail to connect.
-
-smolvm --state-dir "$HOME/.config/bb/isolation/runtime" machine stop --name demo
-# Repeat the mediated start command to resume. A bare start must fail.
+echo "192.0.2.1 SERVER_TAILSCALE_NAME" >> /etc/hosts
+curl -i https://SERVER_TAILSCALE_NAME:8445/api/v1/hosts
+# Expected: 403 from the gateway. Port 8444, the real Tailscale IP and
+# every other private address must fail to connect.
 ```
+
+Stop and start again with the same start body. A start without it must fail.
 
 Configure bb's direct machine URL to the **worker** HTTPS origin, then use bb's
 manual-machine enrollment inside the guest as `developer`. This setting is
@@ -107,8 +139,8 @@ a one-use credential. Give the guest only its enrollment and model-provider
 credentials, not host Git credentials, server state or the interceptor token.
 Set guest `BB_DATA_DIR=/home/developer/.config/bb/worker` and
 `PI_CODING_AGENT_DIR=/home/developer/.config/bb/pi` for the worker service.
-The guest needs to resolve the server's Tailscale name to the permitted IP;
-configure guest DNS or an `/etc/hosts` entry when host MagicDNS is unavailable.
+The guest resolves the server's Tailscale name to the placeholder (Sandbox
+writes the `/etc/hosts` entry on each boot).
 
 The image does not bundle bb. The prototype found that bb 0.49.0's Nix-packaged
 download artifact contains Nix-store Node shebangs that fail in this non-Nix
@@ -144,7 +176,9 @@ provisioning. No launcher or image builder is included in this change.
 `checks.<system>.bb-isolation` evaluates disabled/server/worker/combined roles
 and runs the real Caddy proxy against a test backend plus actual SMOLMEG2 socket
 tests. It covers forbidden methods, routes and encoded traversal attempts,
-wrong tokens, oversized frames, IPv4/IPv6 and alternate private destinations.
+wrong tokens, oversized frames, IPv4/IPv6 and alternate private destinations,
+and placeholder redirects (initial bytes first, unknown placeholders and dead
+targets denied).
 `bb-module` also checks Quine's existing bb configuration with the new module.
 
 The disposable prototype additionally verified authenticated worker connection,

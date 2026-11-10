@@ -58,6 +58,20 @@ let
       worker.services.bbIsolation.egress.tokenFile
       == "/home/developer/.config/bb/isolation/interceptor-token";
     tokenRuntimeOnly = lib.hasInfix "--token-file" worker.systemd.services.bb-worker-egress.serviceConfig.ExecStart;
+    gatewayPlaceholder = lib.hasInfix "--service '192.0.2.1:8445=100.64.1.2:8445'" worker.systemd.services.bb-worker-egress.serviceConfig.ExecStart;
+    mediationPolicy =
+      builtins.fromJSON worker.environment.etc."bb-isolation/mediation.json".text == {
+        broker = "127.0.0.1:16896";
+        tokenFile = "/home/developer/.config/bb/isolation/interceptor-token";
+        services = [
+          {
+            name = "bb-worker";
+            address = "192.0.2.1";
+            port = 8445;
+            hostname = null;
+          }
+        ];
+      };
     gatewayPrivate =
       server.systemd.services.bb-worker-gateway.serviceConfig.DynamicUser
       && !(lib.elem 16895 server.networking.firewall.allowedTCPPorts);

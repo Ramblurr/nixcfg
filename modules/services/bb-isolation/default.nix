@@ -25,7 +25,24 @@ let
   ++ lib.concatMap (cidr: [
     "--deny-cidr"
     cidr
-  ]) cfg.egress.denyCidrs;
+  ]) cfg.egress.denyCidrs
+  ++ lib.concatMap (service: [
+    "--service"
+    "${service.address}:${toString service.port}=${service.target}:${toString service.targetPort}"
+  ]) cfg.egress.hostServices;
+  # Read by Sandbox (`:mediation` in its config.edn). Paths and names only, no token.
+  mediationPolicy = {
+    broker = "127.0.0.1:${toString cfg.egress.listenPort}";
+    inherit (cfg.egress) tokenFile;
+    services = map (service: {
+      inherit (service)
+        name
+        address
+        port
+        hostname
+        ;
+    }) cfg.egress.hostServices;
+  };
   hardening = {
     NoNewPrivileges = true;
     PrivateTmp = true;
@@ -94,6 +111,62 @@ in
         type = lib.types.port;
         default = 16896;
         description = "Loopback SMOLMEG2 listener, supplied at every mediated VM start.";
+      };
+      gatewayHostname = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "TLS name of the worker gateway. Guests resolve it to the gateway placeholder.";
+      };
+      hostServices = lib.mkOption {
+        type = lib.types.listOf (
+          lib.types.submodule {
+            options = {
+              name = lib.mkOption {
+                type = lib.types.strMatching "[a-z][a-z0-9-]{0,62}";
+                description = "Name a sandbox uses to select this service.";
+              };
+              address = lib.mkOption {
+                type = lib.types.strMatching "192\\.0\\.2\\.([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])";
+                description = "Placeholder guest address in 192.0.2.0/24 (TEST-NET-1, never routed).";
+              };
+              port = lib.mkOption {
+                type = lib.types.port;
+                description = "Placeholder guest port.";
+              };
+              target = lib.mkOption {
+                type = lib.types.str;
+                description = "Host-side destination address the broker connects to.";
+              };
+              targetPort = lib.mkOption {
+                type = lib.types.port;
+                description = "Host-side destination port.";
+              };
+              hostname = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Name guests resolve to the placeholder; keep the real TLS name.";
+              };
+            };
+          }
+        );
+        default = [
+          {
+            name = "bb-worker";
+            address = "192.0.2.1";
+            port = cfg.egress.gatewayPort;
+            target = cfg.egress.gatewayAddress;
+            targetPort = cfg.egress.gatewayPort;
+            hostname = cfg.egress.gatewayHostname;
+          }
+        ];
+        defaultText = lib.literalExpression "[ { name = \"bb-worker\"; address = \"192.0.2.1\"; port = gatewayPort; target = gatewayAddress; targetPort = gatewayPort; hostname = gatewayHostname; } ]";
+        description = ''
+          Host services that mediated VMs can reach through placeholder addresses.
+          A machine sends placeholder traffic to the broker with a per-VM redirect
+          rule, and the broker connects to the target. This list is the complete
+          set; a sandbox selects entries from it by name and cannot add targets.
+          The SmolVM strict floor stays in place for every real private address.
+        '';
       };
       denyCidrs = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -165,7 +238,18 @@ in
           assertion = lib.hasPrefix "${cfg.egress.stateDir}/" cfg.egress.tokenFile;
           message = "bbIsolation tokenFile must be inside stateDir.";
         }
+        {
+          assertion =
+            let
+              names = map (service: service.name) cfg.egress.hostServices;
+              placeholders = map (service: "${service.address}:${toString service.port}") cfg.egress.hostServices;
+            in
+            lib.length names == lib.length (lib.unique names)
+            && lib.length placeholders == lib.length (lib.unique placeholders);
+          message = "bbIsolation hostServices names and placeholder address:port pairs must be unique.";
+        }
       ];
+      environment.etc."bb-isolation/mediation.json".text = builtins.toJSON mediationPolicy;
       systemd.tmpfiles.settings."10-bb-isolation" =
         let
           home = config.users.users.${cfg.egress.user}.home;

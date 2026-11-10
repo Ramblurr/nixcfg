@@ -65,6 +65,76 @@ class Policy(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.request("1.1.1.1", 443, length=8193), b"")
 
 
+class Redirect(unittest.IsolatedAsyncioTestCase):
+    """Placeholder services: the broker carries bytes to the host target."""
+
+    async def asyncSetUp(self):
+        self.token = bytes(range(32))
+        self.received = []
+
+        async def origin(r, w):
+            data = await r.readexactly(10)
+            self.received.append(data)
+            w.write(b"origin:" + data)
+            await w.drain()
+            w.close()
+
+        self.origin = await asyncio.start_server(origin, "127.0.0.1", 0)
+        origin_port = self.origin.sockets[0].getsockname()[1]
+        dead = socket.socket()
+        dead.bind(("127.0.0.1", 0))
+        dead_port = dead.getsockname()[1]
+        dead.close()
+        services = dict(egress.parse_service(value) for value in [
+            f"192.0.2.1:8445=127.0.0.1:{origin_port}",
+            f"192.0.2.3:8445=127.0.0.1:{dead_port}"])
+        self.server = await asyncio.start_server(functools.partial(
+            egress.decide, token=self.token, gateway=ipaddress.ip_address("100.64.1.2"),
+            gateway_port=8445, denied=[], services=services), "127.0.0.1", 0)
+        self.port = self.server.sockets[0].getsockname()[1]
+
+    async def asyncTearDown(self):
+        for server in (self.server, self.origin):
+            server.close()
+            await server.wait_closed()
+
+    async def flow(self, address, port, initial=b"", rest=b""):
+        address = ipaddress.ip_address(address)
+        r, w = await asyncio.open_connection("127.0.0.1", self.port)
+        w.write(b"SMOLMEG2" + self.token + bytes(32) + bytes([address.version])
+                + port.to_bytes(2, "big") + address.packed
+                + len(initial).to_bytes(2, "big") + initial)
+        await w.drain()
+        decision = await asyncio.wait_for(r.read(1), 2)
+        body = b""
+        if decision == b"\x02":
+            w.write(rest)
+            await w.drain()
+            body = await asyncio.wait_for(r.read(), 2)
+        w.close()
+        return decision, body
+
+    async def test_known_placeholder_is_carried_with_initial_bytes_first(self):
+        self.assertEqual(await self.flow("192.0.2.1", 8445, b"hello", b"world"),
+                         (b"\x02", b"origin:helloworld"))
+        self.assertEqual(await self.flow("::ffff:192.0.2.1", 8445, b"mapped", b"flow"),
+                         (b"\x02", b"origin:mappedflow"))
+        self.assertEqual(self.received, [b"helloworld", b"mappedflow"])
+
+    async def test_other_placeholders_and_dead_targets_are_denied(self):
+        for address, port in [("192.0.2.1", 8444), ("192.0.2.2", 8445),
+                              ("192.0.2.1", 443), ("192.0.2.3", 8445)]:
+            with self.subTest(address=address, port=port):
+                self.assertEqual(await self.flow(address, port), (b"\x01", b""))
+        self.assertEqual(await self.flow("1.1.1.1", 443), (b"\x00", b""))
+
+    def test_placeholders_must_be_test_net_1(self):
+        for value in ["100.64.1.2:8445=127.0.0.1:1", "192.0.3.1:1=127.0.0.1:1", "192.0.2.1:1"]:
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    egress.parse_service(value)
+
+
 class Backend(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
