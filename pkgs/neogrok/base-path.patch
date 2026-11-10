@@ -1,0 +1,107 @@
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -11,6 +11,7 @@
+       // for more information about preprocessors
+       preprocess: vitePreprocess(),
+       adapter: adapter(),
++      paths: { base: process.env.NEOGROK_BASE_PATH ?? "", relative: false },
+     }),
+     tailwindcss(),
+   ],
+--- a/src/lib/link.svelte
++++ b/src/lib/link.svelte
+@@ -1,4 +1,5 @@
+ <script lang="ts">
++  import { resolve } from "$app/paths";
+   type Props = {
+     to: string;
+     children: import("svelte").Snippet;
+@@ -9,7 +10,7 @@
+ 
+ <a
+   class="text-cyan-700 dark:text-cyan-400 hover:underline decoration-1"
+-  href={to}
++  href={to.startsWith("/") && !to.startsWith("//") ? resolve(to) : to}
+ >
+   {@render children()}
+ </a>
+--- a/src/routes/+layout.svelte
++++ b/src/routes/+layout.svelte
+@@ -1,4 +1,5 @@
+ <script lang="ts">
++  import { resolve } from "$app/paths";
+   import { page } from "$app/state";
+   import { contextifyPreferences } from "#lib/preferences.svelte.js";
+   import "../app.css";
+@@ -31,11 +32,11 @@
+         <li
+           class="after:content-['•'] after:pl-2 after:pr-2 last:after:content-none"
+         >
+-          {#if url === page.url.pathname}
++          {#if resolve(url) === page.url.pathname}
+             {text}{:else}
+             <a
+               class="text-cyan-700 dark:text-cyan-400"
+-              href={`${url}${
++              href={`${resolve(url)}${
+                 // On non-opengrok-compatibility pages, preserve the query
+                 // string so that search queries are preserved across
+                 // navigations. This is useful when moving back and forth
+--- a/src/routes/(search-page)/+page.ts
++++ b/src/routes/(search-page)/+page.ts
+@@ -1,3 +1,4 @@
++import { resolve } from "$app/paths";
+ import type {
+   SearchQuery,
+   SearchResponse,
+@@ -24,7 +25,7 @@
+   }
+ 
+   try {
+-    const response = await f("/api/search", {
++    const response = await f(resolve("/api/search"), {
+       method: "POST",
+       body: JSON.stringify({ query, ...rest } satisfies SearchQuery),
+       headers: { "content-type": "application/json" },
+--- a/src/routes/repositories/+page.ts
++++ b/src/routes/repositories/+page.ts
+@@ -1,3 +1,4 @@
++import { resolve } from "$app/paths";
+ import type {
+   ListQuery,
+   ListRepositoriesResponse,
+@@ -16,7 +17,7 @@
+ ): Promise<ListRepositoriesResponse> => {
+   const listQuery: ListQuery = parseSearchParams(url.searchParams);
+   try {
+-    const response = await f("/api/list", {
++    const response = await f(resolve("/api/list"), {
+       method: "POST",
+       body: JSON.stringify(listQuery),
+       headers: { "content-type": "application/json" },
+--- a/src/routes/(opengrok-compat)/search/+page.server.ts
++++ b/src/routes/(opengrok-compat)/search/+page.server.ts
+@@ -1,3 +1,4 @@
++import { resolve } from "$app/paths";
+ import {
+   toZoekt,
+   type OpenGrokSearchParams,
+@@ -56,7 +57,7 @@
+ 
+   const { preferences } = await parent();
+   if (preferences.openGrokInstantRedirect && zoektQuery) {
+-    redirect(301, `/?${new URLSearchParams({ q: zoektQuery }).toString()}`);
++    redirect(301, `${resolve("/")}?${new URLSearchParams({ q: zoektQuery }).toString()}`);
+   }
+ 
+   return {
+--- a/src/routes/(opengrok-compat)/help.jsp/+page.server.ts
++++ b/src/routes/(opengrok-compat)/help.jsp/+page.server.ts
+@@ -1,5 +1,6 @@
++import { resolve } from "$app/paths";
+ import { redirect } from "@sveltejs/kit";
+ 
+ export const load: import("./$types").PageServerLoad = () => {
+-  redirect(301, "/syntax");
++  redirect(301, resolve("/syntax"));
+ };

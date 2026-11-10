@@ -1,8 +1,9 @@
 # Search dependency mirrors with Neogrok
 
-Peirce serves Neogrok at `http://10.9.4.24:3081/` on the LAN. Zoekt's backend
-listens only on `127.0.0.1:6070`. Neither service has application authentication;
-do not expose these listeners publicly. The Sourcebot trial has been removed.
+Peirce serves Neogrok at `/search` on the existing private cgit hostname, through
+Caddy HTTPS. The frontend listens only on `127.0.0.1:3081`; Zoekt listens only on
+`127.0.0.1:6070`. Network access is restricted by the existing private ingress.
+The Sourcebot trial has been removed.
 
 ## Indexing
 
@@ -32,9 +33,11 @@ ssh peirce 'sudo journalctl -u neogrok-index -n 50 --no-pager'
 ## API and symbols
 
 ```sh
-curl -fsS http://10.9.4.24:3081/api/list \
+# Replace the example hostname with the configured dependency-mirror hostname.
+base=https://src.example.net/search
+curl -fsS "$base/api/list" \
   -H 'Content-Type: application/json' -d '{}'
-curl -fsS http://10.9.4.24:3081/api/search \
+curl -fsS "$base/api/search" \
   -H 'Content-Type: application/json' \
   -d '{"query":"repo:gickup sym:main","contextLines":2,"files":10,"matches":20}'
 ```
@@ -50,7 +53,9 @@ the indexed commit and line.
 `pkgs/neogrok/package.nix` builds pinned upstream source with Node 24 and Yarn 4,
 checks upstream tests, and installs only production dependencies. The small
 `cgit-url-templates.patch` supports the query-string suffix in Zoekt's cgit URL
-templates. Run `bb pkgs/neogrok/update.bb` from the public checkout to update to the latest
+templates. `base-path.patch` makes navigation, API calls and compatibility
+redirects respect SvelteKit's configured prefix. The package defaults to root;
+the service builds it with `basePath = "/search"`. Run `bb pkgs/neogrok/update.bb` from the public checkout to update to the latest
 release, or pass a tag/commit explicitly. It refreshes source, dependency cache,
 and missing platform hashes together and builds the package with upstream tests.
 A failed build restores the original package and hashes; review patch compatibility

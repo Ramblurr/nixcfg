@@ -1,6 +1,6 @@
 { pkgs }:
 let
-  neogrok = pkgs.callPackage ../pkgs/neogrok/package.nix { };
+  neogrok = pkgs.callPackage ../pkgs/neogrok/package.nix { basePath = "/search"; };
 in
 pkgs.runCommand "neogrok-mirror-integration"
   {
@@ -39,15 +39,23 @@ pkgs.runCommand "neogrok-mirror-integration"
     frontend=$!
     trap 'result=$?; if [ "$result" -ne 0 ]; then tail -n 60 zoekt.log neogrok.log; fi; kill $frontend $backend 2>/dev/null || true' EXIT
     for attempt in $(seq 1 60); do
-      if curl -fsS -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:3081/api/list > repos.json; then break; fi
+      if curl -fsS -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:3081/search/api/list > repos.json; then break; fi
       sleep 1
     done
-    curl -fsS http://127.0.0.1:3081/ > page.html
+    curl -fsSL http://127.0.0.1:3081/search/ > page.html
     curl -fsS -H 'Content-Type: application/json' \
       -d '{"query":"sym:DemoSymbol","contextLines":1,"files":10,"matches":10}' \
-      http://127.0.0.1:3081/api/search > search.json
+      http://127.0.0.1:3081/search/api/search > search.json
     python3 - <<'PY'
-    import json
+    import json, re, subprocess
+    page = open('page.html').read()
+    assert 'href="/search/repositories' in page, page
+    assets = re.findall(r'(?:href|src)="(/search/_app/[^"]+)"', page)
+    assert assets, page
+    for asset in assets:
+        subprocess.run(['curl', '-fsS', 'http://127.0.0.1:3081' + asset], check=True, stdout=subprocess.DEVNULL)
+    query_page = subprocess.check_output(['curl', '-fsSL', 'http://127.0.0.1:3081/search/?q=sym%3ADemoSymbol']).decode()
+    assert 'DemoSymbol' in query_page and 'main.go' in query_page, query_page
     repos = json.load(open('repos.json'))
     assert repos['kind'] == 'success', repos
     assert {r['name'] for r in repos['results']['repositories']} == {'github.com/one/demo', 'github.com/two/demo'}, repos
@@ -68,7 +76,7 @@ pkgs.runCommand "neogrok-mirror-integration"
     for attempt in $(seq 1 30); do
       curl -fsS -H 'Content-Type: application/json' \
         -d '{"query":"sym:UpdatedSymbol","contextLines":0,"files":10,"matches":10}' \
-        http://127.0.0.1:3081/api/search > updated.json
+        http://127.0.0.1:3081/search/api/search > updated.json
       if python3 -c 'import json; x=json.load(open("updated.json")); assert len(x["results"]["files"]) == 1'; then break; fi
       sleep 1
     done

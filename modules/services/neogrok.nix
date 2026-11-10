@@ -66,6 +66,12 @@ in
       "d ${cacheDir}/index 0750 neogrok neogrok -"
       "d ${cacheDir}/repos 0750 neogrok neogrok -"
     ];
+    modules.services.caddy.routes.dependency-mirror.handlerConfig = lib.mkBefore ''
+      @search path /search /search/*
+      handle @search {
+        reverse_proxy ${cfg.listenAddress}:${toString cfg.port}
+      }
+    '';
     systemd.services.neogrok = {
       description = "Neogrok code search frontend";
       wantedBy = [ "multi-user.target" ];
@@ -80,12 +86,12 @@ in
       environment = {
         HOST = cfg.listenAddress;
         PORT = toString cfg.port;
-        ORIGIN = "http://${cfg.listenAddress}:${toString cfg.port}";
+        ORIGIN = "https://${config.modules.services.dependency-mirror.domain}";
         ZOEKT_URL = "http://127.0.0.1:${toString cfg.zoektPort}";
         NODE_ENV = "production";
       };
       serviceConfig = sandbox // {
-        ExecStart = lib.getExe pkgs.neogrok;
+        ExecStart = lib.getExe (pkgs.neogrok.override { basePath = "/search"; });
         Restart = "on-failure";
         RestartSec = 5;
         MemoryMax = "1G";

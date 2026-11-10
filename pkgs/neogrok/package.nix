@@ -6,6 +6,7 @@
   yarn-berry_4,
   makeWrapper,
   babashka,
+  basePath ? "",
 }:
 let
   nodejs = nodejs_24;
@@ -23,7 +24,11 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   # Zoekt's cgit templates append ?id= after URLJoinPath.
-  patches = [ ./cgit-url-templates.patch ];
+  patches = [
+    ./cgit-url-templates.patch
+    ./base-path.patch
+  ];
+  NEOGROK_BASE_PATH = basePath;
 
   missingHashes = ./missing-hashes.json;
   offlineCache = yarn.fetchYarnBerryDeps {

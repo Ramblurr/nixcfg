@@ -37,9 +37,7 @@
 
   modules.services.neogrok = {
     enable = true;
-    listenAddress = lib.head config.site.net.prim.hosts4.peirce;
   };
-  networking.firewall.interfaces.prim.allowedTCPPorts = [ config.modules.services.neogrok.port ];
 
   modules.services.forgejo = {
     enable = true;
