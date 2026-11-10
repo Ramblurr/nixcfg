@@ -20,9 +20,11 @@
 (defn- free-port []
   (with-open [socket (ServerSocket. 0)] (.getLocalPort socket)))
 
+(def ^:dynamic *endpoint* "/mcp")
+
 (defn- call-http [origin method message headers]
   (let [result @(client/request
-                 {:url (str origin "/mcp") :method method :as :text :timeout 3000
+                 {:url (str origin *endpoint*) :method method :as :text :timeout 3000
                   :headers (merge {"content-type" "application/json"
                                    "accept" "application/json, text/event-stream"}
                                   headers)
@@ -694,7 +696,8 @@
               stop (sut/start! {:port port :origin origin :neogrok-url (str backend "/search")
                                 :mirror-root root :state-dir (:state-dir catalog)})]
           (try
-            (let [headers (session-headers (initialize origin))]
+            (binding [*endpoint* "/mcp/all"]
+             (let [headers (session-headers (initialize origin))]
               (call-http origin :post {:jsonrpc "2.0" :method "notifications/initialized"} headers)
               (is (= (set (map :name sut/tool-specs))
                      (set (map :name (get-in (call-http origin :post {:jsonrpc "2.0" :id "list" :method "tools/list"} headers)
@@ -725,7 +728,38 @@
                             {:repository "example/repo" :path "src/core.clj" :endLine 501}]]
                 (is (= -32602 (get-in (call-http origin :post {:jsonrpc "2.0" :id (str (random-uuid)) :method "tools/call"
                                                                :params {:name "read_file" :arguments args}} headers)
-                                      [:message :error :code])))))
+                                      [:message :error :code]))))))
+            (finally (stop)))))))))
+
+(deftest endpoints-and-disabled-tools
+  (fixture
+   (fn [{:keys [backend]}]
+     (git-fixture
+      (fn [{:keys [catalog root]}]
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unknown disabled tool: nope"
+                              (sut/start! {:port (free-port) :origin "http://127.0.0.1:1" :neogrok-url backend
+                                           :disabled-tools #{"nope"}})))
+        (let [port (free-port)
+              origin (str "http://127.0.0.1:" port)
+              stop (sut/start! {:port port :origin origin :neogrok-url (str backend "/search")
+                                :mirror-root root :state-dir (:state-dir catalog)
+                                :disabled-tools #{"glob" "commit_search"}})
+              listed (fn [endpoint]
+                       (binding [*endpoint* endpoint]
+                         (let [headers (session-headers (initialize origin))]
+                           (call-http origin :post {:jsonrpc "2.0" :method "notifications/initialized"} headers)
+                           [headers (set (map :name (get-in (call-http origin :post {:jsonrpc "2.0" :id 2 :method "tools/list"} headers)
+                                                            [:message :result :tools])))])))]
+          (try
+            (let [[core-headers core] (listed "/mcp")
+                  [_ all] (listed "/mcp/all")]
+              (is (= (disj sut/core-tools "commit_search") core))
+              (is (= (disj (set (map :name sut/tool-specs)) "glob" "commit_search") all))
+              (binding [*endpoint* "/mcp/all"]
+                (is (= 404 (:status (call-http origin :post {:jsonrpc "2.0" :id 3 :method "tools/list"} core-headers))))
+                (is (= 404 (:status (call-http origin :delete nil core-headers)))))
+              (binding [*endpoint* "/mcp/other"]
+                (is (= 404 (:status (call-http origin :post {:jsonrpc "2.0" :id 3 :method "tools/list"} core-headers))))))
             (finally (stop)))))))))
 
 (when (= *file* (System/getProperty "babashka.file"))

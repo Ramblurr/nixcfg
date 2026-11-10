@@ -1043,6 +1043,17 @@
 
 (defn- tool-spec [tool] (first (filter #(= tool (:name %)) tool-specs)))
 
+(def core-tools
+  "Tool names served on /mcp; /mcp/all serves every implemented tool."
+  (set (map :name (filter :core tool-specs))))
+
+(defn endpoint-tools
+  "Map endpoint paths to SDK tool definitions, omitting `disabled` tool names."
+  [tools disabled]
+  (let [tools (filterv #(not (contains? disabled (:name %))) tools)]
+    {"/mcp" (filterv #(contains? core-tools (:name %)) tools)
+     "/mcp/all" tools}))
+
 (defn- valid-value? [{:keys [type minimum maximum minLength maxLength enum items minItems maxItems]} value]
   (case type
     "array" (and (sequential? value) (<= (or minItems 0) (count value) (or maxItems Integer/MAX_VALUE))
@@ -1254,8 +1265,9 @@
 (defn post-message
   "Validate a JSON-RPC POST, select or create its session, and dispatch it.
 
-  `sessions` is the server's session atom; `tools` contains SDK tool definitions.
-  Return a Ring response or an asynchronous channel."
+  `sessions` is the server's session atom; `tools` contains the SDK tool
+  definitions for the request's endpoint. A session stays bound to the
+  endpoint that created it. Return a Ring response or an asynchronous channel."
   [request sessions tools]
   (let [message (try
                   (json/parse-string (slurp (:body request)) protocol/decode-key)
@@ -1287,10 +1299,12 @@
                                                :tools tools :server-capabilities {:tools {}}
                                                :on-initialized nil :on-client-root-list-changed nil})
                                              :server-supported-protocol-versions protocol-versions))]
-                    (swap! sessions assoc id {:session session :last-seen (System/currentTimeMillis)})
+                    (swap! sessions assoc id {:session session :endpoint (:uri request)
+                                              :last-seen (System/currentTimeMillis)})
                     {:id id :session session}))
                 (nil? session-id) {:error (response 400 "Missing Mcp-Session-Id")}
-                (nil? (get @sessions session-id)) {:error (response 404 "Unknown or expired session")}
+                (not= (:uri request) (get-in @sessions [session-id :endpoint]))
+                {:error (response 404 "Unknown or expired session")}
                 :else
                 (let [session (get-in @sessions [session-id :session])]
                   (if-not (= (:protocol-version @session)
@@ -1310,29 +1324,32 @@
             (str/split (or header "") #","))))
 
 (defn handler
-  "Return a Ring handler for `/mcp` with exact Host and Origin validation.
+  "Return a Ring handler for the MCP endpoints with exact Host and Origin validation.
 
-  `origin` is the allowed public origin. `sessions` and `tools` are passed to
-  [[post-message]]. Only POST and DELETE are supported."
+  `origin` is the allowed public origin. `tools` maps endpoint paths to SDK tool
+  definitions (see [[endpoint-tools]]); a plain vector serves only `/mcp`.
+  Only POST and DELETE are supported."
   [origin sessions tools]
-  (let [host (.getRawAuthority (URI. origin))]
+  (let [host (.getRawAuthority (URI. origin))
+        endpoints (if (map? tools) tools {"/mcp" tools})]
     (fn [{:keys [uri request-method headers] :as request}]
       (cond
         (not= host (get headers "host")) (response 403 "Forbidden Host")
         (and (get headers "origin") (not= origin (get headers "origin")))
         (response 403 "Forbidden Origin")
-        (not= "/mcp" uri) (response 404 "Not found")
+        (not (contains? endpoints uri)) (response 404 "Not found")
         (= :post request-method)
         (cond
           (not (contains? (media-types (get headers "content-type")) "application/json"))
           (response 415 "Expected application/json")
           (not (every? (media-types (get headers "accept")) ["application/json" "text/event-stream"]))
           (response 406 "Accept must include application/json and text/event-stream")
-          :else (post-message request sessions tools))
+          :else (post-message request sessions (get endpoints uri)))
         (= :delete request-method)
         (locking sessions
           (expire-sessions! sessions (System/currentTimeMillis))
-          (if-let [session (get-in @sessions [(get headers "mcp-session-id") :session])]
+          (if-let [session (when (= uri (get-in @sessions [(get headers "mcp-session-id") :endpoint]))
+                             (get-in @sessions [(get headers "mcp-session-id") :session]))]
             (if-not (= (:protocol-version @session) (get headers "mcp-protocol-version"))
               (response 400 "MCP-Protocol-Version must match the negotiated version")
               (do
@@ -1352,8 +1369,9 @@
   | `:origin` | Exact allowed public origin, without a trailing slash. |
   | `:neogrok-url` | Trusted Neogrok base URL, including its path prefix. |
   | `:mirror-root` | Optional bare mirror root; enables catalog and Git tools. |
-  | `:state-dir` | Dedicated writable state directory; required with mirror root. |"
-  [{:keys [port origin neogrok-url mirror-root state-dir]}]
+  | `:state-dir` | Dedicated writable state directory; required with mirror root. |
+  | `:disabled-tools` | Optional set of tool names removed from every endpoint. |"
+  [{:keys [port origin neogrok-url mirror-root state-dir disabled-tools]}]
   (let [uri (URI. origin)
         _ (when-not (and (integer? port) (<= 1 port 65535)
                          (#{"http" "https"} (.getScheme uri)) (.getHost uri)
@@ -1362,6 +1380,9 @@
             (throw (ex-info "Invalid listening port or public origin" {})))
         _ (when (and mirror-root (not state-dir))
             (throw (ex-info "state-dir is required with mirror-root" {})))
+        disabled (set disabled-tools)
+        _ (when-let [unknown (seq (remove (set (map :name tool-specs)) disabled))]
+            (throw (ex-info (str "Unknown disabled tool: " (str/join ", " unknown)) {})))
         cancelled (atom false)
         wake (java.util.concurrent.CountDownLatch. 1)
         catalog (when mirror-root (open-catalog! mirror-root state-dir))
@@ -1374,7 +1395,7 @@
                                         (catch Exception _ nil)))))
         _ (when catalog (refresh))
         sessions (atom {})
-        tools (search-tools neogrok-url (Semaphore. 4) catalog)
+        tools (endpoint-tools (search-tools neogrok-url (Semaphore. 4) catalog) disabled)
         stop (http/run-server (handler origin sessions tools)
                               {:ip "127.0.0.1" :port port :max-body max-request-bytes})
         worker (when catalog
@@ -1399,7 +1420,8 @@
         backend (or (System/getenv "NEOGROK_URL") "http://127.0.0.1:3081/search")
         stop (start! {:port port :origin origin :neogrok-url backend
                       :mirror-root (System/getenv "MIRROR_ROOT")
-                      :state-dir (System/getenv "STATE_DIRECTORY")})]
+                      :state-dir (System/getenv "STATE_DIRECTORY")
+                      :disabled-tools (remove str/blank? (str/split (or (System/getenv "CODE_SEARCH_DISABLED_TOOLS") "") #","))})]
     (.addShutdownHook (Runtime/getRuntime) (Thread. ^Runnable stop))
     (binding [*out* *err*] (println "Code-search MCP listening on loopback port" port))
     @(promise)))

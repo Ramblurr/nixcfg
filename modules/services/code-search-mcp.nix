@@ -25,7 +25,13 @@ in
         "100.64.0.0/10"
         "fd7a:115c:a1e0::/48"
       ];
-      description = "Direct client networks permitted on /mcp; no forwarded-IP trust or agent token";
+      description = "Direct client networks permitted on /mcp and /mcp/all; no forwarded-IP trust or agent token";
+    };
+    disabledTools = lib.mkOption {
+      type = lib.types.listOf (lib.types.strMatching "[a-z_]+");
+      default = [ ];
+      example = [ "sync_repos" ];
+      description = "MCP tool names removed from every endpoint; unknown names stop the service at start";
     };
   };
 
@@ -86,6 +92,7 @@ in
         CODE_SEARCH_ORIGIN = "https://${config.modules.services.dependency-mirror.domain}";
         NEOGROK_URL = "http://127.0.0.1:${toString config.modules.services.neogrok.port}/search";
         MIRROR_ROOT = mirrors;
+        CODE_SEARCH_DISABLED_TOOLS = lib.concatStringsSep "," cfg.disabledTools;
         HOME = stateDir;
       };
       serviceConfig = {
