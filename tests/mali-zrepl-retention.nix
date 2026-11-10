@@ -78,7 +78,7 @@ let
   jobs = lib.listToAttrs (
     map (job: lib.nameValuePair job.name job) evaluated.config.services.zrepl.settings.jobs
   );
-  nodePull = name: jobs.${name};
+  pullJobs = lib.filter (job: job.type == "pull") evaluated.config.services.zrepl.settings.jobs;
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
   sourceLib = lib // {
     my = { inherit cidrToIp; };
@@ -139,14 +139,12 @@ let
     "tank2/backups/gamsjaegers<" = false;
   };
 in
-assert
-  builtins.attrNames jobs == [
-    "debord"
-    "dewey"
-    "mali_rsyncnet"
-    "mali_snap"
-    "mali_source"
-  ];
+# Fixture sources must be pulled, but unrelated jobs may be added independently.
+assert lib.all (name: builtins.any (job: job.name == name) pullJobs) [
+  "debord"
+  "dewey"
+];
+assert !(jobs ? ignored);
 assert
   map
     (
@@ -202,22 +200,11 @@ assert
       };
     }
   ];
-assert
-  map (name: (nodePull name).pruning.keep_receiver) [
-    "debord"
-    "dewey"
-  ] == [
-    keepAll
-    keepAll
-  ];
-assert
-  map (name: (nodePull name).pruning.keep_sender) [
-    "debord"
-    "dewey"
-  ] == [
-    senderRetention
-    senderRetention
-  ];
+# Every pull must preserve the offsite queue and protect unreplicated snapshots.
+assert lib.assertMsg (lib.all
+  (job: job.pruning.keep_receiver == keepAll && job.pruning.keep_sender == senderRetention)
+  pullJobs
+) "Mali pull jobs must retain all received snapshots and apply the sender retention policy";
 assert
   jobs.mali_snap.snapshotting == {
     type = "periodic";
