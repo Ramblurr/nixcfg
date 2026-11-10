@@ -9,6 +9,13 @@ let
   cfg = config.modules.shell.git;
   inherit (config.modules.users.primaryUser) username;
   inherit (config.modules.users.primaryUser) homeDirectory;
+  credentialCacheSocket = "${homeDirectory}/.cache/git/credential-systemd/socket";
+  credentialCacheHelper = pkgs.writeShellScript "git-credential-cache-systemd" ''
+    set -eu
+    ${pkgs.systemd}/bin/systemctl --user start git-credential-cache.service
+    exec ${pkgs.git}/bin/git credential-cache \
+      --socket=${lib.escapeShellArg credentialCacheSocket} --timeout=86400 "$@"
+  '';
 in
 {
   options.modules.shell.git = {
@@ -19,6 +26,26 @@ in
       home.packages = with pkgs; [
         forgejo-cli
       ];
+      systemd.user.services.git-credential-cache = {
+        Unit.Description = "In-memory Git credential cache";
+        Service = {
+          Type = "exec";
+          ExecStart = "${pkgs.git}/bin/git credential-cache--daemon --debug ${credentialCacheSocket}";
+          ExecStartPost = pkgs.writeShellScript "git-credential-cache-ready" ''
+            while [ ! -S ${lib.escapeShellArg credentialCacheSocket} ]; do
+              ${pkgs.coreutils}/bin/sleep 0.05
+            done
+          '';
+          TimeoutStartSec = 10;
+          # Git exits when empty; systemd must own the next daemon too.
+          Restart = "always";
+          RestartSec = 0;
+          CacheDirectory = "git/credential-systemd";
+          CacheDirectoryMode = "0700";
+          UMask = "0077";
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
       programs.difftastic.enable = true;
       programs.difftastic.git.enable = true;
       programs.git = {
@@ -36,7 +63,7 @@ in
             directory = "${homeDirectory}/src/nixcfg";
           };
           credential.helper = [
-            "cache --timeout 86400"
+            "${credentialCacheHelper}"
             "${pkgs.git-credential-oauth}/bin/git-credential-oauth"
           ];
           alias = {
