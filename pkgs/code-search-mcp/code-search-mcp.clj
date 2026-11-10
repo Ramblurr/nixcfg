@@ -1099,51 +1099,63 @@
              path (if (= "github" provider) (str/lower-case path) path)]
          (str (.getScheme uri) "://" host "/" path (when plain-git? ".git")))))))
 
-(defn add-repos
-  "Insert repositories into the mirror inventory; leave existing entries unchanged.
+(def ^:private editor-option-keys
+  "Tool argument keys and the editor inventory option each one sets."
+  {:include "include" :provider "provider" :scope "scope" :organization "organization?"
+   :issues "issues?" :wiki "wiki?" :contributed "contributed?" :gists "gists?"
+   :exclude-forks "exclude-forks?"})
 
-  Each entry has `:url` and optional `:include`, `:provider`, `:scope` and
-  `:organization`. Patches are split below the editor's request limit; each
-  request is atomic. Return added and already-present canonical URLs. The
-  inventory read and the patches are separate requests: an entry another
-  client adds in between is merged with these options rather than reported
-  as existing."
+(defn upsert-repos
+  "Create or update mirror inventory entries with JSON Merge Patch semantics.
+
+  Each entry has `:url` plus any options in [[editor-option-keys]]. Given
+  options replace the entry's current values (an `:include` vector replaces
+  the whole list); omitted options keep their values. `:unset` names options
+  to remove, restoring the editor default. The editor validates the result,
+  including which options a provider supports. Unchanged entries are not
+  sent. Patches are split below the editor's request limit; each request is
+  atomic, but the inventory read and the patches are separate requests.
+  Return created, updated and unchanged canonical URLs."
   [editor repos]
   (let [{current :data csrf :csrf} (editor-request editor :get "/api/repos" {} nil)
-        entries (into (sorted-map)
-                      (map (fn [{:keys [url include provider scope organization]}]
+        patches (into (sorted-map)
+                      (map (fn [{:keys [url provider unset] :as entry}]
                              [(canonical-url url provider)
-                              (cond-> {}
-                                include (assoc "include" include)
-                                provider (assoc "provider" provider)
-                                scope (assoc "scope" scope)
-                                organization (assoc "organization?" organization))]))
+                              (merge (into {} (keep (fn [[k option]] (when (contains? entry k) [option (get entry k)])))
+                                           editor-option-keys)
+                                     (into {} (map (fn [k] [(get editor-option-keys (keyword (protocol/decode-key k))) nil]))
+                                           unset))]))
                       repos)
-        _ (doseq [[url options] entries]
+        merged (fn [url patch]
+                 (reduce-kv (fn [options k v] (if (nil? v) (dissoc options k) (assoc options k v)))
+                            (or (get current url) {}) patch))
+        created (filterv #(not (contains? current %)) (keys patches))
+        updated (filterv #(and (contains? current %) (not= (get current %) (merged % (get patches %)))) (keys patches))
+        changes (select-keys patches (concat created updated))
+        _ (doseq [[url options] changes]
             (when (> (alength (.getBytes (json/generate-string {url options}) "UTF-8")) max-patch-bytes)
               (throw (ex-info (str "Repository entry is too large for one editor request: " url) {}))))
-        existing (filterv #(contains? current %) (keys entries))
-        fresh (into (sorted-map) (remove (fn [[url _]] (contains? current url))) entries)
         chunks (reduce (fn [chunks [url options]]
                          (let [chunk (assoc (peek chunks) url options)]
                            (if (and (> (count (peek chunks)) 0)
                                     (> (alength (.getBytes (json/generate-string chunk) "UTF-8")) max-patch-bytes))
                              (conj chunks {url options})
                              (conj (pop chunks) chunk))))
-                       [{}] fresh)
-        added (atom [])]
+                       [{}] (into (sorted-map) changes))
+        written (atom [])]
     (try
       (doseq [chunk chunks :when (seq chunk)]
         (editor-request editor :patch "/api/repos"
                         {"content-type" "application/merge-patch+json" "x-csrf-token" csrf}
                         (json/generate-string chunk))
-        (swap! added into (keys chunk)))
+        (swap! written into (keys chunk)))
       (catch Exception e
         (throw (ex-info (str (or (ex-message e) "Mirror editor request failed")
-                             (when (seq @added) (str " (already added: " (str/join ", " @added) ")")))
+                             (when (seq @written) (str " (already written: " (str/join ", " @written) ")")))
                         (or (ex-data e) {})))))
-    {:added @added :existing existing
-     :hint (when (seq @added) "Call sync_repos to fetch them; they become searchable after sync and indexing.")}))
+    {:created created :updated updated
+     :unchanged (filterv #(not (contains? changes %)) (keys patches))
+     :hint (when (seq created) "Call sync_repos to fetch new entries; they become searchable after sync and indexing.")}))
 
 (defn sync-repos
   "Start a background mirror sync for one inventory URL or for all entries."
@@ -1235,22 +1247,73 @@
            {"repo" text "base" text "head" text "first" (assoc limit :maximum 100)
             "after" {:type "string" :minLength 1 :maxLength 16} "maxChars" budget}
            ["repo" "base" "head"])
-     (spec "add_repos"
-           (str "Add repositories, or forge users/organizations, to the mirror inventory. Existing entries are "
-                "unchanged. include selects repositories of an owner URL; provider and scope disambiguate "
-                "self-hosted forges. Does not fetch: call sync_repos afterwards.")
+     (spec "upsert_repos"
+           (str "Create or update entries in the dependency-mirror inventory. Writes configuration only; call "
+                "sync_repos afterwards to fetch, and new mirrors become searchable after the next sync and "
+                "indexing.\n\n"
+                "URLs: an HTTPS repository URL (https://github.com/owner/repo) mirrors one repository; an owner "
+                "URL (https://github.com/owner, a user or organization) mirrors all its repositories, or only "
+                "those named in include. No credentials, ports, queries or fragments. URLs are normalized to the "
+                "inventory's canonical form (lowercase host, no trailing slash, no .git except for plain Git, "
+                "lowercase GitHub paths); results report canonical URLs.\n\n"
+                "Providers are detected for github.com, gitlab.com, codeberg.org and gitea.com (gitea), "
+                "bitbucket.org and git.sr.ht (sourcehut); any other host is plain Git (provider any, single "
+                "repositories only) unless provider is given. For a self-hosted forge set provider; set "
+                "scope when the path is ambiguous (one path segment on a forge defaults to owner, more to "
+                "repo; nested GitLab groups need scope).\n\n"
+                "Option support by provider (others are rejected): github: issues, wiki, contributed, gists, "
+                "excludeForks, organization; gitlab, gitea, gogs: issues, wiki, excludeForks, organization; "
+                "onedev: issues, excludeForks; sourcehut: wiki; bitbucket: organization; opengist and any: none. "
+                "include and organization apply only to owner URLs. GitLab groups need organization=true. "
+                "Defaults: excludeForks true, everything else false or absent.\n\n"
+                "Merge semantics (JSON Merge Patch): for an existing entry, options given replace current "
+                "values (include replaces the whole list), omitted options are kept, and unset removes options "
+                "to restore their defaults. Entries whose options would not change are not written. The "
+                "inventory is validated as a whole per request; an invalid entry fails its batch with the "
+                "editor's message. Result: {:created [urls] :updated [urls] :unchanged [urls]}.\n\n"
+                "Examples: {\"repos\":[{\"url\":\"https://github.com/babashka/fs\"}]} adds one repository; "
+                "{\"repos\":[{\"url\":\"https://github.com/clojure\",\"include\":[\"clojure\",\"tools.cli\"]}]} "
+                "adds two repositories of an owner; {\"repos\":[{\"url\":\"https://git.example.org/team/app\","
+                "\"provider\":\"gitea\",\"issues\":true}]} adds a self-hosted Forgejo repository with issues; "
+                "{\"repos\":[{\"url\":\"https://github.com/clojure\",\"unset\":[\"include\"]}]} widens an "
+                "owner entry to all repositories.")
            {"repos" {:type "array" :minItems 1 :maxItems 50
+                     :description "Entries to create or update, one per URL."
                      :items {:type "object" :required ["url"] :additionalProperties false
-                             :properties {"url" {:type "string" :minLength 8 :maxLength 2048}
-                                          "include" (array text 200)
-                                          "provider" {:type "string" :minLength 1 :maxLength 32}
-                                          "scope" {:type "string" :enum ["owner" "repo"]}
-                                          "organization" {:type "boolean"}}}}}
+                             :properties {"url" {:type "string" :minLength 8 :maxLength 2048
+                                                 :description "HTTPS repository or owner URL."}
+                                          "include" (assoc (array text 200)
+                                                           :description "Owner URLs only: mirror just these repository names. Replaces the whole list.")
+                                          "provider" {:type "string"
+                                                      :enum ["github" "gitlab" "gitea" "gogs" "bitbucket"
+                                                             "onedev" "sourcehut" "opengist" "any"]
+                                                      :description "Forge type; required for self-hosted forges. gitea covers Forgejo and Codeberg; any is plain Git."}
+                                          "scope" {:type "string" :enum ["owner" "repo"]
+                                                   :description "Whether the URL names an owner or one repository, when the path is ambiguous."}
+                                          "organization" {:type "boolean"
+                                                          :description "Owner is an organization or group (required for GitLab groups)."}
+                                          "issues" {:type "boolean" :description "Also back up issues as JSON."}
+                                          "wiki" {:type "boolean" :description "Also mirror the wiki."}
+                                          "contributed" {:type "boolean"
+                                                         :description "GitHub owners: also mirror repositories the user contributed to."}
+                                          "gists" {:type "boolean" :description "GitHub owners: also mirror gists."}
+                                          "excludeForks" {:type "boolean"
+                                                          :description "Owner URLs: skip forks. Default true."}
+                                          "unset" (assoc (array {:type "string"
+                                                                 :enum ["include" "provider" "scope" "organization" "issues"
+                                                                        "wiki" "contributed" "gists" "excludeForks"]}
+                                                                9)
+                                                         :description "Options to remove from an existing entry, restoring defaults.")}}}}
            ["repos"] :core true :mutates true
-           :annotations {:read-only-hint false :destructive-hint false :idempotent-hint true})
+           :annotations {:read-only-hint false :destructive-hint true :idempotent-hint true})
      (spec "sync_repos"
-           "Start a background mirror sync for one inventory URL, or all=true for every entry. Returns once accepted."
-           {"url" {:type "string" :minLength 8 :maxLength 2048} "all" {:type "boolean"}}
+           (str "Start a background mirror sync (fetch) for one inventory entry, or all=true for every entry. "
+                "Pass exactly one of url or all. url must be an inventory URL (as returned by upsert_repos); it "
+                "is normalized the same way. Returns once the editor accepts; only one sync runs at a time, so a "
+                "busy error means retry later. New or changed mirrors appear in list_repos after the sync, "
+                "indexing and the next catalog refresh (about five minutes).")
+           {"url" {:type "string" :minLength 8 :maxLength 2048 :description "Inventory entry URL to sync."}
+            "all" {:type "boolean" :description "Sync every inventory entry."}}
            [] :core true :mutates true
            :annotations {:read-only-hint false :destructive-hint false :idempotent-hint false})
      (spec "find_symbol_definitions" "Find exact case-sensitive Ctags definitions in the indexed revision."
@@ -1342,7 +1405,7 @@
   [base catalog tool args & [editor]]
   (validate-arguments tool args)
   (case tool
-    "add_repos" (add-repos editor (:repos args))
+    "upsert_repos" (upsert-repos editor (:repos args))
     "sync_repos" (sync-repos editor args)
     "grep" (let [result (present-search (execute-search base tool args)
                                         {:context? (pos? (get args :context-lines 0)) :repo? true})]
@@ -1617,7 +1680,7 @@
   | `:mirror-root` | Optional bare mirror root; enables catalog and Git tools. |
   | `:state-dir` | Dedicated writable state directory; required with mirror root. |
   | `:disabled-tools` | Optional set of tool names removed from every endpoint. |
-  | `:editor-url` | Optional mirror editor base URL; enables add_repos and sync_repos. |"
+  | `:editor-url` | Optional mirror editor base URL; enables upsert_repos and sync_repos. |"
   [{:keys [port origin neogrok-url mirror-root state-dir disabled-tools editor-url]}]
   (let [uri (URI. origin)
         _ (when-not (and (integer? port) (<= 1 port 65535)

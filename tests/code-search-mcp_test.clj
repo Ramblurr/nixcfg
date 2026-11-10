@@ -702,7 +702,7 @@
 
 (defn- fake-editor [{:keys [sticky] :or {sticky true}} f]
   (let [port (free-port)
-        inventory (atom {"https://github.com/existing/repo" {}})
+        inventory (atom {"https://github.com/existing/repo" {"issues?" true}})
         patches (atom [])
         syncs (atom [])
         busy (atom false)
@@ -720,7 +720,15 @@
                     (if (and (= "application/merge-patch+json" (get headers "content-type"))
                              (every? #(re-matches #"https://[a-z0-9./-]+" %) (keys data)))
                       (do (swap! patches conj data)
-                          (json-response 200 (swap! inventory merge data)))
+                          ;; JSON Merge Patch, one level of options deep, as the editor applies it.
+                          (json-response 200 (swap! inventory
+                                                    (fn [current]
+                                                      (reduce-kv (fn [inv url options]
+                                                                   (if (nil? options)
+                                                                     (dissoc inv url)
+                                                                     (assoc inv url (reduce-kv (fn [o k v] (if (nil? v) (dissoc o k) (assoc o k v)))
+                                                                                               (get inv url {}) options))))
+                                                                 current data)))))
                       (json-response 400 {"error" "Use canonical URLs (see GET /api/repos)."}))
                     (= [:post "/edit/api/sync"] [request-method uri])
                     (if (compare-and-set! busy false sticky)
@@ -745,23 +753,39 @@
                                       ["https://github.com:8443/A/b" "https://github.com:8443/A/b" nil]
                                       ["not a url" " not a url " nil]]]
        (is (= expected (sut/canonical-url url provider)) url))
-     (is (= {:added ["https://example.test/owner" "https://github.com/new/repo"]
-             :existing ["https://github.com/existing/repo"]}
-            (dissoc (sut/execute-tool nil nil "add_repos"
+     (is (= {:created ["https://example.test/owner" "https://github.com/new/repo"]
+             :unchanged ["https://github.com/existing/repo"]}
+            (sut/compact (dissoc (sut/execute-tool nil nil "upsert_repos"
                                       {:repos [{:url "https://github.com/New/Repo.git/"}
-                                               {:url "https://github.com/existing/repo"}
+                                               {:url "https://github.com/existing/repo" :issues true}
                                                {:url "https://example.test/owner" :include ["a" "b"]
-                                                :provider "gitea" :scope "owner" :organization true}]}
+                                                :provider "gitea" :scope "owner" :organization true :wiki true}]}
                                       editor)
-                    :hint)))
-     (is (= [{"https://example.test/owner" {"include" ["a" "b"] "provider" "gitea" "scope" "owner" "organization?" true}
+                    :hint))))
+     (is (= [{"https://example.test/owner" {"include" ["a" "b"] "provider" "gitea" "scope" "owner"
+                                            "organization?" true "wiki?" true}
               "https://github.com/new/repo" {}}]
             @patches))
+     (is (= {:updated ["https://github.com/existing/repo"]}
+            (sut/compact (sut/upsert-repos editor [{:url "https://github.com/existing/repo" :gists true :contributed true
+                                                    :exclude-forks false :unset ["issues"]}]))))
+     (is (= {"gists?" true "contributed?" true "exclude-forks?" false}
+            (get @inventory "https://github.com/existing/repo")))
+     (is (= {"https://github.com/existing/repo" {"gists?" true "contributed?" true "exclude-forks?" false "issues?" nil}}
+            (peek @patches)))
+     (is (= {:updated ["https://example.test/owner"]}
+            (sut/compact (sut/upsert-repos editor [{:url "https://example.test/owner" :include ["c"] :unset ["wiki"]}]))))
+     (is (= {"include" ["c"] "provider" "gitea" "scope" "owner" "organization?" true}
+            (get @inventory "https://example.test/owner")))
+     (let [before (count @patches)]
+       (is (= {:unchanged ["https://example.test/owner"]}
+              (sut/compact (sut/upsert-repos editor [{:url "https://example.test/owner" :include ["c"]}]))))
+       (is (= before (count @patches))))
      (with-redefs [sut/max-patch-bytes 40]
-       (sut/add-repos editor [{:url "https://github.com/a/one"} {:url "https://github.com/a/two"}]))
-     (is (= 3 (count @patches)))
+       (sut/upsert-repos editor [{:url "https://github.com/a/one"} {:url "https://github.com/a/two"}]))
+     (is (= {"https://github.com/a/two" {}} (peek @patches)))
      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Use canonical URLs"
-                           (sut/add-repos editor [{:url "https://Example.test/UPPER"}])))
+                           (sut/upsert-repos editor [{:url "https://Example.test/UPPER"}])))
      (is (= {:status "accepted" :selection "https://github.com/new/repo"}
             (dissoc (sut/execute-tool nil nil "sync_repos" {:url "https://github.com/New/Repo"} editor) :hint)))
      (is (= [{"url" "https://github.com/new/repo"}] @syncs))
@@ -772,7 +796,9 @@
      (doseq [args [{} {:url "https://github.com/a/b" :all true}]]
        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"exactly one" (sut/sync-repos editor args))))
      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid argument: repos"
-                           (sut/validate-arguments "add_repos" {:repos [{:url "https://github.com/a/b" :bogus 1}]})))
+                           (sut/validate-arguments "upsert_repos" {:repos [{:url "https://github.com/a/b" :bogus 1}]})))
+     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid argument: repos"
+                           (sut/validate-arguments "upsert_repos" {:repos [{:url "https://github.com/a/b" :unset ["url"]}]})))
      (is (contains? @inventory "https://github.com/a/two")))))
 
 (deftest refresh-survives-too-many-tags-and-skips-unchanged-refs
@@ -854,7 +880,7 @@
                        ["compare_revisions" {:repo "example/repo" :base head :head "HEAD"} :base head]
                        ["find_symbol_definitions" {:repository "example/repo" :symbol "main"} :kind "ctags-definitions"]
                        ["find_symbol_references" {:repository "example/repo" :symbol "main"} :kind "textual-occurrences-not-semantic"]
-                       ["add_repos" {:repos [{:url "https://github.com/existing/repo"}]} :existing ["https://github.com/existing/repo"]]
+                       ["upsert_repos" {:repos [{:url "https://github.com/existing/repo"}]} :unchanged ["https://github.com/existing/repo"]]
                        ["sync_repos" {:url "https://github.com/existing/repo"} :status "accepted"]]
                       fmt ["json" "edn"]]
                 (let [response (call-http origin :post {:jsonrpc "2.0" :id (str tool fmt) :method "tools/call"

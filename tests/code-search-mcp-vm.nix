@@ -58,7 +58,7 @@ pkgs.testers.runNixOSTest {
           isSystemUser = true;
           group = "dependency-mirror";
         };
-        # The real inventory editor, so add_repos and sync_repos use its agent API.
+        # The real inventory editor, so upsert_repos and sync_repos use its agent API.
         systemd.services.dependency-mirror = {
           wantedBy = [ "multi-user.target" ];
           serviceConfig = {

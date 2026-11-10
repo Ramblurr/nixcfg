@@ -5,7 +5,7 @@ import urllib.error
 import urllib.request
 
 base, repository, revision = sys.argv[1:]
-CORE = {"grep", "read_file", "list_files", "list_repos", "commit_search", "add_repos", "sync_repos"}
+CORE = {"grep", "read_file", "list_files", "list_repos", "commit_search", "upsert_repos", "sync_repos"}
 ALL = CORE | {"glob", "list_refs", "compare_revisions", "find_symbol_definitions", "find_symbol_references"}
 
 
@@ -83,13 +83,21 @@ for name, kind in [("find_symbol_definitions", "ctags-definitions"),
     assert result["kind"] == kind and f"@{revision}:" in result["results"][0]["cite"], result
 
 # Inventory changes go through the real editor's agent API.
-added = tool("add_repos", {"repos": [{"url": "https://github.com/Example/Added.git"}]})
-assert added["added"] == ["https://github.com/example/added"], added
+added = tool("upsert_repos", {"repos": [{"url": "https://github.com/Example/Added.git", "issues": True}]})
+assert added["created"] == ["https://github.com/example/added"], added
 with urllib.request.urlopen(base + "/edit/api/repos", timeout=15) as response:
     assert "https://github.com/example/added" in json.load(response)
-assert tool("add_repos", {"repos": [{"url": "https://github.com/example/added"}]})["existing"] == ["https://github.com/example/added"]
+assert tool("upsert_repos", {"repos": [{"url": "https://github.com/example/added"}]})["unchanged"] == ["https://github.com/example/added"]
+updated = tool("upsert_repos", {"repos": [{"url": "https://github.com/example/added", "gists": True, "unset": ["issues"]}]})
+assert updated["updated"] == ["https://github.com/example/added"], updated
+with urllib.request.urlopen(base + "/edit/api/repos", timeout=15) as response:
+    assert json.load(response)["https://github.com/example/added"] == {"gists?": True}
+# The editor rejects options the provider does not support, with its own message.
+response = request("/mcp/all", full, {"jsonrpc": "2.0", "id": "reject", "method": "tools/call", "params": {
+    "name": "upsert_repos", "arguments": {"repos": [{"url": "https://gitlab.com/team/app", "contributed": True}]}}})[2]
+assert response["result"].get("isError") and "does not support" in response["result"]["content"][0]["text"], response
 # Normalization matches the editor's canonical form for other forges too.
-assert tool("add_repos", {"repos": [{"url": "https://Codeberg.org/Some/Repo.git/"}]})["added"] == ["https://codeberg.org/Some/Repo"]
+assert tool("upsert_repos", {"repos": [{"url": "https://Codeberg.org/Some/Repo.git/"}]})["created"] == ["https://codeberg.org/Some/Repo"]
 assert tool("sync_repos", {"url": "https://github.com/example/added"})["status"] == "accepted"
 
 # Sessions are bound to their endpoint; untrusted origins are rejected.

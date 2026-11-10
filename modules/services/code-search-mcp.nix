@@ -40,7 +40,7 @@ in
           "compare_revisions"
           "find_symbol_definitions"
           "find_symbol_references"
-          "add_repos"
+          "upsert_repos"
           "sync_repos"
         ]
       );
@@ -108,7 +108,7 @@ in
         NEOGROK_URL = "http://127.0.0.1:${toString config.modules.services.neogrok.port}/search";
         MIRROR_ROOT = mirrors;
         CODE_SEARCH_DISABLED_TOOLS = lib.concatStringsSep "," cfg.disabledTools;
-        # add_repos and sync_repos use the editor's agent API over loopback.
+        # upsert_repos and sync_repos use the editor's agent API over loopback.
         EDITOR_URL = "http://${config.modules.services.dependency-mirror.listenAddress}:${toString config.modules.services.dependency-mirror.port}/edit";
         HOME = stateDir;
       };

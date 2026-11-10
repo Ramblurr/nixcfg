@@ -26,7 +26,7 @@ The state directory must be dedicated to this service. Mirrors are read but
 never modified or fetched by this process. Omit `MIRROR_ROOT` and
 `STATE_DIRECTORY` for search-only mode, which exposes only `grep` and
 `list_repos`. Set `EDITOR_URL` (for example `http://127.0.0.1:8084/edit`) to
-enable `add_repos` and `sync_repos`. `CODE_SEARCH_DISABLED_TOOLS` is a
+enable `upsert_repos` and `sync_repos`. `CODE_SEARCH_DISABLED_TOOLS` is a
 comma-separated list of tool names to remove; unknown names stop startup.
 
 Startup resolves pinned development dependencies and may need Java and network
@@ -37,7 +37,7 @@ SQLite uses experimental native FFI, not a separate pod process.
 ## Endpoints
 
 - `/mcp`: core tools `grep`, `read_file`, `list_files`, `list_repos`,
-  `commit_search`, `add_repos`, `sync_repos`.
+  `commit_search`, `upsert_repos`, `sync_repos`.
 - `/mcp/all`: every tool, adding `glob`, `list_refs`, `compare_revisions`,
   `find_symbol_definitions` and `find_symbol_references`.
 
@@ -110,14 +110,22 @@ lines. Argument errors name the offending argument.
 - `find_symbol_definitions`: exact, case-sensitive Ctags names.
 - `find_symbol_references`: case-sensitive textual name occurrences with
   identifier boundaries. These are not semantic references.
-- `add_repos`: inserts repository or owner URLs into the dependency-mirror
-  inventory through the editor's agent API. Existing entries are left alone;
-  the result lists added and existing URLs. URLs are normalized like the
-  editor does: the host is lowercased, trailing slashes are removed, a final
-  `.git` is removed except for plain Git URLs (an unknown host with no
-  `provider`), and github.com paths are lowercased. Patches are split below the
-  editor's 16 KiB request limit; each request is atomic, but the inventory read
-  and the patches are separate requests.
+- `upsert_repos`: creates or updates dependency-mirror inventory entries through
+  the editor's JSON Merge Patch API. It accepts every editor option: `include`,
+  `provider`, `scope`, `organization`, `issues`, `wiki`, `contributed`, `gists`
+  and `excludeForks`. For an existing entry, given options replace current
+  values (`include` replaces the whole list), omitted options are kept, and
+  `unset` removes options to restore defaults. Entries that would not change
+  are not written. The result lists created, updated and unchanged canonical
+  URLs. URLs are normalized like the editor does: the host is lowercased,
+  trailing slashes are removed, a final `.git` is removed except for plain Git
+  URLs (an unknown host with no `provider`), and github.com paths are
+  lowercased. The editor validates provider support and rejects unsupported
+  options with its own message. Patches are split below the editor's 16 KiB
+  request limit; each request is atomic, but the inventory read and the
+  patches are separate requests. The tool description documents URL forms,
+  providers, option support and examples for agents. It does not delete
+  entries.
 - `sync_repos`: starts a background sync for one inventory URL or `all: true`.
   It returns when the editor accepts; a running sync is reported as busy.
 
