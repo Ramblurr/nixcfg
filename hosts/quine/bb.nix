@@ -55,6 +55,15 @@ in
     };
   };
 
+  services.bbIsolation = {
+    gateway.enable = true;
+    egress = {
+      enable = true;
+      user = username;
+      gatewayAddress = config.site.hosts.quine.tailscaleIPv4;
+    };
+  };
+
   # Foreground Serve owns only this port and withdraws it on service stop.
   # Keep the backend on loopback; tailnet ACLs control remote access.
   systemd.services.bb-tailscale-serve = {

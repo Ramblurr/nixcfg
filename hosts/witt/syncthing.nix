@@ -62,7 +62,7 @@
           id = "RK7O6ZN-OSUW3SM-TP2E2YZ-RBFGWK6-V2MHYEY-Z4HGCJU-EQTC4TO-72WI2QA";
           addresses = [
             "tcp://10.9.6.138:22000"
-            "tcp://100.93.18.79:22000"
+            "tcp://${config.site.hosts.quine.tailscaleIPv4}:22000"
           ];
         };
         "v-phone" = {

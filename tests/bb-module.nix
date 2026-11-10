@@ -8,6 +8,7 @@ let
       specialArgs = { inherit inputs; };
       modules = [
         ../modules/services/bb.nix
+        ../modules/services/bb-isolation
         {
           nixpkgs.pkgs = pkgs;
           users.users.developer = {
@@ -126,10 +127,15 @@ let
           type = lib.types.str;
           default = "tailnet.example.test";
         };
+        options.site.hosts.quine.tailscaleIPv4 = lib.mkOption {
+          type = lib.types.str;
+          default = "100.64.1.42";
+        };
         config.services.tailscale.enable = true;
       })
     ]).config;
   tests = {
+    quineGatewayUsesInventory = quine.services.bbIsolation.egress.gatewayAddress == "100.64.1.42";
     quinePrivateListener = quine.services.bb.bindHost == "127.0.0.1" && !quine.services.bb.openFirewall;
     quineState =
       quine.services.bb.dataDir == "/home/developer/.config/bb/server"

@@ -1,0 +1,53 @@
+{
+	admin off
+	auto_https off
+}
+http://:@listenPort@ {
+	bind 127.0.0.1
+	@workerPost {
+		method POST
+		path_regexp workerPost ^/internal/(hosts/enroll|session/(open|events|interactive-request|interactive-request/interrupt))$
+	}
+	@workerGet {
+		method GET
+		path_regexp workerGet ^/(internal/ws|install\.sh|install/version|install/bb-app\.tgz)$
+	}
+	@artifact {
+		method GET
+		path_regexp artifact ^/internal/plugins/[A-Za-z0-9_-]+/host/[a-f0-9]{64}$
+	}
+	@skillManifest {
+		method GET
+		path_regexp skillManifest ^/internal/skills/tree/[a-f0-9]{64}$
+	}
+	handle @skillManifest {
+		reverse_proxy 127.0.0.1:@backendPort@ {
+			header_up Host 127.0.0.1:@backendPort@
+		}
+	}
+	@skillContent {
+		method POST
+		path_regexp skillContent ^/internal/skills/tree/[a-f0-9]{64}/content$
+	}
+	handle @skillContent {
+		reverse_proxy 127.0.0.1:@backendPort@ {
+			header_up Host 127.0.0.1:@backendPort@
+		}
+	}
+	handle @workerPost {
+		reverse_proxy 127.0.0.1:@backendPort@ {
+			header_up Host 127.0.0.1:@backendPort@
+		}
+	}
+	handle @workerGet {
+		reverse_proxy 127.0.0.1:@backendPort@ {
+			header_up Host 127.0.0.1:@backendPort@
+		}
+	}
+	handle @artifact {
+		reverse_proxy 127.0.0.1:@backendPort@ {
+			header_up Host 127.0.0.1:@backendPort@
+		}
+	}
+	respond "Worker gateway: route denied" 403
+}

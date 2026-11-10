@@ -20,6 +20,7 @@ in
   };
 
   site.sshPubKeys = global.pubKeys;
+  site.hosts.quine.tailscaleIPv4 = "100.93.18.79";
   #site.net.wan6tun = {
   #  vlan = null;
   #  domainName = null;

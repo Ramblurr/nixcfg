@@ -5,6 +5,7 @@
     {
       checks = {
         bb-module = import ../tests/bb-module.nix { inherit inputs pkgs; };
+        bb-isolation = import ../tests/bb-isolation.nix { inherit inputs pkgs; };
         git-credential-cache = import ../tests/git-credential-cache.nix { inherit inputs pkgs; };
         neogrok = import ../tests/neogrok.nix { inherit pkgs; };
         ha-mqtt = import ../tests/ha-mqtt.nix { inherit inputs pkgs; };

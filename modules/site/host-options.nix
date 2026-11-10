@@ -13,6 +13,11 @@ in
 { name, ... }:
 {
   options = {
+    tailscaleIPv4 = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Stable Tailscale IPv4 address, when enrolled in the tailnet.";
+    };
     role = mkOption {
       type = types.enum [
         "ap"
