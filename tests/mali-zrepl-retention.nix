@@ -79,6 +79,9 @@ let
     map (job: lib.nameValuePair job.name job) evaluated.config.services.zrepl.settings.jobs
   );
   pullJobs = lib.filter (job: job.type == "pull") evaluated.config.services.zrepl.settings.jobs;
+  offsiteConfig = (pkgs.formats.yaml { }).generate "mali-offsite-filter-test.yml" {
+    jobs = [ jobs.mali_rsyncnet ];
+  };
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
   sourceLib = lib // {
     my = { inherit cidrToIp; };
@@ -215,7 +218,9 @@ assert jobs.mali_snap.filesystems == expectedMaliSnapFilesystems;
 assert jobs.mali_snap.pruning.keep == keepAll;
 assert jobs.mali_rsyncnet.type == "source";
 assert jobs.mali_rsyncnet.snapshotting == { type = "manual"; };
-assert jobs.mali_rsyncnet.filesystems == expectedOffsiteFilesystems;
+assert
+  lib.intersectAttrs expectedOffsiteFilesystems jobs.mali_rsyncnet.filesystems
+  == expectedOffsiteFilesystems;
 assert !(jobs.mali_rsyncnet ? pruning);
 assert jobs.mali_source.type == "source";
 assert jobs.mali_source.snapshotting == { type = "manual"; };
@@ -223,6 +228,24 @@ assert jobs.mali_source.filesystems."fast<" == false;
 assert jobs.mali_source.filesystems."fast/services/garage/metadata" == true;
 assert jobs.mali_source.filesystems."tank2/services/garage<" == true;
 assert !(jobs.mali_source ? pruning);
-pkgs.runCommand "mali-zrepl-retention-test" { } ''
+pkgs.runCommand "mali-zrepl-retention-test" { nativeBuildInputs = [ pkgs.zrepl ]; } ''
+  check_filter() {
+    expected=$1
+    dataset=$2
+    actual=$(zrepl --config ${offsiteConfig} test filesystems --job mali_rsyncnet --input "$dataset" | cut -f1)
+    if [ "$actual" != "$expected" ]; then
+      echo "$dataset: expected $expected, got $actual" >&2
+      exit 1
+    fi
+  }
+
+  # Test real filter behavior, not the spelling or number of filter rules.
+  root=tank2/replication/peirce
+  for dataset in "$root" "$root/rpool" "$root/rpool/encrypted" "$root/rpool/other"; do
+    check_filter REJECT "$dataset"
+  done
+  for suffix in persist svc svc/forgejo svc/dependency-mirror svc/new-service vms; do
+    check_filter ACCEPT "$root/rpool/encrypted/safe/$suffix"
+  done
   touch "$out"
 ''

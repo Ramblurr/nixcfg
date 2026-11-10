@@ -225,6 +225,9 @@ in
               "tank2/replication/dewey/rpool/encrypted/safe/persist<" = true;
               "tank2/replication/dewey/rpool/encrypted/safe/svc<" = true;
               "tank2/replication/dewey/rpool/encrypted/safe/vms<" = true;
+              # The receive root has no snapshots; export its backed-up descendants only.
+              "tank2/replication/peirce<" = false;
+              "tank2/replication/peirce/rpool/encrypted/safe<" = true;
               "tank2/proxmox<" = false;
               "tank2/backups/gamsjaegers<" = false;
             };
