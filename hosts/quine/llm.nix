@@ -3,7 +3,10 @@ _: {
   # TODO disable smolvm due to failed upstream pkg build
   #environment.systemPackages = [ inputs.smolvm.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
-  modules.dev.llms.cliproxy-api.enable = true;
+  modules.dev.llms.cliproxy-api = {
+    enable = true;
+    tailscaleServePort = 8317;
+  };
 
   modules.dev.llms.t3 = {
     enable = true;

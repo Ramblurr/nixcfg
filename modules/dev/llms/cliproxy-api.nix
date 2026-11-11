@@ -18,9 +18,39 @@ in
       defaultText = lib.literalExpression "inputs.llm-agents.packages.\${system}.cli-proxy-api";
       description = "The CLIProxyAPI package.";
     };
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 8317;
+      description = "Loopback port the proxy listens on. Must match `port` in the unmanaged config.yaml.";
+    };
+    tailscaleServePort = lib.mkOption {
+      type = lib.types.nullOr lib.types.port;
+      default = null;
+      description = "Tailscale Serve HTTPS port, or null to disable.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.tailscaleServePort == null || config.services.tailscale.enable;
+        message = "CLIProxyAPI Tailscale Serve requires services.tailscale.enable.";
+      }
+    ];
+
+    # Foreground Serve owns only this port and withdraws it on service stop.
+    systemd.services.cliproxy-api-tailscale-serve = lib.mkIf (cfg.tailscaleServePort != null) {
+      description = "CLIProxyAPI Tailscale HTTPS listener";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "tailscaled.service" ];
+      requires = [ "tailscaled.service" ];
+      serviceConfig = {
+        ExecStart = "${lib.getExe config.services.tailscale.package} serve --https=${toString cfg.tailscaleServePort} http://127.0.0.1:${toString cfg.port}";
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+    };
+
     myhm =
       hm:
       let
