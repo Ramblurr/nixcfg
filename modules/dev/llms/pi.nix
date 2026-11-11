@@ -15,6 +15,11 @@ in
       hm:
       let
         home = hm.config.home.homeDirectory;
+        # Consumed by pkgs.pi-cliproxy; quine serves CLIProxyAPI to the tailnet.
+        cliproxyProvider = {
+          baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
+          apiKey = "!op read 'op://Private/CLIProxyAPI/api-key'";
+        };
       in
       {
         imports = [ ./pi-nix.nix ];
@@ -75,11 +80,7 @@ in
                 subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
                 openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
                 openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
-                # Consumed by pkgs.pi-cliproxy; quine serves CLIProxyAPI to the tailnet.
-                cliproxy = {
-                  baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-                  apiKey = "!op read 'op://Private/CLIProxyAPI/api-key'";
-                };
+                cliproxy = cliproxyProvider;
               };
               fff = {
                 mode = "override";
@@ -105,6 +106,7 @@ in
                   "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
                   pkgs.brepl-balance
                   pkgs.pi-openai-fast
+                  pkgs.pi-cliproxy
                   pkgs.pi-lens
                   pkgs.pi-fff
                 ];
@@ -115,6 +117,7 @@ in
                 showCacheMissNotices = true;
                 shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
               };
+              models.providers.cliproxy = cliproxyProvider;
               fff = {
                 mode = "override";
                 enableHomeDirScanning = false;
