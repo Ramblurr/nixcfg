@@ -24,6 +24,10 @@ in
       enable = lib.mkEnableOption "";
       networkDev = lib.mkOption { type = lib.types.str; };
     };
+    resolveTailnet.enable = lib.mkEnableOption ''
+      resolving tailnet names through systemd-resolved without Tailscale DNS.
+      Only lookups under the tailnet domain go to Tailscale's 100.100.100.100 resolver
+    '';
   };
   config = mkIf cfg.enable {
     services.tailscale.enable = lib.mkIf cfg.enable true;
@@ -42,6 +46,20 @@ in
         script = ''
           ${lib.getExe pkgs.ethtool} -K ${cfg.exitNode.networkDev} rx-udp-gro-forwarding on rx-gro-list off
         '';
+      };
+    };
+
+    assertions = [
+      {
+        assertion = !cfg.resolveTailnet.enable || config.services.resolved.enable;
+        message = "modules.vpn.tailscale.resolveTailnet requires services.resolved.enable.";
+      }
+    ];
+
+    services.resolved.dnsDelegates.tailnet = lib.mkIf cfg.resolveTailnet.enable {
+      Delegate = {
+        DNS = "100.100.100.100";
+        Domains = [ "~${config.repo.secrets.global.domain.tailnet}" ];
       };
     };
 

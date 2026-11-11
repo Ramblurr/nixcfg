@@ -412,6 +412,7 @@ in
     boot.zfs.usePlymouth = false;
     vpn.mullvad.enable = false;
     vpn.tailscale.enable = true;
+    vpn.tailscale.resolveTailnet.enable = true;
     firewall.enable = true;
     security.default.enable = true;
     hardware.keyboardio.enable = true;
