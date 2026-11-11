@@ -51,7 +51,10 @@ in
             epkgs.eldev
             epkgs.tramp-rpc
             epkgs.vterm
-            epkgs.treesit-grammars.with-all-grammars
+            # leave out tree-sitter-ron (Rusty Object Notation) because i use stardust ron
+            (epkgs.treesit-grammars.with-grammars (
+              grammars: builtins.attrValues (builtins.removeAttrs grammars [ "tree-sitter-ron" ])
+            ))
           ];
         };
 
