@@ -44,6 +44,7 @@ let
 in
 {
   imports = [
+    ./llms/cliproxy-api.nix
     ./llms/nono.nix
     ./llms/pi.nix
     ./llms/t3.nix
