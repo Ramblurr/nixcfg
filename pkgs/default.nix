@@ -93,6 +93,7 @@ inputs: [
       pi-link-control = prev.callPackage ./pi/pi-link-control/package.nix { };
       pi-nono-sandbox = prev.callPackage ./pi/pi-nono-sandbox/package.nix { };
       pi-openai-fast = prev.callPackage ./pi/pi-openai-fast/package.nix { };
+      pi-cliproxy = prev.callPackage ./pi/pi-cliproxy/package.nix { };
       pi-sexp-edit = prev.callPackage ./pi/pi-sexp-edit/package.nix { };
       pi-matrix-relay = prev.callPackage ./pi/pi-matrix-relay/package.nix { };
       glimpseui = prev.callPackage ./glimpseui/package.nix { };

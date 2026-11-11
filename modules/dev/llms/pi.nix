@@ -54,6 +54,7 @@ in
                   #pkgs.epimetheus
                   #pkgs.pi-mcp-adapter
                   pkgs.pi-openai-fast
+                  pkgs.pi-cliproxy
                   #pkgs.pi-nono-sandbox
                   #pkgs.pi-matrix-relay
                   pkgs.pi-link
@@ -74,6 +75,11 @@ in
                 subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
                 openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
                 openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
+                # Consumed by pkgs.pi-cliproxy; quine serves CLIProxyAPI to the tailnet.
+                cliproxy = {
+                  baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
+                  apiKey = "!op read 'op://Private/CLIProxyAPI/api-key'";
+                };
               };
               fff = {
                 mode = "override";
