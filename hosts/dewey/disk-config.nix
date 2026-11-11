@@ -32,9 +32,12 @@ _: {
         };
       };
       micron7400 = {
-        # NVME 800GB Micron 7400
+        # NVME 1TB Samsung 990 Pro. Replaced the overheating 800GB Micron 7400 on
+        # 2026-11-11 by mirror attach and swap. The attribute name is kept because
+        # disko derives the partition labels from it (disk-micron7400-ESP is what
+        # /boot mounts), and the live partitions carry those labels.
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Micron_7400_MTFDKBA800TFC_21443B458DD5";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_1TB_S7HDNL0L324011L";
         content = {
           type = "gpt";
           partitions = {
