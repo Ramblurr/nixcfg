@@ -66,6 +66,13 @@ in
       };
     };
 
+    # Forgejo keeps user and deploy keys in its own file. Our sshd reads only
+    # /etc/ssh/authorized_keys.d/%u, so point it at that file for this user.
+    services.openssh.extraConfig = ''
+      Match User ${config.services.forgejo.user}
+        AuthorizedKeysFile ${config.services.forgejo.stateDir}/.ssh/authorized_keys
+    '';
+
     site.gatus.endpoints = [
       {
         name = "Forgejo (${cfg.domain})";
