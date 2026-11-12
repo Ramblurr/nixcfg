@@ -199,6 +199,18 @@ in
     LOGINTERVAL = "60";
     LOGGENERATIONS = "60";
   };
+  # Stop PowerDevil's hibernation rollback loop. With mem_sleep=s2idle,
+  # PowerDevil arms /sys/power/wakeup_count before hibernating. This firmware's
+  # _WAK(4) always sends a Thunderbolt RP05 wake notify after the snapshot, so
+  # the kernel aborts every PowerDevil hibernation and PowerDevil retries.
+  # PowerDevil continues when this helper is denied. See 072-09.
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (action.id == "org.kde.powerdevil.wakeupsourcehelper.setwakeupcount") {
+        return polkit.Result.NO;
+      }
+    });
+  '';
   fonts.packages = [
     pkgs.noto-fonts
     pkgs.noto-fonts-color-emoji
