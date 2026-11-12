@@ -73,6 +73,8 @@ let
           url = "https://download-r2.pytorch.org/whl/cu126/torch-2.14.0%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl";
           hash = "sha256-6ZIkQcsu0ml0KkYkaEDFNjTKlj+LCjjTAYLCi06DiNo=";
         };
+        # torch-bin 2.15 dropped libcurand for its CUDA 13 wheel; the cu126 wheel still links it.
+        buildInputs = old.buildInputs ++ [ cuda.libcurand ];
         # Eager inference only: no torch.compile or distributed training.
         dependencies = [
           final.cuda-bindings
