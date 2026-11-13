@@ -22,6 +22,8 @@ let
   maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
   debordMgmtAddress = builtins.head config.site.net.mgmt.hosts4.debord;
   workDomain = config.repo.secrets.global.domain.work;
+  forgejoItem = "op://home-ops-prod/nixbot git.outskirtslabs.com ";
+  credentialSocket = config.modules.services.onepassword-systemd-credentials.socketPath;
   localAtticSubstituter = config.repo.secrets.global.localAtticSubstituter;
   quineMgmtIp = builtins.head config.site.net.mgmt.hosts4.quine;
   atticServer = "mali";
@@ -74,10 +76,11 @@ in
   ];
   imports = [ inputs.nix-tarmac.nixosModules.default ];
 
-  # The provider delivers the effects JSON directly as a systemd credential.
+  # The provider delivers the Forgejo credentials directly as systemd
+  # credentials; the IDs match the nixbot module's LoadCredential names.
   modules.services.onepassword-systemd-credentials.consumers.nixbot = {
-    "effects-secret__gitea_colon_stardustdb_slash_epsilon" =
-      "op://home-ops-prod/epsilon-deploy/effects-json";
+    gitea-token = "${forgejoItem}/api-token";
+    gitea-oauth-secret = "${forgejoItem}/oauth-client-secret";
   };
 
   modules.services.onepassword-systemd-credentials.consumers.databasus-nixbot-role = {
@@ -101,7 +104,10 @@ in
     # TLS is terminated by dewey's ingress; generate https:// URLs.
     useHTTPS = true;
     nginx.enable = false;
-    admins = [ "github:Ramblurr" ];
+    admins = [
+      "github:Ramblurr"
+      "gitea:casey"
+    ];
     buildSystems = [ "x86_64-linux" ];
     buildConcurrency = 2;
     evalWorkerCount = 4;
@@ -117,18 +123,16 @@ in
       # empty database; afterwards projects are managed in the web UI.
       topic = "nixbot";
     };
+    # Forgejo speaks the Gitea API; nixbot uses its gitea forge for it.
     gitea = {
       enable = true;
-      instanceUrl = "https://git.bitflip.ai";
-      tokenFile = config.sops.secrets."nixbot-bitflip-token".path;
-      oauthId = "190b408f-63d0-45ee-b68c-03d764ace860";
-      oauthSecretFile = config.sops.secrets."nixbot-bitflip-oauth-secret".path;
-      repoAllowlist = [ "stardustdb/epsilon" ];
-      # Enable the repository explicitly after discovery, not by topic import.
+      instanceUrl = "https://git.${workDomain}";
+      tokenFile = credentialSocket;
+      oauthId = "2b4e904c-ccf0-4660-968a-9688a4cf7da2";
+      oauthSecretFile = credentialSocket;
+      # Enable repositories explicitly after discovery, not by topic import.
       topic = null;
     };
-    effects.perRepoSecretFiles."gitea:stardustdb/epsilon" =
-      config.modules.services.onepassword-systemd-credentials.socketPath;
     postBuildSteps = [
       {
         name = "Upload to Mali Attic";
@@ -152,34 +156,8 @@ in
   sops.secrets."nixbot-github-oauth-secret" = {
     sopsFile = ./nixbot.sops.yaml;
   };
-  # Provision this key before deploying the Gitea integration.
-  sops.secrets."nixbot-bitflip-token" = {
-    sopsFile = ./nixbot.sops.yaml;
-  };
-  sops.secrets."nixbot-bitflip-username" = {
-    sopsFile = ./nixbot.sops.yaml;
-  };
-  sops.templates."nixbot-netrc" = {
-    path = "/var/lib/nixbot/.netrc";
-    owner = "nixbot";
-    mode = "0400";
-    content = ''
-      machine git.bitflip.ai
-      login ${config.sops.placeholder."nixbot-bitflip-username"}
-      password ${config.sops.placeholder."nixbot-bitflip-token"}
-    '';
-  };
-  sops.secrets."nixbot-bitflip-oauth-secret" = {
-    sopsFile = ./nixbot.sops.yaml;
-  };
   sops.secrets."attic-nixbot-token" = {
     sopsFile = ./nixbot.sops.yaml;
-  };
-
-  systemd.services.nixbot.environment = {
-    GIT_CONFIG_COUNT = "1";
-    GIT_CONFIG_KEY_0 = "url.https://git.bitflip.ai/.insteadOf";
-    GIT_CONFIG_VALUE_0 = "ssh://gitea@git.bitflip.ai/";
   };
 
   systemd.services.nixbot.serviceConfig.LoadCredential = [
