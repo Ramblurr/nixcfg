@@ -15,10 +15,17 @@ in
       hm:
       let
         home = hm.config.home.homeDirectory;
-        # Consumed by pkgs.pi-cliproxy; quine serves CLIProxyAPI to the tailnet.
         cliproxyProvider = {
           baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
           apiKey = "!op read 'op://Private/CLIProxyAPI/api-key'";
+        };
+        all-providers = {
+          anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
+          typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
+          subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
+          openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
+          openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
+          cliproxy = cliproxyProvider;
         };
       in
       {
@@ -33,9 +40,9 @@ in
           instances = {
             pi = {
               settings = {
-                defaultProvider = "openai-codex";
-                defaultModel = "gpt-6-astra";
-                defaultThinkingLevel = "medium";
+                defaultProvider = "cliproxy";
+                defaultModel = "gpt-6.1-sol";
+                defaultThinkingLevel = "high";
                 skills = [
                   "${home}/src/git.outskirtslabs.com/casey/skills/skills/pi"
                   "${home}/src/git.outskirtslabs.com/casey/skills/skills/mine"
@@ -74,14 +81,7 @@ in
                 showCacheMissNotices = true;
                 shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
               };
-              models.providers = {
-                anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
-                typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
-                subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
-                openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
-                openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
-                cliproxy = cliproxyProvider;
-              };
+              models.providers = all-providers;
               fff = {
                 mode = "override";
                 enableHomeDirScanning = false;
@@ -90,9 +90,9 @@ in
             };
             pi-t3 = {
               settings = {
-                defaultProvider = "openai-codex";
-                defaultModel = "gpt-6-astra";
-                defaultThinkingLevel = "medium";
+                defaultProvider = "cliproxy";
+                defaultModel = "gpt-6.1-sol";
+                defaultThinkingLevel = "high";
                 skills = [
                   "${home}/src/git.outskirtslabs.com/casey/skills/skills/t3"
                   "${home}/src/git.outskirtslabs.com/casey/skills/skills/mine"
@@ -117,7 +117,7 @@ in
                 showCacheMissNotices = true;
                 shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
               };
-              models.providers.cliproxy = cliproxyProvider;
+              models.providers = all-providers;
               fff = {
                 mode = "override";
                 enableHomeDirScanning = false;
