@@ -58,6 +58,8 @@
     user = config.repo.secrets.home-ops.users.forgejo;
     group = config.repo.secrets.home-ops.groups.forgejo;
   };
+  # Push webhooks to the moot VLAN, e.g. casey/skills -> thingstead's skills-sync.
+  services.forgejo.settings.webhook.ALLOWED_HOST_LIST = "external,${config.site.net.moot.subnet4}";
   modules.services.caddy.defaultRequestBodyMaxSize = "100MB";
   modules.services.caddy.edge = {
     certificateHosts = [
