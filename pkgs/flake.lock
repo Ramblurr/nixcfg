@@ -1,0 +1,100 @@
+{
+  "nodes": {
+    "clojure-nix-locker": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767628431,
+        "narHash": "sha256-9JHKdlgDspXbBTE9b+bYYBMfXzBwHMUymY9DUHIvZrQ=",
+        "owner": "bevuta",
+        "repo": "clojure-nix-locker",
+        "rev": "d706ad2804bf8237a61171757b44783042bc9fee",
+        "type": "github"
+      },
+      "original": {
+        "owner": "bevuta",
+        "repo": "clojure-nix-locker",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1793181660,
+        "narHash": "sha256-Qr52IaHqXohzrlOfewpPPswi0mr1keCxwrE34e0I7a4=",
+        "owner": "ramblurr",
+        "repo": "nixpkgs",
+        "rev": "74271f8fa84feaf73924d731547f10dd370e4e86",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ramblurr",
+        "ref": "channel/personal-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-mine": {
+      "locked": {
+        "lastModified": 1793894484,
+        "narHash": "sha256-WQT0sG68fx5Q4JoybyyQv3gN/xO18EayDVo8NSGELxQ=",
+        "ref": "channel/personal-master",
+        "rev": "e6b71e5ec90c0fc9c72bed646266e49da91ece31",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/ramblurr/nixpkgs"
+      },
+      "original": {
+        "ref": "channel/personal-master",
+        "shallow": true,
+        "type": "git",
+        "url": "https://github.com/ramblurr/nixpkgs"
+      }
+    },
+    "root": {
+      "inputs": {
+        "clojure-nix-locker": "clojure-nix-locker",
+        "nixpkgs": "nixpkgs",
+        "nixpkgs-mine": "nixpkgs-mine"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
