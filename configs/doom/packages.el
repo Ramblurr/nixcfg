@@ -120,7 +120,10 @@
   (package! consult-flyspell)
   (package! magit-difftastic
     :recipe (:host github :repo "rschmukler/magit-difftastic")
-    :pin "0e9fd361b77bcd40ac76ab18b7afd5c3a9331194"))
+    :pin "0e9fd361b77bcd40ac76ab18b7afd5c3a9331194")
+  (package! markdown-modern
+    :recipe (:host github :repo "rjprins/markdown-modern" :files ("lisp/*.el"))
+    :pin "a561fdc96da4f969e7d978ed93425021270ffe07"))
 
 (package! org-modern-indent
   :recipe (:host github :repo "jdtsmith/org-modern-indent")
