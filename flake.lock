@@ -2048,15 +2048,16 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1794721493,
-        "narHash": "sha256-7extb+ld6xPCzcVuhVdvcvGPLu/qtDRrhFJmH68jXfM=",
-        "owner": "numtide",
+        "lastModified": 1794769771,
+        "narHash": "sha256-fIfILMS79SAqbWHCc6NE9LlObvxbopWZXPsKx8riV1k=",
+        "owner": "Ramblurr",
         "repo": "llm-agents.nix",
-        "rev": "aeb1afe1529c5dc7dcdc54d644a8aed212d99dd0",
+        "rev": "9b278780a681e2c12b41b05def5a2310a24594bb",
         "type": "github"
       },
       "original": {
-        "owner": "numtide",
+        "owner": "Ramblurr",
+        "ref": "t3code-nix-headless-shell",
         "repo": "llm-agents.nix",
         "type": "github"
       }

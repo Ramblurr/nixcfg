@@ -41,7 +41,9 @@
     libro-fm-cli.inputs.devshell.follows = "devshell";
     libro-fm-cli.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use llm-agents' nixpkgs for their cache
-    llm-agents.url = "github:numtide/llm-agents.nix";
+    # TODO: return to github:numtide/llm-agents.nix once t3code uses nixpkgs' headless shell
+    # ref: https://github.com/numtide/llm-agents.nix/pull/12351
+    llm-agents.url = "github:Ramblurr/llm-agents.nix/t3code-nix-headless-shell";
     microvm.url = "github:microvm-nix/microvm.nix";
     microvm.inputs.nixpkgs.follows = "nixpkgs";
     nad-api.url = "github:ramblurr/nad-api";
