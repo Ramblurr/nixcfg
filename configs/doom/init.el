@@ -168,7 +168,7 @@
     ;;nim               ; python + lisp at the speed of c
     nix               ; I hereby declare "nix geht mehr!"
     ;;ocaml             ; an objective camel
-    (org +roam +dragndrop +gnuplot +pretty +pandoc +pomodoro)               ; organize your plain life in plain text
+    (org +roam +dragndrop +gnuplot +pretty +pandoc)             ; organize your plain life in plain text
     ;;php               ; perl's insecure younger brother
     ;;plantuml          ; diagrams for confusing people more
     ;;graphviz          ; diagrams for confusing yourself even more
@@ -182,6 +182,7 @@
     ;;(ruby +rails)     ; 1.step {|i| p "Ruby is #{i.even? ? 'love' : 'life'}"}
     (rust +lsp)       ; Fe2O3.unwrap().unwrap().unwrap().unwrap()
     ;;scala             ; java, but good
+    (scad +lsp)       ; OpenSCAD models via openscad-lsp
     ;;(scheme +guile)   ; a fully conniving family of lisps
     (sh +lsp)                ; she sells {ba,z,fi}sh shells on the C xor
     ;;sml

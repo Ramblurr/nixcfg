@@ -263,6 +263,16 @@
           ("\\.pp$" . pollen-mode)
           ("\\.pmd$" . pollen-mode)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; markdown-modern
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Grammars (markdown, markdown-inline) come from Nix treesit-grammars, so
+;; markdown-modern-install-grammars is not needed. User config runs after
+;; Doom's :lang markdown, so this :mode entry wins over markdown-mode and
+;; gfm-mode for README.md.
+(use-package! markdown-modern
+  :mode ("\\.md\\'" . markdown-modern-mode))
+
 ;; Disabled during the NDEU canary.
 (comment
 (use-package! clojure-prose-mode
