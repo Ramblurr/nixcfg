@@ -19,12 +19,12 @@
 
   ;; - My primary REPL setup for development
   :repl/dev
-  {:extra-deps {djblue/portal                 {:mvn/version "0.68.1"}
+  {:extra-deps {djblue/portal                 {:mvn/version "0.69.2"}
                 clj-commons/clj-yaml          {:mvn/version "1.0.30"} ; portal yaml support (optional)
                 io.github.tonsky/clj-reload   {:mvn/version "1.0.0"}
                 nrepl/nrepl                   {:mvn/version "1.8.0"}
-                cider/cider-nrepl             {:mvn/version "0.63.1"}
-                refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}
+                cider/cider-nrepl             {:mvn/version "0.64.1"}
+                refactor-nrepl/refactor-nrepl {:mvn/version "3.16.0"}
                 com.github.gnl/playback       {:mvn/version "0.5.4"}
                 jedi-time/jedi-time           {:mvn/version "0.2.1"}
                 lambdaisland/ansi             {:mvn/version "0.2.37"}
@@ -33,7 +33,7 @@
                                                :git/tag "v0.1"
                                                :git/url "https://github.com/Datomic/dev.datafy.git"}
                 etaoin/etaoin                 {:mvn/version "1.1.43"}
-                my/dev-repl                   {:git/sha "f053984effdc6c78b1d1ce8a8878b00639854db8"
+                my/dev-repl                   {:git/sha "18ab64bec161618ca6d4f3d3ac432b42467dcf6a"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
@@ -42,15 +42,15 @@
   ;; - A secondary REPL setup for development, with less dependencies
   :repl/lite
   {:extra-deps {nrepl/nrepl                   {:mvn/version "1.8.0"}
-                cider/cider-nrepl             {:mvn/version "0.63.1"}
-                refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}
-                my/dev-repl                   {:git/sha "f053984effdc6c78b1d1ce8a8878b00639854db8"
+                cider/cider-nrepl             {:mvn/version "0.64.1"}
+                refactor-nrepl/refactor-nrepl {:mvn/version "3.16.0"}
+                my/dev-repl                   {:git/sha "18ab64bec161618ca6d4f3d3ac432b42467dcf6a"
                                                :git/url "https://github.com/Ramblurr/clojure-dev-repl.git"}}
    :main-opts  ["-m" "ol.dev.repl"]}
 
   ;; -------------------------------------
 
-  :repl/bench {:extra-deps {org.hugoduncan/criterium {:mvn/version "0.5.245-ALPHA"}}
+  :repl/bench {:extra-deps {org.hugoduncan/criterium {:mvn/version "0.5.253-ALPHA"}}
                :jvm-opts ["-XX:+UnlockExperimentalVMOptions"
                           "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}
 
@@ -59,8 +59,8 @@
   :repl/clerk
   {:extra-deps {io.github.nextjournal/clerk   {:mvn/version "0.18.1158"}
                 nrepl/nrepl                   {:mvn/version "1.8.0"}
-                cider/cider-nrepl             {:mvn/version "0.63.1"}
-                refactor-nrepl/refactor-nrepl {:mvn/version "3.14.0"}}
+                cider/cider-nrepl             {:mvn/version "0.64.1"}
+                refactor-nrepl/refactor-nrepl {:mvn/version "3.16.0"}}
    :main-opts  ["--eval" "(require '[nextjournal.clerk])(nextjournal.clerk/show! 'nextjournal.clerk.tap)(nextjournal.clerk/serve! {:browse? true})"
                 "-m" "nrepl.cmdline"
                 "--middleware" "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"
@@ -72,7 +72,7 @@
 
   :portal/cli
   {:main-opts  ["-m" "portal.main"]
-   :extra-deps {djblue/portal        {:mvn/version "0.68.1"}
+   :extra-deps {djblue/portal        {:mvn/version "0.69.2"}
                 clj-commons/clj-yaml {:mvn/version "1.0.30"}}}
 
   ;; -------------------------------------
