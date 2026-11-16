@@ -66,6 +66,17 @@ in
         default = "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080";
         description = "1Password Connect endpoint used with `tokenFile`.";
       };
+      package = lib.mkOption {
+        type = lib.types.package;
+        readOnly = true;
+        default = pkgs.writeShellScriptBin "op-read-llm" ''
+          OP_CONNECT_HOST=${lib.escapeShellArg cfg.onepasswordConnect.host} \
+          OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg cfg.onepasswordConnect.tokenFile})" \
+            exec ${lib.getExe pkgs._1password-cli} read "$@"
+        '';
+        defaultText = lib.literalMD "`op-read-llm`, built from `host` and `tokenFile`";
+        description = "`op-read-llm`, which runs `op read` through Connect with `tokenFile`.";
+      };
     };
   };
   config = lib.mkIf cfg.enable {
