@@ -14,6 +14,18 @@
     "--snat-subnet-routes=true"
     "--ssh=true"
   ];
+  # The tunnel MTU is below the LAN's. Clamp the MSS of TCP forwarded into it,
+  # so connections through the subnet routes do not depend on path MTU
+  # discovery (ICMP) getting through. plato carries the same rule.
+  networking.nftables.tables.mss-clamp = {
+    family = "inet";
+    content = ''
+      chain forward {
+        type filter hook forward priority mangle; policy accept;
+        oifname "tailscale0" tcp flags syn tcp option maxseg size set rt mtu
+      }
+    '';
+  };
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = true;
     "net.ipv4.conf.all.forwarding" = true;
