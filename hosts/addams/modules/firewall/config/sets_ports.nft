@@ -9,7 +9,15 @@ set tailscale_dest_ports {
   elements = {
     3478,
     1900,
-    5351
+    5351,
+    40000 # peer relay, see tailscale_relay_ports
+  }
+}
+# Tailscale peer relay on addams (services.tailscale.extraSetFlags)
+set tailscale_relay_ports {
+  type inet_service
+  elements = {
+    40000
   }
 }
 

@@ -44,6 +44,14 @@ in
   ];
 
   services.tailscale.enable = true;
+  # Peer relay: LAN nodes behind addams' randomized masquerade cannot
+  # hole-punch to port-restricted remote NATs, so they relay through addams,
+  # which holds the WAN address directly. tailscale_relay_ports in the
+  # firewall must match this port.
+  services.tailscale.extraSetFlags = [
+    "--relay-server-port=40000"
+    "--relay-server-static-endpoints=${builtins.head (builtins.split "/" config.repo.secrets.local.wan0.cidr)}:40000"
+  ];
 
   ############################
   ## My Custom Base Modules ##

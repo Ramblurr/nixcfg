@@ -192,6 +192,12 @@ let
           comment = "allow wireguard2";
           extra = [ "counter" ];
         }
+        {
+          destPort = "tailscale_relay_ports";
+          proto = [ "udp" ];
+          comment = "allow tailscale peer relay";
+          extra = [ "counter" ];
+        }
       ];
     };
 
