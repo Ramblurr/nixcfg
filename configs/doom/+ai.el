@@ -121,6 +121,15 @@
             (lambda (e) (user-error "Error setting gptel org title: %s" e)))
           t)))))
 
+(defun my/op-key (ref)
+  "Return a function that reads 1Password REF on first use and caches it."
+  (let (key)
+    (lambda ()
+      (or key
+          (setq key (car (if (executable-find "op-read-llm")
+                             (process-lines "op-read-llm" ref)
+                           (process-lines "op" "read" ref))))))))
+
 (use-package! gptel
   :init
   (setopt
@@ -133,10 +142,10 @@
   :config
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
   (setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
-  (setq my/gptel-backend--anthropic (gptel-make-anthropic "Claude" :stream t :key (auth-source-pick-first-password :host "api.anthropic.com")))
-  (setq my/gptel-backend--gemini (gptel-make-gemini "Gemini" :stream t :key (auth-source-pick-first-password :host "generativelanguage.googleapis.com")))
-  (setq my/gptel-backend--openai (gptel-make-openai "OpenAI" :stream t :key (auth-source-pick-first-password :host "api.openai.com")))
-  (setq my/gptel-backend--kagi (gptel-make-kagi "Kagi" :key (auth-source-pick-first-password :host "kagi.com")))
+  (setq my/gptel-backend--anthropic (gptel-make-anthropic "Claude" :stream t :key (my/op-key "op://LLM/Anthropic-quine/credential")))
+  (setq my/gptel-backend--gemini (gptel-make-gemini "Gemini" :stream t :key (my/op-key "op://LLM/GoogleAIStudio-quine/credential")))
+  (setq my/gptel-backend--openai (gptel-make-openai "OpenAI" :stream t :key (my/op-key "op://LLM/OpenAI-quine/credential")))
+  (setq my/gptel-backend--kagi (gptel-make-kagi "Kagi" :key (my/op-key "op://LLM/Kagi/credential")))
   (defvar my/gptel-backends-list
     `(("Anthropic"           . ,my/gptel-backend--anthropic)
        ("Gemini"              . ,my/gptel-backend--gemini)

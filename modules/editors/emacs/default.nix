@@ -64,11 +64,6 @@ in
           startWithUserSession = "graphical";
         };
 
-        sops.secrets.authinfo = {
-          mode = "0400";
-          path = ".authinfo";
-        };
-
         xdg.configFile.doom.source = config.lib.file.mkOutOfStoreSymlink cfg.localDoomConfigRepo;
 
         home.packages = with pkgs; [
