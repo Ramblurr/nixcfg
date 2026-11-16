@@ -28,8 +28,13 @@ OpenRouter uses `api-keys.openai-compatibility`, with its upstream key read from
 settings. Quine exposes `google/gemini-4-carbon`, `z-ai/glm-5.3-flash`,
 `deepseek/deepseek-v4.1-flash-1017`, `moonshotai/kimi-k3.1-pro`, and `tencent/hy4`.
 Pi discovers them under `cliproxy`, using its OpenRouter catalog for
-protocol, limits, and metered prices. ECA's separate nono OpenRouter route remains
-configured independently.
+protocol, limits, and metered prices. ECA's `openrouter` provider uses the same five
+models through `nono-eca`. Nono forwards its OpenRouter route to CLIProxyAPI with
+the proxy client credential, so ECA never retrieves the upstream OpenRouter key.
+The wrapper preserves unrelated `ECA_CONFIG` settings and configures the provider
+to use nono's local URL and temporary token. Restart an existing ECA server after
+changing this wrapper. Global or project ECA provider settings can override its
+environment defaults.
 
 Claude Code and Codex currently keep proxy client keys in their local settings.
 Rotating only the server key breaks them: update clients in the same operation.

@@ -34,9 +34,11 @@ let
 
   providerCatalog = {
     openrouter.route = {
-      upstream = "https://openrouter.ai/api/v1";
-      credential_key = "op://LLM/OpenRouter/credential";
+      upstream = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317/v1";
+      credential_key = "op://LLM/CLIProxyAPI/credential";
       env_var = "OPENROUTER_API_KEY";
+      inject_header = "Authorization";
+      credential_format = "Bearer {}";
     };
 
     openai.route = {
@@ -234,7 +236,33 @@ let
     };
   };
 
+  ecaProxyConfig = {
+    providers.openrouter = {
+      api = "openai-chat";
+      url = "\${env:OPENROUTER_BASE_URL}";
+      key = "\${env:OPENROUTER_API_KEY}";
+      models = lib.genAttrs [
+        "google/gemini-4-carbon"
+        "z-ai/glm-5.3-flash"
+        "deepseek/deepseek-v4.1-flash-1017"
+        "moonshotai/kimi-k3.1-pro"
+        "tencent/hy4"
+      ] (_: { });
+    };
+  };
   nono-eca = pkgs.writeShellScriptBin "nono-eca" ''
+    set -euo pipefail
+    # Keep unrelated caller settings while routing OpenRouter through nono's credential proxy.
+    existing_config="''${ECA_CONFIG:-}"
+    if [ -z "$existing_config" ]; then existing_config='{}'; fi
+    ECA_CONFIG=$(printf '%s' "$existing_config" | ${lib.getExe pkgs.jq} \
+      --argjson routing ${lib.escapeShellArg (builtins.toJSON ecaProxyConfig)} '. * $routing')
+    export ECA_CONFIG
+    ${lib.optionalString (cfg.onepasswordConnect.tokenFile != null) ''
+      export OP_CONNECT_HOST=${lib.escapeShellArg cfg.onepasswordConnect.host}
+      OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg cfg.onepasswordConnect.tokenFile})"
+      export OP_CONNECT_TOKEN
+    ''}
     exec ${lib.getExe llmAgents.nono} --silent run \
       --profile eca \
       --allow-cwd \
