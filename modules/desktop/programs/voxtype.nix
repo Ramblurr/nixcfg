@@ -89,6 +89,11 @@ in
       default = [ ];
       description = "Extra global arguments for the Voxtype daemon. Do not pass credentials here.";
     };
+    credentialUnits = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "User units that deliver credentials; required and ordered before the daemon.";
+    };
   };
   config = lib.mkIf cfg.enable {
     myhm = {
@@ -105,7 +110,9 @@ in
               "graphical-session.target"
               "pipewire.service"
               "pipewire-pulse.service"
-            ];
+            ]
+            ++ cfg.credentialUnits;
+            Requires = cfg.credentialUnits;
             PartOf = [ "graphical-session.target" ];
           };
           Service = {
