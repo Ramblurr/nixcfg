@@ -25,7 +25,7 @@ layout, and where the migrated state lives.
 | `fast` | SSD mirror, ZFS native encryption; root pool |
 | NixOS root | the `modules.boot.zfs` dataset layout on the root pool |
 | ESPs | partition 1 of each SSD, GRUB mirrored |
-| Old TrueNAS boot disk | SATA DOM, unused; still holds TrueNAS |
+| SATA DOM | 16 GB, wiped and unused (the former TrueNAS boot disk) |
 
 Pool keys are as TrueNAS made them (`keyformat=hex`, `keylocation=prompt`)
 and are backed up in 1Password. NixOS loads them with explicit
@@ -72,5 +72,4 @@ what went wrong and how it was fixed. The installer, its scripts and the
 runbook were removed afterwards; they are in git history up to commit
 `54db80cc`.
 
-Left from TrueNAS: the SATA DOM still holds the TrueNAS boot pool, and
-`dynamic_gang_header` is not enabled on `fast`.
+Left from TrueNAS: `dynamic_gang_header` is not enabled on `fast`.
