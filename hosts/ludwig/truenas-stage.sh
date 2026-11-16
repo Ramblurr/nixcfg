@@ -15,9 +15,8 @@ esp=/dev/gptid/d4fb2736-d81c-11ec-bff8-d05099fb0f82
 ssh_dir=/usr/local/etc/ssh
 router_key=/root/.ssh/id_rsa
 router_known_hosts=/root/.ssh/known_hosts
-ts_state=/mnt/fast/iocage/jails/tailscale-ludwig/root/var/db/tailscale/tailscaled.state
-# Optional fallback: a tagged, pre-approved Tailscale auth key, used only if
-# the reused node state is rejected.
+# A tagged, pre-approved Tailscale auth key; the installer and the NixOS host
+# log in with it under their own names.
 ts_authkey=/root/ludwig-ts-authkey
 
 die() {
@@ -33,16 +32,14 @@ check_sources() {
 	done
 	[ -s "$router_key" ] || die "missing $router_key (UPS router key)"
 	[ -s "$router_known_hosts" ] || die "missing $router_known_hosts"
-	[ -s "$ts_state" ] || die "missing $ts_state"
+	[ -s "$ts_authkey" ] || die "missing $ts_authkey (Tailscale auth key)"
 	for p in fast tank; do
 		n=$(midclt call -job pool.dataset.export_key "$p" | tr -d '"\n' | wc -c | tr -d ' ')
 		[ "$n" -eq 64 ] || die "exported $p key is $n bytes, expected 64"
 	done
 	n=$(pdbedit -L -w | wc -l | tr -d ' ')
 	[ "$n" -gt 0 ] || die "pdbedit exported no SMB accounts"
-	fallback="no fallback auth key"
-	[ -s "$ts_authkey" ] && fallback="fallback auth key"
-	echo "sources OK: pool keys, host keys, router key, $n SMB accounts, tailscale state, $fallback"
+	echo "sources OK: pool keys, host keys, router key, $n SMB accounts, tailscale auth key"
 }
 
 with_esp() {
@@ -77,10 +74,7 @@ stage() {
 	cp "$router_key" "$m/ups/router_key"
 	cp "$router_known_hosts" "$m/ups/known_hosts"
 	pdbedit -L -w >"$m/smbpasswd"
-	cp "$ts_state" "$bundle/tailscaled.state"
-	if [ -s "$ts_authkey" ]; then
-		cp "$ts_authkey" "$bundle/authkey"
-	fi
+	cp "$ts_authkey" "$bundle/authkey"
 	if [ "$mode" = --auto ]; then
 		: >"$bundle/autoinstall"
 	fi

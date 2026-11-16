@@ -2,8 +2,11 @@
 
 ludwig is an iXsystems TrueNAS Mini at a remote site (hardware in
 `hosts/inventory.nix`). It pulls mali's zrepl source, serves SMB and NFS to
-the remote LAN, runs AdGuard Home for that LAN, and is the remote LAN's
-Tailscale subnet router and exit node.
+the remote LAN, runs AdGuard Home for that LAN, and is the remote site's
+Tailscale exit node. plato is the LAN's subnet router.
+
+[LESSONS.md](./LESSONS.md) lists what went wrong during the 2026-11-16
+cutover and how it was fixed.
 
 It ran TrueNAS CORE 13.1 until the migration described below. Site-specific
 data (accounts, shares, exports, the mali address) lives in
@@ -45,16 +48,18 @@ rollback option.
 
 ludwig is only reachable over Tailscale, two independent ways:
 
-1. Its own node: the `tailscale-ludwig` identity (`100.79.17.127`), reused by
-   the installer and the installed host from the jail's state. If that state
-   is ever rejected, a staged fallback auth key logs in instead, and
-   `tailscale-watchdog` restarts `tailscaled` while it is not connected.
+1. Its own node, `ludwig` (MagicDNS `ludwig-1`, since 2026-11-16). The
+   installer and the host log in with the staged, tagged auth key, and
+   `tailscale-watchdog` restarts `tailscaled` while it is not connected. The
+   old jail node `tailscale-ludwig` is offline; TrueNAS would use it again on
+   a rollback.
 2. plato's subnet route for the LAN: SSH to the LAN address works even if
    ludwig's own node is down, as long as plato is on. The installer and the
-   host take that address on whichever port has a cable.
+   host take that address on whichever port has a cable. ludwig must not
+   advertise this route itself; see `tailscaleFlags` in `site.nix`.
 
-Both run with `--accept-routes=false`: plato advertises ludwig's own LAN, and
-accepting that route would send LAN traffic through Tailscale.
+The path through plato has an MTU of 1280. If SSH stalls right after the key
+exchange starts, add `-o KexAlgorithms=curve25519-sha256`.
 
 The commands below use one destination, through plato's route:
 
@@ -109,10 +114,9 @@ hand with `ludwig-install <step>`.
    ssh "$LUDWIG_SSH" "midclt call -job pool.dataset.export_key tank" | tr -d '"\n' | wl-copy --paste-once
    ```
 
-4. Optional but recommended: create a fallback Tailscale auth key (tagged
-   with the jail's tag, pre-approved, reusable, 90 days) and store it on TrueNAS as
-   `/root/ludwig-ts-authkey`. Apply `nixcfg-private/tailscale/policy.hujson`,
-   whose `autoApprovers` approve the remote LAN route for that tag.
+4. Create a Tailscale auth key (tag `tag:ayoub`, pre-approved, reusable)
+   and store it on TrueNAS as `/root/ludwig-ts-authkey`. Staging refuses to
+   run without it: it is how the installer and the host join the tailnet.
 
 ### 2. Write the installer stick (from quine)
 
@@ -154,9 +158,9 @@ ssh "$LUDWIG_SSH" sh /tmp/truenas-stage.sh --auto    # stage and arm
 Without `--auto` the installer boots, joins Tailscale and waits for you to
 run the steps by hand. `--wipe` removes a staged bundle.
 
-The installer and the final system reuse the jail's Tailscale node state:
-same tailnet address, tag and approved subnet route, so the remote LAN and
-the BMC stay reachable throughout.
+The installer and the final system each log in with the auth key as new
+nodes (`ludwig-installer`, `ludwig`). plato's subnet route keeps the remote
+LAN and the BMC reachable throughout.
 
 ### 4. Cut over (HUMAN)
 
@@ -170,8 +174,8 @@ shutdown -r now
 
 The installer then runs on its own:
 
-1. It joins Tailscale with the jail state and waits for the grace period in
-   `installer.nix`. To abort, SSH to the reused node (or `$LUDWIG_SSH`
+1. It joins Tailscale with the auth key and waits for the grace period in
+   `installer.nix`. To abort, SSH to `ludwig-installer` (or `$LUDWIG_SSH`
    through plato) and run `systemctl stop ludwig-autoinstall`.
 2. `ludwig-install auto` runs every step in `install.sh`. Each step stops at
    the first unexpected state; the installer then stays up on Tailscale with

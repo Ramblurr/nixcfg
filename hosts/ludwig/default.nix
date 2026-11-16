@@ -55,8 +55,7 @@ in
       autoSnapshot.enable = false;
       extraPools = [ "tank" ];
     };
-    # Replaces the tailscale-ludwig jail and reuses its node state, so the
-    # tailnet address, tag and approved routes carry over.
+    # Replaces the tailscale-ludwig jail as the remote site's exit node.
     vpn.tailscale = {
       enable = true;
       useRoutingFeatures = "server";
@@ -75,10 +74,9 @@ in
   };
 
   services.tailscale = {
-    # Only used if the reused jail state is ever rejected; see install.sh seed.
+    # Tagged, pre-approved key seeded by install.sh; used whenever the node
+    # needs a login.
     authKeyFile = site.persist.tailscaleAuthKey;
-    # The jail accepted routes; on Linux a peer's route for this LAN would
-    # take over LAN traffic.
     extraSetFlags = site.tailscaleFlags ++ [ "--advertise-exit-node" ];
   };
 

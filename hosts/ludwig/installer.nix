@@ -10,8 +10,8 @@
 # own, so the remote site stays reachable while TrueNAS is down.
 #
 # truenas-stage.sh, run on TrueNAS, writes a bundle to the TrueNAS ESP: the
-# tailscale-ludwig jail state, the migration inputs and an optional
-# autoinstall marker. This image copies it into RAM at boot. With the marker
+# Tailscale auth key, the migration inputs and an optional autoinstall
+# marker. This image copies it into RAM at boot. With the marker
 # present, ludwig-autoinstall runs every step, wipes the bundle and reboots
 # into NixOS once. See README.md.
 let
@@ -125,9 +125,8 @@ in
     services.tailscale = {
       enable = true;
       useRoutingFeatures = "server";
-      # Only used when no jail state was provided; use a tagged auth key.
+      # A tagged, pre-approved auth key from the bundle.
       authKeyFile = "${seedDir}/authkey";
-      # Keeps the LAN, including the BMC, reachable while TrueNAS is down.
       extraSetFlags = site.tailscaleFlags;
     };
 
@@ -152,13 +151,10 @@ in
           echo "TrueNAS ESP not found; tailscale needs a manual login" >&2
           exit 0
         fi
-        install -d -m 0700 ${seedDir} /var/lib/tailscale
+        install -d -m 0700 ${seedDir}
         mnt=$(mktemp -d)
         mount -o ro ${truenasEsp} "$mnt"
         src="$mnt/${site.bundleDir}"
-        if [ -f "$src/tailscaled.state" ] && [ ! -e /var/lib/tailscale/tailscaled.state ]; then
-          install -m 0600 "$src/tailscaled.state" /var/lib/tailscale/tailscaled.state
-        fi
         if [ -f "$src/authkey" ]; then
           install -m 0600 "$src/authkey" ${seedDir}/authkey
         fi

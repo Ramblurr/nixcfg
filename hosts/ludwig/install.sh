@@ -103,7 +103,8 @@ cmd_preflight() {
   for f in ssh/ssh_host_ed25519_key ssh/ssh_host_rsa_key ssh/ssh_host_ecdsa_key ups/router_key ups/known_hosts smbpasswd; do
     [[ -s $INPUT/$f ]] || die "missing $INPUT/$f"
   done
-  [[ -s /var/lib/tailscale/tailscaled.state ]] || echo "WARNING: no tailscale state; the host will need a fresh login" >&2
+  # The installed host joins the tailnet with this key under its own name.
+  [[ -s $LUDWIG_SEED_AUTHKEY ]] || die "missing $LUDWIG_SEED_AUTHKEY (Tailscale auth key from the bundle)"
   info "pools visible for import:"
   zpool import | grep -E '^ +(pool|state):' || true
   info "BMC watchdog:"
@@ -217,16 +218,10 @@ cmd_seed() {
   install -m 0644 "$INPUT/ups/known_hosts" "$ups/known_hosts"
   install -d -m 0700 "$(dirname "/mnt$LUDWIG_SMBPASSWD")"
   install -m 0600 "$INPUT/smbpasswd" "/mnt$LUDWIG_SMBPASSWD"
-  if [[ -s /var/lib/tailscale/tailscaled.state ]]; then
-    install -d -m 0700 /mnt/persist/var/lib/tailscale
-    install -m 0600 /var/lib/tailscale/tailscaled.state /mnt/persist/var/lib/tailscale/tailscaled.state
-  fi
-  # Fallback login for the installed host if the reused state is ever rejected.
-  if [[ -s $LUDWIG_SEED_AUTHKEY ]]; then
-    install -d -m 0700 "$(dirname "/mnt$LUDWIG_TS_AUTHKEY")"
-    install -m 0600 "$LUDWIG_SEED_AUTHKEY" "/mnt$LUDWIG_TS_AUTHKEY"
-  fi
-  find /mnt/persist/etc /mnt/persist/var -maxdepth 3 | sort
+  # Not the installer's own node state: the host logs in under its own name.
+  install -d -m 0700 "$(dirname "/mnt$LUDWIG_TS_AUTHKEY")"
+  install -m 0600 "$LUDWIG_SEED_AUTHKEY" "/mnt$LUDWIG_TS_AUTHKEY"
+  find /mnt/persist/etc -maxdepth 2 | sort
 }
 
 cmd_install() {

@@ -14,10 +14,13 @@ rec {
     "9.9.9.9"
   ];
 
-  # The remote LAN stays reachable through this node, and no peer route may
-  # take over LAN traffic.
+  # plato is the LAN's subnet router. This node must not advertise the LAN:
+  # as primary it receives tailnet traffic for its own LAN address but
+  # replies through the site router, without SNAT, so the reply is lost.
+  # Accepting routes would let plato's route take over LAN traffic.
+  # `tailscale set` keeps prefs it is not given, so the empty value is needed.
   tailscaleFlags = [
-    "--advertise-routes=${lan.subnet}"
+    "--advertise-routes="
     "--accept-dns=false"
     "--accept-routes=false"
   ];

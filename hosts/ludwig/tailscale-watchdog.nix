@@ -5,10 +5,10 @@
   ...
 }:
 #
-# ludwig is remote and reachable only through its own Tailscale node, on both
-# the installer and the installed host. Restart tailscaled while it is not
-# connected, as the TrueNAS cron check did for the jail. An auth key, when one
-# was staged, is used only if the reused node state is rejected.
+# ludwig is remote; its own Tailscale node is one of its two ways in, on both
+# the installer and the installed host, which each log in with the staged
+# auth key. Restart tailscaled while it is not connected, as the TrueNAS cron
+# check did for the jail.
 let
   authKeyFile = config.services.tailscale.authKeyFile;
 in
@@ -16,6 +16,9 @@ in
   systemd.services.tailscaled-autoconnect.unitConfig.ConditionPathExists = lib.mkIf (
     authKeyFile != null
   ) authKeyFile;
+  # `tailscale up` refuses an auth key while older prefs are set; extraSetFlags
+  # reapplies ours afterwards.
+  services.tailscale.extraUpFlags = [ "--reset" ];
 
   systemd.services.tailscale-watchdog = {
     description = "Restart tailscaled while it is not connected";
@@ -31,7 +34,7 @@ in
       case "$state" in
       Running) exit 0 ;;
       NeedsLogin)
-        echo "tailscale needs a login; retrying the staged auth key if present"
+        echo "tailscale needs a login; retrying the staged auth key"
         systemctl restart tailscaled-autoconnect.service || true
         ;;
       *)
