@@ -77,7 +77,11 @@ in
     # Tagged, pre-approved key seeded by install.sh; used whenever the node
     # needs a login.
     authKeyFile = site.persist.tailscaleAuthKey;
-    extraSetFlags = site.tailscaleFlags ++ [ "--advertise-exit-node" ];
+    # Tailscale SSH, as on the other hosts; sshd still serves the LAN address.
+    extraSetFlags = site.tailscaleFlags ++ [
+      "--advertise-exit-node"
+      "--ssh"
+    ];
   };
 
   environment.systemPackages = [
