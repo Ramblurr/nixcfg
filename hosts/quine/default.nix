@@ -82,10 +82,6 @@ in
       [
         "user@${toString config.users.users.${username}.uid}.service"
       ];
-  sops.secrets.homeassistant-mqtt-password = {
-    owner = username;
-    mode = "0400";
-  };
   sops.secrets.onepassword-connect-llm-token = {
     owner = username;
     mode = "0400";
@@ -199,7 +195,8 @@ in
           mqtt.port = 1883;
           mqtt.tls.enable = false;
           mqtt.username = "quine";
-          mqtt.passwordFile = config.sops.secrets.homeassistant-mqtt-password.path;
+          mqtt.passwordFile = "${credentialDir}/homeassistant-mqtt-password";
+          credentialUnits = [ credentialUnit ];
           shutdown.enable = false;
         };
         hacompanion = {
@@ -531,9 +528,11 @@ in
           read=${lib.getExe config.modules.dev.llms.onepasswordConnect.package}
           mistral=$($read op://LLM/Mistral-quine/credential)
           hass=$($read op://home-ops-prod/vmxwbsjwa6ziohzyg63xfbveai/credential)
+          mqtt=$($read op://home-ops-prod/ln3ygj3s5aeexoma6trqfdgbkq/password)
           ${pkgs.coreutils}/bin/mkdir -p ${credentialDir}
           printf 'VOXTYPE_WHISPER_API_KEY=%s\n' "$mistral" > ${credentialDir}/voxtype.env
           printf 'HASS_TOKEN=%s\nHASS_DEVICE_NAME=quine\n' "$hass" > ${credentialDir}/hacompanion.env
+          printf '%s' "$mqtt" > ${credentialDir}/homeassistant-mqtt-password
         '';
         ExecStopPost = "${pkgs.coreutils}/bin/rm -rf ${credentialDir}";
       };
