@@ -10,17 +10,13 @@ let
   cfg = config.modules.dev.llms;
   connect = cfg.onepasswordConnect;
   # Reads LLM-vault keys through Connect so agents start without desktop approval.
-  opRead =
-    if connect.tokenFile == null then
-      "op read"
-    else
-      toString (
-        pkgs.writeShellScript "op-read-llm" ''
-          OP_CONNECT_HOST=${lib.escapeShellArg connect.host} \
-          OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg connect.tokenFile})" \
-            exec ${lib.getExe pkgs._1password-cli} read "$@"
-        ''
-      );
+  # Also on PATH as `op-read-llm` for hand-written configs such as pi-speak.json.
+  opReadLlm = pkgs.writeShellScriptBin "op-read-llm" ''
+    OP_CONNECT_HOST=${lib.escapeShellArg connect.host} \
+    OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg connect.tokenFile})" \
+      exec ${lib.getExe pkgs._1password-cli} read "$@"
+  '';
+  opRead = if connect.tokenFile == null then "op read" else lib.getExe opReadLlm;
 in
 {
   config = lib.mkIf cfg.enable {
@@ -43,6 +39,8 @@ in
       in
       {
         imports = [ ./pi-nix.nix ];
+
+        home.packages = lib.optional (connect.tokenFile != null) opReadLlm;
 
         programs.pi = {
           enable = true;
