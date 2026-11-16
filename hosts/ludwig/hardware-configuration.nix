@@ -29,9 +29,8 @@ let
   initrdKey = "/etc/zfs-keys/${rootPool}.key";
   # The TrueNAS altroot.
   altroot = "/mnt";
-  # Pool keys live on the encrypted root pool; install.sh places them.
-  # TrueNAS loaded them from its config database, keylocation stays "prompt"
-  # so the pools remain importable by TrueNAS for rollback.
+  # The pools keep the TrueNAS key setup (keylocation "prompt"); the key
+  # files live on the encrypted root pool.
   loadKey = pool: keyFile: ''
     if [ "$(${zfs} get -H -o value keystatus ${pool})" != available ]; then
       ${zfs} load-key -L file://${keyFile} ${pool}
@@ -92,11 +91,9 @@ in
     };
   };
 
-  # Never change pool properties: TrueNAS must find both pools exactly as it
-  # left them, or a fallback boot cannot start its jails, Tailscale included.
-  # A temporary altroot gives tank its TrueNAS paths instead; the module's
-  # own import then finds the pool imported. The root pool's old TrueNAS
-  # datasets (the iocage jails) mount at their stored mountpoints, unused.
+  # tank's stored mountpoints are relative to the TrueNAS altroot. Importing
+  # it with the same altroot keeps the paths shares, exports and clients use;
+  # the module's own import then finds the pool imported.
   systemd.services.zfs-import-tank = {
     preStart = ''
       for _ in $(seq 1 60); do

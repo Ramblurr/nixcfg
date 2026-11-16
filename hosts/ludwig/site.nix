@@ -1,4 +1,4 @@
-# Facts shared by the ludwig host, its installer and their scripts.
+# Facts shared by the ludwig host's modules.
 rec {
   lan = {
     interface = "lan0";
@@ -25,7 +25,7 @@ rec {
     "--accept-routes=false"
   ];
 
-  # TrueNAS kern.hostid, recorded in the pool labels.
+  # The former TrueNAS kern.hostid, recorded in the pool labels.
   hostId = "ac91e159";
   rootPool = "fast";
   # Mount point to dataset under <rootPool>/encrypted: the modules.boot.zfs
@@ -36,8 +36,8 @@ rec {
     "/home" = "local/home";
     "/persist" = "safe/persist";
   };
-  # One ESP per root pool SSD, in the order of install.sh's ESP_UUIDS. GRUB
-  # mirrors to every one; only the first is required at boot.
+  # One ESP per root pool SSD. GRUB mirrors to every one; only the first is
+  # required at boot.
   esps = [
     {
       mountPoint = "/boot";
@@ -48,16 +48,12 @@ rec {
       label = "ludwig-esp1";
     }
   ];
-  truenasEspUuid = "d4fb2736-d81c-11ec-bff8-d05099fb0f82";
-  # Directory on the TrueNAS ESP that truenas-stage.sh writes.
-  bundleDir = "ludwig-installer";
 
-  # Where install.sh seeds the migrated state and the host reads it.
+  # State migrated from TrueNAS, outside the sops file.
   persist = {
     zfsKeys = "/persist/etc/zfs-keys";
     sshHostKeys = "/persist/etc/ssh";
     ups = "/persist/etc/ups";
-    smbpasswd = "/persist/etc/ludwig-migration/smbpasswd";
     tailscaleAuthKey = "/persist/etc/tailscale/authkey";
   };
 

@@ -74,8 +74,7 @@ in
   };
 
   services.tailscale = {
-    # Tagged, pre-approved key seeded by install.sh; used whenever the node
-    # needs a login.
+    # Absent in normal operation; see tailscale-watchdog.nix.
     authKeyFile = site.persist.tailscaleAuthKey;
     # Tailscale SSH, as on the other hosts; sshd still serves the LAN address.
     extraSetFlags = site.tailscaleFlags ++ [
@@ -85,7 +84,6 @@ in
   };
 
   environment.systemPackages = [
-    (pkgs.callPackage ./ludwig-boot.nix { })
     pkgs.efibootmgr
     pkgs.ipmitool
     pkgs.lm_sensors

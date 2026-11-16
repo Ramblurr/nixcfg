@@ -5,10 +5,9 @@
   ...
 }:
 #
-# ludwig is remote; its own Tailscale node is one of its two ways in, on both
-# the installer and the installed host, which each log in with the staged
-# auth key. Restart tailscaled while it is not connected, as the TrueNAS cron
-# check did for the jail.
+# ludwig is remote; its own Tailscale node is one of its two ways in. Restart
+# tailscaled while it is not connected. If the node ever needs a new login,
+# place a tagged auth key at authKeyFile.
 let
   authKeyFile = config.services.tailscale.authKeyFile;
 in

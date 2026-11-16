@@ -5,6 +5,10 @@ unattended installer, and what changed because of it. The operation ledger
 is `.scratch-org/ocp/20261116T115539Z-ludwig-nixos-cutover.org` (local).
 Read this before the next unattended install of any remote host.
 
+The installer and its scripts (`installer.nix`, `install.sh`,
+`truenas-stage.sh`, `flash-usb.sh`, `ludwig-boot.sh`) were removed after the
+cutover; they are in git history up to commit `54db80cc`.
+
 ## Tailscale
 
 1. Reused node state from another OS did not log in. The FreeBSD jail's
