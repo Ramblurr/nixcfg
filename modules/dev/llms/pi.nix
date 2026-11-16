@@ -71,7 +71,6 @@ in
           typesafe.apiKey = "!${opRead} 'op://LLM/Jev-quine/credential'";
           subq.apiKey = "!${opRead} 'op://LLM/Subq-quine/credential'";
           openai.apiKey = "!${opRead} 'op://LLM/OpenAI-quine/credential'";
-          openrouter.apiKey = "!${opRead} 'op://LLM/OpenRouter/credential'";
           cliproxy = cliproxyProvider;
         };
       in

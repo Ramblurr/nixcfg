@@ -21,7 +21,17 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 8317;
-      description = "Loopback port the proxy listens on. Must match `port` in the unmanaged config.yaml.";
+      description = "Loopback port the proxy listens on.";
+    };
+    settings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      description = "CLIProxyAPI settings. Exact op:// strings are resolved at service startup; never put secret values here.";
+    };
+    secretFiles = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "Runtime file overrides for 1Password references unavailable through Connect.";
     };
     tailscaleServePort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
@@ -52,9 +62,26 @@ in
     };
 
     myhm =
-      hm:
+      _hm:
       let
-        configFile = "${hm.config.xdg.configHome}/cliproxyapi/config.yaml";
+        configFile = "%t/cliproxyapi/config.yaml";
+        connect = config.modules.dev.llms.onepasswordConnect;
+        reader = if connect.tokenFile == null then desktopReader else connect.package;
+        desktopReader = pkgs.writeShellScriptBin "op-read-cliproxy" ''
+          exec ${lib.getExe pkgs._1password-cli} read "$@"
+        '';
+        template = pkgs.writeText "cliproxyapi-template.json" (
+          builtins.toJSON {
+            inherit (cfg) secretFiles;
+            settings = lib.recursiveUpdate {
+              config-version = 8;
+              server = {
+                host = "127.0.0.1";
+                inherit (cfg) port;
+              };
+            } cfg.settings;
+          }
+        );
       in
       {
         home.packages = [ cfg.package ];
@@ -63,9 +90,12 @@ in
           Unit = {
             Description = "CLIProxyAPI";
             After = [ "network.target" ];
-            ConditionPathExists = configFile;
           };
           Service = {
+            RuntimeDirectory = "cliproxyapi";
+            RuntimeDirectoryMode = "0700";
+            UMask = "0077";
+            ExecStartPre = "${lib.getExe pkgs.python3} ${./cliproxy-config.py} ${template} ${lib.getExe reader} ${configFile}";
             ExecStart = "${lib.getExe cfg.package} --config ${configFile}";
             Restart = "on-failure";
             RestartSec = 5;
