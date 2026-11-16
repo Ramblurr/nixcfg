@@ -76,7 +76,9 @@ Read this before the next unattended install of any remote host.
     quine to the remote LAN is 1280 and the post-quantum key exchange
     packets are larger. `-o KexAlgorithms=curve25519-sha256
     -o HostKeyAlgorithms=ssh-ed25519` works.
-    Open: MSS clamping on the route.
+    Fixed: both subnet routers, debord and plato, now clamp the MSS of TCP
+    forwarded into Tailscale, so it no longer depends on ICMP getting
+    through.
 
 11. FreeBSD `efibootmgr -c` creates entries inactive and first in
     BootOrder. Create with `-a`, then put the default back first.
