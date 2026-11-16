@@ -35,13 +35,13 @@ let
   providerCatalog = {
     openrouter.route = {
       upstream = "https://openrouter.ai/api/v1";
-      credential_key = "op://Private/OpenRouter/OPENROUTER_API_KEY";
+      credential_key = "op://LLM/OpenRouter/credential";
       env_var = "OPENROUTER_API_KEY";
     };
 
     openai.route = {
       upstream = "https://api.openai.com/v1";
-      credential_key = "op://Private/OpenAI API/OPENAI_API_KEY_quine";
+      credential_key = "op://LLM/OpenAI-quine/credential";
       env_var = "OPENAI_API_KEY";
       inject_header = "Authorization";
       credential_format = "Bearer {}";
@@ -49,7 +49,7 @@ let
 
     anthropic.route = {
       upstream = "https://api.anthropic.com";
-      credential_key = "op://Private/Anthropic/api-key-quine";
+      credential_key = "op://LLM/Anthropic-quine/credential";
       env_var = "ANTHROPIC_API_KEY";
       inject_header = "x-api-key";
       credential_format = "{}";
@@ -58,19 +58,19 @@ let
     gemini = {
       route = {
         upstream = "https://generativelanguage.googleapis.com";
-        credential_key = "op://Private/Google AI Studio/api-key-quine";
+        credential_key = "op://LLM/GoogleAIStudio-quine/credential";
         env_var = "GEMINI_API_KEY";
         inject_header = "x-goog-api-key";
         credential_format = "{}";
       };
       envCredentials = {
-        "op://Private/Google AI Studio/GOOGLE_CLOUD_PROJECT" = "GOOGLE_CLOUD_PROJECT";
+        "op://LLM/GoogleAIStudio-quine/GOOGLE_CLOUD_PROJECT" = "GOOGLE_CLOUD_PROJECT";
       };
     };
 
     cerebras.route = {
       upstream = "https://api.cerebras.ai/v1";
-      credential_key = "op://Private/Cerebras/CEREBRAS_API_KEY_quine";
+      credential_key = "op://LLM/Cerebras-quine/credential";
       env_var = "CEREBRAS_API_KEY";
       inject_header = "Authorization";
       credential_format = "Bearer {}";
@@ -78,7 +78,7 @@ let
 
     mistral.route = {
       upstream = "https://api.mistral.ai/v1";
-      credential_key = "op://Private/Mistral/api-key-quine";
+      credential_key = "op://LLM/Mistral-quine/credential";
       env_var = "MISTRAL_API_KEY";
       inject_header = "Authorization";
       credential_format = "Bearer {}";
@@ -86,7 +86,7 @@ let
 
     elevenlabs.route = {
       upstream = "https://api.elevenlabs.io";
-      credential_key = "op://Private/ElevenLabs/api-key-quine";
+      credential_key = "op://LLM/ElevenLabs-quine/credential";
       env_var = "ELEVENLABS_API_KEY";
       inject_header = "xi-api-key";
       credential_format = "{}";

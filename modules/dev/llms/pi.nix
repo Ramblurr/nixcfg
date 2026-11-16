@@ -17,14 +17,14 @@ in
         home = hm.config.home.homeDirectory;
         cliproxyProvider = {
           baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-          apiKey = "!op read 'op://Private/CLIProxyAPI/api-key'";
+          apiKey = "!op read 'op://LLM/CLIProxyAPI/credential'";
         };
         all-providers = {
-          anthropic.apiKey = "!op read 'op://Private/Anthropic/api-key-quine'";
-          typesafe.apiKey = "!op read 'op://Private/Jev API Keys/quine'";
-          subq.apiKey = "!op read 'op://Private/Subq/quine-api-key'";
-          openai.apiKey = "!op read 'op://Private/OpenAI/OPENAI_API_KEY_quine'";
-          openrouter.apiKey = "!op read 'op://Private/OpenRouter/OPENROUTER_API_KEY'";
+          anthropic.apiKey = "!op read 'op://LLM/Anthropic-quine/credential'";
+          typesafe.apiKey = "!op read 'op://LLM/Jev-quine/credential'";
+          subq.apiKey = "!op read 'op://LLM/Subq-quine/credential'";
+          openai.apiKey = "!op read 'op://LLM/OpenAI-quine/credential'";
+          openrouter.apiKey = "!op read 'op://LLM/OpenRouter/credential'";
           cliproxy = cliproxyProvider;
         };
       in
