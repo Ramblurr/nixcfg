@@ -91,8 +91,9 @@ cutover; they are in git history up to commit `54db80cc`.
     could see the KVM console (screenshots worked).
     Open.
 
-13. The RTC runs about two minutes fast; the journal jumps back when NTP
-    syncs. Cosmetic.
+13. The RTC ran about two minutes fast under TrueNAS; the journal jumped
+    back when NTP first synced. Fixed by itself: NixOS keeps the RTC in
+    sync once the clock is synchronized.
 
 14. `nixos-rebuild switch` does not rerun the oneshot `tailscaled-set`, so
     changed `extraSetFlags` only apply at the next boot. After a deploy that
