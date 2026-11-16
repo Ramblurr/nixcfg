@@ -72,4 +72,3 @@ what went wrong and how it was fixed. The installer, its scripts and the
 runbook were removed afterwards; they are in git history up to commit
 `54db80cc`.
 
-Left from TrueNAS: `dynamic_gang_header` is not enabled on `fast`.
