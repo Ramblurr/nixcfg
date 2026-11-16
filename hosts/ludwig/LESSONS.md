@@ -37,8 +37,14 @@ Read this before the next unattended install of any remote host.
    Fixed: ludwig no longer advertises the route (`tailscaleFlags` in
    `site.nix`); plato is the only subnet router.
 
-5. The new node's MagicDNS name is `ludwig-1`: `ludwig` was already taken.
-   Open: rename or clean up the old node in the admin console.
+5. The new node's MagicDNS name was `ludwig-1`: `ludwig` was already taken.
+   Fixed: renamed to `ludwig` in the admin console.
+
+5a. Tailscale SSH was off: the jail never ran it, and the other hosts have
+    it as runtime state rather than config, so nothing carried it over.
+    `ssh root@ludwig` fell through to sshd and the YubiKey.
+    Fixed: `--ssh` in ludwig's `extraSetFlags`. Also drop any saved sshd
+    host key for the tailnet IP from `known_hosts`.
 
 ## Installer
 

@@ -48,7 +48,8 @@ rollback option.
 
 ludwig is only reachable over Tailscale, two independent ways:
 
-1. Its own node, `ludwig` (MagicDNS `ludwig-1`, since 2026-11-16). The
+1. Its own node, `ludwig` (since 2026-11-16), with Tailscale SSH like the
+   other hosts: `ssh root@ludwig` and `deploy ludwig` go through it. The
    installer and the host log in with the staged, tagged auth key, and
    `tailscale-watchdog` restarts `tailscaled` while it is not connected. The
    old jail node `tailscale-ludwig` is offline; TrueNAS would use it again on
