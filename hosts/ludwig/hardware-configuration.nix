@@ -5,9 +5,31 @@
   ...
 }:
 let
+  site = import ./site.nix;
+  inherit (site) rootPool;
   zfs = lib.getExe' config.boot.zfs.package "zfs";
   zpool = lib.getExe' config.boot.zfs.package "zpool";
-  # Pool keys live on the encrypted fast pool; install.sh places them.
+  dataset = name: {
+    device = "${rootPool}/encrypted/${name}";
+    fsType = "zfs";
+    neededForBoot = true;
+  };
+  esp = i: esp: {
+    name = esp.mountPoint;
+    value = {
+      device = "/dev/disk/by-partlabel/${esp.label}";
+      fsType = "vfat";
+      options = [
+        "fmask=0077"
+        "dmask=0077"
+      ]
+      ++ lib.optional (i > 0) "nofail";
+    };
+  };
+  initrdKey = "/etc/zfs-keys/${rootPool}.key";
+  # The TrueNAS altroot.
+  altroot = "/mnt";
+  # Pool keys live on the encrypted root pool; install.sh places them.
   # TrueNAS loaded them from its config database, keylocation stays "prompt"
   # so the pools remain importable by TrueNAS for rollback.
   loadKey = pool: keyFile: ''
@@ -19,9 +41,9 @@ in
 {
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
-  # TrueNAS kern.hostid, recorded in both pool labels. Matching it lets either
-  # OS import the pools without -f after an unclean shutdown.
-  networking.hostId = "ac91e159";
+  # Matching TrueNAS lets either OS import the pools without -f after an
+  # unclean shutdown.
+  networking.hostId = site.hostId;
 
   hardware.cpu.intel.updateMicrocode = true;
   zramSwap.enable = true;
@@ -32,45 +54,8 @@ in
     RebootWatchdogSec = "10min";
   };
 
-  fileSystems."/" = {
-    device = "fast/encrypted/local/root";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-  fileSystems."/nix" = {
-    device = "fast/encrypted/local/nix";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-  fileSystems."/home" = {
-    device = "fast/encrypted/local/home";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-  fileSystems."/persist" = {
-    device = "fast/encrypted/safe/persist";
-    fsType = "zfs";
-    neededForBoot = true;
-  };
-
-  # One ESP on partition 1 of each fast SSD (formerly TrueNAS swap).
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-partlabel/ludwig-esp0";
-    fsType = "vfat";
-    options = [
-      "fmask=0077"
-      "dmask=0077"
-    ];
-  };
-  fileSystems."/boot-fallback" = {
-    device = "/dev/disk/by-partlabel/ludwig-esp1";
-    fsType = "vfat";
-    options = [
-      "fmask=0077"
-      "dmask=0077"
-      "nofail"
-    ];
-  };
+  # The ESPs are the former TrueNAS swap partitions.
+  fileSystems = lib.mapAttrs (_: dataset) site.datasets // lib.listToAttrs (lib.imap0 esp site.esps);
 
   boot = {
     loader = {
@@ -80,16 +65,10 @@ in
         efiSupport = true;
         copyKernels = true;
         configurationLimit = 10;
-        mirroredBoots = [
-          {
-            path = "/boot";
-            devices = [ "nodev" ];
-          }
-          {
-            path = "/boot-fallback";
-            devices = [ "nodev" ];
-          }
-        ];
+        mirroredBoots = map (esp: {
+          path = esp.mountPoint;
+          devices = [ "nodev" ];
+        }) site.esps;
       };
     };
 
@@ -106,28 +85,28 @@ in
       ];
       # Plaintext on both ESPs. TrueNAS kept the same key on its boot device,
       # so unattended boot keeps the existing protection level.
-      secrets."/etc/zfs-keys/fast.key" = "/persist/etc/zfs-keys/fast.key";
+      secrets.${initrdKey} = "${site.persist.zfsKeys}/${rootPool}.key";
       # Every sysroot mount and the rollback wait for the import unit, so they
       # also wait for the key.
-      systemd.services.zfs-import-fast.postStart = loadKey "fast" "/etc/zfs-keys/fast.key";
+      systemd.services."zfs-import-${rootPool}".postStart = loadKey rootPool initrdKey;
     };
   };
 
   # Never change pool properties: TrueNAS must find both pools exactly as it
   # left them, or a fallback boot cannot start its jails, Tailscale included.
-  # A temporary altroot gives tank the TrueNAS paths (/mnt/tank) instead; the
-  # module's own import then finds the pool imported. fast mounts its
-  # non-NixOS datasets (the old iocage jails) under /fast, unused.
+  # A temporary altroot gives tank its TrueNAS paths instead; the module's
+  # own import then finds the pool imported. The root pool's old TrueNAS
+  # datasets (the iocage jails) mount at their stored mountpoints, unused.
   systemd.services.zfs-import-tank = {
     preStart = ''
       for _ in $(seq 1 60); do
         ${zpool} list tank >/dev/null 2>&1 && break
-        ${zpool} import -d ${config.boot.zfs.devNodes} -N -R /mnt -o cachefile=none tank && break
+        ${zpool} import -d ${config.boot.zfs.devNodes} -N -R ${altroot} -o cachefile=none tank && break
         sleep 1
       done
-      # Fail rather than let the module import tank at /tank.
-      ${zpool} list -H -o altroot tank | grep -qx /mnt
+      # Fail rather than let the module import tank at its stored mountpoint.
+      ${zpool} list -H -o altroot tank | grep -qx ${altroot}
     '';
-    postStart = loadKey "tank" "/persist/etc/zfs-keys/tank.key";
+    postStart = loadKey "tank" "${site.persist.zfsKeys}/tank.key";
   };
 }

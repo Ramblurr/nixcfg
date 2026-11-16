@@ -9,6 +9,10 @@
 # Ported from the TrueNAS jail config (zrepl 0.6.1).
 let
   inherit (config.repo.secrets.local) ludwig;
+  inherit (import ./site.nix) snapshotPrefix;
+  receiveRoot = "tank/replication/mali";
+  # mali's own zrepl snapshot prefix.
+  maliPrefix = "zrepl_";
   secret = name: config.sops.secrets."zrepl/${name}".path;
   snapshotAge = pkgs.callPackage ../../pkgs/zfs-snapshot-age.nix { zfs = config.boot.zfs.package; };
   keepNonPrefixed = prefix: {
@@ -54,7 +58,7 @@ in
             key = secret "ludwigKey";
             server_cn = "mali";
           };
-          root_fs = "tank/replication/mali";
+          root_fs = receiveRoot;
           interval = "10m";
           recv = {
             properties.override = {
@@ -76,9 +80,9 @@ in
               {
                 type = "grid";
                 grid = "1x24h(keep=all) | 7x1d(keep=1) | 30x1d(keep=1) | 6x30d(keep=1)";
-                regex = "^zrepl_.*";
+                regex = "^${maliPrefix}";
               }
-              (keepNonPrefixed "zrepl_")
+              (keepNonPrefixed maliPrefix)
             ];
           };
           replication.concurrency = {
@@ -87,15 +91,16 @@ in
           };
         }
         {
-          # Replaces the TrueNAS periodic snapshot tasks: daily at midnight,
-          # kept for a month, same names so existing snapshots age out normally.
+          # Replaces the TrueNAS periodic snapshot tasks with the same names,
+          # so existing snapshots age out normally.
           name = "ludwig_snap";
           type = "snap";
           filesystems = ludwig.snapshotFilesystems;
           snapshotting = {
             type = "cron";
             cron = "0 0 * * *";
-            prefix = "auto-";
+            prefix = snapshotPrefix;
+            # Samba's shadow:format in samba.nix parses this.
             timestamp_format = "2006-01-02_15-04";
             timestamp_location = config.time.timeZone;
           };
@@ -103,24 +108,24 @@ in
             {
               type = "grid";
               grid = "1x1d(keep=all) | 30x1d";
-              regex = "^auto-";
+              regex = "^${snapshotPrefix}";
             }
-            (keepNonPrefixed "auto-")
+            (keepNonPrefixed snapshotPrefix)
           ];
         }
       ];
     };
   };
 
-  # Daily healthchecks.io ping, as the TrueNAS cron job did.
+  # healthchecks.io ping, as the TrueNAS cron job did.
   systemd.services.zrepl-mali-received = {
-    description = "Report whether mali snapshots arrived within a day";
+    description = "Report whether recent mali snapshots arrived";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     serviceConfig.Type = "oneshot";
     script = ''
       url=${lib.escapeShellArg ludwig.zreplHealthcheckUrl}
-      if ! ${lib.getExe snapshotAge} tank/replication/mali/tank2 "1 day ago"; then
+      if ! ${lib.getExe snapshotAge} ${receiveRoot}/tank2 "1 day ago"; then
         url="$url/fail"
       fi
       ${lib.getExe pkgs.curl} -fsS -m 10 --retry 5 -o /dev/null "$url"

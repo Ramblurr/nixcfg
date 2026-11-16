@@ -5,6 +5,7 @@
 }:
 let
   inherit (config.modules.users.primaryUser) username;
+  site = import ./site.nix;
 in
 {
   imports = [
@@ -44,16 +45,13 @@ in
     impermanence.enable = true;
     boot.zfs = {
       enable = true;
-      encrypted = true;
       usePlymouth = false;
-      # NixOS lives in fast/encrypted on the existing SSD mirror; see README.md.
-      rootPool = "fast";
+      # NixOS lives on the existing SSD mirror; see hardware-configuration.nix.
+      inherit (site) rootPool;
       scrubPools = [
-        "fast"
+        site.rootPool
         "tank"
       ];
-      # tank is HDD-only.
-      trimPools = [ "fast" ];
       autoSnapshot.enable = false;
       extraPools = [ "tank" ];
     };
@@ -64,42 +62,28 @@ in
       useRoutingFeatures = "server";
       exitNode = {
         enable = true;
-        networkDev = "lan0";
+        networkDev = site.lan.interface;
       };
     };
     firewall.enable = true;
     security.default.enable = true;
     users.enable = true;
     users.headless.enable = true;
-    # uid 1000 belongs to a migrated account that owns data on tank.
+    # The default uid belongs to a migrated account that owns data on tank.
     users.primaryUser.uid = 1010;
     users.primaryUser.extraGroups = [ "wheel" ];
   };
 
   services.tailscale = {
     # Only used if the reused jail state is ever rejected; see install.sh seed.
-    authKeyFile = "/persist/etc/tailscale/authkey";
-    extraSetFlags = [
-      "--advertise-routes=192.168.8.0/22"
-      "--advertise-exit-node"
-      "--accept-dns=false"
-      # The jail accepted routes. On Linux a peer's route for this LAN would
-      # take over LAN traffic, and ludwig needs no routes to other sites.
-      "--accept-routes=false"
-    ];
+    authKeyFile = site.persist.tailscaleAuthKey;
+    # The jail accepted routes; on Linux a peer's route for this LAN would
+    # take over LAN traffic.
+    extraSetFlags = site.tailscaleFlags ++ [ "--advertise-exit-node" ];
   };
 
   environment.systemPackages = [
-    (pkgs.writeShellApplication {
-      name = "ludwig-boot";
-      runtimeInputs = [
-        pkgs.coreutils
-        pkgs.efibootmgr
-        pkgs.gnugrep
-        pkgs.gnused
-      ];
-      text = builtins.readFile ./ludwig-boot.sh;
-    })
+    (pkgs.callPackage ./ludwig-boot.nix { })
     pkgs.efibootmgr
     pkgs.ipmitool
     pkgs.lm_sensors
@@ -109,7 +93,6 @@ in
   ];
 
   environment.persistence."/persist" = {
-    hideMounts = true;
     directories = [
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
@@ -119,11 +102,11 @@ in
   # Keep all TrueNAS host keys: borg clients pin them in known_hosts.
   services.openssh.hostKeys = [
     {
-      path = "/persist/etc/ssh/ssh_host_rsa_key";
+      path = "${site.persist.sshHostKeys}/ssh_host_rsa_key";
       type = "rsa";
     }
     {
-      path = "/persist/etc/ssh/ssh_host_ecdsa_key";
+      path = "${site.persist.sshHostKeys}/ssh_host_ecdsa_key";
       type = "ecdsa";
     }
   ];

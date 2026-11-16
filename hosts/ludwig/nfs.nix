@@ -2,6 +2,17 @@
   config,
   ...
 }:
+let
+  server = config.services.nfs.server;
+  # rpcbind, nfsd and the pinned NFSv3 side daemons.
+  ports = [
+    111
+    2049
+    server.statdPort
+    server.lockdPort
+    server.mountdPort
+  ];
+in
 {
   services.nfs.server = {
     enable = true;
@@ -10,20 +21,6 @@
     mountdPort = 4002;
     exports = config.repo.secrets.local.ludwig.nfsExports;
   };
-  networking.firewall.allowedTCPPorts = [
-    111
-    2049
-    4000
-    4001
-    4002
-    20048
-  ];
-  networking.firewall.allowedUDPPorts = [
-    111
-    2049
-    4000
-    4001
-    4002
-    20048
-  ];
+  networking.firewall.allowedTCPPorts = ports;
+  networking.firewall.allowedUDPPorts = ports;
 }

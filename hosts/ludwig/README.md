@@ -1,8 +1,9 @@
 # ludwig - offsite replica NAS
 
-ludwig is an iXsystems TrueNAS Mini 3.0 X at a remote site. It pulls mali's
-zrepl source, serves SMB and NFS to the remote LAN, runs AdGuard Home for that
-LAN, and is the remote LAN's Tailscale subnet router and exit node.
+ludwig is an iXsystems TrueNAS Mini at a remote site (hardware in
+`hosts/inventory.nix`). It pulls mali's zrepl source, serves SMB and NFS to
+the remote LAN, runs AdGuard Home for that LAN, and is the remote LAN's
+Tailscale subnet router and exit node.
 
 It ran TrueNAS CORE 13.1 until the migration described below. Site-specific
 data (accounts, shares, exports, the mali address) lives in
@@ -10,25 +11,30 @@ data (accounts, shares, exports, the mali address) lives in
 
 ## Layout
 
-| Item | Value |
+[`site.nix`](./site.nix) holds the values the host, the installer and the
+scripts share: LAN addresses, the interface name, the hostid, the root pool,
+the ESP labels, the TrueNAS ESP, and the paths the installer seeds.
+
+| Item | Where |
 | --- | --- |
-| LAN | `lan0` (X553 port 0, `pci-0000:04:00.0`), `192.168.8.4/22`, gateway `192.168.8.1`; any other cabled port also takes `192.168.8.4` |
-| AdGuard Home | `192.168.8.2:53`; web UI on `127.0.0.1:3000` |
-| BMC | DHCP, last seen at `192.168.10.144` |
-| `tank` | raidz2, 5 x 12 TB HDD, ZFS native encryption; imported with altroot `/mnt`, so `/mnt/tank` as on TrueNAS |
-| `fast` | mirror, 2 x Samsung 870 EVO 500 GB, ZFS native encryption; old jails mount under `/fast`, unused |
-| NixOS root | `fast/encrypted/{local/root,local/nix,local/home,safe/persist}` |
-| ESPs | partition 1 of each SSD (former TrueNAS swap), labels `ludwig-esp0`, `ludwig-esp1`, GRUB mirrored |
-| TrueNAS boot | 16 GB SATA DOM, untouched; ESP partuuid `d4fb2736-d81c-11ec-bff8-d05099fb0f82` |
-| hostid | `ac91e159`, the TrueNAS hostid, so either OS imports the pools without `-f` |
+| LAN | `networking.nix`; any other cabled port also takes the LAN address |
+| AdGuard Home | `adguardhome.nix`; web UI on loopback only |
+| BMC | DHCP on the LAN |
+| `tank` | raidz2 of HDDs, ZFS native encryption; imported under the TrueNAS altroot, see `hardware-configuration.nix` |
+| `fast` | SSD mirror, ZFS native encryption; root pool for NixOS, old jail datasets unused |
+| NixOS root | the `modules.boot.zfs` dataset layout on the root pool; `hardware-configuration.nix` |
+| ESPs | partition 1 of each SSD (former TrueNAS swap), GRUB mirrored |
+| TrueNAS boot | SATA DOM, untouched |
+| hostid | the TrueNAS hostid, so either OS imports the pools without `-f` |
 
 Pool keys stay as TrueNAS made them (`keyformat=hex`, `keylocation=prompt`).
-NixOS loads them with explicit `zfs load-key -L file://...`:
+NixOS loads them with explicit `zfs load-key -L file://...` from the
+persistent key directory in `site.nix`:
 
-- `fast`: from `/persist/etc/zfs-keys/fast.key`, embedded in the initrd. It is
-  therefore plaintext on both ESPs. TrueNAS kept the same key on its boot
-  device, so unattended boot keeps the existing protection level.
-- `tank`: from `/persist/etc/zfs-keys/tank.key` after `zfs-import-tank`.
+- The root pool's key is embedded in the initrd, so it is plaintext on both
+  ESPs. TrueNAS kept the same key on its boot device, so unattended boot
+  keeps the existing protection level.
+- `tank`'s key is loaded after `zfs-import-tank`.
 
 Neither NixOS nor the installer changes any pool property. TrueNAS finds both
 pools exactly as it left them, so a fallback boot starts its jails, including
@@ -43,12 +49,18 @@ ludwig is only reachable over Tailscale, two independent ways:
    the installer and the installed host from the jail's state. If that state
    is ever rejected, a staged fallback auth key logs in instead, and
    `tailscale-watchdog` restarts `tailscaled` while it is not connected.
-2. plato's subnet route for `192.168.8.0/22`: `ssh root@192.168.8.4` works
-   even if ludwig's own node is down, as long as plato is on. The installer
-   and the host take `192.168.8.4` on whichever port has a cable.
+2. plato's subnet route for the LAN: SSH to the LAN address works even if
+   ludwig's own node is down, as long as plato is on. The installer and the
+   host take that address on whichever port has a cable.
 
 Both run with `--accept-routes=false`: plato advertises ludwig's own LAN, and
 accepting that route would send LAN traffic through Tailscale.
+
+The commands below use one destination, through plato's route:
+
+```sh
+export LUDWIG_SSH=root@$(nix eval --raw --file ~/nixcfg/hosts/ludwig/site.nix lan.address)
+```
 
 An extra root key for unattended administration, `~/.ssh/id_ed25519_ludwig_agent`
 on quine, is authorized on TrueNAS root (through the middleware), the
@@ -57,7 +69,7 @@ Use it without the ssh config and control socket:
 
 ```sh
 ssh -F /dev/null -i ~/.ssh/id_ed25519_ludwig_agent -o IdentitiesOnly=yes \
-  -o HostKeyAlias=ludwig.int.<home domain> root@192.168.8.4
+  -o HostKeyAlias=ludwig.int.<home domain> "$LUDWIG_SSH"
 ```
 
 The installer generates a fresh host key on every boot, so connect to it
@@ -82,18 +94,19 @@ hand with `ludwig-install <step>`.
    | Key | Source |
    | --- | --- |
    | `root-password`, `ramblurr-password` | same hashes as `hosts/quine/secrets.sops.yaml` |
-   | `ssh_host_ed25519_key_pub` | `/usr/local/etc/ssh/ssh_host_ed25519_key.pub` on TrueNAS |
-   | `zrepl/ludwigCert`, `zrepl/ludwigKey`, `zrepl/maliCert` | `ludwig.crt`, `ludwig.key`, `mali.crt` in `/mnt/fast/iocage/jails/zrepl/root/usr/local/etc/zrepl/` |
+   | `ssh_host_ed25519_key_pub` | the TrueNAS ed25519 host key |
+   | `zrepl/ludwigCert`, `zrepl/ludwigKey`, `zrepl/maliCert` | `ludwig.crt`, `ludwig.key`, `mali.crt` from the old zrepl jail |
    | `upsmonPassword` | random; only upsd and upsmon on ludwig use it |
 
 2. Commit and update the `nixcfg` input in `nixcfg-private`.
 
-3. Back up both pool keys to 1Password (read-only on TrueNAS):
+3. Back up both pool keys to 1Password (read-only on TrueNAS). Each command
+   puts one key on the clipboard for a single paste, without printing it;
+   paste it into the pool's 1Password item before running the next:
 
    ```sh
-   for p in fast tank; do
-     ssh root@192.168.8.4 "midclt call -job pool.dataset.export_key $p" | tr -d '"\n' | wc -c   # 64
-   done
+   ssh "$LUDWIG_SSH" "midclt call -job pool.dataset.export_key fast" | tr -d '"\n' | wl-copy --paste-once
+   ssh "$LUDWIG_SSH" "midclt call -job pool.dataset.export_key tank" | tr -d '"\n' | wl-copy --paste-once
    ```
 
 4. Optional but recommended: create a fallback Tailscale auth key (tagged
@@ -122,30 +135,28 @@ gpart show da0          # the EFI partition, usually da0s2
 mkdir -p /tmp/usbesp && mount_msdosfs /dev/da0s2 /tmp/usbesp
 efibootmgr -c -l /tmp/usbesp/EFI/BOOT/BOOTX64.EFI -L ludwig-installer
 umount /tmp/usbesp
-efibootmgr -v           # note the new entry number NNNN
-efibootmgr -o 0008,...  # put TrueNAS (0008) first again if -c moved it
+efibootmgr -v           # note the new entry NNNN and the TrueNAS entry TTTT
+efibootmgr -o TTTT,...  # put TrueNAS first again if -c moved it
 ```
 
 ### 3. Stage the bundle (HUMAN, on TrueNAS)
 
-`truenas-stage.sh` copies everything the install needs onto the TrueNAS ESP
-(`ludwig-installer/`, plaintext, until the install wipes it): both pool keys,
-the SSH host keys, root's UPS router key, the SMB password export, the
-`tailscale-ludwig` jail state and the fallback auth key if present. The
-secrets never leave ludwig and are not printed.
+`truenas-stage.sh` copies everything the install needs onto the TrueNAS ESP,
+plaintext, until the install wipes it. The secrets never leave ludwig and are
+not printed. The script lists what it stages.
 
 ```sh
-scp ~/nixcfg/hosts/ludwig/truenas-stage.sh root@192.168.8.4:/tmp/
-ssh root@192.168.8.4 sh /tmp/truenas-stage.sh --check   # read-only
-ssh root@192.168.8.4 sh /tmp/truenas-stage.sh --auto    # stage and arm
+scp ~/nixcfg/hosts/ludwig/truenas-stage.sh "$LUDWIG_SSH:/tmp/"
+ssh "$LUDWIG_SSH" sh /tmp/truenas-stage.sh --check   # read-only
+ssh "$LUDWIG_SSH" sh /tmp/truenas-stage.sh --auto    # stage and arm
 ```
 
 Without `--auto` the installer boots, joins Tailscale and waits for you to
 run the steps by hand. `--wipe` removes a staged bundle.
 
 The installer and the final system reuse the jail's Tailscale node state:
-same tailnet address (`100.79.17.127`), tag and approved subnet route, so the
-remote LAN and the BMC stay reachable throughout.
+same tailnet address, tag and approved subnet route, so the remote LAN and
+the BMC stay reachable throughout.
 
 ### 4. Cut over (HUMAN)
 
@@ -159,16 +170,15 @@ shutdown -r now
 
 The installer then runs on its own:
 
-1. It joins Tailscale with the jail state and waits 3 minutes. To abort, SSH
-   to `root@100.79.17.127` (or `root@192.168.8.4` through plato) and run
-   `systemctl stop ludwig-autoinstall`.
-2. `ludwig-install auto` runs preflight, esp, import, datasets, mount, seed,
-   install and bootorder. Every step stops at the first unexpected state; the
-   installer then stays up on Tailscale with TrueNAS still the default boot
-   entry. Follow along with `journalctl -fu ludwig-autoinstall`.
-3. On success it overwrites and deletes `ludwig-installer/` on the TrueNAS
-   ESP, saves its log to `/persist/var/log/ludwig-install.log`, and reboots
-   into NixOS once.
+1. It joins Tailscale with the jail state and waits for the grace period in
+   `installer.nix`. To abort, SSH to the reused node (or `$LUDWIG_SSH`
+   through plato) and run `systemctl stop ludwig-autoinstall`.
+2. `ludwig-install auto` runs every step in `install.sh`. Each step stops at
+   the first unexpected state; the installer then stays up on Tailscale with
+   TrueNAS still the default boot entry. Follow along with
+   `journalctl -fu ludwig-autoinstall`.
+3. On success it overwrites and deletes the staged bundle, saves its log to
+   `/persist/var/log/ludwig-install.log`, and reboots into NixOS once.
 
 If the installer is unreachable both ways, a power cycle by someone on site
 boots TrueNAS again.
@@ -176,18 +186,23 @@ boots TrueNAS again.
 ### 5. Verify the first NixOS boot
 
 ```sh
-ssh root@192.168.8.4
+ssh "$LUDWIG_SSH"
 systemctl --failed
 zpool status -x; zfs get -H keystatus fast tank
-findmnt /mnt/tank /mnt/fast
+findmnt -t zfs          # tank under the TrueNAS altroot, the NixOS datasets
 tailscale status | head -3
 journalctl -b -u samba-import-truenas-passdb   # one-time SMB password import
 pdbedit -L
 exportfs -v
-zrepl status            # pull_mali resumes on its 10 minute interval
-dig +short @192.168.8.2 example.com
+zrepl status            # confirm pull_mali replication resumes
 upsc ups@localhost ups.status
 ipmitool mc watchdog get; wdctl
+```
+
+AdGuard Home, from quine through plato's route:
+
+```sh
+dig +short @"$(nix eval --raw --file ~/nixcfg/hosts/ludwig/site.nix lan.dns)" example.com
 ```
 
 - The NFS client must remount both exports: FreeBSD file handles are stale.
@@ -213,14 +228,15 @@ Before NixOS is the default: power-cycle ludwig. Afterwards, from NixOS:
 `ludwig-boot truenas-once && reboot` for one boot, or `ludwig-boot
 truenas-default` to make TrueNAS the default again.
 
-TrueNAS imports the pools under its `/mnt` altroot as before. Its swap mirror
-is degraded because the SSD partitions became ESPs; that is harmless. Data
-written under NixOS and the `fast/encrypted` datasets stay in place.
+TrueNAS imports the pools under its altroot as before. Its swap mirror is
+degraded because the SSD partitions became ESPs; that is harmless. Data
+written under NixOS and the NixOS datasets stay in place.
 
 ### Cleanup once TrueNAS is retired
 
-- If an install failed, `ludwig-installer/` may still be on the TrueNAS ESP;
+- If an install failed, the staged bundle may still be on the TrueNAS ESP;
   wipe it from TrueNAS with `truenas-stage.sh --wipe`.
 - Destroy `tank/.system` and, after salvaging anything wanted, `fast/iocage`.
 - `mali.key` sits in the old zrepl jail directory; ludwig never needs it.
-- Remove TrueNAS boot entry `0008`; consider `zpool upgrade`.
+- Remove the TrueNAS boot entry (`ludwig-boot status` shows it); consider
+  `zpool upgrade`.

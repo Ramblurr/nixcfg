@@ -9,15 +9,18 @@
 # Installer ISO for the TrueNAS-to-NixOS migration. It joins the tailnet on its
 # own, so the remote site stays reachable while TrueNAS is down.
 #
-# truenas-stage.sh, run on TrueNAS, writes a bundle to ludwig-installer/ on the
-# TrueNAS ESP: the tailscale-ludwig jail state, the migration inputs and an
-# optional autoinstall marker. This image copies it into RAM at boot. With the
-# marker present, ludwig-autoinstall runs every step, wipes the bundle and
-# reboots into NixOS once. See README.md.
+# truenas-stage.sh, run on TrueNAS, writes a bundle to the TrueNAS ESP: the
+# tailscale-ludwig jail state, the migration inputs and an optional
+# autoinstall marker. This image copies it into RAM at boot. With the marker
+# present, ludwig-autoinstall runs every step, wipes the bundle and reboots
+# into NixOS once. See README.md.
 let
   cfg = config.ludwigInstaller;
-  truenasEsp = "/dev/disk/by-partuuid/d4fb2736-d81c-11ec-bff8-d05099fb0f82";
+  site = import ./site.nix;
+  truenasEsp = "/dev/disk/by-partuuid/${site.truenasEspUuid}";
   seedDir = "/run/ludwig-installer";
+  inputDir = "/root/ludwig-migration";
+  ludwigBoot = pkgs.callPackage ./ludwig-boot.nix { };
   install = pkgs.writeShellApplication {
     name = "ludwig-install";
     runtimeInputs = [
@@ -26,7 +29,6 @@ let
       config.systemd.package
       pkgs.coreutils
       pkgs.dosfstools
-      pkgs.efibootmgr
       pkgs.findutils
       pkgs.gawk
       pkgs.gnugrep
@@ -35,8 +37,23 @@ let
       pkgs.ipmitool
       pkgs.nixos-install-tools
       pkgs.util-linux
+      ludwigBoot
     ];
-    runtimeEnv = lib.optionalAttrs (cfg.system != null) { LUDWIG_SYSTEM = "${cfg.system}"; };
+    runtimeEnv = {
+      LUDWIG_INPUT = inputDir;
+      LUDWIG_ROOT_POOL = site.rootPool;
+      LUDWIG_DATASETS = toString (lib.mapAttrsToList (mp: ds: "${mp}=${ds}") site.datasets);
+      LUDWIG_ESPS = toString (map (esp: "${esp.mountPoint}=${esp.label}") site.esps);
+      LUDWIG_TRUENAS_ESP_UUID = site.truenasEspUuid;
+      LUDWIG_BUNDLE_DIR = site.bundleDir;
+      LUDWIG_SEED_AUTHKEY = config.services.tailscale.authKeyFile;
+      LUDWIG_ZFS_KEYS = site.persist.zfsKeys;
+      LUDWIG_SSH_HOST_KEYS = site.persist.sshHostKeys;
+      LUDWIG_UPS = site.persist.ups;
+      LUDWIG_SMBPASSWD = site.persist.smbpasswd;
+      LUDWIG_TS_AUTHKEY = site.persist.tailscaleAuthKey;
+    }
+    // lib.optionalAttrs (cfg.system != null) { LUDWIG_SYSTEM = "${cfg.system}"; };
     text = builtins.readFile ./install.sh;
   };
 in
@@ -66,8 +83,7 @@ in
   config = {
     system.stateVersion = "26.05";
     networking.hostName = "ludwig-installer";
-    # TrueNAS kern.hostid; see hardware-configuration.nix.
-    networking.hostId = "ac91e159";
+    networking.hostId = site.hostId;
     boot.zfs.forceImportRoot = false;
     boot.kernelModules = [
       "ipmi_devintf"
@@ -93,17 +109,14 @@ in
     # The minimal profile enables NetworkManager; keep networkd the only manager.
     networking.networkmanager.enable = lib.mkForce false;
     networking.useNetworkd = true;
-    networking.nameservers = [
-      "1.1.1.1"
-      "9.9.9.9"
-    ];
+    networking.nameservers = site.nameservers;
     # Whichever port has a cable gets the known address, so SSH works through
     # plato's subnet route even if this node never joins Tailscale. Ports
     # without carrier are left unconfigured.
     systemd.network.networks."10-lan" = {
       matchConfig.Name = "en*";
-      address = [ "192.168.8.4/22" ];
-      gateway = [ "192.168.8.1" ];
+      address = [ "${site.lan.address}/${toString site.lan.prefixLength}" ];
+      gateway = [ site.lan.gateway ];
       networkConfig.DHCP = "ipv4";
       networkConfig.IPv6AcceptRA = false;
     };
@@ -114,12 +127,8 @@ in
       useRoutingFeatures = "server";
       # Only used when no jail state was provided; use a tagged auth key.
       authKeyFile = "${seedDir}/authkey";
-      # Keep the LAN, including the BMC, reachable while TrueNAS is down.
-      extraSetFlags = [
-        "--advertise-routes=192.168.8.0/22"
-        "--accept-dns=false"
-        "--accept-routes=false"
-      ];
+      # Keeps the LAN, including the BMC, reachable while TrueNAS is down.
+      extraSetFlags = site.tailscaleFlags;
     };
 
     systemd.services.ludwig-installer-seed = {
@@ -146,7 +155,7 @@ in
         install -d -m 0700 ${seedDir} /var/lib/tailscale
         mnt=$(mktemp -d)
         mount -o ro ${truenasEsp} "$mnt"
-        src="$mnt/ludwig-installer"
+        src="$mnt/${site.bundleDir}"
         if [ -f "$src/tailscaled.state" ] && [ ! -e /var/lib/tailscale/tailscaled.state ]; then
           install -m 0600 "$src/tailscaled.state" /var/lib/tailscale/tailscaled.state
         fi
@@ -154,9 +163,9 @@ in
           install -m 0600 "$src/authkey" ${seedDir}/authkey
         fi
         if [ -d "$src/migration" ]; then
-          rm -rf /root/ludwig-migration
-          cp -r "$src/migration" /root/ludwig-migration
-          chmod -R go= /root/ludwig-migration
+          rm -rf ${inputDir}
+          cp -r "$src/migration" ${inputDir}
+          chmod -R go= ${inputDir}
         fi
         if [ -f "$src/autoinstall" ]; then
           touch ${seedDir}/autoinstall
@@ -186,6 +195,7 @@ in
 
     environment.systemPackages = [
       install
+      ludwigBoot
       pkgs.efibootmgr
       pkgs.gptfdisk
       pkgs.ipmitool

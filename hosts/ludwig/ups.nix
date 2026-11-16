@@ -4,16 +4,17 @@
   ...
 }:
 #
-# CyberPower CP1500PFCLCDa on USB. Matches the TrueNAS setup: after 10 minutes
-# on battery, power off the site router, then this host.
+# USB UPS, as on TrueNAS: after a sustained time on battery, power off the
+# site router, then this host.
 let
+  site = import ./site.nix;
   nut = config.power.ups.package;
   passwordFile = config.sops.secrets.upsmonPassword.path;
   shutdown = pkgs.writeShellScript "ludwig-ups-shutdown" ''
-    ${pkgs.openssh}/bin/ssh -i /persist/etc/ups/router_key \
-      -o UserKnownHostsFile=/persist/etc/ups/known_hosts \
+    ${pkgs.openssh}/bin/ssh -i ${site.persist.ups}/router_key \
+      -o UserKnownHostsFile=${site.persist.ups}/known_hosts \
       -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=10 \
-      root@192.168.8.1 ubnt-systool poweroff || true
+      root@${site.lan.gateway} ubnt-systool poweroff || true
     ${pkgs.systemd}/bin/shutdown -h now
   '';
   upsschedCmd = pkgs.writeShellScript "ludwig-upssched-cmd" ''

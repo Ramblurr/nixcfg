@@ -16,12 +16,18 @@
 # bundle from the TrueNAS ESP, and reboots into NixOS once. The installer
 # starts it at boot only when the bundle contains an `autoinstall` marker.
 # Without a path, `install` uses the system built into the ISO ($LUDWIG_SYSTEM).
+#
+# installer.nix sets the LUDWIG_* variables from site.nix and its own config.
 
-INPUT=${LUDWIG_INPUT:-/root/ludwig-migration}
+INPUT=$LUDWIG_INPUT
+POOL=$LUDWIG_ROOT_POOL
+ENC=$POOL/encrypted
+# mountpoint=dataset under $ENC, root first, and mountpoint=partlabel per ESP.
+read -ra DATASETS <<<"$LUDWIG_DATASETS"
+read -ra ESPS <<<"$LUDWIG_ESPS"
 LOG=/run/ludwig-install.log
-HOSTID=ac91e159
-TRUENAS_ESP_UUID=d4fb2736-d81c-11ec-bff8-d05099fb0f82
-# Partition 1 (TrueNAS swap) and 2 (fast mirror member) of each Samsung SSD.
+# The former TrueNAS swap and the root pool member on each SSD; the pool
+# member partitions are never touched.
 ESP_UUIDS=(f0616c65-1c4b-11ed-8520-d05099fb0f82 f063b85a-1c4b-11ed-8520-d05099fb0f82)
 FAST_UUIDS=(f0677a2b-1c4b-11ed-8520-d05099fb0f82 f069c614-1c4b-11ed-8520-d05099fb0f82)
 TANK_UUIDS=(
@@ -73,8 +79,7 @@ load_key() {
 }
 
 cmd_preflight() {
-  [[ $(hostid) == "$HOSTID" ]] || die "hostid is $(hostid), expected $HOSTID"
-  for u in "${ESP_UUIDS[@]}" "${FAST_UUIDS[@]}" "${TANK_UUIDS[@]}" "$TRUENAS_ESP_UUID"; do
+  for u in "${ESP_UUIDS[@]}" "${FAST_UUIDS[@]}" "${TANK_UUIDS[@]}" "$LUDWIG_TRUENAS_ESP_UUID"; do
     [[ -e $(part "$u") ]] || die "partition $u not found"
   done
   for u in "${FAST_UUIDS[@]}" "${TANK_UUIDS[@]}"; do
@@ -85,9 +90,15 @@ cmd_preflight() {
     "$FREEBSD_SWAP" | "$EFI_SYSTEM") ;;
     *) die "$u is neither TrueNAS swap nor an ESP" ;;
     esac
-    [[ $(blockdev --getsz "$(part "$u")") == "$ESP_SECTORS" ]] || die "$u is not 2 GiB"
+    [[ $(blockdev --getsz "$(part "$u")") == "$ESP_SECTORS" ]] || die "$u is not $ESP_SECTORS sectors"
   done
-  check_key fast
+  # Either OS imports the pools without -f only if this matches their labels.
+  local label
+  for u in "${FAST_UUIDS[0]}" "${TANK_UUIDS[0]}"; do
+    label=$(zdb -l "$(part "$u")" | awk '$1 == "hostid:" && !seen++ { print $2 }')
+    [[ $label == $((16#$(hostid))) ]] || die "hostid $(hostid) does not match the pool label on $u (${label:-none})"
+  done
+  check_key "$POOL"
   check_key tank
   for f in ssh/ssh_host_ed25519_key ssh/ssh_host_rsa_key ssh/ssh_host_ecdsa_key ups/router_key ups/known_hosts smbpasswd; do
     [[ -s $INPUT/$f ]] || die "missing $INPUT/$f"
@@ -115,11 +126,11 @@ cmd_esp() {
       info "$dev is already ESP$i"
       continue
     fi
-    imported fast && die "export fast before changing its disks' partition tables"
+    imported "$POOL" && die "export $POOL before changing its disks' partition tables"
     sgdisk -p "$disk"
-    confirm "Convert $dev (TrueNAS swap) into ESP$i? Partition 2 is not touched."
+    confirm "Convert $dev (TrueNAS swap) into ESP$i? The pool member partition is not touched."
     sgdisk --backup="$INPUT/gpt-${disk#/dev/}-$u.bak" "$disk"
-    sgdisk --typecode=1:EF00 --change-name="1:ludwig-esp$i" "$disk"
+    sgdisk --typecode=1:EF00 --change-name="1:${ESPS[$i]#*=}" "$disk"
     partx -u "$disk"
     udevadm settle
     wipefs -a "$dev"
@@ -129,20 +140,22 @@ cmd_esp() {
     mkfs.vfat -F 32 -n "ESP$i" "$dev"
   done
   udevadm settle
-  ls -l /dev/disk/by-partlabel/ludwig-esp0 /dev/disk/by-partlabel/ludwig-esp1
+  for e in "${ESPS[@]}"; do
+    ls -l "/dev/disk/by-partlabel/${e#*=}"
+  done
 }
 
 cmd_import() {
   local pool
-  for pool in fast tank; do
+  for pool in "$POOL" tank; do
     imported "$pool" || zpool import -N -o cachefile=none "$pool" ||
       die "import of $pool failed; do not use -f before checking that TrueNAS is really off"
     load_key "$pool"
   done
-  zpool status fast tank
+  zpool status "$POOL" tank
   # Pool properties stay exactly as TrueNAS left them; see hardware-configuration.nix.
   info "local properties (unchanged):"
-  zfs get -H -s local -o name,property,value all fast tank || true
+  zfs get -H -s local -o name,property,value all "$POOL" tank || true
 }
 
 ensure_dataset() {
@@ -153,62 +166,67 @@ ensure_dataset() {
 }
 
 cmd_datasets() {
-  [[ $(keystatus fast) == available ]] || die "run import first"
-  ensure_dataset fast/encrypted -o canmount=off -o mountpoint=none \
+  local e ds
+  [[ $(keystatus "$POOL") == available ]] || die "run import first"
+  ensure_dataset "$ENC" -o canmount=off -o mountpoint=none \
     -o xattr=sa -o acltype=posixacl -o atime=off
-  [[ $(zfs get -H -o value encryptionroot fast/encrypted) == fast ]] || die "fast/encrypted is not under the fast key"
-  ensure_dataset fast/encrypted/local -o canmount=off -o mountpoint=none
-  ensure_dataset fast/encrypted/safe -o canmount=off -o mountpoint=none
-  local ds
-  for ds in local/root local/nix local/home safe/persist; do
-    ensure_dataset "fast/encrypted/$ds" -o mountpoint=legacy
+  [[ $(zfs get -H -o value encryptionroot "$ENC") == "$POOL" ]] || die "$ENC is not under the $POOL key"
+  for e in "${DATASETS[@]}"; do
+    ds=${e#*=}
+    ensure_dataset "$ENC/${ds%/*}" -o canmount=off -o mountpoint=none
+    ensure_dataset "$ENC/$ds" -o mountpoint=legacy
   done
+  # modules.boot.zfs rolls these back to @blank on every boot.
   for ds in local/root local/home; do
-    zfs list -H -t snapshot "fast/encrypted/$ds@blank" >/dev/null 2>&1 ||
-      zfs snapshot "fast/encrypted/$ds@blank"
+    zfs list -H -t snapshot "$ENC/$ds@blank" >/dev/null 2>&1 ||
+      zfs snapshot "$ENC/$ds@blank"
   done
-  zfs list -r -o name,used,mountpoint,encryptionroot fast/encrypted
+  zfs list -r -o name,used,mountpoint,encryptionroot "$ENC"
 }
 
 cmd_mount() {
-  mountpoint -q /mnt || mount -t zfs fast/encrypted/local/root /mnt
-  mkdir -p /mnt/nix /mnt/home /mnt/persist /mnt/boot /mnt/boot-fallback
-  mountpoint -q /mnt/nix || mount -t zfs fast/encrypted/local/nix /mnt/nix
-  mountpoint -q /mnt/home || mount -t zfs fast/encrypted/local/home /mnt/home
-  mountpoint -q /mnt/persist || mount -t zfs fast/encrypted/safe/persist /mnt/persist
-  mountpoint -q /mnt/boot || mount -o umask=0077 /dev/disk/by-partlabel/ludwig-esp0 /mnt/boot
-  mountpoint -q /mnt/boot-fallback || mount -o umask=0077 /dev/disk/by-partlabel/ludwig-esp1 /mnt/boot-fallback
+  local e target
+  for e in "${DATASETS[@]}"; do
+    target=/mnt${e%%=*}
+    mkdir -p "$target"
+    mountpoint -q "$target" || mount -t zfs "$ENC/${e#*=}" "$target"
+  done
+  for e in "${ESPS[@]}"; do
+    target=/mnt${e%%=*}
+    mkdir -p "$target"
+    mountpoint -q "$target" || mount -o umask=0077 "/dev/disk/by-partlabel/${e#*=}" "$target"
+  done
   findmnt -R /mnt
 }
 
 cmd_seed() {
   mountpoint -q /mnt/persist || die "run mount first"
-  local p=/mnt/persist pool t
-  install -d -m 0700 "$p/etc/zfs-keys"
-  for pool in fast tank; do
-    tr -d '\n' <"$INPUT/$pool.key" >"$p/etc/zfs-keys/$pool.key"
-    chmod 0400 "$p/etc/zfs-keys/$pool.key"
+  local keys=/mnt$LUDWIG_ZFS_KEYS ssh=/mnt$LUDWIG_SSH_HOST_KEYS ups=/mnt$LUDWIG_UPS pool t
+  install -d -m 0700 "$keys"
+  for pool in "$POOL" tank; do
+    tr -d '\n' <"$INPUT/$pool.key" >"$keys/$pool.key"
+    chmod 0400 "$keys/$pool.key"
   done
-  install -d -m 0755 "$p/etc/ssh"
+  install -d -m 0755 "$ssh"
   for t in ed25519 rsa ecdsa; do
-    install -m 0600 "$INPUT/ssh/ssh_host_${t}_key" "$p/etc/ssh/"
-    install -m 0644 "$INPUT/ssh/ssh_host_${t}_key.pub" "$p/etc/ssh/"
+    install -m 0600 "$INPUT/ssh/ssh_host_${t}_key" "$ssh/"
+    install -m 0644 "$INPUT/ssh/ssh_host_${t}_key.pub" "$ssh/"
   done
-  install -d -m 0700 "$p/etc/ups"
-  install -m 0600 "$INPUT/ups/router_key" "$p/etc/ups/router_key"
-  install -m 0644 "$INPUT/ups/known_hosts" "$p/etc/ups/known_hosts"
-  install -d -m 0700 "$p/etc/ludwig-migration"
-  install -m 0600 "$INPUT/smbpasswd" "$p/etc/ludwig-migration/smbpasswd"
+  install -d -m 0700 "$ups"
+  install -m 0600 "$INPUT/ups/router_key" "$ups/router_key"
+  install -m 0644 "$INPUT/ups/known_hosts" "$ups/known_hosts"
+  install -d -m 0700 "$(dirname "/mnt$LUDWIG_SMBPASSWD")"
+  install -m 0600 "$INPUT/smbpasswd" "/mnt$LUDWIG_SMBPASSWD"
   if [[ -s /var/lib/tailscale/tailscaled.state ]]; then
-    install -d -m 0700 "$p/var/lib/tailscale"
-    install -m 0600 /var/lib/tailscale/tailscaled.state "$p/var/lib/tailscale/tailscaled.state"
+    install -d -m 0700 /mnt/persist/var/lib/tailscale
+    install -m 0600 /var/lib/tailscale/tailscaled.state /mnt/persist/var/lib/tailscale/tailscaled.state
   fi
   # Fallback login for the installed host if the reused state is ever rejected.
-  if [[ -s /run/ludwig-installer/authkey ]]; then
-    install -d -m 0700 "$p/etc/tailscale"
-    install -m 0600 /run/ludwig-installer/authkey "$p/etc/tailscale/authkey"
+  if [[ -s $LUDWIG_SEED_AUTHKEY ]]; then
+    install -d -m 0700 "$(dirname "/mnt$LUDWIG_TS_AUTHKEY")"
+    install -m 0600 "$LUDWIG_SEED_AUTHKEY" "/mnt$LUDWIG_TS_AUTHKEY"
   fi
-  find "$p/etc" "$p/var" -maxdepth 3 | sort
+  find /mnt/persist/etc /mnt/persist/var -maxdepth 3 | sort
 }
 
 cmd_install() {
@@ -217,13 +235,13 @@ cmd_install() {
   nix-store --store /mnt --check-validity "$system" 2>/dev/null ||
     nix-store --check-validity "$system" ||
     die "$system is in neither /mnt nor the installer store; nix copy it first"
-  [[ -s /mnt/persist/etc/zfs-keys/fast.key ]] || die "run seed first"
+  [[ -s /mnt$LUDWIG_ZFS_KEYS/$POOL.key ]] || die "run seed first"
   nixos-install --system "$system" --no-root-passwd --no-channel-copy
   seed_userborn "$system"
 }
 
 seed_userborn() {
-  # The userborn module refuses to start on an empty /persist/var/lib/userborn
+  # The userborn module refuses an empty persistent account database
   # (docs/userborn-persistence.md). Seed it with the system's own account set.
   # Password hashes are filled in on first boot, after sops decrypts them.
   local db=/persist/var/lib/userborn exec
@@ -243,40 +261,25 @@ seed_userborn() {
   cut -d: -f1,3,4 "/mnt$db/passwd" | awk -F: '$2 >= 800 && $2 < 30000'
 }
 
-entry_for() {
-  # Boot entry number whose line matches the given pattern.
-  efibootmgr -v | grep -i -- "$1" | head -n1 | sed -E 's/^Boot([0-9A-Fa-f]{4}).*/\1/'
-}
-
 cmd_bootorder() {
-  local truenas nixos fallback rest
-  truenas=$(entry_for "$TRUENAS_ESP_UUID")
-  nixos=$(entry_for 'NixOS-boot[^-]')
-  fallback=$(entry_for 'NixOS-boot-fallback')
-  [[ -n $truenas && -n $nixos && -n $fallback ]] || {
-    efibootmgr -v
-    die "could not identify the TrueNAS and NixOS boot entries"
-  }
-  rest=$(efibootmgr | sed -nE 's/^BootOrder: //p' | tr ',' '\n' |
-    grep -v -i -x -e "$truenas" -e "$nixos" -e "$fallback" | paste -sd, -)
   # TrueNAS stays the default; NixOS boots once. A power cycle returns to TrueNAS.
-  efibootmgr -o "$truenas,$nixos,$fallback${rest:+,$rest}"
-  efibootmgr -n "$nixos"
-  efibootmgr
+  ludwig-boot truenas-default
+  ludwig-boot nixos-once
 }
 
 wipe_bundle() {
   # Overwrite and delete the staged secrets on the TrueNAS ESP.
   local esp f
   esp=$(mktemp -d)
-  mount "$(part "$TRUENAS_ESP_UUID")" "$esp"
-  if [[ -d $esp/ludwig-installer ]]; then
-    find "$esp/ludwig-installer" -type f -print0 |
+  mount "$(part "$LUDWIG_TRUENAS_ESP_UUID")" "$esp"
+  local bundle=$esp/$LUDWIG_BUNDLE_DIR
+  if [[ -d $bundle ]]; then
+    find "$bundle" -type f -print0 |
       while IFS= read -r -d '' f; do
         dd if=/dev/zero of="$f" bs=4096 conv=notrunc,fsync status=none \
           count=$((($(stat -c %s "$f") + 4095) / 4096))
       done
-    rm -rf "$esp/ludwig-installer"
+    rm -rf "$bundle"
   fi
   sync
   umount "$esp"
@@ -306,7 +309,7 @@ cmd_auto() {
 cmd_finish() {
   umount -R /mnt
   zpool export tank
-  zpool export fast
+  zpool export "$POOL"
   info "pools exported; reboot to start NixOS once"
 }
 

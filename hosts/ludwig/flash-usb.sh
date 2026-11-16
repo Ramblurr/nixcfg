@@ -7,15 +7,15 @@
 #
 # --dry-run builds, checks the target and stops before anything is written.
 #
-# LUDWIG_SSH     ssh destination for TrueNAS (default root@192.168.8.4)
+# LUDWIG_SSH     ssh destination for TrueNAS (default: root at the LAN address in site.nix)
 # LUDWIG_SSH_OPTS extra ssh options, e.g. "-i ~/.ssh/key -o IdentitiesOnly=yes"
-# NIXCFG_PRIVATE nixcfg-private checkout (default ~/nixcfg-private)
+# NIXCFG_PRIVATE nixcfg-private checkout override
 #
 # Example with an unpushed nixcfg working tree:
 #   hosts/ludwig/flash-usb.sh -- --override-input nixcfg git+file://$HOME/nixcfg
 set -euo pipefail
 
-host=${LUDWIG_SSH:-root@192.168.8.4}
+host=${LUDWIG_SSH:-root@$(nix eval --raw --file "$(dirname "$0")/site.nix" lan.address)}
 private=${NIXCFG_PRIVATE:-$HOME/nixcfg-private}
 stage=/mnt/fast/ludwig-installer
 assume_yes=0
@@ -69,7 +69,7 @@ count=$(grep -c . <<<"$candidates" || true)
 [[ $count -eq 1 ]] || die "expected exactly one free USB disk on $host, found $count: $candidates"
 read -r disk disk_bytes disk_descr <<<"$candidates"
 ((disk_bytes > size)) || die "/dev/$disk ($disk_bytes bytes) is smaller than the ISO"
-((disk_bytes < 300 * 1024 * 1024 * 1024)) || die "/dev/$disk is larger than 300 GB; not a USB stick?"
+((disk_bytes < 300 * 1024 * 1024 * 1024)) || die "/dev/$disk is too large for a USB stick"
 info "target: /dev/$disk, $disk_bytes bytes, \"$disk_descr\" (everything on it will be erased)"
 if [[ $dry_run == 1 ]]; then
   info "dry run: stopping before upload and write"

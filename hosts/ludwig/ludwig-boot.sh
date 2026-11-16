@@ -4,11 +4,11 @@
 #   ludwig-boot nixos-default    boot NixOS by default; TrueNAS stays third
 #   ludwig-boot truenas-default  boot TrueNAS by default again (rollback)
 #   ludwig-boot truenas-once     boot TrueNAS on the next boot only
+#   ludwig-boot nixos-once       boot NixOS on the next boot only
 #
 # Entries are found by label and partition, never by number, so this keeps
-# working after firmware or GRUB renumber them.
-
-TRUENAS_ESP_UUID=d4fb2736-d81c-11ec-bff8-d05099fb0f82
+# working after firmware or GRUB renumber them. The TrueNAS partition comes
+# from site.nix through $LUDWIG_TRUENAS_ESP_UUID.
 
 die() {
   echo "ERROR: $*" >&2
@@ -20,7 +20,7 @@ entry_for() {
 }
 
 entries() {
-  truenas=$(entry_for "$TRUENAS_ESP_UUID")
+  truenas=$(entry_for "$LUDWIG_TRUENAS_ESP_UUID")
   nixos=$(entry_for 'NixOS-boot[^-]')
   fallback=$(entry_for 'NixOS-boot-fallback')
   [[ -n $truenas && -n $nixos && -n $fallback ]] || {
@@ -60,5 +60,10 @@ truenas-once)
   efibootmgr -n "$truenas" >/dev/null
   status
   ;;
-*) die "usage: ludwig-boot status|nixos-default|truenas-default|truenas-once" ;;
+nixos-once)
+  entries
+  efibootmgr -n "$nixos" >/dev/null
+  status
+  ;;
+*) die "usage: ludwig-boot status|nixos-default|truenas-default|truenas-once|nixos-once" ;;
 esac

@@ -3,17 +3,20 @@
   ...
 }:
 #
-# Replaces the adguardhome jail (192.168.8.2). The web UI has no users, so it
-# listens on loopback only; reach it with an SSH tunnel.
+# Replaces the adguardhome jail at the same address. The web UI has no users,
+# so it listens on loopback only; reach it with an SSH tunnel.
+let
+  site = import ./site.nix;
+  inherit (config.services.adguardhome.settings) dns;
+in
 {
   services.adguardhome = {
     enable = true;
     mutableSettings = false;
     host = "127.0.0.1";
-    port = 3000;
     settings = {
       dns = {
-        bind_hosts = [ "192.168.8.2" ];
+        bind_hosts = [ site.lan.dns ];
         port = 53;
         upstream_dns = [
           "https://dns.cloudflare.com/dns-query"
@@ -54,8 +57,8 @@
       ];
     };
   };
-  networking.firewall.interfaces.lan0 = {
-    allowedTCPPorts = [ 53 ];
-    allowedUDPPorts = [ 53 ];
+  networking.firewall.interfaces.${site.lan.interface} = {
+    allowedTCPPorts = [ dns.port ];
+    allowedUDPPorts = [ dns.port ];
   };
 }
