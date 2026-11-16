@@ -24,9 +24,54 @@ in
       hm:
       let
         home = hm.config.home.homeDirectory;
+        cliproxyRoot = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
+        # Static so they exist the moment Pi starts
+        cliproxyOpenaiModel = id: name: offLevel: {
+          inherit id name;
+          api = "openai-responses";
+          baseUrl = "${cliproxyRoot}/v1";
+          reasoning = true;
+          input = [
+            "text"
+            "image"
+          ];
+          contextWindow = 272000;
+          maxTokens = 128000;
+          # Billed to the subscriptions behind the proxy, not per token.
+          cost = {
+            input = 0;
+            output = 0;
+            cacheRead = 0;
+            cacheWrite = 0;
+          };
+          thinkingLevelMap = {
+            off = offLevel;
+            minimal = null;
+            low = "low";
+            medium = "medium";
+            high = "high";
+            xhigh = "xhigh";
+            max = "max";
+          };
+          compat = {
+            supportsStrictMode = true;
+            supportsOpenAIGrammarTools = true;
+            supportsAdditionalTools = true;
+            supportsToolSearch = true;
+            supportsMidConvoSystemMessages = true;
+            supportsExplicitPromptCacheMode = true;
+            supportsMidConvoEffort = true;
+          };
+        };
         cliproxyProvider = {
-          baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
+          baseUrl = cliproxyRoot;
           apiKey = "!${opRead} 'op://LLM/CLIProxyAPI/credential'";
+          models = [
+            (cliproxyOpenaiModel "gpt-6.1-sol" "GPT-6.1 Sol" null)
+            (cliproxyOpenaiModel "gpt-6.1-terra" "GPT-6.1 Terra" "none")
+            (cliproxyOpenaiModel "gpt-6-astra" "GPT-6 Astra" null)
+            (cliproxyOpenaiModel "gpt-6-luna" "GPT-6 Luna" "none")
+          ];
         };
         all-providers = {
           anthropic.apiKey = "!${opRead} 'op://LLM/Anthropic-quine/credential'";
