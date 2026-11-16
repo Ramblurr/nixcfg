@@ -5,175 +5,57 @@
   inputs,
   ...
 }:
-
 let
   cfg = config.modules.dev.llms;
-  connect = cfg.onepasswordConnect;
-  opRead = if connect.tokenFile == null then "op read" else lib.getExe connect.package;
+  instructions = lib.concatStringsSep "\n\n" (
+    lib.filter (s: s != "") [
+      cfg.agents.preamble
+      cfg.pi.agents.preamble
+      cfg.agents.extraText
+      cfg.pi.agents.extraText
+    ]
+  );
 in
 {
-  config = lib.mkIf cfg.enable {
-    myhm =
-      hm:
-      let
-        home = hm.config.home.homeDirectory;
-        cliproxyRoot = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-        # Static so they exist the moment Pi starts
-        cliproxyOpenaiModel = id: name: offLevel: {
-          inherit id name;
-          api = "openai-responses";
-          baseUrl = "${cliproxyRoot}/v1";
-          reasoning = true;
-          input = [
-            "text"
-            "image"
-          ];
-          contextWindow = 272000;
-          maxTokens = 128000;
-          # Billed to the subscriptions behind the proxy, not per token.
-          cost = {
-            input = 0;
-            output = 0;
-            cacheRead = 0;
-            cacheWrite = 0;
-          };
-          thinkingLevelMap = {
-            off = offLevel;
-            minimal = null;
-            low = "low";
-            medium = "medium";
-            high = "high";
-            xhigh = "xhigh";
-            max = "max";
-          };
-          compat = {
-            supportsStrictMode = true;
-            supportsOpenAIGrammarTools = true;
-            supportsAdditionalTools = true;
-            supportsToolSearch = true;
-            supportsMidConvoSystemMessages = true;
-            supportsExplicitPromptCacheMode = true;
-            supportsMidConvoEffort = true;
-          };
-        };
-        cliproxyProvider = {
-          baseUrl = cliproxyRoot;
-          apiKey = "!${opRead} 'op://LLM/CLIProxyAPI/credential'";
-          models = [
-            (cliproxyOpenaiModel "gpt-6.1-sol" "GPT-6.1 Sol" null)
-            (cliproxyOpenaiModel "gpt-6.1-terra" "GPT-6.1 Terra" "none")
-            (cliproxyOpenaiModel "gpt-6-astra" "GPT-6 Astra" null)
-            (cliproxyOpenaiModel "gpt-6-luna" "GPT-6 Luna" "none")
-          ];
-        };
-        all-providers = {
-          anthropic.apiKey = "!${opRead} 'op://LLM/Anthropic-quine/credential'";
-          typesafe.apiKey = "!${opRead} 'op://LLM/Jev-quine/credential'";
-          subq.apiKey = "!${opRead} 'op://LLM/Subq-quine/credential'";
-          openai.apiKey = "!${opRead} 'op://LLM/OpenAI-quine/credential'";
-          cliproxy = cliproxyProvider;
-        };
-      in
-      {
-        imports = [ ./pi-nix.nix ];
-
-        home.packages = lib.optional (connect.tokenFile != null) connect.package;
-
-        programs.pi = {
-          enable = true;
-          # pi-hashline-edit-pro imports node:sqlite, unavailable in Bun's standalone runtime.
-          package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
-            useBun = false;
-          };
-          instances = {
-            pi = {
-              settings = {
-                defaultProvider = "cliproxy";
-                defaultModel = "gpt-6.1-sol";
-                defaultThinkingLevel = "high";
-                skills = [
-                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/pi"
-                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/mine"
-                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/engineering"
-                  "${home}/src/github.com/backnotprop/plannotator/apps/skills/core"
-                  "${home}/src/github.com/backnotprop/plannotator/apps/skills/extra"
-                ];
-                packages = map toString [
-                  pkgs.pi-reload
-                  pkgs.pi-speak
-                  #pkgs.pi-heartbeat
-                  #pkgs.pi-ghost
-                  "${home}/src/github.com/ramblurr/pi-extensions/handoff"
-                  "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-                  "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
-                  pkgs.brepl-balance
-                  #pkgs.pi-sexp-edit
-                  #pkgs.pi-nrepl
-                  #pkgs.pi-hashline-edit-pro
-                  pkgs.plannotator-pi-extension
-                  #pkgs.epimetheus
-                  #pkgs.pi-mcp-adapter
-                  pkgs.pi-openai-fast
-                  pkgs.pi-cliproxy
-                  #pkgs.pi-nono-sandbox
-                  #pkgs.pi-matrix-relay
-                  pkgs.pi-link
-                  pkgs.pi-lens
-                  pkgs.pi-fff
-                  #pkgs.pi-goal-x
-                ];
-                npmCommand = [ "pnpm" ];
-                hideThinkingBlock = true;
-                theme = "dark";
-                steeringMode = "all";
-                showCacheMissNotices = true;
-                shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
-              };
-              models.providers = all-providers;
-              fff = {
-                mode = "override";
-                enableHomeDirScanning = false;
-                enableFsRootScanning = false;
-              };
-            };
-            pi-t3 = {
-              settings = {
-                defaultProvider = "cliproxy";
-                defaultModel = "gpt-6.1-sol";
-                defaultThinkingLevel = "high";
-                skills = [
-                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/t3"
-                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/mine"
-                  "${home}/src/git.outskirtslabs.com/casey/skills/skills/engineering"
-                ];
-                packages = map toString [
-                  pkgs.pi-reload
-                  pkgs.pi-speak
-                  "${home}/src/github.com/ramblurr/pi-extensions/handoff"
-                  "${home}/src/github.com/ramblurr/pi-extensions/fork-new"
-                  "${home}/src/github.com/ramblurr/pi-extensions/pi-subq"
-                  pkgs.brepl-balance
-                  pkgs.pi-openai-fast
-                  pkgs.pi-cliproxy
-                  pkgs.pi-lens
-                  pkgs.pi-fff
-                ];
-                npmCommand = [ "pnpm" ];
-                hideThinkingBlock = true;
-                theme = "dark";
-                steeringMode = "all";
-                showCacheMissNotices = true;
-                shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
-              };
-              models.providers = all-providers;
-              fff = {
-                mode = "override";
-                enableHomeDirScanning = false;
-                enableFsRootScanning = false;
-              };
-            };
-          };
-        };
+  options.modules.dev.llms.pi = {
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
+      description = "Pi CLI package.";
+    };
+    instances = lib.mkOption {
+      type = lib.types.attrsOf lib.types.attrs;
+      default = { };
+      description = "Host-declared Pi instances, using programs.pi.instances fields.";
+    };
+  };
+  config = lib.mkIf (cfg.enable && cfg.pi.enable) {
+    myhm = {
+      imports = [ ./pi-nix.nix ];
+      home.packages = lib.optional (
+        cfg.onepasswordConnect.tokenFile != null
+      ) cfg.onepasswordConnect.package;
+      programs.pi = {
+        enable = true;
+        package = cfg.pi.package;
+        instances = lib.mapAttrs (
+          _: instance:
+          instance
+          // {
+            instructions = lib.optionalString (cfg.agents.enable && cfg.pi.agents.enable) (
+              instance.instructions or instructions
+            );
+            settings = lib.recursiveUpdate cfg.pi.settings (instance.settings or { });
+            models =
+              if (instance.models or null) == null && cfg.pi.models == { } then
+                null
+              else
+                lib.recursiveUpdate cfg.pi.models (
+                  if (instance.models or null) == null then { } else instance.models
+                );
+          }
+        ) cfg.pi.instances;
       };
+    };
   };
 }

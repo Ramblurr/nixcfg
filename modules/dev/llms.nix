@@ -44,6 +44,8 @@ let
 in
 {
   imports = [
+    ./llms/agents.nix
+    ./llms/clients.nix
     ./llms/cliproxy-api.nix
     ./llms/nono.nix
     ./llms/pi.nix
@@ -88,25 +90,6 @@ in
     services.open-webui.enable = false;
     services.open-webui.port = 11180;
     myhm = {
-      home.sessionVariables = {
-        #PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
-        CLAUDE_CONFIG_DIR = "$XDG_CONFIG_HOME/claude";
-        CODEX_HOME = "$XDG_CONFIG_HOME/codex";
-        HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
-        PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
-        VIBE_HOME = "$XDG_CONFIG_HOME/vibe";
-        PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
-        PLANNOTATOR_GLIMPSE = "0";
-        PLANNOTATOR_SHARE = "disabled";
-        UCP_HOME = "$XDG_STATE_HOME/ucp";
-        SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
-        SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
-        PI_LENS_DISABLE_LSP_INSTALL = "1";
-        PI_LENS_DISABLE_TOOL_INSTALL = "1";
-      };
-      xdg.configFile."spel/config.json".text = builtins.toJSON {
-        contentBoundaries = true;
-      };
       home.packages =
         with pkgs;
         [
@@ -139,9 +122,7 @@ in
           #llm-agents.annot
           llm-agents.herdr
           llm-agents.collie
-          llm-agents.claude-code
           #llm-agents.code-review-graph
-          llm-agents.codex
           #llm-agents.jscpd
           llm-agents.plannotator
           llm-agents.plannotator-tui
@@ -154,7 +135,6 @@ in
           difftastic
           ast-grep
           nushell
-          llm-agents.nono
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda

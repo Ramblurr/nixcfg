@@ -375,9 +375,6 @@ in
       node.enable = true;
       python.enable = true;
       random.enable = true;
-      llms.enable = true;
-      llms.ollama.enable = true;
-      llms.onepasswordConnect.tokenFile = config.sops.secrets.onepassword-connect-llm-token.path;
     };
 
     editors = {

@@ -6,10 +6,16 @@
   git,
   nix,
   ast-grep,
+  jq,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "ol-skills";
-  version = "0-unstable-${builtins.substring 0 7 finalAttrs.src.rev}";
+  version = "0.0.0-unstable.${builtins.substring 0 7 finalAttrs.src.rev}";
+  outputs = [
+    "out"
+    "codexPlugin"
+  ];
+  nativeBuildInputs = [ jq ];
 
   src = fetchFromGitea {
     domain = "git.outskirtslabs.com";
@@ -27,6 +33,23 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook preInstall
     mkdir -p "$out"
     cp -a skills .claude-plugin "$out/"
+    mkdir -p "$codexPlugin/plugin/skills" "$codexPlugin/plugin/.codex-plugin" "$codexPlugin/.agents/plugins"
+    cp skills/LICENSE* "$codexPlugin/plugin/"
+    for group in mine engineering codex; do
+      for skill in skills/$group/*/SKILL.md; do
+        name=$(basename "$(dirname "$skill")")
+        if [ -e "$codexPlugin/plugin/skills/$name" ]; then
+          echo "Duplicate skill name: $name" >&2
+          exit 1
+        fi
+        cp -a "$(dirname "$skill")" "$codexPlugin/plugin/skills/$name"
+      done
+    done
+    jq -n --arg version ${lib.escapeShellArg finalAttrs.version} \
+      '{name:"ol-skills",version:$version,description:"Outskirts Labs agent skills"}' > "$codexPlugin/plugin/plugin.json"
+    jq '. + {skills:"./skills"}' "$codexPlugin/plugin/plugin.json" > "$codexPlugin/plugin/.codex-plugin/plugin.json"
+    jq -n '{name:"ol-skills",plugins:[{name:"ol-skills",source:{source:"local",path:"./plugin"},policy:{installation:"AVAILABLE",authentication:"ON_INSTALL"},category:"Productivity"}]}' \
+      > "$codexPlugin/.agents/plugins/marketplace.json"
     runHook postInstall
   '';
 
@@ -41,7 +64,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   };
 
   meta = {
-    description = "Outskirts Labs agent skills and Claude plugin manifests";
+    description = "Outskirts Labs skills, Claude plugin, and Codex plugin marketplace";
     homepage = "https://git.outskirtslabs.com/casey/skills";
     platforms = lib.platforms.all;
   };

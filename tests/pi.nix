@@ -16,6 +16,7 @@ let
             package = pkgs.hello;
             instances = {
               pi = {
+                instructions = "A shared rule.";
                 settings = {
                   theme = lib.mkDefault "dark";
                   packages = [
@@ -47,6 +48,7 @@ let
   readJson = path: builtins.fromJSON (builtins.unsafeDiscardStringContext files.${path}.text);
   targets = map (file: file.target) (lib.attrValues files);
 in
+assert files."/home/test/.config/pi/agent/AGENTS.md".text == "A shared rule.";
 assert
   readJson "/home/test/.config/pi/agent/settings.json" == {
     theme = "light";

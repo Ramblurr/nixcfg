@@ -10,10 +10,10 @@ let
   cfg = config.modules.dev.llms.t3;
   agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   package = agents.t3code.override {
-    providerPackages = [
-      agents.codex
-      agents.claude-code
-    ];
+    providerPackages =
+      lib.optional config.modules.dev.llms.codex.enable config.modules.dev.llms.codex.finalPackage
+      ++ lib.optional config.modules.dev.llms.claude.enable config.modules.dev.llms.claude.finalPackage
+      ++ lib.optional config.modules.dev.llms.pi.enable config.modules.dev.llms.pi.package;
   };
   jsonFormat = pkgs.formats.json { };
   json5 = pkgs.python3Packages.toPythonApplication pkgs.python3Packages.json5;
@@ -21,6 +21,11 @@ in
 {
   options.modules.dev.llms.t3 = {
     enable = lib.mkEnableOption "T3 Code and its headless user service";
+    settings = lib.mkOption {
+      type = lib.types.attrs;
+      default = { };
+      description = "T3 settings merged with the managed provider defaults.";
+    };
     desktop.enable = lib.mkEnableOption "the T3 Code desktop app";
     tailscaleServePort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
@@ -41,38 +46,7 @@ in
       hm:
       let
         t3Home = "${hm.config.xdg.configHome}/t3";
-        userSettings = {
-          enableProviderUpdateChecks = false;
-          storageCleanup = {
-            worktreeAfterDays = 90;
-            worktreeOnMerge = true;
-          };
-          projectSettingsFolded = true;
-          idleCompaction = "onReturn";
-          providerInstances = {
-            pi = {
-              driver = "pi";
-              displayName = "Pi";
-              environment = [
-                {
-                  name = "PI_CODING_AGENT_DIR";
-                  value = "${hm.config.xdg.configHome}/pi-t3/agent";
-                  sensitive = false;
-                }
-              ];
-              enabled = true;
-            };
-            claudeAgent = {
-              driver = "claudeAgent";
-              enabled = true;
-              config.homePath = "${hm.config.xdg.configHome}/claude";
-            };
-            codex = {
-              driver = "codex";
-              config.homePath = "${hm.config.xdg.configHome}/codex";
-            };
-          };
-        };
+
       in
       {
         home.packages = [
@@ -90,7 +64,6 @@ in
           settings.StartupWMClass = "t3code";
         };
 
-        # Preserve UI changes to unmanaged settings; declared values win on activation.
         home.activation.t3codeSettings = hm.lib.hm.dag.entryAfter [ "linkGeneration" ] (
           hm.lib.hm.generators.mkImpureConfigMerger {
             inherit pkgs;
@@ -99,7 +72,7 @@ in
             jqOperation = "$dynamic * $static";
             path = "${t3Home}/userdata/settings.json";
             mode = "600";
-            staticSettings = jsonFormat.generate "t3code-user-settings" userSettings;
+            staticSettings = jsonFormat.generate "t3code-user-settings" cfg.settings;
             reader = "${lib.getExe json5} --as-json";
           }
         );

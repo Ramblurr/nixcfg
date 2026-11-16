@@ -35,6 +35,11 @@ in
                 default = "${config.xdg.configHome}/${name}/agent";
                 description = "Agent directory, absolute or relative to the home directory.";
               };
+              instructions = lib.mkOption {
+                type = lib.types.lines;
+                default = "";
+                description = "Global instructions written to this instance's AGENTS.md.";
+              };
               settings = lib.mkOption {
                 inherit (jsonFormat) type;
                 default = { };
@@ -61,6 +66,9 @@ in
     home.packages = lib.optional (cfg.package != null) cfg.package;
     home.file = lib.mkMerge (
       lib.mapAttrsToList (_: instance: {
+        "${instance.configDir}/AGENTS.md" = lib.mkIf (instance.instructions != "") {
+          text = instance.instructions;
+        };
         "${instance.configDir}/settings.json".text = builtins.toJSON instance.settings;
         "${instance.configDir}/models.json" = lib.mkIf (instance.models != null) {
           text = builtins.toJSON instance.models;

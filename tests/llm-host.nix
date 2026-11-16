@@ -1,0 +1,36 @@
+{ inputs, pkgs }:
+let
+  inherit (pkgs) lib;
+  host = import ../hosts/quine/llm.nix {
+    inherit inputs pkgs lib;
+    config = {
+      repo.secrets.global.domain.tailnet = "example.test";
+      sops.secrets.onepassword-connect-llm-token.path = null;
+      modules.dev.llms = suite;
+      modules.users.primaryUser.homeDirectory = "/home/test";
+    };
+  };
+  suite = lib.recursiveUpdate {
+    codex.enable = true;
+    claude.enable = true;
+    pi.enable = true;
+    onepasswordConnect.tokenFile = null;
+    proxy.removeLegacyCredentials = false;
+  } host.modules.dev.llms;
+in
+assert suite.codex.settings.model == "gpt-6-luna";
+assert suite.codex.settings.web_search == "disabled";
+assert !(suite.codex.settings.model_providers.cliproxy ? env_key);
+assert lib.elem "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\"" suite.codex.extraArgs;
+assert suite.claude.settings.modelSettings."claude-opus-5".effortLevel == "high";
+assert suite.claude.settings.env.ANTHROPIC_BASE_URL == suite.proxy.url;
+assert suite.t3.settings.providerInstances.pi.enabled;
+assert suite.t3.settings.providerInstances.codex.config.homePath == "/home/test/.config/codex";
+assert
+  suite.nono.profiles.eca.network.custom_credentials.openrouter.upstream == "${suite.proxy.url}/v1";
+assert suite.nono.ecaSettings.providers.openrouter.models ? "google/gemini-4-carbon";
+assert suite.pi.instances.pi.settings.defaultProvider == "cliproxy";
+assert suite.pi.instances.pi-t3.settings.defaultThinkingLevel == "high";
+assert lib.all (lib.hasPrefix builtins.storeDir) suite.pi.instances.pi.settings.skills;
+assert lib.elem [ "features" "skills" ] suite.codex.removeSettings;
+pkgs.runCommand "llm-host-settings-test" { } ''touch "$out"''
