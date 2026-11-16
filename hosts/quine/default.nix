@@ -55,13 +55,15 @@ in
 
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
-  sops.secrets.gatus-heartbeat-token = { };
-  sops.templates.gatus-heartbeat-env.content = ''
-    GATUS_EXTERNAL_TOKEN=${config.sops.placeholder.gatus-heartbeat-token}
-  '';
-  site.gatus.heartbeatToken.environmentFile = config.sops.templates.gatus-heartbeat-env.path;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-  site.gatus.heartbeatToken.gatusEnvironmentVariable = "GATUS_QUINE_EXTERNAL_TOKEN";
+  modules.services.onepassword-systemd-credentials = {
+    enable = true;
+    bootstrapTokenFile = config.sops.secrets.onepassword-connect-llm-token.path;
+  };
+  site.gatus.heartbeatToken = {
+    gatusEnvironmentVariable = "GATUS_QUINE_EXTERNAL_TOKEN";
+    onepasswordReference = "op://home-ops-prod/gatus/quine_external_endpoint_token";
+  };
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   environment.persistence."/persist".directories = [ "/var/lib/containers" ];
   networking.hostId = lib.my.generateHostId config.networking.hostName;
