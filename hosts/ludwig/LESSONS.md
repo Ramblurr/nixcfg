@@ -81,3 +81,7 @@ Read this before the next unattended install of any remote host.
 
 13. The RTC runs about two minutes fast; the journal jumps back when NTP
     syncs. Cosmetic.
+
+14. `nixos-rebuild switch` does not rerun the oneshot `tailscaled-set`, so
+    changed `extraSetFlags` only apply at the next boot. After a deploy that
+    changes them, run `systemctl start tailscaled-set`.
