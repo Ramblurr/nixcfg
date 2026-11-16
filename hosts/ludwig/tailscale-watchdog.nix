@@ -5,9 +5,8 @@
   ...
 }:
 #
-# ludwig is remote; its own Tailscale node is one of its two ways in. Restart
-# tailscaled while it is not connected. If the node ever needs a new login,
-# place a tagged auth key at authKeyFile.
+# Tailscale is the way in to this remote host: restart tailscaled while it is
+# not connected.
 let
   authKeyFile = config.services.tailscale.authKeyFile;
 in

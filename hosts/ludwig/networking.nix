@@ -5,7 +5,6 @@ let
   cidr = address: "${address}/${toString lan.prefixLength}";
 in
 {
-  # ludwig sits on a remote LAN that is not part of our site network.
   networking.useNetworkd = true;
   networking.useDHCP = false;
   networking.nameservers = site.nameservers;
@@ -15,7 +14,7 @@ in
   systemd.network = {
     # Any routable link will do: the fallback must not stall Samba and NFS.
     wait-online.anyInterface = true;
-    # Intel X553 port 0 (FreeBSD ix0), the only cabled port.
+    # The only cabled port.
     links."10-${lan.interface}" = {
       matchConfig.Path = "pci-0000:04:00.0";
       linkConfig.Name = lan.interface;
@@ -30,9 +29,7 @@ in
       networkConfig.IPv6AcceptRA = false;
       linkConfig.RequiredForOnline = "routable";
     };
-    # Keeps the host at its known address if the rename above ever fails:
-    # whichever port has a cable gets it. Ports without carrier stay
-    # unconfigured; with anyInterface only one link has to come up.
+    # Keeps the host at its known address if the rename above ever fails.
     networks."90-fallback" = {
       matchConfig.Name = "en*";
       address = [ (cidr lan.address) ];

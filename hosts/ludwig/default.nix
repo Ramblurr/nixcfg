@@ -20,7 +20,6 @@ in
     ./tailscale-watchdog.nix
     ../../config/offsite.nix
   ];
-  # First NixOS install; the host previously ran TrueNAS CORE 13.
   system.stateVersion = "26.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
@@ -46,7 +45,6 @@ in
     boot.zfs = {
       enable = true;
       usePlymouth = false;
-      # NixOS lives on the existing SSD mirror; see hardware-configuration.nix.
       inherit (site) rootPool;
       scrubPools = [
         site.rootPool
@@ -55,7 +53,6 @@ in
       autoSnapshot.enable = false;
       extraPools = [ "tank" ];
     };
-    # Replaces the tailscale-ludwig jail as the remote site's exit node.
     vpn.tailscale = {
       enable = true;
       useRoutingFeatures = "server";
@@ -74,9 +71,7 @@ in
   };
 
   services.tailscale = {
-    # Absent in normal operation; see tailscale-watchdog.nix.
     authKeyFile = site.persist.tailscaleAuthKey;
-    # Tailscale SSH, as on the other hosts; sshd still serves the LAN address.
     extraSetFlags = site.tailscaleFlags ++ [
       "--advertise-exit-node"
       "--ssh"

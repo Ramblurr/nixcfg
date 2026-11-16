@@ -28,16 +28,13 @@ rec {
   # The former TrueNAS kern.hostid, recorded in the pool labels.
   hostId = "ac91e159";
   rootPool = "fast";
-  # Mount point to dataset under <rootPool>/encrypted: the modules.boot.zfs
-  # layout.
+  # Mount point to dataset under <rootPool>/encrypted.
   datasets = {
     "/" = "local/root";
     "/nix" = "local/nix";
     "/home" = "local/home";
     "/persist" = "safe/persist";
   };
-  # One ESP per root pool SSD. GRUB mirrors to every one; only the first is
-  # required at boot.
   esps = [
     {
       mountPoint = "/boot";
@@ -49,7 +46,6 @@ rec {
     }
   ];
 
-  # State migrated from TrueNAS, outside the sops file.
   persist = {
     zfsKeys = "/persist/etc/zfs-keys";
     sshHostKeys = "/persist/etc/ssh";
@@ -57,7 +53,6 @@ rec {
     tailscaleAuthKey = "/persist/etc/tailscale/authkey";
   };
 
-  # The TrueNAS periodic snapshot prefix, kept so existing snapshots age out
-  # and Samba lists them.
+  # Existing snapshots carry this prefix; pruning and Samba match on it.
   snapshotPrefix = "auto-";
 }

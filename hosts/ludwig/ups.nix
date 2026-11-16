@@ -4,8 +4,7 @@
   ...
 }:
 #
-# USB UPS, as on TrueNAS: after a sustained time on battery, power off the
-# site router, then this host.
+# After a sustained time on battery, power off the site router, then this host.
 let
   site = import ./site.nix;
   nut = config.power.ups.package;

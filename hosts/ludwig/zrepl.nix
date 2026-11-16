@@ -6,12 +6,10 @@
 }:
 #
 # ludwig is mali's offsite replica: it pulls mali's mali_source job over TLS.
-# Ported from the TrueNAS jail config (zrepl 0.6.1).
 let
   inherit (config.repo.secrets.local) ludwig;
   inherit (import ./site.nix) snapshotPrefix;
   receiveRoot = "tank/replication/mali";
-  # mali's own zrepl snapshot prefix.
   maliPrefix = "zrepl_";
   secret = name: config.sops.secrets."zrepl/${name}".path;
   snapshotAge = pkgs.callPackage ../../pkgs/zfs-snapshot-age.nix { zfs = config.boot.zfs.package; };
@@ -91,8 +89,6 @@ in
           };
         }
         {
-          # Replaces the TrueNAS periodic snapshot tasks with the same names,
-          # so existing snapshots age out normally.
           name = "ludwig_snap";
           type = "snap";
           filesystems = ludwig.snapshotFilesystems;
@@ -117,7 +113,6 @@ in
     };
   };
 
-  # healthchecks.io ping, as the TrueNAS cron job did.
   systemd.services.zrepl-mali-received = {
     description = "Report whether recent mali snapshots arrived";
     after = [ "network-online.target" ];

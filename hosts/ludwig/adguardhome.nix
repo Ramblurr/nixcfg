@@ -3,8 +3,7 @@
   ...
 }:
 #
-# Replaces the adguardhome jail at the same address. The web UI has no users,
-# so it listens on loopback only; reach it with an SSH tunnel.
+# The web UI has no users, so it listens on loopback only.
 let
   site = import ./site.nix;
   inherit (config.services.adguardhome.settings) dns;

@@ -50,7 +50,7 @@ let
       gpu = "Virtio 1.0 GPU";
     };
     ludwig = {
-      # Ludwig Wittgenstein; this host predates witt.
+      # Ludwig Wittgenstein - https://en.wikipedia.org/wiki/Ludwig_Wittgenstein
       purpose = "Offsite replica NAS";
       system = "x86_64-linux";
       channel = "stable";

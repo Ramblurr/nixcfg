@@ -27,10 +27,7 @@ let
     };
   };
   initrdKey = "/etc/zfs-keys/${rootPool}.key";
-  # The TrueNAS altroot.
   altroot = "/mnt";
-  # The pools keep the TrueNAS key setup (keylocation "prompt"); the key
-  # files live on the encrypted root pool.
   loadKey = pool: keyFile: ''
     if [ "$(${zfs} get -H -o value keystatus ${pool})" != available ]; then
       ${zfs} load-key -L file://${keyFile} ${pool}
@@ -40,20 +37,16 @@ in
 {
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
-  # Matching TrueNAS lets either OS import the pools without -f after an
-  # unclean shutdown.
   networking.hostId = site.hostId;
 
   hardware.cpu.intel.updateMicrocode = true;
   zramSwap.enable = true;
 
-  # Reboot a hung remote host instead of waiting for someone on site.
   systemd.settings.Manager = {
     RuntimeWatchdogSec = "60s";
     RebootWatchdogSec = "10min";
   };
 
-  # The ESPs are the former TrueNAS swap partitions.
   fileSystems = lib.mapAttrs (_: dataset) site.datasets // lib.listToAttrs (lib.imap0 esp site.esps);
 
   boot = {
@@ -82,8 +75,7 @@ in
         "usbhid"
         "xhci_pci"
       ];
-      # Plaintext on both ESPs. TrueNAS kept the same key on its boot device,
-      # so unattended boot keeps the existing protection level.
+      # Plaintext on both ESPs: the price of unattended boot.
       secrets.${initrdKey} = "${site.persist.zfsKeys}/${rootPool}.key";
       # Every sysroot mount and the rollback wait for the import unit, so they
       # also wait for the key.
@@ -91,9 +83,9 @@ in
     };
   };
 
-  # tank's stored mountpoints are relative to the TrueNAS altroot. Importing
-  # it with the same altroot keeps the paths shares, exports and clients use;
-  # the module's own import then finds the pool imported.
+  # tank's stored mountpoints assume this altroot; shares, exports and
+  # clients use the resulting paths. The module's own import then finds the
+  # pool imported.
   systemd.services.zfs-import-tank = {
     preStart = ''
       for _ in $(seq 1 60); do

@@ -8,8 +8,7 @@ let
   inherit (config.repo.secrets.local) ludwig;
 in
 {
-  # Accounts migrated from TrueNAS. Their uids and gids own existing data on
-  # tank, so the values must match the TrueNAS database exactly.
+  # These uids and gids own existing data on tank.
   users.groups = lib.mapAttrs (_: gid: { inherit gid; }) ludwig.groups;
   users.users =
     lib.mapAttrs (
@@ -28,10 +27,8 @@ in
       }
     ) ludwig.users
     // {
-      # Extra root keys for unattended remote administration, kept private.
       root.openssh.authorizedKeys.keys = ludwig.agentSshKeys or [ ];
     };
 
-  # Remote borg clients run `borg serve` through their forced command.
   environment.systemPackages = [ pkgs.borgbackup ];
 }

@@ -13,7 +13,6 @@ let
     "read only" = "no";
     "guest ok" = "no";
     "create mask" = "0664";
-    # Previous Versions from the periodic snapshots (TrueNAS shadowcopy).
     "vfs objects" = "shadow_copy2 streams_xattr";
     "shadow:snapdir" = ".zfs/snapshot";
     "shadow:sort" = "desc";
@@ -29,7 +28,7 @@ in
     winbindd.enable = false;
     settings = {
       global = {
-        # Clients already know this server by its TrueNAS name.
+        # Clients know this server by this name.
         "netbios name" = "truenas";
         workgroup = "WORKGROUP";
         "server string" = config.networking.hostName;
@@ -59,6 +58,5 @@ in
     hostname = global."netbios name";
   };
 
-  # passdb.tdb holds the SMB password hashes imported from TrueNAS.
   environment.persistence."/persist".directories = [ "/var/lib/samba" ];
 }

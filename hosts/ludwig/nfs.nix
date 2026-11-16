@@ -4,7 +4,6 @@
 }:
 let
   server = config.services.nfs.server;
-  # rpcbind, nfsd and the pinned NFSv3 side daemons.
   ports = [
     111
     2049
