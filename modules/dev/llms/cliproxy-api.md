@@ -25,7 +25,9 @@ Connect. This file must be restored when recovering the host.
 
 OpenRouter uses `api-keys.openai-compatibility`, with its upstream key read from
 `op://LLM/OpenRouter/credential`. Model IDs must be listed explicitly in the host
-settings. Pi discovers them under `cliproxy`, using its OpenRouter catalog for
+settings. Quine exposes `google/gemini-4-carbon`, `z-ai/glm-5.3-flash`,
+`deepseek/deepseek-v4.1-flash-1017`, `moonshotai/kimi-k3.1-pro`, and `tencent/hy4`.
+Pi discovers them under `cliproxy`, using its OpenRouter catalog for
 protocol, limits, and metered prices. ECA's separate nono OpenRouter route remains
 configured independently.
 

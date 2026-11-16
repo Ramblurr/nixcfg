@@ -24,7 +24,13 @@ _: {
           name = "openrouter";
           base-url = "https://openrouter.ai/api/v1";
           keys = [ { api-key = "op://LLM/OpenRouter/credential"; } ];
-          models = [ { name = "moonshotai/kimi-k2"; } ];
+          models = map (name: { inherit name; }) [
+            "google/gemini-4-carbon"
+            "z-ai/glm-5.3-flash"
+            "deepseek/deepseek-v4.1-flash-1017"
+            "moonshotai/kimi-k3.1-pro"
+            "tencent/hy4"
+          ];
         }
       ];
       routing = {
