@@ -4,11 +4,12 @@ Quine runs the `cliproxy-api` user service on loopback port 8317, with HTTPS
 through Tailscale Serve on the same port. Host settings live in
 `hosts/quine/llm.nix`; the service module is `cliproxy-api.nix`.
 
-At each service start, `cliproxy-config.py` resolves exact `op://` strings in the
+At each service start, `scripts/render-op-config.clj` resolves exact `op://` strings in the
 Nix-generated template and writes a mode-0600 config under
 `$XDG_RUNTIME_DIR/cliproxyapi/config.yaml`. JSON is accepted as YAML by the proxy.
 Secret values never enter the Nix template or store. Resolution failure stops
-startup rather than starting with missing credentials. The old hand-edited
+startup rather than starting with missing credentials. Run
+`bb tests/render-op-config_test.clj` after changing the renderer. The old hand-edited
 `~/.config/cliproxyapi/config.yaml` is no longer the service input after deployment.
 
 The LLM vault is read through `op-read-llm` and the configured Connect token.

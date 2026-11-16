@@ -95,7 +95,7 @@ in
             RuntimeDirectory = "cliproxyapi";
             RuntimeDirectoryMode = "0700";
             UMask = "0077";
-            ExecStartPre = "${lib.getExe pkgs.python3} ${./cliproxy-config.py} ${template} ${lib.getExe reader} ${configFile}";
+            ExecStartPre = "${lib.getExe pkgs.babashka} ${../../../scripts/render-op-config.clj} ${template} ${lib.getExe reader} ${configFile}";
             ExecStart = "${lib.getExe cfg.package} --config ${configFile}";
             Restart = "on-failure";
             RestartSec = 5;
