@@ -49,6 +49,17 @@ let
       ramMiB = 8000;
       gpu = "Virtio 1.0 GPU";
     };
+    ludwig = {
+      # Ludwig Wittgenstein; this host predates witt.
+      purpose = "Offsite replica NAS";
+      system = "x86_64-linux";
+      channel = "stable";
+      role = "server";
+      board = "ASRock Rack C3558D4I-4L (iXsystems TrueNAS Mini 3.0 X)";
+      cpu = "Intel Atom C3558";
+      ramMiB = 16384;
+      gpu = "ASPEED Graphics Family";
+    };
     mali = {
       purpose = "Storage NAS";
       documentation = "https://notes.binaryelysium.com/HomeOps/NAS/";
