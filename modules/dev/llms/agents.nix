@@ -6,7 +6,13 @@
 }:
 let
   cfg = config.modules.dev.llms;
+  extraFiles = lib.mkOption {
+    type = lib.types.listOf lib.types.path;
+    default = [ ];
+    description = "Markdown files appended to the agent instructions, in order.";
+  };
   instructionOptions = label: filename: {
+    inherit extraFiles;
     enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -49,6 +55,7 @@ in
 {
   options.modules.dev.llms = {
     agents = {
+      inherit extraFiles;
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;

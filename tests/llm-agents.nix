@@ -119,6 +119,10 @@ let
   unmanagedInstructions = evaluate { agents.enable = false; };
   codexInstructionsOff = evaluate { codex.agents.enable = false; };
   withPreamble = evaluate { codex.agents.preamble = "Preamble."; };
+  withFiles = evaluate {
+    agents.extraFiles = [ (builtins.toFile "shared-instructions.md" "Shared file rule.") ];
+    codex.agents.extraFiles = [ (builtins.toFile "codex-instructions.md" "Codex file rule.") ];
+  };
   direct = evaluate {
     proxy.enable = false;
     skills.enable = false;
@@ -158,6 +162,16 @@ assert !(unmanagedInstructions.xdg.configFile ? "claude/CLAUDE.md");
 assert !(codexInstructionsOff.xdg.configFile ? "codex/AGENTS.md");
 assert codexInstructionsOff.xdg.configFile ? "claude/CLAUDE.md";
 assert withPreamble.xdg.configFile."codex/AGENTS.md".text == "Preamble.\n\nShared rule.";
+assert
+  withFiles.xdg.configFile."codex/AGENTS.md".text
+  == "Shared rule.\n\nShared file rule.\n\nCodex file rule.";
+assert withFiles.xdg.configFile."claude/CLAUDE.md".text == "Shared rule.\n\nShared file rule.";
+assert
+  withFiles.home.file."/home/test/.config/pi/agent/AGENTS.md".text
+  == "Shared rule.\n\nShared file rule.";
+assert
+  withFiles.home.file."/home/test/.config/pi-t3/agent/AGENTS.md".text
+  == "Shared rule.\n\nShared file rule.";
 assert !(direct.home.activation ? codexLocalSkills);
 assert lib.hasInfix "plugin add" common.home.activation.codexLocalSkills.data;
 assert lib.hasInfix "experimental_bearer_token" common.home.activation.codexSettings.data;

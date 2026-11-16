@@ -38,12 +38,15 @@ let
   instructions =
     tool:
     lib.concatStringsSep "\n\n" (
-      lib.filter (s: s != "") [
-        cfg.agents.preamble
-        tool.agents.preamble
-        cfg.agents.extraText
-        tool.agents.extraText
-      ]
+      lib.filter (s: s != "") (
+        [
+          cfg.agents.preamble
+          tool.agents.preamble
+          cfg.agents.extraText
+          tool.agents.extraText
+        ]
+        ++ map builtins.readFile (cfg.agents.extraFiles ++ tool.agents.extraFiles)
+      )
     );
 in
 {

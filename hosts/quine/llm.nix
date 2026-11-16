@@ -424,6 +424,7 @@ in
   };
 
   modules.dev.llms.enable = true;
+  modules.dev.llms.agents.extraFiles = [ ../../modules/dev/llms/plannotator-instructions.md ];
   modules.dev.llms.ollama.enable = true;
   modules.dev.llms.onepasswordConnect.tokenFile =
     config.sops.secrets.onepassword-connect-llm-token.path;

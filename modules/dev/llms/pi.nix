@@ -8,12 +8,15 @@
 let
   cfg = config.modules.dev.llms;
   instructions = lib.concatStringsSep "\n\n" (
-    lib.filter (s: s != "") [
-      cfg.agents.preamble
-      cfg.pi.agents.preamble
-      cfg.agents.extraText
-      cfg.pi.agents.extraText
-    ]
+    lib.filter (s: s != "") (
+      [
+        cfg.agents.preamble
+        cfg.pi.agents.preamble
+        cfg.agents.extraText
+        cfg.pi.agents.extraText
+      ]
+      ++ map builtins.readFile (cfg.agents.extraFiles ++ cfg.pi.agents.extraFiles)
+    )
   );
 in
 {
