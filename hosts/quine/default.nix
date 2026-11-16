@@ -12,6 +12,8 @@ let
   deweyServiceAddress = builtins.head config.site.net.svc.hosts4.dewey;
   debordServiceAddress = builtins.head config.site.net.svc.hosts4.debord;
   inherit (config.modules.users.primaryUser) username;
+  credentialDir = "/run/user/${toString config.users.users.${username}.uid}/onepassword";
+  credentialUnit = "onepassword-credentials.service";
 in
 {
   imports = [
@@ -84,33 +86,13 @@ in
     owner = username;
     mode = "0400";
   };
-  sops.secrets.mistral-api-key-quine.owner = "root";
-  sops.templates.voxtype-env = {
-    owner = username;
-    mode = "0400";
-    content = ''
-      VOXTYPE_WHISPER_API_KEY=${config.sops.placeholder.mistral-api-key-quine}
-    '';
-  };
   sops.secrets.onepassword-connect-llm-token = {
-    owner = username;
-    mode = "0400";
-  };
-  sops.secrets.HASS_TOKEN = {
     owner = username;
     mode = "0400";
   };
   sops.secrets.netrc = {
     owner = username;
     mode = "0400";
-  };
-  sops.templates.hacompanion-env = {
-    owner = username;
-    mode = "0400";
-    content = ''
-      HASS_TOKEN=${config.sops.placeholder."HASS_TOKEN"}
-      HASS_DEVICE_NAME=quine
-    '';
   };
   sops.secrets."github_token" = {
     owner = username;
@@ -222,8 +204,8 @@ in
         };
         hacompanion = {
           enable = true;
-          environmentFile = config.sops.templates.hacompanion-env.path;
-          unitAfter = [ "sops-nix.service" ];
+          environmentFile = "${credentialDir}/hacompanion.env";
+          unitAfter = [ credentialUnit ];
           listenPort = 6669;
           settings = {
             homeassistant = {
@@ -279,7 +261,8 @@ in
           enable = true;
           autostart.enable = true;
           cudaSupport = true;
-          environmentFile = config.sops.templates.voxtype-env.path;
+          environmentFile = "${credentialDir}/voxtype.env";
+          credentialUnits = [ credentialUnit ];
           extraArgs = [
             "--engine"
             "whisper"
@@ -534,7 +517,27 @@ in
     pkgs.kdePackages.krdc
   ];
 
+  systemd.user.services.hacompanion.requires = [ credentialUnit ];
+
   myhm = _: {
+    systemd.user.services.onepassword-credentials = {
+      Unit.Description = "Fetch desktop service credentials from 1Password Connect";
+      Service = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        UMask = "0077";
+        ExecStart = pkgs.writeShellScript "onepassword-credentials" ''
+          set -eu
+          read=${lib.getExe config.modules.dev.llms.onepasswordConnect.package}
+          mistral=$($read op://LLM/Mistral-quine/credential)
+          hass=$($read op://home-ops-prod/vmxwbsjwa6ziohzyg63xfbveai/credential)
+          ${pkgs.coreutils}/bin/mkdir -p ${credentialDir}
+          printf 'VOXTYPE_WHISPER_API_KEY=%s\n' "$mistral" > ${credentialDir}/voxtype.env
+          printf 'HASS_TOKEN=%s\nHASS_DEVICE_NAME=quine\n' "$hass" > ${credentialDir}/hacompanion.env
+        '';
+        ExecStopPost = "${pkgs.coreutils}/bin/rm -rf ${credentialDir}";
+      };
+    };
     nix.registry.nixpkgs.flake = actual-nixpkgs;
     home.packages = with pkgs; [
       libation
