@@ -8,6 +8,19 @@
 
 let
   cfg = config.modules.dev.llms;
+  connect = cfg.onepasswordConnect;
+  # Reads LLM-vault keys through Connect so agents start without desktop approval.
+  opRead =
+    if connect.tokenFile == null then
+      "op read"
+    else
+      toString (
+        pkgs.writeShellScript "op-read-llm" ''
+          OP_CONNECT_HOST=${lib.escapeShellArg connect.host} \
+          OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg connect.tokenFile})" \
+            exec ${lib.getExe pkgs._1password-cli} read "$@"
+        ''
+      );
 in
 {
   config = lib.mkIf cfg.enable {
@@ -17,14 +30,14 @@ in
         home = hm.config.home.homeDirectory;
         cliproxyProvider = {
           baseUrl = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-          apiKey = "!op read 'op://LLM/CLIProxyAPI/credential'";
+          apiKey = "!${opRead} 'op://LLM/CLIProxyAPI/credential'";
         };
         all-providers = {
-          anthropic.apiKey = "!op read 'op://LLM/Anthropic-quine/credential'";
-          typesafe.apiKey = "!op read 'op://LLM/Jev-quine/credential'";
-          subq.apiKey = "!op read 'op://LLM/Subq-quine/credential'";
-          openai.apiKey = "!op read 'op://LLM/OpenAI-quine/credential'";
-          openrouter.apiKey = "!op read 'op://LLM/OpenRouter/credential'";
+          anthropic.apiKey = "!${opRead} 'op://LLM/Anthropic-quine/credential'";
+          typesafe.apiKey = "!${opRead} 'op://LLM/Jev-quine/credential'";
+          subq.apiKey = "!${opRead} 'op://LLM/Subq-quine/credential'";
+          openai.apiKey = "!${opRead} 'op://LLM/OpenAI-quine/credential'";
+          openrouter.apiKey = "!${opRead} 'op://LLM/OpenRouter/credential'";
           cliproxy = cliproxyProvider;
         };
       in

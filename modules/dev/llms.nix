@@ -52,6 +52,21 @@ in
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
+    onepasswordConnect = {
+      tokenFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Runtime path to a 1Password Connect token that can read the LLM vault.
+          When set, agent API-key reads use Connect instead of the desktop-approved `op` session.
+        '';
+      };
+      host = lib.mkOption {
+        type = lib.types.str;
+        default = "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080";
+        description = "1Password Connect endpoint used with `tokenFile`.";
+      };
+    };
   };
   config = lib.mkIf cfg.enable {
     services.ollama = lib.mkIf cfg.ollama.enable {

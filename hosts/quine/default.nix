@@ -89,6 +89,10 @@ in
       VOXTYPE_WHISPER_API_KEY=${config.sops.placeholder.mistral-api-key-quine}
     '';
   };
+  sops.secrets.onepassword-connect-llm-token = {
+    owner = username;
+    mode = "0400";
+  };
   sops.secrets.HASS_TOKEN = {
     owner = username;
     mode = "0400";
@@ -390,6 +394,7 @@ in
       random.enable = true;
       llms.enable = true;
       llms.ollama.enable = true;
+      llms.onepasswordConnect.tokenFile = config.sops.secrets.onepassword-connect-llm-token.path;
     };
 
     editors = {
