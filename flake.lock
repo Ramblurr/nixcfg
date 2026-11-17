@@ -2048,11 +2048,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1794769771,
-        "narHash": "sha256-fIfILMS79SAqbWHCc6NE9LlObvxbopWZXPsKx8riV1k=",
+        "lastModified": 1794947783,
+        "narHash": "sha256-NYBD60RDyy33jtQWL2xdOPL7oEGsn9z6S3sa1h32muk=",
         "owner": "Ramblurr",
         "repo": "llm-agents.nix",
-        "rev": "9b278780a681e2c12b41b05def5a2310a24594bb",
+        "rev": "6839a4224bfbd03840f7f266712c4eee2c0547a8",
         "type": "github"
       },
       "original": {
