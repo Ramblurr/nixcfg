@@ -1,13 +1,11 @@
 { inputs, pkgs }:
 let
   primary = pkgs.caddy-with-security;
-  stablePkgs = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
-  stable = (stablePkgs.callPackage ../pkgs/caddy/package.nix { }).overrideAttrs (old: {
-    # Force independent vendoring: a shared fixed-output cache can hide drift.
-    goModules = old.goModules.overrideAttrs (modules: {
-      name = "${modules.name}-stable-check";
-    });
-  });
+  # Stable hosts get the same Caddy as unstable hosts: the overlay builds it
+  # from the unstable channel, so one go.mod and vendorHash serve every host.
+  stablePkgs =
+    inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system}.appendOverlays
+      (import ../pkgs/default.nix inputs);
   mismatchedVersion =
     builtins.tryEval
       (pkgs.callPackage ../pkgs/caddy/package.nix {
@@ -18,21 +16,17 @@ let
       }).drvPath;
 in
 assert !mismatchedVersion.success;
+assert stablePkgs.caddy-with-security.drvPath == primary.drvPath;
 pkgs.runCommand "caddy-package-check" { } ''
-  # Both package builds run the version and plugin installation checks.
-  for package in ${primary} ${stable}; do
-    test -x "$package/bin/caddy"
-    test -f "$package/lib/systemd/system/caddy.service"
-    test -f "$package/lib/systemd/system/caddy-api.service"
-    test -f "$package/share/man/man8/caddy.8.gz"
-    test -f "$package/share/bash-completion/completions/caddy.bash"
-  done
+  # The package build runs the version and plugin installation checks.
+  test -x "${primary}/bin/caddy"
+  test -f "${primary}/lib/systemd/system/caddy.service"
+  test -f "${primary}/lib/systemd/system/caddy-api.service"
+  test -f "${primary}/share/man/man8/caddy.8.gz"
+  test -f "${primary}/share/bash-completion/completions/caddy.bash"
 
-  # Neither toolchain may regenerate the checked-in module manifests.
+  # The toolchain may not regenerate the checked-in module manifests.
   cmp ${primary.src}/go.mod ${../pkgs/caddy/src/go.mod}
-  cmp ${stable.src}/go.mod ${../pkgs/caddy/src/go.mod}
   cmp ${primary.src}/go.sum ${../pkgs/caddy/src/go.sum}
-  cmp ${stable.src}/go.sum ${../pkgs/caddy/src/go.sum}
-  diff -qr ${primary.goModules} ${stable.goModules}
   touch "$out"
 ''

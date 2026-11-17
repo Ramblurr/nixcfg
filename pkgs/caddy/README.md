@@ -12,6 +12,11 @@ Caddy/plugin module versions against `go.mod` and the presence of deSEC,
 authenticator, authorizer and security modules. Evaluation refuses a mismatch
 between the locked Caddy module version and the nixpkgs Caddy package version.
 
+Every host builds this package from the unstable channel's Caddy, stable hosts
+included (see `pkgs/default.nix`). In November 2026 unstable moved to the Caddy
+2.11.9 security release while its backport to the stable channel failed; one
+`go.mod` cannot match two Caddy versions.
+
 ## Why the module files are checked in
 
 The former `withPlugins` build generated `go.mod` inside a fixed-output source
@@ -44,9 +49,9 @@ Run `go get` with explicit selected versions. For example, these are the current
 pins; change only the version(s) you intend to update:
 
 ```sh
-go get github.com/caddyserver/caddy/v2@v2.11.7 \
+go get github.com/caddyserver/caddy/v2@v2.11.9 \
   github.com/caddy-dns/desec@v1.1.0 \
-  github.com/greenpau/caddy-security@v1.1.64
+  github.com/greenpau/caddy-security@v1.6.2
 go mod tidy
 go mod verify
 ```
@@ -54,7 +59,7 @@ go mod verify
 Do not delete the manifests or use `@latest` / `go get -u` for routine updates.
 Review `main.go`, `go.mod` and `go.sum`, including any Go language/toolchain
 changes. When adding/removing a plugin, update the installation checks too.
-Caddy updates must match the nixpkgs package version; do not bypass the version
+Caddy updates must match the unstable nixpkgs package version; do not bypass the version
 assertion or plugin checks to make a build pass.
 
 From the repository root, temporarily set `vendorHash` in `package.nix` to
@@ -66,16 +71,15 @@ nix build --no-link -L .#caddy-with-security
 
 Review the expected vendor-hash mismatch and replace the placeholder with the
 reported hash. Build again and require the installation checks to pass. Run the
-cross-channel flake check too:
+package check too:
 
 ```sh
 nix build --no-link -L .#checks.x86_64-linux.caddy-package
 ```
 
-This builds with both nixpkgs channels, forces an independent stable-channel
-vendor output, compares the vendor trees and unchanged source manifests, checks
-installed packaging files, and tests rejection of a Caddy version mismatch.
-A cached primary-channel vendor output is not proof of independent regeneration.
+It checks that stable hosts get the same derivation as unstable hosts, that the
+source manifests are unchanged, the installed packaging files, and that a Caddy
+version mismatch is rejected.
 Commit the module files and vendor hash together. This workflow does not change
 global Git configuration, commit, push or deploy automatically.
 

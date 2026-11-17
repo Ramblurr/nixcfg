@@ -7,7 +7,11 @@ inputs: [
     in
     {
       bb-desktop = prev.callPackage ./bb-desktop/package.nix { inherit pkgs-lib; };
-      caddy-with-security = prev.callPackage ./caddy/package.nix { };
+      # Every host, stable ones included, builds Caddy from the unstable channel,
+      # so one go.mod serves all hosts. See pkgs/caddy/README.md.
+      caddy-with-security = prev.callPackage ./caddy/package.nix {
+        inherit (inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system}) caddy;
+      };
       neogrok = prev.callPackage ./neogrok/package.nix { };
       code-search-mcp = prev.callPackage ./code-search-mcp/package.nix {
         clojureNixLocker = inputs.clojure-nix-locker;
