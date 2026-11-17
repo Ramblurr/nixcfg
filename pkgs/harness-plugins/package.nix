@@ -15,8 +15,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     domain = "git.outskirtslabs.com";
     owner = "casey";
     repo = "skills";
-    rev = "5f754c406879006ed0c208dd822e0efac8577f2a";
-    hash = "sha256-B1xEtFK8Y/m6doWIpJSJwAFl9YgixWRzJt1Qd0BEbN4=";
+    rev = "80b9d99ba3e7855c5e2ab19847e92472484d004c";
+    hash = "sha256-CP/khGwak5glBDSQUZErJxwQ37pGWWC1bj6r0yEnKQQ=";
   };
 
   dontConfigure = true;
@@ -33,10 +33,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   passthru = {
     plugins = lib.genAttrs [
       "my"
-      "my-cc"
-      "my-cx"
-      "my-pi"
-      "my-t3"
       "pstack"
       "tstack"
     ] (name: "${finalAttrs.finalPackage}/plugins/${name}");

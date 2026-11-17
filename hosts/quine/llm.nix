@@ -506,7 +506,6 @@ in
           skills = lib.optionals cfg.skills.enable (
             map (name: "${cfg.skills.package.plugins.${name}}/skills") [
               "my"
-              "my-pi"
               "tstack"
             ]
           );
@@ -555,7 +554,6 @@ in
           skills = lib.optionals cfg.skills.enable (
             map (name: "${cfg.skills.package.plugins.${name}}/skills") [
               "my"
-              "my-t3"
               "tstack"
             ]
           );
@@ -611,7 +609,6 @@ in
     marketplaces = lib.optional cfg.skills.enable cfg.skills.package;
     plugins = lib.optionals cfg.skills.enable [
       "my@harness-plugins"
-      "my-cx@harness-plugins"
       "pstack@harness-plugins"
       "tstack@harness-plugins"
     ];
@@ -652,7 +649,6 @@ in
     plugins = lib.optionalAttrs cfg.skills.enable {
       inherit (cfg.skills.package.plugins)
         my
-        my-cc
         pstack
         tstack
         ;
