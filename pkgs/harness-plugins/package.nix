@@ -15,8 +15,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     domain = "git.outskirtslabs.com";
     owner = "casey";
     repo = "skills";
-    rev = "04f1a65b3c7340c1271f0bdb2389d040296ae7c9";
-    hash = "sha256-+PGesFSGGWSSNfmCm6B7ihyL+650Q/fYq1HeWG4weyw=";
+    rev = "67ac9028391c3bb2bb726a662976a63774b5a051";
+    hash = "sha256-oWt1zuaVI0qq4BNjADOeZijULizOjgNcI3Bur8McocQ=";
   };
 
   dontConfigure = true;
