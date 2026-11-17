@@ -510,6 +510,7 @@ in
           );
           packages = map toString [
             pkgs.pi-reload
+            cfg.skills.package.plugins.pstack
             pkgs.pi-speak
             #pkgs.pi-heartbeat
             #pkgs.pi-ghost
@@ -558,6 +559,7 @@ in
           );
           packages = map toString [
             pkgs.pi-reload
+            cfg.skills.package.plugins.pstack
             pkgs.pi-speak
             "${pkgs.pi-cliproxy.src}/pi-subq"
             pkgs.brepl-balance
@@ -588,6 +590,7 @@ in
     plugins = lib.optionals cfg.skills.enable [
       "my@harness-plugins"
       "my-cx@harness-plugins"
+      "pstack@harness-plugins"
       "tstack@harness-plugins"
     ];
     extraArgs = lib.optionals cfg.proxy.enable [
@@ -625,7 +628,12 @@ in
   modules.dev.llms.claude = {
     enable = true;
     plugins = lib.optionalAttrs cfg.skills.enable {
-      inherit (cfg.skills.package.plugins) my my-cc tstack;
+      inherit (cfg.skills.package.plugins)
+        my
+        my-cc
+        pstack
+        tstack
+        ;
     };
     settings = claudeSettings;
     removeSettings =
