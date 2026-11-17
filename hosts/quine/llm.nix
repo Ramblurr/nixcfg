@@ -318,6 +318,8 @@ let
     web_search = "disabled";
     notice.hide_rate_limit_model_nudge = true;
     plugins."github@openai-curated".enabled = true;
+    # pstack's session-start hook runs from /etc/codex/config.toml, where Codex trusts it.
+    hooks.state."pstack@harness-plugins:hooks/codex-hooks.json:session_start:0:0".enabled = false;
     mcp_servers.plannotator-inbox = {
       command = lib.getExe' packages.plannotator "plannotator";
       args = [
@@ -584,6 +586,26 @@ in
       };
     };
   };
+  environment.etc."codex/config.toml" = lib.mkIf cfg.skills.enable {
+    source =
+      let
+        pstack = cfg.skills.package.plugins.pstack;
+      in
+      (pkgs.formats.toml { }).generate "codex-system-config.toml" {
+        hooks.SessionStart = [
+          {
+            matcher = "startup|resume|clear|compact";
+            hooks = [
+              {
+                type = "command";
+                command = "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
+              }
+            ];
+          }
+        ];
+      };
+  };
+
   modules.dev.llms.codex = {
     enable = true;
     marketplaces = lib.optional cfg.skills.enable cfg.skills.package;
