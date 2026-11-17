@@ -903,11 +903,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794789740,
-        "narHash": "sha256-8bvgtMpN383QC5fseMJEr0ZbPgPxICir7CsMYfNGKNU=",
+        "lastModified": 1794944174,
+        "narHash": "sha256-jqmQZiKV8Lldo2jF8HvbxWwY3im9navKdz0jmAr5qv8=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "1681105582790af1d74bfa85ab46a168f41fb378",
+        "rev": "7253404368d1eb0ca8c4268ea9ae94b7338372e5",
         "type": "github"
       },
       "original": {
@@ -2661,10 +2661,10 @@
     },
     "nixpkgs-mine": {
       "locked": {
-        "lastModified": 1793894484,
-        "narHash": "sha256-WQT0sG68fx5Q4JoybyyQv3gN/xO18EayDVo8NSGELxQ=",
+        "lastModified": 1794897703,
+        "narHash": "sha256-asapCXMOqsbrpCDazsKRtArEoL5wjFjxxwgqD4XKeyY=",
         "ref": "channel/personal-master",
-        "rev": "e6b71e5ec90c0fc9c72bed646266e49da91ece31",
+        "rev": "d7f4377eef13b81c1f90fd4196cf7b0dc6cdf2a2",
         "shallow": true,
         "type": "git",
         "url": "https://github.com/ramblurr/nixpkgs"
@@ -3556,11 +3556,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794794210,
-        "narHash": "sha256-HQjyIK+7YgYg5HiAaxFuacLaeeSVHiNhRbapgs4cExw=",
+        "lastModified": 1794943213,
+        "narHash": "sha256-tB01SCF/hj7E6xAQF5w8bKwiXH+mmo9fNorC8jxT5Ic=",
         "owner": "smol-machines",
         "repo": "smolvm",
-        "rev": "9890e8a28b06a03270de95488122535ba690210b",
+        "rev": "6e6f285ef47eeeae58a9182db6321ae6ff715c71",
         "type": "github"
       },
       "original": {
