@@ -56,20 +56,20 @@ let
         name = "debord";
         reference = "https://example.invalid/secret";
         bootstrapTokenFile = "/run/test-token";
-      }).system.build.toplevel;
+      }).system.build.toplevel.drvPath;
   storeBootstrapToken =
     builtins.tryEval
       (evaluate {
         name = "debord";
         bootstrapTokenFile = "/nix/store/example-token";
-      }).system.build.toplevel;
+      }).system.build.toplevel.drvPath;
   bootstrapConsumer =
     builtins.tryEval
       (evaluate {
         name = "debord";
         consumerService = "sops-install-secrets";
         bootstrapTokenFile = "/run/test-token";
-      }).system.build.toplevel;
+      }).system.build.toplevel.drvPath;
   authorizationMapFile = lib.removePrefix "credential-map:" (
     builtins.elemAt
       configs.debord.systemd.services."onepassword-credential-provider@".serviceConfig.LoadCredential
