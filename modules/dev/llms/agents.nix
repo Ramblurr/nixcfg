@@ -103,7 +103,7 @@ in
       };
       package = lib.mkOption {
         type = lib.types.package;
-        default = pkgs.ol-skills;
+        default = pkgs.harness-plugins;
         description = "Shared skills source and tool plugin outputs.";
       };
     };

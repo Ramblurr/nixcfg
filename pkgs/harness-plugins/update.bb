@@ -11,7 +11,7 @@
   (let [root (-> (shell {:out :string} "git" "rev-parse" "--show-toplevel")
                  :out
                  str/trim)
-        package-file (str root "/pkgs/ol-skills/package.nix")
+        package-file (str root "/pkgs/harness-plugins/package.nix")
         rev (-> (shell {:out :string} "git" "ls-remote" (str repo-url ".git") "HEAD")
                 :out
                 (str/split #"\s+")
@@ -31,7 +31,7 @@
                "--selector" "binding"
                "--rewrite" (str field " = \"" value "\";")
                "--update-all" package-file))
-      (println "Updated ol-skills to" rev))))
+      (println "Updated harness-plugins to" rev))))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))

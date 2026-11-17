@@ -133,7 +133,16 @@ in
                   else
                     ${lib.concatMapStringsSep "\n" (
                       source:
-                      "CODEX_HOME=${lib.escapeShellArg codexHome} ${lib.getExe cfg.codex.package} plugin marketplace add ${lib.escapeShellArg (toString source)} --json >/dev/null"
+                      let
+                        codex = "CODEX_HOME=${lib.escapeShellArg codexHome} ${lib.getExe cfg.codex.package}";
+                        root = lib.escapeShellArg (toString source);
+                      in
+                      # Codex refuses to re-add a marketplace name from a new store path, and keeps a
+                      # cached plugin whose version is unchanged, so replace the marketplace each time.
+                      ''
+                        ${codex} plugin marketplace remove "$(${lib.getExe pkgs.jq} -r .name ${root}/.agents/plugins/marketplace.json)" >/dev/null 2>&1 || true
+                        ${codex} plugin marketplace add ${root} --json >/dev/null
+                      ''
                     ) cfg.codex.marketplaces}
                     ${lib.concatMapStringsSep "\n" (
                       selector:

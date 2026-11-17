@@ -435,7 +435,7 @@ in
   };
   modules.dev.llms.skills = {
     enable = true;
-    package = pkgs.ol-skills;
+    package = pkgs.harness-plugins;
   };
 
   modules.dev.llms.cliproxy-api = {
@@ -502,10 +502,10 @@ in
           defaultModel = "gpt-6.1-sol";
           defaultThinkingLevel = "high";
           skills = lib.optionals cfg.skills.enable (
-            map (group: "${cfg.skills.package}/skills/${group}") [
-              "mine"
-              "engineering"
-              "pi"
+            map (name: "${cfg.skills.package.plugins.${name}}/skills") [
+              "my"
+              "my-pi"
+              "tstack"
             ]
           );
           packages = map toString [
@@ -550,10 +550,10 @@ in
           defaultModel = "gpt-6.1-sol";
           defaultThinkingLevel = "high";
           skills = lib.optionals cfg.skills.enable (
-            map (group: "${cfg.skills.package}/skills/${group}") [
-              "mine"
-              "engineering"
-              "t3"
+            map (name: "${cfg.skills.package.plugins.${name}}/skills") [
+              "my"
+              "my-t3"
+              "tstack"
             ]
           );
           packages = map toString [
@@ -584,8 +584,12 @@ in
   };
   modules.dev.llms.codex = {
     enable = true;
-    marketplaces = lib.optional cfg.skills.enable cfg.skills.package.codexPlugin;
-    plugins = lib.optional cfg.skills.enable "ol-skills@ol-skills";
+    marketplaces = lib.optional cfg.skills.enable cfg.skills.package;
+    plugins = lib.optionals cfg.skills.enable [
+      "my@harness-plugins"
+      "my-cx@harness-plugins"
+      "tstack@harness-plugins"
+    ];
     extraArgs = lib.optionals cfg.proxy.enable [
       "-c"
       "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\""
@@ -620,7 +624,9 @@ in
   };
   modules.dev.llms.claude = {
     enable = true;
-    plugins = lib.optionalAttrs cfg.skills.enable { my = cfg.skills.package; };
+    plugins = lib.optionalAttrs cfg.skills.enable {
+      inherit (cfg.skills.package.plugins) my my-cc tstack;
+    };
     settings = claudeSettings;
     removeSettings =
       lib.optionals (!cfg.proxy.enable) [
