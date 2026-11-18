@@ -78,33 +78,42 @@ in
       )
     );
 
-    # Keep the pre-1.0 workaround only where the NixOS module cannot manage subids.
-    # https://github.com/nikstur/userborn/issues/7
-    environment.etc = lib.mkIf (!nativeSubids) (
-      let
-        lines = lib.concatStrings (
-          lib.mapAttrsToList (
-            name: user:
-            if user.isNormalUser && user.uid != null then
-              let
-                range = rangeFor name user.uid;
-              in
-              "${name}:${toString range.start}:${toString range.count}\n"
-            else
-              ""
-          ) config.users.users
-        );
-      in
-      {
-        "subuid" = {
-          text = lines;
-          mode = "0444";
-        };
-        "subgid" = {
-          text = lines;
-          mode = "0444";
-        };
-      }
-    );
+    environment.etc = lib.mkMerge [
+      # Keep the pre-1.0 workaround only where the NixOS module cannot manage subids.
+      # https://github.com/nikstur/userborn/issues/7
+      (lib.mkIf (!nativeSubids) (
+        let
+          lines = lib.concatStrings (
+            lib.mapAttrsToList (
+              name: user:
+              if user.isNormalUser && user.uid != null then
+                let
+                  range = rangeFor name user.uid;
+                in
+                "${name}:${toString range.start}:${toString range.count}\n"
+              else
+                ""
+            ) config.users.users
+          );
+        in
+        {
+          "subuid" = {
+            text = lines;
+            mode = "0444";
+          };
+          "subgid" = {
+            text = lines;
+            mode = "0444";
+          };
+        }
+      ))
+
+      (lib.mkIf (nativeSubids && cfg.passwordFilesLocation != "/etc" && !config.system.etc.overlay.enable)
+        {
+          subuid.enable = false;
+          subgid.enable = false;
+        }
+      )
+    ];
   };
 }
