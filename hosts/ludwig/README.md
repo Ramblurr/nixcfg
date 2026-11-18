@@ -43,15 +43,16 @@ ludwig is only reachable over Tailscale, two independent ways:
 1. Its own node, `ludwig`, with Tailscale SSH like the other hosts:
    `ssh root@ludwig` and `deploy ludwig` go through it. `tailscale-watchdog`
    restarts `tailscaled` while it is not connected.
-2. plato's subnet route for the LAN: SSH to the LAN address works even if
-   ludwig's own node is down, as long as plato is on. ludwig must not
-   advertise this route itself; see `tailscaleFlags` in `site.nix`.
+2. Through plato, which sits on the same LAN: `ssh -J plato` to ludwig's LAN
+   address works even if ludwig's own node is down, as long as plato is on.
 
-Both subnet routers on the path, debord and plato, clamp the TCP MSS into
-the tunnel.
+There is no subnet route to the LAN. One existed until 2026-11-18; Tailscale
+then carried its own traffic to ludwig inside it, WireGuard inside WireGuard,
+and transfers ran at about 15 KB/s. ludwig must not advertise the LAN either;
+see `tailscaleFlags` in `site.nix`.
 
-If both ways fail, the BMC's web UI (through plato's route) has a KVM
-console and power control. For a non-technical helper on site, the only
+If both ways fail, the BMC's web UI has a KVM console and power control; reach
+it with an SSH tunnel through plato (`ssh -L 8443:<BMC address>:443 plato`). For a non-technical helper on site, the only
 physical instruction is: unplug ludwig's power for ten seconds and plug it
 back in.
 
