@@ -39,6 +39,18 @@ in
         {
           "/persist".users.root.directories = [ ".local/state/zsh" ];
         };
+    systemd.tmpfiles.rules =
+      let
+        user = config.modules.users.primaryUser.username;
+        homeDirs = owner: home: [
+          "d ${home}/.local 0755 ${owner} ${owner} -"
+          "d ${home}/.local/state 0755 ${owner} ${owner} -"
+          "d ${home}/.local/state/zsh 0700 ${owner} ${owner} -"
+        ];
+      in
+      lib.mkIf (config.modules.impermanence.enable && config.modules.impermanence.persistHomes) (
+        homeDirs user "/home/${user}" ++ homeDirs "root" "/root"
+      );
 
     myhm = hm: {
       home.packages = with pkgs; [
