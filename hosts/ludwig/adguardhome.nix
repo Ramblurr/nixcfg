@@ -64,9 +64,7 @@ in
     ];
     preStart = lib.mkAfter ''
       hash=$(${lib.getExe pkgs.mkpasswd} -m bcrypt -R 10 -s < "$CREDENTIALS_DIRECTORY/admin-password")
-      HASH="$hash" ${lib.getExe pkgs.yq-go} -i \
-        '.users = [{"name": "seed", "password": strenv(HASH)}]' \
-        "$STATE_DIRECTORY/AdGuardHome.yaml"
+      printf 'users:\n  - name: seed\n    password: %s\n' "$hash" >> "$STATE_DIRECTORY/AdGuardHome.yaml"
     '';
   };
   networking.firewall.interfaces.${site.lan.interface} = {
