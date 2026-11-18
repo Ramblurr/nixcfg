@@ -14,12 +14,6 @@ set router_untagged {
   elements = { 192.168.1.1 }
 }
 
-set offsite1 {
-  type ipv4_addr
-  flags interval
-  elements = { 192.168.8.0/22 }
-}
-
 set ereaders {
   type ipv4_addr
   elements = { 10.9.6.96, 10.9.6.95}

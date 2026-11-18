@@ -14,10 +14,9 @@ rec {
     "9.9.9.9"
   ];
 
-  # plato is the LAN's subnet router. This node must not advertise the LAN:
-  # as primary it receives tailnet traffic for its own LAN address but
-  # replies through the site router, without SNAT, so the reply is lost.
-  # Accepting routes would let plato's route take over LAN traffic.
+  # This node must not advertise the LAN: as primary it receives tailnet
+  # traffic for its own LAN address but replies through the site router,
+  # without SNAT, so the reply is lost.
   # `tailscale set` keeps prefs it is not given, so the empty value is needed.
   tailscaleFlags = [
     "--advertise-routes="

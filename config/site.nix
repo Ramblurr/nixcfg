@@ -299,10 +299,6 @@ in
               Table = "vpn";
               Metric = 2;
             }
-            {
-              Destination = "192.168.8.0/22";
-              Gateway = "10.9.4.21";
-            }
           ];
 
         };
@@ -378,15 +374,7 @@ in
       role = "server";
       interfaces = {
         lan0.type = "phys";
-        prim = {
-          type = "bridge";
-          routes = [
-            {
-              Destination = "192.168.8.0/22";
-              Gateway = "10.9.4.21";
-            }
-          ];
-        };
+        prim.type = "bridge";
         data = {
           type = "bridge";
           parent = "lan0";
@@ -405,12 +393,6 @@ in
         prim = {
           type = "bridge";
           parent = "bond0";
-          routes = [
-            {
-              Destination = "192.168.8.0/22";
-              Gateway = "10.9.4.21";
-            }
-          ];
         };
         data = {
           type = "bridge";
