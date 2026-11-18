@@ -44,8 +44,9 @@
        "Watch one Signal group with signal-cli and send each new message to a T3 thread.\n"
        "The process runs until signal-cli exits. It then exits nonzero, so a\n"
        "supervisor such as systemd can restart it.\n\n"
-       "signal-cli locks its data directory. While this runs, other signal-cli\n"
-       "commands for the same account wait for the lock.\n\n"
+       "signal-cli runs as a daemon on the D-Bus session bus. Other programs\n"
+       "use the account through it, for example:\n"
+       "  signal-cli --dbus send -g <id> -m <text>\n\n"
        "Options:\n"
        (cli/format-opts {:spec  spec
                          :order [:account :group-id :thread :signal-cli :t3
@@ -130,7 +131,7 @@
   (log "Watching group" (:group-id opts) "for" account)
   (let [proc (process/process {:out :stream :err :inherit}
                               signal-cli "-a" account "-o" "json"
-                              "receive" "--timeout" "-1")]
+                              "daemon" "--dbus")]
     (with-open [reader (io/reader (:out proc))]
       (doseq [line (line-seq reader)
               :when (not (str/blank? line))]
