@@ -77,14 +77,29 @@ in
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
+      "/etc/nixos"
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
+      "/var/log"
     ];
-    files = [ ];
-    users.${username}.directories = [
-      ".config/sops"
-      ".local/state/zsh"
-    ];
+    files = [ "/var/lib/dbus/machine-id" ];
+  };
+
+  boot.initrd.systemd.services.rollback = {
+    description = "Rollback ZFS datasets to a pristine state";
+    requiredBy = [ "sysroot.mount" ];
+    requires = [ "zfs-import-rpool.service" ];
+    after = [ "zfs-import-rpool.service" ];
+    before = [ "sysroot.mount" ];
+    path = [ config.boot.zfs.package ];
+    unitConfig.DefaultDependencies = "no";
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      zfs rollback -r rpool/local/root@blank && echo "rollback complete"
+    '';
   };
 
   systemd.tmpfiles.rules = [
