@@ -76,6 +76,11 @@ let
       server.systemd.services.bb-worker-gateway.serviceConfig.DynamicUser
       && !(lib.elem 16895 server.networking.firewall.allowedTCPPorts);
     separateIngress = lib.hasInfix "--https=8445 http://127.0.0.1:16895" server.systemd.services.bb-worker-tailscale-serve.serviceConfig.ExecStart;
+    ingressFollowsTailscaleDaemon =
+      let
+        serve = server.systemd.services.bb-worker-tailscale-serve;
+      in
+      lib.elem "tailscaled.service" serve.wantedBy && lib.elem "tailscaled.service" serve.partOf;
     rejectsExposedBackend = lib.any (
       a: !a.assertion && lib.hasPrefix "bbIsolation gateway requires" a.message
     ) invalid.assertions;

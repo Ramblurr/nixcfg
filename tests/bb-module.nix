@@ -144,6 +144,11 @@ let
     quineTailscale =
       lib.hasInfix "serve --https=8444 http://127.0.0.1:38886" quine.systemd.services.bb-tailscale-serve.serviceConfig.ExecStart
       && quine.services.bb.environment.BB_APP_URL == "https://quine.tailnet.example.test:8444";
+    quineTailscaleFollowsDaemon =
+      let
+        serve = quine.systemd.services.bb-tailscale-serve;
+      in
+      lib.elem "tailscaled.service" serve.wantedBy && lib.elem "tailscaled.service" serve.partOf;
     quineProviders =
       quine.services.bb.providers.codex.enable
       && quine.services.bb.providers.claude.enable

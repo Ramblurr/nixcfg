@@ -218,7 +218,11 @@ in
       # no services.tailscale.serve.services option.
       systemd.services.bb-worker-tailscale-serve = {
         description = "bb worker Tailscale HTTPS listener";
-        wantedBy = [ "multi-user.target" ];
+        wantedBy = [
+          "multi-user.target"
+          "tailscaled.service"
+        ];
+        partOf = [ "tailscaled.service" ];
         requires = [ "tailscaled.service" ];
         wants = [ "bb-worker-gateway.service" ];
         after = [

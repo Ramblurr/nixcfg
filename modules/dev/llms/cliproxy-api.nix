@@ -51,7 +51,11 @@ in
     # Foreground Serve owns only this port and withdraws it on service stop.
     systemd.services.cliproxy-api-tailscale-serve = lib.mkIf (cfg.tailscaleServePort != null) {
       description = "CLIProxyAPI Tailscale HTTPS listener";
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = [
+        "multi-user.target"
+        "tailscaled.service"
+      ];
+      partOf = [ "tailscaled.service" ];
       after = [ "tailscaled.service" ];
       requires = [ "tailscaled.service" ];
       serviceConfig = {

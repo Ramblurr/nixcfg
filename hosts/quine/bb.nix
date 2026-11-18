@@ -69,7 +69,11 @@ in
   # Keep the backend on loopback; tailnet ACLs control remote access.
   systemd.services.bb-tailscale-serve = {
     description = "bb private Tailscale HTTPS listener";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = [
+      "multi-user.target"
+      "tailscaled.service"
+    ];
+    partOf = [ "tailscaled.service" ];
     after = [
       "tailscaled.service"
       "bb.service"
