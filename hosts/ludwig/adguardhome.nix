@@ -1,9 +1,9 @@
 {
   config,
+  lib,
+  pkgs,
   ...
 }:
-#
-# The web UI has no users, so it listens on loopback only.
 let
   site = import ./site.nix;
   inherit (config.services.adguardhome.settings) dns;
@@ -12,7 +12,8 @@ in
   services.adguardhome = {
     enable = true;
     mutableSettings = false;
-    host = "127.0.0.1";
+    host = site.lan.dns;
+    port = 80;
     settings = {
       dns = {
         bind_hosts = [ site.lan.dns ];
@@ -56,8 +57,23 @@ in
       ];
     };
   };
+  sops.secrets.admin-password = { };
+  systemd.services.adguardhome = {
+    serviceConfig.LoadCredential = [
+      "admin-password:${config.sops.secrets.admin-password.path}"
+    ];
+    preStart = lib.mkAfter ''
+      hash=$(${lib.getExe pkgs.mkpasswd} -m bcrypt -R 10 -s < "$CREDENTIALS_DIRECTORY/admin-password")
+      HASH="$hash" ${lib.getExe pkgs.yq-go} -i \
+        '.users = [{"name": "admin", "password": strenv(HASH)}]' \
+        "$STATE_DIRECTORY/AdGuardHome.yaml"
+    '';
+  };
   networking.firewall.interfaces.${site.lan.interface} = {
-    allowedTCPPorts = [ dns.port ];
+    allowedTCPPorts = [
+      dns.port
+      config.services.adguardhome.port
+    ];
     allowedUDPPorts = [ dns.port ];
   };
 }
