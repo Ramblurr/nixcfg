@@ -91,6 +91,7 @@ in
 
         addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.home}'), PoolAction('powerdns'))
         addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.work}'), PoolAction('powerdns'))
+        addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.friend}'), PoolAction('powerdns'))
         ${builtins.concatStringsSep "\n  " (
           map (zone: "addAction('${zone}', PoolAction('powerdns'))") config.repo.secrets.local.reverseZones
         )}
