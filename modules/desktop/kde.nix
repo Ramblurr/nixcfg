@@ -35,6 +35,10 @@ in
       }
     ];
     services.displayManager.enable = true;
+    systemd.services.display-manager = lib.mkIf config.services.userborn.enable {
+      requires = [ "userborn.service" ];
+      after = [ "userborn.service" ];
+    };
     services.desktopManager.plasma6.enable = true;
     services.displayManager.sddm = {
       enable = true;
