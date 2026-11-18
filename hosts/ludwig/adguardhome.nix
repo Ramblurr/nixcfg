@@ -33,7 +33,9 @@ in
         protection_enabled = true;
         filtering_enabled = true;
         safebrowsing_enabled = true;
-        rewrites = config.repo.secrets.local.ludwig.dnsRewrites;
+        rewrites = map (
+          rewrite: { enabled = true; } // rewrite
+        ) config.repo.secrets.local.ludwig.dnsRewrites;
       };
       filters = [
         {
