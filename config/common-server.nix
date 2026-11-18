@@ -97,8 +97,6 @@
     useHostResolvConf = lib.mkIf (!config.services.resolved.enable) true;
   };
 
-  modules.nix.gc.keepDays = 30;
-
   sops.environment.SOPS_GPG_EXEC = lib.getExe (pkgs.gnupg.override { enableMinimal = true; });
   nix = {
     gc = {

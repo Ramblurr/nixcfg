@@ -47,7 +47,7 @@ with lib;
     };
     keepDays = lib.mkOption {
       type = lib.types.ints.positive;
-      default = 7;
+      default = 30;
       description = "Also keep generations younger than this many days.";
     };
   };
