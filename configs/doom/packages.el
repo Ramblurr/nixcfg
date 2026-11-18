@@ -139,5 +139,6 @@
 ;;             :local-repo "/home/ramblurr/src/github.com/ramblurr/clojure-prose-mode"
 ;;             :files ("clojure-prose-mode.el")))
 (package! adoc-mode)
-;; TODO(2026-11-18): re-enable once codeberg.org resolves; its fetch broke quine/witt evaluation.
-(package! android-mode :disable t)
+;; TODO(2026-11-18): drop these GitHub mirrors once codeberg.org resolves again; pins match Doom's.
+(package! android-mode :recipe (:host github :repo "emacsmirror/android-mode") :pin "67f7c0d7d37605efc7f055b76d731556861c3eb9")
+(package! zig-mode :recipe (:host github :repo "emacsmirror/zig-mode") :pin "62bfbaced0222e2bfbc086fa8556adf6b3298476")
