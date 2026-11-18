@@ -139,3 +139,5 @@
 ;;             :local-repo "/home/ramblurr/src/github.com/ramblurr/clojure-prose-mode"
 ;;             :files ("clojure-prose-mode.el")))
 (package! adoc-mode)
+;; TODO(2026-11-18): re-enable once codeberg.org resolves; its fetch broke quine/witt evaluation.
+(package! android-mode :disable t)
