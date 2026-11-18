@@ -112,11 +112,7 @@ in
       ".config/sops"
       ".local/state/zsh"
     ];
-    users.root.directories = [ ".local/state/zsh" ];
   };
-
-  # Keep root's history in a persisted directory rather than the wiped root dataset.
-  programs.zsh.histFile = "$HOME/.local/state/zsh/zhistory";
 
   systemd.tmpfiles.rules = [
     "d /persist/home/${username} 700 ${username} ${username}"

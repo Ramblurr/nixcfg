@@ -92,7 +92,10 @@ in
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
     ];
-    users.${username}.directories = [ ".config/sops" ];
+    users.${username}.directories = [
+      ".config/sops"
+      ".local/state/zsh"
+    ];
   };
   # Keep all TrueNAS host keys: borg clients pin them in known_hosts.
   services.openssh.hostKeys = [

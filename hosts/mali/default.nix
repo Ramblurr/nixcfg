@@ -262,6 +262,7 @@ in
         ".local/share/attic"
         ".local/share/direnv"
         ".local/share/zoxide"
+        ".local/state/zsh"
       ];
     };
   };

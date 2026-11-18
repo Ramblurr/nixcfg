@@ -32,6 +32,12 @@ in
     environment.pathsToLink = [ "/share/zsh" ];
 
     programs.zsh.enable = true;
+
+    programs.zsh.histFile = lib.mkIf config.modules.impermanence.enable "$HOME/.local/state/zsh/zhistory";
+    environment.persistence = lib.mkIf config.modules.impermanence.enable {
+      "/persist".users.root.directories = [ ".local/state/zsh" ];
+    };
+
     myhm = hm: {
       home.packages = with pkgs; [
         eza
