@@ -28,6 +28,11 @@ in
       resolving tailnet names through systemd-resolved without Tailscale DNS.
       Only lookups under the tailnet domain go to Tailscale's 100.100.100.100 resolver
     '';
+    resolveTailnet.extraDomains = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Other tailnets' domains whose shared machines should also resolve through 100.100.100.100.";
+    };
   };
   config = mkIf cfg.enable {
     services.tailscale.enable = lib.mkIf cfg.enable true;
@@ -59,7 +64,10 @@ in
     services.resolved.dnsDelegates.tailnet = lib.mkIf cfg.resolveTailnet.enable {
       Delegate = {
         DNS = "100.100.100.100";
-        Domains = [ "~${config.repo.secrets.global.domain.tailnet}" ];
+        Domains = [
+          "~${config.repo.secrets.global.domain.tailnet}"
+        ]
+        ++ map (domain: "~${domain}") cfg.resolveTailnet.extraDomains;
       };
     };
 

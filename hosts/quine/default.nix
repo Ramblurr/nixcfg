@@ -400,6 +400,7 @@ in
     vpn.mullvad.enable = false;
     vpn.tailscale.enable = true;
     vpn.tailscale.resolveTailnet.enable = true;
+    vpn.tailscale.resolveTailnet.extraDomains = [ config.repo.secrets.global.domain.tailnetPlato ];
     firewall.enable = true;
     security.default.enable = true;
     hardware.keyboardio.enable = true;
