@@ -65,7 +65,7 @@ in
     preStart = lib.mkAfter ''
       hash=$(${lib.getExe pkgs.mkpasswd} -m bcrypt -R 10 -s < "$CREDENTIALS_DIRECTORY/admin-password")
       HASH="$hash" ${lib.getExe pkgs.yq-go} -i \
-        '.users = [{"name": "admin", "password": strenv(HASH)}]' \
+        '.users = [{"name": "seed", "password": strenv(HASH)}]' \
         "$STATE_DIRECTORY/AdGuardHome.yaml"
     '';
   };
