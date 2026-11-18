@@ -3,8 +3,8 @@
 ludwig is an iXsystems TrueNAS Mini at a remote site (hardware in
 `hosts/inventory.nix`). It pulls mali's zrepl source, serves SMB and NFS to
 the remote LAN, runs AdGuard Home for that LAN, is the target of plato's
-borg backups, and is the remote site's Tailscale exit node. plato is the
-LAN's subnet router.
+borg backups, and is the remote site's Tailscale exit node. No subnet route joins the remote LAN to
+the home sites; reach it over Tailscale node addresses.
 
 It ran TrueNAS CORE 13.1 until 2026-11-16. Site-specific data (accounts,
 shares, exports, the mali address) lives in
