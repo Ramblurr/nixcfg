@@ -82,7 +82,7 @@ in
       "/var/lib/systemd/coredump"
       "/var/log"
     ];
-    files = [ "/var/lib/dbus/machine-id" ];
+    files = [ ];
   };
 
   boot.initrd.systemd.services.rollback = {
