@@ -104,10 +104,19 @@ in
     directories = [
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
+      "/var/lib/tailscale"
+      "/var/cache/tailscale"
     ];
     files = [ ];
-    users.${username}.directories = [ ".config/sops" ];
+    users.${username}.directories = [
+      ".config/sops"
+      ".local/state/zsh"
+    ];
+    users.root.directories = [ ".local/state/zsh" ];
   };
+
+  # Keep root's history in a persisted directory rather than the wiped root dataset.
+  programs.zsh.histFile = "$HOME/.local/state/zsh/zhistory";
 
   systemd.tmpfiles.rules = [
     "d /persist/home/${username} 700 ${username} ${username}"
