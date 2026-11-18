@@ -7,9 +7,9 @@ let
     {
       imports = [
         ../modules/users/userborn.nix
-        ../modules/impermanence
       ];
       options.modules.users.enable = lib.mkEnableOption "shared user configuration";
+      options.modules.impermanence.enable = lib.mkEnableOption "impermanence";
       config = {
         modules.users.enable = true;
         services.userborn.enable = true;

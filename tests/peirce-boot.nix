@@ -47,7 +47,10 @@ diskoTestLib.makeDiskoTest {
       usePlymouth = false;
       autoSnapshot.enable = false;
     };
-    modules.impermanence.enable = true;
+    modules.impermanence = {
+      enable = true;
+      persistHomes = false;
+    };
     environment.persistence."/persist".directories = [ "/var/lib/nixos" ];
     # Exercise a native early bind alongside impermanence's early log/state binds.
     fileSystems."/var/lib/early-bind-proof" = {
