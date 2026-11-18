@@ -172,6 +172,7 @@ in
             serve = {
               type = "tls";
               listen = "10.9.10.10:3478";
+              listen_freebind = true;
               ca = config.sops.secrets."zrepl/ludwigCert".path;
               cert = config.sops.secrets."zrepl/maliCert".path;
               key = config.sops.secrets."zrepl/maliKey".path;
@@ -204,6 +205,7 @@ in
             serve = {
               type = "tls";
               listen = "10.9.10.10:3479";
+              listen_freebind = true;
               ca = config.sops.secrets."zrepl/rsyncnetCert".path;
               cert = config.sops.secrets."zrepl/maliCert".path;
               key = config.sops.secrets."zrepl/maliKey".path;
