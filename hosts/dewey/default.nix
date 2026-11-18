@@ -102,8 +102,6 @@ in
     domain = "paperless-gpt.${config.repo.secrets.home-ops.homeDomain}";
   };
 
-  environment.persistence."/persist".users.${username}.directories = [ "work" ];
-
   modules.services.ingress-home-assistant.enable = true;
   modules.services.ingress-octoprint.enable = true;
   modules.services.ingress-nixbot.enable = true;

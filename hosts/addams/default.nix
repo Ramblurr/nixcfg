@@ -108,10 +108,6 @@ in
       "/var/cache/tailscale"
     ];
     files = [ ];
-    users.${username}.directories = [
-      ".config/sops"
-      ".local/state/zsh"
-    ];
   };
 
   systemd.tmpfiles.rules = [

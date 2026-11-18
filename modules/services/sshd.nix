@@ -55,8 +55,10 @@ in
       ];
     };
 
-    environment.persistence."/persist" = mkIf withImpermanence {
-      files = [ "${config.users.users.root.home}/.ssh/known_hosts" ];
-    };
+    environment.persistence."/persist" =
+      mkIf (withImpermanence && !config.modules.impermanence.persistHomes)
+        {
+          files = [ "${config.users.users.root.home}/.ssh/known_hosts" ];
+        };
   };
 }

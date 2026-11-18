@@ -5,7 +5,6 @@
   ...
 }:
 let
-  inherit (config.modules.users.primaryUser) username;
   defaultSopsFile = ./secrets.sops.yaml;
   retiredCrucialDisk = "/dev/disk/by-id/ata-Crucial_CT525MX300SSD1_171816E66F09";
   inherit (config.repo.secrets) home-ops;
@@ -251,19 +250,5 @@ in
       "/var/lib/systemd/coredump"
     ];
     files = [ ];
-
-    users.${username} = {
-      directories = [
-        ".config/attic"
-        ".config/atuin"
-        ".config/qobuz-dl"
-        ".config/rclone"
-        ".config/sops"
-        ".local/share/attic"
-        ".local/share/direnv"
-        ".local/share/zoxide"
-        ".local/state/zsh"
-      ];
-    };
   };
 }

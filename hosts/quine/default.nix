@@ -392,6 +392,7 @@ in
       };
     };
     impermanence.enable = true;
+    impermanence.persistHomes = false;
     boot.zfs.enable = true;
     boot.zfs.scrubPools = [ "rpool" ];
     boot.zfs.usePlymouth = false;

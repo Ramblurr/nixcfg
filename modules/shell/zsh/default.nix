@@ -34,9 +34,11 @@ in
     programs.zsh.enable = true;
 
     programs.zsh.histFile = lib.mkIf config.modules.impermanence.enable "$HOME/.local/state/zsh/zhistory";
-    environment.persistence = lib.mkIf config.modules.impermanence.enable {
-      "/persist".users.root.directories = [ ".local/state/zsh" ];
-    };
+    environment.persistence =
+      lib.mkIf (config.modules.impermanence.enable && !config.modules.impermanence.persistHomes)
+        {
+          "/persist".users.root.directories = [ ".local/state/zsh" ];
+        };
 
     myhm = hm: {
       home.packages = with pkgs; [

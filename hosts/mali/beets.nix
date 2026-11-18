@@ -1,11 +1,5 @@
 { config, unstable, ... }:
-let
-  inherit (config.modules.users.primaryUser) username;
-in
 {
-  environment.persistence."/persist".users.${username}.directories = [
-    ".config/beets"
-  ];
   myhm =
     { pkgs, ... }:
     {

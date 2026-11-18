@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   ...
 }:
 let
@@ -11,7 +12,7 @@ in
       "/var/lib/nixos"
       "/var/lib/systemd/coredump"
     ];
-    users.${username} = {
+    users.${username} = lib.mkIf (!config.modules.impermanence.persistHomes) {
       directories = [
         "nixcfg"
         "nixcfg-private"
