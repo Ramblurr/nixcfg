@@ -1,7 +1,13 @@
 {
   config,
+  utils,
   ...
 }:
+let
+  interfaceDevices = map (
+    i: "sys-subsystem-net-devices-${utils.escapeSystemdPath i}.device"
+  ) config.services.ntopng.interfaces;
+in
 {
 
   sops.secrets."maxmind/licenseKey" = { };
@@ -33,6 +39,8 @@
       "data"
     ];
   };
+  systemd.services.ntopng.wants = [ "network-online.target" ] ++ interfaceDevices;
+  systemd.services.ntopng.after = [ "network-online.target" ] ++ interfaceDevices;
   systemd.services.ntopng.serviceConfig = {
     Restart = "always";
     RestartSec = "20s";
