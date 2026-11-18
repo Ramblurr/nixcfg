@@ -15,6 +15,7 @@ stdenvNoCC.mkDerivation {
     hash = "sha256-MI0V0S4FC+HGqAzKJ/0lbBt/m4cwW1gETVUHLcLWJlk=";
   };
   sourceRoot = "source/pi-cliproxy";
+  patches = [ ./keep-static-models.patch ];
 
   installPhase = ''
     runHook preInstall

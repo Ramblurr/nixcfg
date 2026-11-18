@@ -54,6 +54,39 @@ let
       supportsMidConvoEffort = true;
     };
   };
+  cliproxyMuseModel = id: name: {
+    inherit id name;
+    api = "openai-responses";
+    baseUrl = "${cliproxyRoot}/v1";
+    reasoning = true;
+    input = [
+      "text"
+      "image"
+    ];
+    contextWindow = 1048576;
+    maxTokens = 131072;
+    cost = {
+      input = 0;
+      output = 0;
+      cacheRead = 0;
+      cacheWrite = 0;
+    };
+    thinkingLevelMap = {
+      off = null;
+      minimal = "minimal";
+      low = "low";
+      medium = "medium";
+      high = "high";
+      xhigh = "xhigh";
+      max = "max";
+    };
+    inputLimits.images.resize = {
+      maxWidth = 2000;
+      maxHeight = 2000;
+      maxBytes = 4718592;
+      jpegQuality = 80;
+    };
+  };
   cliproxyProvider = {
     baseUrl = cliproxyRoot;
     apiKey = "!${opRead} ${lib.escapeShellArg cfg.proxy.credential}";
@@ -62,6 +95,10 @@ let
       (cliproxyOpenaiModel "gpt-6.1-terra" "GPT-6.1 Terra" "none")
       (cliproxyOpenaiModel "gpt-6-astra" "GPT-6 Astra" null)
       (cliproxyOpenaiModel "gpt-6-luna" "GPT-6 Luna" "none")
+      (cliproxyMuseModel "muse-wonder-1.0" "Muse Wonder")
+      (cliproxyMuseModel "muse-wonder-1.0-contributor" "Muse Wonder (Contributor)")
+      (cliproxyMuseModel "muse-wonder-full-1.0" "Muse Wonder Full")
+      (cliproxyMuseModel "muse-wonder-full-1.0-contributor" "Muse Wonder Full (Contributor)")
     ];
   };
   all-providers = {
