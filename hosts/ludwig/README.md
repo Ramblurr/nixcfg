@@ -19,7 +19,7 @@ layout, and where the migrated state lives.
 | Item | Where |
 | --- | --- |
 | LAN | `networking.nix`; any other cabled port also takes the LAN address |
-| AdGuard Home | `adguardhome.nix`; DNS and web UI on `192.168.8.2`, UI login `seed`, reached as `dns.plato.kodiak.dog` through plato's Traefik |
+| AdGuard Home | `adguardhome.nix`; DNS and web UI on `192.168.8.2`, UI login `seed`, reached as `dns.quetzal-brotula.ts.net` (Tailscale Service on plato, in its owner's tailnet) |
 | BMC | DHCP reservation on the LAN's router |
 | `tank` | raidz2 of HDDs, ZFS native encryption; imported under the former TrueNAS altroot, see `hardware-configuration.nix` |
 | `fast` | SSD mirror, ZFS native encryption; root pool |
