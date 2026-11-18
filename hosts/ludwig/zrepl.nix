@@ -50,7 +50,7 @@ in
           type = "pull";
           connect = {
             type = "tls";
-            address = ludwig.zreplMaliAddress;
+            address = "${config.site.hosts.mali.tailscaleIPv4}:3478";
             ca = secret "maliCert";
             cert = secret "ludwigCert";
             key = secret "ludwigKey";

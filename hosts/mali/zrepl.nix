@@ -17,9 +17,9 @@ let
   cidrToIp = ip: builtins.head (builtins.split "/" ip);
 in
 {
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 3478 ];
   networking.firewall.allowedTCPPorts = [
     9811
-    3478
     3479
     config.repo.secrets.home-ops.ports.zrepl-metrics
   ];
@@ -171,7 +171,7 @@ in
             type = "source";
             serve = {
               type = "tls";
-              listen = "10.9.10.10:3478";
+              listen = "${config.site.hosts.mali.tailscaleIPv4}:3478";
               listen_freebind = true;
               ca = config.sops.secrets."zrepl/ludwigCert".path;
               cert = config.sops.secrets."zrepl/maliCert".path;

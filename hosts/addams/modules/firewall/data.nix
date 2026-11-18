@@ -99,18 +99,6 @@ let
       comment = "Roon ARC";
     };
 
-    zreplMali1 = {
-      priority = 104;
-      interfaces = wan_interfaces;
-      protocols = [ "tcp" ];
-      destination.port = 3478;
-      translation = {
-        address = "10.9.10.10";
-        port = 3478;
-      };
-      comment = "mali zrepl replication";
-    };
-
     zreplMali2 = {
       priority = 105;
       interfaces = wan_interfaces;

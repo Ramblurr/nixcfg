@@ -19,6 +19,7 @@ in
     ./adguardhome.nix
     ./tailscale-watchdog.nix
     ../../config/offsite.nix
+    ../../config/site.nix
   ];
   system.stateVersion = "26.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;

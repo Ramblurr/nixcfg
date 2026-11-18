@@ -154,7 +154,7 @@ set mali_replication_ports {
   type inet_service
   flags interval
   auto-merge
-  elements = { 3478, 3479 }
+  elements = { 3479 }
 }
 
 set truenas_nfs_ports {
