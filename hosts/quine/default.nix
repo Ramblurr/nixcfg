@@ -393,6 +393,7 @@ in
     };
     impermanence.enable = true;
     impermanence.persistHomes = false;
+    nix.gc.keepGenerations = null;
     boot.zfs.enable = true;
     boot.zfs.scrubPools = [ "rpool" ];
     boot.zfs.usePlymouth = false;
