@@ -55,7 +55,7 @@
           id = "FUWM2VN-32WHX4C-AFGU6HX-TZAITRE-PO4YKQI-UR6Z54O-DSQORX2-FJPG3AE";
           addresses = [
             "tcp://10.9.8.3:22000"
-            "tcp://100.114.104.114:22000"
+            "tcp://${config.site.hosts.mali.tailscaleIPv4}:22000"
           ];
         };
         "quine" = {

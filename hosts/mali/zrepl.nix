@@ -128,7 +128,7 @@ in
               builtins.removeAttrs nodesWithZReplSources [ "peirce" ]
             )
             # Peirce has no data-network interface; use encrypted Tailscale transport.
-            ++ [ (mkNodePullJob "peirce" "100.64.18.17") ];
+            ++ [ (mkNodePullJob "peirce" config.site.hosts.peirce.tailscaleIPv4) ];
         in
         nodeJobs
         ++ [

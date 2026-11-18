@@ -21,6 +21,8 @@ in
 
   site.sshPubKeys = global.pubKeys;
   site.hosts.quine.tailscaleIPv4 = "100.93.18.79";
+  site.hosts.mali.tailscaleIPv4 = "100.114.104.114";
+  site.hosts.peirce.tailscaleIPv4 = "100.64.18.17";
   #site.net.wan6tun = {
   #  vlan = null;
   #  domainName = null;

@@ -22,8 +22,8 @@
     # Use encrypted Tailscale transport until the data network is connected.
     zrepl = {
       enable = true;
-      sourceAddress = "100.64.18.17";
-      receiverAddress = "100.114.104.114";
+      sourceAddress = config.site.hosts.peirce.tailscaleIPv4;
+      receiverAddress = config.site.hosts.mali.tailscaleIPv4;
     };
   };
   modules.boot.zfs.extraPools = lib.mkForce [ ];
