@@ -11,6 +11,10 @@ let
   uid = toString osConfig.users.users.hirde.uid;
   inherit (osConfig.repo.secrets.global) domain;
   forge = "git.${domain.home}";
+  cliproxyProvider = import ../../modules/dev/llms/cliproxy-pi-provider.nix {
+    url = "https://quine.${domain.tailnet}:8317";
+    apiKey = "!op read 'op://moot/cliproxyapi hirde/credential'";
+  };
   workspaceDir = config.home.homeDirectory;
   repoDir = "${workspaceDir}/thingstead";
   skillsDir = "/var/lib/skills/current";
@@ -121,16 +125,24 @@ in
     YARN_GLOBAL_FOLDER = "$XDG_DATA_HOME/yarn";
   };
   systemd.user.startServices = "sd-switch";
-  my.services.t3code.enable = true;
+  my.services.t3code = {
+    enable = true;
+    piAgentDir = "${config.xdg.configHome}/pi-t3/agent";
+  };
   my.programs.op-connect = {
     enable = true;
     host = "http://${lib.head osConfig.site.net.mgmt.hosts4.onepassword-connect}:8080";
     tokenFile = config.sops.secrets.onepassword-connect-token.path;
   };
+  programs.pi.instances.pi-t3 = {
+    settings = config.programs.pi.instances.pi.settings // {
+      defaultModel = "gpt-6.2-sol";
+    };
+    models.providers.cliproxy = cliproxyProvider;
+  };
   programs.pi.instances.pi.models.providers = {
     cliproxy = {
-      baseUrl = "https://quine.${domain.tailnet}:8317";
-      apiKey = "!op read 'op://moot/cliproxyapi hirde/credential'";
+      inherit (cliproxyProvider) baseUrl apiKey;
     };
     openai.apiKey = "!op read 'op://moot/openai hirde/credential'";
     openrouter.apiKey = "!op read 'op://moot/openrouter hirde/credential'";
