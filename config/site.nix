@@ -23,6 +23,7 @@ in
   site.hosts.quine.tailscaleIPv4 = "100.93.18.79";
   site.hosts.mali.tailscaleIPv4 = "100.114.104.114";
   site.hosts.peirce.tailscaleIPv4 = "100.64.18.17";
+  site.hosts.thingstead.tailscaleIPv4 = "100.115.53.81";
   #site.net.wan6tun = {
   #  vlan = null;
   #  domainName = null;
@@ -187,6 +188,8 @@ in
     mtu = 1500;
     hosts4 = {
       addams = [ "10.9.12.1" ];
+      # Reserved by MAC in the private site DHCP reservations; thingstead uses DHCP.
+      thingstead = [ "10.9.12.2" ];
     };
     dhcp = {
       enable = true;
@@ -274,6 +277,11 @@ in
       role = "server";
       # The switch presents prim untagged; there are no host-side VLANs yet.
       interfaces.prim.type = "phys";
+    };
+    thingstead = {
+      role = "server";
+      # The switch presents moot untagged on eno1.
+      interfaces.eno1.type = "phys";
     };
     addams = {
       role = "server";
