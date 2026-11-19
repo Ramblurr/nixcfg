@@ -6,13 +6,13 @@
 
 stdenvNoCC.mkDerivation {
   pname = "pi-cliproxy";
-  version = "0.1.0-unstable-2026-11-16";
+  version = "0.1.0-unstable-2026-11-19";
 
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "pi-extensions";
-    rev = "0635dd54b741c30a992fd7c1103054fe57c669bb";
-    hash = "sha256-MI0V0S4FC+HGqAzKJ/0lbBt/m4cwW1gETVUHLcLWJlk=";
+    rev = "e06fb51996698aaf2589242ed541413ebc039527";
+    hash = "sha256-fcz4CUUmQcGk1IYBRHNVqOpdJqtf4qynTqOYryNvAOU=";
   };
   sourceRoot = "source/pi-cliproxy";
   patches = [ ./keep-static-models.patch ];
