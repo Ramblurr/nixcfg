@@ -9,7 +9,11 @@ in
   };
 
   modules.dev.llms = {
-    profile.enable = true;
+    # hirde's Codex reads the same /etc/codex/config.toml.
+    profile = {
+      enable = true;
+      codexSessionHookUsers = [ username ];
+    };
     onepasswordConnect.tokenFile = config.sops.secrets.onepassword-connect-llm-token.path;
     proxy = {
       enable = true;
@@ -22,6 +26,9 @@ in
       tailscaleServePort = 8444;
     };
   };
+
+  # Start the headless T3 Code user service at boot, without a login.
+  users.users.${username}.linger = true;
 
   # T3 Code configures Tailscale Serve as this user.
   services.tailscale.extraSetFlags = [ "--operator=${username}" ];
