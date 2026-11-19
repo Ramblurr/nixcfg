@@ -54,6 +54,7 @@ in
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
+    desktop.enable = lib.mkEnableOption "graphical agent tools (OpenCode Desktop, Glimpse, and the dotool and wtype typing helpers)";
     onepasswordConnect = {
       tokenFile = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
@@ -100,7 +101,9 @@ in
           geckodriver
           chromedriver
           spel
-          glimpseui
+        ]
+        ++ lib.optionals cfg.desktop.enable [ pkgs.glimpseui ]
+        ++ [
           #dirge
           #piper-tts
           #espeak
@@ -108,7 +111,9 @@ in
           mcp-inspector
           llmWithPlugins
           llm-agents.opencode
-          llm-agents.opencode-desktop
+        ]
+        ++ lib.optionals cfg.desktop.enable [ llm-agents.opencode-desktop ]
+        ++ [
           llm-agents.opencode2
           #llm-agents.vix
           #llm-agents.mistral-vibe
@@ -117,8 +122,12 @@ in
           cat-url-markdown
           cat-url-markdown-auto
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
-          dotool # handy (speech to text) uses this for clipboard access
-          wtype # handy (speech to text) uses this for clipboard access
+        ]
+        ++ lib.optionals cfg.desktop.enable [
+          pkgs.dotool # handy (speech to text) uses this for clipboard access
+          pkgs.wtype # handy (speech to text) uses this for clipboard access
+        ]
+        ++ [
           #llm-agents.annot
           llm-agents.herdr
           llm-agents.collie
