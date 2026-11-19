@@ -29,6 +29,8 @@ in
   # Start the headless T3 Code user service at boot, without a login.
   users.users.${username}.linger = true;
   systemd.services."user@${toString config.users.users.${username}.uid}" = rec {
+    overrideStrategy = "asDropin";
+    restartIfChanged = false;
     wants = [
       "tailscaled.service"
       "tailscaled-set.service"
