@@ -57,6 +57,7 @@
 
   swapDevices = [ { device = "/dev/mapper/cryptswap"; } ];
   boot = {
+    zswap.enable = true;
     loader = {
       timeout = 3;
       efi = {
