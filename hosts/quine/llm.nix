@@ -91,9 +91,9 @@ let
     baseUrl = cliproxyRoot;
     apiKey = "!${opRead} ${lib.escapeShellArg cfg.proxy.credential}";
     models = [
-      (cliproxyOpenaiModel "gpt-6.1-sol" "GPT-6.1 Sol" null)
+      (cliproxyOpenaiModel "gpt-6.2-sol" "GPT-6.2 Sol" null)
       (cliproxyOpenaiModel "gpt-6.1-terra" "GPT-6.1 Terra" "none")
-      (cliproxyOpenaiModel "gpt-6-astra" "GPT-6 Astra" null)
+      (cliproxyOpenaiModel "gpt-6.2-astra" "GPT-6.2 Astra" null)
       (cliproxyOpenaiModel "gpt-6-luna" "GPT-6 Luna" "none")
       (cliproxyMuseModel "muse-wonder-1.0" "Muse Wonder")
       (cliproxyMuseModel "muse-wonder-1.0-contributor" "Muse Wonder (Contributor)")
@@ -538,7 +538,7 @@ in
       pi = {
         settings = {
           defaultProvider = if cfg.proxy.enable then "cliproxy" else "openai-codex";
-          defaultModel = "gpt-6.1-sol";
+          defaultModel = "gpt-6.2-sol";
           defaultThinkingLevel = "high";
           skills = lib.optionals cfg.skills.enable (
             map (name: "${cfg.skills.package.plugins.${name}}/skills") [
@@ -586,7 +586,7 @@ in
       pi-t3 = {
         settings = {
           defaultProvider = if cfg.proxy.enable then "cliproxy" else "openai-codex";
-          defaultModel = "gpt-6.1-sol";
+          defaultModel = "gpt-6.2-sol";
           defaultThinkingLevel = "high";
           skills = lib.optionals cfg.skills.enable (
             map (name: "${cfg.skills.package.plugins.${name}}/skills") [
