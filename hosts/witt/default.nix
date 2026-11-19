@@ -158,7 +158,10 @@ in
       node.enable = true;
       python.enable = true;
       random.enable = true;
-      llms.enable = true;
+      llms = {
+        enable = true;
+        desktop.enable = true;
+      };
     };
     hardware.keyboardio.enable = true;
   };
