@@ -903,11 +903,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794967436,
-        "narHash": "sha256-MWzteVzsrIeKw47TCN9TVU2yvSLsULUpffgQZUCxmEw=",
+        "lastModified": 1795052468,
+        "narHash": "sha256-SNoVIPx14B7gCU9Itud9lQY0HTLyCGFFzljSFbfBW+w=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "28bc9edf3a7f2479988b706e2d2116ef27d90e9f",
+        "rev": "71e3b6046771da571b9a0852f6e5d42918596217",
         "type": "github"
       },
       "original": {
@@ -2045,11 +2045,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1794997576,
-        "narHash": "sha256-p+45EliQ7oBPfHevU6GbDbiwjsZMU6OR4UBccNoG89Y=",
+        "lastModified": 1795073199,
+        "narHash": "sha256-49gbHL+NhG0ERyskYJX6E854XnsS3EJK7ta5ZCXhmco=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "3c252ee00a29909e205e4f524cd35f6c68083664",
+        "rev": "b2700a2b5e7b94649dd960d08ea3b2304d91b2bc",
         "type": "github"
       },
       "original": {
@@ -2584,11 +2584,11 @@
     },
     "nixpkgs-flox": {
       "locked": {
-        "lastModified": 1794537146,
-        "narHash": "sha256-Wpz/7x/YWnDIBu7yj6ixe8j6fIMsidd9Y+o1PqPF3iM=",
+        "lastModified": 1794890597,
+        "narHash": "sha256-lME2lHoDHAaSHP3/okgiVoJ0icVEvsQH8LeU3We7tcc=",
         "owner": "flox",
         "repo": "nixpkgs",
-        "rev": "d5cc6833999746cffdfe0598f7bc801a57b887a9",
+        "rev": "04906337b6d53e8bb0eaf0470ae9f070a4d4eb55",
         "type": "github"
       },
       "original": {
@@ -2990,11 +2990,11 @@
     },
     "nixpkgs_9": {
       "locked": {
-        "lastModified": 1794495034,
-        "narHash": "sha256-E0hYoioqUtM2XmPPvYYpJgdADF5AW9oOoPSEiM9dTHQ=",
+        "lastModified": 1794840529,
+        "narHash": "sha256-ySrWnmZB5UsZTYGHHnBjllT05O5iFjElCRS+mabtfP0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2074cc672349f14240fb7ea90d509e0b643e9dd4",
+        "rev": "e21fec321d73511849707a7585e4ea155ee4bf40",
         "type": "github"
       },
       "original": {
@@ -3564,11 +3564,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794984115,
-        "narHash": "sha256-ps5ZMA4gTLOpECGw46B9YPnjqWixxTf4MuN/JSw2AwM=",
+        "lastModified": 1795075183,
+        "narHash": "sha256-utJI23EvCnC4Dp1rM4ICdcJf4otcMMb6WTWqzfztMWM=",
         "owner": "smol-machines",
         "repo": "smolvm",
-        "rev": "175823bc1558a4e07db3eadd16ab8b6ba4e3709d",
+        "rev": "b83cac08a07f6bbdb195fd304777e83fcc157c01",
         "type": "github"
       },
       "original": {
