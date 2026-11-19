@@ -8,4 +8,8 @@
     "vmw_pvscsi"
   ];
   boot.initrd.kernelModules = [ "nvme" ];
+
+  zramSwap.enable = true;
+  # zram has no locality, so skip swap readahead.
+  boot.kernel.sysctl."vm.page-cluster" = 0;
 }

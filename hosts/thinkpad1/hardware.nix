@@ -3,6 +3,7 @@
   # Facts supplied from nixos-generate-config on the ThinkPad X13 Yoga Gen 1.
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   boot = {
+    zswap.enable = true;
     initrd.availableKernelModules = [
       "xhci_pci"
       "nvme"

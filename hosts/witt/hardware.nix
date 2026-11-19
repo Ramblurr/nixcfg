@@ -20,6 +20,7 @@
   };
 
   boot = {
+    zswap.enable = true;
     # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575818 reaches our pin.
     kernelPackages = pkgs.linuxPackages.extend (
       _final: prev: {

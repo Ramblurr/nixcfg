@@ -10,7 +10,10 @@
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
+  zramSwap.enable = true;
   boot = {
+    # zram has no locality, so skip swap readahead.
+    kernel.sysctl."vm.page-cluster" = 0;
     zfs.devNodes = lib.mkForce "/dev/disk/by-partuuid";
     loader = {
       efi.canTouchEfiVariables = false;

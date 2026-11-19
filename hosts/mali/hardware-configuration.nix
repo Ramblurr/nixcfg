@@ -48,6 +48,7 @@
   swapDevices = [ { device = "/dev/mapper/cryptswap"; } ];
 
   boot = {
+    zswap.enable = true;
     zfs.devNodes = "/dev/disk/by-partuuid";
     loader = {
       efi = {
