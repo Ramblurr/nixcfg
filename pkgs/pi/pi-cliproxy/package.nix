@@ -11,8 +11,8 @@ stdenvNoCC.mkDerivation {
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "pi-extensions";
-    rev = "e06fb51996698aaf2589242ed541413ebc039527";
-    hash = "sha256-fcz4CUUmQcGk1IYBRHNVqOpdJqtf4qynTqOYryNvAOU=";
+    rev = "48710f8f0684fd397ad7109c29a483a73b6a08b4";
+    hash = "sha256-HOHGAIwV4jFqtx1xFFIH/ie3Z0uZwViunp5l6jNfs3I=";
   };
   sourceRoot = "source/pi-cliproxy";
   patches = [ ./keep-static-models.patch ];
