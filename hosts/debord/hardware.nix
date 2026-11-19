@@ -11,7 +11,6 @@
 
   zramSwap.enable = true;
   boot = {
-    # zram has no locality, so skip swap readahead.
     kernel.sysctl."vm.page-cluster" = 0;
     zfs.devNodes = lib.mkForce "/dev/disk/by-partuuid";
     loader = {

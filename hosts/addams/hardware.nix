@@ -17,7 +17,6 @@
   services.getty.autologinUser = "ramblurr";
   zramSwap.enable = true;
   boot = {
-    # zram has no locality, so skip swap readahead.
     kernel.sysctl."vm.page-cluster" = 0;
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
