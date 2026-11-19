@@ -102,9 +102,6 @@ in
           geckodriver
           chromedriver
           spel
-        ]
-        ++ lib.optionals cfg.desktop.enable [ pkgs.glimpseui ]
-        ++ [
           #dirge
           #piper-tts
           #espeak
@@ -112,9 +109,6 @@ in
           mcp-inspector
           llmWithPlugins
           llm-agents.opencode
-        ]
-        ++ lib.optionals cfg.desktop.enable [ llm-agents.opencode-desktop ]
-        ++ [
           llm-agents.opencode2
           #llm-agents.vix
           #llm-agents.mistral-vibe
@@ -123,12 +117,6 @@ in
           cat-url-markdown
           cat-url-markdown-auto
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
-        ]
-        ++ lib.optionals cfg.desktop.enable [
-          pkgs.dotool # handy (speech to text) uses this for clipboard access
-          pkgs.wtype # handy (speech to text) uses this for clipboard access
-        ]
-        ++ [
           #llm-agents.annot
           llm-agents.herdr
           llm-agents.collie
@@ -145,6 +133,12 @@ in
           difftastic
           ast-grep
           nushell
+        ]
+        ++ lib.optionals cfg.desktop.enable [
+          glimpseui
+          llm-agents.opencode-desktop
+          dotool # handy (speech to text) uses this for clipboard access
+          wtype # handy (speech to text) uses this for clipboard access
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda

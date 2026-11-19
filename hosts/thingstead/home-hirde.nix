@@ -1,4 +1,3 @@
-# this is a home manager nix module file
 {
   lib,
   pkgs,
