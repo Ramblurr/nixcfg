@@ -135,10 +135,10 @@ in
           nushell
         ]
         ++ lib.optionals cfg.desktop.enable [
-          glimpseui
+          pkgs.glimpseui
           llm-agents.opencode-desktop
-          dotool
-          wtype
+          pkgs.dotool
+          pkgs.wtype
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda

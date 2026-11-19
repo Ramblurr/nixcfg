@@ -232,7 +232,7 @@ in
       type = lib.types.nullOr (lib.types.listOf lib.types.str);
       default = null;
       example = [ "alice" ];
-      description = "Users whose Codex sessions run the pstack session hook from /etc/codex/config.toml, or null for every user. Codex reads that file for all accounts.";
+      description = "Users whose Codex sessions run the pstack session hook from /etc/codex/config.toml, null for every user, or [ ] for none. Codex reads that file for all accounts.";
     };
   };
 
@@ -366,28 +366,32 @@ in
       };
     };
 
-    environment.etc."codex/config.toml" = lib.mkIf cfg.skills.enable {
-      source =
-        let
-          pstack = cfg.skills.package.plugins.pstack;
-        in
-        (pkgs.formats.toml { }).generate "codex-system-config.toml" {
-          hooks.SessionStart = [
-            {
-              matcher = "startup|resume|clear|compact";
-              hooks = [
+    environment.etc."codex/config.toml" =
+      lib.mkIf (cfg.skills.enable && cfg.profile.codexSessionHookUsers != [ ])
+        {
+          source =
+            let
+              pstack = cfg.skills.package.plugins.pstack;
+            in
+            (pkgs.formats.toml { }).generate "codex-system-config.toml" {
+              hooks.SessionStart = [
                 {
-                  type = "command";
-                  command =
-                    lib.optionalString (cfg.profile.codexSessionHookUsers != null) ''
-                      case "$(id -un)" in ${lib.concatStringsSep "|" cfg.profile.codexSessionHookUsers}) ;; *) exit 0 ;; esac;
-                    ''
-                    + "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
+                  matcher = "startup|resume|clear|compact";
+                  hooks = [
+                    {
+                      type = "command";
+                      command =
+                        lib.optionalString (cfg.profile.codexSessionHookUsers != null) ''
+                          case "$(id -un)" in ${
+                            lib.concatMapStringsSep "|" lib.escapeShellArg cfg.profile.codexSessionHookUsers
+                          }) ;; *) exit 0 ;; esac;
+                        ''
+                        + "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
+                    }
+                  ];
                 }
               ];
-            }
-          ];
+            };
         };
-    };
   };
 }
