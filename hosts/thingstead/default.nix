@@ -13,6 +13,7 @@
     ./hirde.nix
     ./ingress.nix
     ./skills.nix
+    ./llm.nix
     ../../config
   ];
 
