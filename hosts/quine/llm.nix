@@ -307,7 +307,7 @@ in
         }
       ];
       routing = {
-        strategy = "soonest-reset";
+        strategy = "fill-first";
         session-affinity = true;
         session-affinity-ttl = "1h";
         session-affinity-rebind-on = "quota";
