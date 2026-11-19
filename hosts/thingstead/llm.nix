@@ -28,6 +28,13 @@ in
 
   # Start the headless T3 Code user service at boot, without a login.
   users.users.${username}.linger = true;
+  systemd.services."user@${toString config.users.users.${username}.uid}" = rec {
+    wants = [
+      "tailscaled.service"
+      "tailscaled-set.service"
+    ];
+    after = wants;
+  };
 
   # T3 Code configures Tailscale Serve as this user.
   services.tailscale.extraSetFlags = [ "--operator=${username}" ];

@@ -79,13 +79,7 @@
     pkgs.yq-go
   ];
 
-  nix.settings = {
-    connect-timeout = 5;
-    narinfo-cache-positive-ttl = 3600;
-    auto-optimise-store = true;
-    min-free = 10 * 1024 * 1024 * 1024;
-    max-free = 20 * 1024 * 1024 * 1024;
-  };
+  nix.settings.narinfo-cache-positive-ttl = 3600;
 
   modules.zfs.datasets.properties = {
     "rpool/encrypted/safe/svc/postgresql"."mountpoint" = "/var/lib/postgresql";
