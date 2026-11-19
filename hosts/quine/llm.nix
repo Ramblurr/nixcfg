@@ -1,113 +1,10 @@
 {
   config,
   lib,
-  pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.modules.dev.llms;
-  packages = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  agentConfigHome = "${config.modules.users.primaryUser.homeDirectory}/.config";
-  connect = cfg.onepasswordConnect;
-  opRead =
-    if connect.tokenFile == null then
-      "${lib.getExe pkgs._1password-cli} read"
-    else
-      lib.getExe connect.package;
-  cliproxyRoot = cfg.proxy.url;
-  # Static so they exist the moment Pi starts
-  cliproxyOpenaiModel = id: name: offLevel: {
-    inherit id name;
-    api = "openai-responses";
-    baseUrl = "${cliproxyRoot}/v1";
-    reasoning = true;
-    input = [
-      "text"
-      "image"
-    ];
-    contextWindow = 272000;
-    maxTokens = 128000;
-    # Billed to the subscriptions behind the proxy, not per token.
-    cost = {
-      input = 0;
-      output = 0;
-      cacheRead = 0;
-      cacheWrite = 0;
-    };
-    thinkingLevelMap = {
-      off = offLevel;
-      minimal = null;
-      low = "low";
-      medium = "medium";
-      high = "high";
-      xhigh = "xhigh";
-      max = "max";
-    };
-    compat = {
-      supportsStrictMode = true;
-      supportsOpenAIGrammarTools = true;
-      supportsAdditionalTools = true;
-      supportsToolSearch = true;
-      supportsMidConvoSystemMessages = true;
-      supportsExplicitPromptCacheMode = true;
-      supportsMidConvoEffort = true;
-    };
-  };
-  cliproxyMuseModel = id: name: {
-    inherit id name;
-    api = "openai-responses";
-    baseUrl = "${cliproxyRoot}/v1";
-    reasoning = true;
-    input = [
-      "text"
-      "image"
-    ];
-    contextWindow = 1048576;
-    maxTokens = 131072;
-    cost = {
-      input = 0;
-      output = 0;
-      cacheRead = 0;
-      cacheWrite = 0;
-    };
-    thinkingLevelMap = {
-      off = null;
-      minimal = "minimal";
-      low = "low";
-      medium = "medium";
-      high = "high";
-      xhigh = "xhigh";
-      max = "max";
-    };
-    inputLimits.images.resize = {
-      maxWidth = 2000;
-      maxHeight = 2000;
-      maxBytes = 4718592;
-      jpegQuality = 80;
-    };
-  };
-  cliproxyProvider = {
-    baseUrl = cliproxyRoot;
-    apiKey = "!${opRead} ${lib.escapeShellArg cfg.proxy.credential}";
-    models = [
-      (cliproxyOpenaiModel "gpt-6.2-sol" "GPT-6.2 Sol" null)
-      (cliproxyOpenaiModel "gpt-6.1-terra" "GPT-6.1 Terra" "none")
-      (cliproxyOpenaiModel "gpt-6.2-astra" "GPT-6.2 Astra" null)
-      (cliproxyOpenaiModel "gpt-6-luna" "GPT-6 Luna" "none")
-      (cliproxyMuseModel "muse-wonder-1.0" "Muse Wonder")
-      (cliproxyMuseModel "muse-wonder-1.0-contributor" "Muse Wonder (Contributor)")
-      (cliproxyMuseModel "muse-wonder-full-1.0" "Muse Wonder Full")
-      (cliproxyMuseModel "muse-wonder-full-1.0-contributor" "Muse Wonder Full (Contributor)")
-    ];
-  };
-  all-providers = {
-    anthropic.apiKey = "!${opRead} 'op://LLM/Anthropic-quine/credential'";
-    typesafe.apiKey = "!${opRead} 'op://LLM/Jev-quine/credential'";
-    subq.apiKey = "!${opRead} 'op://LLM/Subq-quine/credential'";
-    openai.apiKey = "!${opRead} 'op://LLM/OpenAI-quine/credential'";
-  }
-  // lib.optionalAttrs cfg.proxy.enable { cliproxy = cliproxyProvider; };
   agentRuntimeGroups = [
     "node_runtime"
     "rust_runtime"
@@ -349,93 +246,6 @@ let
       ] (_: { });
     };
   };
-  codexSettings = {
-    model = "gpt-6-luna";
-    model_reasoning_effort = "medium";
-    web_search = "disabled";
-    notice.hide_rate_limit_model_nudge = true;
-    plugins."github@openai-curated".enabled = true;
-    # pstack's session-start hook runs from /etc/codex/config.toml, where Codex trusts it.
-    hooks.state."pstack@harness-plugins:hooks/codex-hooks.json:session_start:0:0".enabled = false;
-    mcp_servers.plannotator-inbox = {
-      command = lib.getExe' packages.plannotator "plannotator";
-      args = [
-        "inbox"
-        "mcp"
-      ];
-    };
-    service_tier = "fast";
-    approval_policy = "never";
-    sandbox_mode = "danger-full-access";
-    model_provider = if cfg.proxy.enable then "cliproxy" else "openai";
-    features = {
-      hooks = true;
-    };
-    tui.notifications = false;
-  }
-  // lib.optionalAttrs cfg.proxy.enable {
-    model_providers.cliproxy = {
-      name = "CLIProxyAPI";
-      base_url = "${cfg.proxy.url}/v1";
-      wire_api = "responses";
-      requires_openai_auth = false;
-      supports_websockets = true;
-    }
-    // lib.optionalAttrs cfg.proxy.removeLegacyCredentials { env_key = "CLIPROXY_API_KEY"; };
-  };
-  claudeSettings = {
-    cleanupPeriodDays = 99999;
-    includeCoAuthoredBy = false;
-    model = "opus";
-    spinnerTipsEnabled = false;
-    alwaysThinkingEnabled = true;
-    effortLevel = "xhigh";
-    modelSettings."claude-opus-5".effortLevel = "high";
-    tui = "fullscreen";
-    editorMode = "vim";
-    preferredNotifChannel = "terminal_bell";
-    terminalProgressBarEnabled = false;
-    env.ENABLE_CLAUDEAI_MCP_SERVERS = "false";
-  }
-  // lib.optionalAttrs cfg.proxy.enable {
-    env = {
-      ENABLE_CLAUDEAI_MCP_SERVERS = "false";
-      ANTHROPIC_BASE_URL = cfg.proxy.url;
-    };
-  };
-  t3Settings = {
-    enableProviderUpdateChecks = false;
-    storageCleanup = {
-      worktreeAfterDays = 90;
-      worktreeOnMerge = true;
-    };
-    projectSettingsFolded = true;
-    idleCompaction = "onReturn";
-    providerInstances = {
-      pi = {
-        driver = "pi";
-        displayName = "Pi";
-        environment = [
-          {
-            name = "PI_CODING_AGENT_DIR";
-            value = "${agentConfigHome}/pi-t3/agent";
-            sensitive = false;
-          }
-        ];
-        enabled = config.modules.dev.llms.pi.enable;
-      };
-      claudeAgent = {
-        driver = "claudeAgent";
-        enabled = config.modules.dev.llms.claude.enable;
-        config.homePath = "${agentConfigHome}/claude";
-      };
-      codex = {
-        driver = "codex";
-        enabled = config.modules.dev.llms.codex.enable;
-        config.homePath = "${agentConfigHome}/codex";
-      };
-    };
-  };
 in
 {
   imports = [ ./bb.nix ];
@@ -462,9 +272,16 @@ in
     };
   };
 
-  modules.dev.llms.enable = true;
+  modules.dev.llms.profile = {
+    enable = true;
+    piProviderCredentials = {
+      anthropic = "op://LLM/Anthropic-quine/credential";
+      typesafe = "op://LLM/Jev-quine/credential";
+      subq = "op://LLM/Subq-quine/credential";
+      openai = "op://LLM/OpenAI-quine/credential";
+    };
+  };
   modules.dev.llms.desktop.enable = true;
-  modules.dev.llms.agents.extraFiles = [ ../../modules/dev/llms/plannotator-instructions.md ];
   modules.dev.llms.ollama.enable = true;
   modules.dev.llms.onepasswordConnect.tokenFile =
     config.sops.secrets.onepassword-connect-llm-token.path;
@@ -472,10 +289,6 @@ in
     enable = true;
     url = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
     credential = "op://LLM/CLIProxyAPI/credential";
-  };
-  modules.dev.llms.skills = {
-    enable = true;
-    package = pkgs.harness-plugins;
   };
 
   modules.dev.llms.cliproxy-api = {
@@ -524,195 +337,8 @@ in
   };
 
   modules.dev.llms.t3 = {
-    settings = t3Settings;
-    enable = true;
     desktop.enable = true;
     tailscaleServePort = 8443;
-  };
-  modules.dev.llms.pi = {
-    enable = true;
-    # pi-hashline-edit-pro imports node:sqlite, unavailable in Bun's standalone runtime.
-    package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override {
-      useBun = false;
-    };
-    instances = {
-      pi = {
-        settings = {
-          defaultProvider = if cfg.proxy.enable then "cliproxy" else "openai-codex";
-          defaultModel = "gpt-6.2-sol";
-          defaultThinkingLevel = "high";
-          skills = lib.optionals cfg.skills.enable (
-            map (name: "${cfg.skills.package.plugins.${name}}/skills") [
-              "my"
-              "tstack"
-            ]
-          );
-          packages = map toString [
-            pkgs.pi-reload
-            cfg.skills.package.plugins.pstack
-            pkgs.pi-speak
-            #pkgs.pi-heartbeat
-            #pkgs.pi-ghost
-            "${pkgs.pi-cliproxy.src}/pi-subq"
-            pkgs.brepl-balance
-            #pkgs.pi-sexp-edit
-            #pkgs.pi-nrepl
-            #pkgs.pi-hashline-edit-pro
-            pkgs.plannotator-pi-extension
-            #pkgs.epimetheus
-            #pkgs.pi-mcp-adapter
-            pkgs.pi-openai-fast
-            pkgs.pi-cliproxy
-            #pkgs.pi-nono-sandbox
-            #pkgs.pi-matrix-relay
-            pkgs.pi-link
-            pkgs.pi-lens
-            pkgs.pi-fff
-            #pkgs.pi-goal-x
-          ];
-          npmCommand = [ "pnpm" ];
-          hideThinkingBlock = true;
-          theme = "dark";
-          steeringMode = "all";
-          showCacheMissNotices = true;
-          shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
-        };
-        models.providers = all-providers;
-        fff = {
-          mode = "override";
-          enableHomeDirScanning = false;
-          enableFsRootScanning = false;
-        };
-      };
-      pi-t3 = {
-        settings = {
-          defaultProvider = if cfg.proxy.enable then "cliproxy" else "openai-codex";
-          defaultModel = "gpt-6.2-sol";
-          defaultThinkingLevel = "high";
-          skills = lib.optionals cfg.skills.enable (
-            map (name: "${cfg.skills.package.plugins.${name}}/skills") [
-              "my"
-              "tstack"
-            ]
-          );
-          packages = map toString [
-            pkgs.pi-reload
-            cfg.skills.package.plugins.pstack
-            pkgs.pi-speak
-            "${pkgs.pi-cliproxy.src}/pi-subq"
-            pkgs.brepl-balance
-            pkgs.pi-openai-fast
-            pkgs.pi-cliproxy
-            pkgs.pi-lens
-            pkgs.pi-fff
-          ];
-          npmCommand = [ "pnpm" ];
-          hideThinkingBlock = true;
-          theme = "dark";
-          steeringMode = "all";
-          showCacheMissNotices = true;
-          shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
-        };
-        models.providers = all-providers;
-        fff = {
-          mode = "override";
-          enableHomeDirScanning = false;
-          enableFsRootScanning = false;
-        };
-      };
-    };
-  };
-  environment.etc."codex/config.toml" = lib.mkIf cfg.skills.enable {
-    source =
-      let
-        pstack = cfg.skills.package.plugins.pstack;
-      in
-      (pkgs.formats.toml { }).generate "codex-system-config.toml" {
-        hooks.SessionStart = [
-          {
-            matcher = "startup|resume|clear|compact";
-            hooks = [
-              {
-                type = "command";
-                command = "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
-              }
-            ];
-          }
-        ];
-      };
-  };
-
-  modules.dev.llms.codex = {
-    enable = true;
-    marketplaces = lib.optional cfg.skills.enable cfg.skills.package;
-    plugins = lib.optionals cfg.skills.enable [
-      "my@harness-plugins"
-      "pstack@harness-plugins"
-      "tstack@harness-plugins"
-    ];
-    extraArgs = lib.optionals cfg.proxy.enable [
-      "-c"
-      "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\""
-    ];
-    settings = codexSettings;
-    removeSettings = [
-      [
-        "features"
-        "skills"
-      ]
-    ]
-    ++ lib.optionals (!cfg.proxy.enable) [
-      [
-        "model_providers"
-        "cliproxy"
-      ]
-    ]
-    ++ lib.optionals (cfg.proxy.enable && !cfg.proxy.removeLegacyCredentials) [
-      [
-        "model_providers"
-        "cliproxy"
-        "env_key"
-      ]
-    ]
-    ++ lib.optionals (cfg.proxy.enable && cfg.proxy.removeLegacyCredentials) [
-      [
-        "model_providers"
-        "cliproxy"
-        "experimental_bearer_token"
-      ]
-    ];
-  };
-  modules.dev.llms.claude = {
-    enable = true;
-    plugins = lib.optionalAttrs cfg.skills.enable {
-      inherit (cfg.skills.package.plugins)
-        my
-        pstack
-        tstack
-        ;
-    };
-    settings = claudeSettings;
-    removeSettings =
-      lib.optionals (!cfg.proxy.enable) [
-        [
-          "env"
-          "ANTHROPIC_AUTH_TOKEN"
-        ]
-        [
-          "env"
-          "ANTHROPIC_BASE_URL"
-        ]
-      ]
-      ++ lib.optionals (cfg.proxy.enable && cfg.proxy.removeLegacyCredentials) [
-        [
-          "env"
-          "ANTHROPIC_AUTH_TOKEN"
-        ]
-        [
-          "env"
-          "ANTHROPIC_API_KEY"
-        ]
-      ];
   };
   modules.dev.llms.nono = {
     enable = true;
