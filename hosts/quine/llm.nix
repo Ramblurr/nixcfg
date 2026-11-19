@@ -315,6 +315,7 @@ in
           request-retry = 3;
           max-retry-interval = 30;
         };
+        cooldown.transient-error-cooldown-seconds = 15;
       };
     };
     secretFiles."op://moot/cliproxyapi hirde/credential" =
