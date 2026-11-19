@@ -232,6 +232,12 @@ in
       };
       description = "1Password references for Pi's direct providers, keyed by Pi provider name. The proxy provider is added when `proxy.enable` is set.";
     };
+    codexSessionHookUsers = lib.mkOption {
+      type = lib.types.nullOr (lib.types.listOf lib.types.str);
+      default = null;
+      example = [ "alice" ];
+      description = "Users whose Codex sessions run the pstack session hook from /etc/codex/config.toml, or null for every user. Codex reads that file for all accounts.";
+    };
   };
 
   config = lib.mkIf cfg.profile.enable {
@@ -387,7 +393,11 @@ in
               hooks = [
                 {
                   type = "command";
-                  command = "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
+                  command =
+                    lib.optionalString (cfg.profile.codexSessionHookUsers != null) ''
+                      case "$(id -un)" in ${lib.concatStringsSep "|" cfg.profile.codexSessionHookUsers}) ;; *) exit 0 ;; esac;
+                    ''
+                    + "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
                 }
               ];
             }
