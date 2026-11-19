@@ -252,24 +252,9 @@ in
   # TODO disable smolvm due to failed upstream pkg build
   #environment.systemPackages = [ inputs.smolvm.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
-  myhm = {
-    home.sessionVariables = {
-      #PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
-      HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
-      PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
-      VIBE_HOME = "$XDG_CONFIG_HOME/vibe";
-      PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
-      PLANNOTATOR_GLIMPSE = "0";
-      PLANNOTATOR_SHARE = "disabled";
-      UCP_HOME = "$XDG_STATE_HOME/ucp";
-      SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
-      SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
-      PI_LENS_DISABLE_LSP_INSTALL = "1";
-      PI_LENS_DISABLE_TOOL_INSTALL = "1";
-    };
-    xdg.configFile."spel/config.json".text = builtins.toJSON {
-      contentBoundaries = true;
-    };
+  myhm.home.sessionVariables = {
+    #PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
+    VIBE_HOME = "$XDG_CONFIG_HOME/vibe";
   };
 
   modules.dev.llms.profile = {

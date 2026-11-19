@@ -235,6 +235,23 @@ in
   };
 
   config = lib.mkIf cfg.profile.enable {
+    myhm = {
+      home.sessionVariables = {
+        HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
+        PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
+        PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";
+        PLANNOTATOR_GLIMPSE = "0";
+        PLANNOTATOR_SHARE = "disabled";
+        UCP_HOME = "$XDG_STATE_HOME/ucp";
+        SPEL_CONFIG = "$XDG_CONFIG_HOME/spel/config.json";
+        SPEL_PROFILE = "$XDG_STATE_HOME/spel/profile";
+        PI_LENS_DISABLE_LSP_INSTALL = "1";
+        PI_LENS_DISABLE_TOOL_INSTALL = "1";
+      };
+      xdg.configFile."spel/config.json".text = builtins.toJSON {
+        contentBoundaries = true;
+      };
+    };
     modules.dev.llms = {
       enable = true;
       agents.extraFiles = [ ./plannotator-instructions.md ];
