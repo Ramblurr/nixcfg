@@ -27,6 +27,11 @@ in
       description = "T3 settings merged with the managed provider defaults.";
     };
     desktop.enable = lib.mkEnableOption "the T3 Code desktop app";
+    port = lib.mkOption {
+      type = lib.types.nullOr lib.types.port;
+      default = null;
+      description = "HTTP/WebSocket port for `t3 serve`, or null for T3's default.";
+    };
     tailscaleServePort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
       default = null;
@@ -85,6 +90,7 @@ in
           Service = {
             ExecStart =
               "${lib.getExe' package "t3"} serve"
+              + lib.optionalString (cfg.port != null) " --port ${toString cfg.port}"
               + lib.optionalString (
                 cfg.tailscaleServePort != null
               ) " --tailscale-serve --tailscale-serve-port ${toString cfg.tailscaleServePort}";
