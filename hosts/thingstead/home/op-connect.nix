@@ -1,4 +1,3 @@
-# Home Manager module: `op` CLI wired to a 1Password Connect server.
 {
   config,
   lib,
@@ -8,7 +7,6 @@
 
 let
   cfg = config.my.programs.op-connect;
-  # Read the token per call so it never sits in a session or service environment.
   op = pkgs.writeShellApplication {
     name = "op";
     text = ''

@@ -11,7 +11,6 @@ _: {
 
     disk = {
       bulk = {
-        # SATA 2 TB Crucial MX500
         type = "disk";
         device = "/dev/disk/by-id/ata-CT2000MX500SSD1_2308E6B0D040";
         content = {
@@ -29,7 +28,6 @@ _: {
       };
 
       system = {
-        # NVMe 2 TB Samsung 970 EVO Plus
         type = "disk";
         device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_2TB_S6P1NX0TA10916P";
         content = {

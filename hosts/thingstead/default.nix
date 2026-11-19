@@ -55,7 +55,6 @@
   };
   home.nix-lan-cache.enable = true;
 
-  # hirde has no password and runs deploys through sudo.
   security.sudo.wheelNeedsPassword = false;
 
   environment.persistence."/persist".directories = [

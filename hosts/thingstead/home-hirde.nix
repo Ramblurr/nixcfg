@@ -13,10 +13,8 @@ let
   forge = "git.${domain.home}";
   workspaceDir = config.home.homeDirectory;
   repoDir = "${workspaceDir}/thingstead";
-  # Kept current by skills-sync (./skills.nix).
   skillsDir = "/var/lib/skills/current";
   op = "${config.my.programs.op-connect.package}/bin/op";
-  # File name in $CREDENTIALS_DIRECTORY -> 1Password reference.
   opCredentials = {
     openai-api-key = "op://moot/openai hirde/credential";
     anthropic-api-key = "op://moot/anthropic api/credential";
@@ -255,7 +253,5 @@ in
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.
-  #
-  # You should not change this value, even if you update Home Manager.
-  home.stateVersion = "26.05"; # DO NOT CHANGE
+  home.stateVersion = "26.05";
 }

@@ -106,7 +106,6 @@ let
       gpu = "NVIDIA GeForce RTX 4090";
     };
     thingstead = {
-      # The place where the moot is held; home of the wrights.
       purpose = "Agent host on the moot VLAN";
       system = "x86_64-linux";
       channel = "unstable";

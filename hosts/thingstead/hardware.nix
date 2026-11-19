@@ -31,7 +31,6 @@
         "sr_mod"
         "sdhci_pci"
       ];
-      # thingstead has no local/home dataset for the shared rollback to reset.
       systemd.services.rollback.script = lib.mkForce ''
         zfs rollback -r rpool/encrypted/local/root@blank && \
         echo "rollback complete"

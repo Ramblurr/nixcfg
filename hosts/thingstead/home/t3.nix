@@ -76,8 +76,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Provider CLIs on PATH so the user can log in interactively; the
-    # session variables make those logins land where T3 looks for them.
     home.packages = [ package ] ++ providerPackages;
     programs.pi = {
       enable = lib.mkDefault true;
@@ -90,7 +88,6 @@ in
       CODEX_HOME = cfg.codexHome;
     };
 
-    # Preserve UI changes to unmanaged settings; declared values win on activation.
     home.activation.t3codeSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] (
       lib.hm.generators.mkImpureConfigMerger {
         inherit pkgs;

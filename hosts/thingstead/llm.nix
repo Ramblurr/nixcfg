@@ -20,7 +20,6 @@ in
       url = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
       credential = "op://LLM/CLIProxyAPI/credential";
     };
-    # hirde's T3 Code holds the default port 3773 and Tailscale Serve 8443.
     t3 = {
       port = 3774;
       tailscaleServePort = 8444;

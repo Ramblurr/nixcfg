@@ -14,10 +14,7 @@ let
       "${lib.getExe pkgs._1password-cli} read"
     else
       lib.getExe cfg.onepasswordConnect.package;
-  # Always single-quoted, unlike lib.escapeShellArg, so existing models.json bytes stay unchanged.
-  quote = s: "'${lib.replaceStrings [ "'" ] [ "'\\''" ] s}'";
   cliproxyRoot = cfg.proxy.url;
-  # Static so they exist the moment Pi starts
   cliproxyOpenaiModel = id: name: offLevel: {
     inherit id name;
     api = "openai-responses";
@@ -29,7 +26,6 @@ let
     ];
     contextWindow = 272000;
     maxTokens = 128000;
-    # Billed to the subscriptions behind the proxy, not per token.
     cost = {
       input = 0;
       output = 0;
@@ -104,7 +100,7 @@ let
   };
   piProviders =
     lib.mapAttrs (_: credential: {
-      apiKey = "!${opRead} ${quote credential}";
+      apiKey = "!${opRead} ${lib.escapeShellArg credential}";
     }) cfg.profile.piProviderCredentials
     // lib.optionalAttrs cfg.proxy.enable { cliproxy = cliproxyProvider; };
   piInstance = piPackages: {
@@ -268,31 +264,20 @@ in
       };
       pi = {
         enable = true;
-        # pi-hashline-edit-pro imports node:sqlite, unavailable in Bun's standalone runtime.
         package = packages.pi.override { useBun = false; };
         instances = {
           pi = piInstance [
             pkgs.pi-reload
             cfg.skills.package.plugins.pstack
             pkgs.pi-speak
-            #pkgs.pi-heartbeat
-            #pkgs.pi-ghost
             "${pkgs.pi-cliproxy.src}/pi-subq"
             pkgs.brepl-balance
-            #pkgs.pi-sexp-edit
-            #pkgs.pi-nrepl
-            #pkgs.pi-hashline-edit-pro
             pkgs.plannotator-pi-extension
-            #pkgs.epimetheus
-            #pkgs.pi-mcp-adapter
             pkgs.pi-openai-fast
             pkgs.pi-cliproxy
-            #pkgs.pi-nono-sandbox
-            #pkgs.pi-matrix-relay
             pkgs.pi-link
             pkgs.pi-lens
             pkgs.pi-fff
-            #pkgs.pi-goal-x
           ];
           pi-t3 = piInstance [
             pkgs.pi-reload

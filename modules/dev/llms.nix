@@ -137,8 +137,8 @@ in
         ++ lib.optionals cfg.desktop.enable [
           glimpseui
           llm-agents.opencode-desktop
-          dotool # handy (speech to text) uses this for clipboard access
-          wtype # handy (speech to text) uses this for clipboard access
+          dotool
+          wtype
         ]
         ++ lib.optionals cfg.ollama.enable [
           ollama-cuda

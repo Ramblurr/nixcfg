@@ -20,7 +20,6 @@ in
       };
     };
     networks = {
-      # addams reserves the moot address for this NIC by MAC.
       "10-eno1" = {
         matchConfig.Name = "eno1";
         networkConfig.DHCP = "ipv4";

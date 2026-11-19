@@ -253,7 +253,6 @@ in
   #environment.systemPackages = [ inputs.smolvm.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
   myhm.home.sessionVariables = {
-    #PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright.browsers}";
     VIBE_HOME = "$XDG_CONFIG_HOME/vibe";
   };
 
