@@ -161,6 +161,7 @@ in
       llms = {
         profile.enable = true;
         desktop.enable = true;
+        onepasswordConnect.enable = true;
         proxy.enable = true;
         t3 = {
           tailscaleServePort = 8443;
