@@ -100,6 +100,11 @@ in
           }
         );
 
+        systemd.user.slices.app-t3code-agents.Slice = {
+          ManagedOOMMemoryPressure = "kill";
+          ManagedOOMMemoryPressureLimit = "60%";
+        };
+
         systemd.user.services.t3code = {
           Unit = {
             Description = "T3 Code headless server";
