@@ -93,8 +93,13 @@ in
   inherit apiKey;
   models =
     let
+      extraIds = map (model: model.id) extraModels;
+      routed = builtins.filter (model: !(builtins.elem model.id extraIds)) catalog.routed;
       declared =
-        map cliproxyOpenaiModel catalog.openai ++ map cliproxyMuseModel catalog.muse ++ extraModels;
+        map cliproxyOpenaiModel catalog.openai
+        ++ map cliproxyMuseModel catalog.muse
+        ++ routed
+        ++ extraModels;
       declaredIds = map (model: model.id) declared;
       advertised = builtins.filter (model: !(builtins.elem model.id declaredIds)) catalog.advertised;
       # These clients append /v1 themselves; the others take it in the base URL.

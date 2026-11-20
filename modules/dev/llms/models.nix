@@ -1,4 +1,4 @@
-{
+rec {
   defaults = {
     pi = "gpt-6.2-sol";
     codex = "gpt-6-luna";
@@ -49,6 +49,10 @@
     # Every other model the proxy advertised on 2026-11-20, as Pi's discovery
     # recorded them. OpenRouter prices are that day's OpenRouter list prices.
     advertised = builtins.fromJSON (builtins.readFile ./cliproxy-advertised.json);
+    routed = [
+      subq.savant
+      mistral.large4
+    ];
   };
 
   subq.savant = {

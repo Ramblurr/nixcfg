@@ -253,10 +253,6 @@ in
 
   modules.dev.llms.profile = {
     enable = true;
-    piProxyExtraModels = [
-      models.subq.savant
-      models.mistral.large4
-    ];
     piProviderCredentials = {
       anthropic = "op://LLM/Anthropic-quine/credential";
       typesafe = "op://LLM/Jev-quine/credential";

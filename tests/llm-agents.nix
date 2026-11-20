@@ -234,7 +234,10 @@ assert lib.all (
       cacheWrite = 0;
     }
 ) (lib.attrValues rpcProfile.pi.instances);
-assert !(lib.elem "subq-savant-1.4" cliproxyModelIds);
+assert lib.all (id: lib.elem id cliproxyModelIds) [
+  "subq-savant-1.4"
+  "mistral-large-4"
+];
 # Every model comes from Nix; no profile loads a discovery extension.
 assert lib.all (
   instance:
