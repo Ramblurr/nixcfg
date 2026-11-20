@@ -161,7 +161,10 @@ in
       llms = {
         profile.enable = true;
         desktop.enable = true;
-        onepasswordConnect.enable = true;
+        onepasswordConnect = {
+          enable = true;
+          host = config.modules.services.onepassword-connect.tailnetUrl;
+        };
         proxy.enable = true;
         t3 = {
           tailscaleServePort = 8443;
@@ -173,4 +176,6 @@ in
   };
 
   environment.persistence."/persist".directories = [ "/var/lib/bluetooth" ];
+
+  services.tailscale.extraSetFlags = [ "--accept-routes=false" ];
 }
