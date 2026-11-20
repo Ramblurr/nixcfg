@@ -81,6 +81,24 @@ inputs: [
       harness-plugins = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./harness-plugins/package.nix { };
+      t3code =
+        let
+          llmAgents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
+        in
+        prev.callPackage ./t3code/package.nix {
+          inherit pkgs-lib;
+          inherit (llmAgents)
+            codex
+            claude-code
+            cursor-agent
+            grok
+            opencode
+            ;
+          t3code-unwrapped = prev.callPackage ./t3code/unwrapped.nix {
+            inherit (llmAgents) formatelf versionCheckHomeHook;
+          };
+        };
+      t3code-desktop = prev.callPackage ./t3code-desktop/package.nix { inherit (_final) t3code; };
       pi-web = prev.callPackage ./pi-web/package.nix { };
       pi-nrepl = prev.callPackage ./pi/pi-nrepl/package.nix { };
       pi-hashline-edit-pro = prev.callPackage ./pi/pi-hashline-edit-pro/package.nix { };
