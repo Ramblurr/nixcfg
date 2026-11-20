@@ -244,8 +244,6 @@ in
   networking.firewall.extraInputRules = ''
     iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${debordMgmtAddress} tcp dport 5432 accept comment "Databasus Nixbot logical backup"
   '';
-  # Keep local builds small; quine and thingstead take the remote builds
-  # configured in config/nix-remote-builds.nix.
   nix.settings = {
     max-jobs = 2;
     cores = 4;

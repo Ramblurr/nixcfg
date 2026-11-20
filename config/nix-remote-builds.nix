@@ -4,8 +4,6 @@
   pkgs,
   ...
 }:
-# Remote Nix builds between home hosts.
-#
 # Keep the client -> builder graph acyclic. A builder that is also a client
 # can forward received builds to its own builders, and a cycle can deadlock on
 # output locks held by both ends.
