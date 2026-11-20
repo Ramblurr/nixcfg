@@ -138,7 +138,6 @@ let
   goodWrapper = wrapper (pkgs.writeShellScriptBin "reader" "echo fixture-token");
   badWrapper = wrapper (pkgs.writeShellScriptBin "reader" "exit 1");
 
-  # The shared profile routes every client through the proxy and offers each Pi default model there.
   profile =
     (evaluateSystem {
       profile.enable = true;

@@ -22,7 +22,7 @@ let
       cacheWrite = 0;
     };
     thinkingLevelMap = {
-      inherit (model) off;
+      off = model.offThinkingLevel;
       minimal = null;
       low = "low";
       medium = "medium";
