@@ -88,7 +88,6 @@
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
     quadlet-nix2.url = "github:mirkolenz/quadlet-nix/main";
-    quadlet-nix2.inputs.nixpkgs.follows = "nixpkgs";
     # do not follow nixpkgs: use ramsevka's own cached font build
     ramsevka.url = "github:ramblurr/iosevka-custom";
     smolvm.url = "github:smol-machines/smolvm";
