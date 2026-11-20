@@ -1,7 +1,4 @@
-{
-  config,
-  ...
-}:
+_:
 
 let
   serviceName = "hirde";
@@ -14,7 +11,7 @@ in
 {
   sops.secrets.hirde-age-secret-key = {
     owner = user;
-    group = group;
+    inherit group;
     mode = "0600";
     path = sopsAgeKeyFile;
   };
@@ -23,7 +20,7 @@ in
   users.users.${user} = {
     isNormalUser = true;
     uid = 1001;
-    group = group;
+    inherit group;
     extraGroups = [ "wheel" ];
     home = workspaceDir;
     createHome = true;
