@@ -103,22 +103,70 @@ esac
       (is (= "{\"previous\": true}\n" (slurp output)))
       (is (= ["config.yaml"] (dir-entries output-dir))))))
 
-(deftest rejects-failed-and-empty-reads
-  (testing "reader exits non-zero, after an earlier secret already resolved"
-    (assert-rejected {:a "op://test/client/credential" :b ["op://test/missing/credential"]}
-                     {} "Cannot resolve op://test/missing/credential"))
-  (testing "reader prints only whitespace"
-    (assert-rejected {:a "op://test/empty/credential"} {}
-                     "Empty credential: op://test/empty/credential"))
+(defn- render-skipping
+  "Renders `settings` and returns the parsed config and the skip warnings."
+  [settings secret-files]
+  (fs/with-temp-dir [dir {}]
+    (let [{:keys [template reader output]}
+          (fixture dir {:secretFiles secret-files :settings settings})
+          warnings (java.io.StringWriter.)]
+      (binding [*err* warnings] (sut/generate! template reader output))
+      {:config (json/parse-string (slurp output))
+       :warnings (str warnings)})))
+
+(deftest skips-failed-and-empty-reads
+  (let [client "op://test/client/credential"]
+    (doseq [[label reference secret-files message]
+            [["reader exits non-zero" "op://test/missing/credential" {}
+              "Cannot resolve op://test/missing/credential"]
+             ["reader prints only whitespace" "op://test/empty/credential" {}
+              "Empty credential: op://test/empty/credential"]
+             ["override file is missing" "op://x/y/z" {"op://x/y/z" "/nonexistent/test-secret"}
+              "Cannot read secret file for op://x/y/z"]]]
+      (testing label
+        (let [{:keys [config warnings]}
+              (render-skipping {:access {:api-keys [client reference]}} secret-files)]
+          (is (= {"access" {"api-keys" ["client-key-fixture"]}} config))
+          (is (= (str "Skipping credential: " message "\n") warnings))
+          (is (not (str/includes? warnings "LEAKED")))))))
   (testing "override file is blank"
     (fs/with-temp-dir [dir {}]
       (let [blank (fs/path dir "blank")]
         (spit (fs/file blank) "  \n")
-        (assert-rejected {:a "op://x/y/z"} {"op://x/y/z" (str blank)}
-                         "Empty credential: op://x/y/z"))))
-  (testing "override file is missing"
-    (assert-rejected {:a "op://x/y/z"} {"op://x/y/z" "/nonexistent/test-secret"}
-                     "Cannot read secret file for op://x/y/z")))
+        (is (= {"access" {"api-keys" ["client-key-fixture"]}}
+               (:config (render-skipping {:access {:api-keys ["op://test/client/credential" "op://x/y/z"]}}
+                                         {"op://x/y/z" (str blank)})))))))
+  (testing "an upstream that loses its only key keeps its other settings"
+    (is (= {"access" {"api-keys" ["client-key-fixture"]}
+            "openai-compatibility" [{"name" "mistral"
+                                     "api-key-entries" []
+                                     "models" [{"name" "mistral-large-4"}]}]
+            "routing" {}}
+           (:config (render-skipping {:access {:api-keys ["op://test/client/credential"]}
+                                      :openai-compatibility
+                                      [{:name "mistral"
+                                        :api-key-entries [{:api-key "op://test/missing/credential"}]
+                                        :models [{:name "mistral-large-4"}]}]
+                                      :routing {}}
+                                     {}))))))
+
+(deftest rejects-a-config-with-no-client-key
+  (assert-rejected {:access {:api-keys ["op://test/missing/credential" "op://test/empty/credential"]}}
+                   {} "No client API key resolved"))
+
+(deftest command-line-failure-is-quiet
+  (fs/with-temp-dir [dir {}]
+    (let [{:keys [template reader output]}
+          (fixture dir {:secretFiles {}
+                        :settings {:access {:api-keys ["op://test/missing/credential"]}}})
+          {:keys [exit out err]} (process/shell {:out :string :err :string :continue true}
+                                                "bb" script template reader output)]
+      (is (= 1 exit))
+      (is (= "" out))
+      (is (= (str "Skipping credential: Cannot resolve op://test/missing/credential\n"
+                  "Config generation failed: No client API key resolved\n")
+             err))
+      (is (not (fs/exists? output))))))
 
 (deftest removes-temporary-file-when-replacement-fails
   (fs/with-temp-dir [dir {}]
@@ -129,20 +177,6 @@ esac
       (is (thrown? Exception (sut/write-config! {"a" 1} (str output))))
       (is (= ["config.yaml"] (dir-entries dir)))
       (is (= "x" (slurp (fs/file output "keep")))))))
-
-(deftest command-line-failure-is-quiet
-  (fs/with-temp-dir [dir {}]
-    (let [{:keys [template reader output]}
-          (fixture dir {:secretFiles {}
-                        :settings {:a "op://test/client/credential"
-                                   :b "op://test/missing/credential"}})
-          {:keys [exit out err]} (process/shell {:out :string :err :string :continue true}
-                                                "bb" script template reader output)]
-      (is (= 1 exit))
-      (is (= "" out))
-      (is (= "Config generation failed: Cannot resolve op://test/missing/credential\n"
-             err))
-      (is (not (fs/exists? output))))))
 
 (deftest command-line-success
   (fs/with-temp-dir [dir {}]

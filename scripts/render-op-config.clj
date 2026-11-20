@@ -15,12 +15,32 @@
     (when (str/blank? secret) (throw (ex-info (str "Empty credential: " reference) {:safe true})))
     secret))
 
+(defn- resolve-or-skip [reference reader secret-files]
+  (try (read-secret reference reader secret-files)
+       (catch clojure.lang.ExceptionInfo e
+         (when-not (:safe (ex-data e)) (throw e))
+         (binding [*out* *err*] (println "Skipping credential:" (ex-message e)))
+         ::unresolved)))
+
 (defn render [value reader secret-files]
   (cond
-    (map? value) (update-vals value #(render % reader secret-files))
-    (sequential? value) (mapv #(render % reader secret-files) value)
-    (and (string? value) (str/starts-with? value "op://")) (read-secret value reader secret-files)
+    (map? value) (let [rendered (into {} (for [[k v] value
+                                               :let [rendered (render v reader secret-files)]
+                                               :when (not= ::unresolved rendered)]
+                                           [k rendered]))]
+                   (if (and (seq value) (empty? rendered)) ::unresolved rendered))
+    (sequential? value) (into [] (comp (map #(render % reader secret-files))
+                                       (remove #{::unresolved}))
+                              value)
+    (and (string? value) (str/starts-with? value "op://")) (resolve-or-skip value reader secret-files)
     :else value))
+
+(defn- require-client-keys! [template rendered]
+  (when (and (seq (get-in template ["access" "api-keys"]))
+             (empty? (get-in rendered ["access" "api-keys"])))
+    ;; CLIProxyAPI accepts every request when it has no client keys.
+    (throw (ex-info "No client API key resolved" {:safe true})))
+  rendered)
 
 (defn write-config! [settings output]
   (let [content (str (json/generate-string settings) "\n")
@@ -34,7 +54,7 @@
 
 (defn generate! [template reader output]
   (let [{:strs [settings secretFiles]} (json/parse-string (slurp template))]
-    (write-config! (render settings reader secretFiles) output)))
+    (write-config! (require-client-keys! settings (render settings reader secretFiles)) output)))
 
 (defn -main [& args]
   (if (not= 3 (count args))
