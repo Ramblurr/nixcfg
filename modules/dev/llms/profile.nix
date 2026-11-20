@@ -139,6 +139,11 @@ let
         enabled = cfg.codex.enable;
         config.homePath = "${agentConfigHome}/codex";
       };
+      antigravity = {
+        driver = "antigravity";
+        enabled = true;
+        config.binaryPath = lib.getExe packages.antigravity-cli;
+      };
     };
   };
 in
@@ -168,6 +173,7 @@ in
 
   config = lib.mkIf cfg.profile.enable {
     myhm = {
+      home.packages = [ packages.antigravity-cli ];
       home.sessionVariables = {
         HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";

@@ -249,6 +249,7 @@ assert lib.all (
   model: lib.hasPrefix "http://proxy.invalid" model.baseUrl
 ) rpcProfile.pi.instances.pi.models.providers.cliproxy.models;
 assert profile.codex.settings.model_providers.cliproxy.env_key == "CLIPROXY_API_KEY";
+assert lib.hasSuffix "/bin/agy" profile.t3.settings.providerInstances.antigravity.config.binaryPath;
 assert lib.elem [
   "model_providers"
   "cliproxy"
