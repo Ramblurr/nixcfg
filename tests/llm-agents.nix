@@ -1,49 +1,53 @@
 { inputs, pkgs }:
 let
   inherit (pkgs) lib;
-  evaluate =
+  evaluateSystem =
     overrides:
-    let
-      system = lib.evalModules {
-        specialArgs = { inherit inputs pkgs; };
-        modules = [
-          ../modules/dev/llms/agents.nix
-          ../modules/dev/llms/clients.nix
-          ../modules/dev/llms/pi.nix
-          (
-            { lib, ... }:
-            {
-              options = {
-                myhm = lib.mkOption { type = lib.types.deferredModule; };
-                modules.dev.llms.enable = lib.mkEnableOption "agents";
-                modules.dev.llms.onepasswordConnect = {
-                  tokenFile = lib.mkOption {
-                    type = lib.types.nullOr lib.types.str;
-                    default = null;
-                  };
-                  package = lib.mkOption {
-                    type = lib.types.package;
-                    default = pkgs.hello;
-                  };
+    lib.evalModules {
+      specialArgs = { inherit inputs pkgs; };
+      modules = [
+        ../modules/dev/llms/agents.nix
+        ../modules/dev/llms/clients.nix
+        ../modules/dev/llms/pi.nix
+        ../modules/dev/llms/profile.nix
+        (
+          { lib, ... }:
+          {
+            options = {
+              myhm = lib.mkOption { type = lib.types.deferredModule; };
+              modules.dev.llms.enable = lib.mkEnableOption "agents";
+              modules.dev.llms.onepasswordConnect = {
+                tokenFile = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
                 };
-                repo.secrets.global.domain.tailnet = lib.mkOption {
-                  type = lib.types.str;
-                  default = "example.test";
+                package = lib.mkOption {
+                  type = lib.types.package;
+                  default = pkgs.hello;
                 };
               };
-              config.modules.dev.llms = lib.recursiveUpdate {
-                enable = true;
-                pi.package = pkgs.hello;
-              } overrides;
-            }
-          )
-        ];
-      };
-    in
+              repo.secrets.global.domain.tailnet = lib.mkOption {
+                type = lib.types.str;
+                default = "example.test";
+              };
+              environment = lib.mkOption { type = lib.types.anything; };
+              modules.dev.llms.t3 = lib.mkOption { type = lib.types.anything; };
+              modules.users.primaryUser.homeDirectory = lib.mkOption { default = "/home/test"; };
+            };
+            config.modules.dev.llms = lib.recursiveUpdate {
+              enable = true;
+              pi.package = pkgs.hello;
+            } overrides;
+          }
+        )
+      ];
+    };
+  evaluate =
+    overrides:
     (inputs.home-manager.lib.homeManagerConfiguration {
       inherit pkgs;
       modules = [
-        system.config.myhm
+        (evaluateSystem overrides).config.myhm
         {
           home.username = "test";
           home.homeDirectory = "/home/test";
@@ -134,6 +138,14 @@ let
   goodWrapper = wrapper (pkgs.writeShellScriptBin "reader" "echo fixture-token");
   badWrapper = wrapper (pkgs.writeShellScriptBin "reader" "exit 1");
 
+  # The shared profile routes every client through the proxy and offers each Pi default model there.
+  profile =
+    (evaluateSystem {
+      profile.enable = true;
+      proxy.enable = true;
+    }).config.modules.dev.llms;
+  cliproxyModelIds = map (model: model.id) profile.pi.instances.pi.models.providers.cliproxy.models;
+
   activation = name: pkgs.writeText name configured.home.activation.${name}.data;
   piFile = instance: name: configured.home.file."/home/test/.config/${instance}/agent/${name}".text;
 in
@@ -161,6 +173,13 @@ assert !(instructionsOff.xdg.configFile ? "claude/CLAUDE.md");
 assert !(codexInstructionsOff.xdg.configFile ? "codex/AGENTS.md");
 assert codexInstructionsOff.xdg.configFile ? "claude/CLAUDE.md";
 assert !(instructionsOff.home.activation ? codexLocalSkills);
+assert lib.all (instance: lib.elem instance.settings.defaultModel cliproxyModelIds) (
+  lib.attrValues profile.pi.instances
+);
+assert lib.elem "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\"" profile.codex.extraArgs;
+assert !(profile.codex.settings.model_providers.cliproxy ? env_key);
+assert profile.claude.settings.env.ANTHROPIC_BASE_URL == profile.proxy.url;
+assert lib.all (lib.hasPrefix builtins.storeDir) profile.pi.instances.pi.settings.skills;
 pkgs.runCommand "llm-agents-test"
   {
     nativeBuildInputs = [
