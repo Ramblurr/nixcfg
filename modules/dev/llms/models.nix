@@ -46,12 +46,44 @@
         name = "Muse Wonder Full (Contributor)";
       }
     ];
-
+    # Every other model the proxy advertised on 2026-11-20, as Pi's discovery
+    # recorded them. OpenRouter prices are that day's OpenRouter list prices.
+    advertised = builtins.fromJSON (builtins.readFile ./cliproxy-advertised.json);
   };
 
-  subq.savant = builtins.fromJSON (
-    builtins.readFile "${(import ../../../pkgs/pi/pi-cliproxy/source.nix).outPath}/pi-cliproxy/savant.json"
-  );
+  subq.savant = {
+    id = "subq-savant-1.4";
+    name = "SubQ Savant 1.4";
+    api = "openai-completions";
+    contextWindow = 4000000;
+    maxTokens = 32768;
+    reasoning = true;
+    input = [
+      "text"
+      "image"
+    ];
+    cost = {
+      input = 0.1;
+      output = 0.5;
+      cacheRead = 0.01;
+      cacheWrite = 0;
+    };
+    compat = {
+      maxTokensField = "max_tokens";
+      supportsDeveloperRole = false;
+      supportsReasoningEffort = true;
+      thinkingFormat = "openai";
+    };
+    thinkingLevelMap = {
+      off = null;
+      minimal = null;
+      low = "low";
+      medium = null;
+      high = "high";
+      xhigh = null;
+      max = "max";
+    };
+  };
 
   mistral.large4 = {
     id = "mistral-large-4";

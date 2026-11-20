@@ -155,7 +155,6 @@ in
       "mine"
       "engineering"
     ];
-    packages = [ (toString pkgs.pi-cliproxy) ];
     npmCommand = [ "pnpm" ];
     hideThinkingBlock = true;
     theme = "dark";

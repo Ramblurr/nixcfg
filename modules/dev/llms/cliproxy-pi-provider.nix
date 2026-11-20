@@ -1,5 +1,5 @@
-# Pi provider for CLIProxyAPI with a static model list, so the models exist the
-# moment Pi starts, before any extension can discover them.
+# Pi provider for CLIProxyAPI with the full static model list. Pi does not
+# discover proxy models at runtime, so every model is here.
 {
   url,
   apiKey,
@@ -11,7 +11,6 @@ let
   cliproxyOpenaiModel = model: {
     inherit (model) id name;
     api = "openai-responses";
-    baseUrl = "${cliproxyRoot}/v1";
     reasoning = true;
     input = [
       "text"
@@ -47,7 +46,6 @@ let
   cliproxyMuseModel = model: {
     inherit (model) id name;
     api = "openai-responses";
-    baseUrl = "${cliproxyRoot}/v1";
     reasoning = true;
     input = [
       "text"
@@ -82,13 +80,27 @@ in
   baseUrl = cliproxyRoot;
   inherit apiKey;
   models =
-    map cliproxyOpenaiModel catalog.openai
-    ++ map cliproxyMuseModel catalog.muse
-    ++ map (
-      model:
-      model
-      // {
-        baseUrl = if model.api == "mistral-conversations" then cliproxyRoot else "${cliproxyRoot}/v1";
-      }
-    ) extraModels;
+    let
+      declared =
+        map cliproxyOpenaiModel catalog.openai ++ map cliproxyMuseModel catalog.muse ++ extraModels;
+      declaredIds = map (model: model.id) declared;
+      advertised = builtins.filter (model: !(builtins.elem model.id declaredIds)) catalog.advertised;
+      # These clients append /v1 themselves; the others take it in the base URL.
+      withBaseUrl =
+        model:
+        {
+          baseUrl =
+            if
+              builtins.elem model.api [
+                "anthropic-messages"
+                "mistral-conversations"
+              ]
+            then
+              cliproxyRoot
+            else
+              "${cliproxyRoot}/v1";
+        }
+        // model;
+    in
+    map withBaseUrl (declared ++ advertised);
 }

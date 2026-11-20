@@ -20,11 +20,6 @@ let
     extraModels = cfg.profile.piProxyExtraModels;
     apiKey = "!${opRead} ${lib.escapeShellArg cfg.proxy.credential}";
   };
-  cliproxyPackage = pkgs.pi-cliproxy.override {
-    savantConfigured = lib.any (
-      model: model.id == models.subq.savant.id
-    ) cfg.profile.piProxyExtraModels;
-  };
   piProviders =
     lib.mapAttrs (_: credential: {
       apiKey = "!${opRead} ${lib.escapeShellArg credential}";
@@ -205,11 +200,10 @@ in
             pkgs.pi-reload
             cfg.skills.package.plugins.pstack
             pkgs.pi-speak
-            "${pkgs.pi-cliproxy.src}/pi-subq"
+            pkgs.pi-subq
             pkgs.brepl-balance
             pkgs.plannotator-pi-extension
             pkgs.pi-openai-fast
-            cliproxyPackage
             pkgs.pi-link
             pkgs.pi-lens
             pkgs.pi-fff
@@ -218,10 +212,9 @@ in
             pkgs.pi-reload
             cfg.skills.package.plugins.pstack
             pkgs.pi-speak
-            "${pkgs.pi-cliproxy.src}/pi-subq"
+            pkgs.pi-subq
             pkgs.brepl-balance
             pkgs.pi-openai-fast
-            cliproxyPackage
             pkgs.pi-lens
             pkgs.pi-fff
           ];

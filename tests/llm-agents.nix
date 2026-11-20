@@ -143,15 +143,50 @@ let
       profile.enable = true;
       proxy.enable = true;
     }).config.modules.dev.llms;
-  profileWithSavant =
+  cliproxyModelIds = map (model: model.id) profile.pi.instances.pi.models.providers.cliproxy.models;
+  rpcProfile =
     (evaluateSystem {
       profile = {
         enable = true;
-        piProxyExtraModels = [ (import ../modules/dev/llms/models.nix).subq.savant ];
+        piProviderCredentials.subq = "op://fixture/subq/key";
+        piProxyExtraModels = [
+          (
+            (import ../modules/dev/llms/models.nix).subq.savant
+            // {
+              baseUrl = "http://proxy.invalid/configured/v1";
+            }
+          )
+          {
+            id = "fixture-mistral";
+            api = "mistral-conversations";
+          }
+        ];
       };
-      proxy.enable = true;
+      proxy = {
+        enable = true;
+        url = "http://proxy.invalid";
+        credential = "op://fixture/proxy/key";
+      };
+      onepasswordConnect = {
+        tokenFile = "/fixture";
+        package = pkgs.writeShellScriptBin "reader" ''
+          test "$1" = op://fixture/proxy/key || exit 1
+          echo fixture-token
+        '';
+      };
     }).config.modules.dev.llms;
-  cliproxyModelIds = map (model: model.id) profile.pi.instances.pi.models.providers.cliproxy.models;
+  rpcProfiles = pkgs.writeText "pi-proxy-rpc-profiles.json" (
+    builtins.toJSON (
+      lib.mapAttrs (_: instance: {
+        inherit (instance) models;
+        settings = {
+          inherit (instance.settings) defaultProvider defaultModel;
+          packages = lib.filter (package: package == toString pkgs.pi-subq) instance.settings.packages;
+        };
+      }) rpcProfile.pi.instances
+    )
+  );
+  pi = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi.override { useBun = false; };
 
   activation = name: pkgs.writeText name configured.home.activation.${name}.data;
   piFile = instance: name: configured.home.file."/home/test/.config/${instance}/agent/${name}".text;
@@ -198,8 +233,18 @@ assert lib.all (
       cacheRead = 0.01;
       cacheWrite = 0;
     }
-) (lib.attrValues profileWithSavant.pi.instances);
+) (lib.attrValues rpcProfile.pi.instances);
 assert !(lib.elem "subq-savant-1.4" cliproxyModelIds);
+# Every model comes from Nix; no profile loads a discovery extension.
+assert lib.all (
+  instance:
+  lib.elem (toString pkgs.pi-subq) instance.settings.packages
+  && !(lib.any (package: lib.hasInfix "pi-cliproxy" (toString package)) instance.settings.packages)
+  && instance.settings.defaultTools == [ "+codemode" ]
+) (lib.attrValues rpcProfile.pi.instances);
+assert lib.all (
+  model: lib.hasPrefix "http://proxy.invalid" model.baseUrl
+) rpcProfile.pi.instances.pi.models.providers.cliproxy.models;
 assert lib.elem "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\"" profile.codex.extraArgs;
 assert !(profile.codex.settings.model_providers.cliproxy ? env_key);
 assert profile.claude.settings.env.ANTHROPIC_BASE_URL == profile.proxy.url;
@@ -210,6 +255,7 @@ pkgs.runCommand "llm-agents-test"
       pkgs.bash
       pkgs.jaq
       pkgs.jq
+      pkgs.python3
     ];
   }
   ''
@@ -242,6 +288,8 @@ pkgs.runCommand "llm-agents-test"
       'plugin marketplace add ${marketplace} --json' \
       'plugin add my@fixture --json' > expected-calls
     diff expected-calls "$home/.config/codex/calls"
+
+    python3 ${./pi-proxy-rpc.py} ${lib.getExe pi} ${rpcProfiles}
 
     touch "$out"
   ''
