@@ -173,4 +173,7 @@ in
   };
 
   environment.persistence."/persist".directories = [ "/var/lib/bluetooth" ];
+
+  # 1Password Connect lives on the management subnet, which debord routes over the tailnet.
+  services.tailscale.extraSetFlags = [ "--accept-routes" ];
 }
