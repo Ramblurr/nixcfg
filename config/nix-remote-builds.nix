@@ -7,7 +7,7 @@
 # Remote Nix builds between home hosts.
 #
 # Keep the client -> builder graph acyclic. A builder that is also a client
-# forwards received builds to its own builders, and a cycle can deadlock on
+# can forward received builds to its own builders, and a cycle can deadlock on
 # output locks held by both ends.
 let
   inherit (config.networking) hostName;
@@ -56,6 +56,7 @@ let
   order = lib.toposort (a: b: lib.elem b (clients.${a}.builders or [ ])) (
     lib.attrNames (builders // clients)
   );
+  selfLoops = lib.filter (n: lib.elem n clients.${n}.builders) (lib.attrNames clients);
   client = clients.${hostName} or null;
   inboundKeys = lib.mapAttrsToList (_: c: c.publicKey) (
     lib.filterAttrs (_: c: lib.elem hostName c.builders) clients
@@ -66,8 +67,10 @@ in
     {
       assertions = [
         {
-          assertion = order ? result;
-          message = "nix-remote-builds: the client -> builder graph has a cycle: ${toString (order.cycle or [ ])}";
+          assertion = order ? result && selfLoops == [ ];
+          message = "nix-remote-builds: the client -> builder graph has a cycle: ${
+            toString (order.cycle or selfLoops)
+          }";
         }
       ];
     }
