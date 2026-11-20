@@ -159,8 +159,13 @@ in
       python.enable = true;
       random.enable = true;
       llms = {
-        enable = true;
+        profile.enable = true;
         desktop.enable = true;
+        proxy.enable = true;
+        t3 = {
+          tailscaleServePort = 8443;
+          startAtBoot = true;
+        };
       };
     };
     hardware.keyboardio.enable = true;
