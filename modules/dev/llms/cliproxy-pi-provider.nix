@@ -33,6 +33,18 @@ let
       xhigh = "xhigh";
       max = "max";
     };
+    inputLimits = {
+      maxRequestBytes = 536870912;
+      images = {
+        maxPerRequest = 1500;
+        resize = {
+          maxWidth = 2000;
+          maxHeight = 2000;
+          maxBytes = 4718592;
+          jpegQuality = 80;
+        };
+      };
+    };
     compat = {
       supportsStrictMode = true;
       supportsOpenAIGrammarTools = true;

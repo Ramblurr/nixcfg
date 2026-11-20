@@ -176,8 +176,14 @@ async def pi_rpc(pi, directory, *, extensions=True):
             await asyncio.wait_for(process.wait(), 5)
 
 
-def setup(directory, profile, proxy_url):
+def setup(directory, profile, proxy_url, stale_url):
     directory.mkdir()
+    # A discovery cache from the removed extension, naming another proxy.
+    stale = [
+        {"id": RESPONSES, "api": "openai-responses", "provider": "cliproxy", "baseUrl": f"{stale_url}/v1"},
+        {"id": "stale-only", "api": "openai-responses", "provider": "cliproxy", "baseUrl": f"{stale_url}/v1"},
+    ]
+    (directory / "models-store.json").write_text(json.dumps({"cliproxy": {"models": stale, "checkedAt": 1}}))
     config = copy.deepcopy(profile["models"])
     config["providers"]["subq"]["apiKey"] = "!printf fixture-token"
     provider = config["providers"]["cliproxy"]
@@ -190,12 +196,13 @@ def setup(directory, profile, proxy_url):
     return {model["id"]: model for model in provider["models"]}
 
 
-async def check_profiles(pi, profiles, directory, server):
+async def check_profiles(pi, profiles, directory, server, stale):
     proxy_url = f"http://127.0.0.1:{server.server_port}"
+    stale_url = f"http://127.0.0.1:{stale.server_port}"
     for name, profile in profiles.items():
         assert len(profile["settings"]["packages"]) == 1, name
         agent_dir = directory / name
-        configured = setup(agent_dir, profile, proxy_url)
+        configured = setup(agent_dir, profile, proxy_url, stale_url)
         assert {MISTRAL, SAVANT, RESPONSES, ANTHROPIC, OPENROUTER} <= configured.keys(), name
 
         async with pi_rpc(pi, agent_dir) as rpc:
@@ -225,18 +232,26 @@ async def check_profiles(pi, profiles, directory, server):
         print(f"{name} --no-extensions: first RPC and stream OK", flush=True)
 
     assert not any(method == "GET" for method, _path in server.requests), server.requests
+    assert not stale.requests, stale.requests
 
 
 if __name__ == "__main__":
     pi, profiles_file = sys.argv[1:]
     profiles = json.loads(Path(profiles_file).read_text())
     assert {"pi", "pi-t3"} <= profiles.keys()
-    with TemporaryDirectory() as directory, ThreadingHTTPServer(("127.0.0.1", 0), Proxy) as server:
-        server.requests = []
-        thread = Thread(target=server.serve_forever, daemon=True)
-        thread.start()
+    with (
+        TemporaryDirectory() as directory,
+        ThreadingHTTPServer(("127.0.0.1", 0), Proxy) as server,
+        ThreadingHTTPServer(("127.0.0.1", 0), Proxy) as stale,
+    ):
+        threads = []
+        for proxy in (server, stale):
+            proxy.requests = []
+            threads.append(Thread(target=proxy.serve_forever, daemon=True))
+            threads[-1].start()
         try:
-            asyncio.run(check_profiles(pi, profiles, Path(directory), server))
+            asyncio.run(check_profiles(pi, profiles, Path(directory), server, stale))
         finally:
-            server.shutdown()
-            thread.join()
+            for proxy, thread in zip((server, stale), threads):
+                proxy.shutdown()
+                thread.join()

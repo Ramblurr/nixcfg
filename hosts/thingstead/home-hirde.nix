@@ -140,9 +140,7 @@ in
     models.providers.cliproxy = cliproxyProvider;
   };
   programs.pi.instances.pi.models.providers = {
-    cliproxy = {
-      inherit (cliproxyProvider) baseUrl apiKey;
-    };
+    cliproxy = cliproxyProvider;
     openai.apiKey = "!op read 'op://moot/openai hirde/credential'";
     openrouter.apiKey = "!op read 'op://moot/openrouter hirde/credential'";
   };
