@@ -46,11 +46,46 @@
         name = "Muse Wonder Full (Contributor)";
       }
     ];
+
   };
 
   subq.savant = builtins.fromJSON (
     builtins.readFile "${(import ../../../pkgs/pi/pi-cliproxy/source.nix).outPath}/pi-cliproxy/savant.json"
   );
+
+  mistral.large4 = {
+    id = "mistral-large-4";
+    name = "Mistral Large 4";
+    api = "mistral-conversations";
+    reasoning = true;
+    input = [
+      "text"
+      "image"
+    ];
+    contextWindow = 1048576;
+    maxTokens = 262144;
+    cost = {
+      input = 0.7;
+      output = 2.1;
+      cacheRead = 0.07;
+      cacheWrite = 0;
+    };
+    thinkingLevelMap = {
+      off = null;
+      minimal = null;
+      low = "low";
+      medium = "medium";
+      high = "high";
+      xhigh = null;
+      max = null;
+    };
+    inputLimits.images.resize = {
+      maxWidth = 2000;
+      maxHeight = 2000;
+      maxBytes = 4718592;
+      jpegQuality = 80;
+    };
+  };
 
   openrouter = [
     "google/gemini-4-carbon"

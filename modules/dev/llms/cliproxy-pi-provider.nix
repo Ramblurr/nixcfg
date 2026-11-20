@@ -84,5 +84,11 @@ in
   models =
     map cliproxyOpenaiModel catalog.openai
     ++ map cliproxyMuseModel catalog.muse
-    ++ map (model: model // { baseUrl = "${cliproxyRoot}/v1"; }) extraModels;
+    ++ map (
+      model:
+      model
+      // {
+        baseUrl = if model.api == "mistral-conversations" then cliproxyRoot else "${cliproxyRoot}/v1";
+      }
+    ) extraModels;
 }

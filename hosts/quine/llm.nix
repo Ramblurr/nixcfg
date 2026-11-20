@@ -253,7 +253,10 @@ in
 
   modules.dev.llms.profile = {
     enable = true;
-    piProxyExtraModels = [ models.subq.savant ];
+    piProxyExtraModels = [
+      models.subq.savant
+      models.mistral.large4
+    ];
     piProviderCredentials = {
       anthropic = "op://LLM/Anthropic-quine/credential";
       typesafe = "op://LLM/Jev-quine/credential";
@@ -294,6 +297,12 @@ in
           base-url = "https://api.subq.ai/v1";
           keys = [ { api-key = config.modules.dev.llms.profile.piProviderCredentials.subq; } ];
           models = [ { name = models.subq.savant.id; } ];
+        }
+        {
+          name = "mistral";
+          base-url = "https://api.mistral.ai/v1";
+          keys = [ { api-key = "op://LLM/Mistral-quine/credential"; } ];
+          models = [ { name = models.mistral.large4.id; } ];
         }
       ];
       routing = {
