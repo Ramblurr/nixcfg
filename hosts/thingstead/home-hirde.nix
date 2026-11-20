@@ -11,6 +11,7 @@ let
   uid = toString osConfig.users.users.hirde.uid;
   inherit (osConfig.repo.secrets.global) domain;
   forge = "git.${domain.home}";
+  models = import ../../modules/dev/llms/models.nix;
   cliproxyProvider = import ../../modules/dev/llms/cliproxy-pi-provider.nix {
     inherit (osConfig.modules.dev.llms.proxy) url;
     apiKey = "!op read 'op://moot/cliproxyapi hirde/credential'";
@@ -135,9 +136,7 @@ in
     tokenFile = config.sops.secrets.onepassword-connect-token.path;
   };
   programs.pi.instances.pi-t3 = {
-    settings = config.programs.pi.instances.pi.settings // {
-      defaultModel = "gpt-6.2-sol";
-    };
+    inherit (config.programs.pi.instances.pi) settings;
     models.providers.cliproxy = cliproxyProvider;
   };
   programs.pi.instances.pi.models.providers = {
@@ -149,7 +148,7 @@ in
   };
   programs.pi.instances.pi.settings = {
     defaultProvider = "cliproxy";
-    defaultModel = "gpt-6.1-sol";
+    defaultModel = models.defaults.pi;
     defaultThinkingLevel = "high";
     skills = map (dir: "${skillsDir}/skills/${dir}") [
       "pi"
