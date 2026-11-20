@@ -1,22 +1,41 @@
 { inputs, pkgs }:
 let
   inherit (pkgs) lib;
-  host = import ../hosts/quine/llm.nix {
-    inherit inputs pkgs lib;
-    config = {
-      repo.secrets.global.domain.tailnet = "example.test";
-      sops.secrets.onepassword-connect-llm-token.path = null;
-      modules.dev.llms = suite;
-      modules.users.primaryUser.homeDirectory = "/home/test";
-    };
+  config = {
+    repo.secrets.global.domain.tailnet = "example.test";
+    sops.secrets.onepassword-connect-llm-token.path = null;
+    modules.dev.llms = suite;
+    modules.users.primaryUser.homeDirectory = "/home/test";
   };
-  suite = lib.recursiveUpdate {
-    codex.enable = true;
-    claude.enable = true;
-    pi.enable = true;
-    onepasswordConnect.tokenFile = null;
-    proxy.removeLegacyCredentials = false;
-  } host.modules.dev.llms;
+  host = import ../hosts/quine/llm.nix {
+    inherit
+      config
+      inputs
+      pkgs
+      lib
+      ;
+  };
+  profile = import ../modules/dev/llms/profile.nix {
+    inherit
+      config
+      inputs
+      pkgs
+      lib
+      ;
+  };
+  suite = lib.foldl' lib.recursiveUpdate { } [
+    {
+      codex.enable = true;
+      claude.enable = true;
+      pi.enable = true;
+      onepasswordConnect.tokenFile = null;
+      proxy.removeLegacyCredentials = false;
+      skills.package = pkgs.harness-plugins;
+      profile.codexSessionHookUsers = [ ];
+    }
+    host.modules.dev.llms
+    profile.config.content.modules.dev.llms
+  ];
 in
 assert suite.codex.settings.model == "gpt-6-luna";
 assert suite.codex.settings.web_search == "disabled";
