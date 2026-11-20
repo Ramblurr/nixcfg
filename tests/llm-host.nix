@@ -2,8 +2,6 @@
 let
   inherit (pkgs) lib;
   config = {
-    repo.secrets.global.domain.tailnet = "example.test";
-    sops.secrets.onepassword-connect-llm-token.path = null;
     modules.dev.llms = suite;
     modules.users.primaryUser.homeDirectory = "/home/test";
   };
@@ -29,14 +27,22 @@ let
       claude.enable = true;
       pi.enable = true;
       onepasswordConnect.tokenFile = null;
-      proxy.removeLegacyCredentials = false;
+      proxy = {
+        removeLegacyCredentials = false;
+        url = "https://quine.example.test:8317";
+        credential = "op://LLM/CLIProxyAPI/credential";
+      };
       skills.package = pkgs.harness-plugins;
       profile.codexSessionHookUsers = [ ];
     }
     host.modules.dev.llms
     profile.config.content.modules.dev.llms
   ];
+  cliproxyModelIds = map (model: model.id) suite.pi.instances.pi.models.providers.cliproxy.models;
 in
+assert lib.all (instance: lib.elem instance.settings.defaultModel cliproxyModelIds) (
+  lib.attrValues suite.pi.instances
+);
 assert suite.codex.settings.model == "gpt-6-luna";
 assert suite.codex.settings.web_search == "disabled";
 assert !(suite.codex.settings.model_providers.cliproxy ? env_key);
