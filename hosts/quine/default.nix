@@ -167,6 +167,7 @@ in
 
   modules = {
     nix.pruneAgedGcroots.enable = true;
+    nix.buildLimits.enable = true;
     desktop = {
       wayland.enable = true;
       niri.enable = true;

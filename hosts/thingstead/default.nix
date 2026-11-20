@@ -47,6 +47,7 @@
     };
     zfs.datasets.enable = true;
     nix.pruneAgedGcroots.enable = true;
+    nix.buildLimits.enable = true;
     vpn.tailscale.enable = true;
     microvm-host = {
       enable = true;

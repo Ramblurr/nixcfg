@@ -52,7 +52,18 @@ with lib;
     };
   };
 
+  options.modules.nix.buildLimits.enable =
+    lib.mkEnableOption "per-build cgroups that systemd-oomd can kill one at a time";
+
   config = lib.mkMerge [
+    (lib.mkIf config.modules.nix.buildLimits.enable {
+      nix.settings.use-cgroups = true;
+      nix.settings.experimental-features = [ "cgroups" ];
+      systemd.services.nix-daemon.serviceConfig = {
+        ManagedOOMMemoryPressure = "kill";
+        ManagedOOMMemoryPressureLimit = "50%";
+      };
+    })
     (lib.mkIf (gcCfg.keepGenerations != null) {
       nix.gc.options = lib.mkForce "";
       systemd.services.nix-gc.preStart = "${pruneProfiles}";
@@ -63,12 +74,14 @@ with lib;
         extraOptions = ''
           # Quicker timeout for inaccessible binary caches
           connect-timeout = 5
-          # Enable flakes
-          experimental-features = nix-command flakes
           # Do not warn on dirty git repo
           warn-dirty = false
         '';
         settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+          ];
           trusted-users = [
             "root"
             "@wheel"
