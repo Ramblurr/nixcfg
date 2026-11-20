@@ -18,11 +18,10 @@ proxy hashes it in its runtime config. Client keys are
 `op://LLM/CLIProxyAPI/credential` and
 `op://moot/cliproxyapi hirde/credential`.
 
-Connect cannot read the moot vault. The hirde reference therefore uses the
-owner-only runtime source `/home/ramblurr/.local/state/cliproxyapi/hirde-key` via
-`secretFiles`. When rotating this key, update 1Password, this file, and its
-clients before restarting the service. Other references resolve directly through
-Connect. This file must be restored when recovering the host.
+Every reference resolves through Connect when the service starts, so after
+rotating a key in 1Password, restart `cliproxy-api`. A reference that fails to
+resolve is skipped with a warning; the service refuses to start only when no
+client key resolves.
 
 OpenRouter uses `api-keys.openai-compatibility`, with its upstream key read from
 `op://LLM/OpenRouter/credential`. Model IDs must be listed explicitly in the host

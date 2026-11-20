@@ -313,8 +313,6 @@ in
         cooldown.transient-error-cooldown-seconds = 15;
       };
     };
-    secretFiles."op://moot/cliproxyapi hirde/credential" =
-      "/home/ramblurr/.local/state/cliproxyapi/hirde-key";
   };
 
   modules.dev.llms.t3 = {

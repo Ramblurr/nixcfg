@@ -2,37 +2,33 @@
 (require '[babashka.fs :as fs] '[babashka.process :as process]
          '[cheshire.core :as json] '[clojure.string :as str])
 
-(defn- read-secret [reference reader secret-files]
+(defn- read-secret [reference reader]
   (let [secret (str/trim
-                (if-let [file (get secret-files reference)]
-                  (try (slurp file)
-                       (catch java.io.IOException _
-                         (throw (ex-info (str "Cannot read secret file for " reference) {:safe true}))))
-                  (let [{:keys [exit out]} (process/shell {:in "" :out :string :err :string :continue true}
-                                                          reader reference)]
-                    (when-not (zero? exit) (throw (ex-info (str "Cannot resolve " reference) {:safe true})))
-                    out)))]
+                (let [{:keys [exit out]} (process/shell {:in "" :out :string :err :string :continue true}
+                                                        reader reference)]
+                  (when-not (zero? exit) (throw (ex-info (str "Cannot resolve " reference) {:safe true})))
+                  out))]
     (when (str/blank? secret) (throw (ex-info (str "Empty credential: " reference) {:safe true})))
     secret))
 
-(defn- resolve-or-skip [reference reader secret-files]
-  (try (read-secret reference reader secret-files)
+(defn- resolve-or-skip [reference reader]
+  (try (read-secret reference reader)
        (catch clojure.lang.ExceptionInfo e
          (when-not (:safe (ex-data e)) (throw e))
          (binding [*out* *err*] (println "Skipping credential:" (ex-message e)))
          ::unresolved)))
 
-(defn render [value reader secret-files]
+(defn render [value reader]
   (cond
     (map? value) (let [rendered (into {} (for [[k v] value
-                                               :let [rendered (render v reader secret-files)]
+                                               :let [rendered (render v reader)]
                                                :when (not= ::unresolved rendered)]
                                            [k rendered]))]
                    (if (and (seq value) (empty? rendered)) ::unresolved rendered))
-    (sequential? value) (into [] (comp (map #(render % reader secret-files))
+    (sequential? value) (into [] (comp (map #(render % reader))
                                        (remove #{::unresolved}))
                               value)
-    (and (string? value) (str/starts-with? value "op://")) (resolve-or-skip value reader secret-files)
+    (and (string? value) (str/starts-with? value "op://")) (resolve-or-skip value reader)
     :else value))
 
 (defn- require-client-keys! [template rendered]
@@ -53,8 +49,8 @@
       (finally (fs/delete-if-exists temporary)))))
 
 (defn generate! [template reader output]
-  (let [{:strs [settings secretFiles]} (json/parse-string (slurp template))]
-    (write-config! (require-client-keys! settings (render settings reader secretFiles)) output)))
+  (let [{:strs [settings]} (json/parse-string (slurp template))]
+    (write-config! (require-client-keys! settings (render settings reader)) output)))
 
 (defn -main [& args]
   (if (not= 3 (count args))

@@ -28,11 +28,6 @@ in
       default = { };
       description = "CLIProxyAPI settings. Exact op:// strings are resolved at service startup; never put secret values here.";
     };
-    secretFiles = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      default = { };
-      description = "Runtime file overrides for 1Password references unavailable through Connect.";
-    };
     tailscaleServePort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
       default = null;
@@ -76,7 +71,6 @@ in
         '';
         template = pkgs.writeText "cliproxyapi-template.json" (
           builtins.toJSON {
-            inherit (cfg) secretFiles;
             settings = lib.recursiveUpdate {
               config-version = 8;
               server = {
