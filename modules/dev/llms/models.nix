@@ -48,6 +48,10 @@
     ];
   };
 
+  subq.savant = builtins.fromJSON (
+    builtins.readFile "${(import ../../../pkgs/pi/pi-cliproxy/source.nix).outPath}/pi-cliproxy/savant.json"
+  );
+
   openrouter = [
     "google/gemini-4-carbon"
     "z-ai/glm-5.3-flash"

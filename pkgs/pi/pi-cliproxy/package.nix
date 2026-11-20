@@ -1,21 +1,18 @@
 {
-  fetchFromGitHub,
   lib,
   stdenvNoCC,
+  savantConfigured ? false,
 }:
-
 stdenvNoCC.mkDerivation {
   pname = "pi-cliproxy";
-  version = "0.1.0-unstable-2026-11-19";
+  version = "0.1.0-unstable-2026-11-20";
 
-  src = fetchFromGitHub {
-    owner = "Ramblurr";
-    repo = "pi-extensions";
-    rev = "48710f8f0684fd397ad7109c29a483a73b6a08b4";
-    hash = "sha256-HOHGAIwV4jFqtx1xFFIH/ie3Z0uZwViunp5l6jNfs3I=";
-  };
+  src = (import ./source.nix).outPath;
   sourceRoot = "source/pi-cliproxy";
-  patches = [ ./keep-static-models.patch ];
+  patches = [ ./only-discover-advertised-savant.patch ];
+  postPatch = lib.optionalString savantConfigured ''
+    substituteInPlace index.ts --replace-fail '/* configured-savant */ false' 'true'
+  '';
 
   installPhase = ''
     runHook preInstall

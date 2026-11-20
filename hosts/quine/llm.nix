@@ -253,6 +253,7 @@ in
 
   modules.dev.llms.profile = {
     enable = true;
+    piProxyExtraModels = [ models.subq.savant ];
     piProviderCredentials = {
       anthropic = "op://LLM/Anthropic-quine/credential";
       typesafe = "op://LLM/Jev-quine/credential";
@@ -287,6 +288,12 @@ in
           base-url = "https://openrouter.ai/api/v1";
           keys = [ { api-key = "op://LLM/OpenRouter/credential"; } ];
           models = map (name: { inherit name; }) models.openrouter;
+        }
+        {
+          name = "subq";
+          base-url = "https://api.subq.ai/v1";
+          keys = [ { api-key = config.modules.dev.llms.profile.piProviderCredentials.subq; } ];
+          models = [ { name = models.subq.savant.id; } ];
         }
       ];
       routing = {

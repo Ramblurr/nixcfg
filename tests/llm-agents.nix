@@ -143,6 +143,14 @@ let
       profile.enable = true;
       proxy.enable = true;
     }).config.modules.dev.llms;
+  profileWithSavant =
+    (evaluateSystem {
+      profile = {
+        enable = true;
+        piProxyExtraModels = [ (import ../modules/dev/llms/models.nix).subq.savant ];
+      };
+      proxy.enable = true;
+    }).config.modules.dev.llms;
   cliproxyModelIds = map (model: model.id) profile.pi.instances.pi.models.providers.cliproxy.models;
 
   activation = name: pkgs.writeText name configured.home.activation.${name}.data;
@@ -175,6 +183,23 @@ assert !(instructionsOff.home.activation ? codexLocalSkills);
 assert lib.all (instance: lib.elem instance.settings.defaultModel cliproxyModelIds) (
   lib.attrValues profile.pi.instances
 );
+assert lib.all (
+  instance:
+  let
+    savant = lib.findFirst (
+      model: model.id == "subq-savant-1.4"
+    ) null instance.models.providers.cliproxy.models;
+  in
+  savant.api == "openai-completions"
+  &&
+    savant.cost == {
+      input = 0.10;
+      output = 0.50;
+      cacheRead = 0.01;
+      cacheWrite = 0;
+    }
+) (lib.attrValues profileWithSavant.pi.instances);
+assert !(lib.elem "subq-savant-1.4" cliproxyModelIds);
 assert lib.elem "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\"" profile.codex.extraArgs;
 assert !(profile.codex.settings.model_providers.cliproxy ? env_key);
 assert profile.claude.settings.env.ANTHROPIC_BASE_URL == profile.proxy.url;

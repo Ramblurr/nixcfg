@@ -1,6 +1,10 @@
 # Pi provider for CLIProxyAPI with a static model list, so the models exist the
 # moment Pi starts, before any extension can discover them.
-{ url, apiKey }:
+{
+  url,
+  apiKey,
+  extraModels ? [ ],
+}:
 let
   catalog = (import ./models.nix).cliproxy;
   cliproxyRoot = url;
@@ -77,5 +81,8 @@ in
 {
   baseUrl = cliproxyRoot;
   inherit apiKey;
-  models = map cliproxyOpenaiModel catalog.openai ++ map cliproxyMuseModel catalog.muse;
+  models =
+    map cliproxyOpenaiModel catalog.openai
+    ++ map cliproxyMuseModel catalog.muse
+    ++ map (model: model // { baseUrl = "${cliproxyRoot}/v1"; }) extraModels;
 }

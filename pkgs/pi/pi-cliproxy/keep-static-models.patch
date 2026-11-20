@@ -1,8 +1,0 @@
-diff --git a/index.ts b/index.ts
---- a/index.ts
-+++ b/index.ts
-@@ -83,2 +83,2 @@
--async function refreshModels(context: RefreshModelsContext): Promise<Model<Api>[]> {
--	const cached = (context.stored?.models ?? []) as Model<Api>[];
-+async function refreshModels(context: RefreshModelsContext): Promise<Model<Api>[] | undefined> {
-+	const cached = context.stored?.models as Model<Api>[] | undefined;

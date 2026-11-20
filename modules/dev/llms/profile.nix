@@ -17,7 +17,13 @@ let
       lib.getExe cfg.onepasswordConnect.package;
   cliproxyProvider = import ./cliproxy-pi-provider.nix {
     inherit (cfg.proxy) url;
+    extraModels = cfg.profile.piProxyExtraModels;
     apiKey = "!${opRead} ${lib.escapeShellArg cfg.proxy.credential}";
+  };
+  cliproxyPackage = pkgs.pi-cliproxy.override {
+    savantConfigured = lib.any (
+      model: model.id == models.subq.savant.id
+    ) cfg.profile.piProxyExtraModels;
   };
   piProviders =
     lib.mapAttrs (_: credential: {
@@ -42,6 +48,9 @@ let
       steeringMode = "all";
       showCacheMissNotices = true;
       shellCommandPrefix = "eval \"$(DEVSHELL_NO_MOTD=1 direnv export bash 2>/dev/null)\"";
+    }
+    // lib.optionalAttrs (cfg.profile.piProviderCredentials ? subq) {
+      defaultTools = [ "+codemode" ];
     };
     models.providers = piProviders;
     fff = {
@@ -149,6 +158,11 @@ in
       };
       description = "1Password references for Pi's direct providers, keyed by Pi provider name. The proxy provider is added when `proxy.enable` is set.";
     };
+    piProxyExtraModels = lib.mkOption {
+      type = lib.types.listOf lib.types.attrs;
+      default = [ ];
+      description = "Additional Pi model records for routes supported by the configured proxy.";
+    };
     codexSessionHookUsers = lib.mkOption {
       type = lib.types.nullOr (lib.types.listOf lib.types.str);
       default = null;
@@ -195,7 +209,7 @@ in
             pkgs.brepl-balance
             pkgs.plannotator-pi-extension
             pkgs.pi-openai-fast
-            pkgs.pi-cliproxy
+            cliproxyPackage
             pkgs.pi-link
             pkgs.pi-lens
             pkgs.pi-fff
@@ -207,7 +221,7 @@ in
             "${pkgs.pi-cliproxy.src}/pi-subq"
             pkgs.brepl-balance
             pkgs.pi-openai-fast
-            pkgs.pi-cliproxy
+            cliproxyPackage
             pkgs.pi-lens
             pkgs.pi-fff
           ];
