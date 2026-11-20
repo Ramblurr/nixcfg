@@ -21,7 +21,14 @@ writeShellApplication {
       exit 1
     }
 
-    [[ "$#" -ge 1 ]] || die "usage: cache-push TARGET..."
+    if [[ "$#" -eq 0 ]]; then
+      [[ -e flake.nix ]] || die "usage: cache-push [TARGET...] (no targets pushes the flake in the current directory)"
+      listing=$(nix eval --impure --raw --file ${./cache-push-flake-outputs.nix} \
+        --apply 'builtins.concatStringsSep "\n"')
+      [[ -n "$listing" ]] || die "flake has no outputs for this system"
+      mapfile -t attrs <<< "$listing"
+      set -- "''${attrs[@]/#/.#}"
+    fi
 
     cache=${lib.escapeShellArg atticCache}
     if [[ -n "''${ATTIC_CACHE:-}" ]]; then
