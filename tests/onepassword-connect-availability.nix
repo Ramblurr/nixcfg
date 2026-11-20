@@ -25,6 +25,7 @@ let
     name:
     (inputs.nixpkgs.lib.nixosSystem {
       system = pkgs.stdenv.hostPlatform.system;
+      specialArgs = { inherit inputs; };
       modules = [
         inputs.quadlet-nix2.nixosModules.default
         inputs.home-manager.nixosModules.home-manager
@@ -91,6 +92,7 @@ let
       service = cfg.modules.services.onepassword-connect;
       instance = cfg.services.keepalived.vrrpInstances.onepassword-connect;
       heartbeat = cfg.services.keepalived.vrrpScripts.onepassword-connect-heartbeat;
+      endpoints = cfg.services.tailscale.serve.services.op-connect.endpoints;
       pod = cfg.virtualisation.quadlet.pods.op-connect;
       api = cfg.virtualisation.quadlet.containers.op-connect-api;
       sync = cfg.virtualisation.quadlet.containers.op-connect-sync;
@@ -126,6 +128,10 @@ let
     && heartbeat.user == user.name
     && heartbeat.group == group.name
     && lib.hasInfix "http://127.0.0.1:8080/heartbeat" heartbeat.script
+    && endpoints."tcp:8080" == "tcp://${virtualAddress}:8080"
+    && (
+      !(endpoints ? "tcp:443") || endpoints."tcp:443" == "tls-terminated-tcp://${virtualAddress}:8080"
+    )
     &&
       pod.podConfig.PublishPort == [
         "8080:8080"

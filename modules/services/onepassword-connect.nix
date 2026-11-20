@@ -27,6 +27,7 @@ let
   credentials = config.sops.secrets."onepassword-connect/credentials";
   heartbeat = "${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 2 http://127.0.0.1:8080/heartbeat";
   peerSet = lib.concatStringsSep ", " cfg.availability.peerAddresses;
+  availabilityTarget = "${cfg.availability.virtualAddress}:8080";
 in
 {
   options.modules.services.onepassword-connect = {
@@ -168,9 +169,9 @@ in
     services.tailscale.serve = {
       enable = true;
       services.op-connect.endpoints = {
-        "tcp:8080" = "tcp://127.0.0.1:8080";
+        "tcp:8080" = "tcp://${availabilityTarget}";
       }
-      // lib.optionalAttrs serviceHttps { "tcp:443" = "tls-terminated-tcp://127.0.0.1:8080"; };
+      // lib.optionalAttrs serviceHttps { "tcp:443" = "tls-terminated-tcp://${availabilityTarget}"; };
     };
 
     services.keepalived = {
