@@ -8,6 +8,7 @@
 
 let
   cfg = config.modules.dev.llms.t3;
+  inherit (config.modules.users.primaryUser) username uid;
   agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   package = agents.t3code.override {
     providerPackages =
@@ -35,11 +36,28 @@ in
     tailscaleServePort = lib.mkOption {
       type = lib.types.nullOr lib.types.port;
       default = null;
-      description = "Tailscale Serve HTTPS port, or null to disable. The user needs Tailscale operator access.";
+      description = "Tailscale Serve HTTPS port, or null to disable. Grants the primary user Tailscale operator access.";
     };
+    startAtBoot = lib.mkEnableOption "the headless server at boot, without a login";
   };
 
   config = lib.mkIf cfg.enable {
+    services.tailscale.extraSetFlags = lib.mkIf (cfg.tailscaleServePort != null) [
+      "--operator=${username}"
+    ];
+    users.users.${username}.linger = lib.mkIf cfg.startAtBoot true;
+    systemd.services."user@${toString uid}" =
+      lib.mkIf (cfg.startAtBoot && cfg.tailscaleServePort != null)
+        rec {
+          overrideStrategy = "asDropin";
+          restartIfChanged = false;
+          wants = [
+            "tailscaled.service"
+            "tailscaled-set.service"
+          ];
+          after = wants;
+        };
+
     assertions = [
       {
         assertion = cfg.tailscaleServePort == null || config.services.tailscale.enable;
