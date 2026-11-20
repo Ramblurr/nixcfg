@@ -167,6 +167,7 @@ in
         };
         proxy.enable = true;
         t3 = {
+          desktop.enable = true;
           tailscaleServePort = 8443;
           startAtBoot = true;
         };
