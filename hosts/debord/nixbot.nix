@@ -25,7 +25,6 @@ let
   forgejoItem = "op://home-ops-prod/nixbot git.outskirtslabs.com ";
   credentialSocket = config.modules.services.onepassword-systemd-credentials.socketPath;
   localAtticSubstituter = config.repo.secrets.global.localAtticSubstituter;
-  quineMgmtIp = builtins.head config.site.net.mgmt.hosts4.quine;
   atticServer = "mali";
   atticCacheName = builtins.baseNameOf localAtticSubstituter;
   atticEndpoint = lib.removeSuffix "/${atticCacheName}" localAtticSubstituter;
@@ -245,37 +244,11 @@ in
   networking.firewall.extraInputRules = ''
     iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${debordMgmtAddress} tcp dport 5432 accept comment "Databasus Nixbot logical backup"
   '';
-  networking.hosts.${quineMgmtIp} = [ "quine" ];
-
-  # Remote builders: quine acts as an x86_64-linux build machine.
-  # maxJobs/cores are intentionally low so remote builds share quine
-  # without starving its local workloads.
+  # Keep local builds small; quine and thingstead take the remote builds
+  # configured in config/nix-remote-builds.nix.
   nix.settings = {
     max-jobs = 2;
     cores = 4;
-  };
-
-  nix.distributedBuilds = true;
-  nix.buildMachines = [
-    {
-      hostName = "quine";
-      system = "x86_64-linux";
-      protocol = "ssh-ng";
-      maxJobs = 2;
-      speedFactor = 2;
-      supportedFeatures = [
-        "nixos-test"
-        "benchmark"
-        "big-parallel"
-        "kvm"
-      ];
-      sshUser = "nix-remote-build";
-      sshKey = "/var/lib/nixbot/.ssh/id_ed25519";
-    }
-  ];
-
-  programs.ssh.knownHosts.quine = {
-    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFICZ13T85//UvjEjf+I72FqaXyGJNt9LD4mjYSq3LTl";
   };
 
   # Generate the nixbot user's SSH keypair on first boot if absent.

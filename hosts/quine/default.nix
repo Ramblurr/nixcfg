@@ -34,7 +34,6 @@ in
     #./microvm-host-opts.nix
     ./microvm-host.nix
     #./arm.nix
-    ./remote-builder.nix
     ./llm.nix
     ./signal-t3-bridge.nix
   ];
