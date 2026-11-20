@@ -83,10 +83,6 @@ in
       [
         "user@${toString config.users.users.${username}.uid}.service"
       ];
-  sops.secrets.onepassword-connect-llm-token = {
-    owner = username;
-    mode = "0400";
-  };
   sops.secrets.netrc = {
     owner = username;
     mode = "0400";

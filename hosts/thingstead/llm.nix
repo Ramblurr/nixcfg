@@ -3,18 +3,13 @@ let
   inherit (config.modules.users.primaryUser) username;
 in
 {
-  sops.secrets.onepassword-connect-llm-token = {
-    owner = username;
-    mode = "0400";
-  };
-
   modules.dev.llms = {
     # hirde's Codex reads the same /etc/codex/config.toml.
     profile = {
       enable = true;
       codexSessionHookUsers = [ username ];
     };
-    onepasswordConnect.tokenFile = config.sops.secrets.onepassword-connect-llm-token.path;
+    onepasswordConnect.enable = true;
     proxy.enable = true;
     t3 = {
       port = 3774;

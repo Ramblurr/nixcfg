@@ -57,9 +57,15 @@ in
     ollama.enable = lib.mkEnableOption "";
     desktop.enable = lib.mkEnableOption "graphical agent tools (OpenCode Desktop, Glimpse, and the dotool and wtype typing helpers)";
     onepasswordConnect = {
+      enable = lib.mkEnableOption "agent key reads through 1Password Connect, using the onepassword-connect-llm-token SOPS secret";
       tokenFile = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
-        default = null;
+        default =
+          if cfg.onepasswordConnect.enable then
+            config.sops.secrets.onepassword-connect-llm-token.path
+          else
+            null;
+        defaultText = lib.literalExpression "config.sops.secrets.onepassword-connect-llm-token.path when enable is set, else null";
         description = ''
           Runtime path to a 1Password Connect token that can read the LLM vault.
           When set, agent API-key reads use Connect instead of the desktop-approved `op` session.
@@ -84,6 +90,10 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
+    sops.secrets.onepassword-connect-llm-token = lib.mkIf cfg.onepasswordConnect.enable {
+      owner = config.modules.users.primaryUser.username;
+      mode = "0400";
+    };
     services.ollama = lib.mkIf cfg.ollama.enable {
       enable = true;
       package = pkgs.ollama-cuda;

@@ -262,8 +262,7 @@ in
   };
   modules.dev.llms.desktop.enable = true;
   modules.dev.llms.ollama.enable = true;
-  modules.dev.llms.onepasswordConnect.tokenFile =
-    config.sops.secrets.onepassword-connect-llm-token.path;
+  modules.dev.llms.onepasswordConnect.enable = true;
   modules.dev.llms.proxy.enable = true;
 
   modules.dev.llms.cliproxy-api = {
