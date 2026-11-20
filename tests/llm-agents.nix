@@ -248,8 +248,13 @@ assert lib.all (
 assert lib.all (
   model: lib.hasPrefix "http://proxy.invalid" model.baseUrl
 ) rpcProfile.pi.instances.pi.models.providers.cliproxy.models;
-assert lib.elem "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\"" profile.codex.extraArgs;
-assert !(profile.codex.settings.model_providers.cliproxy ? env_key);
+assert profile.codex.settings.model_providers.cliproxy.env_key == "CLIPROXY_API_KEY";
+assert lib.elem [
+  "model_providers"
+  "cliproxy"
+  "experimental_bearer_token"
+] profile.codex.removeSettings;
+assert lib.elem [ "env" "ANTHROPIC_AUTH_TOKEN" ] profile.claude.removeSettings;
 assert profile.claude.settings.env.ANTHROPIC_BASE_URL == profile.proxy.url;
 assert lib.all (lib.hasPrefix builtins.storeDir) profile.pi.instances.pi.settings.skills;
 pkgs.runCommand "llm-agents-test"

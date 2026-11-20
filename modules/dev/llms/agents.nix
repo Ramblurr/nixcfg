@@ -73,11 +73,6 @@ in
       };
     };
     proxy = {
-      removeLegacyCredentials = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Remove inline credentials from live settings after existing client processes have been restarted onto the credential-aware launchers.";
-      };
       enable = lib.mkOption {
         type = lib.types.bool;
         default = false;

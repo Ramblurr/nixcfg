@@ -85,8 +85,8 @@ let
       wire_api = "responses";
       requires_openai_auth = false;
       supports_websockets = true;
-    }
-    // lib.optionalAttrs cfg.proxy.removeLegacyCredentials { env_key = "CLIPROXY_API_KEY"; };
+      env_key = "CLIPROXY_API_KEY";
+    };
   };
   claudeSettings = {
     cleanupPeriodDays = 99999;
@@ -228,10 +228,6 @@ in
           "pstack@harness-plugins"
           "tstack@harness-plugins"
         ];
-        extraArgs = lib.optionals cfg.proxy.enable [
-          "-c"
-          "model_providers.cliproxy.env_key=\"CLIPROXY_API_KEY\""
-        ];
         settings = codexSettings;
         removeSettings = [
           [
@@ -239,25 +235,20 @@ in
             "skills"
           ]
         ]
-        ++ lib.optionals (!cfg.proxy.enable) [
-          [
-            "model_providers"
-            "cliproxy"
-          ]
-        ]
-        ++ lib.optionals (cfg.proxy.enable && !cfg.proxy.removeLegacyCredentials) [
-          [
-            "model_providers"
-            "cliproxy"
-            "env_key"
-          ]
-        ]
-        ++ lib.optionals (cfg.proxy.enable && cfg.proxy.removeLegacyCredentials) [
-          [
-            "model_providers"
-            "cliproxy"
-            "experimental_bearer_token"
-          ]
+        ++ [
+          (
+            if cfg.proxy.enable then
+              [
+                "model_providers"
+                "cliproxy"
+                "experimental_bearer_token"
+              ]
+            else
+              [
+                "model_providers"
+                "cliproxy"
+              ]
+          )
         ];
       };
       claude = {
@@ -270,27 +261,16 @@ in
             ;
         };
         settings = claudeSettings;
-        removeSettings =
-          lib.optionals (!cfg.proxy.enable) [
-            [
-              "env"
-              "ANTHROPIC_AUTH_TOKEN"
-            ]
-            [
-              "env"
-              "ANTHROPIC_BASE_URL"
-            ]
+        removeSettings = [
+          [
+            "env"
+            "ANTHROPIC_AUTH_TOKEN"
           ]
-          ++ lib.optionals (cfg.proxy.enable && cfg.proxy.removeLegacyCredentials) [
-            [
-              "env"
-              "ANTHROPIC_AUTH_TOKEN"
-            ]
-            [
-              "env"
-              "ANTHROPIC_API_KEY"
-            ]
-          ];
+          [
+            "env"
+            (if cfg.proxy.enable then "ANTHROPIC_API_KEY" else "ANTHROPIC_BASE_URL")
+          ]
+        ];
       };
     };
 
