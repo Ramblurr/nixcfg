@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 let
@@ -11,6 +12,15 @@ let
     "dewey"
     "mali"
   ];
+  inventory = import ../../hosts/inventory.nix;
+  channelTailscale =
+    host:
+    (if inventory.${host}.channel == "stable" then inputs.nixpkgs-stable else inputs.nixpkgs)
+    .legacyPackages.${inventory.${host}.system}.tailscale;
+  # Tailscale before 1.106 cannot load tls-terminated-tcp Service endpoints (tailscale/tailscale@cfa83f7ef).
+  serviceHttps = lib.all (
+    host: lib.versionAtLeast (channelTailscale host).version "1.106"
+  ) replicaHosts;
   replicaAddresses = map (name: builtins.head config.site.net.mgmt.hosts4.${name}) replicaHosts;
   localAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
   dataDir = "/var/lib/onepassword-connect";
@@ -61,6 +71,17 @@ in
         default = builtins.head config.site.net.mgmt.hosts4.onepassword-connect;
         description = "Management-network address held by the active replica.";
       };
+    };
+    tailnetUrl = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default =
+        let
+          name = "op-connect.${config.repo.secrets.global.domain.tailnet}";
+        in
+        if serviceHttps then "https://${name}" else "http://${name}:8080";
+      defaultText = lib.literalMD "the op-connect Tailscale Service, HTTPS once every replica's Tailscale supports it";
+      description = "Connect URL for clients outside the management network.";
     };
     ports.sync = lib.mkOption {
       type = lib.types.port;
@@ -142,6 +163,14 @@ in
       extraInputRules = ''
         iifname "${cfg.availability.interface}" ip saddr { ${peerSet} } ip daddr ${cfg.availability.localAddress} meta l4proto vrrp accept comment "Connect replica VRRP peers"
       '';
+    };
+
+    services.tailscale.serve = {
+      enable = true;
+      services.op-connect.endpoints = {
+        "tcp:8080" = "tcp://127.0.0.1:8080";
+      }
+      // lib.optionalAttrs serviceHttps { "tcp:443" = "tls-terminated-tcp://127.0.0.1:8080"; };
     };
 
     services.keepalived = {
