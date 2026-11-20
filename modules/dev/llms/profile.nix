@@ -7,6 +7,7 @@
 }:
 let
   cfg = config.modules.dev.llms;
+  models = import ./models.nix;
   packages = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   agentConfigHome = "${config.modules.users.primaryUser.homeDirectory}/.config";
   opRead =
@@ -26,7 +27,7 @@ let
   piInstance = piPackages: {
     settings = {
       defaultProvider = if cfg.proxy.enable then "cliproxy" else "openai-codex";
-      defaultModel = "gpt-6.2-sol";
+      defaultModel = models.defaults.pi;
       defaultThinkingLevel = "high";
       skills = lib.optionals cfg.skills.enable (
         map (name: "${cfg.skills.package.plugins.${name}}/skills") [
@@ -50,7 +51,7 @@ let
     };
   };
   codexSettings = {
-    model = "gpt-6-luna";
+    model = models.defaults.codex;
     model_reasoning_effort = "medium";
     web_search = "disabled";
     notice.hide_rate_limit_model_nudge = true;
@@ -86,7 +87,7 @@ let
   claudeSettings = {
     cleanupPeriodDays = 99999;
     includeCoAuthoredBy = false;
-    model = "opus";
+    model = models.defaults.claude;
     spinnerTipsEnabled = false;
     alwaysThinkingEnabled = true;
     effortLevel = "xhigh";

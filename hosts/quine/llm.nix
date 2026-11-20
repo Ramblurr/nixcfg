@@ -5,6 +5,7 @@
 }:
 let
   cfg = config.modules.dev.llms;
+  models = import ../../modules/dev/llms/models.nix;
   agentRuntimeGroups = [
     "node_runtime"
     "rust_runtime"
@@ -237,13 +238,7 @@ let
       api = "openai-chat";
       url = "\${env:OPENROUTER_BASE_URL}";
       key = "\${env:OPENROUTER_API_KEY}";
-      models = lib.genAttrs [
-        "google/gemini-4-carbon"
-        "z-ai/glm-5.3-flash"
-        "deepseek/deepseek-v4.1-flash-1017"
-        "moonshotai/kimi-k3.1-pro"
-        "tencent/hy4"
-      ] (_: { });
+      models = lib.genAttrs models.openrouter (_: { });
     };
   };
 in
@@ -296,13 +291,7 @@ in
           name = "openrouter";
           base-url = "https://openrouter.ai/api/v1";
           keys = [ { api-key = "op://LLM/OpenRouter/credential"; } ];
-          models = map (name: { inherit name; }) [
-            "google/gemini-4-carbon"
-            "z-ai/glm-5.3-flash"
-            "deepseek/deepseek-v4.1-flash-1017"
-            "moonshotai/kimi-k3.1-pro"
-            "tencent/hy4"
-          ];
+          models = map (name: { inherit name; }) models.openrouter;
         }
       ];
       routing = {

@@ -2,9 +2,10 @@
 # moment Pi starts, before any extension can discover them.
 { url, apiKey }:
 let
+  catalog = (import ./models.nix).cliproxy;
   cliproxyRoot = url;
-  cliproxyOpenaiModel = id: name: offLevel: {
-    inherit id name;
+  cliproxyOpenaiModel = model: {
+    inherit (model) id name;
     api = "openai-responses";
     baseUrl = "${cliproxyRoot}/v1";
     reasoning = true;
@@ -21,7 +22,7 @@ let
       cacheWrite = 0;
     };
     thinkingLevelMap = {
-      off = offLevel;
+      inherit (model) off;
       minimal = null;
       low = "low";
       medium = "medium";
@@ -39,8 +40,8 @@ let
       supportsMidConvoEffort = true;
     };
   };
-  cliproxyMuseModel = id: name: {
-    inherit id name;
+  cliproxyMuseModel = model: {
+    inherit (model) id name;
     api = "openai-responses";
     baseUrl = "${cliproxyRoot}/v1";
     reasoning = true;
@@ -76,14 +77,5 @@ in
 {
   baseUrl = cliproxyRoot;
   inherit apiKey;
-  models = [
-    (cliproxyOpenaiModel "gpt-6.2-sol" "GPT-6.2 Sol" null)
-    (cliproxyOpenaiModel "gpt-6.1-terra" "GPT-6.1 Terra" "none")
-    (cliproxyOpenaiModel "gpt-6.2-astra" "GPT-6.2 Astra" null)
-    (cliproxyOpenaiModel "gpt-6-luna" "GPT-6 Luna" "none")
-    (cliproxyMuseModel "muse-wonder-1.0" "Muse Wonder")
-    (cliproxyMuseModel "muse-wonder-1.0-contributor" "Muse Wonder (Contributor)")
-    (cliproxyMuseModel "muse-wonder-full-1.0" "Muse Wonder Full")
-    (cliproxyMuseModel "muse-wonder-full-1.0-contributor" "Muse Wonder Full (Contributor)")
-  ];
+  models = map cliproxyOpenaiModel catalog.openai ++ map cliproxyMuseModel catalog.muse;
 }
