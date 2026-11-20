@@ -15,11 +15,7 @@ in
       codexSessionHookUsers = [ username ];
     };
     onepasswordConnect.tokenFile = config.sops.secrets.onepassword-connect-llm-token.path;
-    proxy = {
-      enable = true;
-      url = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-      credential = "op://LLM/CLIProxyAPI/credential";
-    };
+    proxy.enable = true;
     t3 = {
       port = 3774;
       tailscaleServePort = 8444;

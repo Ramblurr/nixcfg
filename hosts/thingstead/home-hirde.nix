@@ -12,7 +12,7 @@ let
   inherit (osConfig.repo.secrets.global) domain;
   forge = "git.${domain.home}";
   cliproxyProvider = import ../../modules/dev/llms/cliproxy-pi-provider.nix {
-    url = "https://quine.${domain.tailnet}:8317";
+    inherit (osConfig.modules.dev.llms.proxy) url;
     apiKey = "!op read 'op://moot/cliproxyapi hirde/credential'";
   };
   workspaceDir = config.home.homeDirectory;

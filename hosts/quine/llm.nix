@@ -264,11 +264,7 @@ in
   modules.dev.llms.ollama.enable = true;
   modules.dev.llms.onepasswordConnect.tokenFile =
     config.sops.secrets.onepassword-connect-llm-token.path;
-  modules.dev.llms.proxy = {
-    enable = true;
-    url = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-    credential = "op://LLM/CLIProxyAPI/credential";
-  };
+  modules.dev.llms.proxy.enable = true;
 
   modules.dev.llms.cliproxy-api = {
     enable = true;

@@ -86,12 +86,13 @@ in
       url = lib.mkOption {
         type = lib.types.str;
         apply = lib.removeSuffix "/";
-        default = "";
+        default = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
+        defaultText = lib.literalExpression ''"https://quine.''${config.repo.secrets.global.domain.tailnet}:8317"'';
         description = "Proxy root URL, without /v1. Override for other proxy hosts.";
       };
       credential = lib.mkOption {
         type = lib.types.str;
-        default = "";
+        default = "op://LLM/CLIProxyAPI/credential";
         description = "1Password reference for the proxy client key.";
       };
     };
