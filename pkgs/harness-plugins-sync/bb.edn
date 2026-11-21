@@ -1,0 +1,10 @@
+{:paths ["src"]
+ :deps  {metosin/malli              {:mvn/version "0.20.1"}
+         io.github.paintparty/sugar {:mvn/version "0.1.0"}}
+ :tasks {test {:extra-paths ["test"]
+               :requires    ([clojure.test :as t]
+                             [harness-plugins-sync.cli-test]
+                             [harness-plugins-sync.core-test])
+               :task        (let [r (t/run-tests 'harness-plugins-sync.cli-test
+                                                 'harness-plugins-sync.core-test)]
+                              (System/exit (+ (:fail r) (:error r))))}}}

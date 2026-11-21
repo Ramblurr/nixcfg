@@ -8,7 +8,7 @@
         bb-isolation = import ../tests/bb-isolation.nix { inherit inputs pkgs; };
         git-credential-cache = import ../tests/git-credential-cache.nix { inherit inputs pkgs; };
         neogrok = import ../tests/neogrok.nix { inherit pkgs; };
-        inherit (pkgs) code-search-mcp;
+        inherit (pkgs) code-search-mcp harness-plugins-sync;
         code-search-mcp-vm = import ../tests/code-search-mcp-vm.nix { inherit pkgs; };
         ha-mqtt = import ../tests/ha-mqtt.nix { inherit inputs pkgs; };
         thunderbird-cli = import ../tests/thunderbird-cli.nix { inherit inputs pkgs; };

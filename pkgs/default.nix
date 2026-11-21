@@ -81,6 +81,10 @@ inputs: [
       harness-plugins = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./harness-plugins/package.nix { };
+      harness-plugins-sync = prev.callPackage ./harness-plugins-sync/package.nix {
+        clojureNixLocker = inputs.clojure-nix-locker;
+        pkgs = prev;
+      };
       t3code =
         let
           llmAgents = inputs.llm-agents.packages.${prev.stdenv.hostPlatform.system};
