@@ -9,20 +9,6 @@
 let
   cfg = config.modules.dev.llms;
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  llmWithPlugins = pkgs.llm.withPlugins {
-    llm-cmd = true;
-    llm-anthropic = true;
-    llm-docs = true;
-    llm-fragments-reader = true;
-    llm-gemini = true;
-    llm-git = true;
-    llm-jq = true;
-    llm-hacker-news = true;
-    llm-mistral = true;
-    llm-ollama = cfg.ollama.enable;
-    llm-openai-plugin = true;
-    llm-pdf-to-images = true;
-  };
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
       echo "usage: $(basename "$0") URL [FILENAME]"
@@ -56,7 +42,7 @@ in
   options.modules.dev.llms = {
     enable = lib.mkEnableOption "";
     ollama.enable = lib.mkEnableOption "";
-    desktop.enable = lib.mkEnableOption "graphical agent tools (OpenCode Desktop, Glimpse, and the dotool and wtype typing helpers)";
+    desktop.enable = lib.mkEnableOption "graphical agent tools";
     onepasswordConnect = {
       enable = lib.mkEnableOption "agent key reads through 1Password Connect, using the onepassword-connect-llm-token SOPS secret";
       tokenFile = lib.mkOption {
@@ -99,7 +85,6 @@ in
       enable = true;
       package = pkgs.ollama-cuda;
     };
-    # TODO: Re-enable when ChromaDB's PostHog dependency is fixed: https://github.com/NixOS/nixpkgs/pull/578265
     services.open-webui.enable = false;
     services.open-webui.port = 11180;
     myhm = {
@@ -107,36 +92,18 @@ in
         with pkgs;
         [
           llm-agents.swamp
-          #playwright
-          #playwright-test
-          #playwright-mcp
           geckodriver
           chromedriver
           spel
-          #dirge
-          #piper-tts
-          #espeak
-          #jujutsu
           mcp-inspector
-          llmWithPlugins
-          llm-agents.opencode
-          llm-agents.opencode2
-          #llm-agents.vix
-          #llm-agents.mistral-vibe
-          #codex
-          #inputs.boxai.packages.${pkgs.stdenv.hostPlatform.system}.boxai
           cat-url-markdown
           cat-url-markdown-auto
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
-          #llm-agents.annot
-          #llm-agents.code-review-graph
-          #llm-agents.jscpd
           llm-agents.plannotator
           llm-agents.plannotator-tui
           pkgs.hindsight-cli
           pkgs.ucp-cli
           pkgs.link-cli
-          #ccusage
           inputs.git-lines.packages.${pkgs.stdenv.hostPlatform.system}.default
           universal-ctags
           difftastic
@@ -145,7 +112,6 @@ in
         ]
         ++ lib.optionals cfg.desktop.enable [
           pkgs.glimpseui
-          llm-agents.opencode-desktop
           pkgs.dotool
           pkgs.wtype
         ]
