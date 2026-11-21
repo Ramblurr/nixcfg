@@ -10592,7 +10592,7 @@
 
 (defn- command [catalog path]
   (if (= [] path)
-    (assoc (select-keys catalog [:description :examples]) :path [])
+    (assoc (select-keys catalog [:description :examples :footer]) :path [])
     (some #(when (= path (:path %)) %) (:commands catalog))))
 
 (defn- children [catalog path]
@@ -10845,7 +10845,8 @@
                    group?             (conj (str "Commands:\n" (table kids)))
                    true               (conj (str "Options:\n" (table options)))
                    (seq (:examples cmd)) (conj (str "Examples:\n" (str/join "\n" (map #(str "  " %) (:examples cmd)))))
-                   group?             (conj (format "Run '%s help %s<command>' for more information on a command."
+                   (:footer cmd)         (conj (:footer cmd))
+                   group?                (conj (format "Run '%s help %s<command>' for more information on a command."
                                                     (:name catalog)
                                                     (str/join (map #(str % " ") path)))))]
     (str (str/join "\n\n" sections) "\n")))
@@ -11581,7 +11582,46 @@
                      [:name :string]
                      [:ok? :boolean]
                      [:detail :string]
-                     [:fix {:optional true} :string]]})
+                     [:fix {:optional true} :string]]
+   ::pack-spec      [:map
+                     [:url :string]
+                     [:branch :string]]
+   ::resolved-prof  [:map
+                     [:id :string]
+                     [:harness [:enum :claude :codex :pi :antigravity]]
+                     [:dir :string]
+                     [:link-dir {:optional true} :string]
+                     [:source [:enum :t3 :config :merged :default]]
+                     [:plugins [:vector :string]]]})
+
+(def ^:private root-footer
+  (str/join
+   "\n"
+   ["Architecture & workflow:"
+    "  Solves plugin sync across 3 axes: harnesses, provider accounts/profiles, and machines."
+    ""
+    "  Where pieces live:"
+    "    Pack repos   Git repos (default: harness-plugins -> git.outskirtslabs.com/casey/skills);"
+    "                 additional host- or env-specific packs can be declared in config.edn."
+    "    Config       $XDG_CONFIG_HOME/ol-plugins-sync/config.edn (EDN; usually Nix-managed,"
+    "                 defaults apply if absent). Declares packs, peers, defaults, and overrides."
+    "    State        $XDG_DATA_HOME/ol-plugins-sync/ — per-pack bare repo, revs/<sha>, staged,"
+    "                 and atomic active symlink; per-profile state and Pi package.json under profiles/."
+    "    Bindings     Discovered from T3 settings.json (providerInstances) + declared :profiles:"
+    "                   claude       <claudeHome>/skills/<plugin> symlink (live, namespaced)"
+    "                   codex        codex plugin marketplace/add per CODEX_HOME (cached per rev)"
+    "                   pi           <state>/profiles/<id>/package.json referenced by settings.json"
+    "                   antigravity  <profileDir>/config/plugins/<plugin> (per T3 sha256 dir + ~/.gemini)"
+    "    Machines     Each host pulls from Git independently (timer or manual). --all / --host"
+    "                 fans out over SSH to configured peers; offline hosts warn and catch up later."
+    ""
+    "  Workflow:"
+    "    1. Standard update: commit and push changes to the pack repo's branch (default: main),"
+    "       then run 'harness-plugins-sync sync --all'. No Nix rebuild is needed for plugin edits."
+    "    2. Local WIP test: 'harness-plugins-sync apply --local <pack>=<dir>' (next 'sync' resets)."
+    "    3. New T3 account/profile: run 'harness-plugins-sync apply' to discover and bind it."
+    "    4. Verify: 'harness-plugins-sync status --json'. Running sessions do not reload on their own"
+    "       (start a new session, or run /reload-plugins in Claude / /reload in Pi CLI)."]))
 
 (def ^:private common-errors
   {:config/not-found       "The specified configuration file does not exist"
@@ -11598,12 +11638,14 @@
 (def catalog
   "Declarative CLI catalog for `harness-plugins-sync`."
   {:name        "harness-plugins-sync"
-   :description "Sync agent plugin packs and bind them across harnesses and profiles."
+   :description "Sync agent plugin packs and bind them natively across harnesses and profiles."
    :version     "1"
+   :footer      root-footer
    :examples    ["harness-plugins-sync sync"
                  "harness-plugins-sync sync --all"
                  "harness-plugins-sync apply --local harness-plugins=~/src/git.outskirtslabs.com/casey/skills"
-                 "harness-plugins-sync status --json"]
+                 "harness-plugins-sync status --json"
+                 "harness-plugins-sync config"]
    :options     {:config  {:alias :c :coerce :string :ref "<path>"
                            :desc "Config EDN path (default: $XDG_CONFIG_HOME/ol-plugins-sync/config.edn)"}
                  :all     {:alias :a :coerce :boolean
@@ -11611,19 +11653,22 @@
                  :host    {:alias :H :coerce [:string] :ref "<host>"
                            :desc "Target remote host over SSH (repeatable)"}
                  :pack    {:alias :p :coerce [:string] :ref "<name>"
-                           :desc "Limit operation to one pack (repeatable)"}
+                           :desc "Limit fetch/promote to one pack without unbinding others (repeatable)"}
                  :profile {:alias :P :coerce [:string] :ref "<id>"
                            :desc "Limit binding to one profile (repeatable)"}
                  :local   {:alias :L :coerce [:string] :ref "<pack=path>"
-                           :desc "Bind pack to a local directory instead of git snapshot (repeatable)"}
+                           :desc "Bind pack to a local directory instead of Git snapshot (repeatable)"}
                  :force   {:alias :f :coerce :boolean
                            :desc "Re-bind profiles even when revisions and state are unchanged"}
                  :dry-run {:alias :n :coerce :boolean
                            :desc "Show planned changes without modifying files"}}
    :commands
    [{:path        ["sync"]
-     :summary     "Fetch packs, promote active snapshots, and bind profiles"
-     :description "Fetch configured Git packs into snapshots, promote active links, and bind every discovered harness profile."
+     :summary     "Fetch Git packs, promote active snapshots, and bind all profiles"
+     :description (str "Fetch configured Git packs into staged snapshots, promote them to active, and\n"
+                       "bind every discovered harness profile. Resets any previous --local override back\n"
+                       "to Git unless --local is passed. With --all, unreachable SSH peers warn and are\n"
+                       "skipped.")
      :options     [:config :all :host :pack :profile :local :force :dry-run]
      :examples    ["harness-plugins-sync sync"
                    "harness-plugins-sync sync --all"
@@ -11638,7 +11683,7 @@
      :errors      common-errors
      :handler     :cmd/sync}
     {:path        ["pull"]
-     :summary     "Fetch packs into staged snapshots without re-binding profiles"
+     :summary     "Fetch Git packs into staged snapshots without affecting active sessions"
      :description "Fetch configured Git packs and unpack new revisions into staged snapshots. Does not change active links or harness bindings."
      :options     [:config :all :host :pack :dry-run]
      :examples    ["harness-plugins-sync pull"
@@ -11651,7 +11696,7 @@
      :errors      (select-keys common-errors [:config/not-found :config/invalid :pack/not-found :pack/git-failed])
      :handler     :cmd/pull}
     {:path        ["apply"]
-     :summary     "Promote staged snapshots and bind profiles without fetching"
+     :summary     "Promote staged snapshots (or --local) and bind profiles without fetching"
      :description "Promote staged pack snapshots (or --local overrides) to active and bind every discovered harness profile without running git fetch."
      :options     [:config :all :host :pack :profile :local :force :dry-run]
      :examples    ["harness-plugins-sync apply"
@@ -11666,7 +11711,7 @@
      :errors      common-errors
      :handler     :cmd/apply}
     {:path        ["status"]
-     :summary     "Show active revisions, discovered profiles, and binding drift"
+     :summary     "Show config/state paths, active revisions, profiles, and binding drift"
      :description "Inspect resolved config and state paths, active and staged pack revisions, discovered profiles, and binding drift without making changes."
      :options     [:config :all :host :pack :profile]
      :examples    ["harness-plugins-sync status"
@@ -11681,6 +11726,32 @@
                    [:peers [:vector [:ref ::peer-result]]]]
      :errors      (select-keys common-errors [:config/not-found :config/invalid :pack/not-found])
      :handler     :cmd/status}
+    {:path        ["config"]
+     :summary     "Show resolved configuration, config file path, and T3 discovery settings"
+     :description (str "Print the resolved configuration, config file path (and whether it exists),\n"
+                       "state directory, and discovered profile sources without making changes. Use\n"
+                       "--schema output to inspect the configuration contract.")
+     :options     [:config]
+     :examples    ["harness-plugins-sync config"
+                   "harness-plugins-sync config --edn"
+                   "harness-plugins-sync config --schema output --edn"]
+     :output      [:map {:registry shared-registry}
+                   [:host :string]
+                   [:config-path :string]
+                   [:config-exists? :boolean]
+                   [:state-dir :string]
+                   [:t3-settings [:maybe :string]]
+                   [:discover-t3 :boolean]
+                   [:include-antigravity-global :boolean]
+                   [:codex-bin :string]
+                   [:ssh-bin :string]
+                   [:retain-revs :int]
+                   [:peers [:vector :string]]
+                   [:packs [:map-of :string [:ref ::pack-spec]]]
+                   [:defaults [:map [:plugins [:vector :string]]]]
+                   [:resolved-profiles [:vector [:ref ::resolved-prof]]]]
+     :errors      (select-keys common-errors [:config/not-found :config/invalid])
+     :handler     :cmd/config}
     {:path        ["doctor"]
      :summary     "Check prerequisites, file locations, and configuration health"
      :description "Run read-only checks on required tools, configuration, T3 settings, and pack manifests. Never modifies state or starts services."
@@ -11857,6 +11928,33 @@
      :profiles       prof-statuses
      :peers          peers}))
 
+(defn handle-config
+  "Handler for `harness-plugins-sync config`."
+  [input]
+  (let [conf     (cfg/load-config (:config input))
+        profiles (mapv (fn [p]
+                         (cond-> {:id      (:id p)
+                                  :harness (:harness p)
+                                  :dir     (:dir p)
+                                  :source  (:source p)
+                                  :plugins (mapv :selector (:plugins p))}
+                           (:link-dir p) (assoc :link-dir (:link-dir p))))
+                       (cfg/resolve-profiles conf))]
+    {:host                       (remote/local-hostname)
+     :config-path                (:config-path conf)
+     :config-exists?             (:config-exists? conf)
+     :state-dir                  (:state-dir conf)
+     :t3-settings                (:t3-settings conf)
+     :discover-t3                (boolean (:discover-t3 conf))
+     :include-antigravity-global (boolean (:include-antigravity-global conf))
+     :codex-bin                  (:codex-bin conf)
+     :ssh-bin                    (:ssh-bin conf)
+     :retain-revs                (:retain-revs conf)
+     :peers                      (vec (:peers conf))
+     :packs                      (:packs conf)
+     :defaults                   (:defaults conf)
+     :resolved-profiles          profiles}))
+
 (defn handle-doctor
   "Handler for `harness-plugins-sync doctor`."
   [input]
@@ -12003,6 +12101,29 @@
         (println (str "    " (term/style :warn "warning:") " " w)))))
   (render-peers peers))
 
+(defn- render-config [{:keys [config-path config-exists? state-dir t3-settings discover-t3
+                              peers packs defaults resolved-profiles]}]
+  (println (str (term/style :heading "Config: ") config-path
+                (if config-exists? "" (term/style :dim " (not found; using built-in defaults)"))))
+  (println (str (term/style :heading "State:  ") state-dir))
+  (println (str (term/style :heading "T3:     ") (or t3-settings "none")
+                (when-not discover-t3 (term/style :dim " (discovery disabled)"))))
+  (println (str (term/style :heading "Peers:  ") (if (seq peers) (str/join ", " peers) "none")))
+  (println (str (term/style :heading "Defaults: ") (str/join ", " (:plugins defaults))))
+  (println)
+  (println (term/style :heading "Packs"))
+  (let [pw (col-width (keys packs))]
+    (doseq [[k {:keys [url branch]}] (sort-by key packs)]
+      (println (str "  " (pad pw k) url " " (term/style :dim (str "(" branch ")"))))))
+  (println)
+  (println (term/style :heading "Resolved profiles"))
+  (let [pw (col-width (map :id resolved-profiles))
+        hw (col-width (map (comp name :harness) resolved-profiles))
+        sw (col-width (map (comp name :source) resolved-profiles))]
+    (doseq [{:keys [id harness source dir plugins]} resolved-profiles]
+      (println (str "  " (pad pw id) (pad hw (name harness)) (pad sw (name source)) dir))
+      (println (str "    " (term/style :dim (str/join ", " plugins)))))))
+
 (defn- render-doctor [{:keys [checks]}]
   (let [nw (col-width (map :name checks))]
     (println (term/style :heading "Doctor"))
@@ -12018,6 +12139,7 @@
    :cmd/pull   {:run handle-pull   :human render-pull}
    :cmd/apply  {:run handle-apply  :human render-apply}
    :cmd/status {:run handle-status :human render-status}
+   :cmd/config {:run handle-config :human render-config}
    :cmd/doctor {:run handle-doctor :human render-doctor}})
 
 (defn -main

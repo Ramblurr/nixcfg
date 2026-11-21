@@ -38,7 +38,7 @@
 
 (defn- command [catalog path]
   (if (= [] path)
-    (assoc (select-keys catalog [:description :examples]) :path [])
+    (assoc (select-keys catalog [:description :examples :footer]) :path [])
     (some #(when (= path (:path %)) %) (:commands catalog))))
 
 (defn- children [catalog path]
@@ -291,7 +291,8 @@
                    group?             (conj (str "Commands:\n" (table kids)))
                    true               (conj (str "Options:\n" (table options)))
                    (seq (:examples cmd)) (conj (str "Examples:\n" (str/join "\n" (map #(str "  " %) (:examples cmd)))))
-                   group?             (conj (format "Run '%s help %s<command>' for more information on a command."
+                   (:footer cmd)         (conj (:footer cmd))
+                   group?                (conj (format "Run '%s help %s<command>' for more information on a command."
                                                     (:name catalog)
                                                     (str/join (map #(str % " ") path)))))]
     (str (str/join "\n\n" sections) "\n")))

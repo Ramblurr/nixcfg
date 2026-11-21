@@ -82,12 +82,16 @@
 
 (deftest help-and-schema-contracts
   (testing "help agrees across help, --help, and -h without side effects"
-    (doseq [path [[] ["sync"] ["pull"] ["apply"] ["status"] ["doctor"]]]
+    (doseq [path [[] ["sync"] ["pull"] ["apply"] ["status"] ["config"] ["doctor"]]]
       (let [res (map #(apply invoke %) [(into ["help"] path) (conj path "--help") (conj path "-h")])]
         (is (apply = res) (str path))
         (is (= 0 (:exit (first res)))))))
+  (testing "root help includes architecture and workflow guide"
+    (let [out (:out (invoke "help"))]
+      (is (str/includes? out "Architecture & workflow:"))
+      (is (str/includes? out "ol-plugins-sync/config.edn"))))
   (testing "schema exports are self-contained EDN and JSON Schema"
-    (doseq [cmd ["sync" "pull" "apply" "status" "doctor"]]
+    (doseq [cmd ["sync" "pull" "apply" "status" "config" "doctor"]]
       (let [edn-res  (invoke cmd "--schema" "all" "--edn")
             json-res (invoke cmd "--schema" "all" "--json")
             edn-data (edn/read-string (:out edn-res))
@@ -281,6 +285,13 @@
                 data (edn/read-string (:out res))]
             (is (= 0 (:exit res)))
             (is (nil? (m/explain (:output (some #(when (= ["doctor"] (:path %)) %) (:commands main/catalog))) data)))
-            (is (not (fs/exists? (fs/path tmp "state")))))))
+            (is (not (fs/exists? (fs/path tmp "state"))))))
+        (testing "config runs read-only and matches its schema"
+          (let [res  (invoke "config" "--config" (str cfg-f) "--edn")
+                data (edn/read-string (:out res))]
+            (is (= 0 (:exit res)))
+            (is (= true (:config-exists? data)))
+            (is (= ["good-peer" "offline-peer"] (:peers data)))
+            (is (nil? (m/explain (:output (some #(when (= ["config"] (:path %)) %) (:commands main/catalog))) data))))))
       (finally
         (fs/delete-tree tmp)))))
