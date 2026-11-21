@@ -8,9 +8,11 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   export fakeSystem="$TMPDIR/fake-system"
   export sshLog="$TMPDIR/ssh.log"
   export nixLog="$TMPDIR/nix.log"
+  export nvdLog="$TMPDIR/nvd.log"
+  export sudoLog="$TMPDIR/sudo.log"
   export localHost="$(${pkgs.coreutils}/bin/uname -n)"
   mkdir -p "$fakeBin" "$workRoot" "$fakeSystem/bin"
-  touch "$workRoot/flake.nix" "$sshLog" "$nixLog"
+  touch "$workRoot/flake.nix" "$sshLog" "$nixLog" "$nvdLog" "$sudoLog"
 
   cat > "$fakeBin/git" <<'EOF'
   #!/bin/sh
@@ -76,7 +78,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
     root@debord:"$fakeSystem/bin/switch-to-configuration")
       exit 42
       ;;
-    root@addams-lan:"$fakeSystem/bin/switch-to-configuration"|root@addams-lan:nvd|root@debord:nvd)
+    root@addams-lan:"$fakeSystem/bin/switch-to-configuration"|root@addams-lan:nvd|root@debord:nvd|root@thinkpad1:nvd)
       exit 0
       ;;
   esac
@@ -91,6 +93,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
 
   cat > "$fakeBin/sudo" <<'EOF'
   #!/bin/sh
+  printf '%s\n' "$*" >> "$sudoLog"
   case "$1" in
     /run/current-system/sw/bin/nix-env)
       exit 0
@@ -104,7 +107,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
 
   cat > "$fakeBin/nvd" <<'EOF'
   #!/bin/sh
-  exit 0
+  printf '%s\n' "$*" >> "$nvdLog"
   EOF
 
 
@@ -114,7 +117,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
     host="$1"
     expected="$2"
     set +e
-    PATH="$fakeBin:$PATH" ${deploy}/bin/deploy "$host" > "$TMPDIR/$host.stdout" 2> "$TMPDIR/$host.stderr"
+    PATH="$fakeBin:$PATH" ${deploy}/bin/deploy switch "$host" > "$TMPDIR/$host.stdout" 2> "$TMPDIR/$host.stderr"
     status=$?
     set -e
 
@@ -130,6 +133,34 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
     }
   }
 
+  # The command comes first and is required; without hosts, help lists them.
+  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy > "$TMPDIR/bare.stdout"
+  grep -Fx "  debord" "$TMPDIR/bare.stdout"
+  if PATH="$fakeBin:$PATH" ${deploy}/bin/deploy switch > "$TMPDIR/nohosts.stdout"; then
+    echo "deploy without hosts returned success" >&2
+    exit 1
+  fi
+  grep -Fx "  debord" "$TMPDIR/nohosts.stdout"
+  if PATH="$fakeBin:$PATH" ${deploy}/bin/deploy debord switch 2> "$TMPDIR/oldorder.stderr"; then
+    echo "deploy accepted the host before the command" >&2
+    exit 1
+  fi
+  grep -F "error: Unknown command: debord" "$TMPDIR/oldorder.stderr"
+  [ ! -s "$sshLog" ] || { echo "rejected command reached SSH" >&2; exit 1; }
+
+  # diff compares each host's running system and activates nothing.
+  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy diff debord "$localHost",addams thinkpad1 > "$TMPDIR/diff.stdout" 2> "$TMPDIR/diff.stderr"
+  grep -Fx "root@debord|nvd --color always diff /run/current-system $fakeSystem" "$sshLog"
+  grep -Fx "root@addams-lan|nvd --color always diff /run/current-system $fakeSystem" "$sshLog"
+  grep -Fx "root@thinkpad1|nvd --color always diff /run/current-system $fakeSystem" "$sshLog"
+  grep -Fx -- "--color always diff /run/current-system $fakeSystem" "$nvdLog"
+  [ ! -s "$sudoLog" ] || { echo "diff ran sudo locally" >&2; exit 1; }
+  if grep -q 'nix-env\|switch-to-configuration\|tpm-deploy\|readlink' "$sshLog"; then
+    echo "diff activated or inspected a profile" >&2
+    exit 1
+  fi
+  : > "$sshLog"
+
   run_expected_failure debord "error: Failed to activate debord"
   run_expected_failure "$localHost" "error: Failed to activate $localHost"
   if grep -q "^root@$localHost|" "$sshLog"; then
@@ -137,7 +168,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
     exit 1
   fi
 
-  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy addams > "$TMPDIR/addams.stdout" 2> "$TMPDIR/addams.stderr"
+  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy switch addams > "$TMPDIR/addams.stdout" 2> "$TMPDIR/addams.stderr"
   grep -F "ssh://root@addams-lan" "$nixLog"
   grep -Fx "root@addams-lan|readlink -e /nix/var/nix/profiles/system" "$sshLog"
   grep -F "root@addams-lan|$fakeSystem/bin/switch-to-configuration switch" "$sshLog"
@@ -147,7 +178,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   fi
 
   : > "$sshLog"
-  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy addams dry-activate > "$TMPDIR/preview.stdout" 2> "$TMPDIR/preview.stderr"
+  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy dry-activate addams > "$TMPDIR/preview.stdout" 2> "$TMPDIR/preview.stderr"
   if grep -q 'nix-env' "$sshLog"; then
     echo "dry-activate changed the system profile" >&2
     exit 1

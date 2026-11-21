@@ -28,7 +28,7 @@
 
   function show_help() {
     resolve_targets || return 1
-    printf '%s\n' 'Usage: build <name>...' '       deploy [OPTIONS] <name,...> [ACTION]' ""
+    printf '%s\n' 'Usage: build <name>...' '       deploy [OPTIONS] <COMMAND> <name>...' ""
     ${jq}/bin/jq -r '
       to_entries | sort_by(.key) |
       (map(select(.value.guest)) | ([6] + map(.key | length) | max)) as $width |
@@ -39,13 +39,15 @@
       (.[] | select(.value.guest) | "  " + (.key | pad) + "  " + .value.host)
     ' <<< "$TARGETS_JSON"
     printf '%s\n' "" \
-      'Deploy actions' \
-      '  switch          Activate now and make the boot default (default).' \
+      'Deploy commands' \
+      '  switch          Activate now and make the boot default.' \
       '  boot            Make the boot default without activating.' \
       '  test            Activate without making the boot default.' \
       '  dry-activate    Show activation changes without activating.' \
+      '  diff            Show package changes against the running system (nvd).' \
+      '                  Copies the build to remote hosts; activates nothing.' \
       "" \
-      '  Guests support switch only.' \
+      '  Names may be separated by spaces or commas. Guests support switch only.' \
       "" \
       'Options' \
       '  build           No options; accepts one or more names.' \

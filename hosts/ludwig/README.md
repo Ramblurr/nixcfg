@@ -41,7 +41,7 @@ and are backed up in 1Password. NixOS loads them with explicit
 ludwig is only reachable over Tailscale, two independent ways:
 
 1. Its own node, `ludwig`, with Tailscale SSH like the other hosts:
-   `ssh root@ludwig` and `deploy ludwig` go through it. `tailscale-watchdog`
+   `ssh root@ludwig` and `deploy switch ludwig` go through it. `tailscale-watchdog`
    restarts `tailscaled` while it is not connected.
 2. Through plato, which sits on the same LAN: `ssh -J plato` to ludwig's LAN
    address works even if ludwig's own node is down, as long as plato is on.

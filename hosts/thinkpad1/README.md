@@ -212,7 +212,7 @@ on the installed hardware; a successful build does not establish these behaviors
 
 ## TPM-aware deployment
 
-`deploy thinkpad1` uses the candidate system's `thinkpad1-tpm-deploy` helper.
+`deploy switch thinkpad1` (or `boot`) uses the candidate system's `thinkpad1-tpm-deploy` helper.
 Run it from a fresh private `nix develop` shell after updating the public input.
 An older installed deploy wrapper does not provide this protection. Direct
 `switch-to-configuration` and `nixos-rebuild` calls are not supported for updates.

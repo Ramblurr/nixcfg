@@ -85,11 +85,12 @@ class Wrappers(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         self.stdout = result.stdout
+        self.stderr = result.stderr
         return [json.loads(line) for line in self.log.read_text().splitlines()]
 
     def test_vsock_runs_upstream_switch_on_host_for_both_transports(self):
         self.env["VSOCK"] = "1"
-        commands = self.run_wrapper(DEPLOY, "guest,guest2")
+        commands = self.run_wrapper(DEPLOY, "switch", "guest,guest2")
         self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
         ssh = [c for c in commands if c[0] == "ssh"]
         self.assertEqual(len(ssh), 4)
@@ -108,7 +109,7 @@ class Wrappers(unittest.TestCase):
             with self.subTest(failure=failure):
                 self.log.unlink(missing_ok=True)
                 self.env[failure] = "1"
-                commands = self.run_wrapper(DEPLOY, "guest", success=False)
+                commands = self.run_wrapper(DEPLOY, "switch", "guest", success=False)
                 del self.env[failure]
                 self.assertEqual(commands[-1][0], last)
                 self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
@@ -127,9 +128,13 @@ class Wrappers(unittest.TestCase):
                 self.assertEqual(commands[-1][1], "eval")
                 outputs.append(self.stdout)
         self.assertEqual(outputs, [outputs[0]] * 3)
+        for args in (["switch"], ["--show-trace", "diff"]):
+            with self.subTest(args=args):
+                self.run_wrapper(DEPLOY, *args, success=False)
+                self.assertEqual(self.stdout, outputs[0])
         self.assertIn("Hosts\n  host\n  zhost\n\nGuests    Runs on\n  guest   host\n  guest2  host\n", outputs[0])
-        for phrase in ("Usage: build <name>...", "deploy [OPTIONS] <name,...> [ACTION]",
-                       "Deploy actions", "switch", "boot", "test", "dry-activate",
+        for phrase in ("Usage: build <name>...", "deploy [OPTIONS] <COMMAND> <name>...",
+                       "Deploy commands", "switch", "boot", "test", "dry-activate", "diff",
                        "Guests support switch only.", "Options", "--show-trace, --keep-going, --verbose",
                        "Local build options do not apply to that remote build."):
             self.assertIn(phrase, outputs[0])
@@ -153,18 +158,21 @@ class Wrappers(unittest.TestCase):
                          ".#nixosConfigurations.guest.config.microvm.declaredRunner"])
         self.assertFalse(any(c[0] == "ssh" for c in commands))
 
-    def test_switch_default_and_explicit(self):
-        for action in ([], ["switch"]):
-            with self.subTest(action=action):
+    def test_switch_requires_command_first(self):
+        commands = self.run_wrapper(DEPLOY, "--show-trace", "switch", "guest")
+        self.assertEqual(commands[-1], ["microvm-rebuild", "root@host", "root@192.0.2.23"])
+        self.assertIn(["nom", "build", "--no-link", "--print-out-paths", "--show-trace",
+                       ".#nixosConfigurations.guest.config.microvm.deploy.rebuild"], commands)
+        self.assertFalse(any(c[0] == "ssh" or c[:2] == ["nix", "copy"] for c in commands))
+        for args in (["guest"], ["guest", "switch"]):
+            with self.subTest(args=args):
                 self.log.unlink(missing_ok=True)
-                commands = self.run_wrapper(DEPLOY, "--show-trace", "guest", *action)
-                self.assertEqual(commands[-1], ["microvm-rebuild", "root@host", "root@192.0.2.23"])
-                self.assertIn(["nom", "build", "--no-link", "--print-out-paths", "--show-trace",
-                               ".#nixosConfigurations.guest.config.microvm.deploy.rebuild"], commands)
-                self.assertFalse(any(c[0] == "ssh" or c[:2] == ["nix", "copy"] for c in commands))
+                commands = self.run_wrapper(DEPLOY, *args, success=False)
+                self.assertIn("error: Unknown command: guest", self.stderr)
+                self.assertTrue(all(c[0] == "git" for c in commands))
 
     def test_mixed_deploy(self):
-        commands = self.run_wrapper(DEPLOY, "host,guest,guest2")
+        commands = self.run_wrapper(DEPLOY, "switch", "host", "guest,guest2")
         self.assertIn(["microvm-rebuild", "root@host", "root@192.0.2.24"], commands)
         copies = [c for c in commands if c[:2] == ["nix", "copy"]]
         self.assertEqual(len(copies), 1)
@@ -172,22 +180,22 @@ class Wrappers(unittest.TestCase):
         self.assertTrue(any(c[0] == "ssh" and "switch" in c for c in commands))
 
     def test_unsupported_actions_fail_before_build_or_activation(self):
-        for action in ("boot", "test", "dry-activate", "invalid"):
+        for action in ("boot", "test", "dry-activate", "diff", "invalid"):
             with self.subTest(action=action):
                 self.log.unlink(missing_ok=True)
-                commands = self.run_wrapper(DEPLOY, "host,guest", action, success=False)
+                commands = self.run_wrapper(DEPLOY, action, "host,guest", success=False)
                 self.assertTrue(all(c[0] == "git" or c[:2] == ["nix", "eval"] for c in commands))
 
     def test_unknown_and_invalid_names(self):
-        for name in ("unknown", "host,unknown", "guest.bad", "host,"):
-            with self.subTest(name=name):
+        for names in (["unknown"], ["host,unknown"], ["host", "unknown"], ["guest.bad"], ["host,"]):
+            with self.subTest(names=names):
                 self.log.unlink(missing_ok=True)
-                commands = self.run_wrapper(DEPLOY, name, success=False)
+                commands = self.run_wrapper(DEPLOY, "switch", *names, success=False)
                 self.assertTrue(all(c[0] == "git" or c[:2] == ["nix", "eval"] for c in commands))
 
     def test_metadata_failure_blocks_build_and_deploy(self):
         self.env["FAIL_METADATA"] = "1"
-        for executable, names in ((BUILD, ["host", "guest"]), (DEPLOY, ["host,guest"])):
+        for executable, names in ((BUILD, ["host", "guest"]), (DEPLOY, ["switch", "host,guest"])):
             with self.subTest(executable=executable):
                 self.log.unlink(missing_ok=True)
                 commands = self.run_wrapper(executable, *names, success=False)
@@ -195,23 +203,23 @@ class Wrappers(unittest.TestCase):
 
     def test_failures_propagate(self):
         self.env["FAIL_BUILD"] = "1"
-        commands = self.run_wrapper(DEPLOY, "guest", success=False)
+        commands = self.run_wrapper(DEPLOY, "switch", "guest", success=False)
         self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
         del self.env["FAIL_BUILD"]
         self.env["FAIL_GUEST"] = "1"
-        self.run_wrapper(DEPLOY, "guest", success=False)
+        self.run_wrapper(DEPLOY, "switch", "guest", success=False)
 
     def test_nix_fallback(self):
         (self.bin / "nom").unlink()
         commands = self.run_wrapper(BUILD, "guest")
         self.assertEqual(commands[-1][0:2], ["nix", "build"])
         self.log.unlink()
-        commands = self.run_wrapper(DEPLOY, "guest")
+        commands = self.run_wrapper(DEPLOY, "switch", "guest")
         self.assertTrue(any(c[:2] == ["nix", "build"] for c in commands))
         self.assertEqual(commands[-1], ["microvm-rebuild", "root@host", "root@192.0.2.23"])
 
     def test_host_boot(self):
-        commands = self.run_wrapper(DEPLOY, "host", "boot")
+        commands = self.run_wrapper(DEPLOY, "boot", "host")
         self.assertTrue(any(c[0] == "ssh" and "boot" in c for c in commands))
         self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
 

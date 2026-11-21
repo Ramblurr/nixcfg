@@ -61,18 +61,23 @@ let
         shift
       done
 
-      [[ ''${#POSITIONAL_ARGS[@]} -ge 1 ]] \
-        || die "Missing argument: <hosts...>"
-      [[ ''${#POSITIONAL_ARGS[@]} -le 2 ]] \
-        || die "Too many arguments given."
+      [[ ''${#POSITIONAL_ARGS[@]} -ge 1 ]] || {
+        show_help
+        exit 1
+      }
 
-      tr , '\n' <<< "''${POSITIONAL_ARGS[0]}" | sort -u | readarray -t HOSTS
-      ACTION="''${POSITIONAL_ARGS[1]-switch}"
-
+      ACTION="''${POSITIONAL_ARGS[0]}"
       case "$ACTION" in
-        switch|boot|test|dry-activate) ;;
-        *) die "Unsupported action: $ACTION" ;;
+        switch|boot|test|dry-activate|diff) ;;
+        *) die "Unknown command: $ACTION (see deploy --help)" ;;
       esac
+
+      [[ ''${#POSITIONAL_ARGS[@]} -ge 2 ]] || {
+        show_help
+        exit 1
+      }
+
+      printf '%s\n' "''${POSITIONAL_ARGS[@]:1}" | tr , '\n' | sort -u | readarray -t HOSTS
 
       resolve_targets "''${HOSTS[@]}" || die "Failed to resolve deployment targets"
 
@@ -157,6 +162,16 @@ let
             # Keep the upstream network route for guests without VSOCK SSH.
             "$store_path/bin/microvm-rebuild" "$ssh_host" "root@''${GUEST_IPS[$host]}" \
               || die "Failed to deploy guest $host"
+          fi
+          continue
+        fi
+        if [[ "$ACTION" == diff ]]; then
+          if [[ "$host" == "$localTargetHost" ]]; then
+            nvd --color always diff /run/current-system "$store_path" \
+              || die "Failed to diff $host"
+          else
+            ssh "root@''${SSH_TARGETS[$host]-$host}" -- nvd --color always diff /run/current-system "$store_path" \
+              || die "Failed to diff $host"
           fi
           continue
         fi
