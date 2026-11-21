@@ -34,6 +34,7 @@ let
               environment = lib.mkOption { type = lib.types.anything; };
               modules.dev.llms.t3 = lib.mkOption { type = lib.types.anything; };
               modules.users.primaryUser.homeDirectory = lib.mkOption { default = "/home/test"; };
+              modules.users.primaryUser.username = lib.mkOption { default = "test"; };
             };
             config.modules.dev.llms = lib.recursiveUpdate {
               enable = true;
@@ -156,7 +157,9 @@ let
         }
       ];
     }).config;
-  generatedSyncConfig = pkgs.writeText "ol-plugins-sync-config.edn" profileHm.xdg.configFile."ol-plugins-sync/config.edn".text;
+  generatedSyncConfig =
+    pkgs.writeText "ol-plugins-sync-config.edn"
+      profileHm.xdg.configFile."ol-plugins-sync/config.edn".text;
   codexSystemHook = builtins.readFile profileSystem.config.environment.etc."codex/config.toml".source;
   cliproxyModelIds = map (model: model.id) profile.pi.instances.pi.models.providers.cliproxy.models;
   rpcProfile =
@@ -276,9 +279,13 @@ assert profile.pluginsSync.enable;
 assert profile.claude.plugins == { };
 assert profile.codex.plugins == [ ];
 assert profile.codex.marketplaces == [ ];
-assert lib.elem "/home/test/.local/share/ol-plugins-sync/profiles/pi-cli" profile.pi.instances.pi.settings.packages;
-assert lib.elem "/home/test/.local/share/ol-plugins-sync/profiles/pi" profile.pi.instances.pi-t3.settings.packages;
-assert lib.hasInfix "/home/test/.local/share/ol-plugins-sync/packs/harness-plugins/active/plugins/pstack/hooks/session-start.sh" codexSystemHook;
+assert lib.elem "/home/test/.local/share/ol-plugins-sync/profiles/pi-cli"
+  profile.pi.instances.pi.settings.packages;
+assert lib.elem "/home/test/.local/share/ol-plugins-sync/profiles/pi"
+  profile.pi.instances.pi-t3.settings.packages;
+assert lib.hasInfix
+  "/home/test/.local/share/ol-plugins-sync/packs/harness-plugins/active/plugins/pstack/hooks/session-start.sh"
+  codexSystemHook;
 assert profileHm.systemd.user.timers ? harness-plugins-sync;
 pkgs.runCommand "llm-agents-test"
   {
