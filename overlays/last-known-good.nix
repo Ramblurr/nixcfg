@@ -3,6 +3,11 @@
 _final: prev:
 
 {
+  # nix-update fails on every version bump under Nix 2.35, which no longer
+  # copies a dirty flake into the store. Nix 2.34 still does.
+  # TODO: Remove once https://github.com/Mic92/nix-update/issues/687 is fixed.
+  nix-update = prev.nix-update.override { nix = prev.nixVersions.nix_2_34; };
+
   # TODO: Remove once nixpkgs includes https://github.com/maralorn/nix-output-monitor/pull/321.
   nix-output-monitor = prev.nix-output-monitor.overrideAttrs (old: {
     patches =

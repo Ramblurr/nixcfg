@@ -30,12 +30,15 @@
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
         config.allowUnfree = true;
-        overlays = ourOverlays ++ [
+        # last-known-good comes first so ourOverlays' `prev` sees its fixes,
+        # as in flake/nixos.nix.
+        overlays = [
           (final: prev: {
-            inherit ((import ../overlays/last-known-good.nix) final prev) nix-output-monitor;
+            inherit ((import ../overlays/last-known-good.nix) final prev) nix-output-monitor nix-update;
           })
-          inputs.nixos-extra-modules.overlays.default
-        ];
+        ]
+        ++ ourOverlays
+        ++ [ inputs.nixos-extra-modules.overlays.default ];
       };
 
       # Export packages for flake consumers
