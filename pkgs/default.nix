@@ -134,6 +134,9 @@ inputs: [
       };
       spdx-util = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./spdx-util/package.nix { };
       nixbot-cli = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./nixbot-cli/package.nix { };
+      firefox-mcp = prev.lib.callPackageWith (
+        prev // { inherit pkgs-lib; }
+      ) ./firefox-mcp/package.nix { };
       hindsight-cli = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./hindsight-cli/package.nix { };
