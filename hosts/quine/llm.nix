@@ -243,7 +243,7 @@ let
   };
 in
 {
-  imports = [ ./bb.nix ];
+  # imports = [ ./bb.nix ];
   # TODO disable smolvm due to failed upstream pkg build
   #environment.systemPackages = [ inputs.smolvm.packages.${pkgs.stdenv.hostPlatform.system}.default ];
 
