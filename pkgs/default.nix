@@ -125,7 +125,6 @@ inputs: [
       ucp-cli = prev.callPackage ./ucp-cli/package.nix { };
       link-cli = prev.callPackage ./link-cli/package.nix { };
       udpbroadcastrelay = prev.callPackage ./udpbroadcastrelay.nix { };
-      rex = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./rex/package.nix { };
       brepl = prev.lib.callPackageWith (prev // { inherit pkgs-lib; }) ./brepl/package.nix { };
       spel = prev.callPackage ./spel/package.nix {
         clojureNixLocker = inputs.clojure-nix-locker;
