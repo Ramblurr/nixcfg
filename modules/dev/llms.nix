@@ -129,8 +129,6 @@ in
           cat-url-markdown-auto
           inputs.tmux-buddy.packages.${pkgs.stdenv.hostPlatform.system}.default
           #llm-agents.annot
-          llm-agents.herdr
-          llm-agents.collie
           #llm-agents.code-review-graph
           #llm-agents.jscpd
           llm-agents.plannotator
