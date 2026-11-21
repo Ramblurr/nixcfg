@@ -64,7 +64,8 @@
                      [:warnings [:vector :string]]]
    ::peer-result    [:map
                      [:host :string]
-                     [:status [:enum :ok :unreachable :error]]
+                     [:status [:enum :ok :unreachable :auth-required :error]]
+                     [:auth-url {:optional true} :string]
                      [:message {:optional true} :string]
                      [:result {:optional true} :any]]
    ::doctor-check   [:map
@@ -284,10 +285,11 @@
 (defn- run-peers [conf subcmd input remotes]
   (mapv (fn [h]
           (let [res (remote/run-remote (:ssh-bin conf) h subcmd input)]
-            (when (= :unreachable (:status res))
-              (term/warn (str "peer " h " unreachable: " (:message res))))
-            (when (= :error (:status res))
-              (term/warn (str "peer " h " failed: " (:message res))))
+            (case (:status res)
+              :unreachable   (term/warn (str "peer " h " unreachable: " (:message res)))
+              :auth-required (term/warn (str "peer " h " needs Tailscale SSH auth: " (:auth-url res)))
+              :error         (term/warn (str "peer " h " failed: " (:message res)))
+              nil)
             res))
         remotes))
 
@@ -501,7 +503,7 @@
       (println)
       (println (term/style :heading "Peers"))
       (doseq [{:keys [host status message]} peers]
-        (let [role (case status :ok :ok :unreachable :warn :error :error)]
+        (let [role (case status :ok :ok :unreachable :warn :auth-required :warn :error :error)]
           (println (str "  " (pad hw host)
                         (term/style role (name status))
                         (when message (str "  " (term/style :dim message))))))))))

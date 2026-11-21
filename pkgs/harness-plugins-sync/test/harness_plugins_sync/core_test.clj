@@ -76,6 +76,8 @@
              "for a in \"$@\"; do\n"
              "  case \"$a\" in\n"
              "    offline-peer) echo 'ssh: connect failed' >&2; exit 255 ;;\n"
+             "    auth-peer) printf 'To authenticate, visit:\\nhttps://login.tailscale.com/a/test12345\\n' >&2; sleep 30; exit 255 ;;\n"
+             "    hang-peer) sleep 30; exit 255 ;;\n"
              "  esac\n"
              "done\n"
              "printf '{\"host\":\"remote\",\"dry-run\":false,\"pulled\":[],\"packs\":[],\"profiles\":[],\"peers\":[]}\\n'\n"))
@@ -281,6 +283,21 @@
                     {:host "offline-peer" :status :unreachable}]
                    (mapv #(select-keys % [:host :status]) (:peers data))))
             (is (not (str/includes? (:out res) "\u001b")))))
+        (testing "remote fanout fails fast on Tailscale SSH auth URL and on timeout"
+          (let [start (System/nanoTime)
+                res   (invoke "status" "--config" (str cfg-f) "--host" "auth-peer" "--edn")
+                ms    (/ (- (System/nanoTime) start) 1e6)
+                data  (edn/read-string (:out res))]
+            (is (= 0 (:exit res)))
+            (is (< ms 5000) "should fail fast without waiting for sleep 30")
+            (is (= [{:host     "auth-peer"
+                     :status   :auth-required
+                     :auth-url "https://login.tailscale.com/a/test12345"
+                     :message  "Tailscale SSH auth required: https://login.tailscale.com/a/test12345"}]
+                   (:peers data))))
+          (let [res (remote/run-remote (str ssh-bin) "hang-peer" "status" {} 300)]
+            (is (= :unreachable (:status res)))
+            (is (str/includes? (:message res) "timed out"))))
         (testing "target-plan matches user@host peers against local user and host"
           (is (= {:local? true :remotes ["ramblurr@witt" "hirde@quine"]}
                  (remote/target-plan ["ramblurr@quine" "ramblurr@witt" "hirde@quine"]

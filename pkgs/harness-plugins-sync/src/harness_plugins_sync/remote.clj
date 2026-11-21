@@ -3,9 +3,24 @@
   (:require
    [babashka.process :as proc]
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [clojure.string :as str])
   (:import
-   java.net.InetAddress))
+   java.net.InetAddress
+   java.util.concurrent.TimeUnit))
+
+(def default-timeout-ms
+  "Default per-peer SSH wall-clock timeout in milliseconds."
+  15000)
+
+(def ^:private tailscale-auth-pattern
+  #"(https://login\.tailscale\.com/\S+)")
+
+(defn extract-auth-url
+  "Extracts a Tailscale SSH auth URL from `s`, or returns nil."
+  [s]
+  (when-let [[_ url] (re-find tailscale-auth-pattern (str s))]
+    (str/replace url #"[.,;:)\]]+$" "")))
 
 (defn local-hostname
   "Returns the short local hostname."
@@ -66,32 +81,83 @@
     force         (conj "--force")
     dry-run       (conj "--dry-run")))
 
+(defn- read-stream-async [stream on-line]
+  (let [lines (atom [])
+        t     (Thread.
+               ^Runnable
+               (fn []
+                 (try
+                   (with-open [r (io/reader stream)]
+                     (loop []
+                       (when-let [line (.readLine r)]
+                         (swap! lines conj line)
+                         (when on-line (on-line line))
+                         (recur))))
+                   (catch Exception _ nil))))]
+    (.setDaemon t true)
+    (.start t)
+    {:thread t :lines lines}))
+
 (defn run-remote
-  "Runs `subcmd` on remote `host` via SSH and returns a structured peer result."
-  [ssh-bin host subcmd input]
-  (let [remote-argv (forward-flags subcmd input)
-        ssh-args    (into [ssh-bin "-o" "BatchMode=yes" "-o" "ConnectTimeout=5" host]
-                          remote-argv)
-        res         (proc/sh ssh-args {:out :string :err :string :continue true})]
-    (cond
-      (zero? (:exit res))
-      (try
-        {:host   host
-         :status :ok
-         :result (json/read-str (:out res) :key-fn keyword)}
-        (catch Exception e
-          {:host    host
-           :status  :error
-           :message (str "invalid JSON from remote host: " (ex-message e))}))
+  "Runs `subcmd` on remote `host` via SSH and returns a structured peer result.
 
-      (= 255 (:exit res))
-      {:host    host
-       :status  :unreachable
-       :message (let [msg (str/trim (:err res))]
-                  (if (str/blank? msg) "SSH connection failed" msg))}
+  Fails fast when Tailscale SSH emits an interactive auth URL on stderr or
+  stdout, killing the stalled SSH process and returning `:status :auth-required`
+  with `:auth-url`. Enforces `timeout-ms` (default 15000 ms)."
+  ([ssh-bin host subcmd input]
+   (run-remote ssh-bin host subcmd input default-timeout-ms))
+  ([ssh-bin host subcmd input timeout-ms]
+   (let [remote-argv (forward-flags subcmd input)
+         ssh-args    (into [ssh-bin "-o" "BatchMode=yes" "-o" "ConnectTimeout=5" host]
+                           remote-argv)
+         p           (proc/process ssh-args {:out :stream :err :stream})
+         ^Process jp (:proc p)
+         auth-url    (promise)
+         on-line     (fn [line]
+                       (when-let [url (extract-auth-url line)]
+                         (deliver auth-url url)
+                         (.destroyForcibly jp)))
+         out-reader  (read-stream-async (:out p) on-line)
+         err-reader  (read-stream-async (:err p) on-line)
+         finished?   (.waitFor jp (long timeout-ms) TimeUnit/MILLISECONDS)]
+     (when-not finished?
+       (.destroyForcibly jp)
+       (.waitFor jp 2 TimeUnit/SECONDS))
+     (.join ^Thread (:thread out-reader) 1000)
+     (.join ^Thread (:thread err-reader) 1000)
+     (let [out-str (str/join "\n" @(:lines out-reader))
+           err-str (str/join "\n" @(:lines err-reader))
+           url     (when (realized? auth-url) @auth-url)]
+       (cond
+         url
+         {:host     host
+          :status   :auth-required
+          :auth-url url
+          :message  (str "Tailscale SSH auth required: " url)}
 
-      :else
-      {:host    host
-       :status  :error
-       :message (let [msg (str/trim (if (str/blank? (:err res)) (:out res) (:err res)))]
-                  (if (str/blank? msg) (str "remote exited with status " (:exit res)) msg))})))
+         (not finished?)
+         {:host    host
+          :status  :unreachable
+          :message (str "SSH timed out after " (max 1 (quot timeout-ms 1000)) "s")}
+
+         (zero? (.exitValue jp))
+         (try
+           {:host   host
+            :status :ok
+            :result (json/read-str out-str :key-fn keyword)}
+           (catch Exception e
+             {:host    host
+              :status  :error
+              :message (str "invalid JSON from remote host: " (ex-message e))}))
+
+         (= 255 (.exitValue jp))
+         {:host    host
+          :status  :unreachable
+          :message (let [msg (str/trim err-str)]
+                     (if (str/blank? msg) "SSH connection failed" msg))}
+
+         :else
+         {:host    host
+          :status  :error
+          :message (let [msg (str/trim (if (str/blank? err-str) out-str err-str))]
+                     (if (str/blank? msg) (str "remote exited with status " (.exitValue jp)) msg))})))))
