@@ -236,7 +236,7 @@ in
      :retain-revs 2
      :peers []
      :packs {"harness-plugins" {:url "https://git.outskirtslabs.com/casey/skills.git" :branch "main"}}
-     :defaults {:plugins ["my@harness-plugins"]}
+     :defaults {:plugins ["my@harness-plugins" "pstack@harness-plugins" "tstack@harness-plugins"]}
      :profiles {"pi-cli" {:harness :pi :dir ${builtins.toJSON "${config.xdg.configHome}/pi/agent"}}}}
   '';
 
