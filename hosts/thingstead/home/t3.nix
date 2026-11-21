@@ -13,7 +13,7 @@ let
     agents.codex
     agents.claude-code
   ];
-  package = agents.t3code.override { inherit providerPackages; };
+  package = pkgs.t3code.override { inherit providerPackages; };
   jsonFormat = pkgs.formats.json { };
   json5 = pkgs.python3Packages.toPythonApplication pkgs.python3Packages.json5;
   t3Home = "${config.xdg.configHome}/t3";

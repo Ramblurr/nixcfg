@@ -2,15 +2,13 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
 let
   cfg = config.modules.dev.llms.t3;
   inherit (config.modules.users.primaryUser) username uid;
-  agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-  package = agents.t3code.override {
+  package = pkgs.t3code.override {
     providerPackages =
       lib.optional config.modules.dev.llms.codex.enable config.modules.dev.llms.codex.finalPackage
       ++ lib.optional config.modules.dev.llms.claude.enable config.modules.dev.llms.claude.finalPackage
@@ -75,7 +73,7 @@ in
         home.packages = [
           package
         ]
-        ++ lib.optional cfg.desktop.enable (agents.t3code-desktop.override { t3code = package; });
+        ++ lib.optional cfg.desktop.enable (pkgs.t3code-desktop.override { t3code = package; });
         home.sessionVariables.T3CODE_HOME = t3Home;
 
         xdg.desktopEntries.t3code = lib.mkIf cfg.desktop.enable {
