@@ -140,15 +140,22 @@
           :status  :unreachable
           :message (str "SSH timed out after " (max 1 (quot timeout-ms 1000)) "s")}
 
-         (zero? (.exitValue jp))
-         (try
-           {:host   host
-            :status :ok
-            :result (json/read-str out-str :key-fn keyword)}
-           (catch Exception e
+         (#{0 1} (.exitValue jp))
+         (let [data (try (json/read-str out-str :key-fn keyword)
+                         (catch Exception e {::invalid (ex-message e)}))]
+           (cond
+             (:host data)
+             {:host host :status :ok :result data}
+
+             (:error data)
+             {:host host :status :error :message (str (get-in data [:error :message]))}
+
+             :else
              {:host    host
               :status  :error
-              :message (str "invalid JSON from remote host: " (ex-message e))}))
+              :message (if (and (::invalid data) (str/blank? err-str))
+                         (str "invalid JSON from remote host: " (::invalid data))
+                         (str/trim err-str))}))
 
          (= 255 (.exitValue jp))
          {:host    host

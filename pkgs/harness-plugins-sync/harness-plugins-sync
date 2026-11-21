@@ -4680,15 +4680,22 @@
           :status  :unreachable
           :message (str "SSH timed out after " (max 1 (quot timeout-ms 1000)) "s")}
 
-         (zero? (.exitValue jp))
-         (try
-           {:host   host
-            :status :ok
-            :result (json/read-str out-str :key-fn keyword)}
-           (catch Exception e
+         (#{0 1} (.exitValue jp))
+         (let [data (try (json/read-str out-str :key-fn keyword)
+                         (catch Exception e {::invalid (ex-message e)}))]
+           (cond
+             (:host data)
+             {:host host :status :ok :result data}
+
+             (:error data)
+             {:host host :status :error :message (str (get-in data [:error :message]))}
+
+             :else
              {:host    host
               :status  :error
-              :message (str "invalid JSON from remote host: " (ex-message e))}))
+              :message (if (and (::invalid data) (str/blank? err-str))
+                         (str "invalid JSON from remote host: " (::invalid data))
+                         (str/trim err-str))}))
 
          (= 255 (.exitValue jp))
          {:host    host
@@ -4910,11 +4917,12 @@
   its `staged` snapshot. Keeps an existing `active` symlink when neither is set.
 
   Returns a map describing the active pack target, source (`:git` or `:local`),
-  revision or digest, and whether `active` changed."
+  revision or digest, the previous active revision, and whether `active` changed."
   [state-dir pack-name {:keys [local-path dry-run]}]
   (let [act-link    (active-path state-dir pack-name)
         stg-link    (staged-path state-dir pack-name)
-        prev-target (read-symlink-target act-link)]
+        prev-target (read-symlink-target act-link)
+        prev-rev    (rev-from-target prev-target)]
     (cond
       local-path
       (do
@@ -4926,14 +4934,15 @@
           (when (and changed? (not dry-run))
             (with-pack-lock state-dir pack-name
               #(atomic-symlink! act-link abs)))
-          {:pack     pack-name
-           :source   :local
-           :path     abs
-           :active   act-link
-           :rev      nil
-           :digest   (content-digest abs)
-           :changed? changed?
-           :status   (cond dry-run :dry-run changed? :promoted :else :unchanged)}))
+          {:pack         pack-name
+           :source       :local
+           :path         abs
+           :active       act-link
+           :rev          nil
+           :digest       (content-digest abs)
+           :previous-rev prev-rev
+           :changed?     changed?
+           :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)}))
 
       (read-symlink-target stg-link)
       (let [stg-target (read-symlink-target stg-link)
@@ -4943,27 +4952,29 @@
         (when (and changed? (not dry-run))
           (with-pack-lock state-dir pack-name
             #(atomic-symlink! act-link stg-target)))
-        {:pack     pack-name
-         :source   :git
-         :path     resolved
-         :active   act-link
-         :rev      rev
-         :digest   rev
-         :changed? changed?
-         :status   (cond dry-run :dry-run changed? :promoted :else :unchanged)})
+        {:pack         pack-name
+         :source       :git
+         :path         resolved
+         :active       act-link
+         :rev          rev
+         :digest       rev
+         :previous-rev prev-rev
+         :changed?     changed?
+         :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)})
 
       prev-target
       (let [rev      (rev-from-target prev-target)
             resolved (resolve-link-dir act-link)
             local?   (nil? rev)]
-        {:pack     pack-name
-         :source   (if local? :local :git)
-         :path     resolved
-         :active   act-link
-         :rev      rev
-         :digest   (if local? (content-digest resolved) rev)
-         :changed? false
-         :status   :unchanged})
+        {:pack         pack-name
+         :source       (if local? :local :git)
+         :path         resolved
+         :active       act-link
+         :rev          rev
+         :digest       (if local? (content-digest resolved) rev)
+         :previous-rev prev-rev
+         :changed?     false
+         :status       :unchanged})
 
       :else
       (throw (ex-info (str "pack '" pack-name "' has no fetched snapshot; run 'harness-plugins-sync sync' or 'pull' first")
@@ -11046,13 +11057,14 @@
         entry                 (get impl (:handler cmd))
         _                     (when-not entry
                                 (throw (ex-info (str "No implementation for handler " (:handler cmd)) {:path path})))
-        {f :run human :human} (if (map? entry) entry {:run entry})]
+        {f :run human :human exit-status :exit} (if (map? entry) entry {:run entry})]
     (try
-      (let [result (f input)]
+      (let [result (f input)
+            status (if exit-status (exit-status result) 0)]
         (cond
           (:raw-output cmd) (if (int? result) result 0)
-          fmt               (do (print-data fmt result) 0)
-          :else             (do ((or human render-human) result) 0)))
+          fmt               (do (print-data fmt result) status)
+          :else             (do ((or human render-human) result) status)))
       (catch clojure.lang.ExceptionInfo e
         (let [{:keys [code details]} (ex-data e)]
           (if (contains? (:errors cmd) code)
@@ -11064,7 +11076,8 @@
   "Runs `args` against `catalog` and returns an exit status.
 
   `impl` maps each handler key to a function of the input map, or to
-  `{:run f :human g}` where `g` prints the result for humans. A handler signals an
+  `{:run f :human g :exit e}` where `g` prints the result for humans and `e`
+  returns the exit status for a result (default `0`). A handler signals an
   expected failure by throwing `ex-info` with a `:code` declared in the command's
   `:errors`, and optional `:details`. Other exceptions propagate.
 
@@ -11492,6 +11505,44 @@
     {:missing (vec (sort missing))
      :stale   (vec (sort stale))}))
 
+(defn- binding-root
+  "Returns the directory that holds the plugin symlinks of `profile`, or nil for Codex."
+  [state-dir profile]
+  (case (:harness profile)
+    :claude      (str (fs/path (:dir profile) "skills"))
+    :antigravity (str (fs/path (:dir profile) "config" "plugins"))
+    :pi          (str (fs/path (or (:link-dir profile) (profile-state-dir state-dir (:id profile))) "plugins"))
+    :codex       nil))
+
+(defn- linked-rev
+  "Returns the revision that the plugin link at `link-path` resolves to: the
+  `revs/<sha>` name, `\"local\"` for a local checkout, or nil for a missing link."
+  [state-dir pack link-path]
+  (when (fs/exists? link-path)
+    (let [revs (fs/path (packs/pack-dir state-dir pack) "revs")
+          real (fs/real-path link-path)]
+      (if (and (fs/exists? revs) (.startsWith real (fs/real-path revs)))
+        (str (first (.relativize (fs/real-path revs) real)))
+        "local"))))
+
+(defn- profile-loads
+  "Returns `{pack rev}` with the revision of each pack that a new session of
+  `profile` loads. A rev is a commit, `\"local\"`, or `\"mixed\"` when plugins of
+  one pack resolve to different revisions. A pack with a missing binding is absent."
+  [state-dir profile]
+  (let [packs-used (set (map :pack (:plugins profile)))]
+    (if (= :codex (:harness profile))
+      (into {}
+            (for [[pack {:keys [source digest]}] (:codex-packs (read-profile-state state-dir (:id profile)))
+                  :when (contains? packs-used pack)]
+              [pack (if (= :local source) "local" digest)]))
+      (let [root (binding-root state-dir profile)]
+        (into {}
+              (for [[pack items] (group-by :pack (:plugins profile))
+                    :let [revs (set (map #(linked-rev state-dir pack (str (fs/path root (:plugin %)))) items))]
+                    :when (not (contains? revs nil))]
+                [pack (if (= 1 (count revs)) (first revs) "mixed")]))))))
+
 (defn profile-status
   "Inspects `profile` against current pack statuses without modifying disk."
   [state-dir profile pack-statuses]
@@ -11500,103 +11551,105 @@
         missing-pk (vec (distinct (for [{:keys [pack]} (:plugins profile)
                                         :when (= :missing (:source (get pack-statuses pack :missing)))]
                                     pack)))]
-    (if (seq missing-pk)
-      {:profile  (:id profile)
-       :harness  (:harness profile)
-       :dir      (:dir profile)
-       :source   (:source profile)
-       :plugins  selectors
-       :in-sync? false
-       :drift    [(str "unfetched packs: " (str/join ", " missing-pk))]
-       :warnings []}
-      (let [desired (into {}
-                          (for [{:keys [plugin pack]} (:plugins profile)]
-                            [plugin (str (fs/path (packs/active-path state-dir pack) "plugins" plugin))]))]
-        (case (:harness profile)
-          :claude
-          (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "skills"))
-                                                       desired
-                                                       (:managed-plugins prev-state []))
-                drift                   (cond-> []
-                                          (seq missing) (conj (str "unbound: " (str/join ", " missing)))
-                                          (seq stale)   (conj (str "stale: " (str/join ", " stale))))]
-            {:profile  (:id profile)
-             :harness  :claude
-             :dir      (:dir profile)
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings []})
+    (assoc
+     (if (seq missing-pk)
+       {:profile  (:id profile)
+        :harness  (:harness profile)
+        :dir      (:dir profile)
+        :source   (:source profile)
+        :plugins  selectors
+        :in-sync? false
+        :drift    [(str "unfetched packs: " (str/join ", " missing-pk))]
+        :warnings []}
+       (let [desired (into {}
+                           (for [{:keys [plugin pack]} (:plugins profile)]
+                             [plugin (str (fs/path (packs/active-path state-dir pack) "plugins" plugin))]))]
+         (case (:harness profile)
+           :claude
+           (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "skills"))
+                                                        desired
+                                                        (:managed-plugins prev-state []))
+                 drift                   (cond-> []
+                                           (seq missing) (conj (str "unbound: " (str/join ", " missing)))
+                                           (seq stale)   (conj (str "stale: " (str/join ", " stale))))]
+             {:profile  (:id profile)
+              :harness  :claude
+              :dir      (:dir profile)
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings []})
 
-          :antigravity
-          (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "config" "plugins"))
-                                                       desired
-                                                       (:managed-plugins prev-state []))
-                drift                   (cond-> []
-                                          (seq missing) (conj (str "unbound: " (str/join ", " missing)))
-                                          (seq stale)   (conj (str "stale: " (str/join ", " stale))))
-                warnings                (vec (for [{:keys [plugin pack selector]} (:plugins profile)
-                                                   :let [root (:resolved-path (get pack-statuses pack))
-                                                         real (when root (str (fs/path root "plugins" plugin)))]
-                                                   :when (and real (fs/directory? real)
-                                                              (not (has-antigravity-manifest? real)))]
-                                               (str selector " has no .antigravity-plugin/plugin.json")))]
-            {:profile  (:id profile)
-             :harness  :antigravity
-             :dir      (:dir profile)
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings warnings})
+           :antigravity
+           (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "config" "plugins"))
+                                                        desired
+                                                        (:managed-plugins prev-state []))
+                 drift                   (cond-> []
+                                           (seq missing) (conj (str "unbound: " (str/join ", " missing)))
+                                           (seq stale)   (conj (str "stale: " (str/join ", " stale))))
+                 warnings                (vec (for [{:keys [plugin pack selector]} (:plugins profile)
+                                                    :let [root (:resolved-path (get pack-statuses pack))
+                                                          real (when root (str (fs/path root "plugins" plugin)))]
+                                                    :when (and real (fs/directory? real)
+                                                               (not (has-antigravity-manifest? real)))]
+                                                (str selector " has no .antigravity-plugin/plugin.json")))]
+             {:profile  (:id profile)
+              :harness  :antigravity
+              :dir      (:dir profile)
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings warnings})
 
-          :pi
-          (let [proj-dir                (or (:link-dir profile) (profile-state-dir state-dir (:id profile)))
-                {:keys [missing stale]} (symlink-drift (str (fs/path proj-dir "plugins"))
-                                                       desired
-                                                       (:managed-plugins prev-state []))
-                pkg-ok?                 (fs/exists? (fs/path proj-dir "package.json"))
-                settings                (read-pi-settings (str (fs/path (:dir profile) "settings.json")))
-                wired?                  (pi-settings-wired? settings proj-dir)
-                drift                   (cond-> []
-                                          (seq missing)  (conj (str "unbound: " (str/join ", " missing)))
-                                          (seq stale)    (conj (str "stale: " (str/join ", " stale)))
-                                          (not pkg-ok?)  (conj "missing package.json")
-                                          (not wired?)   (conj (str "settings.json does not reference " proj-dir)))]
-            {:profile  (:id profile)
-             :harness  :pi
-             :dir      (:dir profile)
-             :link-dir proj-dir
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings []})
+           :pi
+           (let [proj-dir                (or (:link-dir profile) (profile-state-dir state-dir (:id profile)))
+                 {:keys [missing stale]} (symlink-drift (str (fs/path proj-dir "plugins"))
+                                                        desired
+                                                        (:managed-plugins prev-state []))
+                 pkg-ok?                 (fs/exists? (fs/path proj-dir "package.json"))
+                 settings                (read-pi-settings (str (fs/path (:dir profile) "settings.json")))
+                 wired?                  (pi-settings-wired? settings proj-dir)
+                 drift                   (cond-> []
+                                           (seq missing)  (conj (str "unbound: " (str/join ", " missing)))
+                                           (seq stale)    (conj (str "stale: " (str/join ", " stale)))
+                                           (not pkg-ok?)  (conj "missing package.json")
+                                           (not wired?)   (conj (str "settings.json does not reference " proj-dir)))]
+             {:profile  (:id profile)
+              :harness  :pi
+              :dir      (:dir profile)
+              :link-dir proj-dir
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings []})
 
-          :codex
-          (let [prev-packs (:codex-packs prev-state {})
-                expected   (into {}
-                                 (for [[pack items] (group-by :pack (:plugins profile))
-                                       :let [st (get pack-statuses pack)]]
-                                   [pack {:root    (:active-path st)
-                                          :source  (:source st)
-                                          :digest  (if (= :local (:source st))
-                                                     (packs/content-digest (:resolved-path st))
-                                                     (:active-rev st))
-                                          :plugins (vec (sort (map :plugin items)))}]))
-                drift      (vec (for [[pack exp] expected
-                                      :let [cur (get prev-packs pack)]
-                                      :when (not= (select-keys cur [:root :source :digest :plugins]) exp)]
-                                  (str "pack " pack " needs codex plugin refresh")))]
-            {:profile  (:id profile)
-             :harness  :codex
-             :dir      (:dir profile)
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings []}))))))
+           :codex
+           (let [prev-packs (:codex-packs prev-state {})
+                 expected   (into {}
+                                  (for [[pack items] (group-by :pack (:plugins profile))
+                                        :let [st (get pack-statuses pack)]]
+                                    [pack {:root    (:active-path st)
+                                           :source  (:source st)
+                                           :digest  (if (= :local (:source st))
+                                                      (packs/content-digest (:resolved-path st))
+                                                      (:active-rev st))
+                                           :plugins (vec (sort (map :plugin items)))}]))
+                 drift      (vec (for [[pack exp] expected
+                                       :let [cur (get prev-packs pack)]
+                                       :when (not= (select-keys cur [:root :source :digest :plugins]) exp)]
+                                   (str "pack " pack " needs codex plugin refresh")))]
+             {:profile  (:id profile)
+              :harness  :codex
+              :dir      (:dir profile)
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings []}))))
+     :loads (profile-loads state-dir profile))))
 (ns harness-plugins-sync.main
   "Entrypoint and command catalog for `harness-plugins-sync`."
   (:require
@@ -11625,6 +11678,7 @@
                      [:active :string]
                      [:rev [:maybe :string]]
                      [:digest :string]
+                     [:previous-rev [:maybe :string]]
                      [:changed? :boolean]
                      [:status [:enum :promoted :unchanged :dry-run]]]
    ::pack-status    [:map
@@ -11637,6 +11691,8 @@
                      [:active-rev [:maybe :string]]
                      [:staged-rev [:maybe :string]]
                      [:pending-promote :boolean]]
+   ::loads          [:map-of :string :string]
+   ::targets        [:map-of :string :string]
    ::changes        [:map
                      [:added [:vector :string]]
                      [:updated [:vector :string]]
@@ -11647,9 +11703,13 @@
                      [:harness [:enum :claude :codex :pi :antigravity]]
                      [:dir :string]
                      [:link-dir {:optional true} :string]
-                     [:status [:enum :updated :unchanged :would-update]]
+                     [:status [:enum :updated :unchanged :would-update :failed]]
+                     [:error {:optional true} :string]
                      [:plugins [:vector :string]]
                      [:changes [:ref ::changes]]
+                     [:loads [:ref ::loads]]
+                     [:in-sync? :boolean]
+                     [:drift [:vector :string]]
                      [:warnings [:vector :string]]]
    ::profile-status [:map
                      [:profile :string]
@@ -11660,6 +11720,7 @@
                      [:plugins [:vector :string]]
                      [:in-sync? :boolean]
                      [:drift [:vector :string]]
+                     [:loads [:ref ::loads]]
                      [:warnings [:vector :string]]]
    ::peer-result    [:map
                      [:host :string]
@@ -11709,8 +11770,8 @@
     "       then run 'harness-plugins-sync sync --all'. No Nix rebuild is needed for plugin edits."
     "    2. Local WIP test: 'harness-plugins-sync apply --local <pack>=<dir>' (next 'sync' resets)."
     "    3. New T3 account/profile: run 'harness-plugins-sync apply' to discover and bind it."
-    "    4. Verify: 'harness-plugins-sync status --json'. Running sessions do not reload on their own"
-    "       (start a new session, or run /reload-plugins in Claude / /reload in Pi CLI)."]))
+    "    4. Verify: 'harness-plugins-sync status --all'. Running sessions do not reload on their own"
+    "       (run /clear in T3, or start a new thread)."]))
 
 (def ^:private common-errors
   {:config/not-found       "The specified configuration file does not exist"
@@ -11764,7 +11825,10 @@
                    "harness-plugins-sync sync --dry-run"]
      :output      [:map {:registry shared-registry}
                    [:host :string]
+                   [:user :string]
+                   [:local? :boolean]
                    [:dry-run :boolean]
+                   [:targets [:ref ::targets]]
                    [:pulled [:vector [:ref ::pack-pull]]]
                    [:packs [:vector [:ref ::pack-promote]]]
                    [:profiles [:vector [:ref ::profile-bind]]]
@@ -11793,7 +11857,10 @@
                    "harness-plugins-sync apply --profile pi-t3 --force"]
      :output      [:map {:registry shared-registry}
                    [:host :string]
+                   [:user :string]
+                   [:local? :boolean]
                    [:dry-run :boolean]
+                   [:targets [:ref ::targets]]
                    [:packs [:vector [:ref ::pack-promote]]]
                    [:profiles [:vector [:ref ::profile-bind]]]
                    [:peers [:vector [:ref ::peer-result]]]]
@@ -11807,9 +11874,12 @@
                    "harness-plugins-sync status --json"]
      :output      [:map {:registry shared-registry}
                    [:host :string]
+                   [:user :string]
+                   [:local? :boolean]
                    [:config-path :string]
                    [:config-exists? :boolean]
                    [:state-dir :string]
+                   [:targets [:ref ::targets]]
                    [:packs [:vector [:ref ::pack-status]]]
                    [:profiles [:vector [:ref ::profile-status]]]
                    [:peers [:vector [:ref ::peer-result]]]]
@@ -11883,14 +11953,38 @@
 
 (defn- run-peers [conf subcmd input remotes]
   (mapv (fn [h]
-          (let [res (remote/run-remote (:ssh-bin conf) h subcmd input)]
-            (case (:status res)
-              :unreachable   (term/warn (str "peer " h " unreachable: " (:message res)))
-              :auth-required (term/warn (str "peer " h " needs Tailscale SSH auth: " (:auth-url res)))
-              :error         (term/warn (str "peer " h " failed: " (:message res)))
-              nil)
-            res))
+          (term/step (str "Waiting for " h))
+          (remote/run-remote (:ssh-bin conf) h subcmd input))
         remotes))
+
+(defn- progress-label [verb plan]
+  (let [n (+ (if (:local? plan) 1 0) (count (:remotes plan)))]
+    (str verb " " n (if (= 1 n) " host" " hosts"))))
+
+(defn- pack-target [{:keys [source rev]}]
+  (if (= :local source) "local" rev))
+
+(defn- bind-or-fail
+  "Binds `prof` and returns its result with the disk check of [[bind/profile-status]]:
+  the revisions a new session loads and any drift. Reports a binding error as
+  `:status :failed` so other profiles still bind."
+  [conf prof active-map status-map input]
+  (let [result (try
+                 (bind/bind-profile! (:state-dir conf) prof active-map
+                                     {:codex-bin (:codex-bin conf)
+                                      :force     (boolean (:force input))
+                                      :dry-run   (boolean (:dry-run input))})
+                 (catch clojure.lang.ExceptionInfo e
+                   {:profile  (:id prof)
+                    :harness  (:harness prof)
+                    :dir      (str (:dir prof))
+                    :status   :failed
+                    :error    (ex-message e)
+                    :plugins  (mapv :selector (:plugins prof))
+                    :changes  {:added [] :updated [] :removed [] :unchanged []}
+                    :warnings []}))]
+    (merge result (select-keys (bind/profile-status (:state-dir conf) prof status-map)
+                               [:loads :in-sync? :drift]))))
 
 (defn- pull-local [conf input]
   (let [selected (filter-packs (:packs conf) (:pack input))
@@ -11934,13 +12028,13 @@
         profiles       (cond->> (filter-profiles all-profiles (:profile input))
                          (seq (:pack input))
                          (filterv #(some (comp selected-set :pack) (:plugins %))))
-        bound          (mapv (fn [prof]
-                               (bind/bind-profile! (:state-dir conf) prof active-map
-                                                   {:codex-bin (:codex-bin conf)
-                                                    :force     (boolean (:force input))
-                                                    :dry-run   (boolean (:dry-run input))}))
-                             profiles)]
-    {:packs promoted :profiles bound}))
+        status-map     (into {} (for [pack-name all-pack-names]
+                                  [pack-name (packs/pack-status (:state-dir conf) pack-name
+                                                                (get (:packs conf) pack-name {}))]))
+        bound          (mapv #(bind-or-fail conf % active-map status-map input) profiles)]
+    {:packs    promoted
+     :targets  (update-vals active-map pack-target)
+     :profiles bound}))
 
 (defn handle-pull
   "Handler for `harness-plugins-sync pull`."
@@ -11963,12 +12057,17 @@
   (let [conf  (cfg/load-config (:config input))
         host  (remote/local-hostname)
         plan  (remote/target-plan (:peers conf) (:all input) (:host input) host)
-        local (if (:local? plan)
-                (term/with-progress "Binding profiles" (apply-local conf input))
-                {:packs [] :profiles []})
-        peers (run-peers conf "apply" input (:remotes plan))]
+        [local peers]
+        (term/with-progress (progress-label "Applying" plan)
+          [(if (:local? plan)
+             (apply-local conf input)
+             {:packs [] :targets {} :profiles []})
+           (run-peers conf "apply" input (:remotes plan))])]
     {:host     host
+     :user     (remote/local-username)
+     :local?   (:local? plan)
      :dry-run  (boolean (:dry-run input))
+     :targets  (:targets local)
      :packs    (:packs local)
      :profiles (:profiles local)
      :peers    peers}))
@@ -11979,15 +12078,19 @@
   (let [conf   (cfg/load-config (:config input))
         host   (remote/local-hostname)
         plan   (remote/target-plan (:peers conf) (:all input) (:host input) host)
-        pulled (if (:local? plan)
-                 (term/with-progress "Pulling packs" (pull-local conf input))
-                 [])
-        local  (if (:local? plan)
-                 (term/with-progress "Binding profiles" (apply-local conf input))
-                 {:packs [] :profiles []})
-        peers  (run-peers conf "sync" input (:remotes plan))]
+        [pulled local peers]
+        (term/with-progress (progress-label "Syncing" plan)
+          (if (:local? plan)
+            [(do (term/step "Pulling packs") (pull-local conf input))
+             (do (term/step "Binding profiles") (apply-local conf input))
+             (run-peers conf "sync" input (:remotes plan))]
+            [[] {:packs [] :targets {} :profiles []}
+             (run-peers conf "sync" input (:remotes plan))]))]
     {:host     host
+     :user     (remote/local-username)
+     :local?   (:local? plan)
      :dry-run  (boolean (:dry-run input))
+     :targets  (:targets local)
      :pulled   pulled
      :packs    (:packs local)
      :profiles (:profiles local)
@@ -12009,11 +12112,18 @@
                         (filter-profiles (cfg/resolve-profiles conf) (:profile input))
                         [])
         prof-statuses (mapv #(bind/profile-status (:state-dir conf) % status-map) profiles)
-        peers         (run-peers conf "status" input (:remotes plan))]
+        peers         (term/with-progress (progress-label "Checking" plan)
+                        (run-peers conf "status" input (:remotes plan)))]
     {:host           host
+     :user           (remote/local-username)
+     :local?         (:local? plan)
      :config-path    (:config-path conf)
      :config-exists? (:config-exists? conf)
      :state-dir      (:state-dir conf)
+     :targets        (into {}
+                           (for [{:keys [pack source active-rev]} pack-statuses
+                                 :when (not= :missing source)]
+                             [pack (pack-target {:source source :rev active-rev})]))
      :packs          pack-statuses
      :profiles       prof-statuses
      :peers          peers}))
@@ -12087,7 +12197,7 @@
      :checks      checks}))
 
 (defn- short-rev [rev]
-  (if (and rev (> (count rev) 10)) (subs rev 0 10) (or rev "-")))
+  (if (and rev (> (count rev) 7)) (subs rev 0 7) (or rev "-")))
 
 (defn- col-width [xs]
   (if (seq xs) (+ 2 (apply max (map #(count (str %)) xs))) 2))
@@ -12107,33 +12217,6 @@
                         (term/style role (name status))
                         (when message (str "  " (term/style :dim message))))))))))
 
-(defn- render-packs-promote [packs]
-  (when (seq packs)
-    (let [pw (col-width (map :pack packs))
-          sw (col-width (map (comp name :status) packs))]
-      (println (term/style :heading "Packs"))
-      (doseq [{:keys [pack source rev path status]} packs]
-        (let [ref (if (= :local source) (str "local:" path) (short-rev rev))]
-          (println (str "  " (pad pw pack)
-                        (pad sw (name status))
-                        (term/style :dim ref))))))))
-
-(defn- render-profiles-bind [profiles]
-  (when (seq profiles)
-    (let [pw (col-width (map :profile profiles))
-          hw (col-width (map (comp name :harness) profiles))
-          sw (col-width (map (comp name :status) profiles))]
-      (println)
-      (println (term/style :heading "Profiles"))
-      (doseq [{:keys [profile harness status plugins warnings]} profiles]
-        (let [role (case status :updated :ok :would-update :info :unchanged :dim)]
-          (println (str "  " (pad pw profile)
-                        (pad hw (name harness))
-                        (term/style role (pad sw (name status)))
-                        (term/style :dim (str (count plugins) " plugins"))))
-          (doseq [w warnings]
-            (println (str "    " (term/style :warn "warning:") " " w))))))))
-
 (defn- render-pull [{:keys [pulled peers]}]
   (println (term/style :heading "Pulled"))
   (if (seq pulled)
@@ -12146,50 +12229,160 @@
     (println "  none"))
   (render-peers peers))
 
-(defn- render-apply [{:keys [packs profiles peers]}]
-  (render-packs-promote packs)
-  (render-profiles-bind profiles)
-  (render-peers peers))
+(defn- kw [x]
+  (when x (keyword (name x))))
 
-(defn- render-sync [{:keys [packs profiles peers]}]
-  (render-packs-promote packs)
-  (render-profiles-bind profiles)
-  (render-peers peers))
+(defn- string-keys [m]
+  (update-keys (or m {}) name))
 
-(defn- render-status [{:keys [config-path config-exists? state-dir packs profiles peers]}]
+(defn- selector-pack [selector]
+  (second (str/split selector #"@" 2)))
+
+(defn- host-entries
+  "Returns one entry per host from a local result and its peer results. Peer
+  results arrive as JSON, so this normalizes their keys and enum values."
+  [result]
+  (concat
+   (when (:local? result)
+     [{:name (:host result) :user (:user result) :local? true :status :ok :result result}])
+   (for [{:keys [host status message auth-url result]} (:peers result)
+         :let [[user host-name] (if (str/includes? host "@") (str/split host #"@" 2) [nil host])]]
+     {:name     (or (:host result) host-name)
+      :user     (or (:user result) user)
+      :local?   false
+      :status   (kw status)
+      :message  message
+      :auth-url auth-url
+      :result   result})))
+
+(defn- profile-row [targets dry-run? {:keys [profile harness status error loads plugins in-sync? drift warnings]}]
+  (let [loads      (string-keys loads)
+        packs-used (vec (distinct (map selector-pack plugins)))
+        status     (kw status)
+        current?   (and (not= :failed status)
+                        (not (false? in-sync?))
+                        (every? #(and (get loads %) (= (get loads %) (get targets %))) packs-used))]
+    {:profile  profile
+     :harness  (name harness)
+     :revs     (mapv #(get loads % "none") packs-used)
+     :current? current?
+     :answer   (cond current? "yes" (and dry-run? (not= :failed status)) "pending" :else "NO")
+     :note     (cond error                                          error
+                     (and (= :updated status) (= :codex (kw harness))) "(plugin cache refreshed)"
+                     (= :updated status)                            "(bindings updated)"
+                     (= :would-update status)                       "(would update)")
+     :details  (concat (map #(str "drift: " %) drift)
+                       (map #(str "warning: " %) warnings))}))
+
+(defn host-report
+  "Returns `{:targets :previous :dry-run? :hosts}` for a sync, apply, or status
+  result. Each host holds rows that tell whether a new session of each profile
+  loads the target revision of its packs. The target is the local host's active
+  revision, or the first reached peer's when the local host did not run."
+  [result]
+  (let [entries  (host-entries result)
+        dry-run? (boolean (:dry-run result))
+        source   (some #(when (= :ok (:status %)) (:result %)) entries)
+        targets  (string-keys (:targets source))
+        previous (into {} (for [{:keys [pack previous-rev]} (:packs source)
+                                :when (contains? targets (name pack))]
+                            [(name pack) previous-rev]))]
+    {:targets  targets
+     :previous previous
+     :dry-run? dry-run?
+     :hosts    (vec (for [{:keys [status result] :as entry} entries
+                          :let [host-targets (merge (string-keys (:targets result)) targets)
+                                rows         (when (= :ok status)
+                                               (mapv #(profile-row host-targets dry-run? %) (:profiles result)))]]
+                      (assoc entry
+                             :rows rows
+                             :current? (and (= :ok status)
+                                            (every? #(or (:current? %) (= "pending" (:answer %))) rows)))))}))
+
+(defn- host-exit-status [result]
+  (if (every? :current? (:hosts (host-report result))) 0 1))
+
+(defn- render-pack-lines [{:keys [targets previous]} transition?]
+  (let [pw (col-width (keys targets))]
+    (doseq [[pack target] (sort-by key targets)
+            :let [prev (get previous pack)]]
+      (println (str (term/style :bold (pad pw pack))
+                    (cond
+                      (not transition?)            (short-rev target)
+                      (and prev (not= prev target)) (str (short-rev prev) " -> " (short-rev target))
+                      :else                         (str (short-rev target) " " (term/style :dim "(no change)"))))))))
+
+(defn- render-host [{host-name :name :keys [user local? status message auth-url rows current?]} widths]
+  (let [[pw hw rw aw] widths]
+    (println)
+    (println (str (term/style (if current? :ok :error) (if current? "✓" "✗")) " "
+                  (term/style :bold host-name)
+                  (term/style :dim (str " (" (str/join ", " (remove nil? [user (when local? "local")])) ")"))))
+    (case status
+      :ok
+      (if (empty? rows)
+        (println (str "    " (term/style :dim "no profiles")))
+        (doseq [{:keys [profile harness revs current? answer note details]} rows]
+          (println (str "    " (pad pw profile) (pad hw harness)
+                        (pad rw (str/join "," (map short-rev revs)))
+                        (term/style (cond current? :ok (= "pending" answer) :info :else :error)
+                                    (if note (pad aw answer) answer))
+                        (when note (term/style (if current? :dim :error) note))))
+          (doseq [d details]
+            (println (str "      " (term/style :warn d))))))
+
+      :auth-required
+      (do (println (str "    " (term/style :warn "not reached: Tailscale SSH auth required")))
+          (println (str "    " auth-url)))
+
+      :error
+      (println (str "    " (term/style :error (str "failed: " message))))
+
+      (println (str "    " (term/style :warn (str "not reached: " message)))))))
+
+(defn- render-summary [{:keys [hosts]}]
+  (let [reached  (filter #(= :ok (:status %)) hosts)
+        rows     (mapcat :rows reached)
+        behind   (count (remove #(or (:current? %) (= "pending" (:answer %))) rows))
+        pending  (count (filter #(= "pending" (:answer %)) rows))
+        missed   (- (count hosts) (count reached))
+        current  (count (filter :current? hosts))
+        plural   (fn [n word] (str n " " word (when (not= 1 n) "s")))
+        parts    (cond-> [(if (= current (count hosts))
+                            (str "all " (plural (count hosts) "host") " current")
+                            (str current " of " (plural (count hosts) "host") " current"))]
+                   (pos? behind)  (conj (str (plural behind "profile") " behind"))
+                   (pos? pending) (conj (str (plural pending "profile") " would update"))
+                   (pos? missed)  (conj (str (plural missed "host") " not reached")))]
+    (println)
+    (println (str (term/style :heading "Result: ") (str/join ", " parts) "."))))
+
+(defn- render-hosts [result transition?]
+  (let [report (host-report result)
+        rows   (mapcat :rows (:hosts report))
+        widths [(col-width (map :profile rows))
+                (col-width (map :harness rows))
+                (col-width (map #(str/join "," (map short-rev (:revs %))) rows))
+                (col-width (map :answer rows))]]
+    (render-pack-lines report transition?)
+    (doseq [h (:hosts report)]
+      (render-host h widths))
+    (render-summary report)
+    (when (and transition? (not (:dry-run? report)))
+      (println (term/style :dim "Sessions already running keep their loaded skills until /clear (T3) or a new thread.")))))
+
+(defn- render-apply [result]
+  (render-hosts result true))
+
+(defn- render-sync [result]
+  (render-hosts result true))
+
+(defn- render-status [{:keys [config-path config-exists? state-dir] :as result}]
   (println (str (term/style :heading "Config: ") config-path
                 (when-not config-exists? (term/style :dim " (defaults)"))))
   (println (str (term/style :heading "State:  ") state-dir))
   (println)
-  (println (term/style :heading "Packs"))
-  (let [pw (col-width (map :pack packs))
-        sw (col-width (map (comp name :source) packs))]
-    (doseq [{:keys [pack source active-rev staged-rev resolved-path pending-promote]} packs]
-      (let [ref (case source
-                  :missing "not fetched"
-                  :local   (str "local:" resolved-path)
-                  :git     (short-rev active-rev))]
-        (println (str "  " (pad pw pack)
-                      (pad sw (name source))
-                      (term/style :dim ref)
-                      (when pending-promote
-                        (str "  " (term/style :warn (str "staged:" (short-rev staged-rev))))))))))
-  (println)
-  (println (term/style :heading "Profiles"))
-  (let [pw (col-width (map :profile profiles))
-        hw (col-width (map (comp name :harness) profiles))
-        sw (col-width ["in-sync" "drift"])]
-    (doseq [{:keys [profile harness in-sync? drift plugins warnings]} profiles]
-      (println (str "  " (pad pw profile)
-                    (pad hw (name harness))
-                    (term/style (if in-sync? :ok :warn)
-                                (pad sw (if in-sync? "in-sync" "drift")))
-                    (term/style :dim (str/join ", " plugins))))
-      (doseq [d drift]
-        (println (str "    " (term/style :warn "drift:") " " d)))
-      (doseq [w warnings]
-        (println (str "    " (term/style :warn "warning:") " " w)))))
-  (render-peers peers))
+  (render-hosts result false))
 
 (defn- render-config [{:keys [config-path config-exists? state-dir t3-settings discover-t3
                               peers packs defaults resolved-profiles]}]
@@ -12225,10 +12418,10 @@
 
 (def impl
   "Command handler and human renderer map for [[catalog]]."
-  {:cmd/sync   {:run handle-sync   :human render-sync}
+  {:cmd/sync   {:run handle-sync   :human render-sync   :exit host-exit-status}
    :cmd/pull   {:run handle-pull   :human render-pull}
-   :cmd/apply  {:run handle-apply  :human render-apply}
-   :cmd/status {:run handle-status :human render-status}
+   :cmd/apply  {:run handle-apply  :human render-apply  :exit host-exit-status}
+   :cmd/status {:run handle-status :human render-status :exit host-exit-status}
    :cmd/config {:run handle-config :human render-config}
    :cmd/doctor {:run handle-doctor :human render-doctor}})
 

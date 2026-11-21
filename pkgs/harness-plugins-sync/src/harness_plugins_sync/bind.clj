@@ -407,6 +407,44 @@
     {:missing (vec (sort missing))
      :stale   (vec (sort stale))}))
 
+(defn- binding-root
+  "Returns the directory that holds the plugin symlinks of `profile`, or nil for Codex."
+  [state-dir profile]
+  (case (:harness profile)
+    :claude      (str (fs/path (:dir profile) "skills"))
+    :antigravity (str (fs/path (:dir profile) "config" "plugins"))
+    :pi          (str (fs/path (or (:link-dir profile) (profile-state-dir state-dir (:id profile))) "plugins"))
+    :codex       nil))
+
+(defn- linked-rev
+  "Returns the revision that the plugin link at `link-path` resolves to: the
+  `revs/<sha>` name, `\"local\"` for a local checkout, or nil for a missing link."
+  [state-dir pack link-path]
+  (when (fs/exists? link-path)
+    (let [revs (fs/path (packs/pack-dir state-dir pack) "revs")
+          real (fs/real-path link-path)]
+      (if (and (fs/exists? revs) (.startsWith real (fs/real-path revs)))
+        (str (first (.relativize (fs/real-path revs) real)))
+        "local"))))
+
+(defn- profile-loads
+  "Returns `{pack rev}` with the revision of each pack that a new session of
+  `profile` loads. A rev is a commit, `\"local\"`, or `\"mixed\"` when plugins of
+  one pack resolve to different revisions. A pack with a missing binding is absent."
+  [state-dir profile]
+  (let [packs-used (set (map :pack (:plugins profile)))]
+    (if (= :codex (:harness profile))
+      (into {}
+            (for [[pack {:keys [source digest]}] (:codex-packs (read-profile-state state-dir (:id profile)))
+                  :when (contains? packs-used pack)]
+              [pack (if (= :local source) "local" digest)]))
+      (let [root (binding-root state-dir profile)]
+        (into {}
+              (for [[pack items] (group-by :pack (:plugins profile))
+                    :let [revs (set (map #(linked-rev state-dir pack (str (fs/path root (:plugin %)))) items))]
+                    :when (not (contains? revs nil))]
+                [pack (if (= 1 (count revs)) (first revs) "mixed")]))))))
+
 (defn profile-status
   "Inspects `profile` against current pack statuses without modifying disk."
   [state-dir profile pack-statuses]
@@ -415,100 +453,102 @@
         missing-pk (vec (distinct (for [{:keys [pack]} (:plugins profile)
                                         :when (= :missing (:source (get pack-statuses pack :missing)))]
                                     pack)))]
-    (if (seq missing-pk)
-      {:profile  (:id profile)
-       :harness  (:harness profile)
-       :dir      (:dir profile)
-       :source   (:source profile)
-       :plugins  selectors
-       :in-sync? false
-       :drift    [(str "unfetched packs: " (str/join ", " missing-pk))]
-       :warnings []}
-      (let [desired (into {}
-                          (for [{:keys [plugin pack]} (:plugins profile)]
-                            [plugin (str (fs/path (packs/active-path state-dir pack) "plugins" plugin))]))]
-        (case (:harness profile)
-          :claude
-          (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "skills"))
-                                                       desired
-                                                       (:managed-plugins prev-state []))
-                drift                   (cond-> []
-                                          (seq missing) (conj (str "unbound: " (str/join ", " missing)))
-                                          (seq stale)   (conj (str "stale: " (str/join ", " stale))))]
-            {:profile  (:id profile)
-             :harness  :claude
-             :dir      (:dir profile)
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings []})
+    (assoc
+     (if (seq missing-pk)
+       {:profile  (:id profile)
+        :harness  (:harness profile)
+        :dir      (:dir profile)
+        :source   (:source profile)
+        :plugins  selectors
+        :in-sync? false
+        :drift    [(str "unfetched packs: " (str/join ", " missing-pk))]
+        :warnings []}
+       (let [desired (into {}
+                           (for [{:keys [plugin pack]} (:plugins profile)]
+                             [plugin (str (fs/path (packs/active-path state-dir pack) "plugins" plugin))]))]
+         (case (:harness profile)
+           :claude
+           (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "skills"))
+                                                        desired
+                                                        (:managed-plugins prev-state []))
+                 drift                   (cond-> []
+                                           (seq missing) (conj (str "unbound: " (str/join ", " missing)))
+                                           (seq stale)   (conj (str "stale: " (str/join ", " stale))))]
+             {:profile  (:id profile)
+              :harness  :claude
+              :dir      (:dir profile)
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings []})
 
-          :antigravity
-          (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "config" "plugins"))
-                                                       desired
-                                                       (:managed-plugins prev-state []))
-                drift                   (cond-> []
-                                          (seq missing) (conj (str "unbound: " (str/join ", " missing)))
-                                          (seq stale)   (conj (str "stale: " (str/join ", " stale))))
-                warnings                (vec (for [{:keys [plugin pack selector]} (:plugins profile)
-                                                   :let [root (:resolved-path (get pack-statuses pack))
-                                                         real (when root (str (fs/path root "plugins" plugin)))]
-                                                   :when (and real (fs/directory? real)
-                                                              (not (has-antigravity-manifest? real)))]
-                                               (str selector " has no .antigravity-plugin/plugin.json")))]
-            {:profile  (:id profile)
-             :harness  :antigravity
-             :dir      (:dir profile)
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings warnings})
+           :antigravity
+           (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "config" "plugins"))
+                                                        desired
+                                                        (:managed-plugins prev-state []))
+                 drift                   (cond-> []
+                                           (seq missing) (conj (str "unbound: " (str/join ", " missing)))
+                                           (seq stale)   (conj (str "stale: " (str/join ", " stale))))
+                 warnings                (vec (for [{:keys [plugin pack selector]} (:plugins profile)
+                                                    :let [root (:resolved-path (get pack-statuses pack))
+                                                          real (when root (str (fs/path root "plugins" plugin)))]
+                                                    :when (and real (fs/directory? real)
+                                                               (not (has-antigravity-manifest? real)))]
+                                                (str selector " has no .antigravity-plugin/plugin.json")))]
+             {:profile  (:id profile)
+              :harness  :antigravity
+              :dir      (:dir profile)
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings warnings})
 
-          :pi
-          (let [proj-dir                (or (:link-dir profile) (profile-state-dir state-dir (:id profile)))
-                {:keys [missing stale]} (symlink-drift (str (fs/path proj-dir "plugins"))
-                                                       desired
-                                                       (:managed-plugins prev-state []))
-                pkg-ok?                 (fs/exists? (fs/path proj-dir "package.json"))
-                settings                (read-pi-settings (str (fs/path (:dir profile) "settings.json")))
-                wired?                  (pi-settings-wired? settings proj-dir)
-                drift                   (cond-> []
-                                          (seq missing)  (conj (str "unbound: " (str/join ", " missing)))
-                                          (seq stale)    (conj (str "stale: " (str/join ", " stale)))
-                                          (not pkg-ok?)  (conj "missing package.json")
-                                          (not wired?)   (conj (str "settings.json does not reference " proj-dir)))]
-            {:profile  (:id profile)
-             :harness  :pi
-             :dir      (:dir profile)
-             :link-dir proj-dir
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings []})
+           :pi
+           (let [proj-dir                (or (:link-dir profile) (profile-state-dir state-dir (:id profile)))
+                 {:keys [missing stale]} (symlink-drift (str (fs/path proj-dir "plugins"))
+                                                        desired
+                                                        (:managed-plugins prev-state []))
+                 pkg-ok?                 (fs/exists? (fs/path proj-dir "package.json"))
+                 settings                (read-pi-settings (str (fs/path (:dir profile) "settings.json")))
+                 wired?                  (pi-settings-wired? settings proj-dir)
+                 drift                   (cond-> []
+                                           (seq missing)  (conj (str "unbound: " (str/join ", " missing)))
+                                           (seq stale)    (conj (str "stale: " (str/join ", " stale)))
+                                           (not pkg-ok?)  (conj "missing package.json")
+                                           (not wired?)   (conj (str "settings.json does not reference " proj-dir)))]
+             {:profile  (:id profile)
+              :harness  :pi
+              :dir      (:dir profile)
+              :link-dir proj-dir
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings []})
 
-          :codex
-          (let [prev-packs (:codex-packs prev-state {})
-                expected   (into {}
-                                 (for [[pack items] (group-by :pack (:plugins profile))
-                                       :let [st (get pack-statuses pack)]]
-                                   [pack {:root    (:active-path st)
-                                          :source  (:source st)
-                                          :digest  (if (= :local (:source st))
-                                                     (packs/content-digest (:resolved-path st))
-                                                     (:active-rev st))
-                                          :plugins (vec (sort (map :plugin items)))}]))
-                drift      (vec (for [[pack exp] expected
-                                      :let [cur (get prev-packs pack)]
-                                      :when (not= (select-keys cur [:root :source :digest :plugins]) exp)]
-                                  (str "pack " pack " needs codex plugin refresh")))]
-            {:profile  (:id profile)
-             :harness  :codex
-             :dir      (:dir profile)
-             :source   (:source profile)
-             :plugins  selectors
-             :in-sync? (empty? drift)
-             :drift    drift
-             :warnings []}))))))
+           :codex
+           (let [prev-packs (:codex-packs prev-state {})
+                 expected   (into {}
+                                  (for [[pack items] (group-by :pack (:plugins profile))
+                                        :let [st (get pack-statuses pack)]]
+                                    [pack {:root    (:active-path st)
+                                           :source  (:source st)
+                                           :digest  (if (= :local (:source st))
+                                                      (packs/content-digest (:resolved-path st))
+                                                      (:active-rev st))
+                                           :plugins (vec (sort (map :plugin items)))}]))
+                 drift      (vec (for [[pack exp] expected
+                                       :let [cur (get prev-packs pack)]
+                                       :when (not= (select-keys cur [:root :source :digest :plugins]) exp)]
+                                   (str "pack " pack " needs codex plugin refresh")))]
+             {:profile  (:id profile)
+              :harness  :codex
+              :dir      (:dir profile)
+              :source   (:source profile)
+              :plugins  selectors
+              :in-sync? (empty? drift)
+              :drift    drift
+              :warnings []}))))
+     :loads (profile-loads state-dir profile))))

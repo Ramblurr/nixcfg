@@ -11,6 +11,7 @@
    [harness-plugins-sync.main :as main]
    [harness-plugins-sync.packs :as packs]
    [harness-plugins-sync.remote :as remote]
+   [harness-plugins-sync.terminal :as term]
    [malli.core :as m]))
 
 (def ^:private plain {:color-out? false :color-err? false :animate? false})
@@ -69,12 +70,13 @@
              "printf '{}\\n'\n"))
   (fs/set-posix-file-permissions bin-path "rwxr-xr-x"))
 
-(defn- write-fake-ssh! [bin-path log-path]
+(defn- write-fake-ssh! [bin-path log-path behind-json-path]
   (spit (str bin-path)
         (str "#!/bin/sh\n"
              "printf '%s\\n' \"$*\" >> " (pr-str (str log-path)) "\n"
              "for a in \"$@\"; do\n"
              "  case \"$a\" in\n"
+             "    behind-peer) cat " (pr-str (str behind-json-path)) "; exit 1 ;;\n"
              "    offline-peer) echo 'ssh: connect failed' >&2; exit 255 ;;\n"
              "    auth-peer) printf 'To authenticate, visit:\\nhttps://login.tailscale.com/a/test12345\\n' >&2; sleep 30; exit 255 ;;\n"
              "    hang-peer) sleep 30; exit 255 ;;\n"
@@ -172,8 +174,9 @@
             codex-log (fs/path tmp "codex.log")
             codex-bin (fs/path tmp "fake-codex")
             cfg-f     (fs/path tmp "config.edn")]
-        (fs/create-dirs pi-d pi-t3-d)
-        (spit (str (fs/path pi-d "settings.json")) (json/write-str {:packages []}))
+        (doseq [d [pi-d pi-t3-d]]
+          (fs/create-dirs d)
+          (spit (str (fs/path d "settings.json")) (json/write-str {:packages []})))
         (write-fake-codex! codex-bin codex-log)
         (spit (str cfg-f)
               (pr-str {:state-dir                  (str state-dir)
@@ -243,7 +246,17 @@
             (is (nil? (m/explain (:output (some #(when (= ["sync"] (:path %)) %) (:commands main/catalog))) data)))
             (is (= (str "revs/" rev2) (packs/read-symlink-target (packs/active-path (str state-dir) "harness-plugins"))))
             (is (str/includes? (slurp (str (fs/path claude-d "skills" "my" "skills" "demo" "SKILL.md"))) "my-v2"))
-            (is (> after before))))
+            (is (> after before))
+            (is (= rev1 (:previous-rev (some #(when (= "harness-plugins" (:pack %)) %) (:packs data)))))
+            (is (= #{rev2} (set (map #(get (:loads %) "harness-plugins") (:profiles data))))
+                "every profile, Codex included, loads the new revision")
+            (let [out (binding [term/*terminal* plain]
+                        (with-out-str (#'main/render-sync data)))]
+              (is (str/includes? out (str (subs rev1 0 7) " -> " (subs rev2 0 7))))
+              (is (str/includes? out (str "✓ " (:host data))))
+              (is (str/includes? out "(plugin cache refreshed)"))
+              (is (str/includes? out "/clear (T3)"))
+              (is (not (str/includes? out "NO"))))))
 
         (testing "--local overrides active to local checkout and --pack does not prune other packs"
           (spit (str (fs/path repo-a "plugins" "my" "skills" "demo" "SKILL.md"))
@@ -257,7 +270,22 @@
             (is (str/includes? (slurp (str (fs/path claude-d "skills" "my" "skills" "demo" "SKILL.md")))
                                "local-uncommitted"))
             ;; moot@host-extra symlink on claude must still exist
-            (is (fs/exists? (fs/path claude-d "skills" "moot"))))))
+            (is (fs/exists? (fs/path claude-d "skills" "moot")))))
+
+        (testing "a failed profile is reported as behind and does not stop other profiles"
+          (fs/delete (fs/path claude-d "skills" "tstack"))
+          (fs/create-dirs (fs/path claude-d "skills" "tstack"))
+          (let [res      (invoke "sync" "--config" (str cfg-f) "--edn")
+                data     (edn/read-string (:out res))
+                by-id    (into {} (map (juxt :profile identity) (:profiles data)))
+                human    (invoke "status" "--config" (str cfg-f))]
+            (is (= 1 (:exit res)))
+            (is (= :failed (get-in by-id ["claude" :status])))
+            (is (str/includes? (get-in by-id ["claude" :error]) "refusing to overwrite"))
+            (is (not-any? #(= :failed (get-in by-id [% :status])) ["codex" "pi" "pi-t3" "agy"]))
+            (is (= 1 (:exit human)))
+            (is (str/includes? (:out human) "✗ "))
+            (is (re-find #"claude\s+claude\s+\S+\s+NO" (:out human))))))
       (finally
         (fs/delete-tree tmp)))))
 
@@ -266,8 +294,25 @@
     (try
       (let [ssh-log (fs/path tmp "ssh.log")
             ssh-bin (fs/path tmp "fake-ssh")
+            behind  (fs/path tmp "behind.json")
             cfg-f   (fs/path tmp "config.edn")]
-        (write-fake-ssh! ssh-bin ssh-log)
+        (spit (str behind)
+              (json/write-str {:host     "behind"
+                               :user     "bob"
+                               :local?   true
+                               :dry-run  false
+                               :targets  {"harness-plugins" "bbbbbbbbbb"}
+                               :packs    []
+                               :profiles [{:profile  "claude"
+                                           :harness  "claude"
+                                           :plugins  ["my@harness-plugins"]
+                                           :status   "unchanged"
+                                           :loads    {"harness-plugins" "aaaaaaaaaa"}
+                                           :in-sync? true
+                                           :drift    []
+                                           :warnings []}]
+                               :peers    []}))
+        (write-fake-ssh! ssh-bin ssh-log behind)
         (spit (str cfg-f)
               (pr-str {:state-dir                  (str (fs/path tmp "state"))
                        :discover-t3                false
@@ -278,7 +323,7 @@
         (testing "remote fanout aggregates reachable and unreachable peers without aborting"
           (let [res  (invoke "status" "--config" (str cfg-f) "--host" "good-peer" "--host" "offline-peer" "--edn")
                 data (edn/read-string (:out res))]
-            (is (= 0 (:exit res)))
+            (is (= 1 (:exit res)) "an unreached host is not current")
             (is (= [{:host "good-peer" :status :ok}
                     {:host "offline-peer" :status :unreachable}]
                    (mapv #(select-keys % [:host :status]) (:peers data))))
@@ -288,7 +333,7 @@
                 res   (invoke "status" "--config" (str cfg-f) "--host" "auth-peer" "--edn")
                 ms    (/ (- (System/nanoTime) start) 1e6)
                 data  (edn/read-string (:out res))]
-            (is (= 0 (:exit res)))
+            (is (= 1 (:exit res)))
             (is (< ms 5000) "should fail fast without waiting for sleep 30")
             (is (= [{:host     "auth-peer"
                      :status   :auth-required
@@ -298,6 +343,14 @@
           (let [res (remote/run-remote (str ssh-bin) "hang-peer" "status" {} 300)]
             (is (= :unreachable (:status res)))
             (is (str/includes? (:message res) "timed out"))))
+        (testing "a peer that exits 1 with a result shows its profiles as behind"
+          (let [res  (invoke "status" "--config" (str cfg-f) "--host" "behind-peer" "--edn")
+                data (edn/read-string (:out res))
+                out  (:out (invoke "status" "--config" (str cfg-f) "--host" "behind-peer"))]
+            (is (= 1 (:exit res)))
+            (is (= {:host "behind-peer" :status :ok} (select-keys (first (:peers data)) [:host :status])))
+            (is (str/includes? out "✗ behind (bob)"))
+            (is (re-find #"claude\s+claude\s+aaaaaaa\s+NO" out))))
         (testing "target-plan matches user@host peers against local user and host"
           (is (= {:local? true :remotes ["ramblurr@witt" "hirde@quine"]}
                  (remote/target-plan ["ramblurr@quine" "ramblurr@witt" "hirde@quine"]

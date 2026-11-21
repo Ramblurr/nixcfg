@@ -207,11 +207,12 @@
   its `staged` snapshot. Keeps an existing `active` symlink when neither is set.
 
   Returns a map describing the active pack target, source (`:git` or `:local`),
-  revision or digest, and whether `active` changed."
+  revision or digest, the previous active revision, and whether `active` changed."
   [state-dir pack-name {:keys [local-path dry-run]}]
   (let [act-link    (active-path state-dir pack-name)
         stg-link    (staged-path state-dir pack-name)
-        prev-target (read-symlink-target act-link)]
+        prev-target (read-symlink-target act-link)
+        prev-rev    (rev-from-target prev-target)]
     (cond
       local-path
       (do
@@ -223,14 +224,15 @@
           (when (and changed? (not dry-run))
             (with-pack-lock state-dir pack-name
               #(atomic-symlink! act-link abs)))
-          {:pack     pack-name
-           :source   :local
-           :path     abs
-           :active   act-link
-           :rev      nil
-           :digest   (content-digest abs)
-           :changed? changed?
-           :status   (cond dry-run :dry-run changed? :promoted :else :unchanged)}))
+          {:pack         pack-name
+           :source       :local
+           :path         abs
+           :active       act-link
+           :rev          nil
+           :digest       (content-digest abs)
+           :previous-rev prev-rev
+           :changed?     changed?
+           :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)}))
 
       (read-symlink-target stg-link)
       (let [stg-target (read-symlink-target stg-link)
@@ -240,27 +242,29 @@
         (when (and changed? (not dry-run))
           (with-pack-lock state-dir pack-name
             #(atomic-symlink! act-link stg-target)))
-        {:pack     pack-name
-         :source   :git
-         :path     resolved
-         :active   act-link
-         :rev      rev
-         :digest   rev
-         :changed? changed?
-         :status   (cond dry-run :dry-run changed? :promoted :else :unchanged)})
+        {:pack         pack-name
+         :source       :git
+         :path         resolved
+         :active       act-link
+         :rev          rev
+         :digest       rev
+         :previous-rev prev-rev
+         :changed?     changed?
+         :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)})
 
       prev-target
       (let [rev      (rev-from-target prev-target)
             resolved (resolve-link-dir act-link)
             local?   (nil? rev)]
-        {:pack     pack-name
-         :source   (if local? :local :git)
-         :path     resolved
-         :active   act-link
-         :rev      rev
-         :digest   (if local? (content-digest resolved) rev)
-         :changed? false
-         :status   :unchanged})
+        {:pack         pack-name
+         :source       (if local? :local :git)
+         :path         resolved
+         :active       act-link
+         :rev          rev
+         :digest       (if local? (content-digest resolved) rev)
+         :previous-rev prev-rev
+         :changed?     false
+         :status       :unchanged})
 
       :else
       (throw (ex-info (str "pack '" pack-name "' has no fetched snapshot; run 'harness-plugins-sync sync' or 'pull' first")

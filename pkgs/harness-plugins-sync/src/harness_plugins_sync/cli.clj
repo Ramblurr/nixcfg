@@ -404,13 +404,14 @@
         entry                 (get impl (:handler cmd))
         _                     (when-not entry
                                 (throw (ex-info (str "No implementation for handler " (:handler cmd)) {:path path})))
-        {f :run human :human} (if (map? entry) entry {:run entry})]
+        {f :run human :human exit-status :exit} (if (map? entry) entry {:run entry})]
     (try
-      (let [result (f input)]
+      (let [result (f input)
+            status (if exit-status (exit-status result) 0)]
         (cond
           (:raw-output cmd) (if (int? result) result 0)
-          fmt               (do (print-data fmt result) 0)
-          :else             (do ((or human render-human) result) 0)))
+          fmt               (do (print-data fmt result) status)
+          :else             (do ((or human render-human) result) status)))
       (catch clojure.lang.ExceptionInfo e
         (let [{:keys [code details]} (ex-data e)]
           (if (contains? (:errors cmd) code)
@@ -422,7 +423,8 @@
   "Runs `args` against `catalog` and returns an exit status.
 
   `impl` maps each handler key to a function of the input map, or to
-  `{:run f :human g}` where `g` prints the result for humans. A handler signals an
+  `{:run f :human g :exit e}` where `g` prints the result for humans and `e`
+  returns the exit status for a result (default `0`). A handler signals an
   expected failure by throwing `ex-info` with a `:code` declared in the command's
   `:errors`, and optional `:details`. Other exceptions propagate.
 
