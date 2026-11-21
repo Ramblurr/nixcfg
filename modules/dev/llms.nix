@@ -49,6 +49,7 @@ in
     ./llms/cliproxy-api.nix
     ./llms/nono.nix
     ./llms/pi.nix
+    ./llms/plugins-sync.nix
     ./llms/profile.nix
     ./llms/t3.nix
   ];

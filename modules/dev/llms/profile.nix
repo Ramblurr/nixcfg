@@ -30,12 +30,6 @@ let
       defaultProvider = if cfg.proxy.enable then "cliproxy" else "openai-codex";
       defaultModel = models.defaults.pi;
       defaultThinkingLevel = "high";
-      skills = lib.optionals cfg.skills.enable (
-        map (name: "${cfg.skills.package.plugins.${name}}/skills") [
-          "my"
-          "tstack"
-        ]
-      );
       packages = map toString piPackages;
       npmCommand = [ "pnpm" ];
       hideThinkingBlock = true;
@@ -194,6 +188,13 @@ in
       enable = true;
       agents.extraFiles = [ ./plannotator-instructions.md ];
       skills.enable = true;
+      pluginsSync = {
+        enable = cfg.skills.enable;
+        profiles.pi-cli = {
+          harness = "pi";
+          dir = "${agentConfigHome}/pi/agent";
+        };
+      };
       t3 = {
         enable = true;
         settings = t3Settings;
@@ -202,38 +203,36 @@ in
         enable = true;
         package = packages.pi.override { useBun = false; };
         instances = {
-          pi = piInstance [
-            pkgs.pi-reload
-            cfg.skills.package.plugins.pstack
-            pkgs.pi-speak
-            pkgs.pi-subq
-            pkgs.brepl-balance
-            pkgs.plannotator-pi-extension
-            pkgs.pi-openai-fast
-            pkgs.pi-link
-            pkgs.pi-lens
-            pkgs.pi-fff
-          ];
-          pi-t3 = piInstance [
-            pkgs.pi-reload
-            cfg.skills.package.plugins.pstack
-            pkgs.pi-speak
-            pkgs.pi-subq
-            pkgs.brepl-balance
-            pkgs.pi-openai-fast
-            pkgs.pi-lens
-            pkgs.pi-fff
-          ];
+          pi = piInstance (
+            [
+              pkgs.pi-reload
+              pkgs.pi-speak
+              pkgs.pi-subq
+              pkgs.brepl-balance
+              pkgs.plannotator-pi-extension
+              pkgs.pi-openai-fast
+              pkgs.pi-link
+              pkgs.pi-lens
+              pkgs.pi-fff
+            ]
+            ++ lib.optional cfg.skills.enable "${cfg.pluginsSync.stateDir}/profiles/pi-cli"
+          );
+          pi-t3 = piInstance (
+            [
+              pkgs.pi-reload
+              pkgs.pi-speak
+              pkgs.pi-subq
+              pkgs.brepl-balance
+              pkgs.pi-openai-fast
+              pkgs.pi-lens
+              pkgs.pi-fff
+            ]
+            ++ lib.optional cfg.skills.enable "${cfg.pluginsSync.stateDir}/profiles/pi"
+          );
         };
       };
       codex = {
         enable = true;
-        marketplaces = lib.optional cfg.skills.enable cfg.skills.package;
-        plugins = lib.optionals cfg.skills.enable [
-          "my@harness-plugins"
-          "pstack@harness-plugins"
-          "tstack@harness-plugins"
-        ];
         settings = codexSettings;
         removeSettings = [
           [
@@ -259,13 +258,6 @@ in
       };
       claude = {
         enable = true;
-        plugins = lib.optionalAttrs cfg.skills.enable {
-          inherit (cfg.skills.package.plugins)
-            my
-            pstack
-            tstack
-            ;
-        };
         settings = claudeSettings;
         removeSettings = [
           [
@@ -285,7 +277,7 @@ in
         {
           source =
             let
-              pstack = cfg.skills.package.plugins.pstack;
+              pstack = "${cfg.pluginsSync.stateDir}/packs/harness-plugins/active/plugins/pstack";
             in
             (pkgs.formats.toml { }).generate "codex-system-config.toml" {
               hooks.SessionStart = [
@@ -300,7 +292,7 @@ in
                             lib.concatMapStringsSep "|" lib.escapeShellArg cfg.profile.codexSessionHookUsers
                           }) ;; *) exit 0 ;; esac;
                         ''
-                        + "CLAUDE_PLUGIN_ROOT=${pstack} ${pstack}/hooks/session-start.sh codex";
+                        + ''[ -x "${pstack}/hooks/session-start.sh" ] || exit 0; CLAUDE_PLUGIN_ROOT="${pstack}" "${pstack}/hooks/session-start.sh" codex'';
                     }
                   ];
                 }

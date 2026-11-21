@@ -95,12 +95,7 @@ in
       enable = lib.mkOption {
         type = lib.types.bool;
         default = false;
-        description = "Install the packaged local skills for enabled agents.";
-      };
-      package = lib.mkOption {
-        type = lib.types.package;
-        default = pkgs.harness-plugins;
-        description = "Shared skills source and tool plugin outputs.";
+        description = "Sync and bind harness-plugins skills via harness-plugins-sync.";
       };
     };
     pi = toolOptions // {

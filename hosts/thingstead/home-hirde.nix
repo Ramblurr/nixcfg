@@ -18,7 +18,8 @@ let
   };
   workspaceDir = config.home.homeDirectory;
   repoDir = "${workspaceDir}/thingstead";
-  skillsDir = "/var/lib/skills/current";
+  pluginsStateDir = "${config.xdg.dataHome}/ol-plugins-sync";
+  codexBin = lib.getExe inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.codex;
   op = "${config.my.programs.op-connect.package}/bin/op";
   opCredentials = {
     openai-api-key = "op://moot/openai hirde/credential";
@@ -136,7 +137,9 @@ in
     tokenFile = config.sops.secrets.onepassword-connect-token.path;
   };
   programs.pi.instances.pi-t3 = {
-    inherit (config.programs.pi.instances.pi) settings;
+    settings = config.programs.pi.instances.pi.settings // {
+      packages = [ "${pluginsStateDir}/profiles/pi" ];
+    };
     models.providers.cliproxy = cliproxyProvider;
   };
   programs.pi.instances.pi.models.providers = {
@@ -148,11 +151,7 @@ in
     defaultProvider = "cliproxy";
     defaultModel = models.defaults.pi;
     defaultThinkingLevel = "high";
-    skills = map (dir: "${skillsDir}/skills/${dir}") [
-      "pi"
-      "mine"
-      "engineering"
-    ];
+    packages = [ "${pluginsStateDir}/profiles/pi-cli" ];
     npmCommand = [ "pnpm" ];
     hideThinkingBlock = true;
     theme = "dark";
@@ -182,6 +181,7 @@ in
     pkgs.git
     pkgs.gnugrep
     pkgs.gnused
+    pkgs.harness-plugins-sync
     jdk
     pkgs.jq
     pkgs.killall
@@ -227,8 +227,41 @@ in
     Install.WantedBy = [ "default.target" ];
   };
 
-  home.file."${config.my.services.t3code.claudeConfigDir}/skills/my".source =
-    config.lib.file.mkOutOfStoreSymlink skillsDir;
+  xdg.configFile."ol-plugins-sync/config.edn".text = ''
+    {:state-dir ${builtins.toJSON pluginsStateDir}
+     :t3-settings ${builtins.toJSON "${config.xdg.configHome}/t3/userdata/settings.json"}
+     :discover-t3 true
+     :include-antigravity-global false
+     :codex-bin ${builtins.toJSON codexBin}
+     :retain-revs 2
+     :peers []
+     :packs {"harness-plugins" {:url "https://git.outskirtslabs.com/casey/skills.git" :branch "main"}}
+     :defaults {:plugins ["my@harness-plugins"]}
+     :profiles {"pi-cli" {:harness :pi :dir ${builtins.toJSON "${config.xdg.configHome}/pi/agent"}}}}
+  '';
+
+  systemd.user.services.harness-plugins-sync = {
+    Unit = {
+      Description = "Sync agent plugin packs for hirde";
+      After = [ "network-online.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${lib.getExe pkgs.harness-plugins-sync} sync";
+    };
+  };
+
+  systemd.user.timers.harness-plugins-sync = {
+    Unit = {
+      Description = "Periodically sync agent plugin packs for hirde";
+    };
+    Timer = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "15min";
+      Persistent = true;
+    };
+    Install.WantedBy = [ "timers.target" ];
+  };
 
   programs.git = {
     enable = true;

@@ -152,7 +152,8 @@ let
           "$XDG_CONFIG_HOME/nrepl"
           "$XDG_CONFIG_HOME/clj-kondo"
           "$HOME/vendor/jdks"
-          "$HOME/src/git.outskirtslabs.com/casey/skills/skills"
+          "$HOME/.local/share/ol-plugins-sync"
+          "$HOME/src/git.outskirtslabs.com/casey/skills"
           "$HOME/src/github.com/ramblurr/pi-extensions"
         ];
         write = [ ];

@@ -78,9 +78,6 @@ inputs: [
       betterunsubscribe = prev.callPackage ./betterunsubscribe.nix { };
       paperless-gpt = prev.callPackage ./paperless-gpt/package.nix { };
       thunderbird-ai-bridge = prev.callPackage ./thunderbird-ai-bridge.nix { };
-      harness-plugins = prev.lib.callPackageWith (
-        prev // { inherit pkgs-lib; }
-      ) ./harness-plugins/package.nix { };
       harness-plugins-sync = prev.callPackage ./harness-plugins-sync/package.nix {
         clojureNixLocker = inputs.clojure-nix-locker;
         pkgs = prev;

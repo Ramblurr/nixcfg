@@ -9,6 +9,7 @@ let
         ../modules/dev/llms/agents.nix
         ../modules/dev/llms/clients.nix
         ../modules/dev/llms/pi.nix
+        ../modules/dev/llms/plugins-sync.nix
         ../modules/dev/llms/profile.nix
         (
           { lib, ... }:
@@ -138,11 +139,25 @@ let
   goodWrapper = wrapper (pkgs.writeShellScriptBin "reader" "echo fixture-token");
   badWrapper = wrapper (pkgs.writeShellScriptBin "reader" "exit 1");
 
-  profile =
-    (evaluateSystem {
-      profile.enable = true;
-      proxy.enable = true;
-    }).config.modules.dev.llms;
+  profileSystem = evaluateSystem {
+    profile.enable = true;
+    proxy.enable = true;
+  };
+  profile = profileSystem.config.modules.dev.llms;
+  profileHm =
+    (inputs.home-manager.lib.homeManagerConfiguration {
+      inherit pkgs;
+      modules = [
+        profileSystem.config.myhm
+        {
+          home.username = "test";
+          home.homeDirectory = "/home/test";
+          home.stateVersion = "26.05";
+        }
+      ];
+    }).config;
+  generatedSyncConfig = pkgs.writeText "ol-plugins-sync-config.edn" profileHm.xdg.configFile."ol-plugins-sync/config.edn".text;
+  codexSystemHook = builtins.readFile profileSystem.config.environment.etc."codex/config.toml".source;
   cliproxyModelIds = map (model: model.id) profile.pi.instances.pi.models.providers.cliproxy.models;
   rpcProfile =
     (evaluateSystem {
@@ -257,7 +272,14 @@ assert lib.elem [
 ] profile.codex.removeSettings;
 assert lib.elem [ "env" "ANTHROPIC_AUTH_TOKEN" ] profile.claude.removeSettings;
 assert profile.claude.settings.env.ANTHROPIC_BASE_URL == profile.proxy.url;
-assert lib.all (lib.hasPrefix builtins.storeDir) profile.pi.instances.pi.settings.skills;
+assert profile.pluginsSync.enable;
+assert profile.claude.plugins == { };
+assert profile.codex.plugins == [ ];
+assert profile.codex.marketplaces == [ ];
+assert lib.elem "/home/test/.local/share/ol-plugins-sync/profiles/pi-cli" profile.pi.instances.pi.settings.packages;
+assert lib.elem "/home/test/.local/share/ol-plugins-sync/profiles/pi" profile.pi.instances.pi-t3.settings.packages;
+assert lib.hasInfix "/home/test/.local/share/ol-plugins-sync/packs/harness-plugins/active/plugins/pstack/hooks/session-start.sh" codexSystemHook;
+assert profileHm.systemd.user.timers ? harness-plugins-sync;
 pkgs.runCommand "llm-agents-test"
   {
     nativeBuildInputs = [
@@ -299,6 +321,10 @@ pkgs.runCommand "llm-agents-test"
     diff expected-calls "$home/.config/codex/calls"
 
     python3 ${./pi-proxy-rpc.py} ${lib.getExe pi} ${rpcProfiles}
+
+    # The Nix-generated ol-plugins-sync/config.edn validates against harness-plugins-sync.
+    HOME="$home" ${lib.getExe pkgs.harness-plugins-sync} config --config ${generatedSyncConfig} --json \
+      | jq -e '.["config-exists?"] == true and (.["resolved-profiles"] | any(.id == "pi-cli" and .harness == "pi"))'
 
     touch "$out"
   ''
