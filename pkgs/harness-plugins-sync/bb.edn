@@ -1,5 +1,5 @@
 {:paths ["src"]
- :deps  {metosin/malli              {:mvn/version "0.20.1"}
+ :deps  {metosin/malli              {:mvn/version "0.20.3"}
          io.github.paintparty/sugar {:mvn/version "0.1.0"}}
  :tasks {:init (def paths ["src" "test"])
 
