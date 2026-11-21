@@ -244,10 +244,14 @@
       (select-keys packages names))))
 
 (defn -main
+  "Update the named packages, or all of them. `--list` prints a JSON object
+  from package name to flake export instead."
   [& names]
-  (let [root (repo-root)]
-    (doseq [[_ package] (selected-packages names)]
-      (update-package! root package))))
+  (if (= ["--list"] names)
+    (println (json/generate-string (update-vals packages :nix-name)))
+    (let [root (repo-root)]
+      (doseq [[_ package] (selected-packages names)]
+        (update-package! root package)))))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))

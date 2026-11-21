@@ -54,10 +54,11 @@
       str/trim))
 
 (defn commit-message [pkg old-version new-version]
-  (format "%s: %s -> %s"
-          pkg
-          (str/replace-first old-version #"^v" "")
-          (str/replace-first new-version #"^v" "")))
+  (let [old (str/replace-first old-version #"^v" "")
+        new (str/replace-first new-version #"^v" "")]
+    (if (or (str/blank? old) (str/blank? new) (= old new))
+      (str pkg ": update package")
+      (format "%s: %s -> %s" pkg old new))))
 
 (defn package-path [pkg]
   (if (str/starts-with? (name pkg) "terraform-provider-")
@@ -78,18 +79,41 @@
         (log :info (str "Committing changes: " message))
         (shell "git" "commit" "-m" message "--" path)))))
 
-(defn run-pi-updates [no-commit keep-going]
-  (if (zero? (:exit (shell {:continue keep-going} "bb" "pkgs/pi/update.bb")))
-    (do (doseq [dir (->> (fs/list-dir "pkgs/pi")
-                         (filter fs/directory?)
-                         sort)]
-          (let [path (str dir)
-                pkg  (str (fs/file-name dir))]
-            (commit-changes path (str pkg ": update package") no-commit)))
-        true)
-    (do (log :error "Failed to run pkgs/pi/update.bb")
-        (restore-changes "pkgs/pi")
-        false)))
+(defn script-package
+  "A package with a passthru.updateScript, named by its flake export."
+  [pkg]
+  {:name   pkg
+   :path   (package-path pkg)
+   :update #(run-update-script pkg)})
+
+(defn pi-packages
+  "Packages that pkgs/pi/update.bb updates, named by their flake exports."
+  []
+  (->> (json/parse-string (:out (shell {:out :string} "bb" "pkgs/pi/update.bb" "--list")))
+       (map (fn [[dir export]]
+              {:name   export
+               :path   (str "pkgs/pi/" dir)
+               :update (fn []
+                         (log :info (str "Updating " export))
+                         (zero? (:exit (shell {:continue true} "bb" "pkgs/pi/update.bb" dir))))}))
+       (sort-by :name)))
+
+(defn update-package
+  "Update, then commit or restore one package. Returns its name when it failed."
+  [{:keys [name path update]} {:keys [no-commit keep-going]}]
+  (let [old-version (fetch-package-version name)]
+    (cond
+      (update)
+      (do (commit-changes path (commit-message name old-version (fetch-package-version name)) no-commit)
+          nil)
+
+      keep-going
+      (do (restore-changes path)
+          name)
+
+      :else
+      (do (log :error (str "Aborting: failed to update " name))
+          (System/exit 1)))))
 
 (defn -main [& args]
   (let [changes (tracked-file-changes)]
@@ -103,33 +127,18 @@
                                                                  :desc "Stage changes but don't commit"}
                                                     :keep-going {:coerce :boolean
                                                                  :desc "Restore a failed package and continue, then exit non-zero"}}})
-        {:keys [no-commit keep-going]} opts
         packages-arg (vec args)
-        packages-with-updatescript (get-packages-with-update-script)
+        available (concat (map script-package (get-packages-with-update-script))
+                          (pi-packages))
+        unmatched (remove (set (map :name available)) packages-arg)
         packages-to-update (if (empty? packages-arg)
-                             packages-with-updatescript
-                             (filterv #(some #{%} packages-arg) packages-with-updatescript))
-        update-package (fn [pkg]
-                         (let [old-version (fetch-package-version pkg)]
-                           (cond
-                             (run-update-script pkg)
-                             (do (commit-changes (package-path pkg)
-                                                 (commit-message pkg old-version (fetch-package-version pkg))
-                                                 no-commit)
-                                 nil)
-
-                             keep-going
-                             (do (restore-changes (package-path pkg))
-                                 pkg)
-
-                             :else
-                             (do (log :error (str "Aborting: failed to update " pkg))
-                                 (System/exit 1)))))]
+                             available
+                             (filterv #(some #{(:name %)} packages-arg) available))]
+    (when (seq unmatched)
+      (log :error (str "No updatable package named: " (str/join " " unmatched)))
+      (System/exit 1))
     (log :info (format "Found %d packages to update" (count packages-to-update)))
-    (let [failed (cond-> (filterv some? (mapv update-package packages-to-update))
-                   (and (empty? packages-arg)
-                        (not (run-pi-updates no-commit keep-going)))
-                   (conj "pi"))]
+    (let [failed (filterv some? (mapv #(update-package % opts) packages-to-update))]
       (when (seq failed)
         (log :error (str "Failed packages: " (str/join " " failed)))
         (System/exit 1)))))
