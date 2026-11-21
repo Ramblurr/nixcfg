@@ -1373,6 +1373,40 @@
     }
   },
   {
+    "id": "tencent/hy4-flash",
+    "name": "Tencent: Hy4 flash",
+    "api": "openai-completions",
+    "reasoning": true,
+    "input": [
+      "text",
+      "image"
+    ],
+    "cost": {
+      "input": 0.035,
+      "output": 0.1405,
+      "cacheRead": 0.0015,
+      "cacheWrite": 0
+    },
+    "contextWindow": 1048576,
+    "maxTokens": 65536,
+    "compat": {
+      "supportsDeveloperRole": false,
+      "thinkingFormat": "openrouter",
+      "supportsStrictMode": true,
+      "sendSessionAffinityHeaders": true
+    },
+    "inputLimits": {
+      "images": {
+        "resize": {
+          "maxWidth": 2000,
+          "maxHeight": 2000,
+          "maxBytes": 4718592,
+          "jpegQuality": 80
+        }
+      }
+    }
+  },
+  {
     "id": "z-ai/glm-5.3-flash",
     "name": "Z.ai: GLM 5.3 Flash",
     "api": "openai-completions",

@@ -26,9 +26,10 @@ client key resolves.
 OpenRouter uses `api-keys.openai-compatibility`, with its upstream key read from
 `op://LLM/OpenRouter/credential`. Model IDs must be listed explicitly in the host
 settings. Quine exposes `google/gemini-4-carbon`, `z-ai/glm-5.3-flash`,
-`deepseek/deepseek-v4.1-flash-1017`, `moonshotai/kimi-k3.1-pro`, and `tencent/hy4`.
+`deepseek/deepseek-v4.1-flash-1017`, `moonshotai/kimi-k3.1-pro`, `tencent/hy4`, and
+`tencent/hy4-flash`.
 Pi discovers them under `cliproxy`, using its OpenRouter catalog for
-protocol, limits, and metered prices. ECA's `openrouter` provider uses the same five
+protocol, limits, and metered prices. ECA's `openrouter` provider uses the same six
 models through `nono-eca`. Nono forwards its OpenRouter route to CLIProxyAPI with
 the proxy client credential, so ECA never retrieves the upstream OpenRouter key.
 The wrapper preserves unrelated `ECA_CONFIG` settings and configures the provider

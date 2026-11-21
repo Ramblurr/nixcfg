@@ -129,5 +129,6 @@ rec {
     "deepseek/deepseek-v4.1-flash-1017"
     "moonshotai/kimi-k3.1-pro"
     "tencent/hy4"
+    "tencent/hy4-flash"
   ];
 }
