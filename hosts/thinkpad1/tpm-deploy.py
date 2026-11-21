@@ -614,6 +614,31 @@ def load_state(device, luks):
     return state
 
 
+def store_root(path):
+    return Path("/nix/store") / Path(path).relative_to("/nix/store").parts[0]
+
+
+def same_loader(known, loader):
+    # A rebuilt systemd can ship byte-identical loader bytes at a new store path.
+    # Policies measure bytes, so either path describes the same policy.
+    paths = [Path(known), Path(loader)]
+    return all(
+        path.is_file() and path.resolve().is_relative_to(store_root(path))
+        for path in paths
+    ) and file_hash(paths[0]) == file_hash(paths[1])
+
+
+def remember(state, policy, context):
+    # Keep the recorded loader path, which its loader profile already roots.
+    known = state["contexts"].get(policy)
+    if not (
+        known
+        and known["system"] == context["system"]
+        and same_loader(known["loader"], context["loader"])
+    ):
+        state["contexts"][policy] = context
+
+
 def retain_contexts(state, keep):
     # System profiles provide BLS entries; separate loader profiles are only GC roots.
     directory = Path("/nix/var/nix/profiles/system-profiles")
@@ -623,13 +648,23 @@ def retain_contexts(state, keep):
             len(policy) == 64 and all(c in "0123456789abcdef" for c in policy),
             "invalid policy name",
         )
-        loader_root = (
-            Path("/nix/store")
-            / Path(context["loader"]).relative_to("/nix/store").parts[0]
-        )
+        loader = Path(context["loader"])
+        loader_root = store_root(loader)
+        loader_profile = directory.parent / f"thinkpad1-tpm-loader-{policy}"
+        if policy in keep and loader_profile.exists():
+            # Repair journals that recorded an equivalent loader the profile does not root.
+            rooted = loader_profile.resolve(strict=True)
+            alias = rooted / loader.relative_to(loader_root)
+            if (
+                rooted != loader_root
+                and rooted.parent == Path("/nix/store")
+                and same_loader(alias, loader)
+            ):
+                context["loader"] = str(alias)
+                loader_root = rooted
         profiles = {
             directory / f"thinkpad1-tpm-{policy}": Path(context["system"]),
-            directory.parent / f"thinkpad1-tpm-loader-{policy}": loader_root,
+            loader_profile: loader_root,
         }
         for profile, target in profiles.items():
             generation = profile.with_name(profile.name + "-1-link")
@@ -641,15 +676,20 @@ def retain_contexts(state, keep):
                     "managed rollback profile changed",
                 )
             else:
-                for path in (profile, generation):
-                    if path.is_symlink():
-                        require(
-                            path.resolve() == target,
-                            "managed rollback profile changed; refusing removal",
-                        )
-                        path.unlink()
-                    else:
-                        require(not path.exists(), "unexpected managed profile file")
+                links = [path for path in (profile, generation) if path.is_symlink()]
+                require(
+                    all(
+                        path.is_symlink() or not path.exists()
+                        for path in (profile, generation)
+                    ),
+                    "unexpected managed profile file",
+                )
+                require(
+                    all(path.resolve() == target for path in links),
+                    "managed rollback profile changed; refusing removal",
+                )
+                for path in links:
+                    path.unlink()
         if policy not in keep:
             del state["contexts"][policy]
     save_state(state)
@@ -902,10 +942,11 @@ def deploy(action, candidate):
         [current_policy]
         + [policy for policy in state["confirmed"] if policy != current_policy]
     )[:2]
-    state["contexts"][current_policy] = {
-        "system": str(booted),
-        "loader": str(observed_loader),
-    }
+    remember(
+        state,
+        current_policy,
+        {"system": str(booted), "loader": str(observed_loader)},
+    )
     save_state(state)
     wanted = {}
     specs = {booted: old, candidate: new, previous_system: previous_spec}
@@ -942,9 +983,8 @@ def deploy(action, candidate):
     for policy, (context, future) in wanted.items():
         if not matching_tokens(before, policy):
             state = prepare_policy(device, state, context, future, current_tokens[0])
-    state["contexts"].update(
-        {policy: context for policy, (context, _) in wanted.items()}
-    )
+    for policy, (context, _) in wanted.items():
+        remember(state, policy, context)
     save_state(state)
     prepared = metadata(device)
     for section in ("keyslots", "tokens"):

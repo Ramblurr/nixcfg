@@ -122,6 +122,15 @@ pkgs.testers.runNixOSTest {
         imports = [ encryptedConfig ];
         systemd.package = bootloaderSystemd;
       };
+      specialisation.rebuiltSystemd.configuration = {
+        imports = [ encryptedConfig ];
+        # Same systemd-boot bytes at a new store path, as after a dependency rebuild.
+        systemd.package = pkgs.systemd.overrideAttrs (old: {
+          postFixup = (old.postFixup or "") + ''
+            touch "$out/share/tpm-deploy-rebuilt"
+          '';
+        });
+      };
       specialisation.failedLoader.configuration = {
         imports = [ encryptedConfig ];
         systemd.package = bootloaderSystemd;
@@ -163,6 +172,7 @@ pkgs.testers.runNixOSTest {
       changedKernel = nodes.machine.specialisation.changedKernel.configuration.system.build.toplevel;
       changedBootloader =
         nodes.machine.specialisation.changedBootloader.configuration.system.build.toplevel;
+      rebuiltSystemd = nodes.machine.specialisation.rebuiltSystemd.configuration.system.build.toplevel;
       invalidArguments =
         nodes.machine.specialisation.invalidArguments.configuration.system.build.toplevel;
       emptyArguments = nodes.machine.specialisation.emptyArguments.configuration.system.build.toplevel;
@@ -184,6 +194,7 @@ pkgs.testers.runNixOSTest {
           changedMicrocode
           changedKernel
           changedBootloader
+          rebuiltSystemd
           invalidArguments
           emptyArguments
         ];
@@ -546,6 +557,19 @@ pkgs.testers.runNixOSTest {
                   # The booted closure has the old systemd package, but firmware
                   # used the newly installed shared bootloader.
                   machine.succeed(f"{candidate}/thinkpad1-tpm-deploy boot {candidate}")
+      with subtest("an identical loader at a new store path keeps rollback profiles"):
+          machine.succeed("cmp ${encrypted}/systemd/lib/systemd/boot/efi/systemd-bootx64.efi ${rebuiltSystemd}/systemd/lib/systemd/boot/efi/systemd-bootx64.efi")
+          for candidate in ["${rebuiltSystemd}", "${encrypted}"]:
+              machine.succeed(f"{candidate}/thinkpad1-tpm-deploy boot {candidate}")
+              contexts = json.loads(machine.succeed("cat /var/lib/thinkpad1-tpm-deploy/state.json"))["contexts"]
+              for policy, context in contexts.items():
+                  loader_root = "/".join(context["loader"].split("/")[:4])
+                  machine.succeed(f"test $(readlink -f /nix/var/nix/profiles/thinkpad1-tpm-loader-{policy}) = {loader_root}")
+              machine.succeed("sync")
+              machine.crash()
+              machine.wait_for_unit("multi-user.target")
+              machine.succeed(f"grep -F 'init={candidate}/init' /proc/cmdline")
+              machine.succeed("findmnt -n -o SOURCE / | grep /dev/mapper/cryptroot")
       with subtest("unexpected cached boot sequence cannot authorize preparation"):
           machine.succeed("${encrypted}/thinkpad1-tpm-deploy boot ${encrypted}")
           cache_path = "/run/thinkpad1-tpm-deploy/measurements.json"

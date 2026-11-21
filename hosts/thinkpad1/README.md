@@ -286,6 +286,8 @@ Native profiles named `thinkpad1-tpm-<policy>` under
 boot loader and protect them from garbage collection. Separate profiles named
 `thinkpad1-tpm-loader-<policy>` under `/nix/var/nix/profiles/` retain each policy's
 loader package, which can differ from its system's package after a manual rollback.
+A rebuilt systemd can ship byte-identical loader bytes at a new store path; the
+journal keeps the path its loader profile already roots.
 Do not edit either set of managed profiles.
 
 Failure handling:
