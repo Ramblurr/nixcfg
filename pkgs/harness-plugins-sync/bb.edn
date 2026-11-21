@@ -1,10 +1,35 @@
 {:paths ["src"]
  :deps  {metosin/malli              {:mvn/version "0.20.1"}
          io.github.paintparty/sugar {:mvn/version "0.1.0"}}
- :tasks {test {:extra-paths ["test"]
-               :requires    ([clojure.test :as t]
-                             [harness-plugins-sync.cli-test]
-                             [harness-plugins-sync.core-test])
-               :task        (let [r (t/run-tests 'harness-plugins-sync.cli-test
-                                                 'harness-plugins-sync.core-test)]
-                              (System/exit (+ (:fail r) (:error r))))}}}
+ :tasks {:init (def paths ["src" "test"])
+
+         lint
+         {:doc  "Run clj-kondo on source and tests"
+          :task (if (seq *command-line-args*)
+                  (apply shell "clj-kondo" "--lint" *command-line-args*)
+                  (apply shell "clj-kondo --lint" paths))}
+
+         test
+         {:doc         "Run test suite"
+          :extra-paths ["test"]
+          :requires    ([clojure.test :as t]
+                        [harness-plugins-sync.cli-test]
+                        [harness-plugins-sync.core-test])
+          :task        (let [r (t/run-tests 'harness-plugins-sync.cli-test
+                                            'harness-plugins-sync.core-test)]
+                         (System/exit (+ (:fail r) (:error r))))}
+
+         build
+         {:doc  "Generate standalone harness-plugins-sync uberscript from source"
+          :task (do
+                  (println "Building uberscript...")
+                  (babashka.fs/delete-if-exists "harness-plugins-sync")
+                  (shell {:err :string} "bb" "uberscript" "harness-plugins-sync" "-m" "harness-plugins-sync.main")
+                  (let [content (slurp "harness-plugins-sync")]
+                    (spit "harness-plugins-sync" (str "#!/usr/bin/env -S bb --config /dev/null\n" content)))
+                  (shell "chmod" "+x" "harness-plugins-sync")
+                  (println "Done. Generated: harness-plugins-sync"))}
+
+         ci
+         {:doc     "Run lint and test suite"
+          :depends [lint test]}}}

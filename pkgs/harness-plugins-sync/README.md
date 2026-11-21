@@ -44,6 +44,9 @@ provider instances automatically.
 ## Development & Tests
 
 ```sh
+./harness-plugins-sync help
+./harness-plugins-sync status
+bb build         # regenerate standalone ./harness-plugins-sync uberscript
 bb test
-clj-kondo --lint src test
+bb lint
 ```
