@@ -8,56 +8,6 @@ _final: prev:
   # TODO: Remove once https://github.com/Mic92/nix-update/issues/687 is fixed.
   nix-update = prev.nix-update.override { nix = prev.nixVersions.nix_2_34; };
 
-  # TODO: Remove once nixpkgs includes https://github.com/maralorn/nix-output-monitor/pull/321.
-  nix-output-monitor = prev.nix-output-monitor.overrideAttrs (old: {
-    patches =
-      (old.patches or [ ])
-      ++
-        prev.lib.optionals
-          (
-            !(builtins.any (
-              patch: prev.lib.hasInfix "d48ff7935da72a5a5764ee8c5358d38417b0f337" (toString patch)
-            ) (old.patches or [ ]))
-          )
-          [
-            (prev.fetchpatch {
-              url = "https://github.com/maralorn/nix-output-monitor/compare/c40cb120262d9e9b1b988898708b124f6ffc0913..d48ff7935da72a5a5764ee8c5358d38417b0f337.diff";
-              stripLen = 1;
-              hash = "sha256-JPC3AXycs5oTXe9J1g7DWNBEYYr60AM78R3sajP9cgo=";
-            })
-          ];
-  });
-
-  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575319 reaches our pin.
-  hplip = prev.hplip.overrideAttrs (old: {
-    preFixup =
-      builtins.replaceStrings
-        [ ''$makeWrapperArgs "''${gappsWrapperArgs[@]}"'' ]
-        [ (prev.lib.escapeShellArgs old.makeWrapperArgs) ]
-        old.preFixup;
-  });
-
-  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/576063 reaches our pin.
-  pythonPackagesExtensions = (prev.pythonPackagesExtensions or [ ]) ++ [
-    (_pythonFinal: pythonPrev: {
-      pyopenjtalk-plus = pythonPrev.pyopenjtalk-plus.overridePythonAttrs (old: {
-        postPatch = (old.postPatch or "") + ''
-          substituteInPlace tests/test_frontend.py \
-            --replace-fail 'match="must be str"' 'match="must be str|Expected str"'
-        '';
-      });
-    })
-  ];
-
-  # TODO: Remove once https://github.com/NixOS/nixpkgs/pull/575801 reaches our pin.
-  open-webui = prev.open-webui.overridePythonAttrs {
-    makeWrapperArgs = [
-      "--set"
-      "FRONTEND_BUILD_DIR"
-      "${prev.open-webui.frontend}/share/open-webui"
-    ];
-  };
-
   # Quine's running CUDA/ONNX stack; these exact outputs are available in Flox.
   # TODO: wait for https://github.com/NixOS/nixpkgs/pull/575979
   # (CUDA patchelf workaround) only after verifying the exact CUDA/ONNX outputs and

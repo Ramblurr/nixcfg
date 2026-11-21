@@ -34,7 +34,7 @@
         # as in flake/nixos.nix.
         overlays = [
           (final: prev: {
-            inherit ((import ../overlays/last-known-good.nix) final prev) nix-output-monitor nix-update;
+            inherit ((import ../overlays/last-known-good.nix) final prev) nix-update;
           })
         ]
         ++ ourOverlays
