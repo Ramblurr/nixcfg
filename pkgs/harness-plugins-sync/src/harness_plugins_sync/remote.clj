@@ -18,22 +18,44 @@
     (catch Exception _
       (or (System/getenv "HOSTNAME") "localhost"))))
 
+(defn local-username
+  "Returns the current OS username."
+  []
+  (or (System/getenv "USER") (System/getProperty "user.name") ""))
+
+(defn- peer-host [spec]
+  (let [s (str spec)
+        i (str/index-of s "@")]
+    (if i (subs s (inc i)) s)))
+
+(defn- peer-user [spec]
+  (let [s (str spec)
+        i (str/index-of s "@")]
+    (when i (subs s 0 i))))
+
+(defn- local-peer? [spec self-host self-user]
+  (and (= (peer-host spec) self-host)
+       (let [u (peer-user spec)]
+         (or (nil? u) (= u self-user)))))
+
 (defn target-plan
   "Computes `{:local? bool :remotes [host ...]}` from `peers`, `all?`, `hosts`,
-  and `self-host`."
-  [peers all? hosts self-host]
-  (let [explicit (vec (distinct hosts))]
-    (cond
-      (seq explicit)
-      {:local?  (boolean (some #{self-host} explicit))
-       :remotes (vec (remove #{self-host} explicit))}
+  and `self-host` (matching optional `user@host` peers against `self-user`)."
+  ([peers all? hosts self-host]
+   (target-plan peers all? hosts self-host (local-username)))
+  ([peers all? hosts self-host self-user]
+   (let [explicit (vec (distinct hosts))]
+     (cond
+       (seq explicit)
+       {:local?  (boolean (some #(local-peer? % self-host self-user) explicit))
+        :remotes (vec (remove #(local-peer? % self-host self-user) explicit))}
 
-      all?
-      {:local?  true
-       :remotes (vec (distinct (remove #{self-host} peers)))}
+       all?
+       {:local?  true
+        :remotes (vec (distinct (remove #(local-peer? % self-host self-user) peers)))}
 
-      :else
-      {:local? true :remotes []})))
+       :else
+       {:local? true :remotes []}))))
 
 (defn forward-flags
   "Builds CLI arguments forwarded to a remote `harness-plugins-sync` invocation."

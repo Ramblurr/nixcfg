@@ -173,9 +173,9 @@ in
     peers = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "quine"
-        "witt"
-        "thingstead"
+        "${config.modules.users.primaryUser.username}@quine"
+        "${config.modules.users.primaryUser.username}@witt"
+        "${config.modules.users.primaryUser.username}@thingstead"
       ];
       description = "SSH peer hostnames targeted by `harness-plugins-sync sync --all`.";
     };

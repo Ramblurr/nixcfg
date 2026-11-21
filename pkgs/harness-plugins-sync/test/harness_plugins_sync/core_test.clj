@@ -10,6 +10,7 @@
    [harness-plugins-sync.config :as cfg]
    [harness-plugins-sync.main :as main]
    [harness-plugins-sync.packs :as packs]
+   [harness-plugins-sync.remote :as remote]
    [malli.core :as m]))
 
 (def ^:private plain {:color-out? false :color-err? false :animate? false})
@@ -280,6 +281,10 @@
                     {:host "offline-peer" :status :unreachable}]
                    (mapv #(select-keys % [:host :status]) (:peers data))))
             (is (not (str/includes? (:out res) "\u001b")))))
+        (testing "target-plan matches user@host peers against local user and host"
+          (is (= {:local? true :remotes ["ramblurr@witt" "hirde@quine"]}
+                 (remote/target-plan ["ramblurr@quine" "ramblurr@witt" "hirde@quine"]
+                                     true [] "quine" "ramblurr"))))
         (testing "doctor runs read-only and matches its schema"
           (let [res  (invoke "doctor" "--config" (str cfg-f) "--edn")
                 data (edn/read-string (:out res))]
