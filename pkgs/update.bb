@@ -59,6 +59,15 @@
           (str/replace-first old-version #"^v" "")
           (str/replace-first new-version #"^v" "")))
 
+(defn package-path [pkg]
+  (if (str/starts-with? (name pkg) "terraform-provider-")
+    (package-file pkg)
+    (str "pkgs/" (name pkg))))
+
+(defn restore-changes [path]
+  (log :info (str "Restoring tracked changes in " path))
+  (shell "git" "checkout" "HEAD" "--" path))
+
 (defn commit-changes [path message no-commit]
   (shell "git" "add" "-u" "--" path)
   (if (zero? (:exit (sh {:continue true} "git" "diff" "--cached" "--quiet" "--" path)))
@@ -69,14 +78,18 @@
         (log :info (str "Committing changes: " message))
         (shell "git" "commit" "-m" message "--" path)))))
 
-(defn run-pi-updates [no-commit]
-  (shell "bb" "pkgs/pi/update.bb")
-  (doseq [dir (->> (fs/list-dir "pkgs/pi")
-                   (filter fs/directory?)
-                   sort)]
-    (let [path (str dir)
-          pkg  (str (fs/file-name dir))]
-      (commit-changes path (str pkg ": update package") no-commit))))
+(defn run-pi-updates [no-commit keep-going]
+  (if (zero? (:exit (shell {:continue keep-going} "bb" "pkgs/pi/update.bb")))
+    (do (doseq [dir (->> (fs/list-dir "pkgs/pi")
+                         (filter fs/directory?)
+                         sort)]
+          (let [path (str dir)
+                pkg  (str (fs/file-name dir))]
+            (commit-changes path (str pkg ": update package") no-commit)))
+        true)
+    (do (log :error "Failed to run pkgs/pi/update.bb")
+        (restore-changes "pkgs/pi")
+        false)))
 
 (defn -main [& args]
   (let [changes (tracked-file-changes)]
@@ -86,28 +99,40 @@
         (println (str "  " change)))
       (System/exit 1)))
   (let [{:keys [opts args]} (cli/parse-args args
-                                            {:spec {:no-commit {:coerce :boolean
-                                                                :desc "Stage changes but don't commit"}}})
-        no-commit (:no-commit opts)
+                                            {:spec {:no-commit  {:coerce :boolean
+                                                                 :desc "Stage changes but don't commit"}
+                                                    :keep-going {:coerce :boolean
+                                                                 :desc "Restore a failed package and continue, then exit non-zero"}}})
+        {:keys [no-commit keep-going]} opts
         packages-arg (vec args)
         packages-with-updatescript (get-packages-with-update-script)
         packages-to-update (if (empty? packages-arg)
                              packages-with-updatescript
-                             (filterv #(some #{%} packages-arg) packages-with-updatescript))]
+                             (filterv #(some #{%} packages-arg) packages-with-updatescript))
+        update-package (fn [pkg]
+                         (let [old-version (fetch-package-version pkg)]
+                           (cond
+                             (run-update-script pkg)
+                             (do (commit-changes (package-path pkg)
+                                                 (commit-message pkg old-version (fetch-package-version pkg))
+                                                 no-commit)
+                                 nil)
+
+                             keep-going
+                             (do (restore-changes (package-path pkg))
+                                 pkg)
+
+                             :else
+                             (do (log :error (str "Aborting: failed to update " pkg))
+                                 (System/exit 1)))))]
     (log :info (format "Found %d packages to update" (count packages-to-update)))
-    (doseq [pkg packages-to-update]
-      (let [old-version (fetch-package-version pkg)]
-        (if (run-update-script pkg)
-          (commit-changes (if (str/starts-with? (name pkg) "terraform-provider-")
-                            (package-file pkg)
-                            (str "pkgs/" (name pkg)))
-                          (commit-message pkg old-version (fetch-package-version pkg))
-                          no-commit)
-          (do
-            (log :error (str "Aborting: failed to update " pkg))
-            (System/exit 1)))))
-    (when (empty? packages-arg)
-      (run-pi-updates no-commit))))
+    (let [failed (cond-> (filterv some? (mapv update-package packages-to-update))
+                   (and (empty? packages-arg)
+                        (not (run-pi-updates no-commit keep-going)))
+                   (conj "pi"))]
+      (when (seq failed)
+        (log :error (str "Failed packages: " (str/join " " failed)))
+        (System/exit 1)))))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (apply -main *command-line-args*))
