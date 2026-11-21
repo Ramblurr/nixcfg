@@ -47,7 +47,7 @@
       '  diff            Show package changes against the running system (nvd).' \
       '                  Copies the build to remote hosts; activates nothing.' \
       "" \
-      '  Names may be separated by spaces or commas. Guests support switch only.' \
+      '  Guests support switch only.' \
       "" \
       'Options' \
       '  build           No options; accepts one or more names.' \

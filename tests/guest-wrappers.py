@@ -90,7 +90,7 @@ class Wrappers(unittest.TestCase):
 
     def test_vsock_runs_upstream_switch_on_host_for_both_transports(self):
         self.env["VSOCK"] = "1"
-        commands = self.run_wrapper(DEPLOY, "switch", "guest,guest2")
+        commands = self.run_wrapper(DEPLOY, "switch", "guest", "guest2")
         self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
         ssh = [c for c in commands if c[0] == "ssh"]
         self.assertEqual(len(ssh), 4)
@@ -172,7 +172,7 @@ class Wrappers(unittest.TestCase):
                 self.assertTrue(all(c[0] == "git" for c in commands))
 
     def test_mixed_deploy(self):
-        commands = self.run_wrapper(DEPLOY, "switch", "host", "guest,guest2")
+        commands = self.run_wrapper(DEPLOY, "switch", "host", "guest", "guest2")
         self.assertIn(["microvm-rebuild", "root@host", "root@192.0.2.24"], commands)
         copies = [c for c in commands if c[:2] == ["nix", "copy"]]
         self.assertEqual(len(copies), 1)
@@ -183,11 +183,11 @@ class Wrappers(unittest.TestCase):
         for action in ("boot", "test", "dry-activate", "diff", "invalid"):
             with self.subTest(action=action):
                 self.log.unlink(missing_ok=True)
-                commands = self.run_wrapper(DEPLOY, action, "host,guest", success=False)
+                commands = self.run_wrapper(DEPLOY, action, "host", "guest", success=False)
                 self.assertTrue(all(c[0] == "git" or c[:2] == ["nix", "eval"] for c in commands))
 
     def test_unknown_and_invalid_names(self):
-        for names in (["unknown"], ["host,unknown"], ["host", "unknown"], ["guest.bad"], ["host,"]):
+        for names in (["unknown"], ["host", "unknown"], ["guest.bad"], ["host,guest"]):
             with self.subTest(names=names):
                 self.log.unlink(missing_ok=True)
                 commands = self.run_wrapper(DEPLOY, "switch", *names, success=False)
@@ -195,7 +195,7 @@ class Wrappers(unittest.TestCase):
 
     def test_metadata_failure_blocks_build_and_deploy(self):
         self.env["FAIL_METADATA"] = "1"
-        for executable, names in ((BUILD, ["host", "guest"]), (DEPLOY, ["switch", "host,guest"])):
+        for executable, names in ((BUILD, ["host", "guest"]), (DEPLOY, ["switch", "host", "guest"])):
             with self.subTest(executable=executable):
                 self.log.unlink(missing_ok=True)
                 commands = self.run_wrapper(executable, *names, success=False)

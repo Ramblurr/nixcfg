@@ -77,7 +77,7 @@ let
         exit 1
       }
 
-      printf '%s\n' "''${POSITIONAL_ARGS[@]:1}" | tr , '\n' | sort -u | readarray -t HOSTS
+      printf '%s\n' "''${POSITIONAL_ARGS[@]:1}" | sort -u | readarray -t HOSTS
 
       resolve_targets "''${HOSTS[@]}" || die "Failed to resolve deployment targets"
 

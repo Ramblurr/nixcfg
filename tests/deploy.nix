@@ -149,7 +149,7 @@ pkgs.runCommand "deploy-preserves-activation-failures-and-addams-transport" { } 
   [ ! -s "$sshLog" ] || { echo "rejected command reached SSH" >&2; exit 1; }
 
   # diff compares each host's running system and activates nothing.
-  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy diff debord "$localHost",addams thinkpad1 > "$TMPDIR/diff.stdout" 2> "$TMPDIR/diff.stderr"
+  PATH="$fakeBin:$PATH" ${deploy}/bin/deploy diff debord "$localHost" addams thinkpad1 > "$TMPDIR/diff.stdout" 2> "$TMPDIR/diff.stderr"
   grep -Fx "root@debord|nvd --color always diff /run/current-system $fakeSystem" "$sshLog"
   grep -Fx "root@addams-lan|nvd --color always diff /run/current-system $fakeSystem" "$sshLog"
   grep -Fx "root@thinkpad1|nvd --color always diff /run/current-system $fakeSystem" "$sshLog"
