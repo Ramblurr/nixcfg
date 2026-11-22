@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/netip"
 	"strings"
+	"time"
 
 	"tailscale.com/client/local"
 	"tailscale.com/ipn"
@@ -46,17 +47,20 @@ func unmap(ap netip.AddrPort) netip.AddrPort {
 	return netip.AddrPortFrom(ap.Addr().Unmap(), ap.Port())
 }
 
+// exitNodeWait bounds how long startup waits for -exit-node to resolve. A
+// start from a cached netmap waits on control, which reached through a
+// proxy can take several seconds to answer.
+const exitNodeWait = time.Minute
+
 // setExitNode makes the node's prefs select exitNode, a Tailscale IP or
 // peer name, or select none when exitNode is empty. Prefs persist in the
 // state directory, so an empty flag clears an exit node an earlier run set.
+// It waits until ctx ends for exitNode to resolve to a peer.
 func setExitNode(ctx context.Context, lc *local.Client, exitNode string) error {
 	var prefs ipn.Prefs
 	if exitNode != "" {
-		status, err := lc.Status(ctx)
-		if err != nil {
-			return fmt.Errorf("get tailscale status: %w", err)
-		}
-		if err := prefs.SetExitNodeIP(exitNode, status); err != nil {
+		var err error
+		if prefs, err = resolveExitNode(ctx, lc, exitNode); err != nil {
 			return err
 		}
 	}
@@ -76,4 +80,39 @@ func setExitNode(ctx context.Context, lc *local.Client, exitNode string) error {
 	}
 	slog.Info("using exit node", slog.String("exit_node", exitNode), slog.String("id", string(got.ExitNodeID)))
 	return nil
+}
+
+// resolveExitNode returns prefs that select exitNode once the netmap has a
+// peer it names. A node started from its netmap disk cache is Running
+// before control sends the live netmap, and that cache may lack the peer,
+// so the lookup runs again on every peer change until ctx ends.
+func resolveExitNode(ctx context.Context, lc *local.Client, exitNode string) (ipn.Prefs, error) {
+	// The watch starts before the first lookup, so a change that lands
+	// between a lookup and the next wait still wakes it.
+	w, err := lc.WatchIPNBus(ctx, ipn.NotifyInitialState|ipn.NotifyPeerChanges)
+	if err != nil {
+		return ipn.Prefs{}, fmt.Errorf("watch tailscale: %w", err)
+	}
+	defer w.Close()
+
+	var lookupErr error
+	stopped := func(err error) error {
+		if lookupErr != nil && ctx.Err() != nil {
+			return fmt.Errorf("exit node %q did not resolve before the deadline: %w", exitNode, lookupErr)
+		}
+		return err
+	}
+	for {
+		if _, err := w.Next(); err != nil {
+			return ipn.Prefs{}, stopped(fmt.Errorf("watch tailscale: %w", err))
+		}
+		status, err := lc.Status(ctx)
+		if err != nil {
+			return ipn.Prefs{}, stopped(fmt.Errorf("get tailscale status: %w", err))
+		}
+		var prefs ipn.Prefs
+		if lookupErr = prefs.SetExitNodeIP(exitNode, status); lookupErr == nil {
+			return prefs, nil
+		}
+	}
 }

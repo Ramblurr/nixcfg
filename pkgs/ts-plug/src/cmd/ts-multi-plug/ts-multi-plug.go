@@ -214,7 +214,14 @@ func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 	}
 
 	// Select the exit node before any listener can dial.
-	if err := setExitNode(ctx, lc, *flagExitNode); err != nil {
+	exitCtx, cancelExit := context.WithTimeout(ctx, exitNodeWait)
+	err = setExitNode(exitCtx, lc, *flagExitNode)
+	cancelExit()
+	if err != nil {
+		if ctx.Err() != nil {
+			slog.Info("signal received during startup, shutting down")
+			return nil
+		}
 		return fmt.Errorf("set exit node: %w", err)
 	}
 	viaNetstack, err := newNetstackDial(ts)
