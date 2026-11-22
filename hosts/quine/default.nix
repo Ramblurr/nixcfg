@@ -491,7 +491,6 @@ in
         "*/*.tmp"
         "*/*.swp"
         "*/*~"
-        "*/*.lock"
         "*/*-nas"
         "*/.Trash"
         "*/.terraform"
