@@ -43,20 +43,10 @@ const exitNodeCaps = `{
 // tailnet: testcontrol and an in-process DERP. The egress dials "internet"
 // addresses through Server.Dial, which maps them to loopback listeners.
 func TestExitNode(t *testing.T) {
-	netns.SetEnabled(false)
-	t.Cleanup(func() { netns.SetEnabled(true) })
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	control := &testcontrol.Server{
-		DERPMap:        integration.RunDERPAndSTUN(t, logger.Discard, "127.0.0.1"),
-		DNSConfig:      &tailcfg.DNSConfig{Proxied: true},
-		MagicDNSDomain: "tail-scale.ts.net",
-		Logf:           logger.Discard,
-		TagOwners:      map[string][]string{"tag:egress": nil, "tag:t3-alice": nil},
-	}
-	control.HTTPTestServer = httptest.NewServer(control)
-	t.Cleanup(control.HTTPTestServer.Close)
+	control := testControl(t)
 	control.SetGlobalAppCaps(tailcfg.PeerCapMap{policy.CapName: {tailcfg.RawMessage(exitNodeCaps)}})
 
 	tlsSrv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -87,12 +77,11 @@ func TestExitNode(t *testing.T) {
 	s.Decrypter = &HTTPDecrypter{Leaves: leaves, Secrets: fakeSecrets{}, RootCAs: upstreamRoots, Audit: s.Audit}
 
 	egress := tsnetNode(t, control, "egress", "tag:egress")
-	elc, err := egress.LocalClient()
-	if err != nil {
+	if err := s.ExitNode(ctx, egress, time.Minute); err != nil {
 		t.Fatal(err)
 	}
-	s.IDs = NewIdentities(elc, time.Minute)
-	if err := s.ExitNode(ctx, egress); err != nil {
+	elc, err := egress.LocalClient()
+	if err != nil {
 		t.Fatal(err)
 	}
 	est, err := elc.Status(ctx)
@@ -208,6 +197,57 @@ func TestExitNode(t *testing.T) {
 			t.Fatalf("doh status = %d, want 403", res.StatusCode)
 		}
 	})
+}
+
+func TestExitNodeRefusesAStartedServer(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	egress := tsnetNode(t, testControl(t), "egress", "tag:egress")
+	if _, err := egress.LocalClient(); err != nil {
+		t.Fatal(err)
+	}
+	s, _ := newServer(nil, "")
+	if err := s.ExitNode(ctx, egress, time.Minute); err == nil {
+		t.Fatal("ExitNode took a tsnet server that was already started")
+	}
+}
+
+func TestExitNodeRefusesAnUntaggedNode(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	egress := tsnetNode(t, testControl(t), "egress")
+	s, _ := newServer(nil, "")
+	if err := s.ExitNode(ctx, egress, time.Minute); err == nil {
+		t.Fatal("ExitNode advertised exit routes from an untagged node")
+	}
+	lc, err := egress.LocalClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefs, err := lc.GetPrefs(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(prefs.AdvertiseRoutes) != 0 {
+		t.Fatalf("untagged node advertises %v", prefs.AdvertiseRoutes)
+	}
+}
+
+// testControl runs an offline tailnet: testcontrol and an in-process DERP.
+func testControl(t *testing.T) *testcontrol.Server {
+	t.Helper()
+	netns.SetEnabled(false)
+	t.Cleanup(func() { netns.SetEnabled(true) })
+	control := &testcontrol.Server{
+		DERPMap:        integration.RunDERPAndSTUN(t, logger.Discard, "127.0.0.1"),
+		DNSConfig:      &tailcfg.DNSConfig{Proxied: true},
+		MagicDNSDomain: "tail-scale.ts.net",
+		Logf:           logger.Discard,
+		TagOwners:      map[string][]string{"tag:egress": nil, "tag:t3-alice": nil},
+	}
+	control.HTTPTestServer = httptest.NewServer(control)
+	t.Cleanup(control.HTTPTestServer.Close)
+	return control
 }
 
 func tsnetNode(t *testing.T, control *testcontrol.Server, name string, tags ...string) *tsnet.Server {

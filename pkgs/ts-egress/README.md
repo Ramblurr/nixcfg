@@ -180,8 +180,11 @@ VM for the egress, and an auth key for the tag it will advertise.
    ```
 
    Put an auth key for `tag:egress` at `/run/host-secrets/ts-authkey`, or
-   point `authKeyFile` elsewhere. The node logs in with it once and keeps its
-   identity in `/var/lib/ts-egress`. The module runs ts-egress as the node
+   point `authKeyFile` elsewhere. The node must be tagged, or ts-egress
+   stops before it advertises the exit routes: Tailscale serves peer API
+   DNS to an untagged node's same-owner devices without asking ts-egress.
+   The node logs in with it once and keeps its identity in
+   `/var/lib/ts-egress`. The module runs ts-egress as the node
    `egress` and opens its WireGuard port, UDP 41641. The host needs no
    tailscaled.
 

@@ -102,12 +102,6 @@ func run(ctx context.Context, c config, credDir string) error {
 		}
 		srv.Decrypter = d
 	}
-	lc, err := ts.LocalClient()
-	if err != nil {
-		return err
-	}
-	srv.IDs = egress.NewIdentities(lc, c.identityTTL)
-	go srv.IDs.Watch(ctx, lc)
 	go func() {
 		t := time.NewTicker(time.Minute)
 		defer t.Stop()
@@ -120,7 +114,7 @@ func run(ctx context.Context, c config, credDir string) error {
 			}
 		}
 	}()
-	if err := srv.ExitNode(ctx, ts); err != nil {
+	if err := srv.ExitNode(ctx, ts, c.identityTTL); err != nil {
 		return fmt.Errorf("tailnet: %w", err)
 	}
 
