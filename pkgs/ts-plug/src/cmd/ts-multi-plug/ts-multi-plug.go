@@ -60,8 +60,8 @@ var (
 )
 
 func init() {
-	flag.Var(flagHttp, "http-port", "HTTP port mapping (in:out or port)")
-	flag.Var(flagHttps, "https-port", "HTTPS port mapping (in:out or port)")
+	flag.Var(flagHttp, "http-port", "HTTP port mapping (in:out, port, or in:unix:/path/to/socket)")
+	flag.Var(flagHttps, "https-port", "HTTPS port mapping (in:out, port, or in:unix:/path/to/socket)")
 	flag.Var(flagDNS, "dns-port", "DNS port mapping (in:out or port)")
 
 	flag.StringVar(&flagHostname, "hostname", "tsmultiplug", "hostname on tailnet")
@@ -117,6 +117,11 @@ func main() {
 	}
 	if *dnsEnable && !flagDNS.IsSet() {
 		flagDNS.Set("")
+	}
+
+	if flagDNS.Socket != "" {
+		slog.Error("invalid flags", "error", "-dns-port forwards UDP and takes no unix socket upstream")
+		os.Exit(1)
 	}
 
 	dnsResolver, err := parseDNSResolver(*flagExitNode, *flagDNSResolver)
@@ -283,7 +288,7 @@ func startHTTPListener(ctx context.Context, ts *tsnet.Server, lc *local.Client, 
 
 	slog.Info(fmt.Sprintf("listening at (HTTP): http://%s:%d", hostname, portMap.In))
 
-	proxy := createReverseProxy(portMap.Out)
+	proxy := createReverseProxy(portMap)
 	whoisHandler := withForwardedProto("http", createWhoisHandler(lc, proxy))
 
 	httpServer := &http.Server{
@@ -324,7 +329,7 @@ func startHTTPSListener(ctx context.Context, ts *tsnet.Server, lc *local.Client,
 		slog.Info(fmt.Sprintf("listening at (HTTPS): https://%s:%d", hostname, portMap.In))
 	}
 
-	proxy := createReverseProxy(portMap.Out)
+	proxy := createReverseProxy(portMap)
 	whoisHandler := withForwardedProto("https", createWhoisHandler(lc, proxy))
 
 	httpServer := &http.Server{
@@ -437,24 +442,24 @@ func handleDNSQuery(query []byte, clientAddr net.Addr, tsConn net.PacketConn, up
 	slog.Debug("DNS query handled", "client", clientAddr, "size", n)
 }
 
-// createReverseProxy creates a reverse proxy to the specified localhost port
-func createReverseProxy(port int) *httputil.ReverseProxy {
-	u, err := url.Parse(fmt.Sprintf("http://localhost:%d", port))
-	if err != nil {
-		slog.Error("invalid upstream", "error", err)
-		os.Exit(1)
+// createReverseProxy creates a reverse proxy to portMap's localhost port or unix socket
+func createReverseProxy(portMap *PortMapFlag) *httputil.ReverseProxy {
+	dialer := &net.Dialer{Timeout: *flagDialTimeout}
+	dial := dialer.DialContext
+	upstream := &url.URL{Scheme: "http", Host: fmt.Sprintf("localhost:%d", portMap.Out)}
+	if portMap.Socket != "" {
+		upstream.Host = "localhost"
+		dial = func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return dialer.DialContext(ctx, "unix", portMap.Socket)
+		}
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(u)
-
+	proxy := httputil.NewSingleHostReverseProxy(upstream)
 	proxy.Transport = &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout: *flagDialTimeout,
-		}).DialContext,
+		DialContext:           dial,
 		ResponseHeaderTimeout: *flagResponseHeaderTimeout,
 		IdleConnTimeout:       *flagIdleConnTimeout,
 	}
-
 	return proxy
 }
 
@@ -535,9 +540,10 @@ func attachLogging(cmd *exec.Cmd) error {
 }
 
 type PortMapFlag struct {
-	In    int
-	Out   int
-	isSet bool
+	In     int
+	Out    int
+	Socket string
+	isSet  bool
 
 	defaultIn  int
 	defaultOut int
@@ -555,6 +561,9 @@ func (p *PortMapFlag) String() string {
 	if !p.isSet {
 		return fmt.Sprintf("%d:%d", p.defaultIn, p.defaultOut)
 	}
+	if p.Socket != "" {
+		return fmt.Sprintf("%d:unix:%s", p.In, p.Socket)
+	}
 	return fmt.Sprintf("%d:%d", p.In, p.Out)
 }
 
@@ -564,6 +573,7 @@ func (p *PortMapFlag) IsSet() bool {
 
 func (p *PortMapFlag) Set(value string) error {
 	p.isSet = true
+	p.Socket = ""
 
 	if value == "" {
 		p.In = p.defaultIn
@@ -571,29 +581,27 @@ func (p *PortMapFlag) Set(value string) error {
 		return nil
 	}
 
-	// Parse the input string in the format "in:out" or "port"
-	parts := strings.Split(value, ":")
-	if len(parts) == 1 {
-		// If only one part, treat it as both in and out
-		port, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return fmt.Errorf("invalid port format: %s", value)
-		}
-		p.In = port
-		p.Out = port
-
-	} else if len(parts) == 2 {
-		// If two parts, parse as in:out
-		inPort, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return fmt.Errorf("invalid in port format: %s", parts[0])
-		}
-		outPort, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return fmt.Errorf("invalid out port format: %s", parts[1])
-		}
-		p.In = inPort
-		p.Out = outPort
+	in, out, mapped := strings.Cut(value, ":")
+	inPort, err := strconv.Atoi(in)
+	if err != nil {
+		return fmt.Errorf("invalid in port format: %s", in)
 	}
+	p.In = inPort
+	if !mapped {
+		p.Out = inPort
+		return nil
+	}
+	if socket, ok := strings.CutPrefix(out, "unix:"); ok {
+		if socket == "" {
+			return fmt.Errorf("empty unix socket path: %s", value)
+		}
+		p.Socket = socket
+		return nil
+	}
+	outPort, err := strconv.Atoi(out)
+	if err != nil {
+		return fmt.Errorf("invalid out port format: %s", out)
+	}
+	p.Out = outPort
 	return nil
 }

@@ -16,6 +16,7 @@ a0b2787, which adds:
 Later changes in this tree:
 
 - cmd/ts-multi-plug: answer 403 when the resolver refuses a name by policy
+- cmd/ts-multi-plug: proxy HTTP and HTTPS to a unix socket upstream
 
 Upstream's docker/, cmd/examples/ and images/ were left out. Edit this tree
 directly from now on.

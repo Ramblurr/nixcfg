@@ -133,6 +133,20 @@ By default, ts-plug enables HTTPS on port 443 proxying to localhost:8080.
   ts-plug -https-port 8443:3000 -hostname web -- node server.js
   ```
 
+#### Unix Socket Upstream
+
+`-http-port` and `-https-port` also take `in:unix:<path>`, which proxies the
+listener to an HTTP server on a unix socket instead of a localhost port:
+
+```sh
+ts-plug -https-port 443:unix:/run/myapp/ui.sock -hostname myapp -- ./server
+```
+
+With a socket the upstream opens no TCP port, so the socket's permissions
+decide which local users can reach it. Give the socket a mode or group that
+only ts-plug's user can open, and no other process on the host can bypass
+ts-plug or send forged identity headers. `-dns-port` takes ports only.
+
 #### DNS
 
 - `-dns` - Enable DNS listener (default port mapping: 53:53)
