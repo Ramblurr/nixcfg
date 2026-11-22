@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/netip"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -291,5 +292,22 @@ func waitForPeer(t *testing.T, ctx context.Context, lc *local.Client, ip netip.A
 			t.Fatalf("plug never saw %v: %v", ip, ctx.Err())
 		case <-time.After(20 * time.Millisecond):
 		}
+	}
+}
+
+func TestCommandOutputInherit(t *testing.T) {
+	var stdout, stderr strings.Builder
+	cmd := exec.Command("sh", "-c", `echo '{"kind":"use"}'; echo diagnostic >&2`)
+	if err := commandOutput(cmd, true, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := stdout.String(), "{\"kind\":\"use\"}\n"; got != want {
+		t.Errorf("stdout = %q, want %q", got, want)
+	}
+	if got, want := stderr.String(), "diagnostic\n"; got != want {
+		t.Errorf("stderr = %q, want %q", got, want)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -47,6 +48,8 @@ var (
 	flagDNS   = NewPortMapFlag(53, 53)
 
 	flagPublic = flag.Bool("public", false, "Enable public https access")
+
+	flagInheritOutput = flag.Bool("inherit-output", false, "Give the command ts-plug's stdout and stderr instead of logging each line it writes")
 
 	flagSOCKS5Addr = flag.String("socks5", "", "Local SOCKS5 proxy listen address (host:port or unix:/path/to/socket) that dials through this node")
 	flagHTTPProxy  = flag.String("http-proxy", "", "Local HTTP proxy listen address (host:port or unix:/path/to/socket) that dials through this node")
@@ -176,7 +179,7 @@ func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 		// start the child process that will handle requests
 		cmd := exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...)
 		cmd.Env = append(os.Environ(), "TSPLUG_ACTIVE=1")
-		if err := attachLogging(cmd); err != nil {
+		if err := commandOutput(cmd, *flagInheritOutput, os.Stdout, os.Stderr); err != nil {
 			return fmt.Errorf("attach logging to command: %w", err)
 		}
 
@@ -498,6 +501,17 @@ func setIdentity(h http.Header, r *http.Request, whois whoisFunc) {
 	h.Set("Tailscale-User-Profile-Pic", pp)
 	h.Set("Tailscale-Node-Name", nn)
 	h.Set("Tailscale-Node-Tags", nt)
+}
+
+// commandOutput sends cmd's output to stdout and stderr unchanged when
+// inherit is set, so a service manager gets the command's lines as written.
+// Otherwise ts-plug logs each line.
+func commandOutput(cmd *exec.Cmd, inherit bool, stdout, stderr io.Writer) error {
+	if inherit {
+		cmd.Stdout, cmd.Stderr = stdout, stderr
+		return nil
+	}
+	return attachLogging(cmd)
 }
 
 // attachLogging attaches logging to a command's stdout and stderr

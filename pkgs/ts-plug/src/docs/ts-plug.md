@@ -229,6 +229,13 @@ if os.getenv('TSPLUG_ACTIVE') == '1':
     print("Running behind ts-plug!")
 ```
 
+### Command Output
+
+ts-plug logs each line the command writes, prefixed, on its own stderr.
+With `-inherit-output` the command writes to ts-plug's stdout and stderr
+directly, so a service manager keeps its lines as written, such as a JSON
+log on stdout. ts-plug's own log stays on stderr.
+
 ### Local Proxies
 
 `-socks5 <addr>` and `-http-proxy <addr>` start local proxies that dial
