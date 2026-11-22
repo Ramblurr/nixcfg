@@ -154,7 +154,7 @@ pkgs.runCommand "ts-egress-evaluation"
     env -u CREDENTIALS_DIRECTORY ts-egress -config "$full" 2>err || status=$?
     cat err
     test "$status" = 1
-    grep -qF 'credential ca-cert: $CREDENTIALS_DIRECTORY is not set' err
+    grep -qF 'credential ts-authkey: $CREDENTIALS_DIRECTORY is not set' err
     status=0
     env -u CREDENTIALS_DIRECTORY ts-egress -config "$minimal" 2>err || status=$?
     cat err

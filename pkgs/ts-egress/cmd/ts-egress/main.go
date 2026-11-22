@@ -80,13 +80,6 @@ func run(ctx context.Context, c config, credDir string) error {
 		UDPIdle:     c.udpIdle,
 		Audit:       audit,
 	}
-	if c.caCert != "" {
-		d, err := decrypter(c, credDir, audit)
-		if err != nil {
-			return err
-		}
-		srv.Decrypter = d
-	}
 	authKey, err := readCredential(credDir, c.authKey)
 	if err != nil {
 		return err
@@ -102,6 +95,13 @@ func run(ctx context.Context, c config, credDir string) error {
 		Logf:          tsnetLog(slog.LevelDebug),
 	}
 	defer ts.Close()
+	if c.caCert != "" {
+		d, err := decrypter(c, credDir, audit, ts.HTTPClient())
+		if err != nil {
+			return err
+		}
+		srv.Decrypter = d
+	}
 	lc, err := ts.LocalClient()
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func tsnetLog(level slog.Level) func(string, ...any) {
 // decrypter loads the CA and, when 1Password is configured, the Connect
 // token from the systemd credentials in credDir. Without 1Password only
 // literal: secrets resolve.
-func decrypter(c config, credDir string, audit *slog.Logger) (*egress.HTTPDecrypter, error) {
+func decrypter(c config, credDir string, audit *slog.Logger, client *http.Client) (*egress.HTTPDecrypter, error) {
 	certPEM, err := readCredential(credDir, c.caCert)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func decrypter(c config, credDir string, audit *slog.Logger) (*egress.HTTPDecryp
 		if err != nil {
 			return nil, err
 		}
-		store.OP = &secrets.Connect{Host: c.opURL, Token: strings.TrimSpace(string(tok))}
+		store.OP = &secrets.Connect{Host: c.opURL, Token: strings.TrimSpace(string(tok)), Client: client}
 	}
 	d := &egress.HTTPDecrypter{Leaves: leaves, Secrets: store, Audit: audit}
 	if c.brokerSocket != "" {

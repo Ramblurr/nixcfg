@@ -192,7 +192,7 @@ func TestDecrypterReadsCredentials(t *testing.T) {
 	dir := t.TempDir()
 	writeCA(t, dir)
 	write(t, dir, "op-connect-token", "token\n")
-	d, err := decrypter(c, dir, audit)
+	d, err := decrypter(c, dir, audit, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestDecrypterFailsClosed(t *testing.T) {
 			if tc.dir != nil {
 				dir = tc.dir(dir)
 			}
-			if _, err := decrypter(c, dir, audit); err == nil || !strings.Contains(err.Error(), tc.want) {
+			if _, err := decrypter(c, dir, audit, nil); err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("err = %v, want it to mention %q", err, tc.want)
 			}
 		})
