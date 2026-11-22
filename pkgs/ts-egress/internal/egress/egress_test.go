@@ -946,11 +946,28 @@ func TestUDPSessionLimitDropsWarnOnce(t *testing.T) {
 	s.MaxUDPSessionsPerCaller = 1
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	for port := 1; port <= 6; port++ {
-		client, _ := udpSession(ctx, s, "100.100.1.1:4000", fmt.Sprintf("198.51.100.5:%d", port))
+	held, _ := udpSession(ctx, s, "100.100.1.1:4000", "198.51.100.5:1")
+	defer held.Close()
+	deadline := time.Now().Add(2 * time.Second)
+	for s.liveUDP("100.100.1.1") != 1 {
+		if time.Now().After(deadline) {
+			t.Fatal("first session never took its slot")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	// reject runs a session the bound refuses and waits for its handler,
+	// which logs after closing the conn.
+	reject := func(port int) {
+		client, done := udpSession(ctx, s, "100.100.1.1:4000", fmt.Sprintf("198.51.100.5:%d", port))
 		defer client.Close()
-		_ = client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-		_, _ = client.Read(make([]byte, 1))
+		select {
+		case <-done:
+		case <-time.After(2 * time.Second):
+			t.Fatalf("session to port %d was not refused", port)
+		}
+	}
+	for port := 2; port <= 6; port++ {
+		reject(port)
 	}
 	warns := func() []map[string]any {
 		var w []map[string]any
@@ -968,12 +985,44 @@ func TestUDPSessionLimitDropsWarnOnce(t *testing.T) {
 	s.udpMu.Lock()
 	s.udpWarned = s.udpWarned.Add(-udpDropWarnEvery)
 	s.udpMu.Unlock()
-	client, _ := udpSession(ctx, s, "100.100.1.1:4000", "198.51.100.5:7")
-	defer client.Close()
-	_ = client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	_, _ = client.Read(make([]byte, 1))
+	reject(7)
 	if w := warns(); len(w) != 2 || w[1]["dropped"] != float64(5) {
 		t.Fatalf("warnings = %v, want a second reporting 5 drops", w)
+	}
+}
+
+// liveUDP is the number of session slots caller holds.
+func (s *Server) liveUDP(caller string) int {
+	s.udpMu.Lock()
+	defer s.udpMu.Unlock()
+	return s.perCaller[netip.MustParseAddr(caller)]
+}
+
+// closeProbe calls onClose before closing the conn it wraps.
+type closeProbe struct {
+	net.Conn
+	once    sync.Once
+	onClose func()
+}
+
+func (c *closeProbe) Close() error {
+	c.once.Do(c.onClose)
+	return c.Conn.Close()
+}
+
+// A UDP session closes its conn while it still holds its slot, so a
+// datagram after the close opens a new session instead of reaching the
+// ending one.
+func TestUDPSessionClosesBeforeFreeingItsSlot(t *testing.T) {
+	s, _ := newServer(whoWith(), "127.0.0.1:1")
+	s.UDPIdle = 50 * time.Millisecond
+	client, server := net.Pipe()
+	defer client.Close()
+	heldAtClose := -1
+	probe := &closeProbe{Conn: server, onClose: func() { heldAtClose = s.liveUDP("100.100.1.1") }}
+	s.handleUDP(context.Background(), netip.MustParseAddrPort("100.100.1.1:4000"), netip.MustParseAddrPort("198.51.100.5:9"), probe)
+	if heldAtClose != 1 {
+		t.Fatalf("slots held when the session closed = %d, want 1", heldAtClose)
 	}
 }
 
