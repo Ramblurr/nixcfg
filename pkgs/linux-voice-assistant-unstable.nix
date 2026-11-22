@@ -136,12 +136,16 @@ let
     ];
   };
 
-  # Override pyopen-wakeword to disable tests on aarch64
-  # The tests use TensorFlow Lite which crashes under QEMU emulation.
-  # On native aarch64 the binary cache is used anyway.
-  pyopen-wakeword = python3Packages.pyopen-wakeword.overridePythonAttrs {
+  # nixpkgs marks pyopen-wakeword broken on aarch64-linux because its bundled
+  # libtensorflowlite segfaults there. LVA imports it unconditionally, but the
+  # library only loads when an openWakeWord model is constructed, so it is
+  # usable on aarch64 as long as only microWakeWord models are active.
+  pyopen-wakeword = python3Packages.pyopen-wakeword.overridePythonAttrs (old: {
     doCheck = !stdenv.hostPlatform.isAarch64;
-  };
+    meta = old.meta // {
+      broken = old.meta.broken && !stdenv.hostPlatform.isAarch64;
+    };
+  });
 
 in
 python3Packages.buildPythonPackage rec {
