@@ -47,6 +47,34 @@ in
   modules.services.sshd.enable = lib.mkForce false;
   security.sudo.enable = false;
 
+  # ts-egress is the exit node, a tsnet node named egress. The host
+  # tailscaled is a plain node, egress-broker, that only exists for
+  # tailscale serve of the broker UI; ts-egress and the broker also reach
+  # Connect over it. Its state still advertises the exit routes it offered
+  # before ts-egress took them over, so set withdraws them. It moves off the
+  # WireGuard port the tenants' firewall opens for ts-egress.
+  services.tailscale = {
+    enable = true;
+    port = 41642;
+    openFirewall = true;
+    authKeyFile = "/run/credentials/tailscaled-autoconnect.service/ts-authkey";
+    extraUpFlags = [
+      "--advertise-tags=tag:egress"
+      "--hostname=egress-broker"
+      "--accept-dns=false"
+    ];
+    extraSetFlags = [
+      "--hostname=egress-broker"
+      "--advertise-exit-node=false"
+      "--accept-dns=false"
+    ];
+  };
+  systemd.services.tailscaled-autoconnect.serviceConfig.LoadCredential = [
+    "ts-authkey:${config.modules.services.ts-egress.authKeyFile}"
+  ];
+  # The tsnet node logs in once tailscaled has given up the name egress.
+  systemd.services.ts-egress.after = [ "tailscaled-set.service" ];
+
   # The egress resolves Connect's tailnet name without taking Tailscale DNS.
   services.resolved.dnsDelegates.tailnet.Delegate = {
     DNS = "100.100.100.100";
@@ -79,9 +107,9 @@ in
     };
   };
 
-  # tailscaled answers the node's own 443 in its netstack, before the TPROXY
-  # rules see the packet, and proxies to the broker's loopback port. The
-  # serve config persists in tailscaled's state; setting it again is a no-op.
+  # tailscaled answers egress-broker's 443 and proxies to the broker's
+  # loopback port. The serve config persists in tailscaled's state; setting
+  # it again is a no-op.
   systemd.services.ts-broker-serve = {
     description = "Serve the ts-broker UI on the tailnet";
     wantedBy = [ "multi-user.target" ];
