@@ -139,7 +139,7 @@
     (let [body (:body (form-post actions/create-credential
                                  {:vault "vlt0000000000000000000000a" :item "itm0000000000000000000000a"
                                   :field "f2" :name "GITHUB_NOTE" :header "Host" :hosts "x.com"}))]
-      (is (re-find #"data: mode replace\ndata: elements <div class=\"feedback\" id=\"create-feedback\" role=\"alert\"><div class=\"message\"><p>Host is a reserved header"
+      (is (re-find #"data: mode replace\ndata: elements <div class=\"feedback\" [^>]*id=\"create-feedback\"[^>]*><div class=\"message error\"><p>Host is a reserved header"
                    body)))))
 
 (defn- seed-credential! []
@@ -187,10 +187,21 @@
 
 (deftest assigns-one-manual-subject-per-line
   (seed-credential!)
-  (form-post actions/assign {:credential "GITHUB_TOKEN" :subjects "tag:a,tag:b\n group:agents \n" :subject "tag:t3-bob"
-                               :mode "inject" :approval "ask"})
+  (let [body (:body (form-post actions/assign {:credential "GITHUB_TOKEN" :subjects "tag:a,tag:b\n group:agents \n"
+                                               :subject "tag:t3-bob" :mode "inject" :approval "ask"}))]
+    (is (re-find #"data: mode replace\ndata: elements <form [^>]*id=\"assign-form\".*<p>Saved 3 assignments\.</p>" body)
+        "a successful assign answers with a fresh form that says what it saved"))
   (is (= ["group:agents" "tag:a,tag:b" "tag:t3-bob"]
-         (map :subject (store/read *store* store/assignments)))))
+         (map :subject (store/read *store* store/assignments))))
+  (testing "a refused assign shows why next to the form and keeps the ticked boxes"
+    (is (re-find #"data: mode replace\ndata: elements <div class=\"feedback\" [^>]*id=\"assign-feedback\".*Select at least one credential\."
+                 (:body (form-post actions/assign {:subject "tag:t3-bob" :mode "inject" :approval "ask"}))))))
+
+(deftest the-assign-button-submits-all-three-groups
+  (let [page (render "/assign")
+        form (re-find #"(?s)<form [^>]*id=\"assign-form\".*</form>" page)]
+    (is (re-find #"</fieldset></div><div class=\"form-footer\"><button type=\"submit\">Assign</button>" form))
+    (is (= 3 (count (re-seq #"<fieldset>" form))))))
 
 (defn- open-stream
   "Opens the page stream of `path` and returns a function that returns its

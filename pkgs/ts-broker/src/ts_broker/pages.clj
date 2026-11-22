@@ -275,41 +275,13 @@
                [:h2 "Edit"]
                (actions/edit-form c)]))))
 
-(defn- known-subjects [assignments idents]
-  (let [groups (into (set (keep (comp domain/group-name :subject) assignments))
-                     (mapcat :groups idents))
-        identities (into (set (map :identity idents))
-                         (remove domain/group-name (map :subject assignments)))]
-    (concat (map domain/group-subject (sort groups)) (sort identities))))
-
 (lib/defview assign-page
   "Renders the bulk assignment form and all assignments."
   {:path "/assign" :title "Broker assignments"}
   [{:keys [store]} request]
-  (let [[creds assignments idents] (store/read store (juxt store/credentials store/assignments store/identities))]
+  (let [[form assignments] (store/read store (juxt #(actions/assign-form % nil :ok) store/assignments))]
     (layout request "Assign"
-            [:form.stack {:data-on:submit__prevent (lib/form-post actions/assign)}
-             [:div.columns
-              [:fieldset
-               [:legend "Credentials"]
-               (if (seq creds)
-                 (for [{:keys [name]} creds]
-                   [:label.option [:input {:type "checkbox" :name "credential" :value name}] " " [:code name]])
-                 [:p.muted "No credentials yet."])]
-              [:fieldset
-               [:legend "Subjects"]
-               (for [s (known-subjects assignments idents)]
-                 [:label.option [:input {:type "checkbox" :name "subject" :value s}] " " [:code s]])
-               [:label "Other subjects" [:small.muted " group:name or an identity such as tag:t3-alice, one per line"]
-                [:textarea {:name "subjects" :rows 2}]]]
-              [:fieldset
-               [:legend "Grant"]
-               [:label "Mode" [:select {:name "mode"} (for [m (sort domain/modes)] [:option {:value m} m])]]
-               [:label "Approval"
-                [:select {:name "approval"}
-                 [:option {:value "ask"} "ask each identity"]
-                 [:option {:value "auto"} "auto"]]]
-               [:button {:type "submit"} "Assign"]]]]
+            form
             [:section
              [:h2 "All assignments"]
              (assignments-table assignments #{:subject :credential})])))
@@ -427,8 +399,15 @@ fieldset{border:1px solid #ccd4df;border-radius:6px;margin:.6rem 0;padding:.5rem
 .stack label.option,label.option{display:block;flex-direction:row;margin:.15rem 0}
 .columns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;align-items:start}
 .columns .stack,.columns form{max-width:none}.list{display:flex;flex-direction:column;gap:.2rem}
+.panel{background:#fff;border:1px solid #ccd4df;border-radius:6px;margin:.6rem 0}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.steps fieldset{border:0;border-radius:0;margin:0;padding:.6rem .9rem}.steps fieldset+fieldset{border-left:1px solid #dde3eb}
+.steps label{display:flex;flex-direction:column;gap:.15rem;margin:.3rem 0}.steps label.option{display:block}
+.step{display:inline-block;width:1.4em;height:1.4em;line-height:1.4em;border-radius:50%;background:#174ca0;color:#fff;text-align:center;font-size:.8em;margin-right:.4em}
+.form-footer{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;border-top:1px solid #dde3eb;padding:.6rem .9rem;background:#f3f6fa;border-radius:0 0 6px 6px}
+.form-footer .feedback{flex-basis:100%}.form-footer .feedback:empty{display:none}
 .actions{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
-.message{padding:.5rem .7rem;background:#fff3ce;border:1px solid #e5c76b;border-radius:4px;margin:.5rem 0}.message p{margin:.1rem 0}
+.message{padding:.5rem .7rem;background:#fff3ce;border:1px solid #e5c76b;border-radius:4px;margin:.5rem 0}.message p{margin:.1rem 0}.message.ok{background:#e3f4e7;border-color:#8cc79a}
 .muted,small{color:#586579}.warn-text{color:#8d2418}
 .pill{display:inline-block;padding:0 .4rem;margin:0 .25rem .15rem 0;border-radius:9px;background:#e4e9f1;font-size:.85em}
 .pill.ask{background:#fdecc8}.pill.auto{background:#d6f0dc}

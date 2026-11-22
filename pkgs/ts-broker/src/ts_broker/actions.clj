@@ -34,12 +34,15 @@
     [:textarea {:name "hosts" :rows 3 :required true} (str/join "\n" hosts)]]))
 
 (defn feedback
-  "Returns the element with `id` that shows `messages` next to a form.
-  Actions replace it, so it belongs inside a form that morphing skips."
-  [id messages]
-  [:div.feedback {:id id :role "alert"}
-   (when (seq messages)
-     [:div.message (for [m messages] [:p m])])])
+  "Returns the element with `id` that shows the refusal `messages` next to
+  a form, or with `:ok` the outcome of a successful action. Live
+  re-renders skip it, so the messages stay until an action replaces it."
+  ([id messages]
+   (feedback id messages :error))
+  ([id messages kind]
+   [:div.feedback {:id id :role "alert" :data-ignore-morph true}
+    (when (seq messages)
+      [:div {:class (str "message " (name kind))} (for [m messages] [:p m])])]))
 
 (defn- feedback-on-invalid
   "Calls `f` and returns its result. When the store refuses the command,
@@ -112,14 +115,62 @@
                                   :actor    (:actor request)})]
     {:replace (edit-form (store/read store #(store/credential % name)))}))
 
-(lib/defaction assign [{:keys [store]} request]
-  (store/write! store {:command     :assignment/assign
-                       :credentials (lib/params request :credential)
-                       :subjects    (vec (distinct (concat (lib/params request :subject)
-                                                           (domain/lines (lib/param request :subjects)))))
-                       :mode        (lib/param request :mode)
-                       :approval    (lib/param request :approval)
-                       :actor       (:actor request)}))
+(defn- known-subjects [assignments idents]
+  (let [groups (into (set (keep (comp domain/group-name :subject) assignments))
+                     (mapcat :groups idents))
+        identities (into (set (map :identity idents))
+                         (remove domain/group-name (map :subject assignments)))]
+    (concat (map domain/group-subject (sort groups)) (sort identities))))
+
+(declare assign)
+
+(defn assign-form
+  "Returns the bulk assignment form with the credentials and subjects in
+  reader connection `db`, and `messages` of `kind` in its [[feedback]]. Live re-renders
+  keep the ticked boxes and skip the typed subjects."
+  [db messages kind]
+  (let [creds (store/credentials db)
+        subjects (known-subjects (store/assignments db) (store/identities db))]
+    [:form#assign-form.panel {:data-on:submit__prevent (lib/form-post assign)}
+     [:div.steps
+      [:fieldset
+       [:legend [:span.step "1"] "Credentials"]
+       (if (seq creds)
+         (for [{:keys [name]} creds]
+           [:label.option [:input {:type "checkbox" :name "credential" :value name}] " " [:code name]])
+         [:p.muted "No credentials yet."])]
+      [:fieldset
+       [:legend [:span.step "2"] "Subjects"]
+       (for [s subjects]
+         [:label.option [:input {:type "checkbox" :name "subject" :value s}] " " [:code s]])
+       [:label "Other subjects" [:small.muted " group:name or an identity such as tag:t3-alice, one per line"]
+        [:textarea#other-subjects {:name "subjects" :rows 2 :data-ignore-morph true}]]]
+      [:fieldset
+       [:legend [:span.step "3"] "Grant"]
+       [:label "Mode" [:select {:name "mode"} (for [m (sort domain/modes)] [:option {:value m} m])]]
+       [:label "Approval"
+        [:select {:name "approval"}
+         [:option {:value "ask"} "ask each identity"]
+         [:option {:value "auto"} "auto"]]]]]
+     [:div.form-footer
+      [:button {:type "submit"} "Assign"]
+      [:small.muted "Gives every subject ticked or typed every ticked credential, with the grant."]
+      (feedback "assign-feedback" messages kind)]]))
+
+(lib/defaction assign
+  "Assigns the ticked credentials to the subjects and answers with a fresh
+  form that says how many assignments it saved."
+  [{:keys [store]} request]
+  (feedback-on-invalid
+   "assign-feedback"
+   #(let [n (store/write! store {:command     :assignment/assign
+                                 :credentials (lib/params request :credential)
+                                 :subjects    (vec (distinct (concat (lib/params request :subject)
+                                                                     (domain/lines (lib/param request :subjects)))))
+                                 :mode        (lib/param request :mode)
+                                 :approval    (lib/param request :approval)
+                                 :actor       (:actor request)})]
+      {:replace (store/read store (fn [db] (assign-form db [(str "Saved " n (if (= 1 n) " assignment." " assignments."))] :ok)))})))
 
 (lib/defaction remove-assignment [{:keys [store]} request]
   (store/write! store {:command    :assignment/remove
