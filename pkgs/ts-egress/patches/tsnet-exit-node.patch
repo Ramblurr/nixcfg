@@ -82,7 +82,7 @@ index 8aaef64..19e1960 100644
  //
  // It calls GetCertificate on the localClient, passing in the ClientHelloInfo.
 diff --git a/wgengine/netstack/netstack.go b/wgengine/netstack/netstack.go
-index 0ecd9e2..4ea31e6 100644
+index 0ecd9e2..25bce02 100644
 --- a/wgengine/netstack/netstack.go
 +++ b/wgengine/netstack/netstack.go
 @@ -207,6 +207,11 @@ type Impl struct {
@@ -117,7 +117,7 @@ index 0ecd9e2..4ea31e6 100644
  		return h(tei, pb)
  	}
  }
-@@ -546,16 +544,19 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+@@ -546,16 +544,20 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
  			return true
  		}
  
@@ -125,11 +125,12 @@ index 0ecd9e2..4ea31e6 100644
 +		// Check the per-client and global limits. The TCP forwarder
 +		// reports a SYN beyond its own global limit as handled without
 +		// running acceptTCP, which would leave this packet's state
-+		// behind, so enforce that limit here before taking any.
++		// behind, so enforce that limit here, for the SYNs the
++		// forwarder takes, before taking any.
  		inFlight := ns.connsInFlightByClient[remoteIP]
  		tooManyInFlight := inFlight >= maxInFlightConnectionAttemptsPerClient()
 -		if !tooManyInFlight {
-+		tooManyGlobal := len(ns.packetsInFlight) >= maxInFlightConnectionAttempts()
++		tooManyGlobal := isForwarderSYN(pb) && len(ns.packetsInFlight) >= maxInFlightConnectionAttempts()
 +		if !tooManyInFlight && !tooManyGlobal {
  			ns.connsInFlightByClient[remoteIP]++
 +			// We're handling this packet now; see the comment on the
@@ -143,7 +144,7 @@ index 0ecd9e2..4ea31e6 100644
  		ns.mu.Unlock()
  
  		if debugNetstack() {
-@@ -567,13 +568,17 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+@@ -567,13 +569,17 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
  			ns.forwardInFlightPerClientDropped.Add(1)
  			return false // unhandled
  		}
@@ -164,7 +165,22 @@ index 0ecd9e2..4ea31e6 100644
  		// acceptTCP.  If we don't decrement here, then we would
  		// eventually increment the per-client counter up to the limit
  		// and never decrement because we'd never hit the codepath in
-@@ -594,6 +599,11 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+@@ -581,12 +587,8 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+ 		// endpoint due to the packetsInFlight check.
+ 		defer func() {
+ 			if !handled {
+-				ns.mu.Lock()
+-				delete(ns.packetsInFlight, tei)
+-				ns.connsInFlightByClient[remoteIP]--
+-				new := ns.connsInFlightByClient[remoteIP]
+-				ns.mu.Unlock()
+-				ns.logf("netstack: decrementing connsInFlightByClient[%v] because the packet was not handled; new value is %d", remoteIP, new)
++				ns.decrementInFlightTCPForward(tei, remoteIP)
++				ns.logf("netstack: decrementing connsInFlightByClient[%v] because the packet was not handled", remoteIP)
+ 			}
+ 		}()
+ 
+@@ -594,12 +596,28 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
  		// outbound traffic.
  		if !ns.isLocalIP(localIP) && !ns.isVIPServiceIP(localIP) {
  			ns.addSubnetAddress(localIP)
@@ -176,7 +192,24 @@ index 0ecd9e2..4ea31e6 100644
  		}
  
  		return h(tei, pb)
-@@ -1458,6 +1468,9 @@ func (ns *Impl) injectInbound(p *packet.Parsed, t *tstun.Wrapper, gro *gro.GRO)
+ 	}
+ }
+ 
++// isForwarderSYN reports whether pb is a segment the TCP forwarder takes: a
++// SYN without ACK.
++func isForwarderSYN(pb *stack.PacketBuffer) bool {
++	h := header.TCP(pb.TransportHeader().Slice())
++	if len(h) < header.TCPMinimumSize {
++		return false
++	}
++	f := h.Flags()
++	return f.Contains(header.TCPFlagSyn) && !f.Contains(header.TCPFlagAck)
++}
++
+ func (ns *Impl) decrementInFlightTCPForward(tei stack.TransportEndpointID, remoteAddr netip.Addr) {
+ 	ns.mu.Lock()
+ 	defer ns.mu.Unlock()
+@@ -1458,6 +1476,9 @@ func (ns *Impl) injectInbound(p *packet.Parsed, t *tstun.Wrapper, gro *gro.GRO)
  	// If this is an echo request and we're a subnet router, handle pings
  	// ourselves instead of forwarding the packet on.
  	pingIP, handlePing := ns.shouldHandlePing(p)
@@ -186,7 +219,7 @@ index 0ecd9e2..4ea31e6 100644
  	if handlePing {
  		var pong []byte // the reply to the ping, if our relayed ping works
  		if destIP.Is4() {
-@@ -1989,6 +2002,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -1989,6 +2010,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  	if debugNetstack() {
  		ns.logf("[v2] UDP ForwarderRequest: %v", stringifyTEI(sess))
  	}
@@ -207,7 +240,7 @@ index 0ecd9e2..4ea31e6 100644
  	var wq waiter.Queue
  	ep, err := r.CreateEndpoint(&wq)
  	if err != nil {
-@@ -2011,7 +2038,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2011,7 +2046,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  		switch {
  		case dstAddr.Port() == 53:
  			c := gonet.NewUDPConn(&wq, ep)
@@ -220,7 +253,7 @@ index 0ecd9e2..4ea31e6 100644
  			return
  		case ns.isLoopbackPort(dstAddr.Port()):
  			if dst == serviceIPv6 {
-@@ -2032,15 +2063,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2032,15 +2071,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  				ep.Close()
  				return
  			}

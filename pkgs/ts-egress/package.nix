@@ -23,7 +23,7 @@ buildGoModule {
       patch -p1 -d vendor/tailscale.com <"$p"
     done
   '';
-  vendorHash = "sha256-7Mk9x6+ybA/9HeT9RpMzq9YvaN/bNfRo2E9tZvGrNxA=";
+  vendorHash = "sha256-AkObm8mr6iC+VOS3rMH/bB82wFMZ64WWsGvH7aCdSfc=";
 
   meta = {
     description = "Tailscale exit-node egress that decides every flow from grant capabilities";
