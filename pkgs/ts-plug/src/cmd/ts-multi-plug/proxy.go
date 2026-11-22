@@ -239,28 +239,47 @@ func (d *tailnetDialer) lookupIP(ctx context.Context, network, host string) ([]n
 	if d.viaNetstack != nil {
 		query = d.queryResolver
 	}
-	var ips []netip.Addr
-	var errs []error
-	for _, queryType := range queryTypesForNetwork(network) {
-		response, err := query(ctx, host, queryType)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("%s query: %w", queryType, err))
-			continue
-		}
-		queryIPs, err := parseDNSIPs(response, queryType)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("%s response: %w", queryType, err))
-			continue
-		}
-		slog.Debug("DNS query complete",
-			slog.String("host", host),
-			slog.String("type", queryType),
-			slog.Int("answers", len(queryIPs)),
-		)
-		ips = append(ips, queryIPs...)
+	// The queries go out together. The first type in order that answers
+	// with addresses wins, so A answers keep precedence, but a dial waits on
+	// AAAA only when A gives nothing. Returning cancels the queries left.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	type result struct {
+		ips []netip.Addr
+		err error
 	}
-	if len(ips) > 0 {
-		return ips, nil
+	queryTypes := queryTypesForNetwork(network)
+	results := make([]chan result, len(queryTypes))
+	for i, queryType := range queryTypes {
+		results[i] = make(chan result, 1)
+		go func() {
+			response, err := query(ctx, host, queryType)
+			if err != nil {
+				results[i] <- result{err: fmt.Errorf("%s query: %w", queryType, err)}
+				return
+			}
+			ips, err := parseDNSIPs(response, queryType)
+			if err != nil {
+				results[i] <- result{err: fmt.Errorf("%s response: %w", queryType, err)}
+				return
+			}
+			slog.Debug("DNS query complete",
+				slog.String("host", host),
+				slog.String("type", queryType),
+				slog.Int("answers", len(ips)),
+			)
+			results[i] <- result{ips: ips}
+		}()
+	}
+	var errs []error
+	for _, c := range results {
+		r := <-c
+		if len(r.ips) > 0 {
+			return r.ips, nil
+		}
+		if r.err != nil {
+			errs = append(errs, r.err)
+		}
 	}
 	return nil, errors.Join(errs...)
 }
@@ -308,6 +327,8 @@ func (d *tailnetDialer) queryResolver(ctx context.Context, host, queryType strin
 		return nil, err
 	}
 	defer conn.Close()
+	// A canceled query stops waiting at once instead of at the deadline.
+	defer context.AfterFunc(ctx, func() { conn.Close() })()
 	deadline, _ := ctx.Deadline()
 	_ = conn.SetDeadline(deadline)
 	if _, err := conn.Write(query); err != nil {
