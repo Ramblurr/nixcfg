@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/netip"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"tailscale.com/client/local"
+	"tailscale.com/ipn"
 	"tailscale.com/tailcfg"
 	"tailscale.com/tailcfg/nodecap"
 	"tailscale.com/tsnet"
@@ -142,7 +144,29 @@ func TestSetExitNodeUnknownNameFailsAtDeadline(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), `"nosuch"`) {
 		t.Fatalf("setExitNode(nosuch) = %v, want an error naming it", err)
 	}
+	if took := time.Since(start); took < 500*time.Millisecond || took > 5*time.Second {
+		t.Fatalf("setExitNode returned after %v, want just after its 500ms deadline", took)
+	}
+}
+
+// The node's own IP is refused at once instead of waiting for a netmap that
+// cannot fix it.
+func TestSetExitNodeOwnIPFailsAtOnce(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	plug, _ := startNode(t, ctx, startControl(t, nil).HTTPTestServer.URL, "plug")
+	lc, err := plug.LocalClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	self, _ := plug.TailscaleIPs()
+
+	start := time.Now()
+	err = setExitNode(ctx, lc, self.String())
+	if !errors.As(err, new(ipn.ExitNodeLocalIPError)) {
+		t.Fatalf("setExitNode(own IP) = %v, want ExitNodeLocalIPError", err)
+	}
 	if took := time.Since(start); took > 5*time.Second {
-		t.Fatalf("setExitNode returned %v after its 500ms deadline", took)
+		t.Fatalf("setExitNode(own IP) took %v", took)
 	}
 }
