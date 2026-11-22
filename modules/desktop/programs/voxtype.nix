@@ -8,13 +8,8 @@
 
 let
   cfg = config.modules.desktop.programs.voxtype;
-  # CUDA 13.4's sanitizer binaries currently crash patchelf during fixup.
-  cudaPackages = pkgs.cudaPackages_12_9;
-  onnxruntime =
-    if cfg.cudaSupport then
-      pkgs.pkgsCuda.onnxruntime.override { inherit cudaPackages; }
-    else
-      pkgs.onnxruntime;
+  inherit (pkgs.pkgsCuda) cudaPackages;
+  onnxruntime = if cfg.cudaSupport then pkgs.pkgsCuda.onnxruntime else pkgs.onnxruntime;
   # Pin feat/elevenlabs-developer-backend so builds remain reproducible.
   voxtypeSrc = pkgs.fetchFromGitHub {
     owner = "Ramblurr";
