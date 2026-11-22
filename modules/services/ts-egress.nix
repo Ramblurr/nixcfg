@@ -17,6 +17,7 @@ let
   tproxyTable = 100;
   helperEnabled = cfg.helper.address != null;
   onepasswordEnabled = cfg.onepassword.url != null;
+  brokerEnabled = cfg.broker.socket != null;
   # systemd credential IDs; ts-egress reads them from $CREDENTIALS_DIRECTORY.
   credential = {
     caCert = "ca-cert";
@@ -52,6 +53,9 @@ let
         inherit (cfg.onepassword) url;
         tokenCredential = credential.connectToken;
       };
+    }
+    // lib.optionalAttrs brokerEnabled {
+      brokerSocket = cfg.broker.socket;
     }
   );
   # The source file of a credential, by default on the MicroVM host-secrets
@@ -146,6 +150,24 @@ in
       tokenFile = secretPath credential.connectToken "File holding the Connect token.";
     };
 
+    broker = {
+      socket = lib.mkOption {
+        type = lib.types.nullOr (lib.types.addCheck lib.types.str (lib.hasPrefix "/"));
+        default = null;
+        example = "/run/ts-broker/decide.sock";
+        description = ''
+          Unix socket of the credential broker, asked about placeholders no
+          http rule lists for callers whose caps carry a broker ceiling.
+          Null disables it. Needs onepassword.url.
+        '';
+      };
+      group = lib.mkOption {
+        type = lib.types.str;
+        default = "ts-broker-clients";
+        description = "Group that may write to the broker socket. ts-egress runs with it.";
+      };
+    };
+
     auditOutput = lib.mkOption {
       type = lib.types.str;
       default = "journal";
@@ -172,7 +194,13 @@ in
         assertion = onepasswordEnabled -> cfg.ca.enable;
         message = "modules.services.ts-egress.onepassword injects secrets only into decrypted flows and needs ca.enable.";
       }
+      {
+        assertion = brokerEnabled -> onepasswordEnabled;
+        message = "modules.services.ts-egress.broker names op:// secrets and needs onepassword.url.";
+      }
     ];
+
+    users.groups = lib.mkIf brokerEnabled { ${cfg.broker.group} = { }; };
 
     services.tailscale = {
       enable = true;
@@ -297,6 +325,7 @@ in
             "${credential.caKey}:${cfg.ca.keyFile}"
           ]
           ++ lib.optional onepasswordEnabled "${credential.connectToken}:${cfg.onepassword.tokenFile}";
+        SupplementaryGroups = lib.optional brokerEnabled cfg.broker.group;
         StandardOutput = cfg.auditOutput;
         Restart = "always";
         RestartSec = 2;

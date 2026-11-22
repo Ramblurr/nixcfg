@@ -37,12 +37,19 @@ let
       };
       ca.enable = true;
       onepassword.url = "http://op-connect.example.ts.net:8080";
+      broker.socket = "/run/ts-broker/decide.sock";
     };
   };
   minimal = evaluate { };
   trusted = evaluate { networking.firewall.trustedInterfaces = [ "tailscale0" ]; };
   halfOnepassword = evaluate {
     modules.services.ts-egress.onepassword.url = "http://op-connect.example.ts.net:8080";
+  };
+  halfBroker = evaluate {
+    modules.services.ts-egress = {
+      ca.enable = true;
+      broker.socket = "/run/ts-broker/decide.sock";
+    };
   };
   # A credential source in the world-readable store is a type error.
   storeKey = evaluate { modules.services.ts-egress.ca.keyFile = "${../config/ts-egress-ca.pem}"; };
@@ -61,6 +68,10 @@ assert failedAssertions full == [ ];
 assert failedAssertions minimal == [ ];
 assert failedAssertions trusted != [ ];
 assert failedAssertions halfOnepassword != [ ];
+assert failedAssertions halfBroker != [ ];
+assert unit.serviceConfig.SupplementaryGroups == [ "ts-broker-clients" ];
+assert config.users.groups ? ts-broker-clients;
+assert minimal.config.systemd.services.ts-egress.serviceConfig.SupplementaryGroups == [ ];
 assert !(builtins.tryEval storeKey.config.modules.services.ts-egress.ca.keyFile).success;
 
 # Every forwarded TCP and UDP flow from the tailnet reaches ts-egress, and
@@ -164,6 +175,7 @@ pkgs.runCommand "ts-egress-evaluation"
       and .helper == {listen: "192.0.2.26:3128"}
       and .ca == {certCredential: "ca-cert", keyCredential: "ca-key"}
       and .onepassword == {url: "http://op-connect.example.ts.net:8080", tokenCredential: "op-connect-token"}
+      and .brokerSocket == "/run/ts-broker/decide.sock"
     ' "$full"
     jq -e '. == {
       tcpListen: ["0.0.0.0:15001", "[::]:15001"],
