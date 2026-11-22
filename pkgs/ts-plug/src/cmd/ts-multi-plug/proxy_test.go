@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
+	"net/url"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -286,5 +288,56 @@ func TestHTTPProxyReportsDNSFailures(t *testing.T) {
 			}
 		}
 		proxy.Close()
+	}
+}
+
+func TestHTTPProxyOnUnixSocket(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%s %s", r.Host, r.URL.RequestURI())
+	}))
+	defer backend.Close()
+
+	socket := filepath.Join(t.TempDir(), "proxy.sock")
+	var dialed []string
+	dial := func(ctx context.Context, network, addr string) (net.Conn, error) {
+		dialed = append(dialed, addr)
+		return (&net.Dialer{}).DialContext(ctx, network, backend.Listener.Addr().String())
+	}
+	failed := make(chan error, 1)
+	if err := startLocalProxies(dial, "", "unix:"+socket, func(err error) { failed <- err }); err != nil {
+		t.Fatal(err)
+	}
+
+	client := &http.Client{Transport: &http.Transport{
+		Proxy: http.ProxyURL(&url.URL{Scheme: "http", Host: "proxy"}),
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", socket)
+		},
+	}}
+	resp, err := client.Get("http://op-connect.tail-scale.ts.net:8080/v1/vaults?x=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if got, want := string(body), "op-connect.tail-scale.ts.net:8080 /v1/vaults?x=1"; got != want {
+		t.Errorf("body = %q, want %q", got, want)
+	}
+	if want := []string{"op-connect.tail-scale.ts.net:8080"}; !slices.Equal(dialed, want) {
+		t.Errorf("dialed %q, want %q", dialed, want)
+	}
+	select {
+	case err := <-failed:
+		t.Fatal(err)
+	default:
+	}
+}
+
+func TestListenLocalRefusesRelativeAndAbstractSockets(t *testing.T) {
+	for _, addr := range []string{"unix:proxy.sock", "unix:@proxy"} {
+		if l, err := listenLocal(addr); err == nil {
+			l.Close()
+			t.Errorf("listenLocal(%q) succeeded, want an error", addr)
+		}
 	}
 }

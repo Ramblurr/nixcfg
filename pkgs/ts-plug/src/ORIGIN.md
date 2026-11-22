@@ -20,6 +20,7 @@ Later changes in this tree:
 - cmd/ts-multi-plug: set Tailscale-Node-Name and Tailscale-Node-Tags
 - cmd/ts-multi-plug: set identity and X-Forwarded-* headers after hop-by-hop stripping
 - cmd/ts-multi-plug: require an absolute path for a unix socket upstream
+- cmd/ts-multi-plug: let the local proxies listen on a unix socket
 
 Upstream's docker/, cmd/examples/ and images/ were left out. Edit this tree
 directly from now on.

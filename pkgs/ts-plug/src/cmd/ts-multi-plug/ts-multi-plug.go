@@ -48,8 +48,8 @@ var (
 
 	flagPublic = flag.Bool("public", false, "Enable public https access")
 
-	flagSOCKS5Addr = flag.String("socks5", "", "Local SOCKS5 proxy listen address that dials through this node")
-	flagHTTPProxy  = flag.String("http-proxy", "", "Local HTTP proxy listen address that dials through this node")
+	flagSOCKS5Addr = flag.String("socks5", "", "Local SOCKS5 proxy listen address (host:port or unix:/path/to/socket) that dials through this node")
+	flagHTTPProxy  = flag.String("http-proxy", "", "Local HTTP proxy listen address (host:port or unix:/path/to/socket) that dials through this node")
 
 	flagExitNode       = flag.String("exit-node", "", "Exit node (Tailscale IP or peer name) for internet traffic; the local proxies then dial only over the tailnet, never the host network")
 	flagDNSResolver    = flag.String("dns-resolver", "", "Numeric DNS server ip:port that the local proxies query over the tailnet for names outside it; required with -exit-node, so lookups leave through the exit node as port 53 traffic")

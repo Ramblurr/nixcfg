@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/netip"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -614,7 +615,7 @@ func relay(dst net.Conn, src io.Reader, closeBoth func()) {
 // serving reports its error to fail.
 func startLocalProxies(dialer func(context.Context, string, string) (net.Conn, error), socks5Addr, httpAddr string, fail func(error)) error {
 	if socks5Addr != "" {
-		listener, err := net.Listen("tcp", socks5Addr)
+		listener, err := listenLocal(socks5Addr)
 		if err != nil {
 			return fmt.Errorf("listen for SOCKS5 on %s: %w", socks5Addr, err)
 		}
@@ -622,7 +623,7 @@ func startLocalProxies(dialer func(context.Context, string, string) (net.Conn, e
 		slog.Info("SOCKS5 proxy listening", slog.String("local", listener.Addr().String()))
 	}
 	if httpAddr != "" {
-		listener, err := net.Listen("tcp", httpAddr)
+		listener, err := listenLocal(httpAddr)
 		if err != nil {
 			return fmt.Errorf("listen for HTTP proxy on %s: %w", httpAddr, err)
 		}
@@ -630,4 +631,16 @@ func startLocalProxies(dialer func(context.Context, string, string) (net.Conn, e
 		slog.Info("HTTP proxy listening", slog.String("local", listener.Addr().String()))
 	}
 	return nil
+}
+
+// listenLocal listens on addr, a TCP host:port or unix:<absolute path>.
+func listenLocal(addr string) (net.Listener, error) {
+	socket, ok := strings.CutPrefix(addr, "unix:")
+	if !ok {
+		return net.Listen("tcp", addr)
+	}
+	if !filepath.IsAbs(socket) {
+		return nil, fmt.Errorf("unix socket must be an absolute filesystem path, not abstract or relative: %s", addr)
+	}
+	return net.Listen("unix", socket)
 }

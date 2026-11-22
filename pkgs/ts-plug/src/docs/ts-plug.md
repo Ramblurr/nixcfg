@@ -229,6 +229,22 @@ if os.getenv('TSPLUG_ACTIVE') == '1':
     print("Running behind ts-plug!")
 ```
 
+### Local Proxies
+
+`-socks5 <addr>` and `-http-proxy <addr>` start local proxies that dial
+through this node, so local clients reach the tailnet with the node's
+identity. The address is a TCP `host:port` or `unix:<path>`:
+
+```sh
+ts-plug -hostname app -https-port 443:unix:/run/app/ui/ui.sock \
+  -http-proxy unix:/run/app/ui/proxy.sock -- ./server
+```
+
+A TCP proxy on loopback lets every local user dial as the node. A socket
+in a directory only ts-plug's user can traverse limits it to that user and
+the command ts-plug starts. The path must be absolute, as for a unix socket
+upstream.
+
 ### Egress Through an Exit Node
 
 ts-plug can carry all outbound traffic of a network namespace over the
