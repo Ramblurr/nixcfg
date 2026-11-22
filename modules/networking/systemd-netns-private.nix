@@ -80,6 +80,11 @@ in
                   type = lib.types.strMatching "[a-zA-Z0-9@%:_.\\-]+";
                   description = "The namespace name. Defaults to <name>";
                 };
+                natInterface = lib.mkOption {
+                  type = lib.types.str;
+                  default = "mgmt";
+                  description = "Host interface the namespace is masqueraded out of when `egress` is null";
+                };
                 egress = lib.mkOption {
                   default = null;
                   description = "Optional source-based egress policy for this namespace";
@@ -173,7 +178,7 @@ in
             };
           }) ns.services;
         natSource = ns: if ns.egress == null then ns.nsAddr else ns.egress.source;
-        natInterface = ns: if ns.egress == null then "mgmt" else ns.egress.interface;
+        natInterface = ns: if ns.egress == null then ns.natInterface else ns.egress.interface;
         mkNatAdd =
           ns:
           "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s ${natSource ns} -o ${natInterface ns} -j MASQUERADE";

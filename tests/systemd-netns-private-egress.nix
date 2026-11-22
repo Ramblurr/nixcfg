@@ -32,6 +32,11 @@ let
               hostAddr = "192.168.20.1/30";
               nsAddr = "192.168.20.2/30";
             };
+            uplink = {
+              hostAddr = "192.168.20.5/30";
+              nsAddr = "192.168.20.6/30";
+              natInterface = "svc";
+            };
           };
         };
       }
@@ -41,6 +46,7 @@ let
   existingUnit = evaluated.config.systemd.services.systemd-netns-private-access-existing;
   homeDl = homeDlUnit.serviceConfig;
   existing = existingUnit.serviceConfig;
+  uplink = evaluated.config.systemd.services.systemd-netns-private-access-uplink.serviceConfig;
   homeDlCommands = homeDl.ExecStartPre ++ homeDl.ExecStart ++ homeDl.ExecStopPost;
   existingCommands = existing.ExecStartPre ++ existing.ExecStart ++ existing.ExecStopPost;
   ip = "${pkgs.iproute2}/bin/ip";
@@ -80,4 +86,8 @@ assert lib.all (command: !(lib.hasInfix " -o mgmt " command)) homeDlCommands;
 assert builtins.elem "${iptables} -t nat -A POSTROUTING -s 192.168.20.2/30 -o mgmt -j MASQUERADE"
   existing.ExecStart;
 assert lib.all (command: !(lib.hasInfix " table 100" command)) existingCommands;
+assert builtins.elem "${iptables} -t nat -A POSTROUTING -s 192.168.20.6/30 -o svc -j MASQUERADE"
+  uplink.ExecStart;
+assert builtins.elem "-${iptables} -t nat -D POSTROUTING -s 192.168.20.6/30 -o svc -j MASQUERADE"
+  uplink.ExecStopPost;
 pkgs.runCommand "systemd-netns-private-egress-evaluation" { } "touch $out"
