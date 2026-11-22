@@ -331,12 +331,13 @@ func (d *tailnetDialer) queryResolver(ctx context.Context, host, queryType strin
 	defer context.AfterFunc(ctx, func() { conn.Close() })()
 	deadline, _ := ctx.Deadline()
 	_ = conn.SetDeadline(deadline)
-	if _, err := conn.Write(query); err != nil {
-		return nil, err
-	}
 	buf := make([]byte, 65535)
-	n, err := conn.Read(buf)
+	n, err := exchange(conn, query, buf)
 	if err != nil {
+		// The cancel closes conn, which reads as EOF. Report why instead.
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
 		return nil, err
 	}
 	var p dnsmessage.Parser
@@ -348,6 +349,14 @@ func (d *tailnetDialer) queryResolver(ctx context.Context, host, queryType strin
 		return nil, errors.New("DNS response does not match the query")
 	}
 	return buf[:n], nil
+}
+
+// exchange writes query to conn and reads one reply into buf.
+func exchange(conn net.Conn, query, buf []byte) (int, error) {
+	if _, err := conn.Write(query); err != nil {
+		return 0, err
+	}
+	return conn.Read(buf)
 }
 
 // parseDNSResolver checks -dns-resolver against -exit-node: an exit node
