@@ -181,6 +181,10 @@ in
         "sops-install-secrets.service"
         "sshd.service"
       ];
+      # sops-install-secrets runs before sysinit.target. The default
+      # After=basic.target would order this unit after it and form a cycle
+      # that systemd breaks by dropping sops-install-secrets.
+      unitConfig.DefaultDependencies = false;
       serviceConfig = {
         ImportCredential = "SOPS_AGE_KEY";
         Type = "oneshot";
