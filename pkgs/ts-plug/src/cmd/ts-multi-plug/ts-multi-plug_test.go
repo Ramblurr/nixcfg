@@ -39,6 +39,8 @@ func TestPortMapFlag(t *testing.T) {
 		{"8443:3000", "8443:3000"},
 		{"443:unix:/run/broker/ui.sock", "443:unix:/run/broker/ui.sock"},
 		{"443:unix:", "error"},
+		{"443:unix:@broker-ui", "error"},
+		{"443:unix:run/broker/ui.sock", "error"},
 		{"unix:/run/broker/ui.sock", "error"},
 		{"443:3000:1", "error"},
 		{"https", "error"},

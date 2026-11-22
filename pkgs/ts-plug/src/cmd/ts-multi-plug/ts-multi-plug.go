@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -589,8 +590,8 @@ func (p *PortMapFlag) Set(value string) error {
 		return nil
 	}
 	if socket, ok := strings.CutPrefix(out, "unix:"); ok {
-		if socket == "" {
-			return fmt.Errorf("empty unix socket path: %s", value)
+		if !filepath.IsAbs(socket) {
+			return fmt.Errorf("unix socket upstream must be an absolute filesystem path, not abstract or relative: %s", value)
 		}
 		p.Socket = socket
 		return nil

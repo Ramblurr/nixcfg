@@ -142,10 +142,17 @@ listener to an HTTP server on a unix socket instead of a localhost port:
 ts-plug -https-port 443:unix:/run/myapp/ui.sock -hostname myapp -- ./server
 ```
 
-With a socket the upstream opens no TCP port, so the socket's permissions
+With a socket the upstream opens no TCP port, so filesystem permissions
 decide which local users can reach it. Give the socket a mode or group that
 only ts-plug's user can open, and no other process on the host can bypass
-ts-plug or send forged identity headers. `-dns-port` takes ports only.
+ts-plug or send forged identity headers.
+
+The path must be absolute. ts-plug refuses a relative path and an abstract
+socket (`@name`) at startup, since an abstract socket has no permissions and
+any local process can connect to it. Every directory on the path must also be
+closed to other users: one they can write to lets them replace the socket,
+and one they can traverse lets them reach it whenever its own mode allows.
+`-dns-port` takes ports only.
 
 #### DNS
 
