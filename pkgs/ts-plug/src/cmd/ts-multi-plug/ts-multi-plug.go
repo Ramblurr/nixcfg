@@ -439,9 +439,10 @@ func handleDNSQuery(query []byte, clientAddr net.Addr, tsConn net.PacketConn, up
 }
 
 // createReverseProxy creates a reverse proxy to portMap's localhost port or
-// unix socket. ReverseProxy strips hop-by-hop, Forwarded and X-Forwarded-*
-// headers before Rewrite runs, so a caller can neither forge nor suppress the
-// headers Rewrite sets.
+// unix socket. ReverseProxy strips hop-by-hop headers and Forwarded,
+// X-Forwarded-For, X-Forwarded-Host and X-Forwarded-Proto before Rewrite runs,
+// so a caller can neither forge nor suppress the headers Rewrite sets. Other
+// X-Forwarded-* headers, such as X-Forwarded-Port, pass through untrusted.
 func createReverseProxy(portMap *PortMapFlag, whois whoisFunc) *httputil.ReverseProxy {
 	dialer := &net.Dialer{Timeout: *flagDialTimeout}
 	dial := dialer.DialContext
@@ -456,6 +457,7 @@ func createReverseProxy(portMap *PortMapFlag, whois whoisFunc) *httputil.Reverse
 	return &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			pr.SetURL(upstream)
+			pr.Out.URL.RawQuery = pr.In.URL.RawQuery
 			pr.Out.Host = pr.In.Host
 			pr.SetXForwarded()
 			setIdentity(pr.Out.Header, pr.In, whois)

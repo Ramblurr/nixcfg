@@ -70,6 +70,7 @@ func headerEchoSocket(t *testing.T) string {
 	}
 	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("Host", r.Host)
+		r.Header.Set("X-Raw-Query", r.URL.RawQuery)
 		json.NewEncoder(w).Encode(r.Header)
 	})}
 	go srv.Serve(ln)
@@ -91,12 +92,13 @@ func TestReverseProxyToUnixSocket(t *testing.T) {
 	front := httptest.NewTLSServer(createReverseProxy(upstream, whois))
 	defer front.Close()
 
-	req, _ := http.NewRequest(http.MethodGet, front.URL+"/", nil)
+	req, _ := http.NewRequest(http.MethodGet, front.URL+"/?item=a;b&session=local", nil)
 	req.Header.Set("X-Probe", "through the socket")
 	req.Header.Set("Connection", "Tailscale-User-Login, Tailscale-Node-Name, X-Forwarded-Proto")
 	got := getHeaders(t, front.Client(), req)
 	for k, want := range map[string]string{
 		"X-Probe":              "through the socket",
+		"X-Raw-Query":          "item=a;b&session=local",
 		"Host":                 strings.TrimPrefix(front.URL, "https://"),
 		"X-Forwarded-Proto":    "https",
 		"Tailscale-User-Login": "alice@example.com",
