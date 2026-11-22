@@ -168,7 +168,13 @@ in
   config = lib.mkIf cfg.profile.enable {
     myhm = {
       home.packages = [ packages.antigravity-cli ];
+      # Stops the modern-web-guidance CLI sending search queries to Google. The
+      # t3code copy changes its unit, so the deploy that adds the skill also
+      # restarts T3, and the agents it starts never run without the opt-out.
+      systemd.user.sessionVariables.DISABLE_TELEMETRY = "1";
+      systemd.user.services.t3code.Service.Environment = [ "DISABLE_TELEMETRY=1" ];
       home.sessionVariables = {
+        DISABLE_TELEMETRY = "1";
         HINDSIGHT_CONFIG_DIR = "$XDG_CONFIG_HOME/hindsight";
         PI_CODING_AGENT_DIR = "$XDG_CONFIG_HOME/pi/agent";
         PLANNOTATOR_DATA_DIR = "$XDG_CONFIG_HOME/plannotator";

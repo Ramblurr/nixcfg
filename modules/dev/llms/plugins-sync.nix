@@ -186,6 +186,10 @@ in
           url = "https://git.outskirtslabs.com/casey/skills.git";
           branch = "main";
         };
+        googlechrome = {
+          url = "https://github.com/GoogleChrome/modern-web-guidance.git";
+          branch = "main";
+        };
       };
       description = "Git plugin packs managed by `harness-plugins-sync`.";
     };
@@ -195,6 +199,7 @@ in
         "my@harness-plugins"
         "pstack@harness-plugins"
         "tstack@harness-plugins"
+        "modern-web-guidance@googlechrome"
       ];
       description = "Default plugin@pack selectors bound to every profile unless overridden.";
     };

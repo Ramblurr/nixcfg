@@ -287,6 +287,10 @@ assert lib.hasInfix
   "/home/test/.local/share/ol-plugins-sync/packs/harness-plugins/active/plugins/pstack/hooks/session-start.sh"
   codexSystemHook;
 assert profileHm.systemd.user.timers ? harness-plugins-sync;
+assert lib.elem "modern-web-guidance@googlechrome" profile.pluginsSync.defaultPlugins;
+assert profileHm.home.sessionVariables.DISABLE_TELEMETRY == "1";
+assert profileHm.systemd.user.sessionVariables.DISABLE_TELEMETRY == "1";
+assert lib.elem "DISABLE_TELEMETRY=1" profileHm.systemd.user.services.t3code.Service.Environment;
 pkgs.runCommand "llm-agents-test"
   {
     nativeBuildInputs = [
