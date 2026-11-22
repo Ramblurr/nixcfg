@@ -7,6 +7,7 @@
 with lib;
 let
   cfg = config.modules.services.borgmatic;
+  withImpermanence = config.modules.impermanence.enable;
   hostName = config.networking.hostName;
   gatusGroup = config.site.gatus.groups.infrastructure;
   gatusEndpointName = "Borgmatic Backup (${hostName})";
@@ -79,9 +80,24 @@ in
     systemd.timers.borgmatic = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
-        OnCalendar = "*-*-* 04:00:00";
+        OnCalendar = [
+          ""
+          "*-*-* 04:00:00"
+        ];
         Persistent = true;
         RandomizedDelaySec = "2h";
+      };
+    };
+
+    environment.persistence."/persist" = lib.mkIf withImpermanence {
+      directories = [
+        "/var/lib/borgmatic"
+      ]
+      ++ lib.optional (!config.modules.impermanence.persistHomes) {
+        directory = "${config.users.users.root.home}/.config/borg";
+        user = "root";
+        group = "root";
+        mode = "0700";
       };
     };
 
@@ -100,14 +116,14 @@ in
         exclude_patterns = cfg.exclude-patterns;
         exclude_if_present = [ ".nobackup" ];
         encryption_passphrase = "\${PASSPHRASE}";
-        ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -o StrictHostKeyChecking=yes -i /run/secrets/borgmatic-ssh-key";
+        ssh_command = "ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/root/.ssh/known_hosts -i /run/secrets/borgmatic-ssh-key";
         archive_name_format = "${cfg.name}-{now:%Y-%m-%dT%H:%M:%S.%f}";
         keep_within = "1d";
         keep_daily = 7;
         keep_weekly = 4;
         keep_monthly = 6;
         keep_yearly = 2;
-        match_archives = "${cfg.name}";
+        match_archives = "sh:${cfg.name}-*";
         check_last = 3;
         checks = [
           {
