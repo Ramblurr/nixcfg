@@ -122,7 +122,16 @@
 (deftest malformed-form-encoding-is-a-bad-request
   (is (= 400 (:status (request :post actions/assign
                                :headers (assoc datastar "Content-Type" "application/x-www-form-urlencoded")
-                               :body "credential=%E0%A4%A")))))
+                               :body "credential=%E0%A4%A"))))
+  (is (= 400 (:status (request :post actions/assign
+                               :headers (assoc datastar "Content-Type" "application/x-www-form-urlencoded")
+                               :body "credential=%FF")))
+      "invalid UTF-8 is refused, not replaced"))
+
+(deftest actions-never-retry
+  (is (every? #(str/includes? % "retryMaxCount: 0")
+              [(lib/post actions/assign {}) (lib/form-post actions/create-credential)])
+      "a retried action could send values the human edited after submitting"))
 
 (deftest creates-a-credential-from-the-catalog-by-field-id
   (is (str/includes? (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")
@@ -179,7 +188,7 @@
                                                   :groups ["agents"] :modes ["inject"] :credential "GITHUB_TOKEN"
                                                   :host "api.github.com" :header "Authorization" :mode "inject"})})]
     (is (= {:decision "pending" :approval "1"} (decide)))
-    (is (str/includes? (render "/") "{payload: {&quot;id&quot;:1,&quot;event&quot;:&quot;approve&quot;,&quot;grant&quot;:&quot;once&quot;}}"))
+    (is (str/includes? (render "/") "{payload: {&quot;id&quot;:1,&quot;event&quot;:&quot;approve&quot;,&quot;grant&quot;:&quot;once&quot;}, retryMaxCount: 0})"))
     (testing "an action ignores parameters in the query string"
       (is (str/includes? (:body (request :post (str actions/approval "?id=1&event=approve&grant=24h") :headers datastar))
                          "No such approval or event."))

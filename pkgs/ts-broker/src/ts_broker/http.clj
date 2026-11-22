@@ -28,6 +28,8 @@
   (:import
    [java.io ByteArrayOutputStream]
    [java.net URLDecoder]
+   [java.nio ByteBuffer]
+   [java.nio.charset CharacterCodingException CodingErrorAction StandardCharsets]
    [java.security MessageDigest]
    [java.util Base64]
    [java.util.zip GZIPOutputStream]))
@@ -61,10 +63,20 @@
     {:status 200 :headers (assoc headers "Content-Encoding" "gzip") :body gzip-body}
     {:status 200 :headers headers :body body}))
 
-(defn- decode [s]
+(defn- decode
+  "Decodes the URL-encoded `s` as strict UTF-8, throwing a bad request for a
+  broken escape or an invalid byte sequence instead of substituting U+FFFD."
+  [s]
   (try
-    (URLDecoder/decode (str s) "UTF-8")
+    (let [latin1 (URLDecoder/decode (str s) "ISO-8859-1")
+          bytes  (.getBytes latin1 StandardCharsets/ISO_8859_1)]
+      (str (.decode (doto (.newDecoder StandardCharsets/UTF_8)
+                      (.onMalformedInput CodingErrorAction/REPORT)
+                      (.onUnmappableCharacter CodingErrorAction/REPORT))
+                    (ByteBuffer/wrap bytes))))
     (catch IllegalArgumentException e
+      (throw (ex-info "Malformed URL encoding." {:type ::bad-request} e)))
+    (catch CharacterCodingException e
       (throw (ex-info "Malformed URL encoding." {:type ::bad-request} e)))))
 
 (defn parse-params

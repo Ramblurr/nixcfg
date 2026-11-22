@@ -84,11 +84,13 @@
                                     (str (name k) "=" (URLEncoder/encode (str v) "UTF-8")))))))))
 
 (defn post
-  "Returns a Datastar expression that POSTs `payload` as JSON to `path`."
+  "Returns a Datastar expression that POSTs `payload` as JSON to `path`,
+  once: a retry could send values the human changed after submitting."
   [path payload]
-  (str "@post('" path "', {payload: " (json/generate-string payload) "})"))
+  (str "@post('" path "', {payload: " (json/generate-string payload) ", retryMaxCount: 0})"))
 
 (defn form-post
-  "Returns a Datastar expression that POSTs the enclosing form to `path`."
+  "Returns a Datastar expression that POSTs the enclosing form to `path`,
+  once: a retry would rebuild the body from fields edited since."
   [path]
-  (str "@post('" path "', {contentType: 'form'})"))
+  (str "@post('" path "', {contentType: 'form', retryMaxCount: 0})"))
