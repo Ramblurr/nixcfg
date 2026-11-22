@@ -1,0 +1,57 @@
+{
+  "git": {
+    "io.github.babashka/babashka.sqlite/54ec86f48144f88c5fe2722ea3a8737f28cc22e7": {
+      "common_dir": "https/github.com/babashka/babashka.sqlite",
+      "rev": "54ec86f48144f88c5fe2722ea3a8737f28cc22e7",
+      "sha256": "0xwh7z18gm04fp9jmvclj7gn1y75n6axj7nlpackbxci5xiln89h",
+      "url": "https://github.com/babashka/babashka.sqlite.git"
+    },
+    "io.github.babashka/ffi/5d39a9157ce1f6294d2ff7af84147cb7e568fce1": {
+      "common_dir": "https/github.com/babashka/ffi",
+      "rev": "5d39a9157ce1f6294d2ff7af84147cb7e568fce1",
+      "sha256": "1yir8q6z242cacy4yx1pk4gdy67czw1nrsigpvp7qljgghr8zj0a",
+      "url": "https://github.com/babashka/ffi"
+    }
+  },
+  "maven": {
+    "dev/data-star/clojure/http-kit/1.0.0-RC13/http-kit-1.0.0-RC13.jar": {
+      "sha256": "862c76d23edbe7e9440defb61e133f741a807306c99749616a52a5d216006d9a"
+    },
+    "dev/data-star/clojure/http-kit/1.0.0-RC13/http-kit-1.0.0-RC13.pom": {
+      "sha256": "b59c93eb6265f8ea0b83a569d5ea328e25ca9871ef3b5ebb9bb48d861ec6fec6"
+    },
+    "dev/data-star/clojure/sdk/1.0.0-RC13/sdk-1.0.0-RC13.jar": {
+      "sha256": "e9cbe9d31297e7017889f6135a338c85a8125679e1abc2a606f86be66196dfac"
+    },
+    "dev/data-star/clojure/sdk/1.0.0-RC13/sdk-1.0.0-RC13.pom": {
+      "sha256": "24ca97278c3baa54599c27c09c79d0731946439260c47e11896d9238fd67cb08"
+    },
+    "http-kit/http-kit/2.9.0-beta4/http-kit-2.9.0-beta4.jar": {
+      "sha256": "d97c94eed50e9e22ca91e98c8f8176f41b79380438527793c39c814d7e0ee0b8"
+    },
+    "http-kit/http-kit/2.9.0-beta4/http-kit-2.9.0-beta4.pom": {
+      "sha256": "d40e6298c22763b1c97a4498bcc8abec40ceb01d893276a0c7dff6300bdfddff"
+    },
+    "org/clojure/clojure/1.12.6/clojure-1.12.6.jar": {
+      "sha256": "21b578db389a8e74b286ce79c4a7f86ec641e26d88b12f18d69030916b0e18ca"
+    },
+    "org/clojure/clojure/1.12.6/clojure-1.12.6.pom": {
+      "sha256": "6b85dea75a09f1eb08c8cc18a1b3120a3fd048a6343757a1b6be979ab6f910cf"
+    },
+    "org/clojure/core.specs.alpha/0.4.74/core.specs.alpha-0.4.74.jar": {
+      "sha256": "eb73ac08cf49ba840c88ba67beef11336ca554333d9408808d78946e0feb9ddb"
+    },
+    "org/clojure/core.specs.alpha/0.4.74/core.specs.alpha-0.4.74.pom": {
+      "sha256": "33410eb8aa73d52d957b3dc6e0a65f3998ac0623cbd813d90c33e6e689c42429"
+    },
+    "org/clojure/pom.contrib/1.2.0/pom.contrib-1.2.0.pom": {
+      "sha256": "0916d7a41558b9500a427c886fa29827ace5259206be3ad33e64e296fc1a6111"
+    },
+    "org/clojure/spec.alpha/0.5.238/spec.alpha-0.5.238.jar": {
+      "sha256": "94cd99b6ea639641f37af4860a643b6ed399ee5a8be5d717cff0b663c8d75077"
+    },
+    "org/clojure/spec.alpha/0.5.238/spec.alpha-0.5.238.pom": {
+      "sha256": "3cba7e0dcc085c4ce92dddffea226124ffac178be79bd0379b5b2e30a969cbea"
+    }
+  }
+}

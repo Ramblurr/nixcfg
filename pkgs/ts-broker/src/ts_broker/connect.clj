@@ -1,0 +1,89 @@
+(ns ts-broker.connect
+  "Read-only 1Password Connect catalog: vaults, items and field labels.
+
+  Field values never leave this namespace. Responses are cached for a short
+  time, so page renders do not query Connect on every change."
+  (:require
+   [babashka.http-client :as http]
+   [cheshire.core :as json]
+   [clojure.string :as str])
+  (:import
+   [java.net URLEncoder]))
+
+(def ^:private ttl-ms 30000)
+
+(defn client
+  "Returns a Connect client for the server at `url` with `token`."
+  [url token]
+  {:url   (str/replace url #"/+$" "")
+   :token token
+   :cache (atom {})})
+
+(defn- fetch [{:keys [url token]} path]
+  (let [{:keys [status body]}
+        (try
+          (http/get (str url path)
+                    {:headers {"Authorization" (str "Bearer " token)}
+                     :throw   false
+                     :timeout 10000})
+          (catch Exception _
+            (throw (ex-info "Connect is unreachable." {:type ::unavailable}))))]
+    (when-not (= 200 status)
+      (throw (ex-info (str "Connect answered " status ".") {:type ::unavailable :status status})))
+    (json/parse-string body true)))
+
+(defn- cached
+  "Returns `(f body)` for the Connect response at `path`, from the cache
+  when it is fresh. Only the result of `f` is cached."
+  [{:keys [cache] :as client} path f]
+  (let [now (System/currentTimeMillis)
+        {:keys [at value]} (get @cache path)]
+    (if (and at (< (- now at) ttl-ms))
+      value
+      (let [value (f (fetch client path))]
+        (swap! cache assoc path {:at now :value value})
+        value))))
+
+(defn- encode [s]
+  (URLEncoder/encode (str s) "UTF-8"))
+
+(defn vaults
+  "Returns the vaults that the token can read as maps of `:id` and `:name`,
+  ordered by name."
+  [client]
+  (cached client "/v1/vaults"
+          #(->> (map (fn [v] (select-keys v [:id :name])) %)
+                (sort-by (comp str/lower-case str :name))
+                vec)))
+
+(defn items
+  "Returns the items of vault `vault-id` as maps of `:id`, `:title` and
+  `:category`, ordered by title."
+  [client vault-id]
+  (cached client (str "/v1/vaults/" (encode vault-id) "/items")
+          #(->> (map (fn [i] (select-keys i [:id :title :category])) %)
+                (sort-by (comp str/lower-case str :title))
+                vec)))
+
+(defn item
+  "Returns item `item-id` of vault `vault-id` with `:id`, `:title` and
+  `:fields`. Each field holds `:id`, `:label`, `:type` and `:section`, the
+  section label or nil. Field values are dropped."
+  [client vault-id item-id]
+  (cached client (str "/v1/vaults/" (encode vault-id) "/items/" (encode item-id))
+          (fn [{:keys [id title fields sections]}]
+            (let [section-labels (into {} (map (juxt :id :label)) sections)]
+              {:id     id
+               :title  title
+               :fields (mapv (fn [f]
+                               {:id      (:id f)
+                                :label   (:label f)
+                                :type    (:type f)
+                                :section (get section-labels (get-in f [:section :id]))})
+                             fields)}))))
+
+(defn error-message
+  "Returns the message of a Connect failure `e`, or nil for other errors."
+  [e]
+  (when (= ::unavailable (:type (ex-data e)))
+    (ex-message e)))

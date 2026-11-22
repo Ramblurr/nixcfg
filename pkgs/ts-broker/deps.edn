@@ -1,0 +1,4 @@
+{:paths ["src"]
+ :deps  {dev.data-star.clojure/sdk           {:mvn/version "1.0.0-RC13"}
+         dev.data-star.clojure/http-kit      {:mvn/version "1.0.0-RC13"}
+         io.github.babashka/babashka.sqlite  {:git/sha "54ec86f48144f88c5fe2722ea3a8737f28cc22e7"}}}

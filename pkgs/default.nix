@@ -74,6 +74,10 @@ inputs: [
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       ts-plug = prev.callPackage ./ts-plug/package.nix { };
       ts-egress = prev.callPackage ./ts-egress/package.nix { };
+      ts-broker = prev.callPackage ./ts-broker/package.nix {
+        clojureNixLocker = inputs.clojure-nix-locker;
+        pkgs = prev;
+      };
       mcp-inspector = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./mcp-inspector/package.nix { };

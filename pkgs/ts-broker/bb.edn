@@ -1,0 +1,21 @@
+{:paths ["src"]
+ :deps  {dev.data-star.clojure/sdk          {:mvn/version "1.0.0-RC13"}
+         dev.data-star.clojure/http-kit     {:mvn/version "1.0.0-RC13"}
+         io.github.babashka/babashka.sqlite {:git/sha "54ec86f48144f88c5fe2722ea3a8737f28cc22e7"}}
+ :tasks {:init (def paths ["src" "test"])
+
+         lint
+         {:doc  "Run clj-kondo on source and tests"
+          :task (apply shell "clj-kondo --lint" paths)}
+
+         test
+         {:doc         "Run test suite"
+          :extra-paths ["test"]
+          :requires    ([ts-broker.test-runner :as runner])
+          :task        (System/exit (runner/run))}
+
+         dev
+         {:doc         "Start an nREPL server with the test path"
+          :extra-paths ["test"]
+          :task        (do (babashka.nrepl.server/start-server! {:port 0})
+                         (deref (promise)))}}}
