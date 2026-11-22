@@ -169,12 +169,12 @@ pkgs.testers.runNixOSTest {
         refused = machine.succeed(f"curl -s -D - -o /dev/null {UI}/").lower()
         assert "x-frame-options: deny" in refused, refused
         delete = {"name": "GITHUB_TOKEN"}
-        assert act("/action/credential/delete", delete, [ADMIN, "Datastar-Request: true"]) == "403"
-        assert act("/action/credential/delete", delete, [ADMIN, "Datastar-Request: true", "Sec-Fetch-Site: cross-site"]) == "403"
-        assert act("/action/credential/delete", delete, [ADMIN, "Sec-Fetch-Site: same-origin"]) == "403"
+        assert act("/action/delete-credential", delete, [ADMIN, "Datastar-Request: true"]) == "403"
+        assert act("/action/delete-credential", delete, [ADMIN, "Datastar-Request: true", "Sec-Fetch-Site: cross-site"]) == "403"
+        assert act("/action/delete-credential", delete, [ADMIN, "Sec-Fetch-Site: same-origin"]) == "403"
 
     with subtest("a credential is created from the catalog and assigned"):
-        assert post("/action/credential/create", {
+        assert post("/action/create-credential", {
             "vault": "vlt0000000000000000000000a", "item": "itm0000000000000000000000a",
             "field": "fld0000000000000000000000a", "name": "GITHUB_TOKEN",
             "header": "Authorization", "hosts": "api.github.com"}) == "200"

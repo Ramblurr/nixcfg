@@ -173,7 +173,7 @@ func (b *liveBroker) post(t *testing.T, path string, form url.Values) {
 
 func (b *liveBroker) credential(t *testing.T, name, hosts string) {
 	t.Helper()
-	b.post(t, "/action/credential/create", url.Values{
+	b.post(t, "/action/create-credential", url.Values{
 		"name": {name}, "vault": {contractVault}, "item": {contractItem}, "field": {contractField},
 		"header": {"Authorization"}, "hosts": {hosts},
 	})

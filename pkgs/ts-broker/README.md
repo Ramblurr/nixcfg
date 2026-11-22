@@ -113,7 +113,9 @@ line on stdout.
 | `ts-broker.socket` | NDJSON decide server on the unix socket |
 | `ts-broker.connect` | Read-only Connect catalog. Field values are dropped. |
 | `ts-broker.http` | Datastar server. Each page opens one SSE stream, which re-renders from the database after each committed write. |
-| `ts-broker.ui` | Pages (approvals, credentials, catalog, assign, identities, audit) and actions |
+| `ts-broker.lib` | `defview` and `defaction`: pages and actions as vars that carry their paths |
+| `ts-broker.pages` | Pages (approvals, credentials, catalog, assign, identities, audit) |
+| `ts-broker.actions` | Actions, each served at `/action/<name>` |
 | `ts-broker.main` | Command line |
 
 ## Development

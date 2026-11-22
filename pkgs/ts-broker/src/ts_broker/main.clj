@@ -9,7 +9,9 @@
    [ts-broker.http :as http]
    [ts-broker.socket :as socket]
    [ts-broker.store :as store]
-   [ts-broker.ui :as ui])
+   [ts-broker.actions]
+   [ts-broker.lib :as lib]
+   [ts-broker.pages :as pages])
   (:import
    [java.time Instant]))
 
@@ -62,8 +64,8 @@
              :connect (some-> (:connect-url opts) (connect/client token))}]
     {:store  st
      :socket (socket/start! st (:socket opts) {})
-     :http   (http/start! {:port (:port opts) :ctx ctx :pages ui/pages :actions ui/actions :css ui/css
-                           :datastar-js (datastar-js)})}))
+     :http   (http/start! (merge (lib/routes 'ts-broker.pages 'ts-broker.actions)
+                                 {:port (:port opts) :ctx ctx :css pages/css :datastar-js (datastar-js)}))}))
 
 (defn stop!
   "Stops `system`."

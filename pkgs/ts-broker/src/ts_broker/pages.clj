@@ -1,43 +1,20 @@
-(ns ts-broker.ui
-  "Pages and actions of the broker UI. See [[ts-broker.http]] for how they
-  are served.
+(ns ts-broker.pages
+  "Pages of the broker UI. See [[ts-broker.lib/defview]] for how they are
+  served and [[ts-broker.actions]] for the actions their controls POST to.
 
   Pages read the store through reader connections and the catalog through
-  [[ts-broker.connect]]. Actions turn the parameters of the request body
-  into store commands; the store validates them. Controls send them as a
-  form or a Datastar `payload`, never in the URL. A successful credential
-  edit answers with a fresh edit form."
+  [[ts-broker.connect]]."
   (:require
    [cheshire.core :as json]
    [clojure.string :as str]
+   [ts-broker.actions :as actions]
    [ts-broker.connect :as connect]
    [ts-broker.domain :as domain]
+   [ts-broker.lib :as lib]
    [ts-broker.store :as store])
   (:import
-   [java.net URLEncoder]
    [java.time Duration Instant ZoneOffset]
    [java.time.format DateTimeFormatter]))
-
-(defn- param [request k]
-  (some-> (get-in request [:params k]) first str/trim))
-
-(defn- params [request k]
-  (vec (remove str/blank? (map str/trim (get-in request [:params k])))))
-
-(defn- href [path query]
-  (let [query (remove (comp nil? val) query)]
-    (str path
-         (when (seq query)
-           (str "?" (str/join "&" (for [[k v] query]
-                                    (str (name k) "=" (URLEncoder/encode (str v) "UTF-8")))))))))
-
-(defn- post
-  "Returns a Datastar expression that POSTs `payload` as JSON to `path`."
-  [path payload]
-  (str "@post('" path "', {payload: " (json/generate-string payload) "})"))
-
-(defn- confirm-post [message path payload]
-  (str "confirm(" (json/generate-string message) ") && " (post path payload)))
 
 (def ^:private time-format
   (.withZone (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss 'UTC'") ZoneOffset/UTC))
@@ -71,7 +48,7 @@
    body])
 
 (defn- identity-link [identity]
-  [:a {:href (href "/identity" {:id identity})} [:code identity]])
+  [:a {:href (lib/href "/identity" {:id identity})} [:code identity]])
 
 (defn- subject-link [subject]
   (if (domain/group-name subject)
@@ -79,7 +56,7 @@
     (identity-link subject)))
 
 (defn- credential-link [name]
-  [:a {:href (href "/credential" {:name name})} [:code name]])
+  [:a {:href (lib/href "/credential" {:name name})} [:code name]])
 
 (defn- empty-row [n text]
   [:tr [:td.muted {:colspan n} text]])
@@ -92,7 +69,7 @@
 
 (defn- approval-actions [{:keys [id state]}]
   (let [act (fn [label event grant & [class]]
-              [:button {:class class :data-on:click (post "/action/approval" {:id id :event event :grant grant})}
+              [:button {:class class :data-on:click (lib/post actions/approval {:id id :event event :grant grant})}
                label])]
     (case state
       :pending  [:div.actions
@@ -130,10 +107,11 @@
 (defn- columns [& ks]
   (mapv approval-columns ks))
 
-(defn approvals-page
+(lib/defview approvals-page
   "Renders the approval queue, standing approvals and blocked list. Queued
   and standing approvals show the host they were requested for and the
   credential's current header and hosts."
+  {:path "/" :title "Broker approvals"}
   [{:keys [store clock]} request]
   (let [now (clock)
         [open creds] (store/read store (juxt store/open-approvals store/credentials))
@@ -154,8 +132,9 @@
              (approvals-table now (:blocked by-state)
                               (columns :identity :credential :mode :approver :decided :actions))])))
 
-(defn credentials-page
+(lib/defview credentials-page
   "Renders the credential list."
+  {:path "/credentials" :title "Broker credentials"}
   [{:keys [store]} request]
   (let [[creds assignments] (store/read store (juxt store/credentials store/assignments))
         counts (frequencies (map :credential assignments))]
@@ -183,31 +162,24 @@
       " " [:code (if (str/blank? label) id label)]
       [:small.muted " " (str/join " · " (remove nil? [section (some-> type str/lower-case)]))]])])
 
-(defn- credential-form-fields [{:keys [header hosts]}]
-  (list
-   [:label "Header"
-    [:small.muted " the only header the placeholder may appear in. The tenant writes the value, such as Bearer TS_EGRESS_PLACEHOLDER_NAME."]
-    [:input {:name "header" :value (or header "Authorization") :required true}]]
-   [:label "Hosts" [:small.muted " names or *.domain, one per line"]
-    [:textarea {:name "hosts" :rows 3 :required true} (str/join "\n" hosts)]]))
-
 (defn- create-form [vault item]
-  [:form.stack {:data-on:submit__prevent "@post('/action/credential/create', {contentType: 'form'})"}
+  [:form.stack {:data-on:submit__prevent (lib/form-post actions/create-credential)}
    [:input {:type "hidden" :name "vault" :value (:id vault)}]
    [:input {:type "hidden" :name "item" :value (:id item)}]
    (field-picker item)
    [:label "Name" [:small.muted " the placeholder suffix: A-Z, 0-9 and _, not starting with a digit"]
     [:input {:name "name" :value (domain/suggested-name (:title item)) :required true
              :pattern "[A-Z_][A-Z0-9_]*"}]]
-   (credential-form-fields nil)
+   (actions/credential-form-fields nil)
    [:button {:type "submit"} "Create credential"]])
 
-(defn catalog-page
+(lib/defview catalog-page
   "Renders the 1Password catalog: vaults, then the items of the vault in the
   `vault` parameter, then the fields of the item in `item`."
+  {:path "/catalog" :title "Broker catalog"}
   [{:keys [connect]} request]
-  (let [vault-id (param request :vault)
-        item-id (param request :item)]
+  (let [vault-id (lib/param request :vault)
+        item-id (lib/param request :item)]
     (layout request "Catalog"
             (if-not connect
               [:p.message "No 1Password Connect URL is configured, so the catalog is empty."]
@@ -218,14 +190,14 @@
                  [:nav.list
                   [:h2 "Vaults"]
                   (for [v vaults]
-                    [:a {:href (href "/catalog" {:vault (:id v)})
+                    [:a {:href (lib/href "/catalog" {:vault (:id v)})
                          :aria-current (when (= vault-id (:id v)) "page")}
                      (:name v)])]
                  (when vault
                    [:nav.list
                     [:h2 "Items"]
                     (for [i (connect/items connect (:id vault))]
-                      [:a {:href (href "/catalog" {:vault (:id vault) :item (:id i)})
+                      [:a {:href (lib/href "/catalog" {:vault (:id vault) :item (:id i)})
                            :aria-current (when (= item-id (:id i)) "page")}
                        (:title i) [:small.muted " " (some-> (:category i) str/lower-case)]])])
                  (when (and vault item-id)
@@ -243,7 +215,7 @@
    [:td mode]
    [:td [:span {:class (str "pill " approval)} approval]]
    [:td editor]
-   [:td [:button.warn {:data-on:click (post "/action/assignment/remove"
+   [:td [:button.warn {:data-on:click (lib/post actions/remove-assignment
                                             {:subject subject :credential credential :mode mode})}
          "Remove"]]])
 
@@ -258,29 +230,11 @@
       (for [a rows] (assignment-row a show))
       (empty-row 6 "No assignments."))]])
 
-(defn- edit-form
-  "Returns the edit form of credential `c`. Live re-renders skip the form,
-  so it keeps the draft and the revision it was rendered with until a save
-  replaces it or the page loads again."
-  [{:keys [name revision] :as c}]
-  [:form#credential-form.stack
-   {:data-ignore-morph       true
-    :data-on:submit__prevent "@post('/action/credential/update', {contentType: 'form'})"}
-   [:input {:type "hidden" :name "name" :value name}]
-   [:input {:type "hidden" :name "revision" :value revision}]
-   (credential-form-fields c)
-   [:div.actions
-    [:button {:type "submit"} "Save"]
-    [:a {:href (href "/credential" {:name name})} "Discard and reload"]
-    [:button.danger {:type "button"
-                     :data-on:click (confirm-post (str "Delete " name " and its assignments?")
-                                                  "/action/credential/delete" {:name name :revision revision})}
-     "Delete"]]])
-
-(defn credential-page
+(lib/defview credential-page
   "Renders one credential with its edit form and who can use it."
+  {:path "/credential" :title "Broker credential"}
   [{:keys [store clock]} request]
-  (let [name (param request :name)
+  (let [name (lib/param request :name)
         [c assignments idents open]
         (store/read store (juxt #(store/credential % name)
                                 #(store/credential-assignments % name)
@@ -315,7 +269,7 @@
                      (empty-row 3 "No identity that sent a request matches.")))]]]
               [:section
                [:h2 "Edit"]
-               (edit-form c)]))))
+               (actions/edit-form c)]))))
 
 (defn- known-subjects [assignments idents]
   (let [groups (into (set (keep (comp domain/group-name :subject) assignments))
@@ -324,12 +278,13 @@
                          (remove domain/group-name (map :subject assignments)))]
     (concat (map domain/group-subject (sort groups)) (sort identities))))
 
-(defn assign-page
+(lib/defview assign-page
   "Renders the bulk assignment form and all assignments."
+  {:path "/assign" :title "Broker assignments"}
   [{:keys [store]} request]
   (let [[creds assignments idents] (store/read store (juxt store/credentials store/assignments store/identities))]
     (layout request "Assign"
-            [:form.stack {:data-on:submit__prevent "@post('/action/assign', {contentType: 'form'})"}
+            [:form.stack {:data-on:submit__prevent (lib/form-post actions/assign)}
              [:div.columns
               [:fieldset
                [:legend "Credentials"]
@@ -355,8 +310,9 @@
              [:h2 "All assignments"]
              (assignments-table assignments #{:subject :credential})])))
 
-(defn identities-page
+(lib/defview identities-page
   "Renders the identities that sent requests."
+  {:path "/identities" :title "Broker identities"}
   [{:keys [store]} request]
   (let [idents (store/read store store/identities)]
     (layout request "Identities"
@@ -376,11 +332,12 @@
                    [:td (fmt-time seen)]])
                 (empty-row 5 "No requests yet."))]])))
 
-(defn identity-page
+(lib/defview identity-page
   "Renders what one identity can use: its groups from its latest request,
   its own assignments, and its groups' assignments."
+  {:path "/identity" :title "Broker identity"}
   [{:keys [store clock]} request]
-  (let [id (param request :id)
+  (let [id (lib/param request :id)
         [idents assignments open] (store/read store (juxt store/identities store/assignments store/open-approvals))
         seen (first (filter #(= id (:identity %)) idents))
         groups (:groups seen)
@@ -415,25 +372,26 @@
                            (domain/live? a now) (approval-terms now a)
                            :else (name (:state a)))]])
                  (empty-row 5 "Nothing assigned."))]]]
-            [:p [:a {:href (href "/audit" {:identity id})} "Audit log for this identity"]])))
+            [:p [:a {:href (lib/href "/audit" {:identity id})} "Audit log for this identity"]])))
 
 (def ^:private audit-kinds ["request" "decision" "use" "approval" "assignment" "credential"])
 
-(defn audit-page
+(lib/defview audit-page
   "Renders the newest audit rows, filtered by the `identity`, `credential`
   and `kind` parameters."
+  {:path "/audit" :title "Broker audit"}
   [{:keys [store]} request]
-  (let [filters (into {} (keep (fn [k] (some->> (param request k) not-empty (vector k))))
+  (let [filters (into {} (keep (fn [k] (some->> (lib/param request k) not-empty (vector k))))
                       [:identity :credential :kind])
         entries (store/read store #(store/audit % filters 300))]
     (layout request "Audit"
             [:p.actions
              [:a {:href "/audit" :aria-current (when (empty? filters) "page")} "all"]
              (for [k audit-kinds]
-               [:a {:href (href "/audit" (assoc filters :kind k))
+               [:a {:href (lib/href "/audit" (assoc filters :kind k))
                     :aria-current (when (= k (:kind filters)) "page")} k])
              (for [[k v] (dissoc filters :kind)]
-               [:span.pill (name k) " " v " " [:a {:href (href "/audit" (dissoc filters k))} "x"]])]
+               [:span.pill (name k) " " v " " [:a {:href (lib/href "/audit" (dissoc filters k))} "x"]])]
             [:table.audit
              [:thead [:tr [:th "#"] [:th "At"] [:th "Kind"] [:th "Identity"] [:th "Actor"] [:th "Credential"] [:th "Detail"]]]
              [:tbody
@@ -443,91 +401,11 @@
                    [:td id]
                    [:td (fmt-time at)]
                    [:td kind]
-                   [:td (when identity [:a {:href (href "/audit" (assoc filters :identity identity))} [:code identity]])]
+                   [:td (when identity [:a {:href (lib/href "/audit" (assoc filters :identity identity))} [:code identity]])]
                    [:td actor]
-                   [:td (when credential [:a {:href (href "/audit" (assoc filters :credential credential))} [:code credential]])]
+                   [:td (when credential [:a {:href (lib/href "/audit" (assoc filters :credential credential))} [:code credential]])]
                    [:td [:code.detail (json/generate-string detail)]]])
                 (empty-row 7 "No audit rows."))]])))
-
-(def pages
-  "UI pages by path."
-  {"/"            {:title "Broker approvals" :render approvals-page}
-   "/credentials" {:title "Broker credentials" :render credentials-page}
-   "/credential"  {:title "Broker credential" :render credential-page}
-   "/catalog"     {:title "Broker catalog" :render catalog-page}
-   "/assign"      {:title "Broker assignments" :render assign-page}
-   "/identities"  {:title "Broker identities" :render identities-page}
-   "/identity"    {:title "Broker identity" :render identity-page}
-   "/audit"       {:title "Broker audit" :render audit-page}})
-
-(defn- credential-params [request]
-  {:name   (param request :name)
-   :vault  (param request :vault)
-   :item   (param request :item)
-   :field  (param request :field)
-   :header (param request :header)
-   :hosts  (domain/split-list (param request :hosts))})
-
-(def ^:private approval-events
-  {"approve" :approve "deny" :deny "block" :block "revoke" :revoke "unblock" :unblock})
-
-(def actions
-  "UI actions by path."
-  {"/action/approval"
-   (fn [{:keys [store]} request]
-     (store/write! store {:command :approval/event
-                          :id      (parse-long (str (param request :id)))
-                          :event   (approval-events (param request :event))
-                          :grant   (param request :grant)
-                          :actor   (:actor request)}))
-
-   "/action/credential/create"
-   (fn [{:keys [connect store]} request]
-     (let [{:keys [vault item field] :as c} (credential-params request)
-           picked (when (and connect vault item field)
-                    (->> (:fields (connect/item connect vault item))
-                         (filter #(= field (:id %)))
-                         first))
-           label (when picked
-                   (if (str/blank? (:label picked)) field (:label picked)))]
-       (store/write! store {:command    :credential/create
-                            :credential (assoc c :field-label label)
-                            :actor      (:actor request)})))
-
-   "/action/credential/update"
-   (fn [{:keys [store]} request]
-     (let [name (store/write! store {:command  :credential/update
-                                     :name     (param request :name)
-                                     :revision (param request :revision)
-                                     :header   (param request :header)
-                                     :hosts    (domain/split-list (param request :hosts))
-                                     :actor    (:actor request)})]
-       {:replace (edit-form (store/read store #(store/credential % name)))}))
-
-   "/action/credential/delete"
-   (fn [{:keys [store]} request]
-     (store/write! store {:command  :credential/delete
-                          :name     (param request :name)
-                          :revision (param request :revision)
-                          :actor    (:actor request)}))
-
-   "/action/assign"
-   (fn [{:keys [store]} request]
-     (store/write! store {:command     :assignment/assign
-                          :credentials (params request :credential)
-                          :subjects    (vec (distinct (concat (params request :subject)
-                                                              (domain/lines (param request :subjects)))))
-                          :mode        (param request :mode)
-                          :approval    (param request :approval)
-                          :actor       (:actor request)}))
-
-   "/action/assignment/remove"
-   (fn [{:keys [store]} request]
-     (store/write! store {:command    :assignment/remove
-                          :subject    (param request :subject)
-                          :credential (param request :credential)
-                          :mode       (param request :mode)
-                          :actor      (:actor request)}))})
 
 (def css
   "Stylesheet of the UI."

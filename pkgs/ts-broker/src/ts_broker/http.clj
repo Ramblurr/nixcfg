@@ -1,16 +1,15 @@
 (ns ts-broker.http
   "Datastar HTTP server for the broker UI.
 
-  A page is a function of the app context and the request that returns the
-  `main#morph` element. GET on a page path serves a shell page; its
-  `data-init` opens one long-lived SSE stream by POST on the same path. The
-  stream renders the page when it opens and again after each committed
-  store write. Pages read their parameters from the query string. An
-  action is a POST that runs a command and answers with the `#flash`
-  element, empty on success. When the action returns a map with
-  `:replace`, that element also replaces the element with its id, which
-  morphing would skip. Actions read their parameters from the body only, a
-  form or a JSON object.
+  Pages and actions come from [[ts-broker.lib/routes]]. GET on a page path
+  serves a shell page; its `data-init` opens one long-lived SSE stream by
+  POST on the same path. The stream renders the page when it opens and
+  again after each committed store write. Pages read their parameters from
+  the query string. An action is a POST that runs a command and answers
+  with the `#flash` element, empty on success. When the action returns a
+  map with `:replace`, that element also replaces the element with its id,
+  which morphing would skip. Actions read their parameters from the body
+  only, a form or a JSON object.
 
   Every request needs the `Tailscale-User-Login` header, which tailscale
   serve sets. A POST also needs `Datastar-Request: true` and
@@ -177,7 +176,7 @@
               (= uri (get-in assets [:js :path])) (asset-response (:js assets) request)
               :else {:status 404})
       :post (cond
-              page (render-stream app (assoc request :params (parse-params (:query-string request))) (:render page))
+              page (render-stream app (assoc request :params (parse-params (:query-string request))) (:fn page))
               (get actions uri) (action-response app (assoc request :params (body-params request)) (get actions uri))
               :else {:status 404})
       {:status 405})))
@@ -229,8 +228,8 @@
   |----------------|-------------|
   | `:port`        | TCP port; 0 picks a free one |
   | `:ctx`         | App context passed to pages and actions; must hold `:store` |
-  | `:pages`       | Map of path to `{:title t :render (fn [ctx request] main)}` |
-  | `:actions`     | Map of path to `(fn [ctx request])` that throws on failure and may return `{:replace element}` |
+  | `:pages`       | Pages from [[ts-broker.lib/routes]] |
+  | `:actions`     | Actions from [[ts-broker.lib/routes]] |
   | `:css`         | Stylesheet text |
   | `:datastar-js` | Datastar bundle text |"
   [{:keys [port ctx pages actions css datastar-js]}]

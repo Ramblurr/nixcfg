@@ -5,12 +5,14 @@
    [clojure.string :as str]
    [cheshire.core :as json]
    [clojure.test :refer [deftest is testing use-fixtures]]
+   [ts-broker.actions :as actions]
    [ts-broker.connect :as connect]
    [ts-broker.domain :as domain]
    [ts-broker.fake-connect :as fake-connect]
    [ts-broker.http :as http]
-   [ts-broker.store :as store]
-   [ts-broker.ui :as ui])
+   [ts-broker.lib :as lib]
+   [ts-broker.pages :as pages]
+   [ts-broker.store :as store])
   (:import
    [java.time Instant]))
 
@@ -22,14 +24,13 @@
     (let [dir (fs/create-temp-dir {:prefix "ts-broker-ui-test"})
           fake (fake-connect/start!)
           st (store/start! (str (fs/path dir "broker.db")) {:audit-out (fn [_])})
-          server (http/start! {:port        0
-                               :ctx         {:store   st
-                                             :clock   #(Instant/now)
-                                             :connect (connect/client (:url fake) fake-connect/token)}
-                               :pages       ui/pages
-                               :actions     ui/actions
-                               :css         ui/css
-                               :datastar-js "export {}"})]
+          server (http/start! (merge (lib/routes 'ts-broker.pages 'ts-broker.actions)
+                                     {:port        0
+                                      :ctx         {:store   st
+                                                    :clock   #(Instant/now)
+                                                    :connect (connect/client (:url fake) fake-connect/token)}
+                                      :css         pages/css
+                                      :datastar-js "export {}"}))]
       (try
         (binding [*store* st *base* (str "http://127.0.0.1:" (http/port server))]
           (f))
@@ -93,18 +94,18 @@
 (deftest requests-need-the-tailscale-login
   (is (= [403 403 403 200]
          (mapv :status [(request :get "/")
-                        (json-post "/action/approval" approve :headers {"Tailscale-User-Login" nil})
-                        (json-post "/action/approval" approve :headers {"Tailscale-User-Login" " "})
+                        (json-post actions/approval approve :headers {"Tailscale-User-Login" nil})
+                        (json-post actions/approval approve :headers {"Tailscale-User-Login" " "})
                         (request :get "/" :headers login)]))))
 
 (deftest posts-need-a-same-origin-datastar-request
   (is (= [403 403 403 403 403]
-         (mapv :status [(json-post "/action/credential/delete" {:name "X"} :headers {"Sec-Fetch-Site" "cross-site"})
-                        (json-post "/action/credential/delete" {:name "X"} :headers {"Sec-Fetch-Site" "same-site"})
-                        (json-post "/action/credential/delete" {:name "X"} :headers {"Sec-Fetch-Site" nil})
-                        (json-post "/action/credential/delete" {:name "X"} :headers {"Datastar-Request" nil})
+         (mapv :status [(json-post actions/delete-credential {:name "X"} :headers {"Sec-Fetch-Site" "cross-site"})
+                        (json-post actions/delete-credential {:name "X"} :headers {"Sec-Fetch-Site" "same-site"})
+                        (json-post actions/delete-credential {:name "X"} :headers {"Sec-Fetch-Site" nil})
+                        (json-post actions/delete-credential {:name "X"} :headers {"Datastar-Request" nil})
                         (stream-post "/" (dissoc datastar "Sec-Fetch-Site"))])))
-  (is (= 200 (:status (json-post "/action/credential/delete" {:name "X"})))))
+  (is (= 200 (:status (json-post actions/delete-credential {:name "X"})))))
 
 (deftest no-response-may-be-framed
   (is (= #{{"content-security-policy" "frame-ancestors 'none'" "x-frame-options" "DENY"}}
@@ -112,13 +113,13 @@
                    [(request :get "/" :headers login)
                     (request :get "/")
                     (request :get "/nowhere" :headers login)
-                    (json-post "/action/credential/delete" {:name "X"})
+                    (json-post actions/delete-credential {:name "X"})
                     (stream-post "/" datastar)])))))
 
 (deftest creates-a-credential-from-the-catalog-by-field-id
   (is (str/includes? (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")
                      "value=\"credential\""))
-  (let [{:keys [status body]} (form-post "/action/credential/create"
+  (let [{:keys [status body]} (form-post actions/create-credential
                                          {:vault  "vlt0000000000000000000000a"
                                           :item   "itm0000000000000000000000a"
                                           :field  "f2"
@@ -132,7 +133,7 @@
          (select-keys (store/read *store* #(store/credential % "GITHUB_NOTE"))
                       [:name :field :field-label :hosts :editor])))
   (testing "validation errors come back in the flash"
-    (is (str/includes? (:body (form-post "/action/credential/create"
+    (is (str/includes? (:body (form-post actions/create-credential
                                          {:vault "vlt0000000000000000000000a" :item "itm0000000000000000000000a"
                                           :field "f2" :name "GITHUB_NOTE" :header "Host" :hosts "x.com"}))
                        "Host is a reserved header"))))
@@ -144,7 +145,7 @@
 
 (deftest approves-through-the-ui-and-records-the-approver
   (seed-credential!)
-  (form-post "/action/assign" {:credential "GITHUB_TOKEN" :subjects "group:agents" :mode "inject" :approval "ask"})
+  (form-post actions/assign {:credential "GITHUB_TOKEN" :subjects "group:agents" :mode "inject" :approval "ask"})
   (let [decide #(store/write! *store* {:command :decide
                                        :request (domain/parse-request
                                                  {:op "decide" :identity "tag:t3-alice" :node "t3-alice"
@@ -153,10 +154,10 @@
     (is (= {:decision "pending" :approval "1"} (decide)))
     (is (str/includes? (render "/") "{payload: {&quot;id&quot;:1,&quot;event&quot;:&quot;approve&quot;,&quot;grant&quot;:&quot;once&quot;}}"))
     (testing "an action ignores parameters in the query string"
-      (is (str/includes? (:body (request :post "/action/approval?id=1&event=approve&grant=24h" :headers datastar))
+      (is (str/includes? (:body (request :post (str actions/approval "?id=1&event=approve&grant=24h") :headers datastar))
                          "No such approval or event."))
       (is (= :pending (:state (store/read *store* #(store/approval % 1))))))
-    (is (= 200 (:status (json-post "/action/approval" {:id 1 :event "approve" :grant "24h"}))))
+    (is (= 200 (:status (json-post actions/approval {:id 1 :event "approve" :grant "24h"}))))
     (is (= "allow" (:decision (decide))))
     (is (= {:state :approved :approver "casey@github"}
            (select-keys (store/read *store* #(store/approval % 1)) [:state :approver])))
@@ -164,7 +165,7 @@
 
 (deftest approvals-show-the-requested-host-and-the-current-credential
   (seed-credential!)
-  (form-post "/action/assign" {:credential "GITHUB_TOKEN" :subjects "group:agents" :mode "inject" :approval "ask"})
+  (form-post actions/assign {:credential "GITHUB_TOKEN" :subjects "group:agents" :mode "inject" :approval "ask"})
   (store/write! *store* {:command :decide
                          :request (domain/parse-request
                                    {:op "decide" :identity "tag:t3-alice" :node "t3-alice"
@@ -174,15 +175,15 @@
     (is (re-find #"<td><code>api\.github\.com</code></td><td><code>Authorization</code> <code class=\"pill\">api\.github\.com</code></td>"
                  page)))
   (let [revision (:revision (store/read *store* #(store/credential % "GITHUB_TOKEN")))]
-    (form-post "/action/credential/update" {:name "GITHUB_TOKEN" :revision revision :header "X-Api-Key"
+    (form-post actions/update-credential {:name "GITHUB_TOKEN" :revision revision :header "X-Api-Key"
                                             :hosts "*.github.com"}))
-  (is (str/includes? (:body (json-post "/action/approval" {:id 1 :event "approve" :grant "once"}))
+  (is (str/includes? (:body (json-post actions/approval {:id 1 :event "approve" :grant "once"}))
                      "Approval 1 was superseded by a change to its credential."))
   (is (not (str/includes? (render "/") "api.github.com")) "a superseded approval leaves the queue"))
 
 (deftest assigns-one-manual-subject-per-line
   (seed-credential!)
-  (form-post "/action/assign" {:credential "GITHUB_TOKEN" :subjects "tag:a,tag:b\n group:agents \n" :subject "tag:t3-bob"
+  (form-post actions/assign {:credential "GITHUB_TOKEN" :subjects "tag:a,tag:b\n group:agents \n" :subject "tag:t3-bob"
                                :mode "inject" :approval "ask"})
   (is (= ["group:agents" "tag:a,tag:b" "tag:t3-bob"]
          (map :subject (store/read *store* store/assignments)))))
@@ -214,14 +215,14 @@
         shown (next-event)
         revision (form-revision shown)]
     (try
-      (form-post "/action/credential/update" {:name "GITHUB_TOKEN" :revision revision :header "X-Other-Admin"
+      (form-post actions/update-credential {:name "GITHUB_TOKEN" :revision revision :header "X-Other-Admin"
                                               :hosts "api.github.com"})
       (let [rerender (next-event)]
         (is (= [true true]
                (mapv #(str/includes? (str (form-tag %)) "data-ignore-morph") [shown rerender]))
             "the live re-render leaves the form the user is editing as it is")
         (is (not= revision (form-revision rerender))))
-      (is (str/includes? (:body (form-post "/action/credential/update"
+      (is (str/includes? (:body (form-post actions/update-credential
                                            {:name "GITHUB_TOKEN" :revision revision :header "X-Api-Key"
                                             :hosts "api.github.com"}))
                          "changed or was deleted since the form was shown")
@@ -231,7 +232,7 @@
         (next-event :close))))
   (testing "a successful save replaces the form with one at the new revision"
     (let [{:keys [revision]} (store/read *store* #(store/credential % "GITHUB_TOKEN"))
-          body (:body (form-post "/action/credential/update" {:name "GITHUB_TOKEN" :revision revision
+          body (:body (form-post actions/update-credential {:name "GITHUB_TOKEN" :revision revision
                                                               :header "X-Api-Key" :hosts "api.github.com"}))
           saved (:revision (store/read *store* #(store/credential % "GITHUB_TOKEN")))]
       (is (= [true saved]
@@ -244,7 +245,7 @@
         revision (second (re-find #"name=\"revision\"[^>]*value=\"([^\"]+)\"" page))
         edit {:name "GITHUB_TOKEN" :revision (str revision) :header "X-Api-Key" :hosts "api.github.com"}]
     (is (some? revision))
-    (is (not (str/includes? (:body (form-post "/action/credential/update" edit)) "class=\"message\"")))
+    (is (not (str/includes? (:body (form-post actions/update-credential edit)) "class=\"message\"")))
     (is (= "X-Api-Key" (:header (store/read *store* #(store/credential % "GITHUB_TOKEN")))))
-    (is (str/includes? (:body (form-post "/action/credential/update" (assoc edit :header "Authorization")))
+    (is (str/includes? (:body (form-post actions/update-credential (assoc edit :header "Authorization")))
                        "changed or was deleted since the form was shown"))))
