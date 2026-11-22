@@ -16,6 +16,7 @@ let
   };
   guests = [
     "dev1"
+    "t3-users"
     "egress"
   ];
 in
@@ -28,6 +29,10 @@ in
   sops.secrets = lib.mori.reduceAttrs genGuestSecret guests;
 
   # The private wrapper supplies the evaluated, secret-aware guest configuration.
+  microvm.vms.t3-users = {
+    autostart = true;
+    restartIfChanged = true;
+  };
   microvm.vms.egress = {
     autostart = true;
     restartIfChanged = true;

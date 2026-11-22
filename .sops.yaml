@@ -24,6 +24,7 @@ keys:
       - &wyoming-satellite-bedroom age1zjqpckes5ykxcv2ghkay2ae40a9jjwlp06kqkllcx32jdm6sw9msy5h7r6
       - &ludwig age1r8xj24ge0pdwwv45a3uklhnhedhv3yffktwu4zr0kmxexl7d93vsfseqvf
       - &dev1 age10tg4cn5y2f7trvkmux3c4vsjw6pwc8ke5w0a2c4h004lnwyzfelq64ycrr
+      - &t3-users age1frl34sz748sugpypjxgmjxsemhyp4utp3sqvzqm7d6uh42a30vkqa4ctha
       - &egress age1a0y4g9qh2wc2en8jsfvpqlxfc58cyguvn2hf0s42p8zs5q5jl9qqd0sgjd
   - admin-group: &admin-group
       age:
@@ -144,6 +145,13 @@ creation_rules:
     key_groups:
       - age:
           - *dev1
+          - *quine
+        merge:
+          - *admin-group
+  - path_regex: guests/t3-users/secrets.sops.ya?ml$
+    key_groups:
+      - age:
+          - *t3-users
           - *quine
         merge:
           - *admin-group

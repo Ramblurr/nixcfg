@@ -79,7 +79,8 @@
       guestHosts = {
         immich-home = "dewey";
         opencloud-home = "dewey";
-          egress = "quine";
+        t3-users = "quine";
+        egress = "quine";
       };
     in
     {
