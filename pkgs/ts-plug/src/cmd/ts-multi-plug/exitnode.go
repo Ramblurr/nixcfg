@@ -111,8 +111,13 @@ func resolveExitNode(ctx context.Context, lc *local.Client, exitNode string) (ip
 			return ipn.Prefs{}, stopped(fmt.Errorf("get tailscale status: %w", err))
 		}
 		var prefs ipn.Prefs
-		if lookupErr = prefs.SetExitNodeIP(exitNode, status); lookupErr == nil {
+		lookupErr = prefs.SetExitNodeIP(exitNode, status)
+		if lookupErr == nil {
 			return prefs, nil
+		}
+		// No netmap makes the node's own address a peer.
+		if errors.As(lookupErr, new(ipn.ExitNodeLocalIPError)) {
+			return ipn.Prefs{}, lookupErr
 		}
 	}
 }
