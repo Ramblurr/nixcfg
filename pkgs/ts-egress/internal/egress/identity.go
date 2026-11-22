@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/netip"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,11 +21,23 @@ import (
 // Caller is the tailnet identity behind a flow and its parsed policy. A
 // Caller whose Reason is set must have every flow denied.
 type Caller struct {
-	Node   string
-	Tags   []string
+	Node string
+	Tags []string
+	// Login is the owner's login name, which for a tagged node names no
+	// person.
+	Login  string
 	Policy policy.Policy
 	Reason policy.Reason
 	nodeID tailcfg.NodeID
+}
+
+// Identity is the caller's canonical identity for the broker: its tags
+// sorted and joined with ",", or for an untagged node the owner's login.
+func (c *Caller) Identity() string {
+	if len(c.Tags) > 0 {
+		return strings.Join(slices.Sorted(slices.Values(c.Tags)), ",")
+	}
+	return c.Login
 }
 
 // WhoIser is the subset of tailscale.com/client/local.Client we use.
@@ -94,6 +108,9 @@ func (ids *Identities) resolve(ctx context.Context, src netip.Addr) *Caller {
 		return &Caller{Reason: policy.ReasonNoIdentity}
 	}
 	c := &Caller{Node: res.Node.ComputedName, Tags: res.Node.Tags, nodeID: res.Node.ID}
+	if res.UserProfile != nil {
+		c.Login = res.UserProfile.LoginName
+	}
 	if c.Node == "" {
 		c.Node = res.Node.Name
 	}

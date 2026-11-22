@@ -15,9 +15,10 @@ import (
 )
 
 // Connect reads fields from a 1Password Connect server over its REST API.
-// Vault and item may be IDs or titles; a field matches by ID, or else by a
-// label no other field in scope shares; a section, when given, matches the
-// same way and narrows the scope to its fields. This follows iron-proxy's
+// Vault and item may be IDs or titles; a field matches by ID, or else, unless
+// the reference is FieldByID, by a label no other field in scope shares; a
+// section, when given, matches the same way and narrows the scope to its
+// fields. This follows iron-proxy's
 // 1password_connect source (internal/transform/secrets/op_connect_resolver.go,
 // Apache-2.0, see NOTICE) without the Connect SDK.
 type Connect struct {
@@ -133,7 +134,7 @@ func (it *connectItem) field(ref policy.OPRef) (string, error) {
 		if f.ID == ref.Field {
 			return f.Value, nil
 		}
-		if f.Label == ref.Field {
+		if f.Label == ref.Field && !ref.FieldByID {
 			byLabel = append(byLabel, f.Value)
 		}
 	}

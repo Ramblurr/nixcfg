@@ -5,6 +5,7 @@ import (
 	"net/netip"
 	"os"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -66,46 +67,50 @@ func TestParseLiveCaps(t *testing.T) {
 
 func TestParseRejects(t *testing.T) {
 	for name, grant := range map[string]string{
-		"unknown top field":    `{"tls":[{"hosts":["a.com"],"ports":[443]}],"allow":[]}`,
-		"unknown nested field": `{"tls":[{"hosts":["a.com"],"ports":[443],"sni":true}]}`,
-		"unknown inject field": `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":"{secret}","query":"q"}}]}]}`,
-		"port out of range":    `{"tcp":[{"cidrs":["1.2.3.4/32"],"ports":[70000]}]}`,
-		"port zero":            `{"tcp":[{"cidrs":["1.2.3.4/32"],"ports":[0]}]}`,
-		"no ports":             `{"tls":[{"hosts":["a.com"]}]}`,
-		"no hosts":             `{"tls":[{"ports":[443]}]}`,
-		"l4 without target":    `{"udp":[{"ports":[123]}]}`,
-		"bare ip cidr":         `{"udp":[{"cidrs":["1.2.3.4"],"ports":[123]}]}`,
-		"bad cidr":             `{"deny":{"cidrs":["1.2.3.400/32"]}}`,
-		"host with port":       `{"tls":[{"hosts":["a.com:443"],"ports":[443]}]}`,
-		"non-ascii host":       `{"tls":[{"hosts":["bücher.de"],"ports":[443]}]}`,
-		"trailing dot host":    `{"tls":[{"hosts":["a.com."],"ports":[443]}]}`,
-		"leading dot host":     `{"tls":[{"hosts":[".a.com"],"ports":[443]}]}`,
-		"empty label host":     `{"deny":{"hosts":["a..com"]}}`,
-		"bad glob":             `{"tls":[{"hosts":["[a.com"],"ports":[443]}]}`,
-		"slash in host":        `{"deny":{"hosts":["a/b.com"]}}`,
-		"backslash in host":    `{"deny":{"hosts":["a\\b.com"]}}`,
-		"control byte in host": `{"deny":{"hosts":["a\u0001b.com"]}}`,
-		"underscore mid-label": `{"deny":{"hosts":["a_b.com"]}}`,
-		"lower-case method":    `{"http":[{"hosts":["a.com"],"ports":[443],"methods":["get"]}]}`,
-		"relative path":        `{"http":[{"hosts":["a.com"],"ports":[443],"paths":["v1/*"]}]}`,
-		"plain secret":         `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"hunter2","inject":{"header":"A","format":"{secret}"}}]}]}`,
-		"short op ref":         `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"op://vault/item","inject":{"header":"A","format":"{secret}"}}]}]}`,
-		"no placeholder":       `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":"Bearer"}}]}]}`,
-		"no inject":            `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x"}]}]}`,
-		"bad header":           `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"X Y","format":"{secret}"}}]}]}`,
-		"format with crlf":     `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":"{secret}\r\nX-Other: y"}}]}]}`,
-		"format with space":    `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":" Bearer {secret}"}}]}]}`,
-		"literal with space":   `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x ","inject":{"header":"A","format":"{secret}"}}]}]}`,
-		"literal with newline": `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x\ny","inject":{"header":"A","format":"{secret}"}}]}]}`,
-		"dns allow other":      `{"dns":{"allow":"all"}}`,
-		"wrong type":           `{"tls":{"hosts":["a.com"]}}`,
-		"not an object":        `["tls"]`,
-		"v4-mapped cidr":       `{"tcp":[{"cidrs":["::ffff:203.0.113.0/120"],"ports":[22]}]}`,
-		"v4-mapped deny cidr":  `{"deny":{"cidrs":["::ffff:198.51.100.0/120"]}}`,
-		"duplicate key":        `{"tls":[{"hosts":["a.com"],"ports":[443]}],"tls":[]}`,
-		"duplicate deny null":  `{"deny":{"hosts":["bad.com"]},"deny":null}`,
-		"duplicate nested key": `{"tls":[{"hosts":["a.com"],"ports":[443],"ports":[8443]}]}`,
-		"duplicate folded key": `{"deny":{"hosts":["bad.com"]},"Deny":null}`,
+		"unknown top field":     `{"tls":[{"hosts":["a.com"],"ports":[443]}],"allow":[]}`,
+		"unknown nested field":  `{"tls":[{"hosts":["a.com"],"ports":[443],"sni":true}]}`,
+		"unknown inject field":  `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":"{secret}","query":"q"}}]}]}`,
+		"port out of range":     `{"tcp":[{"cidrs":["1.2.3.4/32"],"ports":[70000]}]}`,
+		"port zero":             `{"tcp":[{"cidrs":["1.2.3.4/32"],"ports":[0]}]}`,
+		"no ports":              `{"tls":[{"hosts":["a.com"]}]}`,
+		"no hosts":              `{"tls":[{"ports":[443]}]}`,
+		"l4 without target":     `{"udp":[{"ports":[123]}]}`,
+		"bare ip cidr":          `{"udp":[{"cidrs":["1.2.3.4"],"ports":[123]}]}`,
+		"bad cidr":              `{"deny":{"cidrs":["1.2.3.400/32"]}}`,
+		"host with port":        `{"tls":[{"hosts":["a.com:443"],"ports":[443]}]}`,
+		"non-ascii host":        `{"tls":[{"hosts":["bücher.de"],"ports":[443]}]}`,
+		"trailing dot host":     `{"tls":[{"hosts":["a.com."],"ports":[443]}]}`,
+		"leading dot host":      `{"tls":[{"hosts":[".a.com"],"ports":[443]}]}`,
+		"empty label host":      `{"deny":{"hosts":["a..com"]}}`,
+		"bad glob":              `{"tls":[{"hosts":["[a.com"],"ports":[443]}]}`,
+		"slash in host":         `{"deny":{"hosts":["a/b.com"]}}`,
+		"backslash in host":     `{"deny":{"hosts":["a\\b.com"]}}`,
+		"control byte in host":  `{"deny":{"hosts":["a\u0001b.com"]}}`,
+		"underscore mid-label":  `{"deny":{"hosts":["a_b.com"]}}`,
+		"lower-case method":     `{"http":[{"hosts":["a.com"],"ports":[443],"methods":["get"]}]}`,
+		"relative path":         `{"http":[{"hosts":["a.com"],"ports":[443],"paths":["v1/*"]}]}`,
+		"plain secret":          `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"hunter2","inject":{"header":"A","format":"{secret}"}}]}]}`,
+		"short op ref":          `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"op://vault/item","inject":{"header":"A","format":"{secret}"}}]}]}`,
+		"no placeholder":        `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":"Bearer"}}]}]}`,
+		"no inject":             `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x"}]}]}`,
+		"bad header":            `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"X Y","format":"{secret}"}}]}]}`,
+		"format with crlf":      `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":"{secret}\r\nX-Other: y"}}]}]}`,
+		"format with space":     `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"A","format":" Bearer {secret}"}}]}]}`,
+		"literal with space":    `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x ","inject":{"header":"A","format":"{secret}"}}]}]}`,
+		"literal with newline":  `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x\ny","inject":{"header":"A","format":"{secret}"}}]}]}`,
+		"dns allow other":       `{"dns":{"allow":"all"}}`,
+		"wrong type":            `{"tls":{"hosts":["a.com"]}}`,
+		"not an object":         `["tls"]`,
+		"v4-mapped cidr":        `{"tcp":[{"cidrs":["::ffff:203.0.113.0/120"],"ports":[22]}]}`,
+		"v4-mapped deny cidr":   `{"deny":{"cidrs":["::ffff:198.51.100.0/120"]}}`,
+		"duplicate key":         `{"tls":[{"hosts":["a.com"],"ports":[443]}],"tls":[]}`,
+		"duplicate deny null":   `{"deny":{"hosts":["bad.com"]},"deny":null}`,
+		"duplicate nested key":  `{"tls":[{"hosts":["a.com"],"ports":[443],"ports":[8443]}]}`,
+		"duplicate folded key":  `{"deny":{"hosts":["bad.com"]},"Deny":null}`,
+		"broker sign mode":      `{"broker":{"groups":["agents"],"modes":["sign"]}}`,
+		"broker empty group":    `{"broker":{"groups":[""],"modes":["inject"]}}`,
+		"broker prefixed group": `{"broker":{"groups":["group:agents"],"modes":["inject"]}}`,
+		"broker unknown key":    `{"broker":{"groups":["agents"],"modes":["inject"],"reveal":true}}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := Parse(caps(t, grant)); err == nil {
@@ -131,6 +136,24 @@ func TestParseNoCaps(t *testing.T) {
 		if _, err := Parse(cm); !errors.Is(err, ErrNoCaps) {
 			t.Errorf("%s: err = %v, want ErrNoCaps", name, err)
 		}
+	}
+}
+
+func TestParseBrokerCeiling(t *testing.T) {
+	if p := mustParse(t, file(t, "alice.json")); p.Broker != nil {
+		t.Fatalf("no broker key, ceiling = %+v", p.Broker)
+	}
+	if p := mustParse(t, `{"broker":{}}`); p.Broker == nil || len(p.Broker.Groups) != 0 || len(p.Broker.Modes) != 0 {
+		t.Fatalf("empty broker key, ceiling = %+v", p.Broker)
+	}
+	p := mustParse(t,
+		`{"broker":{"groups":["agents","ops"],"modes":["inject"]}}`,
+		`{"tls":[{"hosts":["a.com"],"ports":[443]}]}`,
+		`{"broker":{"groups":["readers","agents"],"modes":["inject"]}}`,
+	)
+	want := &BrokerCeiling{Groups: []string{"agents", "ops", "readers"}, Modes: []BrokerMode{BrokerInject}}
+	if !reflect.DeepEqual(p.Broker, want) {
+		t.Fatalf("ceiling = %+v, want %+v", p.Broker, want)
 	}
 }
 
@@ -309,6 +332,7 @@ func TestParseRejectsReservedInjectHeaders(t *testing.T) {
 	for _, hdr := range []string{
 		"Connection", "keep-alive", "Proxy-Authorization", "Proxy-Custom", "TE", "Te", "Trailer",
 		"Transfer-Encoding", "Upgrade", "Host", "Forwarded", "X-Forwarded-For", "x-forwarded-host", "Via", "Content-Length",
+		"Cookie", "expect",
 	} {
 		t.Run(hdr, func(t *testing.T) {
 			grant := `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"` + hdr + `","format":"{secret}"}}]}]}`
@@ -318,6 +342,16 @@ func TestParseRejectsReservedInjectHeaders(t *testing.T) {
 		})
 	}
 	mustParse(t, `{"http":[{"hosts":["a.com"],"ports":[443],"credentials":[{"name":"T","secret":"literal:x","inject":{"header":"X-Proxy-Token","format":"{secret}"}}]}]}`)
+}
+
+func TestReservedHeadersArePinned(t *testing.T) {
+	want := []string{
+		"Connection", "Content-Length", "Cookie", "Expect", "Forwarded", "Host", "Keep-Alive",
+		"Proxy-", "Te", "Trailer", "Transfer-Encoding", "Upgrade", "Via", "X-Forwarded-",
+	}
+	if !slices.Equal(reservedHeaders, want) {
+		t.Fatalf("reservedHeaders = %q; change ts-broker.domain/reserved-headers with it", reservedHeaders)
+	}
 }
 
 // An inject format can carry a static key, so a refusal never quotes it.

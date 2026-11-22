@@ -31,7 +31,7 @@ type Store struct {
 
 	now   func() time.Time
 	mu    sync.Mutex // guards cache and every entry's value and expiry
-	cache map[string]*entry
+	cache map[policy.OPRef]*entry
 }
 
 type entry struct {
@@ -59,7 +59,7 @@ func (s *Store) op(ctx context.Context, ref policy.SecretRef) (string, error) {
 	if s.OP == nil {
 		return "", ErrNotConfigured
 	}
-	e := s.entry(ref.Ref)
+	e := s.entry(ref.OP)
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	now := s.clock()
@@ -98,11 +98,11 @@ func (s *Store) op(ctx context.Context, ref policy.SecretRef) (string, error) {
 	return v, nil
 }
 
-func (s *Store) entry(key string) *entry {
+func (s *Store) entry(key policy.OPRef) *entry {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.cache == nil {
-		s.cache = map[string]*entry{}
+		s.cache = map[policy.OPRef]*entry{}
 	}
 	e, ok := s.cache[key]
 	if !ok {

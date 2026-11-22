@@ -32,6 +32,7 @@ type fileConfig struct {
 	Helper           *helperConfig  `json:"helper"`
 	CA               *caConfig      `json:"ca"`
 	OnePassword      *onePassConfig `json:"onepassword"`
+	BrokerSocket     string         `json:"brokerSocket"`
 }
 
 // helperConfig enables the Tailscale CONNECT helper.
@@ -90,6 +91,8 @@ type config struct {
 	// opURL empty means only literal: secrets resolve.
 	opURL, opToken string
 	secretTTL      time.Duration
+	// brokerSocket empty means no placeholder outside the rules resolves.
+	brokerSocket string
 }
 
 func defaultFileConfig() fileConfig {
@@ -179,6 +182,15 @@ func parseConfig(data []byte) (config, error) {
 		c.opURL = op.URL
 		c.opToken = orDefault(op.TokenCredential, "op-connect-token")
 		c.secretTTL = time.Duration(op.SecretTTL)
+	}
+	if f.BrokerSocket != "" {
+		if f.OnePassword == nil {
+			return c, errors.New("brokerSocket needs onepassword: broker credentials are op:// secrets")
+		}
+		if !filepath.IsAbs(f.BrokerSocket) {
+			return c, errors.New("brokerSocket must be an absolute path")
+		}
+		c.brokerSocket = f.BrokerSocket
 	}
 	if c.secretTTL == 0 {
 		c.secretTTL = time.Minute

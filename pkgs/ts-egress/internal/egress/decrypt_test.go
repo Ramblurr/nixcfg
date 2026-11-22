@@ -140,6 +140,14 @@ type harness struct {
 
 	mu      sync.Mutex
 	verdict policy.Verdict // what reauthorizing the flow returns
+	caller  *Caller
+}
+
+// setCaller changes who the flow's grants name from the next request.
+func (h *harness) setCaller(c *Caller) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.caller = c
 }
 
 // setVerdict changes what the flow's grants decide from the next request.
@@ -195,10 +203,11 @@ func newHarness(t *testing.T, tlsOn bool, rules []*policy.HTTPRule, secrets Secr
 	t.Cleanup(func() { ln.Close() })
 	h.addr = ln.Addr().String()
 	caller := &Caller{Node: "t3-alice", Tags: []string{"tag:t3-alice"}}
+	h.caller = caller
 	reauth := func(context.Context) (*Caller, policy.Verdict) {
 		h.mu.Lock()
 		defer h.mu.Unlock()
-		return caller, h.verdict
+		return h.caller, h.verdict
 	}
 	go func() {
 		for {

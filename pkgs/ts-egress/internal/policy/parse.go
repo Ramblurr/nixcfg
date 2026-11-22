@@ -49,6 +49,7 @@ type wireGrant struct {
 	TCP     []wireL4     `json:"tcp"`
 	UDP     []wireL4     `json:"udp"`
 	DNS     *wireDNS     `json:"dns"`
+	Broker  *wireBroker  `json:"broker"`
 }
 
 // UnmarshalJSON rejects unknown fields and duplicate keys at every depth,
@@ -152,6 +153,11 @@ type wireDNS struct {
 	Allow string `json:"allow"`
 }
 
+type wireBroker struct {
+	Groups []string `json:"groups"`
+	Modes  []string `json:"modes"`
+}
+
 func (p *Policy) merge(gi int, g wireGrant) error {
 	block := true
 	if g.Private != nil {
@@ -219,6 +225,37 @@ func (p *Policy) merge(gi int, g wireGrant) error {
 		}
 		p.DNS.Allow = DNSRules
 	}
+
+	if g.Broker != nil {
+		if err := p.mergeBroker(*g.Broker); err != nil {
+			return fmt.Errorf("broker: %w", err)
+		}
+	}
+	return nil
+}
+
+var groupRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
+
+func (p *Policy) mergeBroker(w wireBroker) error {
+	if p.Broker == nil {
+		p.Broker = &BrokerCeiling{}
+	}
+	b := p.Broker
+	for _, g := range w.Groups {
+		if !groupRE.MatchString(g) {
+			return fmt.Errorf("invalid group %q", g)
+		}
+		b.Groups = append(b.Groups, g)
+	}
+	for _, m := range w.Modes {
+		if BrokerMode(m) != BrokerInject {
+			return fmt.Errorf("mode must be %q, got %q", BrokerInject, m)
+		}
+		b.Modes = append(b.Modes, BrokerMode(m))
+	}
+	slices.Sort(b.Groups)
+	slices.Sort(b.Modes)
+	b.Groups, b.Modes = slices.Compact(b.Groups), slices.Compact(b.Modes)
 	return nil
 }
 
@@ -261,9 +298,6 @@ func parseHTTP(w wireHTTP) (HTTPRule, error) {
 }
 
 func parseCredential(c wireCredential) (Credential, error) {
-	if !credRE.MatchString(c.Name) {
-		return Credential{}, fmt.Errorf("invalid name %q", c.Name)
-	}
 	secret, err := parseSecretRef(c.Secret)
 	if err != nil {
 		return Credential{}, err
@@ -271,29 +305,49 @@ func parseCredential(c wireCredential) (Credential, error) {
 	if c.Inject == nil {
 		return Credential{}, errors.New("missing inject")
 	}
-	if !httpguts.ValidHeaderFieldName(c.Inject.Header) || ReservedHeader(textproto.CanonicalMIMEHeaderKey(c.Inject.Header)) {
-		return Credential{}, fmt.Errorf("invalid inject header %q", c.Inject.Header)
-	}
-	// The format can carry a static key, so errors never quote it.
-	if strings.Count(c.Inject.Format, "{secret}") != 1 {
-		return Credential{}, errors.New("inject format must contain {secret} once")
-	}
-	if !SentVerbatim(c.Inject.Format) {
-		return Credential{}, errors.New("inject format is not a header value net/http sends as is")
-	}
-	return Credential{Name: c.Name, Secret: secret, Inject: Inject{Header: textproto.CanonicalMIMEHeaderKey(c.Inject.Header), Format: c.Inject.Format}}, nil
+	return NewCredential(c.Name, secret, c.Inject.Header, c.Inject.Format)
 }
 
-// ReservedHeader reports whether the canonical header name k frames the
-// request, is hop-by-hop, or routes or forwards it. net/http and
-// ReverseProxy set or strip these on purpose, so no credential may be
-// injected there and no placeholder sent in one.
-func ReservedHeader(k string) bool {
-	switch k {
-	case "Connection", "Content-Length", "Forwarded", "Host", "Keep-Alive", "Te", "Trailer", "Transfer-Encoding", "Upgrade", "Via":
-		return true
+// NewCredential checks a credential's name and how it is injected, the
+// same for one from the policy and one the broker names. format holds
+// "{secret}" once.
+func NewCredential(name string, secret SecretRef, header, format string) (Credential, error) {
+	if !credRE.MatchString(name) {
+		return Credential{}, fmt.Errorf("invalid name %q", name)
 	}
-	return strings.HasPrefix(k, "Proxy-") || strings.HasPrefix(k, "X-Forwarded-")
+	if !httpguts.ValidHeaderFieldName(header) || ReservedHeader(textproto.CanonicalMIMEHeaderKey(header)) {
+		return Credential{}, fmt.Errorf("invalid inject header %q", header)
+	}
+	// The format can carry a static key, so errors never quote it.
+	if strings.Count(format, "{secret}") != 1 {
+		return Credential{}, errors.New("inject format must contain {secret} once")
+	}
+	if !SentVerbatim(format) {
+		return Credential{}, errors.New("inject format is not a header value net/http sends as is")
+	}
+	return Credential{Name: name, Secret: secret, Inject: Inject{Header: textproto.CanonicalMIMEHeaderKey(header), Format: format}}, nil
+}
+
+// reservedHeaders are the canonical names, and with a trailing "-" the
+// name prefixes, of the headers that frame the request, are hop-by-hop,
+// route or forward it, or carry state the tenant should not get a secret
+// into.
+var reservedHeaders = []string{
+	"Connection", "Content-Length", "Cookie", "Expect", "Forwarded", "Host", "Keep-Alive",
+	"Proxy-", "Te", "Trailer", "Transfer-Encoding", "Upgrade", "Via", "X-Forwarded-",
+}
+
+// ReservedHeader reports whether the canonical header name k is in
+// reservedHeaders. net/http and ReverseProxy set or strip most of these on
+// purpose, so no credential may be injected there and no placeholder sent
+// in one.
+func ReservedHeader(k string) bool {
+	return slices.ContainsFunc(reservedHeaders, func(r string) bool {
+		if strings.HasSuffix(r, "-") {
+			return strings.HasPrefix(k, r)
+		}
+		return k == r
+	})
 }
 
 // SentVerbatim reports whether net/http sends v byte for byte as a header

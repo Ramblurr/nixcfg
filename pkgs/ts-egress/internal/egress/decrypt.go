@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/broker"
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/policy"
 )
 
@@ -45,6 +46,9 @@ type SecretSource interface {
 type HTTPDecrypter struct {
 	Leaves  *Leaves
 	Secrets SecretSource
+	// Broker decides placeholders no rule lists, for callers whose caps
+	// carry a broker ceiling. Nil refuses them.
+	Broker *broker.Client
 	// RootCAs verifies upstream servers. Nil means the system roots.
 	RootCAs *x509.CertPool
 	Audit   *slog.Logger
@@ -57,22 +61,27 @@ type HTTPDecrypter struct {
 
 // Request denial reasons, logged on the request audit line.
 const (
-	reasonHostMismatch     = "host-not-sni"
-	reasonDotSegment       = "dot-segment"
-	reasonRequestNoRule    = "no-request-rule"
-	reasonPlaceholderURL   = "placeholder-in-url"
-	reasonPlaceholderHdr   = "placeholder-in-protected-header"
-	reasonPlaceholderOther = "placeholder-not-allowed"
-	reasonPlaceholderPlain = "placeholder-over-plain-http"
-	reasonSecret           = "secret-unavailable"
-	reasonSecretHdrName    = "secret-in-response-header-name"
-	reasonUnexpected101    = "unexpected-101"
-	reasonRevoked          = "grant-revoked"
-	reasonAmbiguousPath    = "ambiguous-path"
-	reasonBodyIdle         = "request-body-idle"
-	reasonUpstream         = "upstream-failed"
-	reasonUpstreamTLS      = "upstream-tls"
-	reasonUpstreamTimeout  = "upstream-timeout"
+	reasonHostMismatch         = "host-not-sni"
+	reasonDotSegment           = "dot-segment"
+	reasonRequestNoRule        = "no-request-rule"
+	reasonPlaceholderURL       = "placeholder-in-url"
+	reasonPlaceholderHdr       = "placeholder-in-protected-header"
+	reasonPlaceholderOther     = "placeholder-not-allowed"
+	reasonPlaceholderElsewhere = "placeholder-outside-inject-header"
+	reasonPlaceholderPlain     = "placeholder-over-plain-http"
+	reasonSecret               = "secret-unavailable"
+	reasonSecretHdrName        = "secret-in-response-header-name"
+	reasonUnexpected101        = "unexpected-101"
+	reasonRevoked              = "grant-revoked"
+	reasonAmbiguousPath        = "ambiguous-path"
+	reasonBodyIdle             = "request-body-idle"
+	reasonUpstream             = "upstream-failed"
+	reasonUpstreamTLS          = "upstream-tls"
+	reasonUpstreamTimeout      = "upstream-timeout"
+	reasonApprovalPending      = "approval-pending"
+	// reasonBrokerUnavailable is the broker deny reason logged when it
+	// could not be asked or gave an answer the egress cannot use.
+	reasonBrokerUnavailable = "broker-unavailable"
 )
 
 var (
@@ -162,10 +171,21 @@ type decryptFlow struct {
 type reqLog struct {
 	method, path string
 	rules, creds []string
+	broker       []brokerLog
 	scrub        scrubber
 	status       int
 	reason       string
 	err          error
+	// pending is the approval a refused request waits for.
+	pending string
+}
+
+// brokerLog is one broker decision on a request audit line.
+type brokerLog struct {
+	Credential string `json:"credential"`
+	Decision   string `json:"decision"`
+	Reason     string `json:"reason,omitempty"`
+	Approval   string `json:"approval,omitempty"`
 }
 
 func (f *decryptFlow) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -191,7 +211,11 @@ func (f *decryptFlow) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if upgrade {
 			w.Header().Set("Connection", "close")
 		}
-		http.Error(w, "ts-egress: "+reason, status)
+		msg := "ts-egress: " + reason
+		if l.pending != "" {
+			msg = reasonApprovalPending + " " + l.pending
+		}
+		http.Error(w, msg, status)
 		return
 	}
 	var body *idleBody
@@ -355,15 +379,29 @@ func (f *decryptFlow) prepare(r *http.Request, l *reqLog) (http.Header, int, str
 	if !f.v.TLS {
 		allowed = nil
 	}
-	if len(allowed) > 0 && ambiguousPath(r.URL) {
-		return nil, http.StatusForbidden, reasonAmbiguousPath
-	}
-	need, reason := needed(r.Header, allowed)
+	ask, brokered := f.brokerRequest()
+	need, unknown, reason := needed(r.Header, allowed, brokered)
 	if reason != "" {
 		if !f.v.TLS {
 			reason = reasonPlaceholderPlain
 		}
 		return nil, http.StatusForbidden, reason
+	}
+	if slices.ContainsFunc(unknown, func(u unlisted) bool { return f.static(u.name) }) {
+		return nil, http.StatusForbidden, reasonPlaceholderOther
+	}
+	if (len(allowed) > 0 || len(unknown) > 0) && ambiguousPath(r.URL) {
+		return nil, http.StatusForbidden, reasonAmbiguousPath
+	}
+	for _, u := range unknown {
+		c, status, reason := f.brokered(r.Context(), ask, u, l)
+		if status != 0 {
+			return nil, status, reason
+		}
+		if c.Inject.Header != u.header {
+			return nil, http.StatusForbidden, reasonPlaceholderElsewhere
+		}
+		need = append(need, c)
 	}
 	values := map[string]string{}
 	for _, c := range need {
@@ -378,6 +416,48 @@ func (f *decryptFlow) prepare(r *http.Request, l *reqLog) (http.Header, int, str
 	set, scrub := apply(r.Header, need, values)
 	l.scrub = scrub
 	return set, 0, ""
+}
+
+// brokerRequest returns the decide request for this flow's caller, without
+// the credential and header. It is false for plain HTTP, for a caller
+// without a broker ceiling for inject or without an identity, and when no
+// broker is set.
+func (f *decryptFlow) brokerRequest() (broker.Request, bool) {
+	ceiling, identity := f.caller.Policy.Broker, f.caller.Identity()
+	if !f.v.TLS || f.d.Broker == nil || ceiling == nil || !slices.Contains(ceiling.Modes, policy.BrokerInject) || identity == "" {
+		return broker.Request{}, false
+	}
+	return broker.Request{
+		Identity: identity, Node: f.caller.Node, Groups: ceiling.Groups, Modes: ceiling.Modes,
+		Host: f.v.Name, Mode: policy.BrokerInject,
+	}, true
+}
+
+func (f *decryptFlow) static(name string) bool {
+	return slices.ContainsFunc(f.caller.Policy.HTTP, func(r policy.HTTPRule) bool {
+		return slices.ContainsFunc(r.Credentials, func(c policy.Credential) bool { return c.Name == name })
+	})
+}
+
+func (f *decryptFlow) brokered(ctx context.Context, req broker.Request, u unlisted, l *reqLog) (policy.Credential, int, string) {
+	req.Credential, req.Header = u.name, u.header
+	v, err := f.d.Broker.Decide(ctx, req)
+	if err != nil {
+		l.err = err
+		v = broker.Deny{Reason: reasonBrokerUnavailable}
+	}
+	switch v := v.(type) {
+	case broker.Allow:
+		l.broker = append(l.broker, brokerLog{Credential: u.name, Decision: "allow", Approval: v.Approval})
+		return v.Credential, 0, ""
+	case broker.Pending:
+		l.broker = append(l.broker, brokerLog{Credential: u.name, Decision: "pending", Approval: v.Approval})
+		l.pending = v.Approval
+		return policy.Credential{}, http.StatusForbidden, reasonApprovalPending
+	case broker.Deny:
+		l.broker = append(l.broker, brokerLog{Credential: u.name, Decision: "deny", Reason: v.Reason})
+	}
+	return policy.Credential{}, http.StatusForbidden, reasonPlaceholderOther
 }
 
 // upstreamReason classes a failed round trip. The error itself is not
@@ -429,42 +509,51 @@ func hasDotSegment(p string) bool {
 	return slices.ContainsFunc(strings.Split(p, "/"), func(s string) bool { return s == "." || s == ".." })
 }
 
-// protected reports whether header k routes or frames the request, or
-// carries state the tenant should not get a secret into. A placeholder
-// there refuses the request.
-func protected(k string) bool {
-	return policy.ReservedHeader(k) || k == "Cookie" || k == "Expect"
-}
+// unlisted is a placeholder no matched rule lists and the one header that
+// carries it.
+type unlisted struct{ name, header string }
 
 // needed returns the credentials r's headers call for: each placeholder it
-// carries, and each allowed credential whose inject header is missing. A
-// placeholder outside allowed, or in a protected header, is a refusal.
-func needed(h http.Header, allowed []policy.Credential) ([]policy.Credential, string) {
+// carries, and each allowed credential whose inject header is missing.
+// Headers are read by name, then value, then position. With brokered, the
+// placeholders outside allowed, which only the broker can resolve, come
+// back separately in that order; without it the first one is a refusal. A
+// placeholder in a reserved header, or one outside allowed in two headers,
+// is a refusal.
+func needed(h http.Header, allowed []policy.Credential, brokered bool) ([]policy.Credential, []unlisted, string) {
 	byName := map[string]policy.Credential{}
 	for _, c := range allowed {
 		byName[c.Name] = c
 	}
 	var need []policy.Credential
+	var unknown []unlisted
+	seen := map[string]string{}
 	add := func(c policy.Credential) {
 		if !slices.ContainsFunc(need, func(n policy.Credential) bool { return n.Name == c.Name }) {
 			need = append(need, c)
 		}
 	}
-	for k, vs := range h {
-		for _, v := range vs {
+	for _, k := range slices.Sorted(maps.Keys(h)) {
+		for _, v := range h[k] {
 			names := placeholderNames(v)
 			if inner, ok := basicPayload(k, v); ok {
 				names = append(names, placeholderNames(inner)...)
 			}
-			if len(names) > 0 && protected(k) {
-				return nil, reasonPlaceholderHdr
+			if len(names) > 0 && policy.ReservedHeader(k) {
+				return nil, nil, reasonPlaceholderHdr
 			}
 			for _, n := range names {
-				c, ok := byName[n]
-				if !ok {
-					return nil, reasonPlaceholderOther
+				switch c, ok := byName[n]; {
+				case ok:
+					add(c)
+				case !brokered:
+					return nil, nil, reasonPlaceholderOther
+				case seen[n] == "":
+					seen[n] = k
+					unknown = append(unknown, unlisted{n, k})
+				case seen[n] != k:
+					return nil, nil, reasonPlaceholderElsewhere
 				}
-				add(c)
 			}
 		}
 	}
@@ -473,7 +562,7 @@ func needed(h http.Header, allowed []policy.Credential) ([]policy.Credential, st
 			add(c)
 		}
 	}
-	return need, ""
+	return need, unknown, ""
 }
 
 // apply swaps placeholders in h for values and sets missing inject
@@ -522,6 +611,9 @@ func (f *decryptFlow) log(l *reqLog) {
 	}
 	if len(l.creds) > 0 {
 		attrs = append(attrs, slog.Any("credentials", l.creds))
+	}
+	if len(l.broker) > 0 {
+		attrs = append(attrs, slog.Any("broker", l.broker))
 	}
 	if l.reason != "" {
 		attrs = append(attrs, slog.String("reason", l.reason))

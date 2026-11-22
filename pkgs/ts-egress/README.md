@@ -97,9 +97,42 @@ A credential's `secret` is `op://vault/item/[section/]field`, read through
 1Password Connect, or `literal:value` for tests. The egress replaces
 placeholders in request header values, including inside a Basic
 `Authorization` payload. When the inject header is missing it sets it from
-`format`. A placeholder in the URL, in a header that routes the request
-(`Host`, `Cookie` and similar), or for a credential the rule does not list
-refuses the request. Bodies are not searched.
+`format`. A placeholder in the URL, in a reserved header (`Host`,
+`Cookie`, `Expect` and the others that frame, route or forward the
+request), or for a credential the rule does not list refuses the request.
+No credential may be injected into a reserved header. Bodies are not
+searched.
+
+### Broker credentials
+
+A cap object may carry a broker ceiling:
+`{"broker": {"groups": ["agents"], "modes": ["inject"]}}`. Several merge by
+union, and `inject` is the only mode. For a caller with a ceiling, a
+placeholder that no matching `http` rule lists is put to the credential
+broker over `brokerSocket`, with the caller's identity (its tags sorted and
+joined with `,`, or the owner's login on an untagged node), its groups and
+modes, the credential name, the host and the canonical name of the header
+that carries the placeholder. The broker answers:
+
+- allow: the egress reads the named 1Password item and the field with the
+  given ID, never one matched by label, and replaces the placeholder with
+  the raw value, scrubbing included. The tenant writes the header value
+  itself, such as `Authorization: Bearer TS_EGRESS_PLACEHOLDER_X`. The
+  placeholder may appear only in the header the broker names, which must
+  not be reserved. In any other header, alone or as well, the
+  request is refused with `placeholder-outside-inject-header` before a
+  secret is read.
+- pending: 403 with the body `approval-pending <id>`. Retry once a human
+  has approved.
+- deny, or no usable answer: 403 as for an unknown placeholder.
+
+Each request asks again, so a revoked approval stops the next request. A
+static credential of the same name wins: a name any rule in the caller's
+caps lists is never put to the broker, and is refused where the matched
+rule does not list it. The broker is never asked on plain HTTP or for a
+caller without a ceiling. The request audit line has a `broker` entry for
+each decision, with `broker-unavailable` as the reason when the broker
+could not be asked.
 
 Response headers on a credentialed request have the secret value replaced
 with the placeholder. This is a courtesy for servers that echo a token back,
@@ -172,6 +205,7 @@ systemd did not provide stops startup.
 | `helper` | off | CONNECT helper: `listen`, `hosts`, `ports`. |
 | `ca` | off | `certCredential`, `keyCredential`: names of the CA credentials. Enables `http` rules. |
 | `onepassword` | off | `url`, `tokenCredential`, `secretTTL`: Connect API for `op://` secrets. |
+| `brokerSocket` | off | Absolute path of the credential broker's unix socket. Needs `onepassword`. |
 
 Unknown keys are an error.
 

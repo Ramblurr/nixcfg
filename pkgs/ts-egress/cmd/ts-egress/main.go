@@ -21,6 +21,7 @@ import (
 
 	"tailscale.com/client/local"
 
+	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/broker"
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/egress"
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/policy"
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/secrets"
@@ -143,7 +144,7 @@ func run(ctx context.Context, c config, credDir string) error {
 			}
 		}()
 	}
-	slog.Info("ts-egress started", "tcp", c.tcpListen, "udp", c.udpListen, "helper", c.helper, "dns_upstream", c.resolver, "decrypt", srv.Decrypter != nil)
+	slog.Info("ts-egress started", "tcp", c.tcpListen, "udp", c.udpListen, "helper", c.helper, "dns_upstream", c.resolver, "decrypt", srv.Decrypter != nil, "broker", c.brokerSocket)
 
 	select {
 	case <-ctx.Done():
@@ -180,7 +181,11 @@ func decrypter(c config, credDir string, audit *slog.Logger) (*egress.HTTPDecryp
 		}
 		store.OP = &secrets.Connect{Host: c.opURL, Token: strings.TrimSpace(string(tok))}
 	}
-	return &egress.HTTPDecrypter{Leaves: leaves, Secrets: store, Audit: audit}, nil
+	d := &egress.HTTPDecrypter{Leaves: leaves, Secrets: store, Audit: audit}
+	if c.brokerSocket != "" {
+		d.Broker = &broker.Client{Socket: c.brokerSocket}
+	}
+	return d, nil
 }
 
 // load parses the flags and the config file they name.

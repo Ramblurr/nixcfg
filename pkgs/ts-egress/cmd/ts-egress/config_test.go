@@ -32,7 +32,8 @@ const fullConfig = `{
   "udpIdle": "90s",
   "helper": {"listen": "192.0.2.26:3128", "hosts": ["controlplane.tailscale.com"], "ports": [443]},
   "ca": {"certCredential": "cert", "keyCredential": "key"},
-  "onepassword": {"url": "http://op-connect:8080", "tokenCredential": "tok", "secretTTL": "5m"}
+  "onepassword": {"url": "http://op-connect:8080", "tokenCredential": "tok", "secretTTL": "5m"},
+  "brokerSocket": "/run/ts-broker/decide.sock"
 }`
 
 func TestParseConfigFull(t *testing.T) {
@@ -57,6 +58,9 @@ func TestParseConfigFull(t *testing.T) {
 	}
 	if c.caCert != "cert" || c.caKey != "key" || c.opURL != "http://op-connect:8080" || c.opToken != "tok" {
 		t.Errorf("credentials = %q %q %q %q", c.caCert, c.caKey, c.opURL, c.opToken)
+	}
+	if c.brokerSocket != "/run/ts-broker/decide.sock" {
+		t.Errorf("brokerSocket = %q", c.brokerSocket)
 	}
 }
 
@@ -84,8 +88,8 @@ func TestParseConfigMinimalDisablesOptionalParts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.helper != "" || c.caCert != "" || c.opURL != "" {
-		t.Errorf("helper %q ca %q op %q, want all off", c.helper, c.caCert, c.opURL)
+	if c.helper != "" || c.caCert != "" || c.opURL != "" || c.brokerSocket != "" {
+		t.Errorf("helper %q ca %q op %q broker %q, want all off", c.helper, c.caCert, c.opURL, c.brokerSocket)
 	}
 }
 
@@ -108,6 +112,8 @@ func TestParseConfigRejects(t *testing.T) {
 		"onepassword no url":    {`{"dnsUpstream": "192.0.2.1:53", "ca": {}, "onepassword": {}}`, "onepassword.url is required"},
 		"credential path":       {`{"dnsUpstream": "192.0.2.1:53", "ca": {"keyCredential": "../ca-key"}}`, "not a plain file name"},
 		"credential dotdot":     {`{"dnsUpstream": "192.0.2.1:53", "ca": {"keyCredential": ".."}}`, "not a plain file name"},
+		"broker alone":          {`{"dnsUpstream": "192.0.2.1:53", "ca": {}, "brokerSocket": "/run/b.sock"}`, "brokerSocket needs onepassword"},
+		"broker relative":       {`{"dnsUpstream": "192.0.2.1:53", "ca": {}, "onepassword": {"url": "http://op:8080"}, "brokerSocket": "b.sock"}`, "absolute path"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := parseConfig([]byte(tc.json))
@@ -171,7 +177,7 @@ func write(t *testing.T, dir, name, value string) {
 }
 
 func TestDecrypterReadsCredentials(t *testing.T) {
-	c, err := parseConfig([]byte(`{"dnsUpstream": "192.0.2.1:53", "ca": {}, "onepassword": {"url": "http://op:8080"}}`))
+	c, err := parseConfig([]byte(`{"dnsUpstream": "192.0.2.1:53", "ca": {}, "onepassword": {"url": "http://op:8080"}, "brokerSocket": "/run/b.sock"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,8 +190,8 @@ func TestDecrypterReadsCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 	store, ok := d.Secrets.(*secrets.Store)
-	if d.Leaves == nil || !ok || store.OP == nil {
-		t.Fatalf("decrypter = %+v, want leaves and a Connect fetcher", d)
+	if d.Leaves == nil || !ok || store.OP == nil || d.Broker == nil || d.Broker.Socket != "/run/b.sock" {
+		t.Fatalf("decrypter = %+v, want leaves, a Connect fetcher and the broker", d)
 	}
 }
 

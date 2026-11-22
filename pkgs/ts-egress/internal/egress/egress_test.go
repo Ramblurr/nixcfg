@@ -162,6 +162,23 @@ func TestLookupFailsClosed(t *testing.T) {
 	}
 }
 
+// A tagged node is known by its sorted tags, an untagged one by its
+// owner's login.
+func TestLookupIdentity(t *testing.T) {
+	tagged := whoWith(`{"dns":{"allow":"rules"}}`)
+	tagged.res.Node.Tags = []string{"tag:b", "tag:a"}
+	tagged.res.UserProfile = &tailcfg.UserProfile{LoginName: "tagged-devices"}
+	untagged := whoWith(`{"dns":{"allow":"rules"}}`)
+	untagged.res.Node.Tags = nil
+	untagged.res.UserProfile = &tailcfg.UserProfile{LoginName: "alice@example.com"}
+	for who, want := range map[*fakeWho]string{tagged: "tag:a,tag:b", untagged: "alice@example.com"} {
+		c := NewIdentities(who, time.Minute).Lookup(context.Background(), netip.MustParseAddr("100.100.1.1"))
+		if got := c.Identity(); got != want {
+			t.Errorf("identity = %q, want %q", got, want)
+		}
+	}
+}
+
 func TestLookupCachesUntilTTLOrNetmapChange(t *testing.T) {
 	who := whoWith(`{"dns":{"allow":"rules"}}`)
 	ids := NewIdentities(who, time.Minute)

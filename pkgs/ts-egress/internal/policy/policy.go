@@ -21,7 +21,23 @@ type Policy struct {
 	TCP     []L4Rule
 	UDP     []L4Rule
 	DNS     DNS
+	// Broker is nil when no grant carries a broker key: the caller never
+	// consults the broker.
+	Broker *BrokerCeiling
 }
+
+// BrokerCeiling bounds what the credential broker may grant the caller:
+// the groups it decides assignments for and the modes it may allow. It is
+// the union over every grant, sorted.
+type BrokerCeiling struct {
+	Groups []string
+	Modes  []BrokerMode
+}
+
+type BrokerMode string
+
+// BrokerInject swaps a placeholder for a credential the broker names.
+const BrokerInject BrokerMode = "inject"
 
 // DenyList is checked before any allow rule.
 type DenyList struct {
@@ -90,9 +106,11 @@ type SecretRef struct {
 	OP     OPRef
 }
 
-// OPRef is a parsed op://vault/item/[section/]field reference.
+// OPRef is a parsed op://vault/item/[section/]field reference. FieldByID
+// makes Field match a field's ID only, never its label.
 type OPRef struct {
 	Vault, Item, Section, Field string
+	FieldByID                   bool
 }
 
 type SecretScheme string
