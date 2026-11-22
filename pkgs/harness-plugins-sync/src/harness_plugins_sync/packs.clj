@@ -204,71 +204,64 @@
 
 (defn promote-pack!
   "Promotes `pack-name`'s `active` symlink to `local-path` (when provided) or
-  its `staged` snapshot. Keeps an existing `active` symlink when neither is set.
+  its `staged` snapshot, and keeps an existing `active` symlink when neither is
+  set. `check`, when given, receives the candidate directory and throws to
+  reject it: a rejected candidate leaves `active` alone and the result carries
+  `:error`, or, with no `active` to keep, throws `:pack/rejected`. Choosing,
+  checking, and switching hold the pack lock, so a concurrent pull cannot swap
+  the candidate between check and switch.
 
   Returns a map describing the active pack target, source (`:git` or `:local`),
   revision or digest, the previous active revision, and whether `active` changed."
-  [state-dir pack-name {:keys [local-path dry-run]}]
-  (let [act-link    (active-path state-dir pack-name)
-        stg-link    (staged-path state-dir pack-name)
-        prev-target (read-symlink-target act-link)
-        prev-rev    (rev-from-target prev-target)]
-    (cond
-      local-path
-      (do
-        (when-not (fs/directory? local-path)
-          (throw (ex-info (str "local pack directory does not exist: " local-path)
-                          {:code :pack/not-found :details {:pack pack-name :path local-path}})))
-        (let [abs      (str (fs/absolutize (fs/normalize local-path)))
-              changed? (not= prev-target abs)]
-          (when (and changed? (not dry-run))
-            (with-pack-lock state-dir pack-name
-              #(atomic-symlink! act-link abs)))
-          {:pack         pack-name
-           :source       :local
-           :path         abs
-           :active       act-link
-           :rev          nil
-           :digest       (content-digest abs)
-           :previous-rev prev-rev
-           :changed?     changed?
-           :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)}))
+  [state-dir pack-name {:keys [local-path dry-run check]}]
+  (when (and local-path (not (fs/directory? local-path)))
+    (throw (ex-info (str "local pack directory does not exist: " local-path)
+                    {:code :pack/not-found :details {:pack pack-name :path local-path}})))
+  (let [act-link (active-path state-dir pack-name)
+        stg-link (staged-path state-dir pack-name)
+        promote
+        (fn []
+          (let [prev-target  (read-symlink-target act-link)
+                local-abs    (when local-path (str (fs/absolutize (fs/normalize local-path))))
+                [target dir] (cond
+                               local-abs                    [local-abs local-abs]
+                               (read-symlink-target stg-link) [(read-symlink-target stg-link)
+                                                               (resolve-link-dir stg-link)])
+                error        (when (and target check)
+                               (try
+                                 (check dir)
+                                 nil
+                                 (catch Exception e
+                                   (or (ex-message e) (str e)))))
+                [target dir] (if (and target (not error))
+                               [target dir]
+                               [prev-target (when prev-target (resolve-link-dir act-link))])
+                changed?     (and (some? target) (not= prev-target target))
+                rev          (rev-from-target target)]
+            (cond
+              (nil? target)
+              (if error
+                (throw (ex-info error {:code :pack/rejected :details {:pack pack-name}}))
+                (throw (ex-info (str "pack '" pack-name "' has no fetched snapshot; run 'harness-plugins-sync sync' or 'pull' first")
+                                {:code :pack/not-fetched :details {:pack pack-name}})))
 
-      (read-symlink-target stg-link)
-      (let [stg-target (read-symlink-target stg-link)
-            rev        (rev-from-target stg-target)
-            resolved   (resolve-link-dir stg-link)
-            changed?   (not= prev-target stg-target)]
-        (when (and changed? (not dry-run))
-          (with-pack-lock state-dir pack-name
-            #(atomic-symlink! act-link stg-target)))
-        {:pack         pack-name
-         :source       :git
-         :path         resolved
-         :active       act-link
-         :rev          rev
-         :digest       rev
-         :previous-rev prev-rev
-         :changed?     changed?
-         :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)})
-
-      prev-target
-      (let [rev      (rev-from-target prev-target)
-            resolved (resolve-link-dir act-link)
-            local?   (nil? rev)]
-        {:pack         pack-name
-         :source       (if local? :local :git)
-         :path         resolved
-         :active       act-link
-         :rev          rev
-         :digest       (if local? (content-digest resolved) rev)
-         :previous-rev prev-rev
-         :changed?     false
-         :status       :unchanged})
-
-      :else
-      (throw (ex-info (str "pack '" pack-name "' has no fetched snapshot; run 'harness-plugins-sync sync' or 'pull' first")
-                      {:code :pack/not-fetched :details {:pack pack-name}})))))
+              :else
+              (do
+                (when (and changed? (not dry-run))
+                  (atomic-symlink! act-link target))
+                (cond-> {:pack         pack-name
+                         :source       (if rev :git :local)
+                         :path         dir
+                         :active       act-link
+                         :rev          rev
+                         :digest       (or rev (content-digest dir))
+                         :previous-rev (rev-from-target prev-target)
+                         :changed?     changed?
+                         :status       (cond dry-run :dry-run changed? :promoted :else :unchanged)}
+                  error (assoc :error error))))))]
+    (if dry-run
+      (promote)
+      (with-pack-lock state-dir pack-name promote))))
 
 (defn pack-status
   "Inspects `pack-name` under `state-dir` without making changes."

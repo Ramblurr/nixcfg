@@ -21,6 +21,27 @@ harness-plugins-sync status --json         # inspect revisions and drift
 harness-plugins-sync doctor                # read-only environment checks
 ```
 
+## Packs
+
+A pack is any Git repository with a Codex marketplace at
+`.agents/plugins/marketplace.json`. Each plugin binds from the local source path
+its marketplace entry names, so a repository that is one plugin at its root lists
+it at `./`. A plugin the marketplace does not list binds from `plugins/<name>`.
+On Pi, a plugin's `package.json` `pi` manifest selects its resources, and a plugin
+without one contributes its `skills/` directory.
+
+Codex registers each pack as a marketplace named after its config key, from a
+copy of its plugins that the tool generates per revision. The upstream
+marketplace name never reaches Codex, so two packs cannot claim one name, and
+pruning old snapshots never removes a directory that Codex still reads. A pack
+removed from the config is unregistered before its copy is deleted.
+
+Each new snapshot is checked before it becomes active. A pack that fails to
+fetch, or whose snapshot has an unusable marketplace or a plugin path that
+resolves outside the pack, keeps its last good snapshot. A pack with no good
+snapshot is left out of each profile, which still binds its other packs. Either
+case marks the host not current.
+
 ## Config (`config.edn`)
 
 Configuration is read as EDN data (never evaluated). Without a config file,

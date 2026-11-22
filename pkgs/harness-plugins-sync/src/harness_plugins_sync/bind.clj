@@ -40,32 +40,128 @@
     (fs/create-dirs (fs/parent p))
     (spit p (str (pr-str state) "\n"))))
 
+(defn- marketplace-error [plugin-name mkt msg]
+  (ex-info (str "plugin '" plugin-name "' " msg)
+           {:code    :pack/invalid-marketplace
+            :details {:plugin plugin-name :marketplace (some-> mkt str)}}))
+
+(defn- marketplace-entry
+  "Returns the entry for `plugin-name` in the `.agents/plugins/marketplace.json`
+  of `pack-root`, or nil when the pack has no marketplace or does not list it.
+  Throws an `ex-info` for a marketplace it cannot read, so callers fail only
+  this pack."
+  [pack-root plugin-name]
+  (let [mkt   (fs/path pack-root ".agents" "plugins" "marketplace.json")
+        mkt-v (when (fs/exists? mkt)
+                (try
+                  (json/read-str (slurp (str mkt)) :key-fn keyword)
+                  (catch Exception e
+                    (throw (marketplace-error plugin-name mkt
+                                              (str "has an unreadable marketplace " mkt ": " (ex-message e)))))))]
+    (when (and (map? mkt-v) (sequential? (:plugins mkt-v)))
+      (some #(when (and (map? %) (= plugin-name (:name %))) %) (:plugins mkt-v)))))
+
+(defn- entry-subpath
+  "Returns the path relative to its pack root that the marketplace `entry` of
+  `plugin-name` names, or `plugins/<name>` when the marketplace does not list
+  it. A pack such as a single-plugin repository lists its plugin at `./`."
+  [plugin-name entry]
+  (let [source (:source entry)
+        fail   #(throw (marketplace-error plugin-name nil %))
+        rel    (fs/normalize
+                (fs/path (cond
+                           (nil? entry)     (str "plugins/" plugin-name)
+                           (string? source) source
+                           (and (map? source) (= "local" (:source source)) (string? (:path source)))
+                           (:path source)
+                           :else            (fail (str "has a marketplace source that is not a local path: "
+                                                       (pr-str source))))))]
+    (when (or (fs/absolute? rel) (= ".." (str (first rel))))
+      (fail (str "source path leaves its pack: " rel)))
+    (str rel)))
+
+(defn- plugin-subpath [pack-root plugin-name]
+  (entry-subpath plugin-name (marketplace-entry pack-root plugin-name)))
+
+(defn- normalize-rel-entry [plugin-name rel]
+  (let [clean (-> (str rel)
+                  (str/replace #"^\./" ""))]
+    (str "./plugins/" plugin-name "/" clean)))
+
+(defn- pi-plugin-contributions
+  "Returns the Pi resources of a plugin: its `package.json` `pi` manifest, or
+  its `skills/` directory when it has no manifest. A `package.json` written for
+  another tool, such as a VS Code manifest, counts as no manifest."
+  [{:keys [plugin real-dir]}]
+  (let [pkg-path (fs/path real-dir "package.json")
+        pi       (when (fs/exists? pkg-path)
+                   (:pi (json/read-str (slurp (str pkg-path)) :key-fn keyword)))]
+    (if pi
+      {:skills     (mapv #(normalize-rel-entry plugin %) (:skills pi))
+       :extensions (mapv #(normalize-rel-entry plugin %) (:extensions pi))
+       :prompts    (mapv #(normalize-rel-entry plugin %) (:prompts pi))
+       :themes     (mapv #(normalize-rel-entry plugin %) (:themes pi))}
+      {:skills     (if (fs/directory? (fs/path real-dir "skills"))
+                     [(str "./plugins/" plugin "/skills")]
+                     [])
+       :extensions []
+       :prompts    []
+       :themes     []})))
+
+(defn- plugin-dir [root subpath]
+  (str (fs/normalize (fs/path root subpath))))
+
 (defn- resolve-plugin-dir [pack-info plugin-name]
-  (let [active-root (:active pack-info)
-        real-root   (:path pack-info)
-        real-dir    (str (fs/path real-root "plugins" plugin-name))
-        link-dir    (str (fs/path active-root "plugins" plugin-name))]
+  (let [entry    (marketplace-entry (:path pack-info) plugin-name)
+        subpath  (entry-subpath plugin-name entry)
+        real-dir (plugin-dir (:path pack-info) subpath)
+        link-dir (plugin-dir (:active pack-info) subpath)]
     (when-not (fs/directory? real-dir)
       (throw (ex-info (str "plugin '" plugin-name "' not found in pack '" (:pack pack-info)
                            "' at " real-dir)
                       {:code    :pack/plugin-not-found
                        :details {:pack (:pack pack-info) :plugin plugin-name :path real-dir}})))
-    {:plugin    plugin-name
-     :pack      (:pack pack-info)
-     :selector  (str plugin-name "@" (:pack pack-info))
-     :link-dir  link-dir
-     :real-dir  real-dir
-     :pack-info pack-info}))
+    (when-not (.startsWith (fs/real-path real-dir) (fs/real-path (:path pack-info)))
+      (throw (ex-info (str "plugin '" plugin-name "' source path leaves its pack: " subpath
+                           " resolves to " (fs/real-path real-dir))
+                      {:code    :pack/invalid-marketplace
+                       :details {:pack (:pack pack-info) :plugin plugin-name :path real-dir}})))
+    ;; Parsed here so a broken package.json fails this plugin, not the whole Pi profile.
+    (let [pi (try
+               (pi-plugin-contributions {:plugin plugin-name :real-dir real-dir})
+               (catch Exception e
+                 (throw (ex-info (str "plugin '" plugin-name "' has an unreadable package.json: " (ex-message e))
+                                 {:code    :pack/invalid-plugin
+                                  :details {:pack (:pack pack-info) :plugin plugin-name :path real-dir}}))))]
+      {:plugin    plugin-name
+       :pack      (:pack pack-info)
+       :selector  (str plugin-name "@" (:pack pack-info))
+       :link-dir  link-dir
+       :real-dir  real-dir
+       :entry     entry
+       :pi        pi
+       :pack-info pack-info})))
 
-(defn- resolve-profile-plugins [profile active-packs]
-  (let [resolved (mapv (fn [{:keys [plugin pack selector]}]
-                         (let [info (get active-packs pack)]
-                           (when-not info
-                             (throw (ex-info (str "profile '" (:id profile) "' references unknown pack '" pack "'")
-                                             {:code    :pack/not-found
-                                              :details {:profile (:id profile) :pack pack :selector selector}})))
-                           (resolve-plugin-dir info plugin)))
-                       (:plugins profile))]
+(defn check-pack!
+  "Throws an `ex-info` unless each of `plugin-names` is a directory inside the
+  pack snapshot at `pack-root`. Run before a snapshot becomes `active`."
+  [pack-name pack-root plugin-names]
+  (doseq [p plugin-names]
+    (resolve-plugin-dir {:pack pack-name :path pack-root :active pack-root} p)))
+
+(defn- resolve-profile-plugins
+  "Returns `[resolved warnings]` for `profile`. A plugin whose pack has no
+  active snapshot, or that its snapshot cannot provide, is left out with a
+  warning so the profile still binds its other plugins."
+  [profile active-packs]
+  (let [results  (for [{:keys [plugin pack selector]} (:plugins profile)]
+                   (if-let [info (get active-packs pack)]
+                     (try
+                       {:resolved (resolve-plugin-dir info plugin)}
+                       (catch clojure.lang.ExceptionInfo e
+                         {:warning (str selector " is not bound: " (ex-message e))}))
+                     {:warning (str "pack " pack " has no active snapshot; " selector " is not bound")}))
+        resolved (vec (keep :resolved results))]
     (when (#{:claude :pi :antigravity} (:harness profile))
       (let [dups (->> resolved (group-by :plugin) (filter #(> (count (val %)) 1)))]
         (when-let [[plugin-name entries] (first dups)]
@@ -75,7 +171,7 @@
                            :details {:profile (:id profile)
                                      :plugin  plugin-name
                                      :packs   (mapv :pack entries)}})))))
-    resolved))
+    [resolved (vec (keep :warning results))]))
 
 (defn- sync-symlink-dir!
   "Synchronizes managed plugin symlinks inside `target-dir` and returns
@@ -174,29 +270,8 @@
      :changes  changes
      :warnings warnings}))
 
-(defn- normalize-rel-entry [plugin-name rel]
-  (let [clean (-> (str rel)
-                  (str/replace #"^\./" ""))]
-    (str "./plugins/" plugin-name "/" clean)))
-
-(defn- pi-plugin-contributions [{:keys [plugin real-dir]}]
-  (let [pkg-path (fs/path real-dir "package.json")]
-    (if (fs/exists? pkg-path)
-      (let [pkg (json/read-str (slurp (str pkg-path)) :key-fn keyword)
-            pi  (:pi pkg)]
-        {:skills     (mapv #(normalize-rel-entry plugin %) (:skills pi))
-         :extensions (mapv #(normalize-rel-entry plugin %) (:extensions pi))
-         :prompts    (mapv #(normalize-rel-entry plugin %) (:prompts pi))
-         :themes     (mapv #(normalize-rel-entry plugin %) (:themes pi))})
-      {:skills     (if (fs/directory? (fs/path real-dir "skills"))
-                     [(str "./plugins/" plugin "/skills")]
-                     [])
-       :extensions []
-       :prompts    []
-       :themes     []})))
-
 (defn- pi-aggregate-manifest [profile-id resolved]
-  (let [contribs (map pi-plugin-contributions resolved)
+  (let [contribs (map :pi resolved)
         merge-k  (fn [k] (vec (distinct (mapcat k contribs))))
         pi-map   (into {}
                        (for [k [:skills :extensions :prompts :themes]
@@ -282,13 +357,6 @@
      :changes  changes
      :warnings (:warnings wiring)}))
 
-(defn- codex-marketplace-name [pack-info]
-  (let [mkt-path (fs/path (:path pack-info) ".agents" "plugins" "marketplace.json")]
-    (if (fs/exists? mkt-path)
-      (or (:name (json/read-str (slurp (str mkt-path)) :key-fn keyword))
-          (:pack pack-info))
-      (:pack pack-info))))
-
 (defn- run-codex! [codex-bin codex-home args]
   (let [res (proc/sh (into [codex-bin] args)
                      {:extra-env {"CODEX_HOME" codex-home}
@@ -305,16 +373,69 @@
                     {:code    :bind/codex-failed
                      :details {:args args :exit (:exit res) :stderr (str/trim (:err res))}}))))
 
-(defn- desired-codex-stamp [resolved]
+(defn- codex-root
+  "Returns the directory of the marketplace generated for `pack` at `digest`
+  with `plugins`. Any change to either gets a new directory, which makes Codex
+  register it again; Codex resolves a marketplace path only when it is added."
+  [state-dir profile-id pack digest plugins]
+  (let [md  (java.security.MessageDigest/getInstance "SHA-256")
+        key (->> (.digest md (.getBytes (pr-str [digest plugins]) "UTF-8"))
+                 (take 8)
+                 (map #(format "%02x" (bit-and % 0xff)))
+                 (apply str))]
+    (str (fs/path (profile-state-dir state-dir profile-id) "codex" pack key))))
+
+(defn- desired-codex-stamp
+  "Returns `{pack stamp}`. Each pack registers in Codex as a marketplace named
+  after its config key, from a generated copy of its plugins. Codex keys
+  marketplaces by name and reads the copy for as long as it is registered, so
+  neither an upstream marketplace name nor a pruned snapshot can reach
+  another pack."
+  [state-dir profile-id resolved]
   (into {}
         (for [[pack entries] (group-by :pack resolved)
-              :let [info (:pack-info (first entries))
-                    mkt  (codex-marketplace-name info)]]
-          [pack {:marketplace mkt
-                 :root        (:active info)
+              :let [info    (:pack-info (first entries))
+                    plugins (vec (sort (map :plugin entries)))]]
+          [pack {:marketplace pack
+                 :root        (codex-root state-dir profile-id pack (:digest info) plugins)
                  :source      (:source info)
                  :digest      (:digest info)
-                 :plugins     (vec (sort (map :plugin entries)))}])))
+                 :plugins     plugins}])))
+
+(defn- write-codex-marketplace!
+  "Writes the marketplace for `pack` at `root` from its resolved `entries`,
+  unless a previous run already wrote it."
+  [root pack entries]
+  (when-not (fs/exists? root)
+    (let [tmp (str root ".tmp." (System/nanoTime))]
+      (try
+        (fs/create-dirs (fs/path tmp ".agents" "plugins"))
+        (doseq [{:keys [plugin real-dir]} entries]
+          (fs/copy-tree real-dir (fs/path tmp "plugins" plugin)))
+        (spit (str (fs/path tmp ".agents" "plugins" "marketplace.json"))
+              (json/write-str {:name    pack
+                               :plugins (vec (for [{:keys [plugin entry]} (sort-by :plugin entries)]
+                                               (assoc entry
+                                                      :name plugin
+                                                      :source {:source "local" :path (str "./plugins/" plugin)})))}
+                              :escape-slash false))
+        (fs/move tmp root)
+        (catch Exception e
+          (fs/delete-tree tmp)
+          (throw e))))))
+
+(defn- rollback-codex-pack!
+  "Undoes a registration of `next-pack` that failed part way. Its new plugins
+  and its marketplace go, and `prev-pack`, when its generated copy still
+  exists, is registered again, so Codex never points at a deleted directory."
+  [codex-bin codex-home prev-pack next-pack]
+  (doseq [p (remove (set (:plugins prev-pack)) (:plugins next-pack))]
+    (run-codex! codex-bin codex-home ["plugin" "remove" (str p "@" (:marketplace next-pack)) "--json"]))
+  (run-codex! codex-bin codex-home ["plugin" "marketplace" "remove" (:marketplace next-pack)])
+  (when (and prev-pack (fs/exists? (:root prev-pack)))
+    (run-codex! codex-bin codex-home ["plugin" "marketplace" "add" (:root prev-pack) "--json"])
+    (doseq [p (:plugins prev-pack)]
+      (run-codex! codex-bin codex-home ["plugin" "add" (str p "@" (:marketplace prev-pack)) "--json"]))))
 
 (defn- codex-installed-selectors [stamp]
   (set (for [[_ {:keys [marketplace plugins]}] stamp
@@ -325,12 +446,12 @@
   (let [codex-home (str (:dir profile))
         prev-state (read-profile-state state-dir (:id profile))
         prev-stamp (:codex-packs prev-state {})
-        next-stamp (desired-codex-stamp resolved)
+        next-stamp (desired-codex-stamp state-dir (:id profile) resolved)
         prev-sels  (codex-installed-selectors prev-stamp)
         next-sels  (codex-installed-selectors next-stamp)
-        removed    (vec (sort (remove next-sels prev-sels)))
         changed?   (or force (not= prev-stamp next-stamp))]
-    (if (not changed?)
+    (cond
+      (not changed?)
       {:profile  (:id profile)
        :harness  :codex
        :dir      codex-home
@@ -338,42 +459,76 @@
        :plugins  (mapv :selector resolved)
        :changes  {:added [] :updated [] :removed [] :unchanged (vec (sort next-sels))}
        :warnings []}
-      (if dry-run
-        {:profile  (:id profile)
-         :harness  :codex
-         :dir      codex-home
-         :status   :would-update
-         :plugins  (mapv :selector resolved)
-         :changes  {:added     (vec (sort (remove prev-sels next-sels)))
-                    :updated   (vec (sort (filter prev-sels next-sels)))
-                    :removed   removed
-                    :unchanged []}
-         :warnings []}
-        (do
-          (when-not (fs/which codex-bin)
-            (throw (ex-info (str "codex binary not found: " codex-bin)
-                            {:code :bind/codex-missing :details {:codex-bin codex-bin}})))
-          (fs/create-dirs codex-home)
-          (doseq [[pack {:keys [marketplace root plugins] :as next-pack}] next-stamp
-                  :let [prev-pack (get prev-stamp pack)]]
-            (when (or force (not= prev-pack next-pack))
-              (when (or force (not= (:root prev-pack) root))
-                ;; Replace any previous store or local marketplace registration.
-                (run-codex! codex-bin codex-home ["plugin" "marketplace" "remove" marketplace])
-                (ensure-codex-ok!
-                 (run-codex! codex-bin codex-home ["plugin" "marketplace" "add" root "--json"])
-                 ["plugin" "marketplace" "add" root "--json"]))
-              (doseq [p plugins
-                      :let [sel (str p "@" marketplace)]]
-                (ensure-codex-ok!
-                 (run-codex! codex-bin codex-home ["plugin" "add" sel "--json"])
-                 ["plugin" "add" sel "--json"]))))
-          (doseq [sel removed]
+
+      dry-run
+      {:profile  (:id profile)
+       :harness  :codex
+       :dir      codex-home
+       :status   :would-update
+       :plugins  (mapv :selector resolved)
+       :changes  {:added     (vec (sort (remove prev-sels next-sels)))
+                  :updated   (vec (sort (filter prev-sels next-sels)))
+                  :removed   (vec (sort (remove next-sels prev-sels)))
+                  :unchanged []}
+       :warnings []}
+
+      :else
+      (do
+        (when-not (fs/which codex-bin)
+          (throw (ex-info (str "codex binary not found: " codex-bin)
+                          {:code :bind/codex-missing :details {:codex-bin codex-bin}})))
+        (fs/create-dirs codex-home)
+        ;; Each pack registers on its own: a pack Codex rejects keeps its previous
+        ;; stamp, so the next run retries it, and the other packs still install.
+        (let [by-pack    (group-by :pack resolved)
+              failures   (into {}
+                               (for [[pack {:keys [marketplace root plugins] :as next-pack}] next-stamp
+                                     :let [prev-pack (get prev-stamp pack)]
+                                     :when (or force (not= prev-pack next-pack))
+                                     :let [error (try
+                                                   (when (or force (not= (:root prev-pack) root))
+                                                     (write-codex-marketplace! root pack (get by-pack pack))
+                                                     (run-codex! codex-bin codex-home ["plugin" "marketplace" "remove" marketplace])
+                                                     (ensure-codex-ok!
+                                                      (run-codex! codex-bin codex-home ["plugin" "marketplace" "add" root "--json"])
+                                                      ["plugin" "marketplace" "add" root "--json"]))
+                                                   (doseq [p plugins
+                                                           :let [sel (str p "@" marketplace)]]
+                                                     (ensure-codex-ok!
+                                                      (run-codex! codex-bin codex-home ["plugin" "add" sel "--json"])
+                                                      ["plugin" "add" sel "--json"]))
+                                                   nil
+                                                   (catch Exception e
+                                                     (rollback-codex-pack! codex-bin codex-home prev-pack next-pack)
+                                                     (or (ex-message e) (str e))))]
+                                     :when error]
+                                 [pack error]))
+              applied    (reduce-kv (fn [stamp pack _]
+                                      (if-let [prev-pack (get prev-stamp pack)]
+                                        (assoc stamp pack prev-pack)
+                                        (dissoc stamp pack)))
+                                    next-stamp
+                                    failures)
+              ;; A rejected pack keeps its previous stamp, so its installed plugins stay.
+              uninstall  (vec (sort (remove (codex-installed-selectors applied) prev-sels)))
+              live-mkts  (set (map :marketplace (vals applied)))
+              stale-mkts (sort (distinct (remove live-mkts (map :marketplace (vals prev-stamp)))))
+              live-roots (set (map :root (vals applied)))
+              codex-dir  (fs/path (profile-state-dir state-dir (:id profile)) "codex")]
+          (doseq [sel uninstall]
             (run-codex! codex-bin codex-home ["plugin" "remove" sel "--json"]))
+          ;; Unregister before deleting, so Codex never points at a missing marketplace.
+          (doseq [mkt stale-mkts]
+            (run-codex! codex-bin codex-home ["plugin" "marketplace" "remove" mkt]))
+          (when (fs/directory? codex-dir)
+            (doseq [pack-dir  (fs/list-dir codex-dir)
+                    generated (fs/list-dir pack-dir)
+                    :when (not (contains? live-roots (str generated)))]
+              (fs/delete-tree generated)))
           (write-profile-state! state-dir (:id profile)
                                 {:harness     :codex
                                  :dir         codex-home
-                                 :codex-packs next-stamp
+                                 :codex-packs applied
                                  :plugins     (mapv :selector resolved)})
           {:profile  (:id profile)
            :harness  :codex
@@ -382,19 +537,22 @@
            :plugins  (mapv :selector resolved)
            :changes  {:added     (vec (sort (remove prev-sels next-sels)))
                       :updated   (vec (sort (filter prev-sels next-sels)))
-                      :removed   removed
+                      :removed   uninstall
                       :unchanged []}
-           :warnings []})))))
+           :warnings (vec (for [[pack error] (sort failures)]
+                            (str "codex could not register pack " pack ": " error)))})))))
 
 (defn bind-profile!
-  "Binds `profile` against `active-packs` using the appropriate harness adapter."
+  "Binds `profile` against `active-packs` using the appropriate harness adapter.
+  Plugins that cannot be resolved are left out and named in the warnings."
   [state-dir profile active-packs opts]
-  (let [resolved (resolve-profile-plugins profile active-packs)]
-    (case (:harness profile)
-      :claude      (bind-claude! state-dir profile resolved opts)
-      :antigravity (bind-antigravity! state-dir profile resolved opts)
-      :pi          (bind-pi! state-dir profile resolved opts)
-      :codex       (bind-codex! state-dir profile resolved opts))))
+  (let [[resolved warnings] (resolve-profile-plugins profile active-packs)
+        result              (case (:harness profile)
+                              :claude      (bind-claude! state-dir profile resolved opts)
+                              :antigravity (bind-antigravity! state-dir profile resolved opts)
+                              :pi          (bind-pi! state-dir profile resolved opts)
+                              :codex       (bind-codex! state-dir profile resolved opts))]
+    (update result :warnings into warnings)))
 
 (defn- symlink-drift [target-dir desired-map managed-prev]
   (let [missing (for [[k v] desired-map
@@ -452,103 +610,119 @@
         selectors  (mapv :selector (:plugins profile))
         missing-pk (vec (distinct (for [{:keys [pack]} (:plugins profile)
                                         :when (= :missing (:source (get pack-statuses pack :missing)))]
-                                    pack)))]
+                                    pack)))
+        ;; An unreadable pack marketplace is drift of this profile, not a failed command.
+        desired    (when (empty? missing-pk)
+                     (try
+                       (into {}
+                             (for [{:keys [plugin pack]} (:plugins profile)
+                                   :let [active (packs/active-path state-dir pack)]]
+                               [plugin (plugin-dir active (plugin-subpath active plugin))]))
+                       (catch clojure.lang.ExceptionInfo e e)))
+        unbound    (fn [drift]
+                     {:profile  (:id profile)
+                      :harness  (:harness profile)
+                      :dir      (:dir profile)
+                      :source   (:source profile)
+                      :plugins  selectors
+                      :in-sync? false
+                      :drift    [drift]
+                      :warnings []})]
     (assoc
-     (if (seq missing-pk)
-       {:profile  (:id profile)
-        :harness  (:harness profile)
-        :dir      (:dir profile)
-        :source   (:source profile)
-        :plugins  selectors
-        :in-sync? false
-        :drift    [(str "unfetched packs: " (str/join ", " missing-pk))]
-        :warnings []}
-       (let [desired (into {}
-                           (for [{:keys [plugin pack]} (:plugins profile)]
-                             [plugin (str (fs/path (packs/active-path state-dir pack) "plugins" plugin))]))]
-         (case (:harness profile)
-           :claude
-           (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "skills"))
-                                                        desired
-                                                        (:managed-plugins prev-state []))
-                 drift                   (cond-> []
-                                           (seq missing) (conj (str "unbound: " (str/join ", " missing)))
-                                           (seq stale)   (conj (str "stale: " (str/join ", " stale))))]
-             {:profile  (:id profile)
-              :harness  :claude
-              :dir      (:dir profile)
-              :source   (:source profile)
-              :plugins  selectors
-              :in-sync? (empty? drift)
-              :drift    drift
-              :warnings []})
+     (cond
+       (seq missing-pk)
+       (unbound (str "unfetched packs: " (str/join ", " missing-pk)))
 
-           :antigravity
-           (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "config" "plugins"))
-                                                        desired
-                                                        (:managed-plugins prev-state []))
-                 drift                   (cond-> []
-                                           (seq missing) (conj (str "unbound: " (str/join ", " missing)))
-                                           (seq stale)   (conj (str "stale: " (str/join ", " stale))))
-                 warnings                (vec (for [{:keys [plugin pack selector]} (:plugins profile)
-                                                    :let [root (:resolved-path (get pack-statuses pack))
-                                                          real (when root (str (fs/path root "plugins" plugin)))]
-                                                    :when (and real (fs/directory? real)
-                                                               (not (has-antigravity-manifest? real)))]
-                                                (str selector " has no .antigravity-plugin/plugin.json")))]
-             {:profile  (:id profile)
-              :harness  :antigravity
-              :dir      (:dir profile)
-              :source   (:source profile)
-              :plugins  selectors
-              :in-sync? (empty? drift)
-              :drift    drift
-              :warnings warnings})
+       (instance? Exception desired)
+       (unbound (ex-message desired))
 
-           :pi
-           (let [proj-dir                (or (:link-dir profile) (profile-state-dir state-dir (:id profile)))
-                 {:keys [missing stale]} (symlink-drift (str (fs/path proj-dir "plugins"))
-                                                        desired
-                                                        (:managed-plugins prev-state []))
-                 pkg-ok?                 (fs/exists? (fs/path proj-dir "package.json"))
-                 settings                (read-pi-settings (str (fs/path (:dir profile) "settings.json")))
-                 wired?                  (pi-settings-wired? settings proj-dir)
-                 drift                   (cond-> []
-                                           (seq missing)  (conj (str "unbound: " (str/join ", " missing)))
-                                           (seq stale)    (conj (str "stale: " (str/join ", " stale)))
-                                           (not pkg-ok?)  (conj "missing package.json")
-                                           (not wired?)   (conj (str "settings.json does not reference " proj-dir)))]
-             {:profile  (:id profile)
-              :harness  :pi
-              :dir      (:dir profile)
-              :link-dir proj-dir
-              :source   (:source profile)
-              :plugins  selectors
-              :in-sync? (empty? drift)
-              :drift    drift
-              :warnings []})
+       :else
+       (case (:harness profile)
+         :claude
+         (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "skills"))
+                                                      desired
+                                                      (:managed-plugins prev-state []))
+               drift                   (cond-> []
+                                         (seq missing) (conj (str "unbound: " (str/join ", " missing)))
+                                         (seq stale)   (conj (str "stale: " (str/join ", " stale))))]
+           {:profile  (:id profile)
+            :harness  :claude
+            :dir      (:dir profile)
+            :source   (:source profile)
+            :plugins  selectors
+            :in-sync? (empty? drift)
+            :drift    drift
+            :warnings []})
 
-           :codex
-           (let [prev-packs (:codex-packs prev-state {})
-                 expected   (into {}
-                                  (for [[pack items] (group-by :pack (:plugins profile))
-                                        :let [st (get pack-statuses pack)]]
-                                    [pack {:root    (:active-path st)
-                                           :source  (:source st)
-                                           :digest  (if (= :local (:source st))
+         :antigravity
+         (let [{:keys [missing stale]} (symlink-drift (str (fs/path (:dir profile) "config" "plugins"))
+                                                      desired
+                                                      (:managed-plugins prev-state []))
+               drift                   (cond-> []
+                                         (seq missing) (conj (str "unbound: " (str/join ", " missing)))
+                                         (seq stale)   (conj (str "stale: " (str/join ", " stale))))
+               warnings                (vec (for [{:keys [plugin pack selector]} (:plugins profile)
+                                                  :let [root (:resolved-path (get pack-statuses pack))
+                                                        real (when root (plugin-dir root (plugin-subpath root plugin)))]
+                                                  :when (and real (fs/directory? real)
+                                                             (not (has-antigravity-manifest? real)))]
+                                              (str selector " has no .antigravity-plugin/plugin.json")))]
+           {:profile  (:id profile)
+            :harness  :antigravity
+            :dir      (:dir profile)
+            :source   (:source profile)
+            :plugins  selectors
+            :in-sync? (empty? drift)
+            :drift    drift
+            :warnings warnings})
+
+         :pi
+         (let [proj-dir                (or (:link-dir profile) (profile-state-dir state-dir (:id profile)))
+               {:keys [missing stale]} (symlink-drift (str (fs/path proj-dir "plugins"))
+                                                      desired
+                                                      (:managed-plugins prev-state []))
+               pkg-ok?                 (fs/exists? (fs/path proj-dir "package.json"))
+               settings                (read-pi-settings (str (fs/path (:dir profile) "settings.json")))
+               wired?                  (pi-settings-wired? settings proj-dir)
+               drift                   (cond-> []
+                                         (seq missing)  (conj (str "unbound: " (str/join ", " missing)))
+                                         (seq stale)    (conj (str "stale: " (str/join ", " stale)))
+                                         (not pkg-ok?)  (conj "missing package.json")
+                                         (not wired?)   (conj (str "settings.json does not reference " proj-dir)))]
+           {:profile  (:id profile)
+            :harness  :pi
+            :dir      (:dir profile)
+            :link-dir proj-dir
+            :source   (:source profile)
+            :plugins  selectors
+            :in-sync? (empty? drift)
+            :drift    drift
+            :warnings []})
+
+         :codex
+         (let [prev-packs (:codex-packs prev-state {})
+               expected   (into {}
+                                (for [[pack items] (group-by :pack (:plugins profile))
+                                      :let [st      (get pack-statuses pack)
+                                            digest  (if (= :local (:source st))
                                                       (packs/content-digest (:resolved-path st))
                                                       (:active-rev st))
-                                           :plugins (vec (sort (map :plugin items)))}]))
-                 drift      (vec (for [[pack exp] expected
-                                       :let [cur (get prev-packs pack)]
-                                       :when (not= (select-keys cur [:root :source :digest :plugins]) exp)]
-                                   (str "pack " pack " needs codex plugin refresh")))]
-             {:profile  (:id profile)
-              :harness  :codex
-              :dir      (:dir profile)
-              :source   (:source profile)
-              :plugins  selectors
-              :in-sync? (empty? drift)
-              :drift    drift
-              :warnings []}))))
+                                            plugins (vec (sort (map :plugin items)))]]
+                                  [pack {:marketplace pack
+                                         :root        (codex-root state-dir (:id profile) pack digest plugins)
+                                         :source      (:source st)
+                                         :digest      digest
+                                         :plugins     plugins}]))
+               drift      (vec (for [[pack exp] expected
+                                     :let [cur (get prev-packs pack)]
+                                     :when (not= (select-keys cur [:marketplace :root :source :digest :plugins]) exp)]
+                                 (str "pack " pack " needs codex plugin refresh")))]
+           {:profile  (:id profile)
+            :harness  :codex
+            :dir      (:dir profile)
+            :source   (:source profile)
+            :plugins  selectors
+            :in-sync? (empty? drift)
+            :drift    drift
+            :warnings []})))
      :loads (profile-loads state-dir profile))))

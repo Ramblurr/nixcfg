@@ -18,7 +18,11 @@
                      [:rev {:optional true} [:maybe :string]]
                      [:previous-rev {:optional true} [:maybe :string]]
                      [:changed? {:optional true} :boolean]
-                     [:status [:enum :fetched :unchanged :dry-run]]]
+                     [:status [:enum :fetched :unchanged :dry-run :failed]]
+                     [:error {:optional true} :string]]
+   ::pack-error     [:map
+                     [:pack :string]
+                     [:error :string]]
    ::pack-promote   [:map
                      [:pack :string]
                      [:source [:enum :git :local]]
@@ -107,7 +111,8 @@
     "                 and atomic active symlink; per-profile state and Pi package.json under profiles/."
     "    Bindings     Discovered from T3 settings.json (providerInstances) + declared :profiles:"
     "                   claude       <claudeHome>/skills/<plugin> symlink (live, namespaced)"
-    "                   codex        codex plugin marketplace/add per CODEX_HOME (cached per rev)"
+    "                   codex        codex plugin marketplace/add per CODEX_HOME, one generated"
+    "                                marketplace per pack, named after its config key"
     "                   pi           <state>/profiles/<id>/package.json referenced by settings.json"
     "                   antigravity  <profileDir>/config/plugins/<plugin> (per T3 sha256 dir + ~/.gemini)"
     "    Machines     Each host pulls from Git independently (timer or manual). --all / --host"
@@ -179,6 +184,7 @@
                    [:targets [:ref ::targets]]
                    [:pulled [:vector [:ref ::pack-pull]]]
                    [:packs [:vector [:ref ::pack-promote]]]
+                   [:pack-errors [:vector [:ref ::pack-error]]]
                    [:profiles [:vector [:ref ::profile-bind]]]
                    [:peers [:vector [:ref ::peer-result]]]]
      :errors      common-errors
@@ -210,6 +216,7 @@
                    [:dry-run :boolean]
                    [:targets [:ref ::targets]]
                    [:packs [:vector [:ref ::pack-promote]]]
+                   [:pack-errors [:vector [:ref ::pack-error]]]
                    [:profiles [:vector [:ref ::profile-bind]]]
                    [:peers [:vector [:ref ::peer-result]]]]
      :errors      common-errors
@@ -322,7 +329,7 @@
                                      {:codex-bin (:codex-bin conf)
                                       :force     (boolean (:force input))
                                       :dry-run   (boolean (:dry-run input))})
-                 (catch clojure.lang.ExceptionInfo e
+                 (catch Exception e
                    {:profile  (:id prof)
                     :harness  (:harness prof)
                     :dir      (str (:dir prof))
@@ -334,14 +341,24 @@
     (merge result (select-keys (bind/profile-status (:state-dir conf) prof status-map)
                                [:loads :in-sync? :drift]))))
 
-(defn- pull-local [conf input]
+(defn- pull-local
+  "Fetches each selected pack. Reports a fetch error as `:status :failed` so
+  other packs still update and bind; the failed pack keeps its last snapshot."
+  [conf input]
   (let [selected (filter-packs (:packs conf) (:pack input))
         locals   (parse-locals (:local input) {})]
     (vec (for [[pack-name spec] (sort-by key selected)
                :when (not (contains? locals pack-name))]
-           (packs/pull-pack! (:state-dir conf) pack-name spec
-                             {:retain-revs (:retain-revs conf)
-                              :dry-run     (boolean (:dry-run input))})))))
+           (try
+             (packs/pull-pack! (:state-dir conf) pack-name spec
+                               {:retain-revs (:retain-revs conf)
+                                :dry-run     (boolean (:dry-run input))})
+             (catch clojure.lang.ExceptionInfo e
+               {:pack   pack-name
+                :url    (:url spec)
+                :branch (:branch spec "main")
+                :status :failed
+                :error  (ex-message e)}))))))
 
 (defn- apply-local [conf input]
   (let [locals         (parse-locals (:local input) {})
@@ -353,11 +370,29 @@
                                                {:code :pack/not-found :details {:pack p}})))
                              (set (:pack input)))
                          (set all-pack-names))
-        promoted       (mapv (fn [pack-name]
-                               (packs/promote-pack! (:state-dir conf) pack-name
-                                                    {:local-path (get locals pack-name)
-                                                     :dry-run    (boolean (:dry-run input))}))
-                             (sort selected-set))
+        all-profiles   (cfg/resolve-profiles conf)
+        needed         (update-vals (group-by :pack (mapcat :plugins all-profiles))
+                                    #(vec (distinct (map :plugin %))))
+        ;; A candidate snapshot that fails its check never becomes active: its pack
+        ;; keeps the last good snapshot, or has none and is left out of binding.
+        attempts       (for [pack-name (sort selected-set)]
+                         (try
+                           {:pack     pack-name
+                            :promoted (packs/promote-pack!
+                                       (:state-dir conf) pack-name
+                                       {:local-path (get locals pack-name)
+                                        :dry-run    (boolean (:dry-run input))
+                                        :check      #(bind/check-pack! pack-name % (get needed pack-name))})}
+                           (catch clojure.lang.ExceptionInfo e
+                             (case (:code (ex-data e))
+                               :pack/not-fetched {:pack pack-name}
+                               :pack/rejected    {:pack pack-name :error (ex-message e)}
+                               (throw e)))))
+        promoted       (mapv #(dissoc % :error) (keep :promoted attempts))
+        pack-errors    (vec (for [{:keys [pack promoted error]} attempts
+                                  :let [error (or error (:error promoted))]
+                                  :when error]
+                              {:pack pack :error error}))
         unchanged-pks  (for [pack-name (sort (remove selected-set all-pack-names))
                              :let [st (packs/pack-status (:state-dir conf) pack-name (get (:packs conf) pack-name {}))]
                              :when (not= :missing (:source st))]
@@ -372,7 +407,6 @@
                           :changed? false
                           :status   :unchanged})
         active-map     (into {} (map (juxt :pack identity) (concat promoted unchanged-pks)))
-        all-profiles   (cfg/resolve-profiles conf)
         profiles       (cond->> (filter-profiles all-profiles (:profile input))
                          (seq (:pack input))
                          (filterv #(some (comp selected-set :pack) (:plugins %))))
@@ -380,9 +414,10 @@
                                   [pack-name (packs/pack-status (:state-dir conf) pack-name
                                                                 (get (:packs conf) pack-name {}))]))
         bound          (mapv #(bind-or-fail conf % active-map status-map input) profiles)]
-    {:packs    promoted
-     :targets  (update-vals active-map pack-target)
-     :profiles bound}))
+    {:packs       promoted
+     :pack-errors pack-errors
+     :targets     (update-vals active-map pack-target)
+     :profiles    bound}))
 
 (defn handle-pull
   "Handler for `harness-plugins-sync pull`."
@@ -409,7 +444,7 @@
         (term/with-progress (progress-label "Applying" plan)
           [(if (:local? plan)
              (apply-local conf input)
-             {:packs [] :targets {} :profiles []})
+             {:packs [] :pack-errors [] :targets {} :profiles []})
            (run-peers conf "apply" input (:remotes plan))])]
     {:host     host
      :user     (remote/local-username)
@@ -417,6 +452,7 @@
      :dry-run  (boolean (:dry-run input))
      :targets  (:targets local)
      :packs    (:packs local)
+     :pack-errors (:pack-errors local)
      :profiles (:profiles local)
      :peers    peers}))
 
@@ -432,7 +468,7 @@
             [(do (term/step "Pulling packs") (pull-local conf input))
              (do (term/step "Binding profiles") (apply-local conf input))
              (run-peers conf "sync" input (:remotes plan))]
-            [[] {:packs [] :targets {} :profiles []}
+            [[] {:packs [] :pack-errors [] :targets {} :profiles []}
              (run-peers conf "sync" input (:remotes plan))]))]
     {:host     host
      :user     (remote/local-username)
@@ -441,6 +477,7 @@
      :targets  (:targets local)
      :pulled   pulled
      :packs    (:packs local)
+     :pack-errors (:pack-errors local)
      :profiles (:profiles local)
      :peers    peers}))
 
@@ -570,12 +607,18 @@
   (if (seq pulled)
     (let [pw (col-width (map :pack pulled))
           sw (col-width (map (comp name :status) pulled))]
-      (doseq [{:keys [pack rev status]} pulled]
+      (doseq [{:keys [pack rev status error]} pulled]
         (println (str "  " (pad pw pack)
                       (pad sw (name status))
-                      (term/style :dim (short-rev rev))))))
+                      (if error
+                        (term/style :error error)
+                        (term/style :dim (short-rev rev)))))))
     (println "  none"))
-  (render-peers peers))
+  (render-peers peers)
+  (doseq [{:keys [host result]} peers
+          {:keys [pack status error]} (:pulled result)
+          :when (= "failed" (name status))]
+    (println (str "  " (term/style :error (str host ": fetch " pack " failed: " error))))))
 
 (defn- kw [x]
   (when x (keyword (name x))))
@@ -641,11 +684,27 @@
      :hosts    (vec (for [{:keys [status result] :as entry} entries
                           :let [host-targets (merge (string-keys (:targets result)) targets)
                                 rows         (when (= :ok status)
-                                               (mapv #(profile-row host-targets dry-run? %) (:profiles result)))]]
+                                               (mapv #(profile-row host-targets dry-run? %) (:profiles result)))
+                                pack-errors  (vec (concat
+                                                   (for [{:keys [pack error] :as pulled} (:pulled result)
+                                                         :when (= :failed (kw (:status pulled)))]
+                                                     (str "fetch " pack " failed: " error))
+                                                   (for [{:keys [pack error]} (:pack-errors result)]
+                                                     (str "pack " pack " rejected its new snapshot: " error))))]]
                       (assoc entry
                              :rows rows
+                             :pack-errors pack-errors
                              :current? (and (= :ok status)
+                                            (empty? pack-errors)
                                             (every? #(or (:current? %) (= "pending" (:answer %))) rows)))))}))
+
+(defn- pull-exit-status
+  "Returns 1 when any pack failed to fetch, on this host or a reached peer."
+  [{:keys [pulled peers]}]
+  (if (some #(= :failed (kw (:status %)))
+            (concat pulled (mapcat (comp :pulled :result) peers)))
+    1
+    0))
 
 (defn- host-exit-status [result]
   (if (every? :current? (:hosts (host-report result))) 0 1))
@@ -660,12 +719,14 @@
                       (and prev (not= prev target)) (str (short-rev prev) " -> " (short-rev target))
                       :else                         (str (short-rev target) " " (term/style :dim "(no change)"))))))))
 
-(defn- render-host [{host-name :name :keys [user local? status message auth-url rows current?]} widths]
+(defn- render-host [{host-name :name :keys [user local? status message auth-url rows current? pack-errors]} widths]
   (let [[pw hw rw aw] widths]
     (println)
     (println (str (term/style (if current? :ok :error) (if current? "✓" "✗")) " "
                   (term/style :bold host-name)
                   (term/style :dim (str " (" (str/join ", " (remove nil? [user (when local? "local")])) ")"))))
+    (doseq [e pack-errors]
+      (println (str "    " (term/style :error e))))
     (case status
       :ok
       (if (empty? rows)
@@ -767,7 +828,7 @@
 (def impl
   "Command handler and human renderer map for [[catalog]]."
   {:cmd/sync   {:run handle-sync   :human render-sync   :exit host-exit-status}
-   :cmd/pull   {:run handle-pull   :human render-pull}
+   :cmd/pull   {:run handle-pull   :human render-pull   :exit pull-exit-status}
    :cmd/apply  {:run handle-apply  :human render-apply  :exit host-exit-status}
    :cmd/status {:run handle-status :human render-status :exit host-exit-status}
    :cmd/config {:run handle-config :human render-config}
