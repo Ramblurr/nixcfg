@@ -23,6 +23,10 @@ const (
 	// as the AAAA glibc sends beside an A on the same port. Netstack's
 	// MagicDNS uses the same bound.
 	dnsLinger = 150 * time.Millisecond
+
+	// udpDropWarnEvery bounds how often flows dropped at the session
+	// bounds are logged.
+	udpDropWarnEvery = 10 * time.Second
 )
 
 // handleUDP carries one UDP session: the datagrams one client address
@@ -33,8 +37,11 @@ func (s *Server) handleUDP(ctx context.Context, src, dst netip.AddrPort, c net.C
 	defer c.Close()
 	stop := context.AfterFunc(ctx, func() { _ = c.Close() })
 	defer stop()
-	if !s.claimUDP(src.Addr()) {
-		slog.Debug("udp session limit reached, dropping flow", "src", src, "dst", dst)
+	ok, dropped := s.claimUDP(src.Addr())
+	if !ok {
+		if dropped > 0 {
+			slog.Warn("udp session limit reached, dropping flows", "src", src, "dst", dst, "dropped", dropped)
+		}
 		return
 	}
 	defer s.releaseUDP(src.Addr())
@@ -73,8 +80,9 @@ func (s *Server) handleUDP(ctx context.Context, src, dst netip.AddrPort, c net.C
 }
 
 // claimUDP takes a session slot for caller, or reports that the bounds
-// allow no other.
-func (s *Server) claimUDP(caller netip.Addr) bool {
+// allow no other. Once per udpDropWarnEvery a refusal also returns the
+// number of flows dropped since the last such report, to be logged.
+func (s *Server) claimUDP(caller netip.Addr) (ok bool, dropped int) {
 	s.udpMu.Lock()
 	defer s.udpMu.Unlock()
 	if s.perCaller == nil {
@@ -82,11 +90,15 @@ func (s *Server) claimUDP(caller netip.Addr) bool {
 	}
 	if s.udpSessions >= cmp.Or(s.MaxUDPSessions, defaultMaxUDPSessions) ||
 		s.perCaller[caller] >= cmp.Or(s.MaxUDPSessionsPerCaller, defaultMaxUDPSessionsPerCaller) {
-		return false
+		s.udpDropped++
+		if now := time.Now(); now.Sub(s.udpWarned) >= udpDropWarnEvery {
+			dropped, s.udpDropped, s.udpWarned = s.udpDropped, 0, now
+		}
+		return false, dropped
 	}
 	s.udpSessions++
 	s.perCaller[caller]++
-	return true
+	return true, 0
 }
 
 func (s *Server) releaseUDP(caller netip.Addr) {

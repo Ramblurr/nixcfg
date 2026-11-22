@@ -48,6 +48,8 @@ type Server struct {
 	udpMu       sync.Mutex
 	udpSessions int
 	perCaller   map[netip.Addr]int
+	udpDropped  int       // flows dropped since udpWarned
+	udpWarned   time.Time // last warning about dropped flows
 }
 
 // Decrypter terminates TLS (or reads plain HTTP) for a flow that matched an
