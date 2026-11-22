@@ -80,6 +80,7 @@ func TestExitNodeForgetsAnUncompletedSYNFlood(t *testing.T) {
 type floodState struct {
 	PacketsInFlight int // entries in the per-endpoint dedup map
 	InFlight        int // per-client in-flight counts, summed
+	Clients         int // entries in the per-client count map
 	TransitAddrs    int // destination addresses assigned to the NIC
 }
 
@@ -90,10 +91,12 @@ func netstackFloodState(t *testing.T, s *tsnet.Server) floodState {
 	mu := (*sync.Mutex)(unsafe.Pointer(v.FieldByName("mu").UnsafeAddr()))
 	mu.Lock()
 	packets := v.FieldByName("packetsInFlight").Len()
+	clients := v.FieldByName("connsInFlightByClient").Len()
 	mu.Unlock()
 	return floodState{
 		PacketsInFlight: packets,
 		InFlight:        expvarInt(t, ns, "gauge_tcp_forward_in_flight"),
+		Clients:         clients,
 		TransitAddrs:    len(transitAddrs(t, s)),
 	}
 }
