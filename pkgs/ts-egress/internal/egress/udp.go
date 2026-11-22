@@ -34,17 +34,20 @@ const (
 // connected conn, whose writes come from dst. A denied session swallows
 // its datagrams until idle so the verdict is logged once per flow.
 func (s *Server) handleUDP(ctx context.Context, src, dst netip.AddrPort, c net.Conn) {
-	defer c.Close()
-	stop := context.AfterFunc(ctx, func() { _ = c.Close() })
-	defer stop()
 	ok, dropped := s.claimUDP(src.Addr())
 	if !ok {
+		_ = c.Close()
 		if dropped > 0 {
-			slog.Warn("udp session limit reached, dropping flows", "src", src, "dst", dst, "dropped", dropped)
+			slog.Warn("udp session limit reached, dropping flows", "dropped", dropped, "sample_src", src, "sample_dst", dst)
 		}
 		return
 	}
+	// Close before release: a datagram arriving between them would land
+	// on this ending session and be lost instead of opening a new one.
 	defer s.releaseUDP(src.Addr())
+	defer c.Close()
+	stop := context.AfterFunc(ctx, func() { _ = c.Close() })
+	defer stop()
 
 	caller := s.IDs.Lookup(ctx, src.Addr())
 	if caller.Reason == "" && dst.Port() == policy.DNSPort {
@@ -55,7 +58,11 @@ func (s *Server) handleUDP(ctx context.Context, src, dst netip.AddrPort, c net.C
 	defer s.log(rec)
 	if caller.Reason != "" {
 		rec.verdict = policy.Deny{Reason: caller.Reason}
-		s.drain(c)
+		idle := s.UDPIdle
+		if dst.Port() == policy.DNSPort {
+			idle = dnsLinger
+		}
+		s.drain(c, idle)
 		return
 	}
 	fl := policy.Flow{
@@ -66,13 +73,13 @@ func (s *Server) handleUDP(ctx context.Context, src, dst netip.AddrPort, c net.C
 	}
 	rec.verdict = s.Floor.Decide(&caller.Policy, fl)
 	if _, ok := rec.verdict.(policy.Relay); !ok {
-		s.drain(c)
+		s.drain(c, s.UDPIdle)
 		return
 	}
 	up, err := s.dialer(caller)(ctx, "udp", dst.String())
 	if err != nil {
 		rec.fail(err)
-		s.drain(c)
+		s.drain(c, s.UDPIdle)
 		return
 	}
 	defer up.Close()
@@ -200,12 +207,12 @@ func (s *Server) serveDNSUDP(ctx context.Context, src, dst netip.AddrPort, c net
 	}
 }
 
-// drain swallows a denied session's datagrams until it idles out or c is
+// drain swallows a denied session's datagrams until none comes for idle or c is
 // closed.
-func (s *Server) drain(c net.Conn) {
+func (s *Server) drain(c net.Conn, idle time.Duration) {
 	buf := make([]byte, 65535)
 	for {
-		_ = c.SetReadDeadline(time.Now().Add(s.UDPIdle))
+		_ = c.SetReadDeadline(time.Now().Add(idle))
 		if _, err := c.Read(buf); err != nil {
 			return
 		}
