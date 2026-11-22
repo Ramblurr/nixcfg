@@ -149,6 +149,111 @@ func answerA(t *testing.T, c net.Conn, name string, ip [4]byte) {
 	_, _ = c.Write(b)
 }
 
+// A CONNECT through an exit node dials the A answer without waiting for
+// the AAAA answer, which here comes only after the dial.
+func TestHTTPProxyConnectDialsBeforeAAAAAnswer(t *testing.T) {
+	release := make(chan struct{})
+	defer close(release)
+	dst := connectViaExitNode(t, func(q dnsmessage.Question) []netip.Addr {
+		if q.Type == dnsmessage.TypeAAAA {
+			<-release
+			return []netip.Addr{netip.MustParseAddr("2001:db8::7")}
+		}
+		return []netip.Addr{netip.MustParseAddr("192.0.2.7")}
+	})
+	if want := netip.MustParseAddrPort("192.0.2.7:443"); dst != want {
+		t.Errorf("CONNECT dialed %s, want %s", dst, want)
+	}
+}
+
+// A CONNECT through an exit node dials a host that has only an AAAA answer.
+func TestHTTPProxyConnectDialsAAAAOnlyHost(t *testing.T) {
+	dst := connectViaExitNode(t, func(q dnsmessage.Question) []netip.Addr {
+		if q.Type == dnsmessage.TypeAAAA {
+			return []netip.Addr{netip.MustParseAddr("2001:db8::7")}
+		}
+		return nil
+	})
+	if want := netip.MustParseAddrPort("[2001:db8::7]:443"); dst != want {
+		t.Errorf("CONNECT dialed %s, want %s", dst, want)
+	}
+}
+
+// connectViaExitNode sends CONNECT example.com:443 to a proxy whose dialer
+// goes through an exit node, with DNS answered by answer, and returns the
+// address the proxy dialed. It fails the test if no dial comes within 2 s.
+func connectViaExitNode(t *testing.T, answer func(dnsmessage.Question) []netip.Addr) netip.AddrPort {
+	t.Helper()
+	resolver := netip.MustParseAddrPort("1.1.1.1:53")
+	dialed := make(chan netip.AddrPort, 1)
+	d := &tailnetDialer{
+		lc:          &local.Client{Socket: filepath.Join(t.TempDir(), "none.sock"), UseSocketOnly: true},
+		dnsResolver: resolver,
+		viaNetstack: func(_ context.Context, network string, dst netip.AddrPort) (net.Conn, error) {
+			if network == "udp" && dst == resolver {
+				client, server := net.Pipe()
+				go serveDNS(t, server, answer)
+				return client, nil
+			}
+			dialed <- dst
+			return nil, errors.New("no route")
+		},
+	}
+	proxy := httptest.NewServer(httpProxyHandler(d.Dial))
+	t.Cleanup(proxy.Close)
+	conn, err := net.Dial("tcp", proxy.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	fmt.Fprintf(conn, "CONNECT example.com:443 HTTP/1.1\r\nHost: example.com:443\r\n\r\n")
+	select {
+	case dst := <-dialed:
+		return dst
+	case <-time.After(2 * time.Second):
+		t.Fatal("CONNECT did not dial within 2 s")
+		return netip.AddrPort{}
+	}
+}
+
+// serveDNS answers one query on c with the addresses answer gives for its
+// question, keeping those of the asked type.
+func serveDNS(t *testing.T, c net.Conn, answer func(dnsmessage.Question) []netip.Addr) {
+	defer c.Close()
+	buf := make([]byte, 512)
+	n, err := c.Read(buf)
+	if err != nil {
+		return
+	}
+	var q dnsmessage.Message
+	if err := q.Unpack(buf[:n]); err != nil || len(q.Questions) != 1 {
+		t.Errorf("unexpected query %+v: %v", q, err)
+		return
+	}
+	question := q.Questions[0]
+	resp := dnsmessage.Message{
+		Header:    dnsmessage.Header{ID: q.ID, Response: true},
+		Questions: q.Questions,
+	}
+	for _, ip := range answer(question) {
+		h := dnsmessage.ResourceHeader{Name: question.Name, Class: dnsmessage.ClassINET, TTL: 60}
+		switch {
+		case question.Type == dnsmessage.TypeA && ip.Is4():
+			h.Type = dnsmessage.TypeA
+			resp.Answers = append(resp.Answers, dnsmessage.Resource{Header: h, Body: &dnsmessage.AResource{A: ip.As4()}})
+		case question.Type == dnsmessage.TypeAAAA && ip.Is6():
+			h.Type = dnsmessage.TypeAAAA
+			resp.Answers = append(resp.Answers, dnsmessage.Resource{Header: h, Body: &dnsmessage.AAAAResource{AAAA: ip.As16()}})
+		}
+	}
+	b, err := resp.Pack()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, _ = c.Write(b)
+}
+
 func TestParseDNSResolver(t *testing.T) {
 	for _, tt := range []struct {
 		exitNode, resolver string
