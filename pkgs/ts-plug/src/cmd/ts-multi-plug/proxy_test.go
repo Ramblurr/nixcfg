@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -181,16 +182,21 @@ func TestHTTPProxyConnectDialsAAAAOnlyHost(t *testing.T) {
 
 // connectViaExitNode sends CONNECT example.com:443 to a proxy whose dialer
 // goes through an exit node, with DNS answered by answer, and returns the
-// address the proxy dialed. It fails the test if no dial comes within 2 s.
+// address the proxy dialed. It fails the test if no dial comes within 2 s
+// of the first DNS query, which bounds the wait without counting the
+// LocalAPI status call before it.
 func connectViaExitNode(t *testing.T, answer func(dnsmessage.Question) []netip.Addr) netip.AddrPort {
 	t.Helper()
 	resolver := netip.MustParseAddrPort("1.1.1.1:53")
 	dialed := make(chan netip.AddrPort, 1)
+	queried := make(chan struct{})
+	var queriedOnce sync.Once
 	d := &tailnetDialer{
 		lc:          &local.Client{Socket: filepath.Join(t.TempDir(), "none.sock"), UseSocketOnly: true},
 		dnsResolver: resolver,
 		viaNetstack: func(_ context.Context, network string, dst netip.AddrPort) (net.Conn, error) {
 			if network == "udp" && dst == resolver {
+				queriedOnce.Do(func() { close(queried) })
 				client, server := net.Pipe()
 				go serveDNS(t, server, answer)
 				return client, nil
@@ -208,10 +214,15 @@ func connectViaExitNode(t *testing.T, answer func(dnsmessage.Question) []netip.A
 	t.Cleanup(func() { conn.Close() })
 	fmt.Fprintf(conn, "CONNECT example.com:443 HTTP/1.1\r\nHost: example.com:443\r\n\r\n")
 	select {
+	case <-queried:
+	case <-time.After(10 * time.Second):
+		t.Fatal("CONNECT sent no DNS query within 10 s")
+	}
+	select {
 	case dst := <-dialed:
 		return dst
 	case <-time.After(2 * time.Second):
-		t.Fatal("CONNECT did not dial within 2 s")
+		t.Fatal("CONNECT did not dial within 2 s of its first DNS query")
 		return netip.AddrPort{}
 	}
 }
