@@ -82,7 +82,7 @@ index 8aaef64..19e1960 100644
  //
  // It calls GetCertificate on the localClient, passing in the ClientHelloInfo.
 diff --git a/wgengine/netstack/netstack.go b/wgengine/netstack/netstack.go
-index 0ecd9e2..38cb073 100644
+index 0ecd9e2..4ea31e6 100644
 --- a/wgengine/netstack/netstack.go
 +++ b/wgengine/netstack/netstack.go
 @@ -207,6 +207,11 @@ type Impl struct {
@@ -117,7 +117,54 @@ index 0ecd9e2..38cb073 100644
  		return h(tei, pb)
  	}
  }
-@@ -594,6 +592,11 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+@@ -546,16 +544,19 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+ 			return true
+ 		}
+ 
+-		// Check the per-client limit.
++		// Check the per-client and global limits. The TCP forwarder
++		// reports a SYN beyond its own global limit as handled without
++		// running acceptTCP, which would leave this packet's state
++		// behind, so enforce that limit here before taking any.
+ 		inFlight := ns.connsInFlightByClient[remoteIP]
+ 		tooManyInFlight := inFlight >= maxInFlightConnectionAttemptsPerClient()
+-		if !tooManyInFlight {
++		tooManyGlobal := len(ns.packetsInFlight) >= maxInFlightConnectionAttempts()
++		if !tooManyInFlight && !tooManyGlobal {
+ 			ns.connsInFlightByClient[remoteIP]++
++			// We're handling this packet now; see the comment on the
++			// packetsInFlight field for more details.
++			ns.packetsInFlight[tei] = struct{}{}
+ 		}
+-
+-		// We're handling this packet now; see the comment on the
+-		// packetsInFlight field for more details.
+-		ns.packetsInFlight[tei] = struct{}{}
+ 		ns.mu.Unlock()
+ 
+ 		if debugNetstack() {
+@@ -567,13 +568,17 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+ 			ns.forwardInFlightPerClientDropped.Add(1)
+ 			return false // unhandled
+ 		}
++		if tooManyGlobal {
++			// Drop the SYN like the forwarder does at its limit.
++			ns.ipstack.Stats().TCP.ForwardMaxInFlightDrop.Increment()
++			return true
++		}
+ 
+ 		// On return, if this packet isn't handled by the inner handler
+ 		// we're wrapping (`h`), we need to decrement the per-client
+ 		// in-flight count and remove the ID from our tracking map.
+-		// This can happen if the underlying forwarder's limit has been
+-		// reached, at which point it will return false to indicate
+-		// that it's not handling the packet, and it will not run
++		// This happens for a segment the forwarder does not take,
++		// such as one that is not a SYN, and then it will not run
+ 		// acceptTCP.  If we don't decrement here, then we would
+ 		// eventually increment the per-client counter up to the limit
+ 		// and never decrement because we'd never hit the codepath in
+@@ -594,6 +599,11 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
  		// outbound traffic.
  		if !ns.isLocalIP(localIP) && !ns.isVIPServiceIP(localIP) {
  			ns.addSubnetAddress(localIP)
@@ -129,7 +176,7 @@ index 0ecd9e2..38cb073 100644
  		}
  
  		return h(tei, pb)
-@@ -1458,6 +1461,9 @@ func (ns *Impl) injectInbound(p *packet.Parsed, t *tstun.Wrapper, gro *gro.GRO)
+@@ -1458,6 +1468,9 @@ func (ns *Impl) injectInbound(p *packet.Parsed, t *tstun.Wrapper, gro *gro.GRO)
  	// If this is an echo request and we're a subnet router, handle pings
  	// ourselves instead of forwarding the packet on.
  	pingIP, handlePing := ns.shouldHandlePing(p)
@@ -139,7 +186,7 @@ index 0ecd9e2..38cb073 100644
  	if handlePing {
  		var pong []byte // the reply to the ping, if our relayed ping works
  		if destIP.Is4() {
-@@ -1989,6 +1995,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -1989,6 +2002,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  	if debugNetstack() {
  		ns.logf("[v2] UDP ForwarderRequest: %v", stringifyTEI(sess))
  	}
@@ -160,7 +207,7 @@ index 0ecd9e2..38cb073 100644
  	var wq waiter.Queue
  	ep, err := r.CreateEndpoint(&wq)
  	if err != nil {
-@@ -2011,7 +2031,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2011,7 +2038,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  		switch {
  		case dstAddr.Port() == 53:
  			c := gonet.NewUDPConn(&wq, ep)
@@ -173,7 +220,7 @@ index 0ecd9e2..38cb073 100644
  			return
  		case ns.isLoopbackPort(dstAddr.Port()):
  			if dst == serviceIPv6 {
-@@ -2032,15 +2056,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2032,15 +2063,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  				ep.Close()
  				return
  			}

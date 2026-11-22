@@ -236,8 +236,9 @@ so it allows only the listed hosts and ports.
 - It carries a patch to tsnet and netstack (`patches/`). The patch adds the
   UDP counterpart of `RegisterFallbackTCPHandler`, and makes netstack
   release the address it takes for a flow's destination when the flow ends
-  or is refused, and adds a switch that drops pings to the internet instead
-  of answering them with the host's `ping`.
+  or is refused, also past the in-flight TCP connection limits, and adds a
+  switch that drops pings to the internet instead of answering them with
+  the host's `ping`.
 - Tenants using MagicDNS through the exit node get SERVFAIL: the peer API
   DNS path is refused, see above.
 - Rules apply per caller. Two tenants behind one Tailscale node share one
