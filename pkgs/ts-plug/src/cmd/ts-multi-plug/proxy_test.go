@@ -341,3 +341,18 @@ func TestListenLocalRefusesRelativeAndAbstractSockets(t *testing.T) {
 		}
 	}
 }
+
+func TestListenLocalReplacesAStaleSocket(t *testing.T) {
+	addr := "unix:" + filepath.Join(t.TempDir(), "proxy.sock")
+	stale, err := listenLocal(addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stale.(*net.UnixListener).SetUnlinkOnClose(false)
+	stale.Close()
+	l, err := listenLocal(addr)
+	if err != nil {
+		t.Fatalf("listen over a stale socket: %v", err)
+	}
+	l.Close()
+}

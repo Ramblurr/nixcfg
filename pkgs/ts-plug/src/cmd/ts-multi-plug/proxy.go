@@ -9,12 +9,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"math/rand/v2"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/netip"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -641,6 +643,9 @@ func listenLocal(addr string) (net.Listener, error) {
 	}
 	if !filepath.IsAbs(socket) {
 		return nil, fmt.Errorf("unix socket must be an absolute filesystem path, not abstract or relative: %s", addr)
+	}
+	if fi, err := os.Lstat(socket); err == nil && fi.Mode()&fs.ModeSocket != 0 {
+		os.Remove(socket)
 	}
 	return net.Listen("unix", socket)
 }
