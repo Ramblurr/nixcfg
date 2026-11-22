@@ -342,9 +342,10 @@ When requests come through ts-plug, these headers are added:
 
 ts-plug sets every one of these on every request, replacing any value the
 client sent, and leaves a header empty when it does not apply or the WhoIs
-lookup fails. A tagged node has no user, so its `Tailscale-User-*` headers
-are empty and `Tailscale-Node-Tags` names it. A user's device has empty
-`Tailscale-Node-Tags`.
+lookup fails. It sets them after removing hop-by-hop headers, so a client
+cannot strip them by naming them in `Connection`. A tagged node has no user,
+so its `Tailscale-User-*` headers are empty and `Tailscale-Node-Tags` names
+it. A user's device has empty `Tailscale-Node-Tags`.
 
 Your server can use these for authentication:
 
@@ -357,6 +358,10 @@ def whoami():
         'picture': request.headers.get('Tailscale-User-Profile-Pic')
     }
 ```
+
+ts-plug also replaces `X-Forwarded-For` with the caller's tailnet address,
+`X-Forwarded-Host` with the host the caller requested, and
+`X-Forwarded-Proto` with `http` or `https`. It drops any `Forwarded` header.
 
 ### Network Isolation
 

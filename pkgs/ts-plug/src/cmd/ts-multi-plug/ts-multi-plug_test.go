@@ -11,10 +11,12 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"tailscale.com/client/local"
+	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/derp/derpserver"
 	"tailscale.com/ipn/store/mem"
 	"tailscale.com/net/netns"
@@ -65,6 +67,7 @@ func headerEchoSocket(t *testing.T) string {
 		t.Fatal(err)
 	}
 	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Set("Host", r.Host)
 		json.NewEncoder(w).Encode(r.Header)
 	})}
 	go srv.Serve(ln)
@@ -77,14 +80,29 @@ func TestReverseProxyToUnixSocket(t *testing.T) {
 	if err := upstream.Set("443:unix:" + headerEchoSocket(t)); err != nil {
 		t.Fatal(err)
 	}
-	front := httptest.NewServer(createReverseProxy(upstream))
+	whois := func(context.Context, string) (*apitype.WhoIsResponse, error) {
+		return &apitype.WhoIsResponse{
+			Node:        &tailcfg.Node{Name: "laptop.tail-scale.ts.net."},
+			UserProfile: &tailcfg.UserProfile{LoginName: "alice@example.com"},
+		}, nil
+	}
+	front := httptest.NewTLSServer(createReverseProxy(upstream, whois))
 	defer front.Close()
 
 	req, _ := http.NewRequest(http.MethodGet, front.URL+"/", nil)
 	req.Header.Set("X-Probe", "through the socket")
-	got := getHeaders(t, http.DefaultClient, req)
-	if got.Get("X-Probe") != "through the socket" {
-		t.Errorf("upstream saw headers %v, want X-Probe", got)
+	req.Header.Set("Connection", "Tailscale-User-Login, Tailscale-Node-Name, X-Forwarded-Proto")
+	got := getHeaders(t, front.Client(), req)
+	for k, want := range map[string]string{
+		"X-Probe":              "through the socket",
+		"Host":                 strings.TrimPrefix(front.URL, "https://"),
+		"X-Forwarded-Proto":    "https",
+		"Tailscale-User-Login": "alice@example.com",
+		"Tailscale-Node-Name":  "laptop.tail-scale.ts.net",
+	} {
+		if v := got.Get(k); v != want {
+			t.Errorf("%s = %q, want %q", k, v, want)
+		}
 	}
 }
 
@@ -204,6 +222,9 @@ func TestIdentityHeaders(t *testing.T) {
 		"Tailscale-User-Profile-Pic": "https://example.com/mallory.png",
 		"Tailscale-Node-Name":        "root-laptop.tail-scale.ts.net",
 		"Tailscale-Node-Tags":        "tag:admin",
+		"X-Forwarded-For":            "203.0.113.7",
+		"X-Forwarded-Host":           "broker.example.com",
+		"X-Forwarded-Proto":          "https",
 	}
 
 	for _, tt := range []struct {
@@ -223,6 +244,10 @@ func TestIdentityHeaders(t *testing.T) {
 			for k, v := range forged {
 				req.Header.Set(k, v)
 			}
+			req.Header.Set("Forwarded", "for=203.0.113.7;host=broker.example.com;proto=https")
+			// Naming a header in Connection makes it hop-by-hop, so a proxy
+			// that set it before stripping would drop it.
+			req.Header.Set("Connection", "Tailscale-Node-Tags, Tailscale-User-Login, X-Forwarded-Proto")
 			got := getHeaders(t, caller.HTTPClient(), req)
 
 			for k, v := range forged {
@@ -233,11 +258,19 @@ func TestIdentityHeaders(t *testing.T) {
 			if login := got.Get("Tailscale-User-Login"); (login != "") != tt.wantUser {
 				t.Errorf("Tailscale-User-Login = %q, want set: %v", login, tt.wantUser)
 			}
-			if tags := got.Get("Tailscale-Node-Tags"); tags != tt.wantTags {
-				t.Errorf("Tailscale-Node-Tags = %q, want %q", tags, tt.wantTags)
+			for k, want := range map[string]string{
+				"Tailscale-Node-Tags": tt.wantTags,
+				"Tailscale-Node-Name": tt.host + ".tail-scale.ts.net",
+				"X-Forwarded-For":     callerIP.String(),
+				"X-Forwarded-Host":    plugIP.String(),
+				"X-Forwarded-Proto":   "http",
+			} {
+				if v := got.Get(k); v != want {
+					t.Errorf("%s = %q, want %q", k, v, want)
+				}
 			}
-			if node, want := got.Get("Tailscale-Node-Name"), tt.host+".tail-scale.ts.net"; node != want {
-				t.Errorf("Tailscale-Node-Name = %q, want %q", node, want)
+			if vs, ok := got["Forwarded"]; ok {
+				t.Errorf("Forwarded = %q reached the upstream", vs)
 			}
 		})
 	}

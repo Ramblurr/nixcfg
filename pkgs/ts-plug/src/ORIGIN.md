@@ -18,6 +18,7 @@ Later changes in this tree:
 - cmd/ts-multi-plug: answer 403 when the resolver refuses a name by policy
 - cmd/ts-multi-plug: proxy HTTP and HTTPS to a unix socket upstream
 - cmd/ts-multi-plug: set Tailscale-Node-Name and Tailscale-Node-Tags
+- cmd/ts-multi-plug: set identity and X-Forwarded-* headers after hop-by-hop stripping
 
 Upstream's docker/, cmd/examples/ and images/ were left out. Edit this tree
 directly from now on.

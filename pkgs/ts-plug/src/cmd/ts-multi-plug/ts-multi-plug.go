@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"tailscale.com/client/local"
+	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tsnet"
 )
 
@@ -288,11 +289,8 @@ func startHTTPListener(ctx context.Context, ts *tsnet.Server, lc *local.Client, 
 
 	slog.Info(fmt.Sprintf("listening at (HTTP): http://%s:%d", hostname, portMap.In))
 
-	proxy := createReverseProxy(portMap)
-	whoisHandler := withForwardedProto("http", createWhoisHandler(lc, proxy))
-
 	httpServer := &http.Server{
-		Handler: whoisHandler,
+		Handler: createReverseProxy(portMap, lc.WhoIs),
 	}
 
 	go func() {
@@ -329,11 +327,8 @@ func startHTTPSListener(ctx context.Context, ts *tsnet.Server, lc *local.Client,
 		slog.Info(fmt.Sprintf("listening at (HTTPS): https://%s:%d", hostname, portMap.In))
 	}
 
-	proxy := createReverseProxy(portMap)
-	whoisHandler := withForwardedProto("https", createWhoisHandler(lc, proxy))
-
 	httpServer := &http.Server{
-		Handler: whoisHandler,
+		Handler: createReverseProxy(portMap, lc.WhoIs),
 	}
 
 	go func() {
@@ -442,8 +437,11 @@ func handleDNSQuery(query []byte, clientAddr net.Addr, tsConn net.PacketConn, up
 	slog.Debug("DNS query handled", "client", clientAddr, "size", n)
 }
 
-// createReverseProxy creates a reverse proxy to portMap's localhost port or unix socket
-func createReverseProxy(portMap *PortMapFlag) *httputil.ReverseProxy {
+// createReverseProxy creates a reverse proxy to portMap's localhost port or
+// unix socket. ReverseProxy strips hop-by-hop, Forwarded and X-Forwarded-*
+// headers before Rewrite runs, so a caller can neither forge nor suppress the
+// headers Rewrite sets.
+func createReverseProxy(portMap *PortMapFlag, whois whoisFunc) *httputil.ReverseProxy {
 	dialer := &net.Dialer{Timeout: *flagDialTimeout}
 	dial := dialer.DialContext
 	upstream := &url.URL{Scheme: "http", Host: fmt.Sprintf("localhost:%d", portMap.Out)}
@@ -454,56 +452,49 @@ func createReverseProxy(portMap *PortMapFlag) *httputil.ReverseProxy {
 		}
 	}
 
-	proxy := httputil.NewSingleHostReverseProxy(upstream)
-	proxy.Transport = &http.Transport{
-		DialContext:           dial,
-		ResponseHeaderTimeout: *flagResponseHeaderTimeout,
-		IdleConnTimeout:       *flagIdleConnTimeout,
+	return &httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.SetURL(upstream)
+			pr.Out.Host = pr.In.Host
+			pr.SetXForwarded()
+			setIdentity(pr.Out.Header, pr.In, whois)
+		},
+		Transport: &http.Transport{
+			DialContext:           dial,
+			ResponseHeaderTimeout: *flagResponseHeaderTimeout,
+			IdleConnTimeout:       *flagIdleConnTimeout,
+		},
 	}
-	return proxy
 }
 
-// createWhoisHandler creates an HTTP handler that injects Tailscale user information
-func createWhoisHandler(lc *local.Client, proxy *httputil.ReverseProxy) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var ul, dn, pp, nn, nt string
+type whoisFunc func(ctx context.Context, remoteAddr string) (*apitype.WhoIsResponse, error)
 
-		who, err := lc.WhoIs(r.Context(), r.RemoteAddr)
-		if err != nil {
-			slog.Error("whois lookup failed", "error", err, "remote", r.RemoteAddr)
-		} else {
-			slog.Debug("set Tailscale-* headers",
-				slog.String("remote", r.RemoteAddr),
-				slog.String("node", string(who.Node.StableID)),
-			)
+func setIdentity(h http.Header, r *http.Request, whois whoisFunc) {
+	var ul, dn, pp, nn, nt string
 
-			nn = strings.TrimSuffix(who.Node.Name, ".")
-			nt = strings.Join(who.Node.Tags, ",")
-			if !who.Node.IsTagged() {
-				ul = who.UserProfile.LoginName
-				dn = who.UserProfile.DisplayName
-				pp = who.UserProfile.ProfilePicURL
-			}
+	who, err := whois(r.Context(), r.RemoteAddr)
+	if err != nil {
+		slog.Error("whois lookup failed", "error", err, "remote", r.RemoteAddr)
+	} else {
+		slog.Debug("set Tailscale-* headers",
+			slog.String("remote", r.RemoteAddr),
+			slog.String("node", string(who.Node.StableID)),
+		)
+
+		nn = strings.TrimSuffix(who.Node.Name, ".")
+		nt = strings.Join(who.Node.Tags, ",")
+		if !who.Node.IsTagged() {
+			ul = who.UserProfile.LoginName
+			dn = who.UserProfile.DisplayName
+			pp = who.UserProfile.ProfilePicURL
 		}
-
-		// always populate the headers, even if blank for security reasons.
-		r.Header.Set("Tailscale-User-Login", ul)
-		r.Header.Set("Tailscale-User-Name", dn)
-		r.Header.Set("Tailscale-User-Profile-Pic", pp)
-		r.Header.Set("Tailscale-Node-Name", nn)
-		r.Header.Set("Tailscale-Node-Tags", nt)
-
-		proxy.ServeHTTP(w, r)
 	}
-}
 
-// withForwardedProto tells the upstream which scheme the tailnet client used,
-// replacing any value the client sent.
-func withForwardedProto(proto string, next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Set("X-Forwarded-Proto", proto)
-		next(w, r)
-	}
+	h.Set("Tailscale-User-Login", ul)
+	h.Set("Tailscale-User-Name", dn)
+	h.Set("Tailscale-User-Profile-Pic", pp)
+	h.Set("Tailscale-Node-Name", nn)
+	h.Set("Tailscale-Node-Tags", nt)
 }
 
 // attachLogging attaches logging to a command's stdout and stderr
