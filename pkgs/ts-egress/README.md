@@ -57,7 +57,8 @@ these:
 Some destinations are refused whatever the rules say: loopback, link-local
 (cloud metadata included), the Tailscale ranges, multicast, broadcast and the
 egress host's addresses. UDP to port 443 of an `http` host is refused, so
-clients fall back from QUIC to TLS, which the egress can read.
+clients fall back from QUIC to TLS, which the egress can read. Pings to
+the internet are dropped.
 
 DNS is answered only on port 53. Tailscale clients normally send DNS to an
 exit node over its peer API (DNS over HTTPS), which ts-egress cannot filter,
@@ -235,7 +236,8 @@ so it allows only the listed hosts and ports.
 - It carries a patch to tsnet and netstack (`patches/`). The patch adds the
   UDP counterpart of `RegisterFallbackTCPHandler`, and makes netstack
   release the address it takes for a flow's destination when the flow ends
-  or is refused.
+  or is refused, and adds a switch that drops pings to the internet instead
+  of answering them with the host's `ping`.
 - Tenants using MagicDNS through the exit node get SERVFAIL: the peer API
   DNS path is refused, see above.
 - Rules apply per caller. Two tenants behind one Tailscale node share one

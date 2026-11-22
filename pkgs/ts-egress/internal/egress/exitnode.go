@@ -27,6 +27,7 @@ func (s *Server) ExitNode(ctx context.Context, ts *tsnet.Server, identityTTL tim
 		return errors.New("tsnet server already started")
 	}
 	ipnlocal.HookReplyToDNSQueries = nil
+	ts.DropTransitPings = true
 	lc, err := ts.LocalClient()
 	if err != nil {
 		return err

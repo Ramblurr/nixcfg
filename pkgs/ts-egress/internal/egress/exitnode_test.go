@@ -204,6 +204,28 @@ func TestExitNode(t *testing.T) {
 			t.Fatalf("netstack still holds %d destination addresses: %v", len(held), held)
 		}
 	})
+	t.Run("ping to the internet gets nothing", func(t *testing.T) {
+		bin := t.TempDir()
+		ran := filepath.Join(bin, "ran")
+		if err := os.WriteFile(filepath.Join(bin, "ping"), []byte("#!/bin/sh\ntouch "+ran+"\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+		if res, err := alc.Ping(ctx, est.TailscaleIPs[0], tailcfg.PingICMP); err != nil || res.Err != "" {
+			t.Fatalf("tailnet ping: %v %+v", err, res)
+		}
+		for _, dst := range []string{"198.51.100.5", "2001:db8::5"} {
+			pctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+			res, err := alc.Ping(pctx, netip.MustParseAddr(dst), tailcfg.PingICMP)
+			cancel()
+			if err == nil && res.Err == "" {
+				t.Errorf("ping %s answered: %+v", dst, res)
+			}
+		}
+		if _, err := os.Stat(ran); err == nil {
+			t.Error("the egress ran the host's ping")
+		}
+	})
 	t.Run("dns on port 53 follows the rules", func(t *testing.T) {
 		for name, want := range map[string]dnsmessage.RCode{"svc.test.": dnsmessage.RCodeSuccess, "other.test.": dnsmessage.RCodeRefused} {
 			resp := tenantUDP(t, ctx, alice, "203.0.113.53:53", query(t, name))

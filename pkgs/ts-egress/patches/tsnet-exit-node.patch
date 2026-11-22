@@ -1,8 +1,20 @@
 diff --git a/tsnet/tsnet.go b/tsnet/tsnet.go
-index 8aaef64..f264df3 100644
+index 8aaef64..19e1960 100644
 --- a/tsnet/tsnet.go
 +++ b/tsnet/tsnet.go
-@@ -350,6 +350,7 @@ type Server struct {
+@@ -314,6 +314,11 @@ type Server struct {
+ 	// field at zero unless you know what you are doing.
+ 	Port uint16
+ 
++	// DropTransitPings, if true, drops ICMP echo requests from peers to
++	// subnet and exit route destinations instead of relaying them with the
++	// host's ping.
++	DropTransitPings bool
++
+ 	// AdvertiseTags specifies tags that should be applied to this node, for
+ 	// purposes of ACL enforcement. These can be referenced from the ACL policy
+ 	// document. Note that advertising a tag on the client doesn't guarantee
+@@ -350,6 +355,7 @@ type Server struct {
  	listeners           map[listenKey]*listener
  	nextEphemeralPort   uint16 // next port to try in ephemeral range; 0 means use ephemeralPortFirst
  	fallbackTCPHandlers set.HandleSet[FallbackTCPHandler]
@@ -10,7 +22,7 @@ index 8aaef64..f264df3 100644
  	dialer              *tsdial.Dialer
  	advertisedServices  map[tailcfg.ServiceName]int
  	closeOnce           sync.Once
-@@ -368,6 +369,12 @@ type Server struct {
+@@ -368,6 +374,12 @@ type Server struct {
  // over the TCP conn.
  type FallbackTCPHandler func(src, dst netip.AddrPort) (handler func(net.Conn), intercept bool)
  
@@ -23,7 +35,15 @@ index 8aaef64..f264df3 100644
  // Dial connects to the address on the tailnet.
  // It will start the server if it has not been started yet.
  func (s *Server) Dial(ctx context.Context, network, address string) (net.Conn, error) {
-@@ -1296,6 +1303,14 @@ func (s *Server) getTCPHandlerForFlow(src, dst netip.AddrPort) (handler func(net
+@@ -915,6 +927,7 @@ func (s *Server) start() (reterr error) {
+ 		// When a TUN is provided, let packets flow through it instead.
+ 		ns.ProcessLocalIPs = true
+ 		ns.ProcessSubnets = true
++		ns.DropTransitPings = s.DropTransitPings
+ 	} else {
+ 		// When using a TUN, check gVisor for registered endpoints to handle
+ 		// packets for tsnet listeners and outbound connection replies.
+@@ -1296,6 +1309,14 @@ func (s *Server) getTCPHandlerForFlow(src, dst netip.AddrPort) (handler func(net
  func (s *Server) getUDPHandlerForFlow(src, dst netip.AddrPort) (handler func(nettype.ConnPacketConn), intercept bool) {
  	ln, ok := s.listenerForDstAddr("udp", dst, false)
  	if !ok {
@@ -38,7 +58,7 @@ index 8aaef64..f264df3 100644
  		return nil, true // don't handle, don't forward to localhost
  	}
  	return func(c nettype.ConnPacketConn) { ln.handle(c) }, true
-@@ -1449,6 +1464,22 @@ func (s *Server) RegisterFallbackTCPHandler(cb FallbackTCPHandler) func() {
+@@ -1449,6 +1470,22 @@ func (s *Server) RegisterFallbackTCPHandler(cb FallbackTCPHandler) func() {
  	}
  }
  
@@ -62,10 +82,22 @@ index 8aaef64..f264df3 100644
  //
  // It calls GetCertificate on the localClient, passing in the ClientHelloInfo.
 diff --git a/wgengine/netstack/netstack.go b/wgengine/netstack/netstack.go
-index 0ecd9e2..0c0d30b 100644
+index 0ecd9e2..38cb073 100644
 --- a/wgengine/netstack/netstack.go
 +++ b/wgengine/netstack/netstack.go
-@@ -489,18 +489,11 @@ type protocolHandlerFunc func(stack.TransportEndpointID, *stack.PacketBuffer) bo
+@@ -207,6 +207,11 @@ type Impl struct {
+ 	// It can only be set before calling Start.
+ 	ProcessSubnets bool
+ 
++	// DropTransitPings is whether to drop ICMP echo requests to subnet
++	// and exit route destinations instead of relaying them with the
++	// host's ping.
++	DropTransitPings bool
++
+ 	ipstack   *stack.Stack
+ 	linkEP    *linkEndpoint
+ 	tundev    *tstun.Wrapper
+@@ -489,18 +494,11 @@ type protocolHandlerFunc func(stack.TransportEndpointID, *stack.PacketBuffer) bo
  func (ns *Impl) wrapUDPProtocolHandler(h protocolHandlerFunc) protocolHandlerFunc {
  	return func(tei stack.TransportEndpointID, pb *stack.PacketBuffer) bool {
  		addr := tei.LocalAddress
@@ -85,7 +117,7 @@ index 0ecd9e2..0c0d30b 100644
  		return h(tei, pb)
  	}
  }
-@@ -594,6 +587,11 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
+@@ -594,6 +592,11 @@ func (ns *Impl) wrapTCPProtocolHandler(h protocolHandlerFunc) protocolHandlerFun
  		// outbound traffic.
  		if !ns.isLocalIP(localIP) && !ns.isVIPServiceIP(localIP) {
  			ns.addSubnetAddress(localIP)
@@ -97,7 +129,17 @@ index 0ecd9e2..0c0d30b 100644
  		}
  
  		return h(tei, pb)
-@@ -1989,6 +1987,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -1458,6 +1461,9 @@ func (ns *Impl) injectInbound(p *packet.Parsed, t *tstun.Wrapper, gro *gro.GRO)
+ 	// If this is an echo request and we're a subnet router, handle pings
+ 	// ourselves instead of forwarding the packet on.
+ 	pingIP, handlePing := ns.shouldHandlePing(p)
++	if handlePing && ns.DropTransitPings {
++		return filter.DropSilently, gro
++	}
+ 	if handlePing {
+ 		var pong []byte // the reply to the ping, if our relayed ping works
+ 		if destIP.Is4() {
+@@ -1989,6 +1995,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  	if debugNetstack() {
  		ns.logf("[v2] UDP ForwarderRequest: %v", stringifyTEI(sess))
  	}
@@ -118,7 +160,7 @@ index 0ecd9e2..0c0d30b 100644
  	var wq waiter.Queue
  	ep, err := r.CreateEndpoint(&wq)
  	if err != nil {
-@@ -2011,7 +2023,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2011,7 +2031,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  		switch {
  		case dstAddr.Port() == 53:
  			c := gonet.NewUDPConn(&wq, ep)
@@ -131,7 +173,7 @@ index 0ecd9e2..0c0d30b 100644
  			return
  		case ns.isLoopbackPort(dstAddr.Port()):
  			if dst == serviceIPv6 {
-@@ -2032,15 +2048,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2032,15 +2056,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  				ep.Close()
  				return
  			}
