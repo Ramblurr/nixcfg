@@ -8,7 +8,8 @@
   the query string. An action is a POST that runs a command and answers
   with the `#flash` element, empty on success. When the action returns a
   map with `:replace`, that element also replaces the element with its id,
-  which morphing would skip. Actions read their parameters from the body
+  which morphing would skip. With `:redirect`, the browser then loads that
+  path. Actions read their parameters from the body
   only, a form or a JSON object.
 
   Every request needs the `Tailscale-User-Login` header, which tailscale
@@ -145,10 +146,9 @@
      [:div.message (for [m messages] [:p m])])])
 
 (defn- action-response [{:keys [ctx]} request action]
-  (let [[elements replacement]
+  (let [[elements {:keys [replace redirect]}]
         (try
-          (let [result (action ctx request)]
-            [(flash nil) (:replace result)])
+          [(flash nil) (action ctx request)]
           (catch Exception e
             [(flash (or (store/invalid-errors e)
                         (do (binding [*out* *err*]
@@ -159,9 +159,11 @@
      (sse-options request
                   {hk-gen/on-open (fn [sse]
                                     (d*/patch-elements! sse (str (h/html elements)))
-                                    (when replacement
-                                      (d*/patch-elements! sse (str (h/html replacement))
+                                    (when replace
+                                      (d*/patch-elements! sse (str (h/html replace))
                                                           {d*/patch-mode d*/pm-replace}))
+                                    (when redirect
+                                      (d*/redirect! sse redirect))
                                     (d*/close-sse! sse))}))))
 
 (defn- forbidden [message]

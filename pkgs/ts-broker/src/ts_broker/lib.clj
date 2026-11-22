@@ -26,8 +26,9 @@
 (defmacro defaction
   "Defines `sym` as the POST path of an action and `sym-fn` as its function
   of the app context and the request. The function reads its parameters
-  from the request body, throws on failure, and may return `{:replace
-  element}` to replace the element with that id."
+  from the request body, throws on failure, and may return a map with
+  `:replace`, an element that replaces the element with its id, and
+  `:redirect`, a path the browser then loads."
   {:clj-kondo/lint-as 'clojure.core/defn}
   [sym & more]
   (let [[doc args & body] (if (string? (first more)) more (cons nil more))]

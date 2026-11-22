@@ -12,13 +12,13 @@
    [ts-broker.lib :as lib]
    [ts-broker.store :as store]))
 
-(def ^:private approvals
+(def ^:private approval-events
   {"approve" :approve "deny" :deny "block" :block "revoke" :revoke "unblock" :unblock})
 
 (lib/defaction approval [{:keys [store]} request]
   (store/write! store {:command :approval/event
                        :id      (parse-long (str (lib/param request :id)))
-                       :event   (approvals (lib/param request :event))
+                       :event   (approval-events (lib/param request :event))
                        :grant   (lib/param request :grant)
                        :actor   (:actor request)}))
 
@@ -33,22 +33,48 @@
    [:label "Hosts" [:small.muted " names or *.domain, one per line"]
     [:textarea {:name "hosts" :rows 3 :required true} (str/join "\n" hosts)]]))
 
-(lib/defaction create-credential [{:keys [connect store]} request]
-  (let [[vault item field] (map #(lib/param request %) [:vault :item :field])
-        picked (when (and connect vault item field)
-                 (->> (:fields (connect/item connect vault item))
-                      (filter #(= field (:id %)))
-                      first))]
-    (store/write! store {:command    :credential/create
-                         :credential {:name        (lib/param request :name)
-                                      :vault       vault
-                                      :item        item
-                                      :field       field
-                                      :field-label (when picked
-                                                     (if (str/blank? (:label picked)) field (:label picked)))
-                                      :header      (lib/param request :header)
-                                      :hosts       (domain/split-list (lib/param request :hosts))}
-                         :actor      (:actor request)})))
+(defn feedback
+  "Returns the element with `id` that shows `messages` next to a form.
+  Actions replace it, so it belongs inside a form that morphing skips."
+  [id messages]
+  [:div.feedback {:id id :role "alert"}
+   (when (seq messages)
+     [:div.message (for [m messages] [:p m])])])
+
+(defn- feedback-on-invalid
+  "Calls `f` and returns its result. When the store refuses the command,
+  returns `{:replace e}` with `e` the [[feedback]] element `id` that shows
+  why."
+  [id f]
+  (try
+    (f)
+    (catch clojure.lang.ExceptionInfo e
+      (if-let [errors (store/invalid-errors e)]
+        {:replace (feedback id errors)}
+        (throw e)))))
+
+(lib/defaction create-credential
+  "Creates a credential from the catalog form and moves the browser to it.
+  Refusals show in the form's `create-feedback` element."
+  [{:keys [connect store]} request]
+  (feedback-on-invalid
+   "create-feedback"
+   #(let [[vault item field] (map (fn [k] (lib/param request k)) [:vault :item :field])
+          picked (when (and connect vault item field)
+                   (->> (:fields (connect/item connect vault item))
+                        (filter (fn [f] (= field (:id f))))
+                        first))
+          name (store/write! store {:command    :credential/create
+                                    :credential {:name        (lib/param request :name)
+                                                 :vault       vault
+                                                 :item        item
+                                                 :field       field
+                                                 :field-label (when picked
+                                                                (if (str/blank? (:label picked)) field (:label picked)))
+                                                 :header      (lib/param request :header)
+                                                 :hosts       (domain/split-list (lib/param request :hosts))}
+                                    :actor      (:actor request)})]
+      {:redirect (lib/href "/credential" {:name name :created true})})))
 
 (lib/defaction delete-credential [{:keys [store]} request]
   (store/write! store {:command  :credential/delete

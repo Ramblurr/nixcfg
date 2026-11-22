@@ -119,24 +119,28 @@
 (deftest creates-a-credential-from-the-catalog-by-field-id
   (is (str/includes? (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")
                      "value=\"credential\""))
-  (let [{:keys [status body]} (form-post actions/create-credential
-                                         {:vault  "vlt0000000000000000000000a"
-                                          :item   "itm0000000000000000000000a"
-                                          :field  "f2"
-                                          :name   "GITHUB_NOTE"
-                                          :header "Authorization"
-                                          :hosts  "api.github.com\n*.githubusercontent.com"})]
-    (is (= 200 status))
-    (is (not (str/includes? body "class=\"message\""))))
+  (is (str/includes? (:body (form-post actions/create-credential
+                                       {:vault  "vlt0000000000000000000000a"
+                                        :item   "itm0000000000000000000000a"
+                                        :field  "f2"
+                                        :name   "GITHUB_NOTE"
+                                        :header "Authorization"
+                                        :hosts  "api.github.com\n*.githubusercontent.com"}))
+                     "window.location.href =\"/credential?name=GITHUB_NOTE&created=true\"")
+      "a successful create moves the browser to the new credential")
   (is (= {:name "GITHUB_NOTE" :field "f2" :field-label "note" :hosts ["api.github.com" "*.githubusercontent.com"]
           :editor "casey@github"}
          (select-keys (store/read *store* #(store/credential % "GITHUB_NOTE"))
                       [:name :field :field-label :hosts :editor])))
-  (testing "validation errors come back in the flash"
-    (is (str/includes? (:body (form-post actions/create-credential
-                                         {:vault "vlt0000000000000000000000a" :item "itm0000000000000000000000a"
-                                          :field "f2" :name "GITHUB_NOTE" :header "Host" :hosts "x.com"}))
-                       "Host is a reserved header"))))
+  (is (str/includes? (render "/credential?name=GITHUB_NOTE&created=true") "Created."))
+  (testing "a refused create shows why next to the form, which morphing skips"
+    (is (re-find #"data-ignore-morph[^>]*>.*id=\"create-feedback\""
+                 (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")))
+    (let [body (:body (form-post actions/create-credential
+                                 {:vault "vlt0000000000000000000000a" :item "itm0000000000000000000000a"
+                                  :field "f2" :name "GITHUB_NOTE" :header "Host" :hosts "x.com"}))]
+      (is (re-find #"data: mode replace\ndata: elements <div class=\"feedback\" id=\"create-feedback\" role=\"alert\"><div class=\"message\"><p>Host is a reserved header"
+                   body)))))
 
 (defn- seed-credential! []
   (store/write! *store* {:command :credential/create :actor "casey@github"

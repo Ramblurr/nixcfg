@@ -163,7 +163,8 @@
       [:small.muted " " (str/join " · " (remove nil? [section (some-> type str/lower-case)]))]])])
 
 (defn- create-form [vault item]
-  [:form.stack {:data-on:submit__prevent (lib/form-post actions/create-credential)}
+  [:form.stack {:data-ignore-morph       true
+                :data-on:submit__prevent (lib/form-post actions/create-credential)}
    [:input {:type "hidden" :name "vault" :value (:id vault)}]
    [:input {:type "hidden" :name "item" :value (:id item)}]
    (field-picker item)
@@ -171,7 +172,8 @@
     [:input {:name "name" :value (domain/suggested-name (:title item)) :required true
              :pattern "[A-Z_][A-Z0-9_]*"}]]
    (actions/credential-form-fields nil)
-   [:button {:type "submit"} "Create credential"]])
+   (actions/feedback "create-feedback" nil)
+   [:div.actions [:button {:type "submit"} "Create credential"]]])
 
 (lib/defview catalog-page
   "Renders the 1Password catalog: vaults, then the items of the vault in the
@@ -244,6 +246,8 @@
     (if-not c
       (layout request "Credential" [:p "No such credential. " [:a {:href "/credentials"} "All credentials"]])
       (layout request [:code name]
+              (when (lib/param request :created)
+                [:p.message "Created. " [:a {:href "/assign"} "Assign it"] " to let identities use it."])
               [:p.muted "1Password vault " [:code (:vault c)] ", item " [:code (:item c)]
                ", field " [:code (:field-label c)] " (" [:code (:field c)] "). Edited by " (:editor c) " at " (fmt-time (:updated c)) "."]
               [:section
