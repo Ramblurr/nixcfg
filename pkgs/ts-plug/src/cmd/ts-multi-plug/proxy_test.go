@@ -150,15 +150,22 @@ func answerA(t *testing.T, c net.Conn, name string, ip [4]byte) {
 	_, _ = c.Write(b)
 }
 
-// A CONNECT through an exit node dials the A answer without waiting for
-// the AAAA answer, which here comes only after the dial.
+// A CONNECT through an exit node sends A and AAAA together and dials the
+// A answer without waiting for the AAAA answer, which here comes only after
+// the dial. The A answer waits until AAAA is asked, so serial queries fail.
 func TestHTTPProxyConnectDialsBeforeAAAAAnswer(t *testing.T) {
 	release := make(chan struct{})
 	defer close(release)
+	aaaaAsked := make(chan struct{})
 	dst := connectViaExitNode(t, func(q dnsmessage.Question) []netip.Addr {
 		if q.Type == dnsmessage.TypeAAAA {
+			close(aaaaAsked)
 			<-release
 			return []netip.Addr{netip.MustParseAddr("2001:db8::7")}
+		}
+		select {
+		case <-aaaaAsked:
+		case <-release:
 		}
 		return []netip.Addr{netip.MustParseAddr("192.0.2.7")}
 	})
@@ -471,4 +478,28 @@ func TestListenLocalReplacesAStaleSocket(t *testing.T) {
 		t.Fatalf("listen over a stale socket: %v", err)
 	}
 	l.Close()
+}
+
+// A resolver query that is canceled while waiting for its reply reports
+// the cancellation, not the closed connection.
+func TestQueryResolverReportsCancellation(t *testing.T) {
+	resolver := netip.MustParseAddrPort("1.1.1.1:53")
+	d := &tailnetDialer{
+		dnsResolver: resolver,
+		viaNetstack: func(context.Context, string, netip.AddrPort) (net.Conn, error) {
+			client, server := net.Pipe()
+			go func() {
+				defer server.Close()
+				_, _ = server.Read(make([]byte, 512))
+				<-t.Context().Done()
+			}()
+			return client, nil
+		},
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	time.AfterFunc(100*time.Millisecond, cancel)
+	_, err := d.queryResolver(ctx, "example.com", "A")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("queryResolver error = %v, want context.Canceled", err)
+	}
 }
