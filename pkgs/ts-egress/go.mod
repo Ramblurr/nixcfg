@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	golang.org/x/net v0.59.0
+	gvisor.dev/gvisor v0.0.0-20260915211658-a6f909f08a72
 	tailscale.com v1.104.2
 )
 
@@ -101,6 +102,5 @@ require (
 	golang.org/x/tools v0.50.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v1.0.1 // indirect
-	gvisor.dev/gvisor v0.0.0-20260915211658-a6f909f08a72 // indirect
 	honnef.co/go/tools v0.8.1 // indirect
 )

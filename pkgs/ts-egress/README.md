@@ -232,8 +232,10 @@ so it allows only the listed hosts and ports.
 
 ## Limitations
 
-- It carries a patch to tsnet (`patches/`), which adds the UDP counterpart of
-  `RegisterFallbackTCPHandler`, until upstream has one.
+- It carries a patch to tsnet and netstack (`patches/`). The patch adds the
+  UDP counterpart of `RegisterFallbackTCPHandler`, and makes netstack
+  release the address it takes for a flow's destination when the flow ends
+  or is refused.
 - Tenants using MagicDNS through the exit node get SERVFAIL: the peer API
   DNS path is refused, see above.
 - Rules apply per caller. Two tenants behind one Tailscale node share one

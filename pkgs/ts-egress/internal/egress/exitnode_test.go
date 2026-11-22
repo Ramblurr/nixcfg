@@ -10,12 +10,16 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
+	"unsafe"
 
 	"golang.org/x/net/dns/dnsmessage"
+	"gvisor.dev/gvisor/pkg/tcpip/stack"
 	"tailscale.com/ipn"
 	"tailscale.com/ipn/store/mem"
 	"tailscale.com/net/netns"
@@ -25,6 +29,7 @@ import (
 	"tailscale.com/tstest/integration"
 	"tailscale.com/tstest/integration/testcontrol"
 	"tailscale.com/types/logger"
+	"tailscale.com/wgengine/netstack"
 
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/policy"
 )
@@ -62,6 +67,7 @@ func TestExitNode(t *testing.T) {
 	}
 	resolver, _ := fakeResolver(t, map[string][4]byte{"svc.test.": {198, 51, 100, 5}})
 	s, ab := newServer(nil, resolver)
+	s.MaxUDPSessionsPerCaller = 16
 	s.Dial = func(*Caller) DialFunc {
 		return func(ctx context.Context, network, address string) (net.Conn, error) {
 			target, ok := internet[network+" "+address]
@@ -174,6 +180,30 @@ func TestExitNode(t *testing.T) {
 		}
 		auditDeny(t, "198.51.100.5:7004")
 	})
+	t.Run("flows release their destinations", func(t *testing.T) {
+		if got := tenantUDP(t, ctx, alice, "198.51.100.5:7002", []byte("ping")); string(got) != "ping" {
+			t.Fatalf("echo = %q", got)
+		}
+		for i := range 64 {
+			for _, dst := range []string{fmt.Sprintf("198.51.100.%d:7004", 10+i), fmt.Sprintf("[2001:db8::%x]:7004", 10+i)} {
+				for _, network := range []string{"udp", "tcp"} {
+					c, err := alice.Dial(ctx, network, dst)
+					if err != nil {
+						t.Fatal(err)
+					}
+					_, _ = c.Write([]byte("ping"))
+					c.Close()
+				}
+			}
+		}
+		held := transitAddrs(t, egress)
+		for deadline := time.Now().Add(10 * time.Second); len(held) > 0 && time.Now().Before(deadline); held = transitAddrs(t, egress) {
+			time.Sleep(100 * time.Millisecond)
+		}
+		if len(held) > 0 {
+			t.Fatalf("netstack still holds %d destination addresses: %v", len(held), held)
+		}
+	})
 	t.Run("dns on port 53 follows the rules", func(t *testing.T) {
 		for name, want := range map[string]dnsmessage.RCode{"svc.test.": dnsmessage.RCodeSuccess, "other.test.": dnsmessage.RCodeRefused} {
 			resp := tenantUDP(t, ctx, alice, "203.0.113.53:53", query(t, name))
@@ -249,6 +279,32 @@ func testControl(t *testing.T) *testcontrol.Server {
 	t.Cleanup(control.HTTPTestServer.Close)
 	return control
 }
+
+// transitAddrs returns the test-range addresses the node's netstack has
+// assigned itself to carry flows to them.
+func transitAddrs(t *testing.T, s *tsnet.Server) []netip.Addr {
+	t.Helper()
+	f := reflect.ValueOf(s.Sys().Netstack.Get().(*netstack.Impl)).Elem().FieldByName("ipstack")
+	if !f.IsValid() {
+		t.Fatal("netstack.Impl has no ipstack field")
+	}
+	st := *(**stack.Stack)(unsafe.Pointer(f.UnsafeAddr()))
+	var out []netip.Addr
+	for _, pas := range st.AllAddresses() {
+		for _, pa := range pas {
+			a, _ := netip.AddrFromSlice(pa.AddressWithPrefix.Address.AsSlice())
+			if testNet4.Contains(a) || testNet6.Contains(a) {
+				out = append(out, a)
+			}
+		}
+	}
+	return out
+}
+
+var (
+	testNet4 = netip.MustParsePrefix("198.51.100.0/24")
+	testNet6 = netip.MustParsePrefix("2001:db8::/32")
+)
 
 func tsnetNode(t *testing.T, control *testcontrol.Server, name string, tags ...string) *tsnet.Server {
 	t.Helper()

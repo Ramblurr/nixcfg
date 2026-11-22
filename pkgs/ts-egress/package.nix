@@ -16,14 +16,14 @@ buildGoModule {
     ];
   };
 
-  # tsnet lacks a fallback UDP handler until upstream takes the patch;
-  # scripts/vendor.sh applies patches/ the same way outside Nix.
+  # tsnet and netstack need patches/ for a policed exit node, see README;
+  # scripts/vendor.sh applies them the same way outside Nix.
   modPostBuild = ''
     for p in ${./patches}/*.patch; do
       patch -p1 -d vendor/tailscale.com <"$p"
     done
   '';
-  vendorHash = "sha256-CLNrbyWOmljcDJ/9qdFEev8VQxSgPvjghdZRdbYuL20=";
+  vendorHash = "sha256-bDXrRaEGgcKQkRggJydpDep19HZQ8+UakXdpd+pAFrM=";
 
   meta = {
     description = "Tailscale exit-node egress that decides every flow from grant capabilities";
