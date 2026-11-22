@@ -175,7 +175,11 @@
   (is (= 400 (:status (request :post actions/assign
                                :headers (assoc datastar "Content-Type" "application/x-www-form-urlencoded")
                                :body "credential=%FF")))
-      "invalid UTF-8 is refused, not replaced"))
+      "invalid UTF-8 is refused, not replaced")
+  (is (= 400 (:status (request :post actions/assign
+                               :headers (assoc datastar "Content-Type" "application/x-www-form-urlencoded")
+                               :body (java.io.ByteArrayInputStream. (byte-array (map unchecked-byte (concat (.getBytes "credential=X&junk=") [0xff])))))))
+      "raw invalid UTF-8 bytes in the body are refused too"))
 
 (deftest actions-never-retry
   (is (every? #(str/includes? % "retryMaxCount: 0")

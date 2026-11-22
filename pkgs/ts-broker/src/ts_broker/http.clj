@@ -110,10 +110,12 @@
   map of keyword to a vector of values."
   [request]
   (let [content-type (str (get-in request [:headers "content-type"]))
-        body (some-> (:body request) slurp)]
+        body (:body request)]
     (cond
-      (str/starts-with? content-type "application/x-www-form-urlencoded") (parse-params body)
-      (str/starts-with? content-type "application/json") (json-params body)
+      (str/starts-with? content-type "application/x-www-form-urlencoded")
+      (parse-params (some-> body (slurp :encoding "ISO-8859-1")))
+
+      (str/starts-with? content-type "application/json") (json-params (some-> body slurp))
       :else {})))
 
 (def ^:private security-headers
