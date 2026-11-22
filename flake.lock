@@ -2826,11 +2826,11 @@
     },
     "nixpkgs_15": {
       "locked": {
-        "lastModified": 1794982327,
-        "narHash": "sha256-C3ZkIWA8uly8qh7teEMpYZPkBQgETvRSU0YEYUpkmR0=",
+        "lastModified": 1795358412,
+        "narHash": "sha256-/DhVJDgVfJt03NPteRs5TEcYc/uJBh5Zio0T23bQ16Y=",
         "owner": "ramblurr",
         "repo": "nixpkgs",
-        "rev": "65f105aee10b9c29abd977a15ff0251dd60b9e0e",
+        "rev": "b7f9f253b85074e7dbc19e642598cb895960fc00",
         "type": "github"
       },
       "original": {
