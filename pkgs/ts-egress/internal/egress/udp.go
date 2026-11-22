@@ -18,6 +18,11 @@ const (
 
 	defaultMaxUDPSessions          = 8192
 	defaultMaxUDPSessionsPerCaller = 1024
+
+	// dnsLinger is how long a DNS session waits for another query, such
+	// as the AAAA glibc sends beside an A on the same port. Netstack's
+	// MagicDNS uses the same bound.
+	dnsLinger = 150 * time.Millisecond
 )
 
 // handleUDP carries one UDP session: the datagrams one client address
@@ -158,12 +163,15 @@ func (s *Server) reauthorize(ctx context.Context, fl policy.Flow) policy.Verdict
 	return v
 }
 
-// serveDNSUDP answers each query in the session until it idles out. Each
-// query is its own audit line.
+// serveDNSUDP answers each query in the session, and ends it once no other
+// query follows within dnsLinger. Most clients send each query from a new
+// port, so holding the session for UDPIdle would pin a slot per lookup. A
+// later query on the same port opens a new session. Each query is its own
+// audit line.
 func (s *Server) serveDNSUDP(ctx context.Context, src, dst netip.AddrPort, c net.Conn) {
 	buf := make([]byte, 65535)
 	for {
-		_ = c.SetReadDeadline(time.Now().Add(s.UDPIdle))
+		_ = c.SetReadDeadline(time.Now().Add(dnsLinger))
 		n, err := c.Read(buf)
 		if err != nil {
 			return

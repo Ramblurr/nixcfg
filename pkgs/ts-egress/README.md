@@ -218,7 +218,7 @@ systemd did not provide stops startup.
 | `self` | none | The host's own addresses, added to the refused set. |
 | `identityTTL` | `15s` | How long a caller's rules are cached. A revoked grant takes effect within this time. |
 | `peekTimeout` | `5s` | How long to wait for a TLS ClientHello or HTTP request line. |
-| `udpIdle` | `1m` | Idle time before a UDP session closes. |
+| `udpIdle` | `1m` | Idle time before a UDP session closes. A DNS session on port 53 closes 150 ms after its last answer instead. |
 | `helper` | off | CONNECT helper: `listen`, `hosts`, `ports`. |
 | `ca` | off | `certCredential`, `keyCredential`: names of the CA credentials. Enables `http` rules. |
 | `onepassword` | off | `url`, `tokenCredential`, `secretTTL`: Connect API for `op://` secrets. |
