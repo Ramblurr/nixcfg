@@ -160,7 +160,9 @@ func startDERP(t *testing.T) *tailcfg.DERPMap {
 	}}
 }
 
-func startControl(t *testing.T) string {
+// startControl runs a test control server. A non-nil wrap sits in front of
+// every request that opens a connection to it.
+func startControl(t *testing.T, wrap func(http.Handler) http.Handler) *testcontrol.Server {
 	netns.SetEnabled(false)
 	t.Cleanup(func() { netns.SetEnabled(true) })
 	control := &testcontrol.Server{
@@ -170,10 +172,14 @@ func startControl(t *testing.T) string {
 		Logf:           logger.Discard,
 		TagOwners:      map[string][]string{"tag:ts-broker": nil, "tag:egress": nil},
 	}
-	control.HTTPTestServer = httptest.NewUnstartedServer(control)
+	var h http.Handler = control
+	if wrap != nil {
+		h = wrap(h)
+	}
+	control.HTTPTestServer = httptest.NewUnstartedServer(h)
 	control.HTTPTestServer.Start()
 	t.Cleanup(control.HTTPTestServer.Close)
-	return control.HTTPTestServer.URL
+	return control
 }
 
 func startNode(t *testing.T, ctx context.Context, controlURL, name string, tags ...string) (*tsnet.Server, netip.Addr) {
@@ -204,7 +210,7 @@ func startNode(t *testing.T, ctx context.Context, controlURL, name string, tags 
 func TestIdentityHeaders(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	controlURL := startControl(t)
+	controlURL := startControl(t, nil).HTTPTestServer.URL
 
 	plug, plugIP := startNode(t, ctx, controlURL, "plug")
 	lc, err := plug.LocalClient()
