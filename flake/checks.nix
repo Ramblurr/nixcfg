@@ -43,6 +43,7 @@
         home-dl-zfs-readiness = import ../tests/home-dl-zfs-readiness.nix { inherit inputs pkgs; };
         recyclarr-policy = import ../tests/recyclarr-policy.nix { inherit pkgs; };
         ts-egress = import ../tests/ts-egress.nix { inherit inputs pkgs; };
+        ts-broker = import ../tests/ts-broker.nix { inherit pkgs; };
         systemd-netns-private-egress = import ../tests/systemd-netns-private-egress.nix {
           inherit inputs pkgs;
         };
