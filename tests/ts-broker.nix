@@ -85,6 +85,7 @@ pkgs.testers.runNixOSTest {
 
   testScript = ''
     import json
+    import re
     import shlex
     from datetime import timedelta
 
@@ -94,9 +95,12 @@ pkgs.testers.runNixOSTest {
     DATASTAR = ["Datastar-Request: true", "Sec-Fetch-Site: same-origin"]
 
 
+    credential = "BRK_UNKNOWN0"
+
+
     def decide(user="egress", **override):
         req = {"op": "decide", "identity": "tag:t3-alice", "node": "t3-alice",
-               "groups": ["agents"], "modes": ["inject"], "credential": "GITHUB_TOKEN",
+               "groups": ["agents"], "modes": ["inject"], "credential": credential,
                "host": "api.github.com", "header": "Authorization", "mode": "inject"}
         req.update(override)
         line = shlex.quote(json.dumps(req))
@@ -140,7 +144,7 @@ pkgs.testers.runNixOSTest {
     with subtest("only the socket group can ask for decisions"):
         assert machine.succeed(f"stat -c '%a %G' {SOCKET}").strip() == "660 ts-broker-clients"
         machine.fail(f"echo '{{}}' | runuser -u outsider -- socat -t 2 - UNIX-CONNECT:{SOCKET}")
-        assert decide(credential="GITHUB_TOKEN") == {"decision": "deny", "reason": "unknown"}
+        assert decide() == {"decision": "deny", "reason": "unknown"}
 
     with subtest("the UI listens on loopback and needs the Tailscale login"):
         listeners = machine.succeed("ss -Hltn 'sport = :795' | awk '{print $4}'").split()
@@ -168,7 +172,7 @@ pkgs.testers.runNixOSTest {
         assert "x-frame-options: deny" in page_headers, page_headers
         refused = machine.succeed(f"curl -s -D - -o /dev/null {UI}/").lower()
         assert "x-frame-options: deny" in refused, refused
-        delete = {"name": "GITHUB_TOKEN"}
+        delete = {"name": credential}
         assert act("/action/delete-credential", delete, [ADMIN, "Datastar-Request: true"]) == "403"
         assert act("/action/delete-credential", delete, [ADMIN, "Datastar-Request: true", "Sec-Fetch-Site: cross-site"]) == "403"
         assert act("/action/delete-credential", delete, [ADMIN, "Sec-Fetch-Site: same-origin"]) == "403"
@@ -176,12 +180,15 @@ pkgs.testers.runNixOSTest {
     with subtest("a credential is created from the catalog and assigned"):
         assert post("/action/create-credential", {
             "vault": "vlt0000000000000000000000a", "item": "itm0000000000000000000000a",
-            "field": "fld0000000000000000000000a", "name": "GITHUB_TOKEN",
+            "field": "fld0000000000000000000000a",
             "header": "Authorization", "hosts": "api.github.com"}) == "200"
-        assert post("/action/assign", {"credential": "GITHUB_TOKEN", "subjects": "group:agents",
+        cred = json.loads(sql("select name, field, vault_title, item_title, field_label, editor from credential"))
+        credential = cred[0]["name"]
+        assert re.fullmatch("BRK_[A-Z2-7]{8}", credential), cred
+        assert post("/action/assign", {"credential": credential, "subjects": "group:agents",
                                        "mode": "inject", "approval": "auto"}) == "200"
-        cred = json.loads(sql("select field, field_label, editor from credential"))
-        assert cred == [{"field": "fld0000000000000000000000a", "field_label": "credential",
+        assert cred == [{"name": credential, "field": "fld0000000000000000000000a", "vault_title": "Agents",
+                         "item_title": "GitHub token", "field_label": "credential",
                          "editor": "admin@example"}], cred
 
     allow = {"decision": "allow", "approval": None,
@@ -196,7 +203,7 @@ pkgs.testers.runNixOSTest {
         assert decide(identity="tag:t3-bob", groups=[]) == {"decision": "deny", "reason": "unassigned"}
 
     with subtest("ask waits for an approval from the UI"):
-        assert post("/action/assign", {"credential": "GITHUB_TOKEN", "subjects": "group:agents",
+        assert post("/action/assign", {"credential": credential, "subjects": "group:agents",
                                        "mode": "inject", "approval": "ask"}) == "200"
         assert decide() == {"decision": "pending", "approval": "1"}
         assert decide() == {"decision": "pending", "approval": "1"}

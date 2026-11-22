@@ -22,7 +22,7 @@
 
 (def schema-version
   "The `user_version` of a database with [[schema]]."
-  2)
+  3)
 
 (def schema
   ["create table credential (
@@ -30,6 +30,8 @@
       vault text not null,
       item text not null,
       field text not null,
+      vault_title text not null,
+      item_title text not null,
       field_label text not null,
       header text not null,
       hosts text not null,
@@ -254,7 +256,7 @@
   (audit! tx {:kind       "credential"
               :actor      actor
               :credential (:name c)
-              :detail     (assoc (select-keys c [:vault :item :field :field-label :header :hosts])
+              :detail     (assoc (select-keys c [:vault :item :field :vault-title :item-title :field-label :header :hosts])
                                  :action action)}))
 
 (defmethod command :credential/create [tx {c :credential :keys [actor]}]
@@ -266,9 +268,11 @@
       (seq errors) (invalid! errors)
       (credential db (:name c)) (invalid! [(str "A credential named " (:name c) " exists.")]))
     (sq/execute! db ["insert into credential
-                        (name, vault, item, field, field_label, header, hosts, revision, created, updated, editor)
-                      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                     (:name c) (:vault c) (:item c) (:field c) (:field-label c) (:header c)
+                        (name, vault, item, field, vault_title, item_title, field_label, header, hosts,
+                         revision, created, updated, editor)
+                      values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                     (:name c) (:vault c) (:item c) (:field c)
+                     (:vault-title c) (:item-title c) (:field-label c) (:header c)
                      (json/generate-string (:hosts c)) (str (random-uuid)) now now actor])
     (credential-audit! tx actor c "create")
     (:name c)))
@@ -300,6 +304,23 @@
         (credential-audit! tx actor c "update")
         (close-approvals! tx name {:pending :supersede :approved :supersede} actor))
       name)))
+
+(def ^:private title-keys [:vault-title :item-title :field-label])
+
+(defmethod command :credential/titles [tx {:keys [titles]}]
+  (let [db (:conn tx)
+        changed (for [t titles
+                      :let [c (credential db (:name t))
+                            t (select-keys t title-keys)]
+                      :when (and c
+                                 (not-any? str/blank? (map t title-keys))
+                                 (not= t (select-keys c title-keys)))]
+                  (merge c t))]
+    (doseq [c changed]
+      (sq/execute! db ["update credential set vault_title = ?, item_title = ?, field_label = ? where name = ?"
+                       (:vault-title c) (:item-title c) (:field-label c) (:name c)])
+      (credential-audit! tx nil c "titles"))
+    (count changed)))
 
 (defmethod command :credential/delete [tx {:keys [name revision actor]}]
   (let [db (:conn tx)]

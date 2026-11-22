@@ -263,13 +263,13 @@
 (defn credential-errors
   "Returns a vector of messages that describe what is wrong with
   `credential`, empty when it is valid."
-  [{:keys [name vault item field field-label header hosts]}]
+  [{:keys [name vault item field vault-title item-title field-label header hosts]}]
   (cond-> []
     (not (credential-name? name))
     (conj "Name must be at most 64 upper-case letters, digits and underscores, and not start with a digit.")
 
     (or (some #(or (str/blank? %) (str/includes? % "/")) [vault item field])
-        (str/blank? field-label))
+        (some str/blank? [vault-title item-title field-label]))
     (conj "Pick a vault, an item and a field. None of their IDs may contain /.")
 
     (not (header-name? header))
@@ -303,9 +303,30 @@
                   (= "group:" s))]
     (str "Invalid subject: " (pr-str s))))
 
-(defn suggested-name
-  "Returns a credential name derived from an item `title`."
+(def placeholder-prefix
+  "The prefix that ts-egress puts before a credential name to make its
+  placeholder."
+  "TS_EGRESS_PLACEHOLDER_")
+
+(def ^:private base32-alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+
+(defn generated-name
+  "Returns a credential name made from `bytes`: `BRK_` and the first 40
+  bits of `bytes` in base32. It tells nothing about the 1Password item."
+  [bytes]
+  (let [n (reduce (fn [n b] (+ (* n 256) (bit-and b 0xff))) 0 (take 5 bytes))]
+    (apply str "BRK_" (for [shift (range 35 -1 -5)]
+                        (nth base32-alphabet (bit-and (bit-shift-right n shift) 31))))))
+
+(defn env-name
+  "Returns an environment variable name derived from an item `title`."
   [title]
   (-> (str/upper-case (str title))
       (str/replace #"[^A-Z0-9]+" "_")
-      (str/replace #"^_+|_+$" "")))
+      (str/replace #"^_+|_+$" "")
+      (str/replace #"^(?=[0-9])" "_")))
+
+(defn title
+  "Returns the title of `credential`: its vault, item and field titles."
+  [{:keys [vault-title item-title field-label]}]
+  (str/join " / " [vault-title item-title field-label]))

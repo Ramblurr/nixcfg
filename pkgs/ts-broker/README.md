@@ -10,6 +10,14 @@ requests in a web UI, so a grant does not need a Tailscale policy push.
 - 1Password holds the values. The broker stores vault, item and field IDs
   and never reads a value.
 
+The UI shows a credential by its 1Password vault, item and field titles.
+The broker stores the titles when the credential is created and refreshes
+them from Connect at start and every 10 minutes. Its name, the suffix of
+the placeholder `TS_EGRESS_PLACEHOLDER_<name>`, is generated at create:
+`BRK_` and 8 random base32 characters, so it tells nothing about the item.
+The name never changes. The credential page offers the placeholder and an
+environment line to copy.
+
 ## Running
 
 ```sh

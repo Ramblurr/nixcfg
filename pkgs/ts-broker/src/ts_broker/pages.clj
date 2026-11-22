@@ -55,8 +55,14 @@
     [:code subject]
     (identity-link subject)))
 
-(defn- credential-link [name]
-  [:a {:href (lib/href "/credential" {:name name})} [:code name]])
+(defn- credential-link
+  "Returns a link to the page of the credential `name`, titled by the
+  1Password titles of credential `c`, or by `name` when `c` is nil."
+  [name c]
+  [:a {:href (lib/href "/credential" {:name name})} (if c (domain/title c) [:code name])])
+
+(defn- by-name [creds]
+  (into {} (map (juxt :name identity)) creds))
 
 (defn- empty-row [n text]
   [:tr [:td.muted {:colspan n} text]])
@@ -93,7 +99,7 @@
 
 (def ^:private approval-columns
   {:identity   ["Identity" (fn [_ a] (identity-link (:identity a)))]
-   :credential ["Credential" (fn [_ a] (credential-link (:credential a)))]
+   :credential ["Credential" (fn [_ a] (credential-link (:credential a) (:current a)))]
    :host       ["Requested host" (fn [_ a] [:code (:host a)])]
    :current    ["Header and hosts now" (fn [_ {{:keys [header hosts]} :current}]
                                          (list [:code header] " " (for [h hosts] [:code.pill h])))]
@@ -115,8 +121,8 @@
   [{:keys [store clock]} request]
   (let [now (clock)
         [open creds] (store/read store (juxt store/open-approvals store/credentials))
-        by-name (into {} (map (juxt :name identity)) creds)
-        by-state (group-by :state (map #(assoc % :current (by-name (:credential %))) open))
+        creds (by-name creds)
+        by-state (group-by :state (map #(assoc % :current (creds (:credential %))) open))
         standing (filter #(domain/live? % now) (:approved by-state))]
     (layout request "Approvals"
             [:section
@@ -141,15 +147,15 @@
     (layout request "Credentials"
             [:p [:a {:href "/catalog"} "Add a credential from the catalog"]]
             [:table
-             [:thead [:tr [:th "Name"] [:th "Hosts"] [:th "Header"] [:th "1Password field"] [:th "Assignments"]]]
+             [:thead [:tr [:th "Vault / item / field"] [:th "Placeholder"] [:th "Hosts"] [:th "Header"] [:th "Assignments"]]]
              [:tbody
               (if (seq creds)
-                (for [{:keys [name hosts header field-label]} creds]
+                (for [{:keys [name hosts header] :as c} (sort-by (comp str/lower-case domain/title) creds)]
                   [:tr
-                   [:td (credential-link name)]
+                   [:td (credential-link name c)]
+                   [:td [:code name]]
                    [:td (for [h hosts] [:code.pill h])]
                    [:td [:code header]]
-                   [:td [:code field-label]]
                    [:td (get counts name 0)]])
                 (empty-row 5 "No credentials yet."))]])))
 
@@ -168,10 +174,8 @@
    [:input {:type "hidden" :name "vault" :value (:id vault)}]
    [:input {:type "hidden" :name "item" :value (:id item)}]
    (field-picker item)
-   [:label "Name" [:small.muted " the placeholder suffix: A-Z, 0-9 and _, not starting with a digit"]
-    [:input {:name "name" :value (domain/suggested-name (:title item)) :required true
-             :pattern "[A-Z_][A-Z0-9_]*"}]]
    (actions/credential-form-fields nil)
+   [:p.muted "The broker generates the credential's placeholder, which tells nothing about the item."]
    (actions/feedback "create-feedback" nil)
    [:div.actions [:button {:type "submit"} "Create credential"]]])
 
@@ -210,10 +214,10 @@
                 (catch Exception e
                   [:p.message (or (connect/error-message e) (throw e))]))))))
 
-(defn- assignment-row [{:keys [subject credential mode approval editor]} show]
+(defn- assignment-row [{:keys [subject credential mode approval editor]} creds]
   [:tr
-   (when (show :subject) [:td (subject-link subject)])
-   (when (show :credential) [:td (credential-link credential)])
+   [:td (subject-link subject)]
+   (when creds [:td (credential-link credential (creds credential))])
    [:td mode]
    [:td [:span {:class (str "pill " approval)} approval]]
    [:td editor]
@@ -221,16 +225,40 @@
                                             {:subject subject :credential credential :mode mode})}
          "Remove"]]])
 
-(defn- assignments-table [rows show]
+(defn- assignments-table
+  "Returns a table of the assignments `rows`. With credentials by name
+  `creds` it also shows the credential of each row."
+  [rows creds]
   [:table
    [:thead [:tr
-            (when (show :subject) [:th "Subject"])
-            (when (show :credential) [:th "Credential"])
+            [:th "Subject"]
+            (when creds [:th "Credential"])
             [:th "Mode"] [:th "Approval"] [:th "By"] [:th ""]]]
    [:tbody
     (if (seq rows)
-      (for [a rows] (assignment-row a show))
-      (empty-row 6 "No assignments."))]])
+      (for [a rows] (assignment-row a creds))
+      (empty-row (if creds 6 5) "No assignments."))]])
+
+(defn- copy-button [text]
+  [:button.copy {:type          "button"
+                 :data-copy     text
+                 :data-on:click "navigator.clipboard.writeText(el.dataset.copy).then(() => el.textContent = 'Copied')"}
+   "Copy"])
+
+(defn- credential-facts
+  "Returns the definition list of credential `c`: its 1Password titles with
+  their IDs, and its placeholder with an environment line to copy."
+  [{:keys [name vault item field vault-title item-title field-label editor updated]}]
+  (let [placeholder (str domain/placeholder-prefix name)
+        env-line (str (domain/env-name item-title) "=" placeholder)]
+    [:dl.facts
+     [:dt "Vault"] [:dd vault-title [:small.id vault]]
+     [:dt "Item"] [:dd item-title [:small.id item]]
+     [:dt "Field"] [:dd field-label [:small.id field]]
+     [:dt "Placeholder"] [:dd [:code placeholder] (copy-button placeholder)]
+     [:dt "Environment"] [:dd [:code env-line] (copy-button env-line)
+                          [:small.muted "for the tenant config, or paste the placeholder into the agent's prompt"]]
+     [:dt "Edited"] [:dd editor " at " (fmt-time updated)]]))
 
 (lib/defview credential-page
   "Renders one credential with its edit form and who can use it."
@@ -245,14 +273,13 @@
         now (clock)]
     (if-not c
       (layout request "Credential" [:p "No such credential. " [:a {:href "/credentials"} "All credentials"]])
-      (layout request [:code name]
+      (layout request (domain/title c)
               (when (lib/param request :created)
-                [:p.message "Created. " [:a {:href "/assign"} "Assign it"] " to let identities use it."])
-              [:p.muted "1Password vault " [:code (:vault c)] ", item " [:code (:item c)]
-               ", field " [:code (:field-label c)] " (" [:code (:field c)] "). Edited by " (:editor c) " at " (fmt-time (:updated c)) "."]
+                [:p.message.ok "Created. " [:a {:href "/assign"} "Assign it"] " to let identities use it."])
+              (credential-facts c)
               [:section
                [:h2 "Who can use it"]
-               (assignments-table assignments #{:subject})
+               (assignments-table assignments nil)
                [:table
                 [:thead [:tr [:th "Seen identity"] [:th "Through"] [:th "Approval"]]]
                 [:tbody
@@ -273,18 +300,24 @@
                      (empty-row 3 "No identity that sent a request matches.")))]]]
               [:section
                [:h2 "Edit"]
+               (when (seq assignments)
+                 [:p#assignment-warning.warn-text
+                  " It has " (count assignments) (if (= 1 (count assignments)) " assignment" " assignments")
+                  ". Deleting it removes them, and its placeholder stops working for every identity they cover."])
                (actions/edit-form c)]))))
 
 (lib/defview assign-page
   "Renders the bulk assignment form and all assignments."
   {:path "/assign" :title "Broker assignments"}
   [{:keys [store]} request]
-  (let [[form assignments] (store/read store (juxt #(actions/assign-form % nil :ok) store/assignments))]
+  (let [[form assignments creds] (store/read store (juxt #(actions/assign-form % nil :ok)
+                                                       store/assignments
+                                                       store/credentials))]
     (layout request "Assign"
             form
             [:section
              [:h2 "All assignments"]
-             (assignments-table assignments #{:subject :credential})])))
+             (assignments-table assignments (by-name creds))])))
 
 (lib/defview identities-page
   "Renders the identities that sent requests."
@@ -314,7 +347,9 @@
   {:path "/identity" :title "Broker identity"}
   [{:keys [store clock]} request]
   (let [id (lib/param request :id)
-        [idents assignments open] (store/read store (juxt store/identities store/assignments store/open-approvals))
+        [idents assignments open creds]
+        (store/read store (juxt store/identities store/assignments store/open-approvals store/credentials))
+        creds (by-name creds)
         seen (first (filter #(= id (:identity %)) idents))
         groups (:groups seen)
         ceiling (set (:modes seen))
@@ -337,7 +372,7 @@
                        :let [approval (if (some #(= "auto" (:approval %)) via) "auto" "ask")
                              a (first (filter #(= [id credential mode] [(:identity %) (:credential %) (:mode %)]) open))]]
                    [:tr
-                    [:td (credential-link credential)]
+                    [:td (credential-link credential (creds credential))]
                     [:td (for [v via] [:code.pill (:subject v)])]
                     [:td mode]
                     [:td [:span {:class (str "pill " approval)} approval]]
@@ -411,6 +446,9 @@ fieldset{border:1px solid #ccd4df;border-radius:6px;margin:.6rem 0;padding:.5rem
 .muted,small{color:#586579}.warn-text{color:#8d2418}
 .pill{display:inline-block;padding:0 .4rem;margin:0 .25rem .15rem 0;border-radius:9px;background:#e4e9f1;font-size:.85em}
 .pill.ask{background:#fdecc8}.pill.auto{background:#d6f0dc}
-code{font-family:ui-monospace,monospace;font-size:.92em}.detail{overflow-wrap:anywhere;font-size:.8em;color:#3b4658}
+code{font-family:ui-monospace,monospace;font-size:.92em}
+.facts{display:grid;grid-template-columns:max-content 1fr;gap:.35rem 1.2rem;margin:.6rem 0 1rem;align-items:baseline}
+.facts dt{font-weight:600;color:#586579}.facts dd{margin:0;display:flex;flex-wrap:wrap;gap:.6rem;align-items:baseline}
+.facts .id{font-family:ui-monospace,monospace;font-size:.75rem;color:#8a95a6}button.copy{font-size:.8rem;padding:0 .45rem}.detail{overflow-wrap:anywhere;font-size:.8em;color:#3b4658}
 table.audit td{font-size:.86rem}
 @media(max-width:800px){table{display:block;overflow-x:auto}}")

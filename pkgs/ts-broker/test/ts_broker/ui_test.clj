@@ -119,20 +119,28 @@
 (deftest creates-a-credential-from-the-catalog-by-field-id
   (is (str/includes? (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")
                      "value=\"credential\""))
-  (is (str/includes? (:body (form-post actions/create-credential
-                                       {:vault  "vlt0000000000000000000000a"
-                                        :item   "itm0000000000000000000000a"
-                                        :field  "f2"
-                                        :name   "GITHUB_NOTE"
-                                        :header "Authorization"
-                                        :hosts  "api.github.com\n*.githubusercontent.com"}))
-                     "window.location.href =\"/credential?name=GITHUB_NOTE&created=true\"")
-      "a successful create moves the browser to the new credential")
-  (is (= {:name "GITHUB_NOTE" :field "f2" :field-label "note" :hosts ["api.github.com" "*.githubusercontent.com"]
-          :editor "casey@github"}
-         (select-keys (store/read *store* #(store/credential % "GITHUB_NOTE"))
-                      [:name :field :field-label :hosts :editor])))
-  (is (str/includes? (render "/credential?name=GITHUB_NOTE&created=true") "Created."))
+  (let [body (:body (form-post actions/create-credential
+                               {:vault  "vlt0000000000000000000000a"
+                                :item   "itm0000000000000000000000a"
+                                :field  "f2"
+                                :name   "GITHUB_NOTE"
+                                :header "Authorization"
+                                :hosts  "api.github.com\n*.githubusercontent.com"}))
+        [_ name] (re-find #"window\.location\.href =\"/credential\?name=(BRK_[A-Z2-7]{8})&created=true\"" body)]
+    (is (some? name) "a successful create moves the browser to the new credential, named by the broker")
+    (is (= {:name        name
+            :field       "f2"
+            :vault-title "Agents"
+            :item-title  "GitHub token"
+            :field-label "note"
+            :hosts       ["api.github.com" "*.githubusercontent.com"]
+            :editor      "casey@github"}
+           (select-keys (store/read *store* #(store/credential % name))
+                        [:name :field :vault-title :item-title :field-label :hosts :editor])))
+    (let [page (render (str "/credential?name=" name "&created=true"))]
+      (is (str/includes? page "<h1>Agents / GitHub token / note</h1>"))
+      (is (str/includes? page "Created."))
+      (is (str/includes? page (str "<code>GITHUB_TOKEN=TS_EGRESS_PLACEHOLDER_" name "</code>")))))
   (testing "a refused create shows why next to the form, which morphing skips"
     (is (re-find #"data-ignore-morph[^>]*>.*id=\"create-feedback\""
                  (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")))
@@ -144,7 +152,8 @@
 
 (defn- seed-credential! []
   (store/write! *store* {:command :credential/create :actor "casey@github"
-                         :credential {:name "GITHUB_TOKEN" :vault "v" :item "i" :field "f" :field-label "credential"
+                         :credential {:name "GITHUB_TOKEN" :vault "v" :item "i" :field "f"
+                                      :vault-title "Agents" :item-title "GitHub token" :field-label "credential"
                                       :header "Authorization" :hosts ["api.github.com"]}}))
 
 (deftest approves-through-the-ui-and-records-the-approver
@@ -253,6 +262,15 @@
       (is (= [true saved]
              [(str/includes? body (str "data: mode replace\ndata: elements " (form-tag body)))
               (form-revision body)])))))
+
+(deftest deleting-an-assigned-credential-warns-that-its-placeholder-stops-working
+  (seed-credential!)
+  (let [warning #"<p class=\"warn-text\" id=\"assignment-warning\"> It has 1 assignment\. Deleting it removes them, and its placeholder stops working"]
+    (is (nil? (re-find warning (render "/credential?name=GITHUB_TOKEN"))))
+    (form-post actions/assign {:credential "GITHUB_TOKEN" :subjects "group:agents" :mode "inject" :approval "ask"})
+    (let [page (render "/credential?name=GITHUB_TOKEN")]
+      (is (re-find warning page))
+      (is (str/includes? page "data-confirm=\"Delete Agents / GitHub token / credential?\"")))))
 
 (deftest edits-the-credential-the-form-showed
   (seed-credential!)

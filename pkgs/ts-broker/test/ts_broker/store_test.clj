@@ -35,7 +35,7 @@
 (defn- seed! [approval]
   (write! {:command :credential/create :actor "casey"
            :credential {:name "GITHUB_TOKEN" :vault "vlt1" :item "itm1" :field "fld1"
-                        :field-label "credential" :header "Authorization"
+                        :vault-title "Agents" :item-title "GitHub token" :field-label "credential" :header "Authorization"
                         :hosts ["API.github.com"]}})
   (write! {:command :assignment/assign :credentials ["GITHUB_TOKEN"] :subjects ["group:agents"]
            :mode "inject" :approval approval :actor "casey"}))
@@ -133,7 +133,7 @@
 (deftest an-approval-covers-only-the-host-it-was-requested-for
   (write! {:command :credential/create :actor "casey"
            :credential {:name "GITHUB_TOKEN" :vault "vlt1" :item "itm1" :field "fld1"
-                        :field-label "credential" :header "Authorization"
+                        :vault-title "Agents" :item-title "GitHub token" :field-label "credential" :header "Authorization"
                         :hosts ["api.github.com" "uploads.github.com"]}})
   (write! {:command :assignment/assign :credentials ["GITHUB_TOKEN"] :subjects ["group:agents"]
            :mode "inject" :approval "ask" :actor "casey"})
@@ -148,7 +148,7 @@
 (deftest unblocking-lifts-the-block-on-every-host
   (write! {:command :credential/create :actor "casey"
            :credential {:name "GITHUB_TOKEN" :vault "vlt1" :item "itm1" :field "fld1"
-                        :field-label "credential" :header "Authorization"
+                        :vault-title "Agents" :item-title "GitHub token" :field-label "credential" :header "Authorization"
                         :hosts ["api.github.com" "uploads.github.com"]}})
   (write! {:command :assignment/assign :credentials ["GITHUB_TOKEN"] :subjects ["group:agents"]
            :mode "inject" :approval "ask" :actor "casey"})
@@ -270,13 +270,27 @@
                                              :actor "kim" :header "Authorization" :hosts ["api.github.com"]}))))
         "a second edit from the same form is refused")))
 
+(deftest title-refreshes-change-only-titles-and-keep-the-revision
+  (seed! "auto")
+  (let [before (credential)
+        renamed {:name "GITHUB_TOKEN" :vault-title "Agents" :item-title "GitHub bot" :field-label "token"}]
+    (is (= 1 (write! {:command :credential/titles
+                      :titles  [renamed
+                                {:name "NOPE" :vault-title "A" :item-title "B" :field-label "C"}
+                                {:name "GITHUB_TOKEN" :vault-title "" :item-title "x" :field-label "y"}]})))
+    (is (= (merge before (dissoc renamed :name)) (credential)))
+    (is (= 0 (write! {:command :credential/titles :titles [renamed]})) "an unchanged title is not written again")
+    (is (= ["credential" nil "GITHUB_TOKEN" {:action "titles" :item-title "GitHub bot" :field-label "token"}]
+           ((juxt :kind :actor :credential #(select-keys (:detail %) [:action :item-title :field-label]))
+            (first (store/read *store* #(store/audit % {:kind "credential"} 1))))))))
+
 (deftest updates-refuse-a-recreated-credential
   (seed! "auto")
   (let [{:keys [revision]} (credential)]
     (write! {:command :credential/delete :name "GITHUB_TOKEN" :revision (:revision (credential)) :actor "kim"})
     (write! {:command :credential/create :actor "kim"
              :credential {:name "GITHUB_TOKEN" :vault "vlt2" :item "itm2" :field "fld2"
-                          :field-label "other" :header "Authorization" :hosts ["api.github.com"]}})
+                          :vault-title "Other" :item-title "Other" :field-label "other" :header "Authorization" :hosts ["api.github.com"]}})
     (is (= ["This credential changed or was deleted since the form was shown. Reload the page."]
            (store/invalid-errors
             (:error @(store/submit! *store* {:command :credential/update :name "GITHUB_TOKEN" :revision revision

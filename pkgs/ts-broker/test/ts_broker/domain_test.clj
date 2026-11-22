@@ -22,6 +22,8 @@
    :vault       "vlt1"
    :item        "itm1"
    :field       "fld1"
+   :vault-title "Agents"
+   :item-title  "GitHub token"
    :field-label "credential"
    :header      "Authorization"
    :hosts       ["api.github.com" "*.githubusercontent.com"]
@@ -194,6 +196,13 @@
   (is (= [true true true true true false false]
          (map #(boolean (seq (domain/credential-errors (assoc credential :header %))))
               ["Cookie" "Expect" "Proxy-Custom" "x-forwarded-host" "TE" "X-Forwarded" "X-Api-Key"]))))
+
+(deftest generates-names-that-say-nothing-about-the-item
+  (is (= ["BRK_AAAAAAAA" "BRK_77777777" "BRK_AEBAGBAF"]
+         (map #(domain/generated-name (byte-array %)) [[0 0 0 0 0] [-1 -1 -1 -1 -1 9] [1 2 3 4 5]])))
+  (is (every? domain/credential-name?
+              (repeatedly 100 #(domain/generated-name (byte-array (repeatedly 5 (fn [] (- (rand-int 256) 128))))))))
+  (is (= ["GITHUB_TOKEN" "_1PASSWORD_ITEM"] (map domain/env-name ["GitHub token" "1password item"]))))
 
 (deftest host-patterns
   (is (= ["api.github.com" "*.github.com" "_dmarc.example.com" nil nil nil nil]

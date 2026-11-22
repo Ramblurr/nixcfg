@@ -82,12 +82,6 @@
   [path payload]
   (str "@post('" path "', {payload: " (json/generate-string payload) "})"))
 
-(defn confirm-post
-  "Returns a Datastar expression that POSTs `payload` to `path` after the
-  user confirms `message`."
-  [message path payload]
-  (str "confirm(" (json/generate-string message) ") && " (post path payload)))
-
 (defn form-post
   "Returns a Datastar expression that POSTs the enclosing form to `path`."
   [path]

@@ -11,8 +11,12 @@
 (def ^:private agents-vault "vlt0000000000000000000000a")
 (def ^:private infra-vault "vlt0000000000000000000000b")
 
+(def ^:private github "BRK_GA7KQ2XM")
+(def ^:private anthropic "BRK_N3W5RBTE")
+(def ^:private hetzner "BRK_Q4ZD6HUY")
+
 (def ^:private headers
-  {"GITHUB_TOKEN" "Authorization" "ANTHROPIC_API_KEY" "X-Api-Key" "HETZNER_DNS" "Auth-Api-Token"})
+  {github "Authorization" anthropic "X-Api-Key" hetzner "Auth-Api-Token"})
 
 (defn- request [identity groups credential host]
   {:command :decide
@@ -24,29 +28,29 @@
 (def seed-commands
   (let [actor "casey@github"
         save (fn [c] {:command :credential/create :actor actor :credential c})]
-    [(save {:name "GITHUB_TOKEN" :vault agents-vault :item "itm0000000000000000000000a"
-            :field "credential" :field-label "credential" :header "Authorization"
-            :hosts ["api.github.com" "*.githubusercontent.com"]})
-     (save {:name "ANTHROPIC_API_KEY" :vault agents-vault :item "itm0000000000000000000000b"
-            :field "credential" :field-label "credential" :header "x-api-key"
-            :hosts ["api.anthropic.com"]})
-     (save {:name "HETZNER_DNS" :vault infra-vault :item "itm0000000000000000000000c"
-            :field "password" :field-label "password" :header "Auth-API-Token"
-            :hosts ["dns.hetzner.com"]})
-     {:command :assignment/assign :credentials ["GITHUB_TOKEN"] :subjects ["group:agents"]
+    [(save {:name github :vault agents-vault :item "itm0000000000000000000000a" :field "credential"
+            :vault-title "Agents" :item-title "GitHub token" :field-label "credential"
+            :header "Authorization" :hosts ["api.github.com" "*.githubusercontent.com"]})
+     (save {:name anthropic :vault agents-vault :item "itm0000000000000000000000b" :field "credential"
+            :vault-title "Agents" :item-title "Anthropic API" :field-label "credential"
+            :header "x-api-key" :hosts ["api.anthropic.com"]})
+     (save {:name hetzner :vault infra-vault :item "itm0000000000000000000000c" :field "password"
+            :vault-title "Infra" :item-title "Hetzner DNS" :field-label "password"
+            :header "Auth-API-Token" :hosts ["dns.hetzner.com"]})
+     {:command :assignment/assign :credentials [github] :subjects ["group:agents"]
       :mode "inject" :approval "auto" :actor actor}
-     {:command :assignment/assign :credentials ["ANTHROPIC_API_KEY" "HETZNER_DNS"]
+     {:command :assignment/assign :credentials [anthropic hetzner]
       :subjects ["group:agents" "tag:t3-bob"] :mode "inject" :approval "ask" :actor actor}
-     (request "tag:t3-alice" ["agents"] "GITHUB_TOKEN" "api.github.com")
-     (request "tag:t3-alice" ["agents"] "ANTHROPIC_API_KEY" "api.anthropic.com")
-     (request "tag:t3-bob" ["agents" "github-readers"] "HETZNER_DNS" "dns.hetzner.com")
-     (request "tag:t3-bob" ["agents" "github-readers"] "ANTHROPIC_API_KEY" "api.anthropic.com")
-     (request "tag:t3-carol" ["agents"] "HETZNER_DNS" "dns.hetzner.com")
-     (request "tag:t3-dave" [] "HETZNER_DNS" "dns.hetzner.com")
-     (request "tag:t3-alice" ["agents"] "GITHUB_TOKEN" "evil.example.com")
+     (request "tag:t3-alice" ["agents"] github "api.github.com")
+     (request "tag:t3-alice" ["agents"] anthropic "api.anthropic.com")
+     (request "tag:t3-bob" ["agents" "github-readers"] hetzner "dns.hetzner.com")
+     (request "tag:t3-bob" ["agents" "github-readers"] anthropic "api.anthropic.com")
+     (request "tag:t3-carol" ["agents"] hetzner "dns.hetzner.com")
+     (request "tag:t3-dave" [] hetzner "dns.hetzner.com")
+     (request "tag:t3-alice" ["agents"] github "evil.example.com")
      {:command :approval/event :id 2 :event :approve :grant "24h" :actor actor}
      {:command :approval/event :id 3 :event :block :actor actor}
-     (request "tag:t3-bob" ["agents" "github-readers"] "ANTHROPIC_API_KEY" "api.anthropic.com")]))
+     (request "tag:t3-bob" ["agents" "github-readers"] anthropic "api.anthropic.com")]))
 
 (defn start!
   "Starts a broker in directory `dir` with a fresh seeded database and a

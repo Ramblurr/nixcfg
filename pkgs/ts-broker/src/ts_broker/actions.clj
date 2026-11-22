@@ -1,16 +1,19 @@
 (ns ts-broker.actions
-  "Actions of the broker UI, and the credential form fields they read.
+  "Actions of the broker UI, and the forms whose answers they render.
 
   Actions turn the parameters of the request body into store commands; the
   store validates them. Controls send them as a form or a Datastar
-  `payload`, never in the URL. A successful credential edit answers with a
-  fresh edit form."
+  `payload`, never in the URL. Refusals of the create and assign forms show
+  in the form's [[feedback]] element. A successful credential edit or
+  assign answers with a fresh form."
   (:require
    [clojure.string :as str]
    [ts-broker.connect :as connect]
    [ts-broker.domain :as domain]
    [ts-broker.lib :as lib]
-   [ts-broker.store :as store]))
+   [ts-broker.store :as store])
+  (:import
+   [java.security SecureRandom]))
 
 (def ^:private approval-events
   {"approve" :approve "deny" :deny "block" :block "revoke" :revoke "unblock" :unblock})
@@ -56,26 +59,28 @@
         {:replace (feedback id errors)}
         (throw e)))))
 
+(defn- random-bytes [n]
+  (let [b (byte-array n)]
+    (.nextBytes (SecureRandom.) b)
+    b))
+
 (lib/defaction create-credential
-  "Creates a credential from the catalog form and moves the browser to it.
-  Refusals show in the form's `create-feedback` element."
+  "Creates a credential from the catalog form with a generated name and
+  its 1Password titles, and moves the browser to it. Refusals show in the
+  form's `create-feedback` element."
   [{:keys [connect store]} request]
   (feedback-on-invalid
    "create-feedback"
-   #(let [[vault item field] (map (fn [k] (lib/param request k)) [:vault :item :field])
-          picked (when (and connect vault item field)
-                   (->> (:fields (connect/item connect vault item))
-                        (filter (fn [f] (= field (:id f))))
-                        first))
+   #(let [ids {:vault (lib/param request :vault)
+               :item  (lib/param request :item)
+               :field (lib/param request :field)}
+          titles (some-> connect (connect/titles [ids]) first)
           name (store/write! store {:command    :credential/create
-                                    :credential {:name        (lib/param request :name)
-                                                 :vault       vault
-                                                 :item        item
-                                                 :field       field
-                                                 :field-label (when picked
-                                                                (if (str/blank? (:label picked)) field (:label picked)))
-                                                 :header      (lib/param request :header)
-                                                 :hosts       (domain/split-list (lib/param request :hosts))}
+                                    :credential (merge ids
+                                                       titles
+                                                       {:name   (domain/generated-name (random-bytes 5))
+                                                        :header (lib/param request :header)
+                                                        :hosts  (domain/split-list (lib/param request :hosts))})
                                     :actor      (:actor request)})]
       {:redirect (lib/href "/credential" {:name name :created true})})))
 
@@ -90,7 +95,8 @@
 (defn edit-form
   "Returns the edit form of credential `c`. Live re-renders skip the form,
   so it keeps the draft and the revision it was rendered with until a save
-  replaces it or the page loads again."
+  replaces it or the page loads again. The delete confirmation adds the
+  text of the live `assignment-warning` element when the page has one."
   [{:keys [name revision] :as c}]
   [:form#credential-form.stack
    {:data-ignore-morph       true
@@ -102,8 +108,10 @@
     [:button {:type "submit"} "Save"]
     [:a {:href (lib/href "/credential" {:name name})} "Discard and reload"]
     [:button.danger {:type "button"
-                     :data-on:click (lib/confirm-post (str "Delete " name " and its assignments?")
-                                                      delete-credential {:name name :revision revision})}
+                     :data-confirm  (str "Delete " (domain/title c) "?")
+                     :data-on:click (str "confirm(el.dataset.confirm"
+                                         " + (document.getElementById('assignment-warning')?.textContent ?? ''))"
+                                         " && " (lib/post delete-credential {:name name :revision revision}))}
      "Delete"]]])
 
 (lib/defaction update-credential [{:keys [store]} request]
@@ -126,8 +134,8 @@
 
 (defn assign-form
   "Returns the bulk assignment form with the credentials and subjects in
-  reader connection `db`, and `messages` of `kind` in its [[feedback]]. Live re-renders
-  keep the ticked boxes and skip the typed subjects."
+  reader connection `db`, and `messages` of `kind` in its [[feedback]].
+  Live re-renders keep the ticked boxes and skip the typed subjects."
   [db messages kind]
   (let [creds (store/credentials db)
         subjects (known-subjects (store/assignments db) (store/identities db))]
@@ -136,8 +144,9 @@
       [:fieldset
        [:legend [:span.step "1"] "Credentials"]
        (if (seq creds)
-         (for [{:keys [name]} creds]
-           [:label.option [:input {:type "checkbox" :name "credential" :value name}] " " [:code name]])
+         (for [{:keys [name] :as c} (sort-by (comp str/lower-case domain/title) creds)]
+           [:label.option [:input {:type "checkbox" :name "credential" :value name}] " " (domain/title c)
+            " " [:small [:code name]]])
          [:p.muted "No credentials yet."])]
       [:fieldset
        [:legend [:span.step "2"] "Subjects"]
@@ -169,8 +178,9 @@
                                                                      (domain/lines (lib/param request :subjects)))))
                                  :mode        (lib/param request :mode)
                                  :approval    (lib/param request :approval)
-                                 :actor       (:actor request)})]
-      {:replace (store/read store (fn [db] (assign-form db [(str "Saved " n (if (= 1 n) " assignment." " assignments."))] :ok)))})))
+                                 :actor       (:actor request)})
+          saved (str "Saved " n (if (= 1 n) " assignment." " assignments."))]
+      {:replace (store/read store (fn [db] (assign-form db [saved] :ok)))})))
 
 (lib/defaction remove-assignment [{:keys [store]} request]
   (store/write! store {:command    :assignment/remove

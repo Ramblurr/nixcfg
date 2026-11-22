@@ -82,6 +82,30 @@
                                 :section (get section-labels (get-in f [:section :id]))})
                              fields)}))))
 
+(defn- field-label [{:keys [id label]}]
+  (if (str/blank? label) id label))
+
+(defn titles
+  "Returns the current vault, item and field titles of `credentials` as
+  maps of `:name`, `:vault-title`, `:item-title` and `:field-label`. Skips
+  a credential whose vault, item or field Connect does not have. Throws
+  when Connect is unavailable."
+  [client credentials]
+  (let [vault-names (into {} (map (juxt :id :name)) (vaults client))]
+    (vec (for [{:keys [name vault field] item-id :item} credentials
+               :let [i (when (vault-names vault)
+                         (try
+                           (item client vault item-id)
+                           (catch clojure.lang.ExceptionInfo e
+                             (when-not (= 404 (:status (ex-data e)))
+                               (throw e)))))
+                     f (first (filter #(= field (:id %)) (:fields i)))]
+               :when f]
+           {:name        name
+            :vault-title (vault-names vault)
+            :item-title  (:title i)
+            :field-label (field-label f)}))))
+
 (defn error-message
   "Returns the message of a Connect failure `e`, or nil for other errors."
   [e]

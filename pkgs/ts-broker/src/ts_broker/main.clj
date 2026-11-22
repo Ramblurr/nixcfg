@@ -13,7 +13,8 @@
    [ts-broker.lib :as lib]
    [ts-broker.pages :as pages])
   (:import
-   [java.time Instant]))
+   [java.time Instant]
+   [java.util.concurrent ScheduledThreadPoolExecutor TimeUnit]))
 
 (def spec
   {:db                 {:desc    "SQLite database file"
@@ -53,9 +54,20 @@
     (println message))
   (System/exit 2))
 
+(defn- refresh-titles!
+  "Updates the stored 1Password titles of every credential from Connect."
+  [{:keys [store connect]}]
+  (try
+    (store/write! store {:command :credential/titles
+                         :titles  (connect/titles connect (store/read store store/credentials))})
+    (catch Exception e
+      (binding [*out* *err*]
+        (println "ts-broker: title refresh failed:" (ex-message e))))))
+
 (defn start!
-  "Starts the store, the decide socket and the UI from parsed `opts`.
-  Returns the running system for [[stop!]]."
+  "Starts the store, the decide socket and the UI from parsed `opts`. With
+  a Connect URL it also refreshes the credentials' 1Password titles at
+  start and every 10 minutes. Returns the running system for [[stop!]]."
   [opts]
   (let [token (some-> (token-file opts) slurp str/trim)
         st (store/start! (:db opts) {})
@@ -63,13 +75,17 @@
              :clock   #(Instant/now)
              :connect (some-> (:connect-url opts) (connect/client token))}]
     {:store  st
+     :titles (when (:connect ctx)
+               (doto (ScheduledThreadPoolExecutor. 1)
+                 (.scheduleWithFixedDelay #(refresh-titles! ctx) 0 10 TimeUnit/MINUTES)))
      :socket (socket/start! st (:socket opts) {})
      :http   (http/start! (merge (lib/routes 'ts-broker.pages 'ts-broker.actions)
                                  {:port (:port opts) :ctx ctx :css pages/css :datastar-js (datastar-js)}))}))
 
 (defn stop!
   "Stops `system`."
-  [{:keys [store socket http]}]
+  [{:keys [store socket http ^ScheduledThreadPoolExecutor titles]}]
+  (some-> titles .shutdownNow)
   (http/stop! http)
   (socket/stop! socket)
   (store/stop! store))

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -150,7 +151,7 @@ func (b *liveBroker) stop() {
 }
 
 // post sends a UI action as the browser on the tailscale serve origin does.
-func (b *liveBroker) post(t *testing.T, path string, form url.Values) {
+func (b *liveBroker) post(t *testing.T, path string, form url.Values) string {
 	t.Helper()
 	req, err := http.NewRequest("POST", b.ui+path, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -169,14 +170,22 @@ func (b *liveBroker) post(t *testing.T, path string, form url.Values) {
 	if resp.StatusCode != 200 {
 		t.Fatalf("POST %s: %d %s", path, resp.StatusCode, body)
 	}
+	return string(body)
 }
 
-func (b *liveBroker) credential(t *testing.T, name, hosts string) {
+var createdRE = regexp.MustCompile(`/credential\?name=(BRK_[A-Z2-7]{8})&created=true`)
+
+func (b *liveBroker) credential(t *testing.T, hosts string) string {
 	t.Helper()
-	b.post(t, "/action/create-credential", url.Values{
-		"name": {name}, "vault": {contractVault}, "item": {contractItem}, "field": {contractField},
+	body := b.post(t, "/action/create-credential", url.Values{
+		"vault": {contractVault}, "item": {contractItem}, "field": {contractField},
 		"header": {"Authorization"}, "hosts": {hosts},
 	})
+	m := createdRE.FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("create did not move to a new credential: %s", body)
+	}
+	return m[1]
 }
 
 func (b *liveBroker) assign(t *testing.T, credential, subject, approval string) {
@@ -204,9 +213,9 @@ func TestBrokerContract(t *testing.T) {
 	ok := func(w http.ResponseWriter, _ *http.Request) { _, _ = io.WriteString(w, "ok\n") }
 	h := newHarness(t, true, openRule(), store, ok, withBroker(b.socket))
 
-	b.credential(t, "GITHUB_TOKEN", "example.com")
-	b.credential(t, "ELSEWHERE_TOKEN", "api.elsewhere.example")
-	b.assign(t, "ELSEWHERE_TOKEN", "group:agents", "auto")
+	github := b.credential(t, "example.com")
+	elsewhere := b.credential(t, "api.elsewhere.example")
+	b.assign(t, elsewhere, "group:agents", "auto")
 
 	type outcome struct {
 		code     int
@@ -252,43 +261,43 @@ func TestBrokerContract(t *testing.T) {
 	t.Run("deny reasons reach the egress audit", func(t *testing.T) {
 		h.setCaller(contractCaller([]string{"agents"}, "tag:t3-alice"))
 		check(t, send(t, "NO_SUCH_TOKEN", "Bearer %p"), deny("NO_SUCH_TOKEN", "unknown"))
-		check(t, send(t, "ELSEWHERE_TOKEN", "Bearer %p"), deny("ELSEWHERE_TOKEN", "host"))
-		check(t, send(t, "GITHUB_TOKEN", "Bearer %p"), deny("GITHUB_TOKEN", "unassigned"))
+		check(t, send(t, elsewhere, "Bearer %p"), deny(elsewhere, "host"))
+		check(t, send(t, github, "Bearer %p"), deny(github, "unassigned"))
 	})
 
 	t.Run("an identity assignment matches the sorted tags", func(t *testing.T) {
-		b.assign(t, "GITHUB_TOKEN", "tag:t3-alice,tag:t3-zed", "auto")
+		b.assign(t, github, "tag:t3-alice,tag:t3-zed", "auto")
 		h.setCaller(contractCaller([]string{"nobody"}, "tag:t3-zed", "tag:t3-alice"))
-		check(t, send(t, "GITHUB_TOKEN", "token %p"), outcome{code: 200, body: "ok\n",
-			upstream: "token " + contractSecret, broker: `[{"credential":"GITHUB_TOKEN","decision":"allow"}]`})
+		check(t, send(t, github, "token %p"), outcome{code: 200, body: "ok\n",
+			upstream: "token " + contractSecret, broker: `[{"credential":"` + github + `","decision":"allow"}]`})
 	})
 
 	t.Run("a pending id is the one the UI approves and a wrong header does not spend it", func(t *testing.T) {
-		b.assign(t, "GITHUB_TOKEN", "group:agents", "ask")
+		b.assign(t, github, "group:agents", "ask")
 		h.setCaller(contractCaller([]string{"agents"}, "tag:t3-alice"))
-		first := send(t, "GITHUB_TOKEN", "Bearer %p")
+		first := send(t, github, "Bearer %p")
 		id := strings.TrimSuffix(strings.TrimPrefix(first.body, "approval-pending "), "\n")
 		check(t, first, outcome{code: 403, body: "approval-pending " + id + "\n",
-			broker: `[{"approval":"` + id + `","credential":"GITHUB_TOKEN","decision":"pending"}]`})
-		check(t, send(t, "GITHUB_TOKEN", "Bearer %p"), first)
+			broker: `[{"approval":"` + id + `","credential":"` + github + `","decision":"pending"}]`})
+		check(t, send(t, github, "Bearer %p"), first)
 
 		b.approval(t, id, "approve")
-		check(t, sendIn(t, "X-Other", "GITHUB_TOKEN", "Bearer %p"), deny("GITHUB_TOKEN", "header"))
-		check(t, send(t, "GITHUB_TOKEN", "Bearer %p"), outcome{code: 200, body: "ok\n", upstream: "Bearer " + contractSecret,
-			broker: `[{"approval":"` + id + `","credential":"GITHUB_TOKEN","decision":"allow"}]`})
+		check(t, sendIn(t, "X-Other", github, "Bearer %p"), deny(github, "header"))
+		check(t, send(t, github, "Bearer %p"), outcome{code: 200, body: "ok\n", upstream: "Bearer " + contractSecret,
+			broker: `[{"approval":"` + id + `","credential":"` + github + `","decision":"allow"}]`})
 
-		again := send(t, "GITHUB_TOKEN", "Bearer %p")
+		again := send(t, github, "Bearer %p")
 		next := strings.TrimSuffix(strings.TrimPrefix(again.body, "approval-pending "), "\n")
 		if next == id || again.code != 403 {
 			t.Fatalf("the once approval %s was not spent: %+v", id, again)
 		}
 		b.approval(t, next, "block")
-		check(t, send(t, "GITHUB_TOKEN", "Bearer %p"), deny("GITHUB_TOKEN", "blocked"))
+		check(t, send(t, github, "Bearer %p"), deny(github, "blocked"))
 	})
 
 	t.Run("a stopped broker fails closed", func(t *testing.T) {
 		h.setCaller(contractCaller([]string{"nobody"}, "tag:t3-zed", "tag:t3-alice"))
 		b.stop()
-		check(t, send(t, "GITHUB_TOKEN", "token %p"), deny("GITHUB_TOKEN", reasonBrokerUnavailable))
+		check(t, send(t, github, "token %p"), deny(github, reasonBrokerUnavailable))
 	})
 }
