@@ -170,6 +170,7 @@
 
 (defn- create-form [vault item]
   [:form.stack {:data-ignore-morph       true
+                :data-indicator          "_creating"
                 :data-on:submit__prevent (lib/form-post actions/create-credential)}
    [:input {:type "hidden" :name "vault" :value (:id vault)}]
    [:input {:type "hidden" :name "item" :value (:id item)}]
@@ -177,7 +178,7 @@
    (actions/credential-form-fields nil)
    [:p.muted "The broker generates the credential's placeholder, which tells nothing about the item."]
    (actions/feedback "create-feedback" nil)
-   [:div.actions [:button {:type "submit"} "Create credential"]]])
+   [:div.actions [:button {:data-attr:disabled "$_creating" :type "submit"} "Create credential"]]])
 
 (lib/defview catalog-page
   "Renders the 1Password catalog: vaults, then the items of the vault in the

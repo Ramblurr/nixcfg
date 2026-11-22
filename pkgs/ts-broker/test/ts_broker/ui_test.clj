@@ -150,6 +150,12 @@
       (is (re-find #"data: mode replace\ndata: elements <div class=\"feedback\" [^>]*id=\"create-feedback\"[^>]*><div class=\"message error\"><p>Host is a reserved header"
                    body)))))
 
+(deftest the-create-button-is-disabled-while-its-request-is-in-flight
+  (let [page (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")
+        [_ signal] (re-find #"<form [^>]*data-indicator=\"(\w+)\"[^>]*data-on:submit__prevent=\"@post\(&apos;/action/create-credential&apos;" page)]
+    (is (some? signal) "the create form sets a signal while its request is in flight")
+    (is (str/includes? page (str "<button data-attr:disabled=\"$" signal "\" type=\"submit\">Create credential</button>")))))
+
 (defn- seed-credential! []
   (store/write! *store* {:command :credential/create :actor "casey@github"
                          :credential {:name "GITHUB_TOKEN" :vault "v" :item "i" :field "f"
