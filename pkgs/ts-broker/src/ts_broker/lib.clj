@@ -52,9 +52,15 @@
 
 (defn routes
   "Returns the pages and actions defined in the namespaces `nss` as
-  `{:pages {path {:title t :fn f}} :actions {path f}}`."
+  `{:pages {path {:title t :fn f}} :actions {path f}}`. Throws when two
+  definitions share a path."
   [& nss]
-  (let [vars (mapcat (comp vals ns-publics) nss)]
+  (let [vars (filter #(some (meta %) [::view ::action]) (mapcat (comp vals ns-publics) nss))
+        shared (for [[path vs] (sort-by key (group-by deref vars))
+                     :when (next vs)]
+                 (str path " (" (str/join ", " (map symbol vs)) ")"))]
+    (when (seq shared)
+      (throw (ex-info (str "Two definitions share a route: " (str/join ", " shared) ".") {:routes shared})))
     {:pages   (into {} (keep #(some->> (::view (meta %)) (vector @%))) vars)
      :actions (into {} (keep #(some->> (::action (meta %)) :fn (vector @%))) vars)}))
 

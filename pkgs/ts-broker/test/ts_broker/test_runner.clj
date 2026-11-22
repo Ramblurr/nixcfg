@@ -3,11 +3,12 @@
   (:require
    [clojure.test :as t]
    [ts-broker.domain-test]
+   [ts-broker.lib-test]
    [ts-broker.store-test]
    [ts-broker.ui-test]))
 
 (defn run
   "Runs the tests and returns the number of failures and errors."
   []
-  (let [{:keys [fail error]} (t/run-tests 'ts-broker.domain-test 'ts-broker.store-test 'ts-broker.ui-test)]
+  (let [{:keys [fail error]} (t/run-tests 'ts-broker.domain-test 'ts-broker.lib-test 'ts-broker.store-test 'ts-broker.ui-test)]
     (+ fail error)))
