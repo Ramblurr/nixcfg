@@ -44,5 +44,6 @@ in
     "ca-key" = "op://LLM/ts-egress-ca/private-key";
     "op-connect-token" = "op://LLM/ts-egress-connect/credential";
     "ts-authkey" = "op://LLM/ts-egress-authkey/credential";
+    "ts-broker-authkey" = "op://LLM/ts-broker-authkey/credential";
   };
 }
