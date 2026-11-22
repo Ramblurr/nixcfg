@@ -952,14 +952,46 @@ func TestUDPSessionLimitDropsWarnOnce(t *testing.T) {
 		_ = client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 		_, _ = client.Read(make([]byte, 1))
 	}
-	var warns []map[string]any
-	for _, l := range logs.lines(t) {
-		if l["level"] == "WARN" {
-			warns = append(warns, l)
+	warns := func() []map[string]any {
+		var w []map[string]any
+		for _, l := range logs.lines(t) {
+			if l["level"] == "WARN" {
+				w = append(w, l)
+			}
 		}
+		return w
 	}
-	if len(warns) != 1 || warns[0]["dropped"] != float64(1) {
-		t.Fatalf("warnings = %v, want one for the first drop", warns)
+	if w := warns(); len(w) != 1 || w[0]["dropped"] != float64(1) {
+		t.Fatalf("warnings = %v, want one for the first drop", w)
+	}
+	// After the interval the next drop reports every drop since.
+	s.udpMu.Lock()
+	s.udpWarned = s.udpWarned.Add(-udpDropWarnEvery)
+	s.udpMu.Unlock()
+	client, _ := udpSession(ctx, s, "100.100.1.1:4000", "198.51.100.5:7")
+	defer client.Close()
+	_ = client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	_, _ = client.Read(make([]byte, 1))
+	if w := warns(); len(w) != 2 || w[1]["dropped"] != float64(5) {
+		t.Fatalf("warnings = %v, want a second reporting 5 drops", w)
+	}
+}
+
+// DNS from a caller the egress cannot identify is denied, and the denied
+// exchange gives back its slot as soon as an answered one would.
+func TestDeniedDNSFromNewPortsOutlastsTheSessionBound(t *testing.T) {
+	s, _ := newServer(whoWith(), "127.0.0.1:1")
+	s.UDPIdle = time.Hour
+	s.MaxUDPSessionsPerCaller = 1
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	for i := range 3 {
+		client, _ := udpSession(ctx, s, fmt.Sprintf("100.100.9.9:%d", 10000+i), "100.100.100.100:53")
+		defer client.Close()
+		if _, err := client.Write(query(t, "svc.test.")); err != nil {
+			t.Fatalf("query %d not taken: %v", i, err)
+		}
+		time.Sleep(300 * time.Millisecond)
 	}
 }
 
@@ -982,8 +1014,16 @@ func TestDNSQueriesFromNewPortsOutlastTheSessionBound(t *testing.T) {
 		if _, err := client.Write(q); err != nil {
 			t.Fatalf("query %d not taken: %v", i, err)
 		}
-		if _, err := client.Read(resp); err != nil {
+		n, err := client.Read(resp)
+		if err != nil {
 			t.Fatalf("query %d not answered: %v", i, err)
+		}
+		var m dnsmessage.Message
+		if err := m.Unpack(resp[:n]); err != nil || len(m.Answers) != 1 {
+			t.Fatalf("query %d answer = %+v, %v; want one A record", i, m.Answers, err)
+		}
+		if a, ok := m.Answers[0].Body.(*dnsmessage.AResource); !ok || a.A != [4]byte{198, 51, 100, 5} {
+			t.Fatalf("query %d answered %v, want 198.51.100.5", i, m.Answers[0].Body)
 		}
 		time.Sleep(time.Millisecond)
 	}
