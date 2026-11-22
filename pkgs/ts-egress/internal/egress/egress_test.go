@@ -934,6 +934,32 @@ func TestUDPSessionLimits(t *testing.T) {
 	}
 }
 
+// A DNS exchange does not hold its session slot for UDPIdle. Clients
+// such as ts-plug send each query from a new port, so a caller that
+// resolves more names than the per-caller bound within UDPIdle still gets
+// every answer. The tenant never closes its end, as in netstack.
+func TestDNSQueriesFromNewPortsOutlastTheSessionBound(t *testing.T) {
+	resolver, _ := fakeResolver(t, map[string][4]byte{"svc.test.": {198, 51, 100, 5}})
+	s, _ := newServer(whoWith(`{"dns":{"allow":"rules"},"tls":[{"hosts":["svc.test"],"ports":[443]}]}`), resolver)
+	s.UDPIdle = time.Minute
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	q := query(t, "svc.test.")
+	resp := make([]byte, 512)
+	for i := range defaultMaxUDPSessionsPerCaller + 100 {
+		client, _ := udpSession(ctx, s, fmt.Sprintf("100.100.1.1:%d", 10000+i), "100.100.100.100:53")
+		defer client.Close()
+		_ = client.SetDeadline(time.Now().Add(2 * time.Second))
+		if _, err := client.Write(q); err != nil {
+			t.Fatalf("query %d not taken: %v", i, err)
+		}
+		if _, err := client.Read(resp); err != nil {
+			t.Fatalf("query %d not answered: %v", i, err)
+		}
+		time.Sleep(time.Millisecond)
+	}
+}
+
 // When one direction of a splice fails, both connections close, so the
 // other direction cannot hang on a silent peer.
 func TestSpliceClosesBothEndsOnCopyError(t *testing.T) {
