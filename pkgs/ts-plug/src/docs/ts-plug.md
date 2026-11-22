@@ -335,6 +335,16 @@ When requests come through ts-plug, these headers are added:
 - `Tailscale-User-Login` - User's login email
 - `Tailscale-User-Name` - User's display name
 - `Tailscale-User-Profile-Pic` - URL to user's profile picture
+- `Tailscale-Node-Name` - The calling node's MagicDNS name, such as
+  `laptop.tailnet-name.ts.net`
+- `Tailscale-Node-Tags` - The calling node's tags, comma-separated, such as
+  `tag:ci,tag:prod`
+
+ts-plug sets every one of these on every request, replacing any value the
+client sent, and leaves a header empty when it does not apply or the WhoIs
+lookup fails. A tagged node has no user, so its `Tailscale-User-*` headers
+are empty and `Tailscale-Node-Tags` names it. A user's device has empty
+`Tailscale-Node-Tags`.
 
 Your server can use these for authentication:
 

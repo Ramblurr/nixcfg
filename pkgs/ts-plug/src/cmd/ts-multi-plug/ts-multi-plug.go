@@ -466,26 +466,32 @@ func createReverseProxy(portMap *PortMapFlag) *httputil.ReverseProxy {
 // createWhoisHandler creates an HTTP handler that injects Tailscale user information
 func createWhoisHandler(lc *local.Client, proxy *httputil.ReverseProxy) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var ul, dn, pp string
+		var ul, dn, pp, nn, nt string
 
 		who, err := lc.WhoIs(r.Context(), r.RemoteAddr)
 		if err != nil {
 			slog.Error("whois lookup failed", "error", err, "remote", r.RemoteAddr)
-		} else if who.UserProfile != nil && who.UserProfile.LoginName != "tagged-devices" {
+		} else {
 			slog.Debug("set Tailscale-* headers",
 				slog.String("remote", r.RemoteAddr),
-				slog.String("id", who.UserProfile.ID.String()),
+				slog.String("node", string(who.Node.StableID)),
 			)
 
-			ul = who.UserProfile.LoginName
-			dn = who.UserProfile.DisplayName
-			pp = who.UserProfile.ProfilePicURL
+			nn = strings.TrimSuffix(who.Node.Name, ".")
+			nt = strings.Join(who.Node.Tags, ",")
+			if !who.Node.IsTagged() {
+				ul = who.UserProfile.LoginName
+				dn = who.UserProfile.DisplayName
+				pp = who.UserProfile.ProfilePicURL
+			}
 		}
 
 		// always populate the headers, even if blank for security reasons.
 		r.Header.Set("Tailscale-User-Login", ul)
 		r.Header.Set("Tailscale-User-Name", dn)
 		r.Header.Set("Tailscale-User-Profile-Pic", pp)
+		r.Header.Set("Tailscale-Node-Name", nn)
+		r.Header.Set("Tailscale-Node-Tags", nt)
 
 		proxy.ServeHTTP(w, r)
 	}
