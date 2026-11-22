@@ -132,10 +132,21 @@
 
 (declare assign)
 
+(defn- option
+  "Returns the labelled checkbox of the assign form for parameter `k` and
+  `value`. The box and its label have ids made from `value`, so a morph
+  that reorders the boxes keeps each tick on its own box."
+  [k value & label]
+  (let [id (str "assign-" (name k) "-" (apply str (map #(format "%02x" %) (.getBytes (str value) "UTF-8"))))]
+    (into [:label.option {:id (str id "-label")}
+           [:input {:id id :type "checkbox" :name (name k) :value value}] " "]
+          label)))
+
 (defn assign-form
   "Returns the bulk assignment form with the credentials and subjects in
   reader connection `db`, and `messages` of `kind` in its [[feedback]].
-  Live re-renders keep the ticked boxes and skip the typed subjects."
+  Live re-renders keep the ticked boxes, even when they move, and skip the
+  typed subjects."
   [db messages kind]
   (let [creds (store/credentials db)
         subjects (known-subjects (store/assignments db) (store/identities db))]
@@ -145,13 +156,12 @@
        [:legend [:span.step "1"] "Credentials"]
        (if (seq creds)
          (for [{:keys [name] :as c} (sort-by (comp str/lower-case domain/title) creds)]
-           [:label.option [:input {:type "checkbox" :name "credential" :value name}] " " (domain/title c)
-            " " [:small [:code name]]])
+           (option :credential name (domain/title c) " " [:small [:code name]]))
          [:p.muted "No credentials yet."])]
       [:fieldset
        [:legend [:span.step "2"] "Subjects"]
        (for [s subjects]
-         [:label.option [:input {:type "checkbox" :name "subject" :value s}] " " [:code s]])
+         (option :subject s [:code s]))
        [:label "Other subjects" [:small.muted " group:name or an identity such as tag:t3-alice, one per line"]
         [:textarea#other-subjects {:name "subjects" :rows 2 :data-ignore-morph true}]]]
       [:fieldset

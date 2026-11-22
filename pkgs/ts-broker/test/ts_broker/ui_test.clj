@@ -212,6 +212,38 @@
     (is (re-find #"</fieldset></div><div class=\"form-footer\"><button type=\"submit\">Assign</button>" form))
     (is (= 3 (count (re-seq #"<fieldset>" form))))))
 
+(defn- options
+  "Returns the checkboxes of the assign form in `html`, in page order, as
+  maps of their value, id and label id."
+  [html]
+  (for [[_ label-id input] (re-seq #"<label class=\"option\"(?: id=\"([^\"]+)\")?><(input [^>]*type=\"checkbox\"[^>]*)>" html)
+        :let [attr #(second (re-find (re-pattern (str " " % "=\"([^\"]+)\"")) input))]]
+    {:value (attr "value") :id (attr "id") :label-id label-id}))
+
+(defn- ids [html]
+  (into {} (map (juxt :value (juxt :id :label-id))) (options html)))
+
+(deftest assign-checkboxes-keep-their-ids-when-a-re-render-reorders-them
+  (doseq [[name title] [["BRK_AAAAAAAA" "Apple"] ["BRK_BBBBBBBB" "Berry"]]]
+    (store/write! *store* {:command :credential/create :actor "casey@github"
+                           :credential {:name name :vault "v" :item name :field "f"
+                                        :vault-title "Agents" :item-title title :field-label "credential"
+                                        :header "Authorization" :hosts ["api.example.com"]}}))
+  (form-post actions/assign {:credential "BRK_AAAAAAAA" :subjects "tag:t3-bob" :mode "inject" :approval "ask"})
+  (let [before (render "/assign")]
+    (store/write! *store* {:command :credential/titles
+                           :titles  [{:name "BRK_AAAAAAAA" :vault-title "Agents" :item-title "Zebra"
+                                      :field-label "credential"}]})
+    (form-post actions/assign {:credential "BRK_AAAAAAAA" :subjects "tag:t3-alice" :mode "inject" :approval "ask"})
+    (let [after (render "/assign")]
+      (is (= [["BRK_AAAAAAAA" "BRK_BBBBBBBB" "tag:t3-bob"]
+              ["BRK_BBBBBBBB" "BRK_AAAAAAAA" "tag:t3-alice" "tag:t3-bob"]]
+             (map #(map :value (options %)) [before after]))
+          "the rename and the new subject move the boxes")
+      (is (= (ids before) (select-keys (ids after) (keys (ids before))))
+          "each box and its label keep their ids, so morphing keeps a tick on its own box")
+      (is (apply distinct? (mapcat val (ids after)))))))
+
 (defn- open-stream
   "Opens the page stream of `path` and returns a function that returns its
   next event, and closes it on `:close`."
