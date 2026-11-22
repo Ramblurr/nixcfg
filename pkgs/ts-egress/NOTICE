@@ -1,0 +1,23 @@
+ts-egress
+
+This program contains code adapted from iron-proxy
+(https://github.com/ironsh/iron-proxy), Copyright 2025 The iron-proxy
+Authors, licensed under the Apache License, Version 2.0
+(LICENSE.iron-proxy in this directory). Source commit:
+c32e47d653256ad7b1638214f60b5859ff94b268.
+
+Adapted files, each keeping the Apache-2.0 header and naming its origin:
+
+- internal/policy/hostmatch.go   from internal/hostmatch/hostmatch.go
+- internal/policy/dialguard.go   from internal/dnsguard/dnsguard.go
+- internal/egress/snipeek.go     from internal/proxy/snipeek.go
+- internal/egress/leaves.go      from internal/certcache/cache.go
+
+Smaller adaptations, credited where they appear:
+
+- policy.ParseOPRef              from ParseOPRef in
+                                 internal/transform/secrets/op_connect_resolver.go
+- internal/secrets/connect.go    field selection from SelectConnectField in
+                                 the same file
+- egress.basicPayload            from decodeBasicAuth in
+                                 internal/transform/secrets/secrets.go

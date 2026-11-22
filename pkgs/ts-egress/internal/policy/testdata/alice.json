@@ -1,0 +1,79 @@
+{
+  "http": [
+    {
+      "hosts": [
+        "api.github.com"
+      ],
+      "ports": [
+        443
+      ],
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "credentials": [
+        {
+          "name": "GITHUB_TOKEN",
+          "secret": "op://LLM/github-test/credential",
+          "inject": {
+            "header": "Authorization",
+            "format": "Bearer {secret}"
+          }
+        }
+      ]
+    },
+    {
+      "hosts": [
+        "httpbin.org"
+      ],
+      "ports": [
+        443
+      ],
+      "credentials": [
+        {
+          "name": "DUMMY_TOKEN",
+          "secret": "literal:egress-dummy-value",
+          "inject": {
+            "header": "X-Dummy-Token",
+            "format": "{secret}"
+          }
+        }
+      ]
+    }
+  ],
+  "tls": [
+    {
+      "hosts": [
+        "registry.npmjs.org",
+        "github.com",
+        "*.githubusercontent.com"
+      ],
+      "ports": [
+        443
+      ]
+    }
+  ],
+  "tcp": [
+    {
+      "hosts": [
+        "github.com"
+      ],
+      "ports": [
+        22
+      ]
+    }
+  ],
+  "udp": [
+    {
+      "cidrs": [
+        "162.159.200.1/32"
+      ],
+      "ports": [
+        123
+      ]
+    }
+  ],
+  "dns": {
+    "allow": "rules"
+  }
+}

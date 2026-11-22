@@ -73,6 +73,7 @@ inputs: [
       #java-mission-control = prev.callPackage ./java-mission-control { };
       netns-proxy = prev.callPackage ./netns-proxy.nix { };
       ts-plug = prev.callPackage ./ts-plug/package.nix { };
+      ts-egress = prev.callPackage ./ts-egress/package.nix { };
       mcp-inspector = prev.lib.callPackageWith (
         prev // { inherit pkgs-lib; }
       ) ./mcp-inspector/package.nix { };

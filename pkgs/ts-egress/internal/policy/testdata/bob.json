@@ -1,0 +1,15 @@
+{
+  "tls": [
+    {
+      "hosts": [
+        "registry.npmjs.org"
+      ],
+      "ports": [
+        443
+      ]
+    }
+  ],
+  "dns": {
+    "allow": "rules"
+  }
+}

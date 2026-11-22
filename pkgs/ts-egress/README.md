@@ -1,0 +1,212 @@
+# ts-egress
+
+A Tailscale exit node that decides every outbound TCP, UDP and DNS flow from
+rules in the tailnet policy file, and adds API credentials to HTTPS requests
+so the client never holds them.
+
+## The problem
+
+You run coding agents, or any workload you only half trust, and you want to
+know and limit what it talks to on the internet. Each agent needs a few things:
+a package registry, GitHub over HTTPS and SSH, maybe an NTP server. It also
+needs API tokens, and anything an agent can read it can also leak.
+
+The usual answers each fall short. A proxy set in `HTTPS_PROXY` is skipped by
+any program that ignores the variable. A firewall allowlist on IP addresses
+breaks when a CDN moves. A token in the environment is visible to every
+process and every prompt.
+
+## Why this exists
+
+Tailscale already knows who each machine is. An exit node already carries all
+of a machine's internet traffic. ts-egress puts the policy where the identity
+lives:
+
+- Rules are a grant capability (`moot.land/cap/egress`) in the tailnet policy
+  file. The egress reads them for each flow with WhoIs, so one policy file
+  says both who may reach the egress and what each caller may do through it.
+  There is no local rule file and no fallback: a caller without the
+  capability gets nothing.
+- The decision runs on the egress host, away from the client. Killing or
+  tampering with the tenant's Tailscale client cannot loosen the rules. At
+  most it cuts the tenant off. Stopping a tenant from going around the exit
+  node is the tenant host's job: in this repository `guests/t3-users` does it
+  with nftables.
+- Secrets stay on the egress. The tenant holds a placeholder such as
+  `TS_EGRESS_PLACEHOLDER_GITHUB_TOKEN`, and the egress swaps in the real
+  value on the way out, only for the hosts, methods and paths the rule names.
+
+## What it does
+
+The exit node forwards nothing by itself. nftables TPROXY hands every TCP and
+UDP flow that arrives from the tailnet to ts-egress, which looks up the
+caller and its rules and then does one of these:
+
+| Rule kind | Matches | What happens |
+|-----------|---------|--------------|
+| `dns` | any question on port 53 | `"allow": "rules"` forwards names some other rule covers. Every other name gets REFUSED with Extended DNS Error 15 (Blocked). |
+| `tls` | TLS by SNI host and port | Relayed undecrypted. |
+| `http` | TLS by SNI, or plain HTTP by Host | Decrypted with a leaf from the egress CA, checked per request (method, path, Host equal to SNI), credentials injected, then sent upstream. |
+| `tcp`, `udp` | host or CIDR, and port | Relayed as raw bytes or datagrams. A host matches only addresses the caller resolved through this egress. |
+| `deny` | CIDRs or hosts | Refused before any allow rule. |
+| `private` | RFC 1918 and ULA ranges | Blocked unless every grant sets `"block": false` or `allow` reopens a range. |
+
+Some destinations are refused whatever the rules say: loopback, link-local
+(cloud metadata included), the Tailscale ranges, multicast, broadcast and the
+egress host's addresses. UDP to port 443 of an `http` host is refused, so
+clients fall back from QUIC to TLS, which the egress can read.
+
+Every flow and every decrypted request writes one JSON line to stdout with
+the caller's node name and tags, the verdict, the rule or reason, and byte
+counts. A DNS line carries the question.
+
+A rule for one tagged tenant looks like this in the policy file:
+
+```jsonc
+{
+  "src": ["tag:t3-alice"],
+  "dst": ["tag:egress"],
+  "app": {
+    "moot.land/cap/egress": [{
+      "http": [{
+        "hosts": ["api.github.com"], "ports": [443], "methods": ["GET", "HEAD"],
+        "credentials": [{
+          "name": "GITHUB_TOKEN",
+          "secret": "op://LLM/github-test/credential",
+          "inject": {"header": "Authorization", "format": "Bearer {secret}"}
+        }]
+      }],
+      "tls": [{"hosts": ["registry.npmjs.org", "github.com"], "ports": [443]}],
+      "tcp": [{"hosts": ["github.com"], "ports": [22]}],
+      "udp": [{"cidrs": ["162.159.200.1/32"], "ports": [123]}],
+      "dns": {"allow": "rules"}
+    }]
+  }
+}
+```
+
+With that grant, `curl -H "Authorization: Bearer $GITHUB_TOKEN"
+https://api.github.com/user` works from the tenant while `$GITHUB_TOKEN`
+holds only the placeholder. Sent to another `http` host, whose rule does not
+list `GITHUB_TOKEN`, the placeholder is refused with 403. `curl
+https://example.com` fails at DNS.
+
+### Credentials
+
+A credential's `secret` is `op://vault/item/[section/]field`, read through
+1Password Connect, or `literal:value` for tests. The egress replaces
+placeholders in request header values, including inside a Basic
+`Authorization` payload. When the inject header is missing it sets it from
+`format`. A placeholder in the URL, in a header that routes the request
+(`Host`, `Cookie` and similar), or for a credential the rule does not list
+refuses the request. Bodies are not searched.
+
+Response headers on a credentialed request have the secret value replaced
+with the placeholder. This is a courtesy for servers that echo a token back,
+and it does not stop a determined leak. Bodies, compression and streaming
+pass through unchanged.
+
+## Quick start
+
+ts-egress is built for NixOS with `modules/services/ts-egress.nix` in this
+repository. You need a tailnet where you can edit the policy file, a host or
+VM for the egress, and an auth key for the tag it will advertise.
+
+1. In the policy file, define the tag, auto-approve it as an exit node, and
+   route the tenant through it:
+
+   ```jsonc
+   "tagOwners": { "tag:egress": ["autogroup:admin"] },
+   "autoApprovers": { "exitNode": ["tag:egress"] },
+   "grants": [
+     { "src": ["tag:t3-alice"], "dst": ["autogroup:internet"], "ip": ["*"], "via": ["tag:egress"] }
+     // plus a moot.land/cap/egress grant like the one above
+   ]
+   ```
+
+2. On the egress host:
+
+   ```nix
+   {
+     imports = [ ./modules/services/ts-egress.nix ];
+     services.resolved.enable = true; # the module requires it
+     modules.services.ts-egress = {
+       enable = true;
+       dnsUpstream = "1.1.1.1:53";
+       selfAddresses = [ "192.0.2.10" ]; # the host's LAN addresses
+     };
+   }
+   ```
+
+   Put the auth key at `/run/host-secrets/ts-authkey`, or point
+   `authKeyFile` elsewhere. The module starts tailscaled as an exit node with
+   `tag:egress`, installs the TPROXY rules, and runs ts-egress.
+
+3. On the tenant, use the egress as its exit node:
+   `tailscale set --exit-node=egress`.
+
+From the tenant, `curl https://registry.npmjs.org/` works and
+`curl https://example.com/` fails. `journalctl -u ts-egress` on the egress
+shows one line for each, the second with `"verdict":"deny"`.
+
+To use `http` rules, also set `ca.enable = true` with the CA certificate and
+key as credentials, and have the tenant trust that certificate. To use
+`op://` secrets, set `onepassword.url` and supply a Connect token.
+
+## Configuration
+
+The program takes `-config <file.json>` and `-log-level`. The NixOS module
+writes the file. It holds no secrets: those arrive as systemd credentials,
+read from `$CREDENTIALS_DIRECTORY`, and a credential the file names but
+systemd did not provide stops startup.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `dnsUpstream` | required | Resolver, as `host:port`, for permitted questions. |
+| `tcpListen`, `udpListen` | `0.0.0.0:15001`, `[::]:15001` | Where TPROXY delivers flows. |
+| `tailscaledSocket` | `/var/run/tailscale/tailscaled.sock` | Local API used for WhoIs. |
+| `self` | none | The host's own addresses, added to the refused set. |
+| `identityTTL` | `15s` | How long a caller's rules are cached. A revoked grant takes effect within this time. |
+| `peekTimeout` | `5s` | How long to wait for a TLS ClientHello or HTTP request line. |
+| `udpIdle` | `1m` | Idle time before a UDP session closes. |
+| `helper` | off | CONNECT helper: `listen`, `hosts`, `ports`. |
+| `ca` | off | `certCredential`, `keyCredential`: names of the CA credentials. Enables `http` rules. |
+| `onepassword` | off | `url`, `tokenCredential`, `secretTTL`: Connect API for `op://` secrets. |
+
+Unknown keys are an error.
+
+The helper is an allow-only CONNECT proxy for Tailscale's control and DERP
+hosts. A tenant whose Tailscale client must reach the control plane
+before it can use the exit node goes through it. It has no notion of caller,
+so it allows only the listed hosts and ports.
+
+## Limitations
+
+- Linux only: it needs TPROXY, `IP_TRANSPARENT` and an nftables ruleset.
+- Rules apply per caller. Two tenants behind one Tailscale node share one
+  identity and one rule set.
+- `tcp` and `udp` host rules depend on the caller resolving the name through
+  the egress first. A hard-coded IP needs a CIDR rule.
+- `http` rules mean the tenant must trust the egress CA, and anything pinning
+  certificates will fail on decrypted hosts.
+- A flow to an allowed name on a port no rule lists has its connection
+  closed, which clients report as a generic connection failure.
+- One 1Password Connect token serves every caller's `op://` references, so
+  the policy file decides which items a caller can use. Give the egress a
+  dedicated Connect token and vault.
+
+## Development
+
+```sh
+go test ./...
+nix build .#ts-egress .#checks.x86_64-linux.ts-egress
+
+# TPROXY end-to-end test in a throwaway user and network namespace, no root
+nix shell nixpkgs#go nixpkgs#iproute2 nixpkgs#nftables -c scripts/tproxy-e2e.sh
+```
+
+## License
+
+Apache-2.0. Parts are adapted from
+[iron-proxy](https://github.com/ironsh/iron-proxy). See [NOTICE](NOTICE) and
+[LICENSE.iron-proxy](LICENSE.iron-proxy).
