@@ -146,6 +146,7 @@
     ./services/stirling-pdf.nix
     ./services/static-sites.nix
     ./services/tautulli.nix
+    ./services/ts-egress.nix
     ./services/tubearchivist.nix
     ./services/udpbroadcastrelay.nix
     ./services/zfs-backup-check.nix
