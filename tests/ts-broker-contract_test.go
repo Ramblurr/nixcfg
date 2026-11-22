@@ -2,8 +2,8 @@ package egress
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -70,7 +70,7 @@ func contractConnect(t *testing.T) string {
 
 type liveBroker struct {
 	socket string
-	ui     string
+	ui     *http.Client
 	cmd    *exec.Cmd
 	out    *syncBuf
 }
@@ -92,16 +92,6 @@ func (b *syncBuf) String() string {
 	return b.buf.String()
 }
 
-func freePort(t *testing.T) int {
-	t.Helper()
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ln.Close()
-	return ln.Addr().(*net.TCPAddr).Port
-}
-
 func startBroker(t *testing.T, connectURL string) *liveBroker {
 	t.Helper()
 	bin := os.Getenv("TS_BROKER")
@@ -117,10 +107,15 @@ func startBroker(t *testing.T, connectURL string) *liveBroker {
 	if err := os.WriteFile(token, []byte(contractToken+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	port := freePort(t)
-	b := &liveBroker{socket: filepath.Join(dir, "decide.sock"), ui: fmt.Sprintf("http://127.0.0.1:%d", port), out: &syncBuf{}}
+	uiSocket := filepath.Join(dir, "ui.sock")
+	b := &liveBroker{socket: filepath.Join(dir, "decide.sock"), out: &syncBuf{}}
+	b.ui = &http.Client{Transport: &http.Transport{
+		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", uiSocket)
+		},
+	}}
 	b.cmd = exec.Command(bin, "serve", "--db", filepath.Join(dir, "broker.db"), "--socket", b.socket,
-		"--port", fmt.Sprint(port), "--connect-url", connectURL, "--connect-token-file", token)
+		"--ui-socket", uiSocket, "--connect-url", connectURL, "--connect-token-file", token)
 	b.cmd.Stdout, b.cmd.Stderr = b.out, b.out
 	if err := b.cmd.Start(); err != nil {
 		t.Fatal(err)
@@ -129,7 +124,7 @@ func startBroker(t *testing.T, connectURL string) *liveBroker {
 	deadline := time.Now().Add(90 * time.Second)
 	for {
 		_, sockErr := os.Stat(b.socket)
-		resp, httpErr := http.Get(b.ui + "/")
+		resp, httpErr := b.ui.Get(brokerURL + "/")
 		if httpErr == nil {
 			resp.Body.Close()
 		}
@@ -150,10 +145,12 @@ func (b *liveBroker) stop() {
 	}
 }
 
-// post sends a UI action as the browser on the tailscale serve origin does.
+const brokerURL = "http://ts-broker.tail-scale.ts.net"
+
+// post sends a UI action as the browser on the broker's origin does.
 func (b *liveBroker) post(t *testing.T, path string, form url.Values) string {
 	t.Helper()
-	req, err := http.NewRequest("POST", b.ui+path, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", brokerURL+path, strings.NewReader(form.Encode()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +158,7 @@ func (b *liveBroker) post(t *testing.T, path string, form url.Values) string {
 	req.Header.Set("Tailscale-User-Login", contractLogin)
 	req.Header.Set("Datastar-Request", "true")
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := b.ui.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

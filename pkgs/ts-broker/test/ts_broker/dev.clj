@@ -54,8 +54,9 @@
 
 (defn start!
   "Starts a broker in directory `dir` with a fresh seeded database and a
-  fake Connect server. Returns the system with `:fake` added."
-  [dir port]
+  fake Connect server. The UI listens on `dir`/ui.sock. Returns the system
+  with `:fake` added."
+  [dir]
   (fs/create-dirs dir)
   (doseq [f ["broker.db" "broker.db-wal" "broker.db-shm"]]
     (fs/delete-if-exists (fs/path dir f)))
@@ -64,7 +65,7 @@
         _ (spit token-file fake-connect/token)
         system (main/start! {:db                 (str (fs/path dir "broker.db"))
                              :socket             (str (fs/path dir "decide.sock"))
-                             :port               port
+                             :ui-socket          (str (fs/path dir "ui.sock"))
                              :connect-url        (:url fake)
                              :connect-token-file token-file})]
     (doseq [cmd seed-commands]

@@ -4,30 +4,41 @@
   Field values never leave this namespace. Responses are cached for a short
   time, so page renders do not query Connect on every change."
   (:require
-   [babashka.http-client :as http]
    [cheshire.core :as json]
-   [clojure.string :as str])
+   [clojure.string :as str]
+   [org.httpkit.client :as http])
   (:import
-   [java.net URLEncoder]))
+   [java.net StandardProtocolFamily URLEncoder UnixDomainSocketAddress]
+   [java.nio.channels SocketChannel]))
 
 (def ^:private ttl-ms 30000)
 
-(defn client
-  "Returns a Connect client for the server at `url` with `token`."
-  [url token]
-  {:url   (str/replace url #"/+$" "")
-   :token token
-   :cache (atom {})})
+(defn- proxy-client
+  "Returns an HTTP client whose connections all go to the unix socket at
+  `path`."
+  [^String path]
+  (let [address (UnixDomainSocketAddress/of path)]
+    (http/make-client {:address-finder  (constantly address)
+                       :channel-factory (fn [_] (SocketChannel/open StandardProtocolFamily/UNIX))})))
 
-(defn- fetch [{:keys [url token]} path]
-  (let [{:keys [status body]}
-        (try
-          (http/get (str url path)
-                    {:headers {"Authorization" (str "Bearer " token)}
-                     :throw   false
-                     :timeout 10000})
-          (catch Exception _
-            (throw (ex-info "Connect is unreachable." {:type ::unavailable}))))]
+(defn client
+  "Returns a Connect client for the server at `url` with `token`. With
+  `:proxy-socket`, requests go through the HTTP proxy on that unix socket,
+  such as ts-plug's `-http-proxy`."
+  ([url token] (client url token {}))
+  ([url token {:keys [proxy-socket]}]
+   {:url     (str/replace url #"/+$" "")
+    :cache   (atom {})
+    :request (cond-> {:headers {"Authorization" (str "Bearer " token)}
+                      :as      :text
+                      :timeout 10000}
+               proxy-socket (assoc :client (proxy-client proxy-socket)
+                                   :proxy-url "http://localhost"))}))
+
+(defn- fetch [{:keys [url request]} path]
+  (let [{:keys [status body error]} @(http/get (str url path) request)]
+    (when error
+      (throw (ex-info "Connect is unreachable." {:type ::unavailable})))
     (when-not (= 200 status)
       (throw (ex-info (str "Connect answered " status ".") {:type ::unavailable :status status})))
     (json/parse-string body true)))

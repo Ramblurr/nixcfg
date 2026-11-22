@@ -14,27 +14,72 @@
    [ts-broker.pages :as pages]
    [ts-broker.store :as store])
   (:import
+   [java.net InetSocketAddress StandardProtocolFamily UnixDomainSocketAddress]
+   [java.nio ByteBuffer]
+   [java.nio.channels ServerSocketChannel SocketChannel]
    [java.time Instant]))
 
 (def ^:dynamic *store* nil)
 (def ^:dynamic *base* nil)
+(def ^:dynamic *socket* nil)
+
+(defn- pump
+  "Copies `from` to `to` until `from` ends, then half-closes `to`."
+  [^SocketChannel from ^SocketChannel to]
+  (future
+    (let [buf (ByteBuffer/allocate 8192)]
+      (try
+        (loop []
+          (.clear buf)
+          (when (<= 0 (.read from buf))
+            (.flip buf)
+            (while (.hasRemaining buf)
+              (.write to buf))
+            (recur)))
+        (.shutdownOutput to)
+        (catch Exception _
+          (.close from)
+          (.close to))))))
+
+(defn- bridge
+  "Forwards connections on a free loopback port to the unix socket at
+  `path`, as ts-plug forwards tailnet connections, so the JDK HTTP client
+  can reach the UI. Returns `{:port p :stop f}`."
+  [path]
+  (let [listener (doto (ServerSocketChannel/open)
+                   (.bind (InetSocketAddress. "127.0.0.1" 0)))
+        upstream (UnixDomainSocketAddress/of ^String path)]
+    (future
+      (loop []
+        (when-let [tcp (try (.accept listener) (catch Exception _ nil))]
+          (let [uds (SocketChannel/open StandardProtocolFamily/UNIX)]
+            (.connect uds upstream)
+            (let [up (pump tcp uds)
+                  down (pump uds tcp)]
+              (future @up @down (.close tcp) (.close uds))))
+          (recur))))
+    {:port (.getPort ^InetSocketAddress (.getLocalAddress listener))
+     :stop #(.close listener)}))
 
 (use-fixtures :each
   (fn [f]
     (let [dir (fs/create-temp-dir {:prefix "ts-broker-ui-test"})
+          socket (str (fs/path dir "ui.sock"))
           fake (fake-connect/start!)
           st (store/start! (str (fs/path dir "broker.db")) {:audit-out (fn [_])})
           server (http/start! (merge (lib/routes 'ts-broker.pages 'ts-broker.actions)
-                                     {:port        0
+                                     {:socket      socket
                                       :ctx         {:store   st
                                                     :clock   #(Instant/now)
                                                     :connect (connect/client (:url fake) fake-connect/token)}
                                       :css         pages/css
-                                      :datastar-js "export {}"}))]
+                                      :datastar-js "export {}"}))
+          tcp (bridge socket)]
       (try
-        (binding [*store* st *base* (str "http://127.0.0.1:" (http/port server))]
+        (binding [*store* st *socket* socket *base* (str "http://127.0.0.1:" (:port tcp))]
           (f))
         (finally
+          ((:stop tcp))
           (http/stop! server)
           ((:stop fake))
           (store/stop! st)
@@ -92,11 +137,15 @@
 (def approve {:id 1 :event "approve" :grant "once"})
 
 (deftest requests-need-the-tailscale-login
-  (is (= [403 403 403 200]
+  (is (= [403 403 403 403 200]
          (mapv :status [(request :get "/")
                         (json-post actions/approval approve :headers {"Tailscale-User-Login" nil})
                         (json-post actions/approval approve :headers {"Tailscale-User-Login" " "})
+                        (request :get "/" :headers {"Tailscale-User-Login" "" "Tailscale-Node-Tags" "tag:t3-alice"})
                         (request :get "/" :headers login)]))))
+
+(deftest only-the-owner-may-open-the-ui-socket
+  (is (= "rw-------" (fs/posix->str (fs/posix-file-permissions *socket*)))))
 
 (deftest posts-need-a-same-origin-datastar-request
   (is (= [403 403 403 403 403]

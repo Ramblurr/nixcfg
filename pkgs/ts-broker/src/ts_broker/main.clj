@@ -21,17 +21,17 @@
                         :default "/var/lib/ts-broker/broker.db"}
    :socket             {:desc    "Unix socket for decide requests"
                         :default "/run/ts-broker/decide.sock"}
-   :port               {:desc    "UI port on 127.0.0.1"
-                        :coerce  :long
-                        :default 795}
+   :ui-socket          {:desc    "Unix socket of the UI, for ts-plug"
+                        :default "/run/ts-broker/ui/ui.sock"}
    :connect-url        {:desc "1Password Connect URL for the catalog"}
+   :connect-proxy      {:desc "Unix socket of the HTTP proxy that Connect requests go through"}
    :connect-token-file {:desc "File with the Connect token (default: the op-connect-token systemd credential)"}})
 
 (def usage
   (str "Usage: ts-broker serve [options]\n\n"
        "Answers ts-egress decide requests on a unix socket and serves the\n"
-       "approval UI on 127.0.0.1.\n\nOptions:\n"
-       (cli/format-opts {:spec spec :order [:db :socket :port :connect-url :connect-token-file]})
+       "approval UI on another.\n\nOptions:\n"
+       (cli/format-opts {:spec spec :order [:db :socket :ui-socket :connect-url :connect-proxy :connect-token-file]})
        "\n"))
 
 (def datastar-url
@@ -73,14 +73,14 @@
         st (store/start! (:db opts) {})
         ctx {:store   st
              :clock   #(Instant/now)
-             :connect (some-> (:connect-url opts) (connect/client token))}]
+             :connect (some-> (:connect-url opts) (connect/client token {:proxy-socket (:connect-proxy opts)}))}]
     {:store  st
      :titles (when (:connect ctx)
                (doto (ScheduledThreadPoolExecutor. 1)
                  (.scheduleWithFixedDelay #(refresh-titles! ctx) 0 10 TimeUnit/MINUTES)))
      :socket (socket/start! st (:socket opts) {})
      :http   (http/start! (merge (lib/routes 'ts-broker.pages 'ts-broker.actions)
-                                 {:port (:port opts) :ctx ctx :css pages/css :datastar-js (datastar-js)}))}))
+                                 {:socket (:ui-socket opts) :ctx ctx :css pages/css :datastar-js (datastar-js)}))}))
 
 (defn stop!
   "Stops `system`."
@@ -103,7 +103,7 @@
                                    (fail! (str "ts-broker: " (ex-message e)))
                                    (throw e))))]
                   (binding [*out* *err*]
-                    (println "ts-broker: decide on" (:socket opts) "and UI on 127.0.0.1:" (http/port (:http system))))
+                    (println "ts-broker: decide on" (:socket opts) "and UI on" (:ui-socket opts)))
                   (.addShutdownHook (Runtime/getRuntime) (Thread. #(stop! system)))
                   @(promise)))
       ("help" "--help" "-h" nil) (print usage)

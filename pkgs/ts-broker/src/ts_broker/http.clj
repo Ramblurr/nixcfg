@@ -12,8 +12,9 @@
   path. Actions read their parameters from the body
   only, a form or a JSON object.
 
-  Every request needs the `Tailscale-User-Login` header, which tailscale
-  serve sets. A POST also needs `Datastar-Request: true` and
+  The server listens on a unix socket that only ts-plug reaches. Every
+  request needs the `Tailscale-User-Login` header, which ts-plug sets from
+  the caller's WhoIs and leaves empty for a tagged node. A POST also needs `Datastar-Request: true` and
   `Sec-Fetch-Site: same-origin`. Without them the answer is 403. The login
   is the request's `:actor`. Malformed URL encoding is a 400. No response
   may be framed, errors included."
@@ -27,9 +28,12 @@
    [ts-broker.store :as store])
   (:import
    [java.io ByteArrayOutputStream]
-   [java.net URLDecoder]
+   [java.net StandardProtocolFamily UnixDomainSocketAddress URLDecoder]
    [java.nio ByteBuffer]
+   [java.nio.channels ServerSocketChannel]
    [java.nio.charset CharacterCodingException CodingErrorAction StandardCharsets]
+   [java.nio.file Files Path]
+   [java.nio.file.attribute PosixFilePermissions]
    [java.security MessageDigest]
    [java.util Base64]
    [java.util.zip GZIPOutputStream]))
@@ -248,19 +252,20 @@
                             (println "render failed:" (ex-message e))))))))))))
 
 (defn start!
-  "Starts the UI server on 127.0.0.1 and returns it for [[stop!]].
+  "Starts the UI server on a unix socket and returns it for [[stop!]].
+  Replaces a stale socket file. The socket file gets mode 0600.
 
   Options:
 
   | key            | description |
   |----------------|-------------|
-  | `:port`        | TCP port; 0 picks a free one |
+  | `:socket`      | Path of the unix socket |
   | `:ctx`         | App context passed to pages and actions; must hold `:store` |
   | `:pages`       | Pages from [[ts-broker.lib/routes]] |
   | `:actions`     | Actions from [[ts-broker.lib/routes]] |
   | `:css`         | Stylesheet text |
   | `:datastar-js` | Datastar bundle text |"
-  [{:keys [port ctx pages actions css datastar-js]}]
+  [{:keys [socket ctx pages actions css datastar-js]}]
   (let [renders (atom {})
         refresh (refresh-fn renders)
         app {:ctx     ctx
@@ -269,19 +274,23 @@
              :renders renders
              :assets  {:css (asset css "text/css; charset=utf-8")
                        :js  (asset datastar-js "text/javascript; charset=utf-8")}}
-        stop-server (server/run-server (handler app) {:ip "127.0.0.1" :port port :legacy-return-value? false})]
+        path (Path/of socket (into-array String []))
+        address (UnixDomainSocketAddress/of path)
+        _ (Files/deleteIfExists path)
+        server (server/run-server (handler app)
+                                  {:address-finder       (constantly address)
+                                   :channel-factory      (fn [_] (ServerSocketChannel/open StandardProtocolFamily/UNIX))
+                                   :legacy-return-value? false})]
+    (Files/setPosixFilePermissions path (PosixFilePermissions/fromString "rw-------"))
     (store/listen! (:store ctx) ::ui (fn [_events] (refresh)))
-    {:server stop-server
+    {:server server
+     :path   path
      :ctx    ctx}))
 
-(defn port
-  "Returns the TCP port of the UI `server`."
-  [{:keys [server]}]
-  (server/server-port server))
-
 (defn stop!
-  "Stops the UI server."
-  [{:keys [server ctx]}]
+  "Stops the UI server and removes its socket file."
+  [{:keys [server ^Path path ctx]}]
   (store/unlisten! (:store ctx) ::ui)
   @(server/server-stop! server {:timeout 1000})
+  (Files/deleteIfExists path)
   nil)

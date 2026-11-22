@@ -5,10 +5,59 @@
   ...
 }:
 
+# ts-plug puts the broker on the tailnet as its own node, ts-broker. It
+# starts the broker as its child, so both run as the ts-broker user, and
+# answers HTTPS on the tailnet by proxying to the UI socket with the
+# caller's identity headers. The UI socket and ts-plug's HTTP proxy for
+# Connect sit in uiDir, mode 0700, which no other user can traverse: no
+# other local process can forge the identity headers or dial the tailnet as
+# ts-broker. The broker opens no TCP port and needs no firewall rule.
 let
   cfg = config.modules.services.ts-broker;
   connectTokenCredential = "op-connect-token";
+  authKeyCredential = "ts-authkey";
   connectEnabled = cfg.onepassword.url != null;
+  uiDir = "/run/ts-broker/ui";
+  uiSocket = "${uiDir}/ui.sock";
+  proxySocket = "${uiDir}/proxy.sock";
+  broker = [
+    (lib.getExe cfg.package)
+    "serve"
+    "--db"
+    "/var/lib/ts-broker/broker.db"
+    "--socket"
+    "/run/ts-broker/decide.sock"
+    "--ui-socket"
+    uiSocket
+  ]
+  ++ lib.optionals connectEnabled [
+    "--connect-url"
+    cfg.onepassword.url
+    "--connect-proxy"
+    proxySocket
+  ];
+  plug = [
+    (lib.getExe cfg.plugPackage)
+    "-hostname"
+    "ts-broker"
+    "-dir"
+    "/var/lib/ts-broker-tailscale"
+    "-https-port"
+    "443:unix:${uiSocket}"
+    "-inherit-output"
+    "-response-header-timeout"
+    "15s"
+  ]
+  ++ lib.optionals connectEnabled [
+    "-http-proxy"
+    "unix:${proxySocket}"
+  ];
+  # tsnet reads the auth key from TS_AUTHKEY for its first login.
+  start = pkgs.writeShellScript "ts-broker-start" ''
+    TS_AUTHKEY=$(< "$CREDENTIALS_DIRECTORY/${authKeyCredential}")
+    export TS_AUTHKEY
+    exec ${lib.escapeShellArgs (plug ++ [ "--" ] ++ broker)}
+  '';
 in
 {
   options.modules.services.ts-broker = {
@@ -16,13 +65,17 @@ in
 
     package = lib.mkPackageOption pkgs "ts-broker" { };
 
-    port = lib.mkOption {
-      type = lib.types.ints.between 1 1023;
-      default = 795;
+    plugPackage = lib.mkPackageOption pkgs "ts-plug" { };
+
+    authKeyFile = lib.mkOption {
+      type = lib.types.addCheck lib.types.str (
+        p: lib.hasPrefix "/" p && !lib.hasPrefix builtins.storeDir p
+      );
+      default = "/run/host-secrets/ts-broker-authkey";
       description = ''
-        Port of the UI on 127.0.0.1. Every request needs the
-        Tailscale-User-Login header. The port is privileged, so no other
-        user can listen on it while the broker is down.
+        File holding the Tailscale auth key, tagged tag:ts-broker, that the
+        ts-broker node logs in with once. Loaded as the systemd credential
+        ${authKeyCredential}. Never the Nix store, which is world-readable.
       '';
     };
 
@@ -67,50 +120,19 @@ in
     users.groups.ts-broker = { };
     users.groups.${cfg.socketGroup} = { };
 
-    # The UI trusts Tailscale-User-Login, so only tailscaled, which runs as
-    # root and proxies tailscale serve, may connect to it.
-    networking.nftables.enable = true;
-    networking.nftables.tables.ts-broker = {
-      family = "inet";
-      content = ''
-        chain output {
-          type filter hook output priority filter; policy accept;
-          oifname "lo" tcp dport ${toString cfg.port} meta skuid != 0 counter drop
-        }
-      '';
-    };
-
     systemd.services.ts-broker = {
       description = "Credential approval broker for ts-egress";
-      wantedBy = [
-        "multi-user.target"
-        "nftables.service"
-      ];
+      wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
-      bindsTo = [ "nftables.service" ];
-      after = [
-        "network-online.target"
-        "nftables.service"
-      ];
+      after = [ "network-online.target" ];
       startLimitIntervalSec = 0;
       serviceConfig = {
-        ExecStart = lib.escapeShellArgs (
-          [
-            (lib.getExe cfg.package)
-            "serve"
-            "--db"
-            "/var/lib/ts-broker/broker.db"
-            "--socket"
-            "/run/ts-broker/decide.sock"
-            "--port"
-            (toString cfg.port)
-          ]
-          ++ lib.optionals connectEnabled [
-            "--connect-url"
-            cfg.onepassword.url
-          ]
-        );
-        LoadCredential = lib.optional connectEnabled "${connectTokenCredential}:${cfg.onepassword.tokenFile}";
+        ExecStartPre = "${pkgs.coreutils}/bin/install -d -m 0700 ${uiDir}";
+        ExecStart = start;
+        LoadCredential = [
+          "${authKeyCredential}:${cfg.authKeyFile}"
+        ]
+        ++ lib.optional connectEnabled "${connectTokenCredential}:${cfg.onepassword.tokenFile}";
         StandardOutput = cfg.auditOutput;
         Restart = "always";
         RestartSec = 2;
@@ -118,19 +140,22 @@ in
         User = "ts-broker";
         # New files, the socket among them, take this group.
         Group = cfg.socketGroup;
-        StateDirectory = "ts-broker";
+        StateDirectory = [
+          "ts-broker"
+          "ts-broker-tailscale"
+        ];
         StateDirectoryMode = "0700";
         RuntimeDirectory = "ts-broker";
         RuntimeDirectoryMode = "0750";
         UMask = "0077";
 
-        AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
-        CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
+        CapabilityBoundingSet = "";
         NoNewPrivileges = true;
         RestrictAddressFamilies = [
           "AF_INET"
           "AF_INET6"
           "AF_UNIX"
+          "AF_NETLINK"
         ];
         ProtectSystem = "strict";
         ProtectHome = true;
@@ -143,7 +168,6 @@ in
         ProtectClock = true;
         ProtectHostname = true;
         ProtectProc = "invisible";
-        ProcSubset = "pid";
         RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;

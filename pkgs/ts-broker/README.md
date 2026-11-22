@@ -21,9 +21,12 @@ environment line to copy.
 ## Running
 
 ```sh
-ts-broker serve --db /var/lib/ts-broker/broker.db \
-  --socket /run/ts-broker/decide.sock --port 795 \
-  --connect-url http://op-connect:8080
+ts-plug -hostname ts-broker -https-port 443:unix:/run/ts-broker/ui/ui.sock \
+  -http-proxy unix:/run/ts-broker/ui/proxy.sock -- \
+  ts-broker serve --db /var/lib/ts-broker/broker.db \
+    --socket /run/ts-broker/decide.sock --ui-socket /run/ts-broker/ui/ui.sock \
+    --connect-url http://op-connect.tailnet-name.ts.net:8080 \
+    --connect-proxy /run/ts-broker/ui/proxy.sock
 ```
 
 The broker creates the schema in a new database and refuses to start on a
@@ -32,17 +35,23 @@ not migrate.
 
 The Connect token comes from `--connect-token-file` or the
 `op-connect-token` systemd credential. `modules/services/ts-broker.nix` runs
-the service. The socket file has mode 0660 and the service's group,
-`ts-broker-clients`, so only the ts-egress service can connect. The UI
-listens on 127.0.0.1 only, and the module's nftables rule drops loopback
-connections to it from every user but root, which tailscaled runs as. The
-UI port is privileged (795 by default), and `CAP_NET_BIND_SERVICE` is the
-service's only capability, so no other user can listen there while the
-broker is down. The service is bound to `nftables.service`: when the
-firewall stops or fails, the broker stops.
-Expose it with `tailscale serve`. Every request must carry the
-`Tailscale-User-Login` header that serve sets, or the broker answers 403.
-The login is recorded as the editor or approver.
+the service. The decide socket has mode 0660 and the service's group,
+`ts-broker-clients`, so only the ts-egress service can connect.
+
+The broker is its own tailnet node, `ts-broker`, through
+[ts-plug](../ts-plug/src/docs/ts-plug.md), which starts it, answers HTTPS
+on the tailnet and proxies to the UI socket. The broker opens no TCP port.
+ts-plug and the broker run as one user, and the UI socket (mode 0600) and
+ts-plug's HTTP proxy socket sit in a directory of mode 0700 that the user
+owns. No other user can traverse that directory, so no other local process
+can reach the UI and forge the identity header, or dial the tailnet as
+`ts-broker`. The broker reads Connect through that proxy, so it needs no
+host tailscaled.
+
+Every request must carry the `Tailscale-User-Login` header that ts-plug
+sets, or the broker answers 403. ts-plug leaves it empty for a tagged node,
+so only people reach the UI. The login is recorded as the editor or
+approver.
 
 Every response forbids framing (`Content-Security-Policy: frame-ancestors
 'none'` and `X-Frame-Options: DENY`). A POST needs `Datastar-Request: true`
@@ -133,8 +142,8 @@ The REPL and the tests need `libsqlite3.so.0` on `LD_LIBRARY_PATH`.
 ```sh
 bb test
 bb lint
-bb dev        # nREPL; (ts-broker.dev/start! dir port) runs a seeded broker
-              # against a fake Connect server
+bb dev        # nREPL; (ts-broker.dev/start! dir) runs a seeded broker
+              # against a fake Connect server, its UI on dir/ui.sock
 ```
 
 After changing `deps.edn`, run the package's `locker` passthru from this

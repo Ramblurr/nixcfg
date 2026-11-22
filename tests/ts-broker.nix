@@ -1,9 +1,16 @@
 { pkgs }:
 let
   connectToken = "fake-connect-token";
+  connectUrl = "http://op-connect.example.ts.net:8080";
+  # ts-plug opens its HTTP proxy only once its node is on a tailnet, which
+  # the VM has none of. This fake Connect stands in for that proxy: it
+  # serves on the proxy socket and takes requests in absolute form.
   fakeConnect = pkgs.writers.writePython3 "fake-connect" { flakeIgnore = [ "E501" ]; } ''
     import json
-    from http.server import BaseHTTPRequestHandler, HTTPServer
+    import os
+    import socketserver
+    import sys
+    from http.server import BaseHTTPRequestHandler
 
     VAULT = "vlt0000000000000000000000a"
     ITEMS = [
@@ -23,10 +30,17 @@ let
             self.end_headers()
             self.wfile.write(data)
 
+        def log_message(self, *args):
+            pass
+
         def do_GET(self):
+            with open("/run/fake-connect/requests", "a") as log:
+                log.write(self.path + "\n")
             if self.headers.get("Authorization") != "Bearer ${connectToken}":
                 return self.answer(401, {"status": 401})
-            parts = self.path.split("?")[0].strip("/").split("/")
+            if not self.path.startswith("${connectUrl}/"):
+                return self.answer(502, {"status": 502})
+            parts = self.path.removeprefix("${connectUrl}").split("?")[0].strip("/").split("/")
             if parts == ["v1", "vaults"]:
                 return self.answer(200, [{"id": VAULT, "name": "Agents"}])
             if parts == ["v1", "vaults", VAULT, "items"]:
@@ -38,7 +52,10 @@ let
             return self.answer(404, {"status": 404})
 
 
-    HTTPServer(("127.0.0.1", 8181), Handler).serve_forever()
+    socketserver.UnixStreamServer.allow_reuse_address = True
+    server = socketserver.UnixStreamServer(sys.argv[1], Handler)
+    os.chmod(sys.argv[1], 0o666)
+    server.serve_forever()
   '';
 in
 pkgs.testers.runNixOSTest {
@@ -50,26 +67,31 @@ pkgs.testers.runNixOSTest {
       virtualisation.memorySize = 2048;
       environment.systemPackages = [
         pkgs.curl
+        pkgs.nftables
         pkgs.socat
         pkgs.sqlite
       ];
       modules.services.ts-broker = {
         enable = true;
+        authKeyFile = "/run/ts-broker-test/authkey";
         onepassword = {
-          url = "http://127.0.0.1:8181";
+          url = connectUrl;
           tokenFile = "/run/ts-broker-test/token";
         };
       };
       systemd.tmpfiles.rules = [
         "d /run/ts-broker-test 0700 root root -"
         "f+ /run/ts-broker-test/token 0600 root root - ${connectToken}"
+        "f+ /run/ts-broker-test/authkey 0600 root root - tskey-auth-test"
       ];
       systemd.services.fake-connect = {
-        wantedBy = [ "multi-user.target" ];
-        before = [ "ts-broker.service" ];
-        serviceConfig.ExecStart = fakeConnect;
+        requires = [ "ts-broker.service" ];
+        after = [ "ts-broker.service" ];
+        serviceConfig = {
+          ExecStart = "${fakeConnect} /run/ts-broker/ui/proxy.sock";
+          RuntimeDirectory = "fake-connect";
+        };
       };
-      systemd.services.ts-broker.after = [ "fake-connect.service" ];
       users.users.egress = {
         isSystemUser = true;
         group = "egress";
@@ -90,7 +112,9 @@ pkgs.testers.runNixOSTest {
     from datetime import timedelta
 
     SOCKET = "/run/ts-broker/decide.sock"
-    UI = "http://127.0.0.1:795"
+    UI_DIR = "/run/ts-broker/ui"
+    UI_SOCKET = f"{UI_DIR}/ui.sock"
+    UI = "http://ts-broker.example.ts.net"
     ADMIN = "Tailscale-User-Login: admin@example"
     DATASTAR = ["Datastar-Request: true", "Sec-Fetch-Site: same-origin"]
 
@@ -108,8 +132,14 @@ pkgs.testers.runNixOSTest {
         return json.loads(out)
 
 
+    def ui(user="ts-broker"):
+        """curl on the UI socket as user. ts-plug, which runs as ts-broker,
+        sends every tailnet request this way with the caller's headers."""
+        return f"runuser -u {user} -- curl -s --unix-socket {UI_SOCKET}"
+
+
     def curl(path, headers, extra=()):
-        args = ["curl", "-s", "-o", "/dev/null", "-w", "'%{http_code}'", *extra]
+        args = [ui(), "-o", "/dev/null", "-w", "'%{http_code}'", *extra]
         for h in headers:
             args += ["-H", shlex.quote(h)]
         return machine.succeed(" ".join(args + [shlex.quote(UI + path)])).strip()
@@ -130,7 +160,7 @@ pkgs.testers.runNixOSTest {
     def flash(path, payload):
         body = shlex.quote(json.dumps(payload))
         headers = " ".join("-H " + shlex.quote(h) for h in (ADMIN, *DATASTAR, "Content-Type: application/json"))
-        return machine.succeed(f"curl -s -X POST {headers} --data {body} {shlex.quote(UI + path)}")
+        return machine.succeed(f"{ui()} -X POST {headers} --data {body} {shlex.quote(UI + path)}")
 
 
     def sql(query):
@@ -138,39 +168,46 @@ pkgs.testers.runNixOSTest {
 
 
     machine.wait_for_unit("ts-broker.service")
-    machine.wait_for_open_port(795, timeout=timedelta(seconds=60))
-    machine.wait_until_succeeds(f"test -S {SOCKET}")
+    machine.wait_until_succeeds(f"test -S {SOCKET} && test -S {UI_SOCKET}", timeout=timedelta(seconds=60))
+    machine.succeed("systemctl start fake-connect.service")
+    machine.wait_until_succeeds(f"test -S {UI_DIR}/proxy.sock")
 
     with subtest("only the socket group can ask for decisions"):
         assert machine.succeed(f"stat -c '%a %G' {SOCKET}").strip() == "660 ts-broker-clients"
         machine.fail(f"echo '{{}}' | runuser -u outsider -- socat -t 2 - UNIX-CONNECT:{SOCKET}")
         assert decide() == {"decision": "deny", "reason": "unknown"}
 
-    with subtest("the UI listens on loopback and needs the Tailscale login"):
-        listeners = machine.succeed("ss -Hltn 'sport = :795' | awk '{print $4}'").split()
-        assert listeners == ["127.0.0.1:795"], listeners
-        assert curl("/", []) == "403"
-        assert act("/action/approval", {"id": 1, "event": "approve", "grant": "once"}, DATASTAR) == "403"
+    with subtest("the UI is a socket that only ts-plug's user can reach"):
+        assert machine.succeed(f"stat -c '%a %U' {UI_DIR} {UI_SOCKET}").split("\n")[:2] == ["700 ts-broker", "600 ts-broker"]
+        for user in ["outsider", "egress"]:
+            out = machine.fail(f"runuser -u {user} -- ls {UI_DIR} 2>&1")
+            assert "Permission denied" in out, (user, out)
+            status, out = machine.execute(f"{ui(user)} -o /dev/null -w '%{{http_code}}' -H {shlex.quote(ADMIN)} {UI}/")
+            assert status == 7 and out == "000", (user, status, out)
         assert curl("/", [ADMIN]) == "200"
 
-    with subtest("only root, which tailscaled runs as, reaches the UI"):
-        for user in ["outsider", "egress", "ts-broker"]:
-            status, out = machine.execute(
-                f"runuser -u {user} -- curl -s -o /dev/null -w '%{{http_code}}' --max-time 3 -H {shlex.quote(ADMIN)} {UI}/")
-            assert status == 28 and out == "000", (user, status, out)
-        assert "counter packets 0 " not in machine.succeed("nft list table inet ts-broker")
+    with subtest("the UI needs a person's Tailscale login"):
+        assert curl("/", []) == "403"
+        assert curl("/", ["Tailscale-User-Login;", "Tailscale-Node-Tags: tag:t3-alice"]) == "403"
+        assert act("/action/approval", {"id": 1, "event": "approve", "grant": "once"}, DATASTAR) == "403"
 
-    with subtest("the broker holds no capability but binding its privileged port"):
-        pid = machine.succeed("systemctl show -p MainPID --value ts-broker.service").strip()
-        caps = dict(line.split(":\t") for line in machine.succeed(f"grep ^Cap /proc/{pid}/status").splitlines())
-        assert {k: caps[k] for k in ["CapAmb", "CapBnd", "CapEff"]} == {
-            "CapAmb": "0000000000000400", "CapBnd": "0000000000000400", "CapEff": "0000000000000400"}, caps
+    with subtest("the broker opens no TCP port, has no firewall table and holds no capability"):
+        cgroup = machine.succeed("systemctl show -p ControlGroup --value ts-broker.service").strip()
+        pids = machine.succeed(f"cat /sys/fs/cgroup{cgroup}/cgroup.procs").split()
+        assert len(pids) >= 2, pids
+        listeners = machine.succeed("ss -Hltnp")
+        assert not any(f"pid={pid}," in listeners for pid in pids), listeners
+        assert "ts-broker" not in machine.succeed("nft list tables")
+        for pid in pids:
+            caps = dict(line.split(":\t") for line in machine.succeed(f"grep ^Cap /proc/{pid}/status").splitlines())
+            assert {k: caps[k] for k in ["CapAmb", "CapBnd", "CapEff"]} == {
+                "CapAmb": "0000000000000000", "CapBnd": "0000000000000000", "CapEff": "0000000000000000"}, (pid, caps)
 
     with subtest("responses forbid framing and posts must be same-origin Datastar requests"):
-        page_headers = machine.succeed(f"curl -s -D - -o /dev/null -H {shlex.quote(ADMIN)} {UI}/").lower()
+        page_headers = machine.succeed(f"{ui()} -D - -o /dev/null -H {shlex.quote(ADMIN)} {UI}/").lower()
         assert "content-security-policy: frame-ancestors 'none'" in page_headers, page_headers
         assert "x-frame-options: deny" in page_headers, page_headers
-        refused = machine.succeed(f"curl -s -D - -o /dev/null {UI}/").lower()
+        refused = machine.succeed(f"{ui()} -D - -o /dev/null {UI}/").lower()
         assert "x-frame-options: deny" in refused, refused
         delete = {"name": credential}
         assert act("/action/delete-credential", delete, [ADMIN, "Datastar-Request: true"]) == "403"
@@ -190,6 +227,8 @@ pkgs.testers.runNixOSTest {
         assert cred == [{"name": credential, "field": "fld0000000000000000000000a", "vault_title": "Agents",
                          "item_title": "GitHub token", "field_label": "credential",
                          "editor": "admin@example"}], cred
+        requests = machine.succeed("cat /run/fake-connect/requests").split()
+        assert "http://op-connect.example.ts.net:8080/v1/vaults/vlt0000000000000000000000a/items/itm0000000000000000000000a" in requests, requests
 
     allow = {"decision": "allow", "approval": None,
              "secret": {"vault": "vlt0000000000000000000000a", "item": "itm0000000000000000000000a",
@@ -233,20 +272,9 @@ pkgs.testers.runNixOSTest {
         uses = [r for r in rows if r["kind"] == "use"]
         assert [u["identity"] for u in uses] == ["tag:t3-alice", "tag:t3-alice"], uses
         journal = machine.succeed("journalctl -u ts-broker -o cat")
-        assert '"kind":"use"' in journal and "ghp_fake_secret" not in journal
+        assert "ghp_fake_secret" not in journal
+        audit = [json.loads(line) for line in journal.splitlines() if line.startswith("{")]
+        assert "use" in {row["kind"] for row in audit}, "ts-plug passes the audit rows through as JSON lines"
         machine.fail("grep -r ghp_fake_secret /var/lib/ts-broker")
-
-    with subtest("the UI never listens without its firewall rule, comes back with it, and no user can take its port"):
-        machine.succeed("systemctl stop nftables.service")
-        machine.wait_until_fails("systemctl is-active ts-broker.service", timeout=timedelta(seconds=30))
-        machine.fail("nft list table inet ts-broker")
-        assert machine.succeed("ss -Hltn 'sport = :795'").strip() == ""
-        out = machine.fail("runuser -u outsider -- socat -T 1 TCP-LISTEN:795,bind=127.0.0.1 - 2>&1")
-        assert "Permission denied" in out, out
-        machine.succeed("systemctl start nftables.service")
-        machine.wait_until_succeeds("systemctl is-active ts-broker.service", timeout=timedelta(seconds=30))
-        machine.wait_for_open_port(795, timeout=timedelta(seconds=60))
-        machine.succeed("nft list table inet ts-broker")
-        assert curl("/", [ADMIN]) == "200"
   '';
 }
