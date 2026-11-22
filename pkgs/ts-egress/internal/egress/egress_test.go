@@ -934,6 +934,35 @@ func TestUDPSessionLimits(t *testing.T) {
 	}
 }
 
+// Sessions dropped at the bound are logged at the default level, once per
+// interval rather than once per flow.
+func TestUDPSessionLimitDropsWarnOnce(t *testing.T) {
+	var logs auditBuf
+	prev := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+	s, _ := newServer(whoWith(), "127.0.0.1:1")
+	s.UDPIdle = time.Hour
+	s.MaxUDPSessionsPerCaller = 1
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	for port := 1; port <= 6; port++ {
+		client, _ := udpSession(ctx, s, "100.100.1.1:4000", fmt.Sprintf("198.51.100.5:%d", port))
+		defer client.Close()
+		_ = client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		_, _ = client.Read(make([]byte, 1))
+	}
+	var warns []map[string]any
+	for _, l := range logs.lines(t) {
+		if l["level"] == "WARN" {
+			warns = append(warns, l)
+		}
+	}
+	if len(warns) != 1 || warns[0]["dropped"] != float64(1) {
+		t.Fatalf("warnings = %v, want one for the first drop", warns)
+	}
+}
+
 // A DNS exchange does not hold its session slot for UDPIdle. Clients
 // such as ts-plug send each query from a new port, so a caller that
 // resolves more names than the per-caller bound within UDPIdle still gets
