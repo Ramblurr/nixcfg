@@ -1,4 +1,4 @@
-// Package egress is the runtime around policy.Decide: transparent listeners,
+// Package egress is the runtime around policy.Decide: the tsnet exit node,
 // caller identity, DNS filtering, the Tailscale helper proxy and the audit
 // log.
 //
@@ -15,7 +15,6 @@ package egress
 
 import (
 	"context"
-	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -39,13 +38,16 @@ type Server struct {
 	Audit       *slog.Logger
 	// Decrypter handles Decrypt verdicts. Nil denies them (108-05 fills it).
 	Decrypter Decrypter
+	// Dial opens upstream connections for a caller. Nil dials the host
+	// network, guarded by the floor and the caller's deny rules.
+	Dial func(*Caller) DialFunc
 	// MaxUDPSessions and MaxUDPSessionsPerCaller bound live UDP sessions,
 	// denied ones included. Zero means the defaults.
 	MaxUDPSessions, MaxUDPSessionsPerCaller int
 
-	udpMu     sync.Mutex
-	sessions  map[udpKey]*udpSession
-	perCaller map[netip.Addr]int
+	udpMu       sync.Mutex
+	udpSessions int
+	perCaller   map[netip.Addr]int
 }
 
 // Decrypter terminates TLS (or reads plain HTTP) for a flow that matched an
@@ -61,7 +63,10 @@ type Reauthorize func(ctx context.Context) (*Caller, policy.Verdict)
 
 type DialFunc func(ctx context.Context, network, address string) (net.Conn, error)
 
-func (s *Server) dial(c *Caller) DialFunc {
+func (s *Server) dialer(c *Caller) DialFunc {
+	if s.Dial != nil {
+		return s.Dial(c)
+	}
 	d := &net.Dialer{
 		Timeout: 10 * time.Second,
 		Control: s.Floor.DialControl(&c.Policy),
@@ -73,20 +78,6 @@ func (s *Server) dial(c *Caller) DialFunc {
 		},
 	}
 	return d.DialContext
-}
-
-// ServeTCP accepts TPROXY'd connections until ln is closed.
-func (s *Server) ServeTCP(ctx context.Context, ln net.Listener) error {
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
-				return nil
-			}
-			return err
-		}
-		go s.handleTCP(ctx, conn)
-	}
 }
 
 func (s *Server) handleTCP(ctx context.Context, conn net.Conn) {
@@ -139,14 +130,14 @@ func (s *Server) handleTCP(ctx context.Context, conn net.Conn) {
 			}
 			return c, s.Floor.Decide(&c.Policy, fl)
 		}
-		rec.up, rec.down, rec.err = s.Decrypter.Serve(ctx, caller, v, reauth, rec.dst, conn, pk.Bytes, s.dial)
+		rec.up, rec.down, rec.err = s.Decrypter.Serve(ctx, caller, v, reauth, rec.dst, conn, pk.Bytes, s.dialer)
 		return
 	case policy.PassThrough:
 		target = net.JoinHostPort(v.Name, strconv.Itoa(int(rec.dst.Port())))
 	case policy.Relay:
 		target = rec.dst.String()
 	}
-	up, err := s.dial(caller)(ctx, "tcp", target)
+	up, err := s.dialer(caller)(ctx, "tcp", target)
 	if err != nil {
 		rec.fail(err)
 		return

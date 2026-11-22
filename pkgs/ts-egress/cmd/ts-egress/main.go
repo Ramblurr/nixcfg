@@ -1,5 +1,5 @@
-// Command ts-egress is the egress for tenant traffic arriving through a
-// Tailscale exit node. It decides every TPROXY'd flow from the caller's
+// Command ts-egress is a Tailscale exit node of its own, built on tsnet. It
+// decides every flow a tenant sends through it from the caller's
 // moot.land/cap/egress grant capabilities and denies anything they do not
 // allow.
 package main
@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	"tailscale.com/client/local"
+	"tailscale.com/tsnet"
 
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/broker"
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/egress"
@@ -63,14 +63,6 @@ func interfaceAddrs() ([]netip.Addr, error) {
 	return out, nil
 }
 
-func family(base, addr string) string {
-	host, _, _ := net.SplitHostPort(addr)
-	if a, err := netip.ParseAddr(host); err == nil && a.Is6() {
-		return base + "6"
-	}
-	return base + "4"
-}
-
 func run(ctx context.Context, c config, credDir string) error {
 	audit := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -79,26 +71,9 @@ func run(ctx context.Context, c config, credDir string) error {
 		return err
 	}
 	floor := policy.NewFloor(append(own, c.self...))
-	lc := &local.Client{Socket: c.socket, UseSocketOnly: true}
-	ids := egress.NewIdentities(lc, c.identityTTL)
-	go ids.Watch(ctx, lc)
 	names := egress.NewNames()
-	go func() {
-		t := time.NewTicker(time.Minute)
-		defer t.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-t.C:
-				names.Sweep()
-			}
-		}
-	}()
-
 	srv := &egress.Server{
 		Floor:       floor,
-		IDs:         ids,
 		Names:       names,
 		Resolver:    c.resolver,
 		PeekTimeout: c.peekTimeout,
@@ -112,25 +87,45 @@ func run(ctx context.Context, c config, credDir string) error {
 		}
 		srv.Decrypter = d
 	}
+	authKey, err := readCredential(credDir, c.authKey)
+	if err != nil {
+		return err
+	}
 
-	errc := make(chan error, len(c.tcpListen)+len(c.udpListen)+1)
+	ts := &tsnet.Server{
+		Dir:           c.stateDir,
+		Hostname:      c.hostname,
+		AuthKey:       strings.TrimSpace(string(authKey)),
+		AdvertiseTags: c.tags,
+		Port:          c.port,
+		UserLogf:      tsnetLog(slog.LevelInfo),
+		Logf:          tsnetLog(slog.LevelDebug),
+	}
+	defer ts.Close()
+	lc, err := ts.LocalClient()
+	if err != nil {
+		return err
+	}
+	srv.IDs = egress.NewIdentities(lc, c.identityTTL)
+	go srv.IDs.Watch(ctx, lc)
+	go func() {
+		t := time.NewTicker(time.Minute)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				names.Sweep()
+			}
+		}
+	}()
+	if err := srv.ExitNode(ctx, ts); err != nil {
+		return fmt.Errorf("tailnet: %w", err)
+	}
+
+	errc := make(chan error, 1)
 	var closers []func() error
-	for _, addr := range c.tcpListen {
-		ln, err := egress.ListenTCP(ctx, family("tcp", addr), addr)
-		if err != nil {
-			return fmt.Errorf("tcp listen %s: %w", addr, err)
-		}
-		closers = append(closers, ln.Close)
-		go func() { errc <- srv.ServeTCP(ctx, ln) }()
-	}
-	for _, addr := range c.udpListen {
-		pc, err := egress.ListenUDP(ctx, family("udp", addr), addr)
-		if err != nil {
-			return fmt.Errorf("udp listen %s: %w", addr, err)
-		}
-		closers = append(closers, pc.Close)
-		go func() { errc <- srv.ServeUDP(ctx, pc) }()
-	}
 	if c.helper != "" {
 		hs := &http.Server{
 			Addr:              c.helper,
@@ -144,7 +139,7 @@ func run(ctx context.Context, c config, credDir string) error {
 			}
 		}()
 	}
-	slog.Info("ts-egress started", "tcp", c.tcpListen, "udp", c.udpListen, "helper", c.helper, "dns_upstream", c.resolver, "decrypt", srv.Decrypter != nil, "broker", c.brokerSocket)
+	slog.Info("ts-egress started", "hostname", c.hostname, "helper", c.helper, "dns_upstream", c.resolver, "decrypt", srv.Decrypter != nil, "broker", c.brokerSocket)
 
 	select {
 	case <-ctx.Done():
@@ -155,6 +150,12 @@ func run(ctx context.Context, c config, credDir string) error {
 		_ = cl()
 	}
 	return err
+}
+
+func tsnetLog(level slog.Level) func(string, ...any) {
+	return func(format string, args ...any) {
+		slog.Log(context.Background(), level, fmt.Sprintf(format, args...), "from", "tsnet")
+	}
 }
 
 // decrypter loads the CA and, when 1Password is configured, the Connect

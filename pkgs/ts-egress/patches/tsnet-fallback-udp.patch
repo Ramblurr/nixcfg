@@ -1,0 +1,63 @@
+diff --git a/tsnet/tsnet.go b/tsnet/tsnet.go
+index 8aaef6410..f264df3bd 100644
+--- a/tsnet/tsnet.go
++++ b/tsnet/tsnet.go
+@@ -350,6 +350,7 @@ type Server struct {
+ 	listeners           map[listenKey]*listener
+ 	nextEphemeralPort   uint16 // next port to try in ephemeral range; 0 means use ephemeralPortFirst
+ 	fallbackTCPHandlers set.HandleSet[FallbackTCPHandler]
++	fallbackUDPHandlers set.HandleSet[FallbackUDPHandler]
+ 	dialer              *tsdial.Dialer
+ 	advertisedServices  map[tailcfg.ServiceName]int
+ 	closeOnce           sync.Once
+@@ -368,6 +369,12 @@ type Server struct {
+ // over the TCP conn.
+ type FallbackTCPHandler func(src, dst netip.AddrPort) (handler func(net.Conn), intercept bool)
+ 
++// FallbackUDPHandler is the UDP counterpart of [FallbackTCPHandler]. It is
++// called for a UDP flow that no listener handles. If it returns
++// intercept=true and a non-nil handler, handler takes over the flow; the
++// conn's LocalAddr is the flow's original destination.
++type FallbackUDPHandler func(src, dst netip.AddrPort) (handler func(nettype.ConnPacketConn), intercept bool)
++
+ // Dial connects to the address on the tailnet.
+ // It will start the server if it has not been started yet.
+ func (s *Server) Dial(ctx context.Context, network, address string) (net.Conn, error) {
+@@ -1296,6 +1303,14 @@ func (s *Server) getTCPHandlerForFlow(src, dst netip.AddrPort) (handler func(net
+ func (s *Server) getUDPHandlerForFlow(src, dst netip.AddrPort) (handler func(nettype.ConnPacketConn), intercept bool) {
+ 	ln, ok := s.listenerForDstAddr("udp", dst, false)
+ 	if !ok {
++		s.mu.Lock()
++		defer s.mu.Unlock()
++		for _, handler := range s.fallbackUDPHandlers {
++			connHandler, intercept := handler(src, dst)
++			if intercept {
++				return connHandler, intercept
++			}
++		}
+ 		return nil, true // don't handle, don't forward to localhost
+ 	}
+ 	return func(c nettype.ConnPacketConn) { ln.handle(c) }, true
+@@ -1449,6 +1464,22 @@ func (s *Server) RegisterFallbackTCPHandler(cb FallbackTCPHandler) func() {
+ 	}
+ }
+ 
++// RegisterFallbackUDPHandler registers a callback which will be called
++// to handle a UDP flow to this tsnet node, for which no listeners will handle.
++// See [Server.RegisterFallbackTCPHandler].
++//
++// The returned function can be used to deregister this callback.
++func (s *Server) RegisterFallbackUDPHandler(cb FallbackUDPHandler) func() {
++	s.mu.Lock()
++	defer s.mu.Unlock()
++	hnd := s.fallbackUDPHandlers.Add(cb)
++	return func() {
++		s.mu.Lock()
++		defer s.mu.Unlock()
++		delete(s.fallbackUDPHandlers, hnd)
++	}
++}
++
+ // getCert is the GetCertificate function used by ListenTLS.
+ //
+ // It calls GetCertificate on the localClient, passing in the ClientHelloInfo.

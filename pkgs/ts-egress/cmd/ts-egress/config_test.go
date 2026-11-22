@@ -22,9 +22,11 @@ import (
 )
 
 const fullConfig = `{
-  "tcpListen": ["0.0.0.0:15002"],
-  "udpListen": ["[::]:15002"],
-  "tailscaledSocket": "/run/tailscale/tailscaled.sock",
+  "hostname": "egress-test",
+  "stateDir": "/var/lib/egress-test",
+  "authKeyCredential": "authkey",
+  "tags": ["tag:egress"],
+  "port": 41641,
   "dnsUpstream": "192.0.2.1:53",
   "self": ["192.0.2.26"],
   "identityTTL": "30s",
@@ -41,11 +43,11 @@ func TestParseConfigFull(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(c.tcpListen, []string{"0.0.0.0:15002"}) || !slices.Equal(c.udpListen, []string{"[::]:15002"}) {
-		t.Errorf("listen = %v %v", c.tcpListen, c.udpListen)
+	if c.hostname != "egress-test" || c.stateDir != "/var/lib/egress-test" || c.authKey != "authkey" || !slices.Equal(c.tags, []string{"tag:egress"}) || c.port != 41641 {
+		t.Errorf("node = %q %q %q %v %d", c.hostname, c.stateDir, c.authKey, c.tags, c.port)
 	}
-	if c.socket != "/run/tailscale/tailscaled.sock" || c.resolver != "192.0.2.1:53" {
-		t.Errorf("socket %q resolver %q", c.socket, c.resolver)
+	if c.resolver != "192.0.2.1:53" {
+		t.Errorf("resolver %q", c.resolver)
 	}
 	if !slices.Equal(c.self, []netip.Addr{netip.MustParseAddr("192.0.2.26")}) {
 		t.Errorf("self = %v", c.self)
@@ -69,8 +71,8 @@ func TestParseConfigDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(c.tcpListen, []string{"0.0.0.0:15001", "[::]:15001"}) || !slices.Equal(c.udpListen, c.tcpListen) {
-		t.Errorf("listen = %v %v", c.tcpListen, c.udpListen)
+	if c.hostname != "egress" || c.stateDir != "/var/lib/ts-egress" || c.authKey != "ts-authkey" || c.tags != nil || c.port != 0 {
+		t.Errorf("node = %q %q %q %v %d", c.hostname, c.stateDir, c.authKey, c.tags, c.port)
 	}
 	if c.identityTTL != 15*time.Second || c.peekTimeout != 5*time.Second || c.udpIdle != time.Minute || c.secretTTL != time.Minute {
 		t.Errorf("durations = %v %v %v %v", c.identityTTL, c.peekTimeout, c.udpIdle, c.secretTTL)
@@ -100,6 +102,11 @@ func TestParseConfigRejects(t *testing.T) {
 		"trailing object":       {`{"dnsUpstream": "192.0.2.1:53"} {}`, "trailing data"},
 		"trailing garbage":      {`{"dnsUpstream": "192.0.2.1:53"} x`, "trailing data"},
 		"empty":                 {``, "EOF"},
+		"empty hostname":        {`{"dnsUpstream": "192.0.2.1:53", "hostname": ""}`, "hostname must not be empty"},
+		"relative stateDir":     {`{"dnsUpstream": "192.0.2.1:53", "stateDir": "state"}`, "stateDir must be an absolute path"},
+		"empty auth key":        {`{"dnsUpstream": "192.0.2.1:53", "authKeyCredential": ""}`, "authKeyCredential must not be empty"},
+		"auth key path":         {`{"dnsUpstream": "192.0.2.1:53", "authKeyCredential": "../key"}`, "not a plain file name"},
+		"port out of range":     {`{"dnsUpstream": "192.0.2.1:53", "port": 70000}`, "cannot unmarshal"},
 		"no dnsUpstream":        {`{}`, "dnsUpstream is required"},
 		"bad dnsUpstream":       {`{"dnsUpstream": "192.0.2.1"}`, "dnsUpstream"},
 		"bad self":              {`{"dnsUpstream": "192.0.2.1:53", "self": ["nope"]}`, "self"},

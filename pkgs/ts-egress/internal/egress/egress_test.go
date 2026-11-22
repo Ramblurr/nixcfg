@@ -809,7 +809,7 @@ func TestDNSLearnsOnlyFromValidatedChain(t *testing.T) {
 	}
 }
 
-// addrConn reports chosen addresses, as a TPROXY'd connection does.
+// addrConn reports chosen addresses, as a netstack connection does.
 type addrConn struct {
 	net.Conn
 	local, remote net.Addr
@@ -872,7 +872,19 @@ func TestDNSSessionReauthorizesEachQuery(t *testing.T) {
 func (s *Server) udpSessionCount() int {
 	s.udpMu.Lock()
 	defer s.udpMu.Unlock()
-	return len(s.sessions)
+	return s.udpSessions
+}
+
+// udpSession starts a session from src to dst on a pipe and returns the
+// tenant's end and a channel closed when the session ends.
+func udpSession(ctx context.Context, s *Server, src, dst string) (net.Conn, <-chan struct{}) {
+	client, server := net.Pipe()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		s.handleUDP(ctx, netip.MustParseAddrPort(src), netip.MustParseAddrPort(dst), server)
+	}()
+	return client, done
 }
 
 // A denied UDP session ends when the server's context does, not only when
@@ -881,36 +893,44 @@ func TestDeniedUDPSessionEndsOnCancel(t *testing.T) {
 	s, _ := newServer(whoWith(), "127.0.0.1:1")
 	s.UDPIdle = time.Hour
 	ctx, cancel := context.WithCancel(context.Background())
-	s.deliver(ctx, udpKey{netip.MustParseAddrPort("100.100.1.1:4000"), netip.MustParseAddrPort("198.51.100.5:9")}, []byte("x"))
-	cancel()
-	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		if s.udpSessionCount() == 0 {
-			return
+	client, done := udpSession(ctx, s, "100.100.1.1:4000", "198.51.100.5:9")
+	defer client.Close()
+	for deadline := time.Now().Add(time.Second); s.udpSessionCount() == 0; time.Sleep(10 * time.Millisecond) {
+		if time.Now().After(deadline) {
+			t.Fatal("session never started")
 		}
 	}
-	t.Fatal("denied session outlived its context")
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("denied session outlived its context")
+	}
+	if n := s.udpSessionCount(); n != 0 {
+		t.Fatalf("%d sessions still counted", n)
+	}
 }
 
-// New UDP sessions beyond the per-caller or total bound are dropped.
+// New UDP sessions beyond the per-caller or total bound are closed at once.
 func TestUDPSessionLimits(t *testing.T) {
 	s, _ := newServer(whoWith(), "127.0.0.1:1")
 	s.UDPIdle = time.Hour
 	s.MaxUDPSessions, s.MaxUDPSessionsPerCaller = 3, 2
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	live := map[string]int{}
 	for _, src := range []string{"100.100.1.1", "100.100.1.1", "100.100.1.1", "100.100.1.2", "100.100.1.2", "100.100.1.3"} {
-		for port := uint16(1); port <= 3; port++ {
-			s.deliver(ctx, udpKey{netip.AddrPortFrom(netip.MustParseAddr(src), 4000), netip.AddrPortFrom(netip.MustParseAddr("198.51.100.5"), port)}, []byte("x"))
+		for port := 1; port <= 3; port++ {
+			client, _ := udpSession(ctx, s, src+":4000", fmt.Sprintf("198.51.100.5:%d", port))
+			defer client.Close()
+			_ = client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+			if _, err := client.Read(make([]byte, 1)); !errors.Is(err, io.EOF) {
+				live[src]++
+			}
 		}
 	}
-	s.udpMu.Lock()
-	perCaller := map[netip.Addr]int{}
-	for k := range s.sessions {
-		perCaller[k.src.Addr()]++
-	}
-	s.udpMu.Unlock()
-	if want := map[netip.Addr]int{netip.MustParseAddr("100.100.1.1"): 2, netip.MustParseAddr("100.100.1.2"): 1}; !maps.Equal(perCaller, want) {
-		t.Fatalf("sessions per caller = %v, want %v", perCaller, want)
+	if want := map[string]int{"100.100.1.1": 2, "100.100.1.2": 1}; !maps.Equal(live, want) {
+		t.Fatalf("live sessions per caller = %v, want %v", live, want)
 	}
 }
 

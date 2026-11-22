@@ -7,18 +7,11 @@ import (
 	"log/slog"
 	"net"
 	"net/netip"
+	"syscall"
 	"time"
 
 	"github.com/ramblurr/nixcfg/pkgs/ts-egress/internal/policy"
 )
-
-type udpKey struct{ src, dst netip.AddrPort }
-
-// udpSession is one client address talking to one original destination.
-// Every datagram for the pair goes through in, in order.
-type udpSession struct {
-	in chan []byte
-}
 
 const (
 	udpQueue = 64
@@ -27,128 +20,93 @@ const (
 	defaultMaxUDPSessionsPerCaller = 1024
 )
 
-// ServeUDP reads TPROXY'd datagrams from pc until it is closed and hands
-// each to the session for its (source, original destination) pair.
-func (s *Server) ServeUDP(ctx context.Context, pc *net.UDPConn) error {
-	buf := make([]byte, 65535)
-	oob := make([]byte, 1024)
-	for {
-		n, oobn, _, from, err := pc.ReadMsgUDPAddrPort(buf, oob)
-		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
-				return nil
-			}
-			return err
-		}
-		dst, ok := origDst(oob[:oobn])
-		if !ok {
-			slog.Debug("udp datagram without original destination", "src", from)
-			continue
-		}
-		src := netip.AddrPortFrom(from.Addr().Unmap(), from.Port())
-		s.deliver(ctx, udpKey{src, dst}, buf[:n])
-	}
-}
-
-// deliver queues a copy of pkt on k's session, starting the session if the
-// bounds allow another. A datagram that would exceed them is dropped.
-func (s *Server) deliver(ctx context.Context, k udpKey, pkt []byte) {
-	s.udpMu.Lock()
-	if s.sessions == nil {
-		s.sessions = map[udpKey]*udpSession{}
-		s.perCaller = map[netip.Addr]int{}
-	}
-	sess := s.sessions[k]
-	if sess == nil {
-		caller := k.src.Addr()
-		if len(s.sessions) >= cmp.Or(s.MaxUDPSessions, defaultMaxUDPSessions) ||
-			s.perCaller[caller] >= cmp.Or(s.MaxUDPSessionsPerCaller, defaultMaxUDPSessionsPerCaller) {
-			s.udpMu.Unlock()
-			slog.Debug("udp session limit reached, dropping datagram", "src", k.src, "dst", k.dst)
-			return
-		}
-		sess = &udpSession{in: make(chan []byte, udpQueue)}
-		s.sessions[k] = sess
-		s.perCaller[caller]++
-		go s.runUDP(ctx, k, sess)
-	}
-	s.udpMu.Unlock()
-	select {
-	case sess.in <- append([]byte(nil), pkt...):
-	default:
-	}
-}
-
-func (s *Server) endUDP(k udpKey) {
-	s.udpMu.Lock()
-	delete(s.sessions, k)
-	if s.perCaller[k.src.Addr()]--; s.perCaller[k.src.Addr()] <= 0 {
-		delete(s.perCaller, k.src.Addr())
-	}
-	s.udpMu.Unlock()
-}
-
-// runUDP decides the session, then relays it until it idles out or a
-// periodic recheck under the caller's current grants denies it. A denied
-// session swallows its datagrams until idle so the verdict is logged once
-// per flow.
-func (s *Server) runUDP(ctx context.Context, k udpKey, sess *udpSession) {
-	defer s.endUDP(k)
-	caller := s.IDs.Lookup(ctx, k.src.Addr())
-	if caller.Reason == "" && k.dst.Port() == policy.DNSPort {
-		s.runDNSUDP(ctx, k, sess)
+// handleUDP carries one UDP session: the datagrams one client address
+// sends to one original destination. Netstack gives each session its own
+// connected conn, whose writes come from dst. A denied session swallows
+// its datagrams until idle so the verdict is logged once per flow.
+func (s *Server) handleUDP(ctx context.Context, src, dst netip.AddrPort, c net.Conn) {
+	defer c.Close()
+	stop := context.AfterFunc(ctx, func() { _ = c.Close() })
+	defer stop()
+	if !s.claimUDP(src.Addr()) {
+		slog.Debug("udp session limit reached, dropping flow", "src", src, "dst", dst)
 		return
 	}
-	rec := &record{start: time.Now(), caller: caller, proto: policy.UDP, src: k.src, dst: k.dst}
+	defer s.releaseUDP(src.Addr())
+
+	caller := s.IDs.Lookup(ctx, src.Addr())
+	if caller.Reason == "" && dst.Port() == policy.DNSPort {
+		s.serveDNSUDP(ctx, src, dst, c)
+		return
+	}
+	rec := &record{start: time.Now(), caller: caller, proto: policy.UDP, src: src, dst: dst}
 	defer s.log(rec)
 	if caller.Reason != "" {
 		rec.verdict = policy.Deny{Reason: caller.Reason}
-		s.drain(ctx, sess)
+		s.drain(c)
 		return
 	}
 	fl := policy.Flow{
 		Proto:    policy.UDP,
-		Src:      k.src,
-		Dst:      k.dst,
-		DstNames: s.Names.For(k.src.Addr(), k.dst.Addr()),
+		Src:      src,
+		Dst:      dst,
+		DstNames: s.Names.For(src.Addr(), dst.Addr()),
 	}
 	rec.verdict = s.Floor.Decide(&caller.Policy, fl)
 	if _, ok := rec.verdict.(policy.Relay); !ok {
-		s.drain(ctx, sess)
+		s.drain(c)
 		return
 	}
-	up, err := s.dial(caller)(ctx, "udp", k.dst.String())
+	up, err := s.dialer(caller)(ctx, "udp", dst.String())
 	if err != nil {
 		rec.fail(err)
-		s.drain(ctx, sess)
+		s.drain(c)
 		return
 	}
 	defer up.Close()
-	back, err := replyConn(ctx, k.dst, k.src)
-	if err != nil {
-		rec.err = err
-		s.drain(ctx, sess)
-		return
-	}
-	defer back.Close()
+	s.relayUDP(ctx, rec, fl, c, up)
+}
 
-	// A connected transparent socket for the pair may also receive the
-	// client's later datagrams, so read it as well as the listener queue.
+// claimUDP takes a session slot for caller, or reports that the bounds
+// allow no other.
+func (s *Server) claimUDP(caller netip.Addr) bool {
+	s.udpMu.Lock()
+	defer s.udpMu.Unlock()
+	if s.perCaller == nil {
+		s.perCaller = map[netip.Addr]int{}
+	}
+	if s.udpSessions >= cmp.Or(s.MaxUDPSessions, defaultMaxUDPSessions) ||
+		s.perCaller[caller] >= cmp.Or(s.MaxUDPSessionsPerCaller, defaultMaxUDPSessionsPerCaller) {
+		return false
+	}
+	s.udpSessions++
+	s.perCaller[caller]++
+	return true
+}
+
+func (s *Server) releaseUDP(caller netip.Addr) {
+	s.udpMu.Lock()
+	defer s.udpMu.Unlock()
+	s.udpSessions--
+	if s.perCaller[caller]--; s.perCaller[caller] <= 0 {
+		delete(s.perCaller, caller)
+	}
+}
+
+// relayUDP copies datagrams both ways until the session idles out, ctx
+// ends, or a periodic recheck under the caller's current grants denies it.
+func (s *Server) relayUDP(ctx context.Context, rec *record, fl policy.Flow, c, up net.Conn) {
 	idle := time.NewTimer(s.UDPIdle)
 	defer idle.Stop()
 	recheck := time.NewTicker(s.recheckEvery())
 	defer recheck.Stop()
 	done := make(chan struct{})
 	defer close(done)
+	fromClient := readLoop(done, c)
 	fromUp := readLoop(done, up)
-	fromBack := readLoop(done, back)
 	for {
 		select {
-		case pkt := <-sess.in:
-			if n, err := up.Write(pkt); err == nil {
-				rec.up += int64(n)
-			}
-		case pkt, ok := <-fromBack:
+		case pkt, ok := <-fromClient:
 			if !ok {
 				return
 			}
@@ -159,7 +117,7 @@ func (s *Server) runUDP(ctx context.Context, k udpKey, sess *udpSession) {
 			if !ok {
 				return
 			}
-			if n, err := back.Write(pkt); err == nil {
+			if n, err := c.Write(pkt); err == nil {
 				rec.down += int64(n)
 			}
 		case <-recheck.C:
@@ -200,41 +158,21 @@ func (s *Server) reauthorize(ctx context.Context, fl policy.Flow) policy.Verdict
 	return v
 }
 
-// runDNSUDP answers each query in the session from the original
-// destination address. Each query is its own audit line.
-func (s *Server) runDNSUDP(ctx context.Context, k udpKey, sess *udpSession) {
-	back, err := replyConn(ctx, k.dst, k.src)
-	if err != nil {
-		logRecord(s.Audit, &record{start: time.Now(), caller: s.IDs.Lookup(ctx, k.src.Addr()), proto: policy.UDP, src: k.src, dst: k.dst, verdict: policy.Deny{Reason: policy.ReasonDial}, err: err})
-		s.drain(ctx, sess)
-		return
-	}
-	defer back.Close()
-	done := make(chan struct{})
-	defer close(done)
-	fromBack := readLoop(done, back)
-	idle := time.NewTimer(s.UDPIdle)
-	defer idle.Stop()
+// serveDNSUDP answers each query in the session until it idles out. Each
+// query is its own audit line.
+func (s *Server) serveDNSUDP(ctx context.Context, src, dst netip.AddrPort, c net.Conn) {
+	buf := make([]byte, 65535)
 	for {
-		var query []byte
-		select {
-		case query = <-sess.in:
-		case pkt, ok := <-fromBack:
-			if !ok {
-				return
-			}
-			query = pkt
-		case <-idle.C:
-			return
-		case <-ctx.Done():
+		_ = c.SetReadDeadline(time.Now().Add(s.UDPIdle))
+		n, err := c.Read(buf)
+		if err != nil {
 			return
 		}
-		idle.Reset(s.UDPIdle)
-		rec := &record{start: time.Now(), proto: policy.UDP, src: k.src, dst: k.dst, up: int64(len(query))}
-		resp, err := s.answerDNS(ctx, rec, "udp", query)
+		rec := &record{start: time.Now(), proto: policy.UDP, src: src, dst: dst, up: int64(n)}
+		resp, err := s.answerDNS(ctx, rec, "udp", buf[:n])
 		rec.err = err
 		if resp != nil {
-			if n, err := back.Write(resp); err == nil {
+			if n, err := c.Write(resp); err == nil {
 				rec.down = int64(n)
 			}
 		}
@@ -242,24 +180,21 @@ func (s *Server) runDNSUDP(ctx context.Context, k udpKey, sess *udpSession) {
 	}
 }
 
-// drain swallows a denied session's datagrams until it idles out or ctx
-// ends.
-func (s *Server) drain(ctx context.Context, sess *udpSession) {
-	idle := time.NewTimer(s.UDPIdle)
-	defer idle.Stop()
+// drain swallows a denied session's datagrams until it idles out or c is
+// closed.
+func (s *Server) drain(c net.Conn) {
+	buf := make([]byte, 65535)
 	for {
-		select {
-		case <-sess.in:
-			idle.Reset(s.UDPIdle)
-		case <-idle.C:
-			return
-		case <-ctx.Done():
+		_ = c.SetReadDeadline(time.Now().Add(s.UDPIdle))
+		if _, err := c.Read(buf); err != nil {
 			return
 		}
 	}
 }
 
-// readLoop reads c into a channel until c is closed or done ends.
+// readLoop reads c into a channel until c fails or done ends. A connected
+// UDP socket reports an ICMP unreachable as ECONNREFUSED on a later read,
+// which does not end the session.
 func readLoop(done <-chan struct{}, c net.Conn) <-chan []byte {
 	ch := make(chan []byte, udpQueue)
 	go func() {
@@ -267,11 +202,11 @@ func readLoop(done <-chan struct{}, c net.Conn) <-chan []byte {
 		buf := make([]byte, 65535)
 		for {
 			n, err := c.Read(buf)
-			if errors.Is(err, net.ErrClosed) {
-				return
+			if errors.Is(err, syscall.ECONNREFUSED) {
+				continue
 			}
 			if err != nil {
-				continue
+				return
 			}
 			select {
 			case ch <- append([]byte(nil), buf[:n]...):

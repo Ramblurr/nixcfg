@@ -5,16 +5,13 @@
   ...
 }:
 
-# A Tailscale exit node whose every forwarded TCP and UDP flow, DNS included,
-# is TPROXY'd into ts-egress (pkgs/ts-egress), which decides it from the
-# caller's grant capabilities. Nothing is routed: IP forwarding stays off and
-# forwarded packets on the Tailscale interface are dropped, so a stopped
-# ts-egress or a missing ruleset fails closed.
+# ts-egress (pkgs/ts-egress) is a Tailscale exit node of its own, built on
+# tsnet. Every TCP and UDP flow a tenant sends through it, DNS included,
+# arrives in its userspace network stack and is decided from the caller's
+# grant capabilities. It needs no tailscaled, no kernel routing and no packet
+# redirection: a stopped ts-egress carries nothing.
 let
   cfg = config.modules.services.ts-egress;
-  tsIface = config.services.tailscale.interfaceName;
-  tproxyMark = 1;
-  tproxyTable = 100;
   helperEnabled = cfg.helper.address != null;
   onepasswordEnabled = cfg.onepassword.url != null;
   brokerEnabled = cfg.broker.socket != null;
@@ -27,16 +24,10 @@ let
   };
   configFile = (pkgs.formats.json { }).generate "ts-egress.json" (
     {
-      tcpListen = [
-        "0.0.0.0:${toString cfg.port}"
-        "[::]:${toString cfg.port}"
-      ];
-      udpListen = [
-        "0.0.0.0:${toString cfg.port}"
-        "[::]:${toString cfg.port}"
-      ];
-      tailscaledSocket = "/run/tailscale/tailscaled.sock";
-      inherit (cfg) dnsUpstream;
+      inherit (cfg) hostname port dnsUpstream;
+      stateDir = "/var/lib/ts-egress";
+      authKeyCredential = credential.authKey;
+      tags = [ cfg.tag ];
       self = cfg.selfAddresses;
     }
     // lib.optionalAttrs helperEnabled {
@@ -72,11 +63,17 @@ let
 in
 {
   options.modules.services.ts-egress = {
-    enable = lib.mkEnableOption "a Tailscale exit node that sends every flow through ts-egress";
+    enable = lib.mkEnableOption "ts-egress, a Tailscale exit node that decides every flow";
 
     package = lib.mkPackageOption pkgs "ts-egress" { };
 
-    authKeyFile = secretPath credential.authKey "File holding the Tailscale auth key for tailscaled-autoconnect.";
+    authKeyFile = secretPath credential.authKey "File holding the Tailscale auth key the node logs in with once.";
+
+    hostname = lib.mkOption {
+      type = lib.types.str;
+      default = "egress";
+      description = "Tailscale hostname of the exit node. Tenants select it with `--exit-node`.";
+    };
 
     tag = lib.mkOption {
       type = lib.types.str;
@@ -86,8 +83,8 @@ in
 
     port = lib.mkOption {
       type = lib.types.port;
-      default = 15001;
-      description = "Port of the transparent TCP and UDP listeners that TPROXY delivers to.";
+      default = 41641;
+      description = "UDP port of the node's WireGuard and peer-to-peer traffic. The firewall opens it.";
     };
 
     dnsUpstream = lib.mkOption {
@@ -179,18 +176,6 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = config.systemd.network.enable;
-        message = "modules.services.ts-egress declares its TPROXY route and rule with systemd-networkd.";
-      }
-      {
-        assertion = config.services.resolved.enable;
-        message = "modules.services.ts-egress hides resolved's resolv.conf from tailscaled and needs services.resolved.";
-      }
-      {
-        assertion = !(builtins.elem tsIface config.networking.firewall.trustedInterfaces);
-        message = "modules.services.ts-egress: ${tsIface} must not be a trusted firewall interface.";
-      }
-      {
         assertion = onepasswordEnabled -> cfg.ca.enable;
         message = "modules.services.ts-egress.onepassword injects secrets only into decrypted flows and needs ca.enable.";
       }
@@ -202,147 +187,37 @@ in
 
     users.groups = lib.mkIf brokerEnabled { ${cfg.broker.group} = { }; };
 
-    services.tailscale = {
-      enable = true;
-      authKeyFile = "/run/credentials/tailscaled-autoconnect.service/${credential.authKey}";
-      openFirewall = true;
-      extraUpFlags = [
-        "--advertise-exit-node"
-        "--advertise-tags=${cfg.tag}"
-        "--accept-dns=false"
-      ];
-      # up only runs at the first login; set converges the rest on every boot.
-      extraSetFlags = [
-        "--advertise-exit-node"
-        "--accept-dns=false"
-      ];
-    };
-
-    # TPROXY delivers locally, so the exit node routes nothing. tailscaled
-    # reports a forwarding health warning; that is expected.
-    boot.kernel.sysctl = {
-      "net.ipv4.conf.all.forwarding" = false;
-      "net.ipv6.conf.all.forwarding" = false;
-    };
-
-    # tailscaled answers exit-node DNS over peerapi DoH inside its netstack,
-    # past nftables, using the first nameserver of its /etc/resolv.conf. With
-    # resolved's directory hidden that file is missing, so those queries fail
-    # and tenants' DNS only resolves through ts-egress. tailscaled's own
-    # lookups then fall back to 127.0.0.1:53, which resolved serves.
-    systemd.services.tailscaled-autoconnect.serviceConfig.LoadCredential = [
-      "${credential.authKey}:${cfg.authKeyFile}"
-    ];
-
-    systemd.services.tailscaled.serviceConfig.TemporaryFileSystem = [ "/run/systemd/resolve:ro" ];
-    # tailscaled turns on src_valid_mark, so the kernel validates a
-    # TPROXY-marked tenant packet's source through table 100, finds a local
-    # route and drops it as a martian. accept_local lets it through; the
-    # interface only exists once tailscaled runs, so set it from there.
-    systemd.services.tailscaled.serviceConfig.ExecStartPost = [
-      "${pkgs.procps}/bin/sysctl -w net.ipv4.conf.${tsIface}.accept_local=1"
-    ];
-    services.resolved.settings.Resolve.DNSStubListenerExtra = [ "127.0.0.1" ];
-
-    systemd.network.networks."40-ts-egress-tproxy" = {
-      matchConfig.Name = "lo";
-      linkConfig.RequiredForOnline = "no";
-      routingPolicyRules = [
-        {
-          FirewallMark = tproxyMark;
-          Table = tproxyTable;
-          Priority = 100;
-          Family = "both";
-        }
-      ];
-      routes = [
-        {
-          Type = "local";
-          Destination = "0.0.0.0/0";
-          Table = tproxyTable;
-        }
-        {
-          Type = "local";
-          Destination = "::/0";
-          Table = tproxyTable;
-        }
-      ];
-    };
-
-    networking.nftables.enable = true;
-    networking.nftables.tables.ts-egress = {
-      family = "inet";
-      content = ''
-        chain prerouting {
-          type filter hook prerouting priority mangle; policy accept;
-          iifname "${tsIface}" meta l4proto { tcp, udp } tproxy to :${toString cfg.port} meta mark set ${toString tproxyMark} accept
-        }
-        # Without a ts-egress socket TPROXY leaves a flow unmarked; it must
-        # not reach anything else listening on this host.
-        chain input {
-          type filter hook input priority filter - 10; policy accept;
-          iifname "${tsIface}" meta mark != ${toString tproxyMark} ct state != { established, related } counter drop
-        }
-        chain forward {
-          type filter hook forward priority filter; policy accept;
-          iifname "${tsIface}" counter drop
-          oifname "${tsIface}" counter drop
-        }
-      '';
-    };
-
-    # The TPROXY mark sends tailnet sources to the local table, which strict
-    # reverse-path filtering rejects.
-    networking.firewall.checkReversePath = "loose";
-    # The reverse-path lookup for a TPROXY-marked packet hits table 100's
-    # local route and fails, so NixOS's rpfilter drops every tenant flow.
-    networking.firewall.extraReversePathFilterRules = ''
-      iifname "${tsIface}" meta mark ${toString tproxyMark} accept
+    networking.firewall.allowedUDPPorts = [ cfg.port ];
+    networking.nftables.enable = lib.mkIf helperEnabled true;
+    networking.firewall.extraInputRules = lib.mkIf helperEnabled ''
+      iifname "${cfg.helper.interface}" ip saddr { ${lib.concatStringsSep ", " cfg.helper.allowFrom} } tcp dport ${toString cfg.helper.port} accept
     '';
-    networking.firewall.extraInputRules = lib.concatStringsSep "\n" (
-      [ ''iifname "${tsIface}" meta mark ${toString tproxyMark} accept'' ]
-      ++ lib.optional helperEnabled ''iifname "${cfg.helper.interface}" ip saddr { ${lib.concatStringsSep ", " cfg.helper.allowFrom} } tcp dport ${toString cfg.helper.port} accept''
-    );
 
     systemd.services.ts-egress = {
       description = "Tailscale exit-node egress";
       wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
-      requires = [ "tailscaled.service" ];
-      after = [
-        "network-online.target"
-        "tailscaled.service"
-        "tailscaled-autoconnect.service"
-        "nftables.service"
-      ];
+      after = [ "network-online.target" ];
       startLimitIntervalSec = 0;
       serviceConfig = {
         ExecStart = "${lib.getExe cfg.package} -config ${configFile}";
         # A missing source file keeps the unit from starting.
-        LoadCredential =
-          lib.optionals cfg.ca.enable [
-            "${credential.caCert}:${cfg.ca.certFile}"
-            "${credential.caKey}:${cfg.ca.keyFile}"
-          ]
-          ++ lib.optional onepasswordEnabled "${credential.connectToken}:${cfg.onepassword.tokenFile}";
+        LoadCredential = [
+          "${credential.authKey}:${cfg.authKeyFile}"
+        ]
+        ++ lib.optionals cfg.ca.enable [
+          "${credential.caCert}:${cfg.ca.certFile}"
+          "${credential.caKey}:${cfg.ca.keyFile}"
+        ]
+        ++ lib.optional onepasswordEnabled "${credential.connectToken}:${cfg.onepassword.tokenFile}";
         SupplementaryGroups = lib.optional brokerEnabled cfg.broker.group;
         StandardOutput = cfg.auditOutput;
         Restart = "always";
         RestartSec = 2;
 
         DynamicUser = true;
-        # IP_TRANSPARENT needs CAP_NET_RAW or CAP_NET_ADMIN; NET_RAW cannot
-        # change routes or the ruleset. UDP replies are sent from the
-        # original destination, so ports such as 53 and 123 need
-        # CAP_NET_BIND_SERVICE.
-        AmbientCapabilities = [
-          "CAP_NET_RAW"
-          "CAP_NET_BIND_SERVICE"
-        ];
-        CapabilityBoundingSet = [
-          "CAP_NET_RAW"
-          "CAP_NET_BIND_SERVICE"
-        ];
+        StateDirectory = "ts-egress";
+        CapabilityBoundingSet = "";
         NoNewPrivileges = true;
         RestrictAddressFamilies = [
           "AF_INET"
@@ -361,7 +236,6 @@ in
         ProtectClock = true;
         ProtectHostname = true;
         ProtectProc = "invisible";
-        ProcSubset = "pid";
         RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;

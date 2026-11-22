@@ -21,18 +21,20 @@ import (
 // fileConfig is the JSON file named by -config. It holds no secret values:
 // ca and onepassword name the systemd credentials that do.
 type fileConfig struct {
-	TCPListen        []string       `json:"tcpListen"`
-	UDPListen        []string       `json:"udpListen"`
-	TailscaledSocket string         `json:"tailscaledSocket"`
-	DNSUpstream      string         `json:"dnsUpstream"`
-	Self             []string       `json:"self"`
-	IdentityTTL      duration       `json:"identityTTL"`
-	PeekTimeout      duration       `json:"peekTimeout"`
-	UDPIdle          duration       `json:"udpIdle"`
-	Helper           *helperConfig  `json:"helper"`
-	CA               *caConfig      `json:"ca"`
-	OnePassword      *onePassConfig `json:"onepassword"`
-	BrokerSocket     string         `json:"brokerSocket"`
+	Hostname          string         `json:"hostname"`
+	StateDir          string         `json:"stateDir"`
+	AuthKeyCredential string         `json:"authKeyCredential"`
+	Tags              []string       `json:"tags"`
+	Port              uint16         `json:"port"`
+	DNSUpstream       string         `json:"dnsUpstream"`
+	Self              []string       `json:"self"`
+	IdentityTTL       duration       `json:"identityTTL"`
+	PeekTimeout       duration       `json:"peekTimeout"`
+	UDPIdle           duration       `json:"udpIdle"`
+	Helper            *helperConfig  `json:"helper"`
+	CA                *caConfig      `json:"ca"`
+	OnePassword       *onePassConfig `json:"onepassword"`
+	BrokerSocket      string         `json:"brokerSocket"`
 }
 
 // helperConfig enables the Tailscale CONNECT helper.
@@ -75,9 +77,11 @@ func (d *duration) UnmarshalJSON(b []byte) error {
 }
 
 type config struct {
-	tcpListen   []string
-	udpListen   []string
-	socket      string
+	hostname    string
+	stateDir    string
+	authKey     string // credential name
+	tags        []string
+	port        uint16
 	resolver    string
 	self        []netip.Addr
 	identityTTL time.Duration
@@ -96,14 +100,13 @@ type config struct {
 }
 
 func defaultFileConfig() fileConfig {
-	// Separate slices: decoding into one reuses its backing array.
 	return fileConfig{
-		TCPListen:        []string{"0.0.0.0:15001", "[::]:15001"},
-		UDPListen:        []string{"0.0.0.0:15001", "[::]:15001"},
-		TailscaledSocket: "/var/run/tailscale/tailscaled.sock",
-		IdentityTTL:      duration(15 * time.Second),
-		PeekTimeout:      duration(5 * time.Second),
-		UDPIdle:          duration(time.Minute),
+		Hostname:          "egress",
+		StateDir:          "/var/lib/ts-egress",
+		AuthKeyCredential: "ts-authkey",
+		IdentityTTL:       duration(15 * time.Second),
+		PeekTimeout:       duration(5 * time.Second),
+		UDPIdle:           duration(time.Minute),
 	}
 }
 
@@ -121,13 +124,21 @@ func parseConfig(data []byte) (config, error) {
 	}
 
 	c := config{
-		tcpListen:   f.TCPListen,
-		udpListen:   f.UDPListen,
-		socket:      f.TailscaledSocket,
+		hostname:    f.Hostname,
+		stateDir:    f.StateDir,
+		authKey:     f.AuthKeyCredential,
+		tags:        f.Tags,
+		port:        f.Port,
 		resolver:    f.DNSUpstream,
 		identityTTL: time.Duration(f.IdentityTTL),
 		peekTimeout: time.Duration(f.PeekTimeout),
 		udpIdle:     time.Duration(f.UDPIdle),
+	}
+	if c.hostname == "" {
+		return c, errors.New("hostname must not be empty")
+	}
+	if !filepath.IsAbs(c.stateDir) {
+		return c, errors.New("stateDir must be an absolute path")
 	}
 	if c.resolver == "" {
 		return c, errors.New("dnsUpstream is required")
@@ -195,7 +206,10 @@ func parseConfig(data []byte) (config, error) {
 	if c.secretTTL == 0 {
 		c.secretTTL = time.Minute
 	}
-	for _, name := range []string{c.caCert, c.caKey, c.opToken} {
+	if c.authKey == "" {
+		return c, errors.New("authKeyCredential must not be empty")
+	}
+	for _, name := range []string{c.authKey, c.caCert, c.caKey, c.opToken} {
 		if name != "" && (!credentialName.MatchString(name) || name == "." || name == "..") {
 			return c, fmt.Errorf("credential name %q is not a plain file name", name)
 		}

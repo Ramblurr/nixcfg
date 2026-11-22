@@ -38,9 +38,12 @@ lives:
 
 ## What it does
 
-The exit node forwards nothing by itself. nftables TPROXY hands every TCP and
-UDP flow that arrives from the tailnet to ts-egress, which looks up the
-caller and its rules and then does one of these:
+ts-egress is the exit node itself: a [tsnet](https://tailscale.com/kb/1244/tsnet)
+node that advertises the exit routes, with no tailscaled, kernel routing or
+packet redirection on the host. Every TCP and UDP flow a tenant sends through
+it arrives in its userspace network stack, and nothing is forwarded by
+itself. ts-egress looks up the caller and its rules and then does one of
+these:
 
 | Rule kind | Matches | What happens |
 |-----------|---------|--------------|
@@ -55,6 +58,11 @@ Some destinations are refused whatever the rules say: loopback, link-local
 (cloud metadata included), the Tailscale ranges, multicast, broadcast and the
 egress host's addresses. UDP to port 443 of an `http` host is refused, so
 clients fall back from QUIC to TLS, which the egress can read.
+
+DNS is answered only on port 53. Tailscale clients normally send DNS to an
+exit node over its peer API (DNS over HTTPS), which ts-egress cannot filter,
+so it refuses that for every caller. A tenant must use a resolver IP on port
+53, such as one in its own `resolv.conf`.
 
 Every flow and every decrypted request writes one JSON line to stdout with
 the caller's node name and tags, the verdict, the rule or reason, and byte
@@ -171,9 +179,11 @@ VM for the egress, and an auth key for the tag it will advertise.
    }
    ```
 
-   Put the auth key at `/run/host-secrets/ts-authkey`, or point
-   `authKeyFile` elsewhere. The module starts tailscaled as an exit node with
-   `tag:egress`, installs the TPROXY rules, and runs ts-egress.
+   Put an auth key for `tag:egress` at `/run/host-secrets/ts-authkey`, or
+   point `authKeyFile` elsewhere. The node logs in with it once and keeps its
+   identity in `/var/lib/ts-egress`. The module runs ts-egress as the node
+   `egress` and opens its WireGuard port, UDP 41641. The host needs no
+   tailscaled.
 
 3. On the tenant, use the egress as its exit node:
    `tailscale set --exit-node=egress`.
@@ -196,8 +206,11 @@ systemd did not provide stops startup.
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `dnsUpstream` | required | Resolver, as `host:port`, for permitted questions. |
-| `tcpListen`, `udpListen` | `0.0.0.0:15001`, `[::]:15001` | Where TPROXY delivers flows. |
-| `tailscaledSocket` | `/var/run/tailscale/tailscaled.sock` | Local API used for WhoIs. |
+| `hostname` | `egress` | Tailscale hostname of the node. |
+| `stateDir` | `/var/lib/ts-egress` | Where the node keeps its keys and state. |
+| `authKeyCredential` | `ts-authkey` | Name of the auth key credential. Required, though only the first login uses it. |
+| `tags` | none | Tags the node advertises. |
+| `port` | random | UDP port for WireGuard and peer-to-peer traffic. |
 | `self` | none | The host's own addresses, added to the refused set. |
 | `identityTTL` | `15s` | How long a caller's rules are cached. A revoked grant takes effect within this time. |
 | `peekTimeout` | `5s` | How long to wait for a TLS ClientHello or HTTP request line. |
@@ -216,7 +229,10 @@ so it allows only the listed hosts and ports.
 
 ## Limitations
 
-- Linux only: it needs TPROXY, `IP_TRANSPARENT` and an nftables ruleset.
+- It carries a patch to tsnet (`patches/`), which adds the UDP counterpart of
+  `RegisterFallbackTCPHandler`, until upstream has one.
+- Tenants using MagicDNS through the exit node get SERVFAIL: the peer API
+  DNS path is refused, see above.
 - Rules apply per caller. Two tenants behind one Tailscale node share one
   identity and one rule set.
 - `tcp` and `udp` host rules depend on the caller resolving the name through
@@ -231,13 +247,18 @@ so it allows only the listed hosts and ports.
 
 ## Development
 
+The build vendors the modules and patches tsnet. Do the same before testing
+outside Nix, and again after changing `go.mod`:
+
 ```sh
+scripts/vendor.sh
 go test ./...
 nix build .#ts-egress .#checks.x86_64-linux.ts-egress
-
-# TPROXY end-to-end test in a throwaway user and network namespace, no root
-nix shell nixpkgs#go nixpkgs#iproute2 nixpkgs#nftables -c scripts/tproxy-e2e.sh
 ```
+
+`TestExitNode` runs a tenant through a real tsnet exit node on an offline
+tailnet (testcontrol and an in-process DERP), so it needs no network or
+privileges.
 
 ## License
 
