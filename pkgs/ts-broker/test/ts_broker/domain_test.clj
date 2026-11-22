@@ -201,8 +201,11 @@
   (is (= ["BRK_AAAAAAAA" "BRK_77777777" "BRK_AEBAGBAF"]
          (map #(domain/generated-name (byte-array %)) [[0 0 0 0 0] [-1 -1 -1 -1 -1 9] [1 2 3 4 5]])))
   (is (every? domain/credential-name?
-              (repeatedly 100 #(domain/generated-name (byte-array (repeatedly 5 (fn [] (- (rand-int 256) 128))))))))
-  (is (= ["GITHUB_TOKEN" "_1PASSWORD_ITEM"] (map domain/env-name ["GitHub token" "1password item"]))))
+              (repeatedly 100 #(domain/generated-name (byte-array (repeatedly 5 (fn [] (- (rand-int 256) 128)))))))))
+
+(deftest names-the-environment-variable-by-item-title-or-else-by-credential-name
+  (is (= ["GITHUB_TOKEN" "_1PASSWORD_ITEM" "BRK_AAAAAAAA" "BRK_AAAAAAAA"]
+         (map #(domain/env-name {:name "BRK_AAAAAAAA" :item-title %}) ["GitHub token" "1password item" "鍵" nil]))))
 
 (deftest host-patterns
   (is (= ["api.github.com" "*.github.com" "_dmarc.example.com" nil nil nil nil]

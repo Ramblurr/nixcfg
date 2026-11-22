@@ -319,12 +319,15 @@
                         (nth base32-alphabet (bit-and (bit-shift-right n shift) 31))))))
 
 (defn env-name
-  "Returns an environment variable name derived from an item `title`."
-  [title]
-  (-> (str/upper-case (str title))
+  "Returns an environment variable name for `credential` derived from its
+  item title, or its name when the title has no ASCII letter or digit."
+  [{:keys [name item-title]}]
+  (-> (str/upper-case (str item-title))
       (str/replace #"[^A-Z0-9]+" "_")
       (str/replace #"^_+|_+$" "")
-      (str/replace #"^(?=[0-9])" "_")))
+      (str/replace #"^(?=[0-9])" "_")
+      not-empty
+      (or name)))
 
 (defn title
   "Returns the title of `credential`: its vault, item and field titles."

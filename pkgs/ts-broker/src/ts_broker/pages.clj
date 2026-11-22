@@ -249,9 +249,9 @@
 (defn- credential-facts
   "Returns the definition list of credential `c`: its 1Password titles with
   their IDs, and its placeholder with an environment line to copy."
-  [{:keys [name vault item field vault-title item-title field-label editor updated]}]
+  [{:keys [name vault item field vault-title item-title field-label editor updated] :as c}]
   (let [placeholder (str domain/placeholder-prefix name)
-        env-line (str (domain/env-name item-title) "=" placeholder)]
+        env-line (str (domain/env-name c) "=" placeholder)]
     [:dl.facts
      [:dt "Vault"] [:dd vault-title [:small.id vault]]
      [:dt "Item"] [:dd item-title [:small.id item]]
