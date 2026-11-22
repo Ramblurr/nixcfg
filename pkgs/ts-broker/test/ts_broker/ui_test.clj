@@ -114,7 +114,15 @@
                     (request :get "/")
                     (request :get "/nowhere" :headers login)
                     (json-post actions/delete-credential {:name "X"})
-                    (stream-post "/" datastar)])))))
+                    (stream-post "/" datastar)
+                    (request :post actions/assign
+                             :headers (assoc datastar "Content-Type" "application/x-www-form-urlencoded")
+                             :body "credential=%E0%A4%A")])))))
+
+(deftest malformed-form-encoding-is-a-bad-request
+  (is (= 400 (:status (request :post actions/assign
+                               :headers (assoc datastar "Content-Type" "application/x-www-form-urlencoded")
+                               :body "credential=%E0%A4%A")))))
 
 (deftest creates-a-credential-from-the-catalog-by-field-id
   (is (str/includes? (render "/catalog?vault=vlt0000000000000000000000a&item=itm0000000000000000000000a")

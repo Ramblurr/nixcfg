@@ -15,7 +15,8 @@
   Every request needs the `Tailscale-User-Login` header, which tailscale
   serve sets. A POST also needs `Datastar-Request: true` and
   `Sec-Fetch-Site: same-origin`. Without them the answer is 403. The login
-  is the request's `:actor`. No response may be framed."
+  is the request's `:actor`. Malformed URL encoding is a 400. No response
+  may be framed, errors included."
   (:require
    [cheshire.core :as json]
    [clojure.string :as str]
@@ -61,7 +62,10 @@
     {:status 200 :headers headers :body body}))
 
 (defn- decode [s]
-  (URLDecoder/decode (str s) "UTF-8"))
+  (try
+    (URLDecoder/decode (str s) "UTF-8")
+    (catch IllegalArgumentException e
+      (throw (ex-info "Malformed URL encoding." {:type ::bad-request} e)))))
 
 (defn parse-params
   "Returns the parameters of the URL-encoded `s` as a map of keyword to a
@@ -166,8 +170,15 @@
                                       (d*/redirect! sse redirect))
                                     (d*/close-sse! sse))}))))
 
-(defn- forbidden [message]
-  {:status 403 :headers {"Content-Type" "text/plain; charset=utf-8"} :body message})
+(defn- text-response [status message]
+  {:status status :headers {"Content-Type" "text/plain; charset=utf-8"} :body message})
+
+(defn- error-response [e]
+  (if (= ::bad-request (:type (ex-data e)))
+    (text-response 400 (str "Bad request: " (ex-message e) "\n"))
+    (do (binding [*out* *err*]
+          (println "request failed:" (ex-message e)))
+        (text-response 500 "The request failed. See the broker log.\n"))))
 
 (defn- route [{:keys [pages actions assets] :as app} {:keys [request-method uri] :as request}]
   (let [page (get pages uri)]
@@ -192,15 +203,18 @@
           headers (:headers request)
           response (cond
                      (nil? actor)
-                     (forbidden "Forbidden: the Tailscale-User-Login header is missing.\n")
+                     (text-response 403 "Forbidden: the Tailscale-User-Login header is missing.\n")
 
                      (and (not= :get (:request-method request))
                           (not (and (= "true" (get headers "datastar-request"))
                                     (= "same-origin" (get headers "sec-fetch-site")))))
-                     (forbidden "Forbidden: not a same-origin Datastar request.\n")
+                     (text-response 403 "Forbidden: not a same-origin Datastar request.\n")
 
                      :else
-                     (route app (assoc request :actor actor)))]
+                     (try
+                       (route app (assoc request :actor actor))
+                       (catch Exception e
+                         (error-response e))))]
       (update response :headers merge security-headers))))
 
 (defn- refresh-fn
