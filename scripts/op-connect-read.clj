@@ -49,8 +49,11 @@
         fields (if section
                  (let [section-id (:id (one "section" section sections :label))]
                    (filter #(= section-id (get-in % [:section :id])) fields))
-                 fields)]
-    (:value (one "field" field fields :label))))
+                 fields)
+        value (:value (one "field" field fields :label))]
+    (if (and (string? value) (not (str/blank? value)))
+      value
+      (fail (str "Empty value for " reference)))))
 
 (defn -main [& args]
   (if (not= 4 (count args))

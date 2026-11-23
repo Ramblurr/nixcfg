@@ -33,7 +33,8 @@
 
 (defn- require-client-keys! [template rendered]
   (when (and (seq (get-in template ["access" "api-keys"]))
-             (empty? (get-in rendered ["access" "api-keys"])))
+             (not-any? #(and (string? %) (not (str/blank? %)))
+                       (get-in rendered ["access" "api-keys"])))
     ;; CLIProxyAPI accepts every request when it has no client keys.
     (throw (ex-info "No client API key resolved" {:safe true})))
   rendered)

@@ -33,7 +33,15 @@ let
   serve = pkgs.writeShellScript "cliproxyapi-serve" ''
     set -eu
     unset TS_AUTHKEY
-    until [ -S ${proxySocket} ]; do ${pkgs.coreutils}/bin/sleep 1; done
+    tries=0
+    until [ -S ${proxySocket} ]; do
+      tries=$((tries + 1))
+      if [ "$tries" -ge 60 ]; then
+        echo "cliproxy-api: timed out waiting for ${proxySocket}" >&2
+        exit 1
+      fi
+      ${pkgs.coreutils}/bin/sleep 1
+    done
     ${bb} ${../../scripts/render-op-config.clj} ${template} ${reader} ${configFile}
     exec ${lib.getExe cfg.package} --config ${configFile}
   '';
@@ -129,8 +137,10 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = (cfg.settings.access.api-keys or [ ]) != [ ];
-        message = "modules.services.cliproxy-api.settings.access.api-keys must configure at least one client API key.";
+        assertion = lib.any (k: builtins.isString k && lib.strings.trim k != "") (
+          cfg.settings.access.api-keys or [ ]
+        );
+        message = "modules.services.cliproxy-api.settings.access.api-keys must configure at least one non-blank client API key.";
       }
     ];
 

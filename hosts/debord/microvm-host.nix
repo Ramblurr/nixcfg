@@ -1,7 +1,7 @@
 {
   modules.microvm-host = {
     enable = true;
-    baseZfsDataset = "rpool/encrypted/safe/microvms";
+    baseZfsDataset = "rpool/encrypted/safe/vms/microvms";
   };
 
   microvm.vms.ward = {

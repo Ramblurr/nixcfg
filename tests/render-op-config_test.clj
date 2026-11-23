@@ -137,6 +137,8 @@ esac
 
 (deftest rejects-a-config-with-no-client-key
   (assert-rejected {:access {:api-keys ["op://test/missing/credential" "op://test/empty/credential"]}}
+                   "No client API key resolved")
+  (assert-rejected {:access {:api-keys ["   " "\t"]}}
                    "No client API key resolved"))
 
 (deftest command-line-failure-is-quiet

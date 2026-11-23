@@ -18,7 +18,8 @@ let
         {"id": "itm0000000000000000000000a", "title": "cliproxyapi",
          "fields": [{"id": "credential", "label": "credential", "value": "${clientKey}"},
                     {"id": "fld0000000000000000000000b", "label": "management-secret-unhashed",
-                     "value": "management-fixture"}]},
+                     "value": "management-fixture"},
+                    {"id": "fld0000000000000000000000d", "label": "empty-field"}]},
         {"id": "itm0000000000000000000000c", "title": "OpenRouter",
          "fields": [{"id": "credential", "label": "credential", "value": "upstream-fixture"}]},
     ]
@@ -87,6 +88,7 @@ pkgs.testers.runNixOSTest {
           management.secret-key = "op://moot-ward/cliproxyapi/management-secret-unhashed";
           access.api-keys = [
             "op://moot-ward/cliproxyapi/credential"
+            "op://moot-ward/cliproxyapi/empty-field"
             "op://moot-ward/missing/credential"
           ];
           api-keys.openai-compatibility = [
@@ -150,6 +152,7 @@ pkgs.testers.runNixOSTest {
         assert status("/v1/models", "${clientKey}") == "200"
         assert status("/v1/models") == "401"
         assert status("/v1/models", "wrong-key") == "401"
+        assert status("/v1/models", "nil") == "401"
         models = machine.succeed(f"curl -sf -H 'Authorization: Bearer ${clientKey}' {API}/v1/models")
         assert "test/upstream-model" in models, models
         machine.fail("ss -Hltn 'sport = :8317' | grep -v 127.0.0.1")
