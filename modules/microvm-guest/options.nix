@@ -19,6 +19,7 @@ in
       type = types.enum [
         "quine"
         "dewey"
+        "debord"
       ];
       default = null;
       description = ''

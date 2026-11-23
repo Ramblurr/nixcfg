@@ -47,6 +47,7 @@
         ts-broker = import ../tests/ts-broker.nix { inherit pkgs; };
         ts-broker-contract = import ../tests/ts-broker-contract.nix { inherit pkgs; };
         cliproxy-api-service = import ../tests/cliproxy-api-service.nix { inherit inputs pkgs; };
+        ward-guest = import ../tests/ward-guest.nix { inherit inputs pkgs; };
         systemd-netns-private-egress = import ../tests/systemd-netns-private-egress.nix {
           inherit inputs pkgs;
         };

@@ -71,6 +71,7 @@
         opencloud-home = "dewey";
         t3-users = "quine";
         egress = "quine";
+        ward = "debord";
       };
     in
     {

@@ -14,6 +14,7 @@ in
     ./disk-config.nix
     ./networking.nix
     ./label-printer.nix
+    ./microvm-host.nix
     ./nixbot.nix
     ./prometheus.nix
     #./grafana

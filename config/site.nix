@@ -262,6 +262,7 @@ in
       opencloud-home = [ "172.20.20.24" ];
       t3-users = [ "172.20.20.25" ];
       egress = [ "172.20.20.26" ];
+      ward = [ "172.20.20.27" ];
     };
     #hosts6.local = {
     #  addams = [ "${prefix6}:5::1" ];
