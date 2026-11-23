@@ -275,6 +275,7 @@ assert lib.elem [
 ] profile.codex.removeSettings;
 assert lib.elem [ "env" "ANTHROPIC_AUTH_TOKEN" ] profile.claude.removeSettings;
 assert profile.claude.settings.env.ANTHROPIC_BASE_URL == profile.proxy.url;
+assert profile.claude.settings.promptCacheTtl == "1h";
 assert profile.pluginsSync.enable;
 assert profile.claude.plugins == { };
 assert profile.codex.plugins == [ ];

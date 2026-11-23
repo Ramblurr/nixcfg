@@ -97,6 +97,8 @@ let
     env.ENABLE_CLAUDEAI_MCP_SERVERS = "false";
   }
   // lib.optionalAttrs cfg.proxy.enable {
+    # Claude Code only picks the 1h cache TTL itself on direct subscription auth.
+    promptCacheTtl = "1h";
     env = {
       ENABLE_CLAUDEAI_MCP_SERVERS = "false";
       ANTHROPIC_BASE_URL = cfg.proxy.url;
