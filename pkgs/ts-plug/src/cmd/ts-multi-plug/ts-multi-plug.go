@@ -155,7 +155,9 @@ func newServer(hostname, dir string, tags []string) *tsnet.Server {
 func childEnv(environ []string) []string {
 	out := make([]string, 0, len(environ)+1)
 	for _, entry := range environ {
-		if strings.HasPrefix(entry, "TS_AUTHKEY=") {
+		if strings.HasPrefix(entry, "TS_AUTHKEY=") ||
+			strings.HasPrefix(entry, "TS_AUTH_KEY=") ||
+			strings.HasPrefix(entry, "TS_CLIENT_SECRET=") {
 			continue
 		}
 		out = append(out, entry)

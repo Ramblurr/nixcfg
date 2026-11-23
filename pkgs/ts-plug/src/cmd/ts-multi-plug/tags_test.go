@@ -163,7 +163,13 @@ func TestOAuthClientSecretLogin(t *testing.T) {
 }
 
 func TestChildEnvStripsAuthKey(t *testing.T) {
-	got := childEnv([]string{"PATH=/bin", "TS_AUTHKEY=tskey-client-secret", "HOME=/tmp"})
+	got := childEnv([]string{
+		"PATH=/bin",
+		"TS_AUTHKEY=tskey-client-secret",
+		"TS_AUTH_KEY=tskey-auth-alias",
+		"TS_CLIENT_SECRET=tskey-client-alias",
+		"HOME=/tmp",
+	})
 	want := []string{"PATH=/bin", "HOME=/tmp", "TSPLUG_ACTIVE=1"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("childEnv() = %q, want %q", got, want)
