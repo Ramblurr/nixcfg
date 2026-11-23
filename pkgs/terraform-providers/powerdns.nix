@@ -8,8 +8,8 @@
 (terraform-providers.mkProvider {
   owner = "mmianl";
   repo = "terraform-provider-powerdns";
-  rev = "v2.5.0";
-  hash = "sha256-8AoWrat7V67tQciDPGw20l0zYQJH1NVp3JwWbs6JYEE=";
+  rev = "v2.6.0";
+  hash = "sha256-GPoX4cB1tBSTGzZKZHK8GZEfCyDcAEIVeD6C2QoWj0I=";
   vendorHash = null;
   homepage = "https://registry.terraform.io/providers/mmianl/powerdns";
   provider-source-address = "registry.terraform.io/mmianl/powerdns";
