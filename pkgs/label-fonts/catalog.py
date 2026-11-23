@@ -183,14 +183,20 @@ def google(src, fonts_dir, out):
     write(out, unique_by_family(entries))
 
 
+SERVER_FALLBACK_FAMILIES = {"DejaVu Sans", "DejaVu Serif", "DejaVu Sans Mono"}
+
+
 def merge(google_json, out, svg_font_dirs):
     with open(google_json, encoding="utf-8") as f:
         entries = json.load(f)["families"]
+    empty = [d for d in svg_font_dirs[1:] if not list_fonts([d])]
+    if empty:
+        sys.exit(f"bundled font dirs with no fonts resvg can load: {empty}")
     for (_, family), (styles, weights) in group_faces(list_fonts(svg_font_dirs[1:]), lambda path: None).items():
         entries.append(entry(family, "bundled", styles, weights))
     entries = unique_by_family(entries)
     found = {family for family, _, _ in list_fonts(svg_font_dirs).values()}
-    absent = sorted(e["family"] for e in entries if e["family"] not in found)
+    absent = sorted(({e["family"] for e in entries} | SERVER_FALLBACK_FAMILIES) - found)
     if absent:
         sys.exit(f"resvg does not find these catalog families in {svg_font_dirs}: {absent}")
     write(out, entries)
