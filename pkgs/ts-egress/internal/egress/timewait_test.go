@@ -24,16 +24,19 @@ import (
 
 // TestExitNodeReopensATimeWaitFlow closes a flow from the egress side, so
 // the egress holds it in TIME_WAIT, then reconnects from the same tenant
-// port, as a Linux client reusing an ephemeral port does. The egress drops
-// a SYN for a tuple in TIME_WAIT, so the tenant connects only once TIME_WAIT
-// ends and a SYN retransmit gets through; that must happen within the 5 s
-// a client waits for its connection (oha's churn timeout).
+// port, as a Linux client reusing an ephemeral port does. The new SYN must
+// reopen the tuple at once, not after a retransmit once TIME_WAIT ends.
 func TestExitNodeReopensATimeWaitFlow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	tw := newTimeWaitFlow(ctx, t)
+	syn := func(b []byte) bool { return tw.fromTenant(b) && tcpFlags(b) == header.TCPFlagSyn }
+	before := tw.cap.received(syn)
 	if err := tw.flow(); err != nil {
 		t.Fatalf("a new SYN on the TIME_WAIT tuple: %v", err)
+	}
+	if n := tw.cap.received(syn) - before; n != 1 {
+		t.Fatalf("the reopen took %d SYNs, want 1", n)
 	}
 }
 

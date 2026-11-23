@@ -105,6 +105,19 @@ func (c *tcpCapture) last(match func([]byte) bool) []byte {
 	return nil
 }
 
+// received returns how many packets the egress has received that match.
+func (c *tcpCapture) received(match func([]byte) bool) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	n := 0
+	for _, b := range c.in {
+		if match(b) {
+			n++
+		}
+	}
+	return n
+}
+
 // mark returns how many packets the egress has sent so far, for since.
 func (c *tcpCapture) mark() int {
 	c.mu.Lock()
