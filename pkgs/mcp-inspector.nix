@@ -14,13 +14,13 @@
 # Modified to set PATH to include node (See https://github.com/andoriyu/flakes/pull/258)
 buildNpmPackage rec {
   pname = "mcp-inspector";
-  version = "2.14.0";
+  version = "2.16.0";
 
   src = fetchFromGitHub {
     owner = "modelcontextprotocol";
     repo = "inspector";
     rev = version;
-    hash = "sha256-iCf/hVWYjgAjfHJKjBXtgA39NL87StgnJjwjAmrukWM=";
+    hash = "sha256-FpTzpN9/B4V4ko4SCTByBJHM+XHFM7ZzseDzyc773R4=";
   };
 
   makeWrapperArgs = [
@@ -31,7 +31,7 @@ buildNpmPackage rec {
     }"
   ];
 
-  npmDepsHash = "sha256-EcmIdl7L+3GM8VOag5r+nGmQgE4sjGffnP2pY8LRWtE=";
+  npmDepsHash = "sha256-fC0/13fgpHDlZxZ+FaY0+4VOQfxCFAtLNvJOnErM+lo=";
 
   # Each v2 client has its own lockfile; install it without the postinstall cascade.
   # The launcher has no dependencies and uses the root package's build tools.
@@ -48,10 +48,10 @@ buildNpmPackage rec {
         }
       )
       {
-        cli = "sha256-Q/Fgk+lerQXLobJYpLjOFGVk0Sc61deqSeJQG67MYyU=";
-        mcpdo = "sha256-ZSsYxDSQTrLSd37tJ90ZChB+IvtPxYpktimSFBEkXgU=";
-        tui = "sha256-DEWTLEbnC0XNuAtEhCmE+ZyvMLlwFfP89+GvwX6irfY=";
-        web = "sha256-0AwMjW4RxIhC0ZLpD5oV+DgyFIiZZKu+lpiWLwIRBbs=";
+        cli = "sha256-Fbi/6HLq4Q6sSgUeySa66LDHepcA5GdvsR9RIMHOubE=";
+        mcpdo = "sha256-ikB1o5YxQ8qO3VTtY3F8cNY9Sycx09L0vttetA2QEkw=";
+        tui = "sha256-b7/he7GMzgFsFQ6v2KWIv0CTTyNEy13Rr5Ye6hTE9TI=";
+        web = "sha256-k8uI5cSuhEKAMFl+UMPElvu9RB9zbapwp+yd/4PJX7A=";
       };
   postConfigure = lib.concatStringsSep "\n" (
     lib.mapAttrsToList (client: deps: ''
