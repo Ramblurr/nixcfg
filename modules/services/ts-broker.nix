@@ -5,7 +5,7 @@
   ...
 }:
 
-# ts-plug puts the broker on the tailnet as its own node, ts-broker. It
+# ts-plug puts the broker on the tailnet as its own node, named by hostname. It
 # starts the broker as its child, so both run as the ts-broker user, and
 # answers HTTPS on the tailnet by proxying to the UI socket with the
 # caller's identity headers. The UI socket and ts-plug's HTTP proxy for
@@ -39,7 +39,7 @@ let
   plug = [
     (lib.getExe cfg.plugPackage)
     "-hostname"
-    "ts-broker"
+    cfg.hostname
     "-dir"
     "/var/lib/ts-broker-tailscale"
     "-https-port"
@@ -66,6 +66,12 @@ in
     package = lib.mkPackageOption pkgs "ts-broker" { };
 
     plugPackage = lib.mkPackageOption pkgs "ts-plug" { };
+
+    hostname = lib.mkOption {
+      type = lib.types.str;
+      default = "ts-broker";
+      description = "Tailscale hostname of the broker's node, which serves the approval UI.";
+    };
 
     authKeyFile = lib.mkOption {
       type = lib.types.addCheck lib.types.str (
