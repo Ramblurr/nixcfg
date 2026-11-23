@@ -109,10 +109,6 @@ pkgs.testers.runNixOSTest {
         return {name(p) for p in guest(f"nix-store -qR {path}").split()}
 
 
-    def staging_roots():
-        return [r for r in guest("ls -A /nix/var/nix/gcroots").split() if r.startswith("microvm-switch.")]
-
-
     def referenced():
         host.succeed("zpool sync tank")
         return int(host.succeed(f"zfs get -Hp -o value referenced {zvol}"))
@@ -171,13 +167,15 @@ pkgs.testers.runNixOSTest {
         guest(f"ln -s {added} /nix/var/nix/gcroots/moot-state")
         # hello is valid on the guest but unrooted, so only the switch keeps it from GC.
         host.succeed(f"nix-store --export {hello} | ssh {target} nix-store --import")
-        # Free space below min-free makes nix-store --import run a full auto-GC,
-        # which takes gc.lock exclusively while the switch is in progress.
+        # Free space below min-free would make nix-store --import wait for an
+        # auto-GC that needs the gc.lock the switch holds.
         guest("mkdir -p ~/.config/nix && echo min-free = 1125899906842624 > ~/.config/nix/nix.conf")
         out = host.succeed(f"timeout 600 ${v2Switch}/bin/microvm-switch {target} 2>&1")
         guest("rm ~/.config/nix/nix.conf")
-        assert "running auto-GC" in out, out
-        assert staging_roots() == [], staging_roots()
+        assert "auto-GC" not in out, out
+        # The switch released gc.lock, and the profile now roots hello.
+        host.succeed(f"timeout 300 {ssh} nix-store --gc")
+        guest(f"nix-store --check-validity {hello}")
         assert guest("cat /proc/sys/kernel/random/boot_id").strip() == first_boot, "the guest rebooted"
         guest("grep -qx v2 /etc/moot-release")
         guest("hello")
@@ -191,7 +189,6 @@ pkgs.testers.runNixOSTest {
     with subtest("a second switch to the same system copies nothing"):
         out = host.succeed(f"${v2Switch}/bin/microvm-switch {target} 2>&1")
         assert "Copying" not in out, out
-        assert staging_roots() == [], staging_roots()
 
     with subtest("the guest reboots onto the v2 image with the same zvol"):
         host.succeed(f"ln -sfn ${v2Runner} {state}/current")

@@ -22,29 +22,27 @@ let
       [[ "$remote_name" == ${lib.escapeShellArg config.networking.hostName} ]] \
         || { echo "refusing to switch $remote_name to ${config.networking.hostName}" >&2; exit 1; }
 
-      # Every requisite gets a GC root before its validity is checked, so no
-      # guest GC between the check and the profile update deletes a path the
-      # profile needs. That includes the auto-GC nix-store --import runs, which
-      # takes gc.lock exclusively. A link becomes a root once its path is valid.
-      # A GC already running scanned the roots before the links existed, so
-      # wait for it to finish before checking.
-      requisites=$(nix-store --query --requisites ${toplevel})
-      root_dir=$(ssh -n "$target" mktemp -d /nix/var/nix/gcroots/microvm-switch.XXXXXX)
-      [[ "$root_dir" =~ ^/nix/var/nix/gcroots/microvm-switch\.[A-Za-z0-9._-]+$ ]] \
-        || { echo "unexpected staging root: $root_dir" >&2; exit 1; }
-      trap 'ssh -n "$target" rm -rf "$root_dir"' EXIT
-      ssh "$target" xargs ln -s -t "$root_dir" <<< "$requisites"
-      ssh -n "$target" flock -s /nix/var/nix/gc.lock true
+      # A shared lock on gc.lock keeps the guest GC from starting between the
+      # validity check and the profile update, and waits out a GC already
+      # running. Nix creates the lock with mode 0600. The store operations
+      # bypass nix-daemon and disable auto-GC: an auto-GC would wait for
+      # gc.lock exclusively and never get it. Closing stdin releases the lock.
+      coproc gc_lock { ssh "$target" "umask 077 && flock -s /nix/var/nix/gc.lock sh -c 'echo locked; exec cat'"; }
+      gc_lock_fd=''${gc_lock[1]}
+      gc_lock_pid=$!
+      read -r lock_reply <&"''${gc_lock[0]}" || lock_reply=
+      [[ "$lock_reply" == locked ]] || { echo "failed to acquire the guest GC lock" >&2; exit 1; }
 
-      missing=$(ssh "$target" xargs nix-store --check-validity --print-invalid <<< "$requisites")
+      missing=$(nix-store --query --requisites ${toplevel} \
+        | ssh "$target" NIX_REMOTE=local xargs nix-store --option min-free 0 --check-validity --print-invalid)
       if [[ -n "$missing" ]]; then
         readarray -t paths <<< "$missing"
         echo "Copying ''${#paths[@]} store paths to $target"
-        nix-store --export "''${paths[@]}" | ssh "$target" nix-store --import >/dev/null
+        nix-store --export "''${paths[@]}" | ssh "$target" NIX_REMOTE=local nix-store --option min-free 0 --import >/dev/null
       fi
-      ssh -n "$target" nix-env -p /nix/var/nix/profiles/system --set ${toplevel}
-      ssh -n "$target" rm -rf "$root_dir"
-      trap - EXIT
+      ssh -n "$target" NIX_REMOTE=local nix-env --option min-free 0 -p /nix/var/nix/profiles/system --set ${toplevel}
+      exec {gc_lock_fd}>&-
+      wait "$gc_lock_pid" || true
       ssh -n "$target" ${toplevel}/bin/switch-to-configuration switch
     '';
   };
