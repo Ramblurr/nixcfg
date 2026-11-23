@@ -1,9 +1,9 @@
 diff --git a/brotherql/tcp_backend.go b/brotherql/tcp_backend.go
 new file mode 100644
-index 0000000..37a3a5e
+index 0000000..b656623
 --- /dev/null
 +++ b/brotherql/tcp_backend.go
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,73 @@
 +package brotherql
 +
 +import (
@@ -51,21 +51,27 @@ index 0000000..37a3a5e
 +
 +type tcpBackend struct {
 +	net.Conn
-+	readTimeout time.Duration
++	readTimeout     time.Duration
++	readDeadlineSet bool
 +}
 +
 +func (b *tcpBackend) SetReadTimeout(timeout time.Duration) {
 +	b.readTimeout = timeout
++	b.readDeadlineSet = false
 +}
 +
 +func (b *tcpBackend) Read(data []byte) (int, error) {
-+	if err := b.SetReadDeadline(time.Now().Add(b.readTimeout)); err != nil {
-+		return 0, err
++	if !b.readDeadlineSet {
++		if err := b.SetReadDeadline(time.Now().Add(b.readTimeout)); err != nil {
++			return 0, err
++		}
++		b.readDeadlineSet = true
 +	}
 +	return b.Conn.Read(data)
 +}
 +
 +func (b *tcpBackend) Write(data []byte) (int, error) {
++	b.readDeadlineSet = false
 +	if err := b.SetWriteDeadline(time.Now().Add(tcpIOTimeout)); err != nil {
 +		return 0, err
 +	}
