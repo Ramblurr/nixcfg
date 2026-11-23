@@ -20,7 +20,7 @@ in
       description = "Brother QL Web Interface";
       wantedBy = [ "multi-user.target" ];
       environment = {
-        FLASK_PRINTER = "tcp://10.9.5.2:9100";
+        FLASK_PRINTER = "tcp://10.8.60.64:9100";
         FLASK_MODEL = "QL-800";
         #FLASK_SERVER_PORT = "8013";
         #FLASK_LABEL_DEFAULT_SIZE = "d24";
