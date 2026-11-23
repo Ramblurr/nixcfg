@@ -11,7 +11,7 @@
 
 (defn- unicode-blank? [s]
   (or (not (string? s))
-      (nil? (re-find #"[^\t\n\x0B\f\r \u0085\u00A0\p{Zs}]" s))))
+      (nil? (re-find #"[^\p{IsWhite_Space}]" s))))
 
 (defn parse-reference [reference]
   (let [parts (some-> (second (re-matches #"op://([^?]+)" reference)) (str/split #"/"))]

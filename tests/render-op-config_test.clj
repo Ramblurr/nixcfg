@@ -22,6 +22,7 @@ case \"$1\" in
   'op://test/upstream/credential') printf '  upstream-key-fixture\\n\\n' ;;
   'op://test/with space/credential') echo 'spaced-key-fixture' ;;
   'op://test/empty/credential') printf ' \\n\\t\\n' ;;
+  'op://test/separator/credential') printf '\\342\\200\\250\\342\\200\\251' ;;
   *) echo 'LEAKED-STDOUT'; echo 'LEAKED-STDERR' >&2; exit 1 ;;
 esac
 ")
@@ -138,7 +139,9 @@ esac
 (deftest rejects-a-config-with-no-client-key
   (assert-rejected {:access {:api-keys ["op://test/missing/credential" "op://test/empty/credential"]}}
                    "No client API key resolved")
-  (assert-rejected {:access {:api-keys ["   " "\t" "\u00A0"]}}
+  (assert-rejected {:access {:api-keys ["op://test/separator/credential"]}}
+                   "No client API key resolved")
+  (assert-rejected {:access {:api-keys ["   " "\t" "\u00A0" "\u2028" "\u2029"]}}
                    "No client API key resolved"))
 
 (deftest command-line-failure-is-quiet

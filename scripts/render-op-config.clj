@@ -2,7 +2,7 @@
 (require '[babashka.fs :as fs] '[babashka.process :as process]
          '[cheshire.core :as json] '[clojure.string :as str])
 
-(def ^:private unicode-space-re #"^[\t\n\x0B\f\r \u0085\u00A0\p{Zs}]+|[\t\n\x0B\f\r \u0085\u00A0\p{Zs}]+$")
+(def ^:private unicode-space-re #"^\p{IsWhite_Space}+|\p{IsWhite_Space}+$")
 
 (defn- trim-unicode [s]
   (str/replace s unicode-space-re ""))

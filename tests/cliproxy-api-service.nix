@@ -20,7 +20,8 @@ let
                     {"id": "fld0000000000000000000000b", "label": "management-secret-unhashed",
                      "value": "management-fixture"},
                     {"id": "fld0000000000000000000000d", "label": "empty-field"},
-                    {"id": "fld0000000000000000000000e", "label": "nbsp-field", "value": "\u00a0"}]},
+                    {"id": "fld0000000000000000000000e", "label": "nbsp-field", "value": "\u00a0"},
+                    {"id": "fld0000000000000000000000f", "label": "sep-field", "value": "\u2028\u2029"}]},
         {"id": "itm0000000000000000000000c", "title": "OpenRouter",
          "fields": [{"id": "credential", "label": "credential", "value": "upstream-fixture"}]},
     ]
@@ -28,7 +29,12 @@ let
 
     def items():
         if os.path.exists("/run/fake-connect-no-client"):
-            return [i for i in ITEMS if i["title"] != "cliproxyapi"]
+            return [
+                {**i, "fields": [f for f in i["fields"] if f["label"] != "credential"]}
+                if i["title"] == "cliproxyapi"
+                else i
+                for i in ITEMS
+            ]
         return ITEMS
 
 
@@ -91,6 +97,7 @@ pkgs.testers.runNixOSTest {
             "op://moot-ward/cliproxyapi/credential"
             "op://moot-ward/cliproxyapi/empty-field"
             "op://moot-ward/cliproxyapi/nbsp-field"
+            "op://moot-ward/cliproxyapi/sep-field"
             "op://moot-ward/missing/credential"
           ];
           api-keys.openai-compatibility = [
