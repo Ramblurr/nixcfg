@@ -1,79 +1,18 @@
 { inputs, pkgs }:
 let
-  connectToken = "fake-connect-token";
-  connectUrl = "http://op-connect.example.ts.net:8080";
   clientKey = "client-key-fixture";
-  # ts-plug opens its HTTP proxy only once its node is on a tailnet, which
-  # the VM has none of. This fake Connect stands in for that proxy: it
-  # serves on the proxy socket and takes requests in absolute form.
-  fakeConnect = pkgs.writers.writePython3 "fake-connect" { flakeIgnore = [ "E501" ]; } ''
-    import json
-    import os
-    import socketserver
-    import sys
-    from http.server import BaseHTTPRequestHandler
-
-    VAULT = "vlt0000000000000000000000a"
-    ITEMS = [
-        {"id": "itm0000000000000000000000a", "title": "cliproxyapi",
-         "fields": [{"id": "credential", "label": "credential", "value": "${clientKey}"},
-                    {"id": "fld0000000000000000000000b", "label": "management-secret-unhashed",
-                     "value": "management-fixture"},
-                    {"id": "fld0000000000000000000000d", "label": "empty-field"},
-                    {"id": "fld0000000000000000000000e", "label": "nbsp-field", "value": "\u00a0"},
-                    {"id": "fld0000000000000000000000f", "label": "sep-field", "value": "\u2028\u2029"}]},
-        {"id": "itm0000000000000000000000c", "title": "OpenRouter",
-         "fields": [{"id": "credential", "label": "credential", "value": "upstream-fixture"}]},
-    ]
-
-
-    def items():
-        if os.path.exists("/run/fake-connect-no-client"):
-            return [
-                {**i, "fields": [f for f in i["fields"] if f["label"] != "credential"]}
-                if i["title"] == "cliproxyapi"
-                else i
-                for i in ITEMS
-            ]
-        return ITEMS
-
-
-    class Handler(BaseHTTPRequestHandler):
-        def answer(self, status, body):
-            data = json.dumps(body).encode()
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-
-        def log_message(self, *args):
-            pass
-
-        def do_GET(self):
-            with open("/run/fake-connect/requests", "a") as log:
-                log.write(self.path + "\n")
-            if self.headers.get("Authorization") != "Bearer ${connectToken}":
-                return self.answer(401, {"status": 401})
-            if not self.path.startswith("${connectUrl}/"):
-                return self.answer(502, {"status": 502})
-            parts = self.path.removeprefix("${connectUrl}").split("?")[0].strip("/").split("/")
-            if parts == ["v1", "vaults"]:
-                return self.answer(200, [{"id": VAULT, "name": "mootward"}])
-            if parts == ["v1", "vaults", VAULT, "items"]:
-                return self.answer(200, [{"id": i["id"], "title": i["title"]} for i in items()])
-            if len(parts) == 5 and parts[:4] == ["v1", "vaults", VAULT, "items"]:
-                for i in items():
-                    if i["id"] == parts[4]:
-                        return self.answer(200, i)
-            return self.answer(404, {"status": 404})
-
-
-    socketserver.UnixStreamServer.allow_reuse_address = True
-    server = socketserver.UnixStreamServer(sys.argv[1], Handler)
-    os.chmod(sys.argv[1], 0o666)
-    server.serve_forever()
-  '';
+  upstreamKey = "upstream-fixture";
+  dir = "/run/cliproxy-test";
+  nbsp = builtins.fromJSON ''"\u00a0"'';
+  separators = builtins.fromJSON ''"\u2028\u2029"'';
+  references = {
+    "op://mootward/cliproxyapi/credential" = "client-key";
+    "op://mootward/cliproxyapi/management-secret-unhashed" = "management";
+    "op://mootward/cliproxyapi/empty-field" = "empty";
+    "op://mootward/cliproxyapi/nbsp-field" = "nbsp";
+    "op://mootward/cliproxyapi/sep-field" = "sep";
+    "op://mootward/OpenRouter/credential" = "openrouter";
+  };
 in
 pkgs.testers.runNixOSTest {
   name = "cliproxy-api-service";
@@ -86,11 +25,8 @@ pkgs.testers.runNixOSTest {
       environment.systemPackages = [ pkgs.curl ];
       modules.services.cliproxy-api = {
         enable = true;
-        authKeyFile = "/run/cliproxy-test/authkey";
-        onepassword = {
-          url = connectUrl;
-          tokenFile = "/run/cliproxy-test/token";
-        };
+        authKeyFile = "${dir}/authkey";
+        credentials = builtins.mapAttrs (_: name: "${dir}/${name}") references;
         settings = {
           management.secret-key = "op://mootward/cliproxyapi/management-secret-unhashed";
           access.api-keys = [
@@ -98,7 +34,6 @@ pkgs.testers.runNixOSTest {
             "op://mootward/cliproxyapi/empty-field"
             "op://mootward/cliproxyapi/nbsp-field"
             "op://mootward/cliproxyapi/sep-field"
-            "op://mootward/missing/credential"
           ];
           api-keys.openai-compatibility = [
             {
@@ -111,18 +46,15 @@ pkgs.testers.runNixOSTest {
         };
       };
       systemd.tmpfiles.rules = [
-        "d /run/cliproxy-test 0700 root root -"
-        "f+ /run/cliproxy-test/token 0600 root root - ${connectToken}"
-        "f+ /run/cliproxy-test/authkey 0600 root root - tskey-auth-test"
+        "d ${dir} 0700 root root -"
+        "f+ ${dir}/authkey 0600 root root - tskey-auth-test"
+        "f+ ${dir}/client-key 0600 root root - ${clientKey}"
+        "f+ ${dir}/management 0600 root root - management-fixture"
+        "f+ ${dir}/empty 0600 root root -"
+        "f+ ${dir}/nbsp 0600 root root - ${nbsp}"
+        "f+ ${dir}/sep 0600 root root - ${separators}"
+        "f+ ${dir}/openrouter 0600 root root - ${upstreamKey}"
       ];
-      systemd.services.fake-connect = {
-        requires = [ "cliproxy-api.service" ];
-        after = [ "cliproxy-api.service" ];
-        serviceConfig = {
-          ExecStart = "${fakeConnect} /run/cliproxyapi/proxy.sock";
-          RuntimeDirectory = "fake-connect";
-        };
-      };
       users.users.outsider = {
         isSystemUser = true;
         group = "outsider";
@@ -143,19 +75,23 @@ pkgs.testers.runNixOSTest {
 
 
     machine.wait_for_unit("cliproxy-api.service")
-    machine.wait_until_succeeds("test -d /run/cliproxyapi")
-    machine.succeed("systemctl start fake-connect.service")
-    machine.wait_for_open_port(8317, "127.0.0.1")
+    machine.wait_for_open_port(8317, "127.0.0.1", timeout=30)
 
-    with subtest("op:// references resolve through the proxy socket with the loaded token"):
-        requests = machine.succeed("cat /run/fake-connect/requests").split()
-        assert requests and all(r.startswith("${connectUrl}/v1/") for r in requests), requests
+    with subtest("the blank fixtures hold Unicode whitespace"):
+        assert machine.succeed("od -An -tx1 ${dir}/nbsp").split() == ["c2", "a0"]
+        assert machine.succeed("od -An -tx1 ${dir}/sep").split() == ["e2", "80", "a8", "e2", "80", "a9"]
+        assert machine.succeed("stat -c %s ${dir}/empty").strip() == "0"
+
+    with subtest("op:// references render from the loaded credentials"):
         rendered = json.loads(machine.succeed(f"cat {CONFIG}"))
         assert rendered["access"]["api-keys"] == ["${clientKey}"], rendered["access"]
+        # CLIProxyAPI replaces the plaintext management secret with its bcrypt hash.
+        assert rendered["management"]["secret-key"].startswith("$2"), rendered["management"]
         compat = rendered["api-keys"]["openai-compatibility"][0]
-        assert compat["keys"] == [{"api-key": "upstream-fixture"}], compat
+        assert compat["keys"] == [{"api-key": "${upstreamKey}"}], compat
         assert rendered["server"] == {"host": "127.0.0.1", "port": 8317}, rendered["server"]
-        machine.succeed("journalctl -u cliproxy-api | grep -q 'Skipping credential: Cannot resolve op://mootward/missing/credential'")
+        for field in ["empty-field", "nbsp-field", "sep-field"]:
+            machine.succeed(f"journalctl -u cliproxy-api | grep -q 'Skipping credential: Empty credential: op://mootward/cliproxyapi/{field}'")
 
     with subtest("CLIProxyAPI serves on loopback and requires a client key"):
         assert status("/v1/models", "${clientKey}") == "200"
@@ -179,21 +115,22 @@ pkgs.testers.runNixOSTest {
         assert machine.succeed("stat -c '%a %U' /var/lib/cliproxyapi").strip() == "700 cliproxyapi"
         machine.succeed("touch /var/lib/cliproxyapi/auths/marker.json && chown cliproxyapi /var/lib/cliproxyapi/auths/marker.json")
         machine.succeed("systemctl restart cliproxy-api.service")
-        machine.wait_for_open_port(8317, "127.0.0.1")
+        machine.wait_for_open_port(8317, "127.0.0.1", timeout=30)
         machine.succeed("test -e /var/lib/cliproxyapi/auths/marker.json")
 
-    with subtest("no other user reaches the config, the proxy or the credentials"):
+    with subtest("no other user reaches the config or the credentials"):
         assert machine.succeed(f"stat -c '%a %U' {CONFIG}").strip() == "600 cliproxyapi"
         assert machine.succeed("stat -c '%a %U' /run/cliproxyapi").strip() == "700 cliproxyapi"
         machine.fail(f"runuser -u outsider -- cat {CONFIG}")
-        machine.fail("runuser -u outsider -- curl -sf --unix-socket /run/cliproxyapi/proxy.sock http://localhost/")
-        machine.fail("runuser -u outsider -- cat /run/credentials/cliproxy-api.service/op-connect-token")
-        machine.fail("runuser -u outsider -- cat /run/credentials/cliproxy-api.service/ts-authkey")
+        credentials = machine.succeed("ls /run/credentials/cliproxy-api.service").split()
+        assert len(credentials) == 7, credentials
+        for credential in credentials:
+            machine.fail(f"runuser -u outsider -- cat /run/credentials/cliproxy-api.service/{credential}")
         pid = machine.succeed("pgrep -u cliproxyapi -x cli-proxy-api").strip()
-        machine.fail(f"grep -qa '${connectToken}\\|tskey-auth-test' /proc/{pid}/environ")
+        machine.fail(f"grep -qa '${clientKey}\\|${upstreamKey}\\|management-fixture\\|tskey-auth-test' /proc/{pid}/environ")
 
-    with subtest("the service fails closed when no client key resolves"):
-        machine.succeed("touch /run/fake-connect-no-client")
+    with subtest("the service fails closed when only blank client keys remain"):
+        machine.succeed("printf ' \\t\\n' > ${dir}/client-key")
         machine.succeed("systemctl restart cliproxy-api.service")
         machine.wait_until_succeeds("journalctl -u cliproxy-api | grep -q 'Config generation failed: No client API key resolved'")
         machine.fail(f"curl -s {API}/v1/models")

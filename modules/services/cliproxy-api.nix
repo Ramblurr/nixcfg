@@ -9,11 +9,8 @@
 let
   cfg = config.modules.services.cliproxy-api;
   authKeyCredential = "ts-authkey";
-  connectTokenCredential = "op-connect-token";
   stateDir = "/var/lib/cliproxyapi";
-  runDir = "/run/cliproxyapi";
-  proxySocket = "${runDir}/proxy.sock";
-  configFile = "${runDir}/config.yaml";
+  configFile = "/run/cliproxyapi/config.yaml";
   bb = lib.getExe pkgs.babashka;
   template = pkgs.writeText "cliproxyapi-template.json" (
     builtins.toJSON {
@@ -26,23 +23,35 @@ let
       } cfg.settings;
     }
   );
+  # op:// references hold characters a systemd credential ID cannot.
+  credentialIds = lib.listToAttrs (
+    lib.imap0 (i: reference: lib.nameValuePair reference "op-${toString i}") (
+      builtins.attrNames cfg.credentials
+    )
+  );
   reader = pkgs.writeShellScript "cliproxyapi-op-read" ''
-    exec ${bb} ${../../scripts/op-connect-read.clj} ${lib.escapeShellArg cfg.onepassword.url} \
-      "$CREDENTIALS_DIRECTORY/${connectTokenCredential}" ${proxySocket} "$1"
+    case "$1" in
+    ${
+      lib.concatStrings (
+        lib.mapAttrsToList (reference: id: ''
+          ${lib.escapeShellArg reference}) exec ${pkgs.coreutils}/bin/cat "$CREDENTIALS_DIRECTORY/${id}" ;;
+        '') credentialIds
+      )
+    }*) exit 1 ;;
+    esac
   '';
+  opReferences =
+    value:
+    if builtins.isAttrs value then
+      lib.concatMap opReferences (builtins.attrValues value)
+    else if builtins.isList value then
+      lib.concatMap opReferences value
+    else
+      lib.optional (builtins.isString value && lib.hasPrefix "op://" value) value;
+  unmapped = lib.subtractLists (builtins.attrNames cfg.credentials) (opReferences cfg.settings);
   serve = pkgs.writeShellScript "cliproxyapi-serve" ''
     set -eu
     unset TS_AUTHKEY
-    tries=0
-    until [ -S ${proxySocket} ]; do
-      tries=$((tries + 1))
-      if [ "$tries" -ge 60 ]; then
-        echo "cliproxy-api: timed out waiting for ${proxySocket}" >&2
-        kill -TERM "$PPID" 2>/dev/null || true
-        exit 1
-      fi
-      ${pkgs.coreutils}/bin/sleep 1
-    done
     ${bb} ${../../scripts/render-op-config.clj} ${template} ${reader} ${configFile}
     exec ${lib.getExe cfg.package} --config ${configFile}
   '';
@@ -54,8 +63,6 @@ let
     "/var/lib/cliproxyapi-tailscale"
     "-https-port"
     "443:${toString cfg.port}"
-    "-http-proxy"
-    "unix:${proxySocket}"
     "-inherit-output"
     # Non-streaming completions send no headers until the model finishes.
     "-response-header-timeout"
@@ -107,30 +114,26 @@ in
       '';
     };
 
-    onepassword = {
-      url = lib.mkOption {
-        type = lib.types.str;
-        example = "http://op-connect.example.ts.net:8080";
-        description = "1Password Connect URL, reached through the node, that op:// references resolve from.";
+    credentials = lib.mkOption {
+      type = lib.types.attrsOf secretPath;
+      default = { };
+      example = {
+        "op://vault/OpenRouter/credential" = "/run/host-secrets/cliproxy-openrouter-key";
       };
-      tokenFile = lib.mkOption {
-        type = secretPath;
-        default = "/run/host-secrets/cliproxy-op-connect-token";
-        description = ''
-          File holding the Connect token, loaded as the systemd credential
-          ${connectTokenCredential}. Never the Nix store, which is world-readable.
-        '';
-      };
+      description = ''
+        File holding the value of each op:// reference in settings, loaded
+        as a systemd credential. Never the Nix store, which is world-readable.
+      '';
     };
 
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
       description = ''
-        CLIProxyAPI settings. Exact op:// strings are resolved at each start
-        into ${configFile}, mode 0600; never put secret values here. A
-        reference that does not resolve is dropped, and the service fails
-        when no access.api-keys entry resolves.
+        CLIProxyAPI settings. At each start, exact op:// strings are replaced
+        with the content of their credentials file and written to
+        ${configFile}, mode 0600; never put secret values here. A blank value
+        is dropped, and the service fails when no access.api-keys entry has one.
       '';
     };
   };
@@ -142,6 +145,10 @@ in
           cfg.settings.access.api-keys or [ ]
         );
         message = "modules.services.cliproxy-api.settings.access.api-keys must configure at least one non-blank client API key.";
+      }
+      {
+        assertion = unmapped == [ ];
+        message = "modules.services.cliproxy-api.credentials has no file for: ${lib.concatStringsSep ", " unmapped}";
       }
     ];
 
@@ -168,8 +175,8 @@ in
         ExecStart = start;
         LoadCredential = [
           "${authKeyCredential}:${cfg.authKeyFile}"
-          "${connectTokenCredential}:${cfg.onepassword.tokenFile}"
-        ];
+        ]
+        ++ lib.mapAttrsToList (reference: file: "${credentialIds.${reference}}:${file}") cfg.credentials;
         Restart = "always";
         RestartSec = 5;
 

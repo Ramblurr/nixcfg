@@ -73,8 +73,5 @@ in
     };
   };
 
-  modules.services.cliproxy-api = {
-    enable = true;
-    onepassword.url = connectUrl;
-  };
+  modules.services.cliproxy-api.enable = true;
 }

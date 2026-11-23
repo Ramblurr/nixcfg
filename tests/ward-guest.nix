@@ -42,6 +42,7 @@ let
     else
       lib.optional (builtins.isString value && lib.hasPrefix "op://" value) value;
   inMootWard = lib.all (lib.hasPrefix "op://mootward/");
+  cliproxy = cfg.modules.services.cliproxy-api;
   connectUrl = "http://op-connect.example.ts.net:8080";
 in
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Guest must fully evaluate";
@@ -67,9 +68,14 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   hostSecretCredentials "cliproxy-api" == [
     "cliproxy-authkey"
-    "cliproxy-op-connect-token"
+    "cliproxy-client-key"
+    "cliproxy-hirde-key"
+    "cliproxy-management-secret"
+    "cliproxy-mistral-key"
+    "cliproxy-openrouter-key"
+    "cliproxy-subq-key"
   ]
-) "cliproxy-api loads exactly its auth key and its own Connect token";
+) "cliproxy-api loads exactly its auth key and its six keys, never the CA or a Connect token";
 assert lib.assertMsg (
   lib.sort lib.lessThan (lib.unique (lib.concatMap hostSecretCredentials services))
   == lib.sort lib.lessThan (builtins.attrNames hostSecrets)
@@ -79,10 +85,14 @@ assert lib.assertMsg (inMootWard (
 )) "ward's host secrets come only from the mootward vault";
 assert lib.assertMsg (
   let
-    references = opReferences cfg.modules.services.cliproxy-api.settings;
+    references = opReferences cliproxy.settings;
   in
   references != [ ] && inMootWard references
 ) "CLIProxyAPI's runtime references come only from mootward";
+assert lib.assertMsg (lib.all
+  (reference: hostSecrets.${baseNameOf cliproxy.credentials.${reference}} == reference)
+  (opReferences cliproxy.settings)
+) "Each CLIProxyAPI reference reads the file debord materializes from that same reference";
 assert lib.assertMsg (lib.all (
   service: builtins.elem mountPoint cfg.systemd.services.${service}.unitConfig.RequiresMountsFor
 ) services) "Every consumer waits for the host-secrets mount";
@@ -96,6 +106,5 @@ assert lib.assertMsg (
 assert lib.assertMsg (lib.all (url: url == connectUrl) [
   cfg.modules.services.ts-egress.onepassword.url
   cfg.modules.services.ts-broker.onepassword.url
-  cfg.modules.services.cliproxy-api.onepassword.url
-]) "Every service reads the tailnet's Connect";
+]) "ts-egress and ts-broker read the tailnet's Connect";
 pkgs.runCommand "ward-guest-evaluation" { } "touch $out"

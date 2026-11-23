@@ -15,6 +15,11 @@
     "ts-broker-authkey" = "op://mootward/ts-broker-authkey/credential";
     "moot-op-connect-token" = "op://mootward/moot-connect-token/credential";
     "cliproxy-authkey" = "op://mootward/cliproxy-authkey/credential";
-    "cliproxy-op-connect-token" = "op://mootward/cliproxy-connect-token/credential";
+    "cliproxy-management-secret" = "op://mootward/CLIProxyAPI/management-secret-unhashed";
+    "cliproxy-client-key" = "op://mootward/CLIProxyAPI/credential";
+    "cliproxy-hirde-key" = "op://mootward/CLIProxyAPI hirde/credential";
+    "cliproxy-openrouter-key" = "op://mootward/OpenRouter/credential";
+    "cliproxy-subq-key" = "op://mootward/Subq/credential";
+    "cliproxy-mistral-key" = "op://mootward/Mistral/credential";
   };
 }
