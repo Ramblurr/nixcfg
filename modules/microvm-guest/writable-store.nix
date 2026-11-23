@@ -22,27 +22,29 @@ let
       [[ "$remote_name" == ${lib.escapeShellArg config.networking.hostName} ]] \
         || { echo "refusing to switch $remote_name to ${config.networking.hostName}" >&2; exit 1; }
 
-      # A shared lock on gc.lock keeps the guest GC from starting between the
-      # validity check and the profile update, and waits out a GC already
-      # running. Nix creates the lock with mode 0600. The store operations
-      # bypass nix-daemon and disable auto-GC: an auto-GC would wait for
-      # gc.lock exclusively and never get it. Closing stdin releases the lock.
-      coproc gc_lock { ssh "$target" "umask 077 && flock -s /nix/var/nix/gc.lock sh -c 'echo locked; exec cat'"; }
-      gc_lock_fd=''${gc_lock[1]}
-      gc_lock_pid=$!
-      read -r lock_reply <&"''${gc_lock[0]}" || lock_reply=
-      [[ "$lock_reply" == locked ]] || { echo "failed to acquire the guest GC lock" >&2; exit 1; }
+      # A link becomes a GC root once its path is valid. Taking and dropping a
+      # shared gc.lock waits out any GC that scanned roots earlier, so paths
+      # still valid afterwards stay rooted. Holding gc.lock across a store
+      # operation instead deadlocks against auto-GC.
+      requisites=$(nix-store --query --requisites ${toplevel})
+      root_dir=$(ssh -n "$target" mktemp -d /nix/var/nix/gcroots/microvm-switch.XXXXXX)
+      [[ "$root_dir" =~ ^/nix/var/nix/gcroots/microvm-switch\.[A-Za-z0-9._-]+$ ]] \
+        || { echo "unexpected staging root: $root_dir" >&2; exit 1; }
+      trap 'ssh -n "$target" rm -rf -- "$root_dir"' EXIT
+      ssh "$target" xargs ln -s -t "$root_dir" <<< "$requisites"
 
-      missing=$(nix-store --query --requisites ${toplevel} \
-        | ssh "$target" NIX_REMOTE=local xargs nix-store --option min-free 0 --check-validity --print-invalid)
-      if [[ -n "$missing" ]]; then
+      for attempt in 1 2 3; do
+        ssh -n "$target" "umask 077 && flock -s /nix/var/nix/gc.lock true"
+        missing=$(ssh "$target" xargs nix-store --check-validity --print-invalid <<< "$requisites")
+        [[ -z "$missing" ]] && break
+        (( attempt < 3 )) || { echo "store paths keep disappearing from $target" >&2; exit 1; }
         readarray -t paths <<< "$missing"
         echo "Copying ''${#paths[@]} store paths to $target"
-        nix-store --export "''${paths[@]}" | ssh "$target" NIX_REMOTE=local nix-store --option min-free 0 --import >/dev/null
-      fi
-      ssh -n "$target" NIX_REMOTE=local nix-env --option min-free 0 -p /nix/var/nix/profiles/system --set ${toplevel}
-      exec {gc_lock_fd}>&-
-      wait "$gc_lock_pid" || true
+        nix-store --export "''${paths[@]}" | ssh "$target" nix-store --import >/dev/null
+      done
+      ssh -n "$target" nix-env -p /nix/var/nix/profiles/system --set ${toplevel}
+      ssh -n "$target" rm -rf -- "$root_dir"
+      trap - EXIT
       ssh -n "$target" ${toplevel}/bin/switch-to-configuration switch
     '';
   };
