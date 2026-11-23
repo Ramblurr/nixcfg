@@ -10,6 +10,8 @@ let
   ffmpeg = pkgs.rpi.ffmpeg_8-headless;
   # Octostream only runs headless MJPEG capture. Dropping the preview and
   # post-processing backends avoids building OpenCV, full ffmpeg and SDL on ARM.
+  # nixos-raspberrypi's 1.13.0 hash predates a moved upstream tag, and the
+  # current 1.13.0 needs a newer libcamera, so pin 1.12.0.
   rpicamApps =
     (pkgs.rpi.rpicam-apps.override {
       inherit ffmpeg;
@@ -18,16 +20,24 @@ let
       withWaylandPreview = false;
       withQtPreview = false;
       withOpenCVPostProc = false;
-      withIMX500 = false;
     }).overrideAttrs
       {
-        # Upstream moved the v1.13.0 tag after nixos-raspberrypi recorded its hash.
+        version = "1.12.0";
         src = pkgs.fetchFromGitHub {
           owner = "raspberrypi";
           repo = "rpicam-apps";
-          rev = "1cab82025230d77b1a715d30631b101923cc7a4d";
-          hash = "sha256-v0wNbQ63H5UExzxGDxgyC0CFlwJau4M8qz0sawsR7YM=";
+          rev = "v1.12.0";
+          hash = "sha256-u/VdAHCiXlc9MDHcVG2DPKqnQGEynlXIieHuAkcTarQ=";
         };
+        mesonFlags = [
+          "-Denable_libav=enabled"
+          "-Denable_drm=disabled"
+          "-Denable_egl=disabled"
+          "-Denable_qt=disabled"
+          "-Denable_opencv=disabled"
+          "-Denable_tflite=disabled"
+          "-Denable_hailo=disabled"
+        ];
       };
 in
 {
