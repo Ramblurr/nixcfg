@@ -73,9 +73,12 @@ in
     ];
     sops.secrets.borgmatic-ssh-key = { };
     sops.secrets.borgmatic-env = { };
-    systemd.services.borgmatic.serviceConfig = {
-      EnvironmentFile = "/run/secrets/borgmatic-env";
-      RuntimeDirectory = "borgmatic";
+    systemd.services.borgmatic = {
+      environment.BORG_USE_CHUNKS_ARCHIVE = "no";
+      serviceConfig = {
+        EnvironmentFile = "/run/secrets/borgmatic-env";
+        RuntimeDirectory = "borgmatic";
+      };
     };
     systemd.timers.borgmatic = {
       wantedBy = [ "timers.target" ];

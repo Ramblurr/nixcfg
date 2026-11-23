@@ -31,6 +31,12 @@
     neededForBoot = true;
   };
 
+  fileSystems."/root/.cache/borg" = {
+    device = "rpool/encrypted/local/borg-cache";
+    fsType = "zfs";
+    neededForBoot = false;
+  };
+
   fileSystems."/persist" = {
     device = "rpool/encrypted/safe/persist";
     fsType = "zfs";

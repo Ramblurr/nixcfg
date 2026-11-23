@@ -142,7 +142,7 @@ in
           "cx" = "codex --dangerously-bypass-approvals-and-sandbox";
           "md" = "glow -p";
           "borgmatic" =
-            "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env borgmatic";
+            "sudo systemd-run --pty --property EnvironmentFile=/run/secrets/borgmatic-env --property Environment=BORG_USE_CHUNKS_ARCHIVE=no borgmatic";
           "mvm" = ''mvn -gs "$XDG_CONFIG_HOME"/maven/settings.xml'';
           "open" = "re.sonny.Junction";
           "nixcfg" = "cd ${hm.config.home.homeDirectory}/nixcfg";

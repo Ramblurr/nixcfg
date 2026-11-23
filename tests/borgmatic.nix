@@ -123,6 +123,7 @@ in
 assert enabled.services.borgmatic.settings.commands == expectedCommands;
 assert !(enabled.services.borgmatic.settings ? healthchecks);
 assert enabled.systemd.services.borgmatic.serviceConfig.RuntimeDirectory == "borgmatic";
+assert enabled.systemd.services.borgmatic.environment.BORG_USE_CHUNKS_ARCHIVE == "no";
 assert
   enabled.systemd.timers.borgmatic.timerConfig.OnCalendar == [
     ""
