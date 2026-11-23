@@ -22,6 +22,12 @@ let
       [[ "$remote_name" == ${lib.escapeShellArg config.networking.hostName} ]] \
         || { echo "refusing to switch $remote_name to ${config.networking.hostName}" >&2; exit 1; }
 
+      # The guest GC holds gc.lock exclusively while it runs. A shared lock
+      # held until this script exits keeps it from deleting paths between the
+      # validity check and the profile update. Closing stdin releases it.
+      coproc gc_lock { ssh "$target" "flock -s /nix/var/nix/gc.lock sh -c 'echo locked; exec cat'"; }
+      read -r _ <&"''${gc_lock[0]}"
+
       missing=$(nix-store --query --requisites ${toplevel} \
         | ssh "$target" xargs nix-store --check-validity --print-invalid)
       if [[ -n "$missing" ]]; then
