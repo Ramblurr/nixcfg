@@ -11,10 +11,10 @@
 
 let
   pname = "bb-desktop";
-  version = "0.49.0";
+  version = "0.50.1";
   src = fetchurl {
     url = "https://github.com/get-bb/bb/releases/download/desktop-v${version}/bb-${version}-x86_64.AppImage";
-    hash = "sha256-g0mrdzcVYk/sUIJznIF9KhWAlQRpnTS0fT2d++YPx3A=";
+    hash = "sha256-cGPRh4F6uv9xCvq6A5vteJI+RkqQBqOSMf8E0XZECKg=";
   };
   contents = appimageTools.extract { inherit pname version src; };
 in
