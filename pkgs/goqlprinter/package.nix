@@ -13,8 +13,8 @@ let
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "goqlprinter";
-    rev = "30f17fa6712ffbdda78df0d8224c63febc34606c";
-    hash = "sha256-tNVwY2yLhagb6iFKyg2b4xFPei9bzJ978XsKZOS7WZY=";
+    rev = "cdd523991c79c11a966a5e5e6fb173cbcce07f30";
+    hash = "sha256-vUtC03bQSOBvAyf3Y626Xf+yWF0uzulnzn1tSuAdKgg=";
   };
   frontend = buildNpmPackage {
     pname = "${pname}-frontend";
