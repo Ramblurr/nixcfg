@@ -241,11 +241,15 @@ so it allows only the listed hosts and ports.
   the host's `ping`. A TCP flow keeps that address until its connection
   has finished closing, not only until its handler returns.
 - It carries upstream's open gVisor fix
-  ([google/gvisor#15019](https://github.com/google/gvisor/pull/15019),
+  ([google/gvisor#15019](https://github.com/google/gvisor/pull/15019) and
+  its follow-up 936ad90db, squashed in
+  [google/gvisor#17844](https://github.com/google/gvisor/pull/17844);
   `patches/gvisor/`) for a tenant that reopens a tuple the egress holds in
   TIME_WAIT: unpatched gVisor hands such a SYN only to a listener, and
   netstack's forwarder is none, so it drops it until TIME_WAIT ends. Drop
-  the patch once tailscale pins a gVisor with the fix.
+  both patches once tailscale pins a gVisor with both. Not covered by the
+  fix: a reopen refused at the in-flight limits loses the old TIME_WAIT,
+  and the new connection's ISN is not raised above the old one's.
 - Tenants using MagicDNS through the exit node get SERVFAIL: the peer API
   DNS path is refused, see above.
 - Rules apply per caller. Two tenants behind one Tailscale node share one
