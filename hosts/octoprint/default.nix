@@ -8,7 +8,17 @@
 let
   mjpegStreamerPort = 8080;
   ffmpeg = pkgs.rpi.ffmpeg_8-headless;
-  rpicamApps = pkgs.rpi.rpicam-apps;
+  # Octostream only runs headless MJPEG capture. Dropping the preview and
+  # post-processing backends avoids building OpenCV, full ffmpeg and SDL on ARM.
+  rpicamApps = pkgs.rpi.rpicam-apps.override {
+    inherit ffmpeg;
+    withDrmPreview = false;
+    withEglPreview = false;
+    withWaylandPreview = false;
+    withQtPreview = false;
+    withOpenCVPostProc = false;
+    withIMX500 = false;
+  };
 in
 {
   imports = [
