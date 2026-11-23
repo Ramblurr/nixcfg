@@ -99,6 +99,9 @@ ts-plug:
   ts-plug -dir /var/lib/tsplug -hostname api -- ./server
   ```
 
+- `-advertise-tags` - Comma-separated ACL tags for the node, such as
+  `tag:web,tag:prod`. Required when `TS_AUTHKEY` holds an OAuth client secret.
+
 ### Listeners
 
 By default, ts-plug enables HTTPS on port 443 proxying to localhost:8080.
@@ -466,6 +469,15 @@ ts-plug -hostname test -- python -m http.server 8080
 ```
 
 State is saved in the `-dir` location (default: `.data/`)
+
+To log in unattended, put an auth key in `TS_AUTHKEY`. An OAuth client secret
+(`tskey-client-...`) works too: ts-plug mints a single-use auth key from it
+for the tags in `-advertise-tags`. That key is ephemeral and not
+preauthorized unless the secret carries `?ephemeral=false&preauthorized=true`:
+```sh
+TS_AUTHKEY='tskey-client-...?ephemeral=false&preauthorized=true' \
+  ts-plug -hostname api -advertise-tags tag:api -- ./server
+```
 
 ## Examples
 

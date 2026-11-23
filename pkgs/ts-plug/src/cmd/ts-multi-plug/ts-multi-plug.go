@@ -26,14 +26,16 @@ import (
 
 	"tailscale.com/client/local"
 	"tailscale.com/client/tailscale/apitype"
+	"tailscale.com/tailcfg"
 	"tailscale.com/tsnet"
 )
 
 var (
-	flagHostname   string
-	flagDir        string
-	flagLogLevel   string
-	flagDebugTSNet = flag.Bool("debug-tsnet", false, "enable tsnet.Server logging")
+	flagHostname      string
+	flagDir           string
+	flagLogLevel      string
+	flagAdvertiseTags tagsFlag
+	flagDebugTSNet    = flag.Bool("debug-tsnet", false, "enable tsnet.Server logging")
 
 	// HTTP flags
 	httpEnable = flag.Bool("http", false, "Enable HTTP listener (default 80:8080)")
@@ -73,6 +75,7 @@ func init() {
 	flag.StringVar(&flagHostname, "hn", "tsmultiplug", "hostname on tailnet (short)")
 	flag.StringVar(&flagDir, "dir", ".data", "directory to store tailscale state")
 	flag.StringVar(&flagLogLevel, "log", "info", "Log level (debug | info | warn | error)")
+	flag.Var(&flagAdvertiseTags, "advertise-tags", "Comma-separated ACL tags for this node (tag:a,tag:b); required when TS_AUTHKEY holds an OAuth client secret (tskey-client-...)")
 }
 
 func main() {
@@ -146,8 +149,9 @@ func main() {
 // exit, so systemd restarts the process only after a failure.
 func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 	ts := &tsnet.Server{
-		Hostname: flagHostname,
-		Dir:      flagDir,
+		Hostname:      flagHostname,
+		Dir:           flagDir,
+		AdvertiseTags: flagAdvertiseTags,
 	}
 	defer ts.Close()
 
@@ -624,5 +628,26 @@ func (p *PortMapFlag) Set(value string) error {
 		return fmt.Errorf("invalid out port format: %s", out)
 	}
 	p.Out = outPort
+	return nil
+}
+
+// tagsFlag holds ACL tags given as a comma-separated list. An empty value
+// clears them.
+type tagsFlag []string
+
+func (t *tagsFlag) String() string { return strings.Join(*t, ",") }
+
+func (t *tagsFlag) Set(value string) error {
+	if value == "" {
+		*t = nil
+		return nil
+	}
+	tags := strings.Split(value, ",")
+	for _, tag := range tags {
+		if err := tailcfg.CheckTag(tag); err != nil {
+			return fmt.Errorf("%q: %w", tag, err)
+		}
+	}
+	*t = tags
 	return nil
 }

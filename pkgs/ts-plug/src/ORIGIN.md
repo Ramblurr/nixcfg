@@ -23,6 +23,7 @@ Later changes in this tree:
 - cmd/ts-multi-plug: let the local proxies listen on a unix socket, replacing
   a stale socket file left by an unclean stop
 - cmd/ts-multi-plug: add -inherit-output to pass the command's output through
+- cmd/ts-multi-plug: add -advertise-tags, so an OAuth client secret can log in
 
 Upstream's docker/, cmd/examples/ and images/ were left out. Edit this tree
 directly from now on.
