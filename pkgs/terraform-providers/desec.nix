@@ -8,9 +8,9 @@
 (terraform-providers.mkProvider {
   owner = "timofurrer";
   repo = "terraform-provider-desec";
-  rev = "v0.6.3";
-  hash = "sha256-+3Dh3GHSgGFLw0sGlex1Y7kxMfvR3K2bxcboXjWnDOs=";
-  vendorHash = "sha256-peMRKmrFKClyWHTEYJlu05ho1VjF+B7hK1Sr7r+gqDc=";
+  rev = "v0.6.4";
+  hash = "sha256-ko04UMXGzholQhTQ4y/kKp0m+Y94TKPRxDSCZUcmllY=";
+  vendorHash = "sha256-Qgm97rmsDVz7nxHSoJtUeUkKLBsuJtO8Bz1eNfDgpPw=";
   homepage = "https://registry.terraform.io/providers/timofurrer/desec";
   provider-source-address = "registry.terraform.io/timofurrer/desec";
   spdx = "MPL-2.0";
