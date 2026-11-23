@@ -7,12 +7,12 @@
 }:
 let
   pname = "goqlprinter";
-  version = "1.1.1";
+  version = "1.1.1-unstable-2026-11-23";
   src = fetchFromGitHub {
-    owner = "mhavo";
+    owner = "Ramblurr";
     repo = "goqlprinter";
-    tag = "v${version}";
-    hash = "sha256-MbCY9CxXjp/LNJm9IsIzNBr3S1P2W3nfdkG5EfAIc1s=";
+    rev = "1f7cd6fcbba230e30cc2f3fa83191777612f21bb";
+    hash = "sha256-7yPI/OmwpqKVyBuN2FaA1u11fgQWWDcFTdd4gT77DYk=";
   };
   frontend = buildNpmPackage {
     pname = "${pname}-frontend";
@@ -30,7 +30,6 @@ let
 in
 buildGoModule {
   inherit pname version src;
-  patches = [ ./tcp-backend.patch ];
   vendorHash = "sha256-7fpaFgUyrqQ3C6vHE0rlmt2WowmSUrYVwwf0gGaMLWo=";
   subPackages = [ "." ];
   # Default tags select the pure-Go native backend; `usb` (gousb) and `gui`
@@ -57,7 +56,7 @@ buildGoModule {
   passthru = { inherit frontend; };
   meta = {
     description = "Web UI, API and CLI for Brother QL label printers";
-    homepage = "https://github.com/mhavo/goqlprinter";
+    homepage = "https://github.com/Ramblurr/goqlprinter";
     license = lib.licenses.mit;
     mainProgram = "goqlprinter";
     platforms = lib.platforms.linux;
