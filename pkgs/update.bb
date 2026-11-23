@@ -60,30 +60,33 @@
       (str pkg ": update package")
       (format "%s: %s -> %s" pkg old new))))
 
-(defn package-path [pkg]
+(defn package-paths
+  "The tracked paths an update of `pkg` may change. A `pkgs/<name>/package.nix`
+  can be a shim importing `pkgs/<name>.nix`, so that file counts too."
+  [pkg]
   (if (str/starts-with? (name pkg) "terraform-provider-")
-    (package-file pkg)
-    (str "pkgs/" (name pkg))))
+    [(package-file pkg)]
+    (filterv fs/exists? [(str "pkgs/" (name pkg)) (str "pkgs/" (name pkg) ".nix")])))
 
-(defn restore-changes [path]
-  (log :info (str "Restoring tracked changes in " path))
-  (shell "git" "checkout" "HEAD" "--" path))
+(defn restore-changes [paths]
+  (log :info (str "Restoring tracked changes in " (str/join " " paths)))
+  (apply shell "git" "checkout" "HEAD" "--" paths))
 
-(defn commit-changes [path message no-commit]
-  (shell "git" "add" "-u" "--" path)
-  (if (zero? (:exit (sh {:continue true} "git" "diff" "--cached" "--quiet" "--" path)))
-    (log :warning (str "No changes to stage in " path))
+(defn commit-changes [paths message no-commit]
+  (apply shell "git" "add" "-u" "--" paths)
+  (if (zero? (:exit (apply sh {:continue true} "git" "diff" "--cached" "--quiet" "--" paths)))
+    (log :warning (str "No changes to stage in " (str/join " " paths)))
     (if no-commit
-      (log :info (str "Changes staged in " path " (not committed)"))
+      (log :info (str "Changes staged in " (str/join " " paths) " (not committed)"))
       (do
         (log :info (str "Committing changes: " message))
-        (shell "git" "commit" "-m" message "--" path)))))
+        (apply shell "git" "commit" "-m" message "--" paths)))))
 
 (defn script-package
   "A package with a passthru.updateScript, named by its flake export."
   [pkg]
   {:name   pkg
-   :path   (package-path pkg)
+   :paths  (package-paths pkg)
    :update #(run-update-script pkg)})
 
 (defn pi-packages
@@ -92,7 +95,7 @@
   (->> (json/parse-string (:out (shell {:out :string} "bb" "pkgs/pi/update.bb" "--list")))
        (map (fn [[dir export]]
               {:name   export
-               :path   (str "pkgs/pi/" dir)
+               :paths  [(str "pkgs/pi/" dir)]
                :update (fn []
                          (log :info (str "Updating " export))
                          (zero? (:exit (shell {:continue true} "bb" "pkgs/pi/update.bb" dir))))}))
@@ -100,15 +103,15 @@
 
 (defn update-package
   "Update, then commit or restore one package. Returns its name when it failed."
-  [{:keys [name path update]} {:keys [no-commit keep-going]}]
+  [{:keys [name paths update]} {:keys [no-commit keep-going]}]
   (let [old-version (fetch-package-version name)]
     (cond
       (update)
-      (do (commit-changes path (commit-message name old-version (fetch-package-version name)) no-commit)
+      (do (commit-changes paths (commit-message name old-version (fetch-package-version name)) no-commit)
           nil)
 
       keep-going
-      (do (restore-changes path)
+      (do (restore-changes paths)
           name)
 
       :else
