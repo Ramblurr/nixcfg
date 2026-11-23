@@ -71,6 +71,7 @@ in
 
     systemd.services.goqlprinter = {
       description = "Brother QL label printing web UI";
+      restartTriggers = [ config.environment.etc."labelprinter/config.json".source ];
       wantedBy = [ "multi-user.target" ];
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
@@ -84,6 +85,7 @@ in
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
+        MemoryMax = "1G";
       }
       // lib.optionalAttrs (cfg.networkPrinter == null) {
         SupplementaryGroups = [ "lp" ];
