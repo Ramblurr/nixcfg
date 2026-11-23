@@ -55,8 +55,6 @@ func TestTagsFlag(t *testing.T) {
 	}
 }
 
-// keyRequest is the body tsnet posts to the API to mint an auth key from an
-// OAuth client secret.
 type keyRequest struct {
 	Capabilities struct {
 		Devices struct {
@@ -70,9 +68,6 @@ type keyRequest struct {
 	} `json:"capabilities"`
 }
 
-// startOAuthAPI fakes the two API calls behind an OAuth client secret login:
-// the token exchange and the auth key it mints. It reports each key request
-// and answers it with mintedKey.
 func startOAuthAPI(t *testing.T, mintedKey string) (string, <-chan keyRequest) {
 	requests := make(chan keyRequest, 4)
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -100,10 +95,6 @@ func startOAuthAPI(t *testing.T, mintedKey string) (string, <-chan keyRequest) {
 	return api.URL, requests
 }
 
-// A node logs in with an OAuth client secret in TS_AUTHKEY, as ts-plug's
-// units pass it, only when -advertise-tags names its tags. The minted key
-// carries those tags, is ephemeral unless the secret says ephemeral=false,
-// and the node joins the tailnet tagged.
 func TestOAuthClientSecretLogin(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -169,7 +160,6 @@ func TestOAuthClientSecretLogin(t *testing.T) {
 				t.Errorf("minted key capabilities = %+v, want tags %q, single use, ephemeral %v, preauthorized %v",
 					create, tags, tt.wantEphemeral, tt.wantPreauth)
 			}
-			// Control reports a node's tags sorted.
 			if got := st.Self.Tags.AsSlice(); !slices.Equal(got, slices.Sorted(slices.Values(tags))) {
 				t.Errorf("node tags = %q, want %q", got, tags)
 			}

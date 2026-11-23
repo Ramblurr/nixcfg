@@ -631,8 +631,6 @@ func (p *PortMapFlag) Set(value string) error {
 	return nil
 }
 
-// tagsFlag holds ACL tags given as a comma-separated list. An empty value
-// clears them.
 type tagsFlag []string
 
 func (t *tagsFlag) String() string { return strings.Join(*t, ",") }
