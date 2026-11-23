@@ -16,7 +16,6 @@ builtins.listToAttrs (
       addresses = config.site.net.svc.hosts4.${config.networking.hostName} or [ ];
       hostConfig = (configurations.${host} or (fail "guest host is not exported by this flake")).config;
       vsock = config.microvm.vsock.ssh.enable or false;
-      # VSOCK guests deploy through their host, so they need no service-network address.
       route =
         if vsock then
           if !(builtins.hasAttr "microvm-${name}" (hostConfig.programs.ssh.knownHosts or { })) then

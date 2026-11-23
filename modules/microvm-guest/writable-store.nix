@@ -88,7 +88,6 @@ in
               "/sysroot${rwStore}"
             ];
           };
-          # Both mounts require this unit; it must not run again once the overlay is up.
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
@@ -126,7 +125,6 @@ in
           };
         };
 
-        # The daemon must not serve a database that failed verification.
         systemd.services.nix-daemon = {
           requires = [ "nix-store-verify.service" ];
           after = [ "nix-store-verify.service" ];

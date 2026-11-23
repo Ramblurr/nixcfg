@@ -242,8 +242,8 @@ pkgs.testers.runNixOSTest {
         host.succeed(f"zfs destroy {zvol}")
         host.succeed(f"zfs create -s -V ${toString zvolSize}M -o volmode=dev {zvol}")
         host.succeed("systemctl start microvm-zfs-datasets@zvol-guest.service")
-        # blkid exits 2 when it finds no signature.
         host.succeed(f"test -b /dev/zvol/{zvol}")
+        # blkid exits 2 when it finds no signature.
         host.succeed(f"rc=0; blkid -p /dev/zvol/{zvol} || rc=$?; test $rc -eq 2")
         host.succeed(f"test $(zfs get -H -o value org.nixcfg:formatted {zvol}) = -")
   '';
