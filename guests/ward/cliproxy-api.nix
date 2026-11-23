@@ -9,29 +9,29 @@ in
     ];
     management = {
       allow-remote = true;
-      secret-key = "op://moot-ward/CLIProxyAPI/management-secret-unhashed";
+      secret-key = "op://mootward/CLIProxyAPI/management-secret-unhashed";
     };
     access.api-keys = [
-      "op://moot-ward/CLIProxyAPI/credential"
-      "op://moot-ward/CLIProxyAPI hirde/credential"
+      "op://mootward/CLIProxyAPI/credential"
+      "op://mootward/CLIProxyAPI hirde/credential"
     ];
     api-keys.openai-compatibility = [
       {
         name = "openrouter";
         base-url = "https://openrouter.ai/api/v1";
-        keys = [ { api-key = "op://moot-ward/OpenRouter/credential"; } ];
+        keys = [ { api-key = "op://mootward/OpenRouter/credential"; } ];
         models = map (name: { inherit name; }) models.openrouter;
       }
       {
         name = "subq";
         base-url = "https://api.subq.ai/v1";
-        keys = [ { api-key = "op://moot-ward/Subq/credential"; } ];
+        keys = [ { api-key = "op://mootward/Subq/credential"; } ];
         models = [ { name = models.subq.savant.id; } ];
       }
       {
         name = "mistral";
         base-url = "https://api.mistral.ai/v1";
-        keys = [ { api-key = "op://moot-ward/Mistral/credential"; } ];
+        keys = [ { api-key = "op://mootward/Mistral/credential"; } ];
         models = [ { name = models.mistral.large4.id; } ];
       }
     ];

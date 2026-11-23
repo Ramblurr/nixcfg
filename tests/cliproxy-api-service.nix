@@ -59,7 +59,7 @@ let
                 return self.answer(502, {"status": 502})
             parts = self.path.removeprefix("${connectUrl}").split("?")[0].strip("/").split("/")
             if parts == ["v1", "vaults"]:
-                return self.answer(200, [{"id": VAULT, "name": "moot-ward"}])
+                return self.answer(200, [{"id": VAULT, "name": "mootward"}])
             if parts == ["v1", "vaults", VAULT, "items"]:
                 return self.answer(200, [{"id": i["id"], "title": i["title"]} for i in items()])
             if len(parts) == 5 and parts[:4] == ["v1", "vaults", VAULT, "items"]:
@@ -92,19 +92,19 @@ pkgs.testers.runNixOSTest {
           tokenFile = "/run/cliproxy-test/token";
         };
         settings = {
-          management.secret-key = "op://moot-ward/cliproxyapi/management-secret-unhashed";
+          management.secret-key = "op://mootward/cliproxyapi/management-secret-unhashed";
           access.api-keys = [
-            "op://moot-ward/cliproxyapi/credential"
-            "op://moot-ward/cliproxyapi/empty-field"
-            "op://moot-ward/cliproxyapi/nbsp-field"
-            "op://moot-ward/cliproxyapi/sep-field"
-            "op://moot-ward/missing/credential"
+            "op://mootward/cliproxyapi/credential"
+            "op://mootward/cliproxyapi/empty-field"
+            "op://mootward/cliproxyapi/nbsp-field"
+            "op://mootward/cliproxyapi/sep-field"
+            "op://mootward/missing/credential"
           ];
           api-keys.openai-compatibility = [
             {
               name = "openrouter";
               base-url = "https://openrouter.ai/api/v1";
-              keys = [ { api-key = "op://moot-ward/OpenRouter/credential"; } ];
+              keys = [ { api-key = "op://mootward/OpenRouter/credential"; } ];
               models = [ { name = "test/upstream-model"; } ];
             }
           ];
@@ -155,7 +155,7 @@ pkgs.testers.runNixOSTest {
         compat = rendered["api-keys"]["openai-compatibility"][0]
         assert compat["keys"] == [{"api-key": "upstream-fixture"}], compat
         assert rendered["server"] == {"host": "127.0.0.1", "port": 8317}, rendered["server"]
-        machine.succeed("journalctl -u cliproxy-api | grep -q 'Skipping credential: Cannot resolve op://moot-ward/missing/credential'")
+        machine.succeed("journalctl -u cliproxy-api | grep -q 'Skipping credential: Cannot resolve op://mootward/missing/credential'")
 
     with subtest("CLIProxyAPI serves on loopback and requires a client key"):
         assert status("/v1/models", "${clientKey}") == "200"

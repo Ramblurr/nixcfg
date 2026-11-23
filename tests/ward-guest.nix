@@ -41,7 +41,7 @@ let
       lib.concatMap opReferences value
     else
       lib.optional (builtins.isString value && lib.hasPrefix "op://" value) value;
-  inMootWard = lib.all (lib.hasPrefix "op://moot-ward/");
+  inMootWard = lib.all (lib.hasPrefix "op://mootward/");
   connectUrl = "http://op-connect.example.ts.net:8080";
 in
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Guest must fully evaluate";
@@ -76,13 +76,13 @@ assert lib.assertMsg (
 ) "debord materializes exactly the host-secrets files ward's services load";
 assert lib.assertMsg (inMootWard (
   builtins.attrValues hostSecrets
-)) "ward's host secrets come only from the moot-ward vault";
+)) "ward's host secrets come only from the mootward vault";
 assert lib.assertMsg (
   let
     references = opReferences cfg.modules.services.cliproxy-api.settings;
   in
   references != [ ] && inMootWard references
-) "CLIProxyAPI's runtime references come only from moot-ward";
+) "CLIProxyAPI's runtime references come only from mootward";
 assert lib.assertMsg (lib.all (
   service: builtins.elem mountPoint cfg.systemd.services.${service}.unitConfig.RequiresMountsFor
 ) services) "Every consumer waits for the host-secrets mount";
