@@ -237,14 +237,27 @@ pkgs.testers.runNixOSTest {
         guest_fail("systemctl start nix-daemon.service")
         guest_fail("systemctl is-active nix-daemon.service")
 
-    with subtest("the host never formats a zvol it did not create"):
+    with subtest("the host records a format an interrupted run did not record"):
         host.succeed("systemctl stop microvm@zvol-guest.service")
+        uuid = host.succeed(f"blkid -p -s UUID -o value /dev/zvol/{zvol}").strip()
+        host.succeed(f"zfs set org.nixcfg:formatted=false {zvol}")
+        host.succeed("systemctl restart microvm-zfs-datasets@zvol-guest.service")
+        host.succeed(f"test $(zfs get -H -o value -s local org.nixcfg:formatted {zvol}) = true")
+        assert host.succeed(f"blkid -p -s UUID -o value /dev/zvol/{zvol}").strip() == uuid, "the zvol was reformatted"
+        host.succeed(f"mkdir -p /mnt && mount -o ro,noload /dev/zvol/{zvol} /mnt")
+        host.succeed(f"test -e /mnt/store/{name(added)} && umount /mnt")
+
+    with subtest("the host never formats a zvol it did not create"):
         host.succeed(f"zfs destroy {zvol}")
         host.succeed(f"zfs create -s -V ${toString zvolSize}M -o volmode=dev {zvol}")
-        host.succeed("systemctl start microvm-zfs-datasets@zvol-guest.service")
+        host.succeed("systemctl restart microvm-zfs-datasets@zvol-guest.service")
         host.succeed(f"test -b /dev/zvol/{zvol}")
         # blkid exits 2 when it finds no signature.
         host.succeed(f"rc=0; blkid -p /dev/zvol/{zvol} || rc=$?; test $rc -eq 2")
         host.succeed(f"test $(zfs get -H -o value org.nixcfg:formatted {zvol}) = -")
+        host.succeed(f"mkfs.ext4 -q -L other /dev/zvol/{zvol} && zfs set org.nixcfg:formatted=false {zvol}")
+        host.fail("systemctl restart microvm-zfs-datasets@zvol-guest.service")
+        host.succeed(f"test $(blkid -p -s LABEL -o value /dev/zvol/{zvol}) = other")
+        host.succeed(f"test $(zfs get -H -o value -s local org.nixcfg:formatted {zvol}) = false")
   '';
 }

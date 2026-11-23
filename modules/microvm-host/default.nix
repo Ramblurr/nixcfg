@@ -172,8 +172,15 @@ in
               if [[ "$(zfs get -H -o value -s local org.nixcfg:formatted "$ZVOL")" == false ]]; then
                 PROBE=0
                 blkid -p "$DEV" >/dev/null || PROBE=$?
-                [[ "$PROBE" == 2 ]] || { echo "blkid on new zvol $DEV exited $PROBE; not formatting" >&2; exit 1; }
-                mkfs.ext4 -q -L "$VOL" "$DEV"
+                case "$PROBE" in
+                  2) mkfs.ext4 -q -L "$VOL" "$DEV" ;;
+                  # A run interrupted after mkfs leaves its filesystem unrecorded.
+                  0)
+                    [[ "$(blkid -p -s TYPE -o value "$DEV")" == ext4 && "$(blkid -p -s LABEL -o value "$DEV")" == "$VOL" ]] \
+                      || { echo "new zvol $DEV holds an unexpected filesystem; not formatting" >&2; exit 1; }
+                    ;;
+                  *) echo "blkid on new zvol $DEV exited $PROBE; not formatting" >&2; exit 1 ;;
+                esac
                 zfs set org.nixcfg:formatted=true "$ZVOL"
               fi
               ln -sfn "$DEV" "$VOL.zvol"
