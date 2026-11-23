@@ -35,10 +35,12 @@ elif command == "nix" and args[0] == "eval":
         guest = name.startswith("guest")
         result[name] = {"guest": guest, "buildAttribute": "nixosConfigurations." + name + ".config." + ("microvm.declaredRunner" if guest else "system.build.toplevel")}
         if guest:
-            result[name].update(host="host", guestIP="192.0.2.23" if name == "guest" else "192.0.2.24")
+            result[name].update(host="host")
             if os.environ.get("VSOCK"):
                 target = "vsock-mux//var/lib/microvms/guest/notify.vsock" if name == "guest" else "vsock/4244"
                 result[name].update(guestSSH=target)
+            else:
+                result[name].update(guestIP="192.0.2.23" if name == "guest" else "192.0.2.24")
     print(json.dumps(result))
 elif command in ("nom", "nix") and args[0] == "build":
     if os.environ.get("FAIL_BUILD"):

@@ -88,8 +88,10 @@ let
           guest_host=$(target_field "$host" host)
           [[ "$guest_host" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]] || die "Invalid guest host: $guest_host"
           GUEST_HOSTS["$host"]="''${SSH_TARGETS[$guest_host]-$guest_host}"
-          GUEST_IPS["$host"]=$(target_field "$host" guestIP)
-          [[ "''${GUEST_IPS[$host]}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Invalid guest IPv4 address for $host"
+          if ! target_field "$host" guestSSH >/dev/null; then
+            GUEST_IPS["$host"]=$(target_field "$host" guestIP)
+            [[ "''${GUEST_IPS[$host]}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Invalid guest IPv4 address for $host"
+          fi
           TOPLEVEL_FLAKE_PATHS["$host"]=".#nixosConfigurations.$host.config.microvm.deploy.rebuild"
         else
           TOPLEVEL_FLAKE_PATHS["$host"]=".#$(target_field "$host" buildAttribute)"

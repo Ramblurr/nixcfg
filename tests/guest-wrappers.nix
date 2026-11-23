@@ -95,7 +95,17 @@ assert fails (badGuest {
 assert fails (badGuest {
   microvm.deploy.sshSwitch = null;
 });
-assert (resolveVsock vsockConfigurations).guestSSH == "vsock/4244";
+assert
+  resolveVsock (
+    pkgs.lib.recursiveUpdate vsockConfigurations {
+      guest.config.site.net.svc.hosts4.guest = [ ];
+    }
+  ) == {
+    guest = true;
+    buildAttribute = "nixosConfigurations.guest.config.microvm.declaredRunner";
+    host = "host";
+    guestSSH = "vsock/4244";
+  };
 assert
   (resolveVsock (
     pkgs.lib.recursiveUpdate vsockConfigurations {

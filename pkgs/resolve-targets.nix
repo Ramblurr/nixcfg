@@ -16,21 +16,25 @@ builtins.listToAttrs (
       addresses = config.site.net.svc.hosts4.${config.networking.hostName} or [ ];
       hostConfig = (configurations.${host} or (fail "guest host is not exported by this flake")).config;
       vsock = config.microvm.vsock.ssh.enable or false;
-      vsockDeployment =
-        if !vsock then
-          { }
-        else if !(builtins.hasAttr "microvm-${name}" (hostConfig.programs.ssh.knownHosts or { })) then
-          fail "VSOCK deployment requires host-owned SSH configuration and a pinned guest key"
+      # VSOCK guests deploy through their host, so they need no service-network address.
+      route =
+        if vsock then
+          if !(builtins.hasAttr "microvm-${name}" (hostConfig.programs.ssh.knownHosts or { })) then
+            fail "VSOCK deployment requires host-owned SSH configuration and a pinned guest key"
+          else
+            {
+              guestSSH =
+                if config.microvm.hypervisor == "qemu" then
+                  "vsock/${toString config.microvm.vsock.cid}"
+                else if config.microvm.hypervisor == "cloud-hypervisor" then
+                  "vsock-mux/${hostConfig.microvm.stateDir}/${name}/notify.vsock"
+                else
+                  fail "unsupported VSOCK deployment hypervisor";
+            }
+        else if builtins.length addresses != 1 then
+          fail "guest without VSOCK SSH needs exactly one service-network IPv4 address"
         else
-          {
-            guestSSH =
-              if config.microvm.hypervisor == "qemu" then
-                "vsock/${toString config.microvm.vsock.cid}"
-              else if config.microvm.hypervisor == "cloud-hypervisor" then
-                "vsock-mux/${hostConfig.microvm.stateDir}/${name}/notify.vsock"
-              else
-                fail "unsupported VSOCK deployment hypervisor";
-          };
+          { guestIP = builtins.head addresses; };
       deployment =
         if !guest then
           { }
@@ -40,16 +44,10 @@ builtins.listToAttrs (
           fail "guest host is itself a guest"
         else if !(builtins.hasAttr name (hostConfig.microvm.vms or { })) then
           fail "guest is not registered on ${host}"
-        else if builtins.length addresses != 1 then
-          fail "guest needs exactly one service-network IPv4 address"
         else if (config.microvm.deploy.sshSwitch or null) == null then
           fail "guest does not support SSH switching; refusing an implicit VM restart"
         else
-          {
-            inherit host;
-            guestIP = builtins.head addresses;
-          }
-          // vsockDeployment;
+          { inherit host; } // route;
     in
     {
       inherit name;
