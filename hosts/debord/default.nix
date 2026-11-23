@@ -13,6 +13,7 @@ in
     ./hardware.nix
     ./disk-config.nix
     ./networking.nix
+    ./label-printer.nix
     ./nixbot.nix
     ./prometheus.nix
     #./grafana

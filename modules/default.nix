@@ -112,6 +112,7 @@
     ./services/neogrok.nix
     ./services/code-search-mcp.nix
     ./services/github-runner.nix
+    ./services/goqlprinter.nix
     ./services/haproxy.nix
     ./services/home-dl.nix
     ./services/hindsight.nix

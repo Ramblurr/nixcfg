@@ -17,6 +17,7 @@ inputs: [
         clojureNixLocker = inputs.clojure-nix-locker;
         pkgs = prev;
       };
+      goqlprinter = prev.callPackage ./goqlprinter/package.nix { };
       konveyor = prev.callPackage ./konveyor.nix { };
       keybr-standalone = prev.callPackage ./keybr-standalone/package.nix { };
       # Work item 065: ML uploads retained one image buffer per request on Node 24.19.
