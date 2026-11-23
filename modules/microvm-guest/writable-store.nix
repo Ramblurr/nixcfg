@@ -33,16 +33,25 @@ let
       trap 'ssh -n "$target" rm -rf -- "$root_dir"' EXIT
       ssh "$target" xargs ln -s -t "$root_dir" <<< "$requisites"
 
+      # A GC that scanned roots before the last import can still delete the
+      # toplevel, so the profile is set and the toplevel checked after another
+      # barrier. nix-env --set fails on an invalid toplevel and is a no-op when
+      # the profile already points at it.
       for attempt in 1 2 3; do
         ssh -n "$target" "umask 077 && flock -s /nix/var/nix/gc.lock true"
         missing=$(ssh "$target" xargs nix-store --check-validity --print-invalid <<< "$requisites")
-        [[ -z "$missing" ]] && break
+        if [[ -n "$missing" ]]; then
+          readarray -t paths <<< "$missing"
+          echo "Copying ''${#paths[@]} store paths to $target"
+          nix-store --export "''${paths[@]}" | ssh "$target" nix-store --import >/dev/null
+        fi
+        if ssh -n "$target" nix-env -p /nix/var/nix/profiles/system --set ${toplevel} \
+          && ssh -n "$target" "umask 077 && flock -s /nix/var/nix/gc.lock true" \
+          && ssh -n "$target" nix-store --check-validity ${toplevel}; then
+          break
+        fi
         (( attempt < 3 )) || { echo "store paths keep disappearing from $target" >&2; exit 1; }
-        readarray -t paths <<< "$missing"
-        echo "Copying ''${#paths[@]} store paths to $target"
-        nix-store --export "''${paths[@]}" | ssh "$target" nix-store --import >/dev/null
       done
-      ssh -n "$target" nix-env -p /nix/var/nix/profiles/system --set ${toplevel}
       ssh -n "$target" rm -rf -- "$root_dir"
       trap - EXIT
       ssh -n "$target" ${toplevel}/bin/switch-to-configuration switch
