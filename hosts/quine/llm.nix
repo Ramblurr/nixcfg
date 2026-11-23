@@ -1,6 +1,8 @@
 {
   config,
+  inputs,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -268,6 +270,9 @@ in
 
   modules.dev.llms.cliproxy-api = {
     enable = true;
+    package = import ../../pkgs/cli-proxy-api.nix {
+      inherit (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}) cli-proxy-api;
+    };
     tailscaleServePort = 8317;
     settings = {
       server.trusted-proxies = [
