@@ -22,7 +22,8 @@ let
     "user@2001"
     "nix-daemon"
   ];
-  bareHost =
+  mkBareHost =
+    extra:
     (inputs.nixpkgs.lib.nixosSystem {
       inherit (pkgs.stdenv.hostPlatform) system;
       specialArgs = { inherit inputs; };
@@ -38,8 +39,44 @@ let
           networking.hostName = "dewey";
           system.stateVersion = "26.05";
         }
+        extra
       ];
     }).config;
+  bareHost = mkBareHost { };
+  failures =
+    scope: c:
+    lib.filter (lib.hasInfix scope) (map (a: a.message) (lib.filter (a: !a.assertion) c.assertions));
+  tapFailures =
+    hostAddress: guestAddress: prefixLength:
+    failures "mootWright"
+      (mkGuest {
+        modules.microvm-guest.mootWright.network = {
+          hostAddress = lib.mkForce hostAddress;
+          guestAddress = lib.mkForce guestAddress;
+          prefixLength = lib.mkForce prefixLength;
+        };
+      }).config;
+  tapHost =
+    guests:
+    mkBareHost {
+      systemd.network.enable = true;
+      modules.microvm-host.isolatedTaps = {
+        uplinks = [ "eth1" ];
+        inherit guests;
+      };
+    };
+  tapHostFailures = guests: failures "isolatedTaps" (tapHost guests);
+  disjointHost = tapHost disjointTaps;
+  disjointTaps = {
+    a = {
+      tapId = "tap-a";
+      hostAddress = "10.0.0.1";
+    };
+    b = {
+      tapId = "tap-b";
+      hostAddress = "10.0.0.5";
+    };
+  };
 in
 assert lib.assertMsg
   (
@@ -97,6 +134,35 @@ assert lib.assertMsg (
   && gitConfig.user.name == name
   && wright.identity.matrixId == "@${name}:moot.land"
 ) "the wright's identity defaults to its name";
+assert lib.assertMsg (
+  lib.any (lib.hasInfix "namespace link") (tapFailures "192.168.255.1" "192.168.255.2" 23)
+  && tapFailures "192.168.254.6" "192.168.254.5" 30 == [ ]
+  && lib.any (lib.hasInfix "distinct host addresses") (tapFailures "10.77.0.1" "10.77.0.5" 30)
+  && lib.any (lib.hasInfix "distinct host addresses") (tapFailures "10.77.0.0" "10.77.0.2" 30)
+) "the guest tap subnet must miss the namespace link and hold both tap addresses";
+assert lib.assertMsg (
+  failures "isolatedTaps" disjointHost == [ ]
+  && lib.any (lib.hasInfix "share tap ids: tap-a") (
+    tapHostFailures (lib.recursiveUpdate disjointTaps { b.tapId = "tap-a"; })
+  )
+  && lib.any (lib.hasInfix "overlapping subnets: a/b") (
+    tapHostFailures (lib.recursiveUpdate disjointTaps { a.prefixLength = 29; })
+  )
+) "isolated taps need unique tap ids and disjoint subnets";
+assert lib.assertMsg (lib.all
+  (
+    u:
+    builtins.elem "nftables.service" u.bindsTo
+    && builtins.elem "nftables.service" u.after
+    && u.overrideStrategy == "asDropin"
+  )
+  (
+    map (n: disjointHost.systemd.services.${n}) [
+      "microvm@a"
+      "microvm-tap-interfaces@a"
+    ]
+  )
+) "isolated guests and their taps stop with the host firewall";
 assert lib.assertMsg (
   !bareHost.networking.nftables.enable
   && !(bareHost.networking.nftables.tables ? microvm-isolated-taps)
@@ -195,6 +261,7 @@ pkgs.testers.runNixOSTest {
   };
 
   testScript = ''
+    import base64
     import json
     import shlex
 
@@ -225,8 +292,13 @@ pkgs.testers.runNixOSTest {
         return guest(f"runuser -l {name} -c {shlex.quote(cmd)}")
 
 
-    def tcp(prefix, addr, port):
-        return f"{prefix} socat -T3 - TCP:{addr}:{port},connect-timeout=3 </dev/null"
+    def tcp(prefix, addr, port, opts=""):
+        return f"{prefix} socat -T3 - TCP:{addr}:{port},connect-timeout=3{opts} </dev/null"
+
+
+    def write_json(path, value):
+        data = base64.b64encode(json.dumps(value).encode()).decode()
+        wright(f"echo {data} | base64 -d > {path}")
 
 
     def main_pid(unit):
@@ -338,8 +410,20 @@ pkgs.testers.runNixOSTest {
         guest(f"echo leak-daemon | {daemon_ns} socat -u - UDP:198.51.100.10:9999")
         guest(f"echo ok-ts | {in_ns} {as_ts} socat -u - UDP:198.51.100.10:9999")
         guest("echo ok-root | socat -u - UDP:198.51.100.10:9999")
-        lan.wait_until_succeeds("grep -q ok-ts /run/udp-sink && grep -q ok-root /run/udp-sink")
+        # Sockets bound to the namespace link skip the capture route.
+        bound = [",so-bindtodevice=mw-ns", ",bind=192.168.254.2"]
+        out = guest(tcp(f"{in_ns} {as_ts}", "198.51.100.10", 80, bound[0]))
+        assert "peer=192.168.1.1" in out, out
+        guest(f"echo ok-ts-bound | {in_ns} {as_ts} socat -u - UDP:198.51.100.10:9999{bound[0]}")
+        for opts in bound:
+            guest_fail(tcp(f"{in_ns} {as_wright}", "198.51.100.10", 80, opts))
+            guest(f"echo leak-bound | {in_ns} {as_wright} socat -u - UDP:198.51.100.10:9999{opts} || true")
+        lan.wait_until_succeeds("grep -q ok-ts /run/udp-sink && grep -q ok-root /run/udp-sink && grep -q ok-ts-bound /run/udp-sink")
         lan.succeed("sleep 3; ! grep -q leak /run/udp-sink")
+        guest(f"systemd-run --unit=capture-probe {in_ns} $(command -v socat) TCP-LISTEN:15001,bind=127.0.0.1,ip-transparent,reuseaddr,fork SYSTEM:'echo captured'")
+        guest(f"sleep 1; {tcp(f'{in_ns} {as_wright}', '198.51.100.10', 80)} | grep -qx captured")
+        guest_fail(tcp(f"{in_ns} {as_wright}", "198.51.100.10", 80, bound[0]))
+        guest("systemctl stop capture-probe")
 
     with subtest("a wright process outside the namespace has no network"):
         guest_fail(tcp(as_wright, "198.51.100.10", 80))
@@ -397,15 +481,46 @@ pkgs.testers.runNixOSTest {
         wright("systemctl --user is-active harness-plugins-sync.timer")
 
     with subtest("managed settings merge over the wright's own"):
-        wright(
-            "jq '.mine = 1 | .providerInstances.custom = {}' ~/.t3/userdata/settings.json > s.json"
-            " && mv s.json ~/.t3/userdata/settings.json"
-            " && printf '[projects.\"/x\"]\\ntrust_level = \"trusted\"\\n' >> ~/.config/codex/config.toml"
+        t3_path = f"{home}/.t3/userdata/settings.json"
+        settings = json.loads(guest(f"cat {t3_path}"))
+        mine_env = {"name": "MINE", "value": "1", "sensitive": False}
+        settings["mine"] = 1
+        instances = settings["providerInstances"]
+        instances["custom"] = {}
+        instances["codex"]["enabled"] = False
+        instances["pi"].update(
+            displayName="My Pi",
+            enabled=False,
+            environment=[{"name": "PI_CODING_AGENT_DIR", "value": "/stale", "sensitive": False}, mine_env],
         )
+        instances["antigravity"]["config"]["binaryPath"] = "/nix/store/stale-agy"
+        write_json(t3_path, settings)
+        for d in ["pi", "pi-t3"]:
+            write_json(f"{home}/.config/{d}/agent/settings.json", {"theme": "dark", "defaultModel": "mine/model", "packages": ["/stale"]})
+            models = json.loads(guest(f"cat {home}/.config/{d}/agent/models.json"))
+            models["providers"]["local"] = {"baseUrl": "http://127.0.0.1:8000"}
+            models["providers"]["cliproxy"]["baseUrl"] = "https://stale"
+            write_json(f"{home}/.config/{d}/agent/models.json", models)
+        wright("printf '[projects.\"/x\"]\\ntrust_level = \"trusted\"\\n' >> ~/.config/codex/config.toml")
         guest("systemctl restart moot-wright-config.service")
-        settings = json.loads(guest(f"cat {home}/.t3/userdata/settings.json"))
-        assert settings["mine"] == 1 and "custom" in settings["providerInstances"], settings
+
+        settings = json.loads(guest(f"cat {t3_path}"))
+        instances = settings["providerInstances"]
+        assert settings["mine"] == 1 and "custom" in instances, settings
         assert settings["linkedEnvironmentsEnabled"] is True
+        assert instances["codex"]["enabled"] is False, instances
+        pi_t3 = {"name": "PI_CODING_AGENT_DIR", "value": f"{home}/.config/pi-t3/agent", "sensitive": False}
+        assert instances["pi"]["displayName"] == "My Pi" and instances["pi"]["enabled"] is False, instances
+        assert instances["pi"]["environment"] == [mine_env, pi_t3], instances
+        assert instances["antigravity"]["config"]["binaryPath"] == agy, instances
+        for d, profile in [("pi", "pi-cli"), ("pi-t3", "pi")]:
+            pi_settings = json.loads(guest(f"cat {home}/.config/{d}/agent/settings.json"))
+            assert pi_settings["theme"] == "dark" and pi_settings["defaultModel"] == "mine/model", pi_settings
+            assert pi_settings["packages"] == [f"{home}/.local/share/ol-plugins-sync/profiles/{profile}"], pi_settings
+            assert pi_settings["defaultProvider"] == "cliproxy", pi_settings
+            providers = json.loads(guest(f"cat {home}/.config/{d}/agent/models.json"))["providers"]
+            assert "local" in providers, providers
+            assert providers["cliproxy"]["baseUrl"] == "https://moot-llm.example.ts.net", providers
         codex = guest(f"cat {home}/.config/codex/config.toml")
         assert "trust_level" in codex and 'model_provider = "cliproxy"' in codex, codex
 
@@ -425,5 +540,20 @@ pkgs.testers.runNixOSTest {
         assert guest("cat /proc/sys/kernel/random/boot_id").strip() == boot_id, "the guest rebooted"
         guest("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
         assert guest(f"ip netns identify {main_pid('nix-daemon')}").strip() == netns
+
+    with subtest("the guest runs only while the host firewall is loaded"):
+        host.succeed("systemctl reload nftables.service")
+        assert guest("cat /proc/sys/kernel/random/boot_id").strip() == boot_id, "a firewall reload restarted the guest"
+        host.succeed("systemctl stop nftables.service")
+        host.fail("nft list table inet microvm-isolated-taps")
+        host.fail(f"systemctl is-active microvm@{name}.service")
+        host.fail(f"systemctl is-active microvm-tap-interfaces@{name}.service")
+        host.fail("ip link show ${network.tapId}")
+        host.succeed("systemctl start nftables.service")
+        host.succeed(f"systemctl start microvm@{name}.service")
+        host.wait_until_succeeds(f"{ssh} true", timeout=600)
+        out = guest(tcp("", "198.51.100.10", 80))
+        assert "peer=192.168.1.1" in out, out
+        guest_fail(tcp("", "${network.hostAddress}", 8080))
   '';
 }

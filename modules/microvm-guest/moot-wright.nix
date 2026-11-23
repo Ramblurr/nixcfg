@@ -13,6 +13,7 @@ let
   agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   models = import ../dev/llms/models.nix;
   json = pkgs.formats.json { };
+  ipv4 = import ../../lib/ipv4.nix { inherit lib; };
 
   uid = 2001;
   tsUid = 2101;
@@ -137,12 +138,12 @@ let
       env_key = "CLIPROXY_API_KEY";
     };
   };
-  piSettings = profile: {
+  piDefaults = {
     defaultProvider = "cliproxy";
     defaultModel = models.defaults.pi;
     defaultThinkingLevel = "high";
-    packages = [ "${pluginsStateDir}/profiles/${profile}" ];
   };
+  piPackages = profile: { packages = [ "${pluginsStateDir}/profiles/${profile}" ]; };
   piModels.providers.cliproxy = import ../dev/llms/cliproxy-pi-provider.nix {
     inherit (cfg.cliproxy) url;
     apiKey = "!cat ${keyFile}";
@@ -153,18 +154,14 @@ let
     providerInstances = {
       claudeAgent = {
         driver = "claudeAgent";
-        enabled = true;
         config.homePath = dirs.claude;
       };
       codex = {
         driver = "codex";
-        enabled = true;
         config.homePath = dirs.codex;
       };
       pi = {
         driver = "pi";
-        displayName = "Pi";
-        enabled = true;
         environment = [
           {
             name = "PI_CODING_AGENT_DIR";
@@ -175,11 +172,25 @@ let
       };
       antigravity = {
         driver = "antigravity";
-        enabled = true;
         config.binaryPath = lib.getExe antigravity;
       };
     };
   };
+  t3Defaults.providerInstances =
+    lib.mapAttrs (_: _: { enabled = true; }) t3Settings.providerInstances
+    // {
+      pi = {
+        displayName = "Pi";
+        enabled = true;
+      };
+    };
+  # Keep the wright's own Pi variables; the managed ones replace theirs by name.
+  t3Environment = ''
+    .providerInstances.pi.environment = [
+      ($user.providerInstances.pi.environment // [])[]
+      | select(.name | IN($managed[0].providerInstances.pi.environment[].name) | not)
+    ] + $managed[0].providerInstances.pi.environment
+  '';
   pluginsSyncConfig = pkgs.writeText "ol-plugins-sync.edn" ''
     {:state-dir ${builtins.toJSON pluginsStateDir}
      :t3-settings ${builtins.toJSON "${t3Home}/userdata/settings.json"}
@@ -199,8 +210,14 @@ let
   # Paths are relative to the home directory: creating any component of the
   # /home mount fails on virtiofs, even when it exists.
   rel = lib.removePrefix "${home}/";
+  # Precedence: managed keys, then the wright's own, then defaults.
   mergeJson =
-    absolute: settings: strip:
+    absolute:
+    {
+      managed,
+      defaults ? { },
+      filter ? ".",
+    }:
     let
       path = rel absolute;
     in
@@ -208,7 +225,10 @@ let
       install -d -m 0700 "$(dirname ${path})"
       [ -s ${path} ] || echo '{}' > ${path}
       ${lib.getExe json5} --as-json < ${path} \
-        | ${jq} --slurpfile static ${json.generate "settings.json" settings} '. * $static[0] ${strip}' > ${path}.new
+        | ${jq} \
+          --slurpfile defaults ${json.generate "defaults.json" defaults} \
+          --slurpfile managed ${json.generate "managed.json" managed} \
+          ${lib.escapeShellArg "($defaults[0] * .) as $user | $user * $managed[0] | ${filter}"} > ${path}.new
       mv ${path}.new ${path}
     '';
   mergeToml =
@@ -231,15 +251,39 @@ let
     set -euo pipefail
     umask 077
     cd ${home}
-    ${mergeJson "${dirs.claude}/settings.json" claudeSettings
-      "| del(.env.ANTHROPIC_AUTH_TOKEN, .env.ANTHROPIC_API_KEY)"
-    }
+    ${mergeJson "${dirs.claude}/settings.json" {
+      managed = claudeSettings;
+      filter = "del(.env.ANTHROPIC_AUTH_TOKEN, .env.ANTHROPIC_API_KEY)";
+    }}
     ${mergeToml "${dirs.codex}/config.toml" codexSettings}
-    ${mergeJson "${t3Home}/userdata/settings.json" t3Settings ""}
-    ${writeConfig "${dirs.pi}/settings.json" (json.generate "pi-settings.json" (piSettings "pi-cli"))}
-    ${writeConfig "${dirs.piT3}/settings.json" (json.generate "pi-t3-settings.json" (piSettings "pi"))}
-    ${writeConfig "${dirs.pi}/models.json" (json.generate "pi-models.json" piModels)}
-    ${writeConfig "${dirs.piT3}/models.json" (json.generate "pi-models.json" piModels)}
+    ${mergeJson "${t3Home}/userdata/settings.json" {
+      managed = t3Settings;
+      defaults = t3Defaults;
+      filter = t3Environment;
+    }}
+    ${lib.concatMapStrings
+      (
+        { dir, profile }:
+        mergeJson "${dir}/settings.json" {
+          managed = piPackages profile;
+          defaults = piDefaults;
+        }
+        + mergeJson "${dir}/models.json" {
+          managed = piModels;
+          filter = ".providers.cliproxy = $managed[0].providers.cliproxy";
+        }
+      )
+      [
+        {
+          dir = dirs.pi;
+          profile = "pi-cli";
+        }
+        {
+          dir = dirs.piT3;
+          profile = "pi";
+        }
+      ]
+    }
     ${writeConfig "${configHome}/ol-plugins-sync/config.edn" pluginsSyncConfig}
   '';
 
@@ -261,6 +305,14 @@ let
         meta mark ${captureMark} meta l4proto { tcp, udp } tproxy ip to ${transparentAddr} accept
         meta mark ${captureMark} meta l4proto tcp reject with tcp reset
         meta mark ${captureMark} drop
+      }
+      # A socket bound to ${veth.nsIface} skips the capture route. Output
+      # chains see the device from before the reroute; postrouting sees the final one.
+      chain postrouting {
+        type filter hook postrouting priority filter; policy accept;
+        oifname "lo" accept
+        meta skuid ${toString tsUid} accept
+        counter drop
       }
     }
   '';
@@ -296,11 +348,11 @@ in
         description = "Host tap interface name; must match the host's isolatedTaps entry.";
       };
       hostAddress = lib.mkOption {
-        type = lib.types.str;
+        inherit (ipv4) type;
         description = "Host IPv4 address on the tap, used as the default gateway.";
       };
       guestAddress = lib.mkOption {
-        type = lib.types.str;
+        inherit (ipv4) type;
         description = "Guest IPv4 address on the tap.";
       };
       prefixLength = lib.mkOption {
@@ -476,12 +528,20 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = !lib.hasPrefix "192.168.254." cfg.network.guestAddress;
-        message = "mootWright reserves 192.168.254.0/30 for the namespace link; pick another tap subnet.";
-      }
-    ];
+    assertions =
+      let
+        inherit (cfg.network) hostAddress guestAddress prefixLength;
+      in
+      [
+        {
+          assertion = !ipv4.overlaps (ipv4.subnet guestAddress prefixLength) (ipv4.fromCidr veth.nsAddr);
+          message = "mootWright reserves the namespace link ${veth.nsAddr}; pick a tap subnet outside it.";
+        }
+        {
+          assertion = ipv4.isLink hostAddress guestAddress prefixLength;
+          message = "mootWright needs hostAddress and guestAddress to be distinct host addresses of one /${toString prefixLength}.";
+        }
+      ];
 
     modules.microvm-guest = {
       autoNetSetup.enable = false;

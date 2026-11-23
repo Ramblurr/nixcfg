@@ -1,12 +1,27 @@
 { config, lib, ... }:
 let
   cfg = config.modules.microvm-host.isolatedTaps;
+  ipv4 = import ../../lib/ipv4.nix { inherit lib; };
   nonPublic = import ../../config/non-public-ipv4.nix;
   nftSet = values: "{ ${lib.concatStringsSep ", " values} }";
   taps = nftSet (lib.mapAttrsToList (_: guest: ''"${guest.tapId}"'') cfg.guests);
   uplinks = nftSet (map (iface: ''"${iface}"'') cfg.uplinks);
   subnets = nftSet (
     lib.mapAttrsToList (_: guest: "${guest.hostAddress}/${toString guest.prefixLength}") cfg.guests
+  );
+  tapIds = lib.mapAttrsToList (_: guest: guest.tapId) cfg.guests;
+  duplicateTapIds = lib.filter (id: lib.count (x: x == id) tapIds > 1) (lib.unique tapIds);
+  guestList = lib.mapAttrsToList (name: guest: {
+    inherit name;
+    subnet = ipv4.subnet guest.hostAddress guest.prefixLength;
+  }) cfg.guests;
+  overlapping = lib.concatLists (
+    lib.imap0 (
+      i: a:
+      map (b: "${a.name}/${b.name}") (
+        lib.filter (b: ipv4.overlaps a.subnet b.subnet) (lib.drop (i + 1) guestList)
+      )
+    ) guestList
   );
 in
 {
@@ -32,7 +47,7 @@ in
               description = "Tap interface name; the guest's microvm.interfaces id.";
             };
             hostAddress = lib.mkOption {
-              type = lib.types.str;
+              inherit (ipv4) type;
               description = "Host IPv4 address on the tap, the guest's gateway.";
             };
             prefixLength = lib.mkOption {
@@ -56,9 +71,28 @@ in
         assertion = config.systemd.network.enable;
         message = "modules.microvm-host.isolatedTaps assigns tap addresses with systemd-networkd.";
       }
+      {
+        assertion = duplicateTapIds == [ ];
+        message = "modules.microvm-host.isolatedTaps.guests share tap ids: ${lib.concatStringsSep ", " duplicateTapIds}";
+      }
+      {
+        assertion = overlapping == [ ];
+        message = "modules.microvm-host.isolatedTaps.guests have overlapping subnets: ${lib.concatStringsSep ", " overlapping}";
+      }
     ];
 
     boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
+
+    # nftables.service deletes its tables on stop, which would leave the taps
+    # forwarding unfiltered; reloads keep them in place.
+    systemd.services = lib.concatMapAttrs (
+      name: _:
+      lib.genAttrs [ "microvm@${name}" "microvm-tap-interfaces@${name}" ] (_: {
+        overrideStrategy = "asDropin";
+        bindsTo = [ "nftables.service" ];
+        after = [ "nftables.service" ];
+      })
+    ) cfg.guests;
 
     systemd.network.networks = lib.mapAttrs' (
       _: guest:
