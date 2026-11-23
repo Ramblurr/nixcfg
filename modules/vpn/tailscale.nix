@@ -77,6 +77,13 @@ in
       "${config.services.mullvad-vpn.package}/bin/mullvad-exclude ${pkgs.tailscale}/bin/tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/run/tailscale/tailscaled.sock --port=\${PORT} $FLAGS"
     ];
 
+    # The nixpkgs tailscale-serve oneshot only orders after tailscaled has
+    # started. At boot the backend can still be NoState, so set-config exits
+    # with "unexpected state: NoState" and nothing retries it.
+    systemd.services.tailscale-serve = lib.mkIf config.services.tailscale.serve.enable {
+      serviceConfig.ExecStartPre = "${lib.getExe config.services.tailscale.package} wait --timeout=5m";
+    };
+
     environment.persistence = mkIf config.modules.impermanence.enable {
       "/persist".directories = [
         "/var/lib/tailscale"
