@@ -27,7 +27,7 @@ rec {
 
   overlaps = a: b: a.first <= b.last && b.first <= a.last;
 
-  # Distinct host addresses of one subnet; /31 and /32 have no network or broadcast address.
+  # /31 and /32 have no network or broadcast address.
   isLink =
     a: b: prefixLength:
     let

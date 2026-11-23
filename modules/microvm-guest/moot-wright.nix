@@ -184,7 +184,6 @@ let
         enabled = true;
       };
     };
-  # Keep the wright's own Pi variables; the managed ones replace theirs by name.
   t3Environment = ''
     .providerInstances.pi.environment = [
       ($user.providerInstances.pi.environment // [])[]
@@ -210,7 +209,6 @@ let
   # Paths are relative to the home directory: creating any component of the
   # /home mount fails on virtiofs, even when it exists.
   rel = lib.removePrefix "${home}/";
-  # Precedence: managed keys, then the wright's own, then defaults.
   mergeJson =
     absolute:
     {

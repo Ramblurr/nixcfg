@@ -410,7 +410,6 @@ pkgs.testers.runNixOSTest {
         guest(f"echo leak-daemon | {daemon_ns} socat -u - UDP:198.51.100.10:9999")
         guest(f"echo ok-ts | {in_ns} {as_ts} socat -u - UDP:198.51.100.10:9999")
         guest("echo ok-root | socat -u - UDP:198.51.100.10:9999")
-        # Sockets bound to the namespace link skip the capture route.
         bound = [",so-bindtodevice=mw-ns", ",bind=192.168.254.2"]
         out = guest(tcp(f"{in_ns} {as_ts}", "198.51.100.10", 80, bound[0]))
         assert "peer=192.168.1.1" in out, out
