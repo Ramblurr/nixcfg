@@ -98,27 +98,42 @@ in
       "microvm-virtiofsd@" = {
         requires = [ "microvm-zfs-datasets@%i.service" ];
       };
+      "microvm@" = {
+        requires = [ "microvm-zfs-datasets@%i.service" ];
+        after = [ "microvm-zfs-datasets@%i.service" ];
+      };
       "microvm-zfs-datasets@" = {
-        description = "Create ZFS datasets for MicroVM '%i'";
-        before = [ "microvm-virtiofsd@%i.service" ];
+        description = "Create ZFS datasets and zvols for MicroVM '%i'";
+        before = [
+          "microvm-virtiofsd@%i.service"
+          "microvm@%i.service"
+        ];
         after = [
           "local-fs.target"
           "zfs-datasets.service"
-          # The installer supplies current/share/microvm/virtiofs on first boot.
+          # The installer supplies current/share/microvm on first boot.
           "install-microvm-%i.service"
         ];
         partOf = [ "microvm@%i.service" ];
-        unitConfig.ConditionPathExists = "/var/lib/microvms/%i/current/share/microvm/virtiofs";
+        unitConfig.ConditionPathExists = [
+          "|/var/lib/microvms/%i/current/share/microvm/virtiofs"
+          "|/var/lib/microvms/%i/current/share/microvm/zvols"
+        ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
           WorkingDirectory = "/var/lib/microvms/%i";
           SyslogIdentifier = "microvm-zfs-datasets@%i";
         };
-        path = with pkgs; [ zfs ];
+        path = [
+          pkgs.zfs
+          pkgs.util-linux
+          pkgs.e2fsprogs
+        ];
         scriptArgs = "%i";
         script = # bash
           ''
+            shopt -s nullglob
             zfsExists() {
               zfs list $1 >/dev/null 2>/dev/null
             }
@@ -137,6 +152,29 @@ in
                 zfsExists $BASE/$NAME/$TAG || \
                   zfs create -o mountpoint=$MNT $BASE/$NAME/$TAG
               fi
+            done
+
+            for d in current/share/microvm/zvols/*; do
+              VOL=$(basename "$d")
+              SIZE=$(cat "$d/size")
+              [[ "$VOL" =~ ^[a-z0-9][a-z0-9-]{0,15}$ ]] || { echo "invalid zvol name: $VOL" >&2; exit 1; }
+              [[ "$SIZE" =~ ^[1-9][0-9]*$ ]] || { echo "invalid size for zvol $VOL: $SIZE" >&2; exit 1; }
+              ZVOL="$BASE/$NAME/$VOL"
+              # volmode=dev keeps the host from scanning guest-written partition tables.
+              zfsExists "$ZVOL" || \
+                zfs create -s -V "''${SIZE}M" -o volmode=dev "$ZVOL"
+              DEV="/dev/zvol/$ZVOL"
+              # ZFS creates the device node asynchronously after zfs create returns.
+              for _ in $(seq 300); do [ -b "$DEV" ] && break; sleep 0.2; done
+              [ -b "$DEV" ] || { echo "zvol device $DEV did not appear" >&2; exit 1; }
+              PROBE=0
+              blkid -p "$DEV" >/dev/null || PROBE=$?
+              case "$PROBE" in
+                0) ;;
+                2) mkfs.ext4 -q -L "$VOL" "$DEV" ;;
+                *) echo "blkid failed on $DEV (exit $PROBE); not formatting" >&2; exit 1 ;;
+              esac
+              ln -sfn "$DEV" "$VOL.zvol"
             done
           '';
       };

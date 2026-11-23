@@ -145,7 +145,7 @@ let
           node.name = name;
           modules.microvm-guest.enable = true;
         }
-        ../guests/${name}
+        hostPath
       ]
       ++ extraModules;
     };

@@ -47,12 +47,24 @@ in
         description = "";
       };
     };
-    writableStoreOverlay.enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Enable writable /nix/store overlay for the MicroVM.
-      '';
+    writableStoreOverlay = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Enable writable /nix/store overlay for the MicroVM.
+        '';
+      };
+      zvolSize = mkOption {
+        type = types.nullOr types.ints.positive;
+        default = null;
+        description = ''
+          Size in MiB of a host zvol that persists the writable store layer
+          and /nix/var across reboots and store image upgrades. Setting it
+          enables the overlay, requires nixStoreBackend = "blk", and lets
+          deploy hot-switch the guest over VSOCK SSH.
+        '';
+      };
     };
 
     autoNetSetup.enable = mkOption {

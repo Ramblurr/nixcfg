@@ -45,7 +45,6 @@ in
         inherit (sshGuest) cid;
         ssh.enable = true;
       };
-      writableStoreOverlay = lib.mkIf cfg.writableStoreOverlay.enable "/nix/.rw-store";
       hypervisor = lib.mkDefault "cloud-hypervisor";
       deflateOnOOM = false;
       mem = lib.mkDefault 1024;
