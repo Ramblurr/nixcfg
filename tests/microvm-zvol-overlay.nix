@@ -75,6 +75,7 @@ pkgs.testers.runNixOSTest {
   };
 
   testScript = ''
+    import json
     import shlex
 
     state = "/var/lib/microvms/zvol-guest"
@@ -130,6 +131,7 @@ pkgs.testers.runNixOSTest {
         host.succeed(f"test $(zfs get -H -o value refreservation {zvol}) = none")
         host.succeed(f"test $(zfs get -H -o value volmode {zvol}) = dev")
         host.succeed(f"test $(blkid -s LABEL -o value /dev/zvol/{zvol}) = nix-rw")
+        host.succeed(f"test $(zfs get -H -o value -s local org.nixcfg:formatted {zvol}) = true")
         host.succeed(f"test $(readlink {state}/nix-rw.zvol) = /dev/zvol/{zvol}")
         host.succeed(f"grep -q free_page_reporting=on {state}/current/bin/microvm-run")
 
@@ -184,12 +186,31 @@ pkgs.testers.runNixOSTest {
         guest(f"test $(readlink /run/booted-system) = {v2_top}")
         guest("systemctl is-active nix-store-verify.service")
 
-    with subtest("the initrd dropped upper copies of paths the v2 image ships"):
+    with subtest("the initrd dedup ran once, before the overlay was mounted"):
+        # systemd's "unit starting" and "unit started" catalog messages, in journal order.
+        events = [
+            (e["UNIT"], {"7d4958e842da4a758f6c1cdc7b36dcc5": "starting", "39f53479d3a045ac8e11786248231fbf": "started"}[e["MESSAGE_ID"]])
+            for e in map(json.loads, guest(
+                "journalctl -b -o json --output-fields=UNIT,MESSAGE_ID"
+                " MESSAGE_ID=7d4958e842da4a758f6c1cdc7b36dcc5 MESSAGE_ID=39f53479d3a045ac8e11786248231fbf"
+                " UNIT=nix-rw-store-dedup.service UNIT=sysroot-nix-store.mount"
+            ).splitlines())
+        ]
+        assert events == [
+            ("nix-rw-store-dedup.service", "starting"),
+            ("nix-rw-store-dedup.service", "started"),
+            ("sysroot-nix-store.mount", "starting"),
+            ("sysroot-nix-store.mount", "started"),
+        ], events
+
+    with subtest("the initrd dropped upper copies of paths the v2 image ships with the same type"):
         left = upper_store_paths() & closure(v2_top)
-        assert left == set(), f"duplicated in the upper layer: {left}"
+        # microvm.nix's image builder stores a symlink path as a copy of its target,
+        # so the upper symlink is the only copy that matches its database hash.
+        assert left == {name(hello_link)}, f"duplicated in the upper layer: {left}"
+        guest(f"test -d /nix/.ro-store/{name(hello_link)} && test ! -L /nix/.ro-store/{name(hello_link)}")
+        guest(f"test -L /nix/store/{name(hello_link)}")
         guest(f"test -e /nix/.ro-store/{name(hello)}")
-        # microvm.nix's image builder stores a symlink path as a copy of its target.
-        guest(f"test -x /nix/.ro-store/{name(hello_link)}/bin/hello")
         guest("hello")
 
     with subtest("state only the zvol holds survives and the database is consistent"):
@@ -199,7 +220,31 @@ pkgs.testers.runNixOSTest {
         report = guest("journalctl -b -u nix-store-verify.service")
         assert f"path '{v1_top}' disappeared, removing from database" in report, report
         guest_fail(f"nix-store --check-validity {v1_top}")
-        report = guest("nix-store --verify 2>&1")
-        assert "disappeared" not in report, report
+        report = guest("nix-store --verify --check-contents 2>&1")
+        assert "disappeared" not in report and "modified" not in report, report
+
+    with subtest("nix-daemon starts on its socket only after the database is verified"):
+        guest("systemctl stop nix-daemon.service")
+        guest(f"NIX_REMOTE=daemon nix-store --check-validity {v2_top}")
+        guest("systemctl is-active nix-daemon.service")
+        guest(
+            "mkdir -p /run/systemd/system/nix-store-verify.service.d"
+            " && printf '[Service]\\nExecStart=\\nExecStart=/run/current-system/sw/bin/false\\n'"
+            " > /run/systemd/system/nix-store-verify.service.d/fail.conf"
+            " && systemctl daemon-reload"
+        )
+        guest_fail("systemctl restart nix-store-verify.service")
+        guest_fail("systemctl start nix-daemon.service")
+        guest_fail("systemctl is-active nix-daemon.service")
+
+    with subtest("the host never formats a zvol it did not create"):
+        host.succeed("systemctl stop microvm@zvol-guest.service")
+        host.succeed(f"zfs destroy {zvol}")
+        host.succeed(f"zfs create -s -V ${toString zvolSize}M -o volmode=dev {zvol}")
+        host.succeed("systemctl start microvm-zfs-datasets@zvol-guest.service")
+        # blkid exits 2 when it finds no signature.
+        host.succeed(f"test -b /dev/zvol/{zvol}")
+        host.succeed(f"rc=0; blkid -p /dev/zvol/{zvol} || rc=$?; test $rc -eq 2")
+        host.succeed(f"test $(zfs get -H -o value org.nixcfg:formatted {zvol}) = -")
   '';
 }

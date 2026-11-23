@@ -67,7 +67,10 @@ in
 
         # An upper-layer copy of a path the image now ships shadows the image
         # copy forever, so drop it before the overlay is assembled. This also
-        # clears whiteouts that GC left for image paths.
+        # clears whiteouts that GC left for image paths. The image builder
+        # stores a symlink path as a copy of its target, so only an entry of
+        # the same type counts as a duplicate; the upper copy keeps the
+        # content the database hash describes.
         boot.initrd.systemd.services.nix-rw-store-dedup = {
           description = "Create /nix/var and drop upper-layer store paths the image ships";
           requiredBy = [
@@ -85,12 +88,27 @@ in
               "/sysroot${rwStore}"
             ];
           };
-          serviceConfig.Type = "oneshot";
+          # Both mounts require this unit; it must not run again once the overlay is up.
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
           script = ''
             mkdir -p /sysroot${rwStore}/var
             for p in /sysroot${rwStore}/store/*; do
               ro=/sysroot/nix/.ro-store/''${p##*/}
-              if [ -e "$ro" ] || [ -L "$ro" ]; then rm -rf "$p"; fi
+              if [ -c "$p" ]; then
+                [ -e "$ro" ] || [ -L "$ro" ] || continue
+              elif [ -L "$p" ]; then
+                [ -L "$ro" ] || continue
+              elif [ -d "$p" ]; then
+                [ -d "$ro" ] && ! [ -L "$ro" ] || continue
+              elif [ -f "$p" ]; then
+                [ -f "$ro" ] && ! [ -L "$ro" ] || continue
+              else
+                continue
+              fi
+              rm -rf "$p"
             done
           '';
         };
@@ -100,13 +118,18 @@ in
         systemd.services.nix-store-verify = {
           description = "Drop Nix database rows for store paths no layer holds";
           wantedBy = [ "multi-user.target" ];
-          before = [ "nix-daemon.service" ];
           restartIfChanged = false;
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
             ExecStart = "${config.nix.package}/bin/nix-store --verify";
           };
+        };
+
+        # The daemon must not serve a database that failed verification.
+        systemd.services.nix-daemon = {
+          requires = [ "nix-store-verify.service" ];
+          after = [ "nix-store-verify.service" ];
         };
 
         system.switch.enable = true;

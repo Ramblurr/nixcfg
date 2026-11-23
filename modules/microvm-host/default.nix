@@ -161,19 +161,21 @@ in
               [[ "$SIZE" =~ ^[1-9][0-9]*$ ]] || { echo "invalid size for zvol $VOL: $SIZE" >&2; exit 1; }
               ZVOL="$BASE/$NAME/$VOL"
               # volmode=dev keeps the host from scanning guest-written partition tables.
+              # Only a zvol this script created carries formatted=false, so an
+              # existing zvol is never formatted.
               zfsExists "$ZVOL" || \
-                zfs create -s -V "''${SIZE}M" -o volmode=dev "$ZVOL"
+                zfs create -s -V "''${SIZE}M" -o volmode=dev -o org.nixcfg:formatted=false "$ZVOL"
               DEV="/dev/zvol/$ZVOL"
               # ZFS creates the device node asynchronously after zfs create returns.
               for _ in $(seq 300); do [ -b "$DEV" ] && break; sleep 0.2; done
               [ -b "$DEV" ] || { echo "zvol device $DEV did not appear" >&2; exit 1; }
-              PROBE=0
-              blkid -p "$DEV" >/dev/null || PROBE=$?
-              case "$PROBE" in
-                0) ;;
-                2) mkfs.ext4 -q -L "$VOL" "$DEV" ;;
-                *) echo "blkid failed on $DEV (exit $PROBE); not formatting" >&2; exit 1 ;;
-              esac
+              if [[ "$(zfs get -H -o value -s local org.nixcfg:formatted "$ZVOL")" == false ]]; then
+                PROBE=0
+                blkid -p "$DEV" >/dev/null || PROBE=$?
+                [[ "$PROBE" == 2 ]] || { echo "blkid on new zvol $DEV exited $PROBE; not formatting" >&2; exit 1; }
+                mkfs.ext4 -q -L "$VOL" "$DEV"
+                zfs set org.nixcfg:formatted=true "$ZVOL"
+              fi
               ln -sfn "$DEV" "$VOL.zvol"
             done
           '';
