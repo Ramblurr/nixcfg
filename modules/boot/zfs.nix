@@ -152,6 +152,11 @@ in
         };
       };
     })
+    (lib.mkIf config.boot.zfs.enabled {
+      # OpenZFS 2.4.4 can crash when mounting encrypted datasets in parallel.
+      # https://github.com/openzfs/zfs/issues/19385
+      systemd.services.zfs-mount.environment.ZFS_SERIAL_MOUNT = "1";
+    })
     (lib.mkIf (heartbeatAvailable && config.boot.zfs.enabled) {
       site.gatus.heartbeats = {
         zfs-scrub = lib.mkIf config.services.zfs.autoScrub.enable {
@@ -188,10 +193,6 @@ in
             weekly = "192h";
             monthly = "840h";
           };
-
-      # OpenZFS 2.4.4 can crash when mounting encrypted datasets in parallel.
-      # https://github.com/openzfs/zfs/issues/19385
-      systemd.services.zfs-mount.environment.ZFS_SERIAL_MOUNT = "1";
 
       # ExecStartPost must follow scrub completion, not just process creation.
       systemd.services.zfs-scrub = lib.mkIf config.services.zfs.autoScrub.enable {
