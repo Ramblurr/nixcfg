@@ -7,6 +7,10 @@
 let
   cfg = config.modules.services.goqlprinter;
   json = pkgs.formats.json { };
+  bundledSvgFontDirs = [
+    "${pkgs.dejavu_fonts}/share/fonts"
+    "${pkgs.goqlprinter}/share/goqlprinter/fonts"
+  ];
 in
 {
   options.modules.services.goqlprinter = {
@@ -55,6 +59,8 @@ in
           "${pkgs.goqlprinter}/share/goqlprinter/fonts"
           "${pkgs.dejavu_fonts}/share/fonts"
         ];
+        svg_font_dirs = [ pkgs.label-fonts.fontsDir ] ++ bundledSvgFontDirs;
+        font_catalog = pkgs.label-fonts.mkCatalog bundledSvgFontDirs;
       }
       // lib.optionalAttrs (cfg.networkPrinter != null) {
         backend = "tcp";

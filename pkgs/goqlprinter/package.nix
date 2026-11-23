@@ -3,7 +3,9 @@
   buildGoModule,
   buildNpmPackage,
   fetchFromGitHub,
+  makeWrapper,
   nodejs_22,
+  resvg,
 }:
 let
   pname = "goqlprinter";
@@ -32,6 +34,7 @@ buildGoModule {
   inherit pname version src;
   vendorHash = "sha256-7fpaFgUyrqQ3C6vHE0rlmt2WowmSUrYVwwf0gGaMLWo=";
   subPackages = [ "." ];
+  nativeBuildInputs = [ makeWrapper ];
   # Default tags select the pure-Go native backend; `usb` (gousb) and `gui`
   # (Wails) stay off.
   env.CGO_ENABLED = 0;
@@ -52,6 +55,8 @@ buildGoModule {
   postInstall = ''
     mkdir -p "$out/share/goqlprinter"
     cp -r fonts "$out/share/goqlprinter/"
+    # SVG labels render through the resvg CLI.
+    wrapProgram "$out/bin/goqlprinter" --prefix PATH : ${lib.makeBinPath [ resvg ]}
   '';
   passthru = { inherit frontend; };
   meta = {
