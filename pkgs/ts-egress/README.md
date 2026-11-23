@@ -238,7 +238,14 @@ so it allows only the listed hosts and ports.
   release the address it takes for a flow's destination when the flow ends
   or is refused, also past the in-flight TCP connection limits, and adds a
   switch that drops pings to the internet instead of answering them with
-  the host's `ping`.
+  the host's `ping`. A TCP flow keeps that address until its connection
+  has finished closing, not only until its handler returns.
+- A tenant that reopens a tuple the egress holds in TIME_WAIT gets no
+  answer until TIME_WAIT ends: gVisor hands such a SYN only to a listener,
+  and netstack's forwarder is none. The exit node therefore holds TIME_WAIT
+  for 1 s, not gVisor's 60 s, so on a low-latency tenant leg the tenant's
+  first SYN retransmit usually connects. The cost is a 1 s window to ack a
+  retransmitted last FIN.
 - Tenants using MagicDNS through the exit node get SERVFAIL: the peer API
   DNS path is refused, see above.
 - Rules apply per caller. Two tenants behind one Tailscale node share one

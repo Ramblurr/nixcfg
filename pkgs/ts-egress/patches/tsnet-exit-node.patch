@@ -82,7 +82,7 @@ index 8aaef64..19e1960 100644
  //
  // It calls GetCertificate on the localClient, passing in the ClientHelloInfo.
 diff --git a/wgengine/netstack/netstack.go b/wgengine/netstack/netstack.go
-index 0ecd9e2..25bce02 100644
+index 0ecd9e2..71142fb 100644
 --- a/wgengine/netstack/netstack.go
 +++ b/wgengine/netstack/netstack.go
 @@ -207,6 +207,11 @@ type Impl struct {
@@ -219,7 +219,67 @@ index 0ecd9e2..25bce02 100644
  	if handlePing {
  		var pong []byte // the reply to the ping, if our relayed ping works
  		if destIP.Is4() {
-@@ -1989,6 +2010,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -1614,11 +1635,19 @@ func (ns *Impl) acceptTCP(r *tcp.ForwarderRequest) {
+ 		dialIP = tsaddr.UnmapVia(dialIP)
+ 	}
+ 
++	// If this is a subnet IP, we added it before the TCP handshake so
++	// netstack is happy TCP-handshaking as a subnet IP. Once this flow has
++	// an endpoint, the endpoint holds the address instead: it still sends
++	// from it after the handler returns (the last ACK, TIME_WAIT).
++	releaseSubnetAddress := func() {}
++	if !isTailscaleIP {
++		subnetIP := dialIP
++		releaseSubnetAddress = sync.OnceFunc(func() { ns.removeSubnetAddress(subnetIP) })
++	}
++	endpointHoldsAddress := false
+ 	defer func() {
+-		if !isTailscaleIP {
+-			// if this is a subnet IP, we added this in before the TCP handshake
+-			// so netstack is happy TCP-handshaking as a subnet IP
+-			ns.removeSubnetAddress(dialIP)
++		if !endpointHoldsAddress {
++			releaseSubnetAddress()
+ 		}
+ 	}()
+ 
+@@ -1645,6 +1674,8 @@ func (ns *Impl) acceptTCP(r *tcp.ForwarderRequest) {
+ 			return nil
+ 		}
+ 		r.Complete(false)
++		releaseWhenFinished(ep, &wq, releaseSubnetAddress)
++		endpointHoldsAddress = true
+ 		for _, opt := range opts {
+ 			ep.SetSockOpt(opt)
+ 		}
+@@ -1780,6 +1811,26 @@ func (ns *Impl) acceptTCP(r *tcp.ForwarderRequest) {
+ 	}
+ }
+ 
++// releaseWhenFinished calls release once ep has finished: closed, reset,
++// or out of TIME_WAIT. Every such transition notifies wq with EventHUp.
++func releaseWhenFinished(ep tcpip.Endpoint, wq *waiter.Queue, release func()) {
++	finished := func() bool {
++		s := tcp.EndpointState(ep.State())
++		return s == tcp.StateClose || s == tcp.StateError
++	}
++	e := waiter.NewFunctionEntry(waiter.EventHUp, func(waiter.EventMask) {
++		if finished() {
++			// The endpoint may notify with its lock held, and removing
++			// the address must not wait on it.
++			go release()
++		}
++	})
++	wq.EventRegister(&e)
++	if finished() {
++		go release()
++	}
++}
++
+ func (ns *Impl) forwardTCP(getClient func(...tcpip.SettableSocketOption) *gonet.TCPConn, clientRemoteIP netip.Addr, wq *waiter.Queue, dialAddr netip.AddrPort, isLocal bool) (handled bool) {
+ 	dialAddrStr := dialAddr.String()
+ 	if debugNetstack() {
+@@ -1989,6 +2040,20 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  	if debugNetstack() {
  		ns.logf("[v2] UDP ForwarderRequest: %v", stringifyTEI(sess))
  	}
@@ -240,7 +300,7 @@ index 0ecd9e2..25bce02 100644
  	var wq waiter.Queue
  	ep, err := r.CreateEndpoint(&wq)
  	if err != nil {
-@@ -2011,7 +2046,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2011,7 +2076,11 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  		switch {
  		case dstAddr.Port() == 53:
  			c := gonet.NewUDPConn(&wq, ep)
@@ -253,7 +313,7 @@ index 0ecd9e2..25bce02 100644
  			return
  		case ns.isLoopbackPort(dstAddr.Port()):
  			if dst == serviceIPv6 {
-@@ -2032,15 +2071,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
+@@ -2032,15 +2101,28 @@ func (ns *Impl) acceptUDP(r *udp.ForwarderRequest) {
  				ep.Close()
  				return
  			}
