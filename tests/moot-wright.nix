@@ -9,7 +9,6 @@ let
       extraModules = [ extra ];
     };
   guest = mkGuest { };
-  # A pre-tagged auth key carries its own tags.
   untagged = mkGuest { modules.microvm-guest.mootWright.tailscale.advertiseTags = lib.mkForce [ ]; };
   cfg = guest.config;
   wright = cfg.modules.microvm-guest.mootWright;
@@ -109,7 +108,6 @@ pkgs.testers.runNixOSTest {
 
   nodes.lan = {
     networking.firewall.enable = false;
-    # A stand-in for the public internet, routed through the LAN host.
     networking.interfaces.eth1.ipv4 = {
       addresses = [
         {
@@ -156,7 +154,6 @@ pkgs.testers.runNixOSTest {
       evaluatedConfig = guest;
       autostart = false;
     };
-    # Only the isolated-taps table may stop the guest reaching the host.
     networking.firewall.trustedInterfaces = [ network.tapId ];
     networking.interfaces.eth1.ipv4.routes = [
       {
@@ -328,7 +325,6 @@ pkgs.testers.runNixOSTest {
 
     with subtest("with ts-plug stopped, nothing but ts-plug leaves the namespace"):
         guest(f"systemctl stop ts-plug-{name}.service")
-        # The namespace, its capture and the confined units outlive ts-plug.
         guest(f"systemctl is-active t3-{name}.service user@{uid}.service systemd-netns-private-access-{netns}.service")
         daemon_ns = f"nsenter --net=/proc/{main_pid('nix-daemon')}/ns/net"
         assert guest(f"ip netns identify {main_pid('nix-daemon')}").strip() == netns

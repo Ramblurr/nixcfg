@@ -23,7 +23,6 @@ let
     "systemd-netns-private-${netns}.service"
     "systemd-netns-private-access-${netns}.service"
   ];
-  # One wright per guest, so the namespace link has fixed names and addresses.
   veth = {
     hostIface = "mw-host";
     nsIface = "mw-ns";
@@ -92,7 +91,6 @@ let
     env:
     lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") env);
 
-  # The proxy key is read at launch, so no secret reaches the store.
   withKey =
     bin: package: variable: extraEnv:
     pkgs.writeShellScriptBin bin ''
@@ -201,8 +199,6 @@ let
   # Paths are relative to the home directory: creating any component of the
   # /home mount fails on virtiofs, even when it exists.
   rel = lib.removePrefix "${home}/";
-  # Merges managed settings over the user's file, keeping the user's other
-  # keys. `strip` drops paths that must never persist, such as secrets.
   mergeJson =
     absolute: settings: strip:
     let
@@ -247,11 +243,6 @@ let
     ${writeConfig "${configHome}/ol-plugins-sync/config.edn" pluginsSyncConfig}
   '';
 
-  # Every user in the namespace but ts-plug has its non-local TCP and UDP
-  # steered into ts-plug's transparent listeners, and everything else
-  # dropped. With ts-plug down the steered flows never leave the namespace:
-  # TCP gets a reset, and UDP is dropped, because the kernel cannot send an
-  # ICMP error from the original non-local destination.
   captureRules = pkgs.writeText "moot-${name}-capture.nft" ''
     table inet moot-capture
     delete table inet moot-capture
@@ -274,8 +265,6 @@ let
     }
   '';
 
-  # The root-ns drops live in nftables and the capture in the namespace's
-  # access unit, so confined units stop with either.
   confinement = {
     bindsTo = [ "nftables.service" ] ++ nsUnits;
     after = [ "nftables.service" ] ++ nsUnits;
@@ -545,8 +534,6 @@ in
       nameserver ${cfg.network.dnsResolver}
     '';
 
-    # Root reaches the guest only over VSOCK: no TCP listener, no password,
-    # and a host key that survives reboots.
     modules.users.enable = lib.mkForce false;
     modules.services.sshd.enable = lib.mkForce false;
     security.sudo.enable = false;
@@ -628,8 +615,6 @@ in
     };
     programs.ssh = lib.mkIf (builder != null) {
       knownHosts.${builder.hostName}.publicKey = builder.publicHostKey;
-      # The daemon resolves only public names, so the builder is dialled
-      # through ts-plug's proxy, which resolves tailnet names.
       extraConfig = ''
         Host ${builder.hostName}
           ProxyCommand ${lib.getExe' pkgs.netcat-openbsd "nc"} -X connect -x 127.0.0.1:${toString proxyPort} %h %p
@@ -657,9 +642,6 @@ in
 
     modules.networking.systemd-netns-private = {
       enable = true;
-      # Confined units join the namespace through `inNetns` rather than the
-      # module's `services`, which would make the namespace part of them: a
-      # ts-plug stop would then remove the namespace and its capture.
       namespaces.${netns} = veth // {
         natInterface = uplink;
       };
@@ -673,9 +655,6 @@ in
           type filter hook input priority filter; policy accept;
           iifname "${veth.hostIface}" counter drop
         }
-        # The namespace reaches only the public internet; ts-plug's capture
-        # sends everything but its own control, DERP and WireGuard traffic
-        # into the tailnet.
         chain forward {
           type filter hook forward priority filter; policy accept;
           iifname "${veth.hostIface}" meta nfproto ipv6 counter drop
@@ -685,8 +664,6 @@ in
           oifname "${veth.hostIface}" ct state { established, related } accept
           oifname "${veth.hostIface}" counter drop
         }
-        # A wright process outside the namespace, such as one root started
-        # with runuser, gets no network at all.
         chain output {
           type filter hook output priority filter; policy accept;
           meta skuid ${toString uid} counter drop
@@ -711,8 +688,6 @@ in
           "${inNs} ${ip} route replace local 0.0.0.0/0 dev lo table ${captureTable}"
         ];
 
-      # Copies only the proxy key out of the root-only host secrets, so the
-      # wright never reads the share or ts-plug's auth key.
       moot-wright-credentials = {
         description = "Provide the CLIProxyAPI key to ${name}";
         wantedBy = [ "multi-user.target" ];
@@ -740,8 +715,6 @@ in
         };
       };
 
-      # Agents and user services run under this manager, so it joins the
-      # wright's namespace too.
       "user@${toString uid}" = confinement // {
         overrideStrategy = "asDropin";
         wants = [
@@ -755,8 +728,6 @@ in
         serviceConfig = inNetns;
       };
 
-      # Builds and substitution leave through ts-plug like the wright's own
-      # traffic. Local store clients such as microvm-switch skip the daemon.
       nix-daemon = confinement // {
         environment = proxyEnv // {
           inherit (caEnv) SSL_CERT_FILE;

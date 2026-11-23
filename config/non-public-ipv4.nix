@@ -1,6 +1,3 @@
-# IPv4 ranges a confined MicroVM must never reach directly: private LANs,
-# CGNAT (which includes the tailnet), link-local, loopback, multicast and the
-# unspecified and reserved blocks.
 [
   "0.0.0.0/8"
   "10.0.0.0/8"
