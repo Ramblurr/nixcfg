@@ -131,8 +131,10 @@ pkgs.testers.runNixOSTest {
 
     with subtest("the service fails closed when only blank client keys remain"):
         machine.succeed("printf ' \\t\\n' > ${dir}/client-key")
-        machine.succeed("systemctl restart cliproxy-api.service")
+        machine.fail("systemctl restart cliproxy-api.service")
         machine.wait_until_succeeds("journalctl -u cliproxy-api | grep -q 'Config generation failed: No client API key resolved'")
+        machine.fail("systemctl is-active cliproxy-api.service")
+        machine.fail("pgrep -u cliproxyapi -x ts-plug")
         machine.fail(f"curl -s {API}/v1/models")
         machine.fail(f"test -e {CONFIG}")
   '';

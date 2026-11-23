@@ -11,10 +11,10 @@
   modules.services.onepassword-systemd-credentials.microvmSecrets.ward = {
     "ca-cert" = "op://mootward/ts-egress-ca/certificate";
     "ca-key" = "op://mootward/ts-egress-ca/private-key";
-    "ts-authkey" = "op://mootward/ts-egress-authkey/credential";
-    "ts-broker-authkey" = "op://mootward/ts-broker-authkey/credential";
+    "ts-authkey" = "op://mootward/tailscale-bootstrap/ts-egress-authkey";
+    "ts-broker-authkey" = "op://mootward/tailscale-bootstrap/ts-broker-authkey";
     "moot-op-connect-token" = "op://mootward/moot-connect-token/credential";
-    "cliproxy-authkey" = "op://mootward/cliproxy-authkey/credential";
+    "cliproxy-authkey" = "op://mootward/tailscale-bootstrap/cliproxy-authkey";
     "cliproxy-management-secret" = "op://mootward/CLIProxyAPI/management-secret-unhashed";
     "cliproxy-client-key" = "op://mootward/CLIProxyAPI/credential";
     "cliproxy-hirde-key" = "op://mootward/CLIProxyAPI hirde/credential";

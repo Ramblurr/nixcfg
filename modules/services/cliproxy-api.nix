@@ -49,11 +49,9 @@ let
     else
       lib.optional (builtins.isString value && lib.hasPrefix "op://" value) value;
   unmapped = lib.subtractLists (builtins.attrNames cfg.credentials) (opReferences cfg.settings);
-  serve = pkgs.writeShellScript "cliproxyapi-serve" ''
+  render = pkgs.writeShellScript "cliproxyapi-render" ''
     set -eu
-    unset TS_AUTHKEY
-    ${bb} ${../../scripts/render-op-config.clj} ${template} ${reader} ${configFile}
-    exec ${lib.getExe cfg.package} --config ${configFile}
+    exec ${bb} ${../../scripts/render-op-config.clj} ${template} ${reader} ${configFile}
   '';
   plug = [
     (lib.getExe cfg.plugPackage)
@@ -69,9 +67,20 @@ let
     "0"
   ];
   start = pkgs.writeShellScript "cliproxyapi-start" ''
+    set -eu
     TS_AUTHKEY=$(< "$CREDENTIALS_DIRECTORY/${authKeyCredential}")
     export TS_AUTHKEY
-    exec ${lib.escapeShellArgs (plug ++ [ "--" ])} ${serve}
+    exec ${
+      lib.escapeShellArgs (
+        plug
+        ++ [
+          "--"
+          (lib.getExe cfg.package)
+          "--config"
+          configFile
+        ]
+      )
+    }
   '';
   secretPath = lib.types.addCheck lib.types.str (
     p: lib.hasPrefix "/" p && !lib.hasPrefix builtins.storeDir p
@@ -172,6 +181,7 @@ in
         XDG_STATE_HOME = "/var/lib";
       };
       serviceConfig = {
+        ExecStartPre = render;
         ExecStart = start;
         LoadCredential = [
           "${authKeyCredential}:${cfg.authKeyFile}"
