@@ -13,8 +13,8 @@ let
   src = fetchFromGitHub {
     owner = "Ramblurr";
     repo = "goqlprinter";
-    rev = "1f7cd6fcbba230e30cc2f3fa83191777612f21bb";
-    hash = "sha256-7yPI/OmwpqKVyBuN2FaA1u11fgQWWDcFTdd4gT77DYk=";
+    rev = "1bf52e07d553843975e1113357b8c54c5be0a5b4";
+    hash = "sha256-78sGoUA94zgJAzRPaoIOQnXJcTE9hC9M2ODxwAOns+4=";
   };
   frontend = buildNpmPackage {
     pname = "${pname}-frontend";
@@ -32,9 +32,10 @@ let
 in
 buildGoModule {
   inherit pname version src;
-  vendorHash = "sha256-7fpaFgUyrqQ3C6vHE0rlmt2WowmSUrYVwwf0gGaMLWo=";
+  vendorHash = "sha256-RCvU6TEfKcg+v9s46WMao0gHUuCeWHdSDvR4y1Q8WPw=";
   subPackages = [ "." ];
   nativeBuildInputs = [ makeWrapper ];
+  nativeCheckInputs = [ resvg ];
   # Default tags select the pure-Go native backend; `usb` (gousb) and `gui`
   # (Wails) stay off.
   env.CGO_ENABLED = 0;
