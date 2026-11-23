@@ -41,10 +41,6 @@ pkgs.testers.runNixOSTest {
       evaluatedConfig = v1;
       autostart = false;
     };
-    # Under load the runner's socat notify relay (-T0.2) can drop READY=1,
-    # which fails the start after the timeout. The test waits for SSH instead.
-    systemd.services."microvm@zvol-guest".serviceConfig.Type = pkgs.lib.mkForce "simple";
-
     boot.supportedFilesystems = [ "zfs" ];
     networking.hostId = "8425e349";
     # The host module orders guest interfaces after networkd-wait-online.

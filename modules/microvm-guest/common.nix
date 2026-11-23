@@ -45,6 +45,22 @@ in
         inherit (sshGuest) cid;
         ssh.enable = true;
       };
+      # The runner's per-connection socat children send each guest notify
+      # message and exit at once, so host PID 1 can drop one, READY=1 included,
+      # when it can no longer map the sender to this unit
+      # (https://github.com/microvm-nix/microvm.nix/issues/637). Hand them to
+      # one relay that lives as long as the VM and sends from its own PID.
+      preStart =
+        lib.mkIf (config.microvm.hypervisor == "cloud-hypervisor" && config.microvm.vsock.cid != null)
+          ''
+            if [ -n "''${NOTIFY_SOCKET:-}" ]; then
+              rm -f notify.relay
+              ${config.microvm.vmHostPackages.socat}/bin/socat -u UNIX-RECV:notify.relay UNIX-SENDTO:"$NOTIFY_SOCKET" &
+              for _ in $(seq 50); do [ -S notify.relay ] && break; sleep 0.1; done
+              [ -S notify.relay ] || { echo "notify relay did not start" >&2; exit 1; }
+              export NOTIFY_SOCKET="$PWD/notify.relay"
+            fi
+          '';
       hypervisor = lib.mkDefault "cloud-hypervisor";
       deflateOnOOM = false;
       mem = lib.mkDefault 1024;
