@@ -4,13 +4,10 @@
     baseZfsDataset = "rpool/encrypted/safe/microvms";
   };
 
-  # The private wrapper supplies the evaluated, secret-aware guest configuration.
   microvm.vms.ward = {
     autostart = true;
     restartIfChanged = true;
   };
-  # Mounted read-only at /run/host-secrets in the guest; see
-  # guests/ward/default.nix.
   modules.services.onepassword-systemd-credentials.microvmSecrets.ward = {
     "ca-cert" = "op://moot-ward/ts-egress-ca/certificate";
     "ca-key" = "op://moot-ward/ts-egress-ca/private-key";

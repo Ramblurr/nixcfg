@@ -9,7 +9,6 @@ let
   address = lib.head svc.hosts4.ward;
   svcDns = lib.head svc.hosts4.${svc.dhcp.router};
   connectUrl = "http://op-connect.${tailnet}:8080";
-  # Reads only the moot vault. CLIProxyAPI has its own token for moot-ward.
   mootConnectToken = "/run/host-secrets/moot-op-connect-token";
 in
 {
@@ -27,8 +26,6 @@ in
     hostFQDN = "debord.${config.site.net.mgmt.domainName}";
     nixStoreBackend = "blk";
     mounts = [ "var/lib" ];
-    # debord's modules.services.onepassword-systemd-credentials.microvmSecrets.ward
-    # fills /run/host-secrets, the modules' credential sources.
     hostSecrets = {
       enable = true;
       services = [
@@ -46,8 +43,6 @@ in
   modules.users.enable = lib.mkForce false;
   modules.services.sshd.enable = lib.mkForce false;
   security.sudo.enable = false;
-  # Root's only key arrives with ward's entry in config/microvm-ssh.nix,
-  # which needs debord's VSOCK key and ward's host key from its first boot.
   users.allowNoPasswordLogin = true;
 
   modules.services.ts-egress = {

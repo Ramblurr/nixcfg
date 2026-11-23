@@ -5,8 +5,7 @@ let
   clientKey = "client-key-fixture";
   # ts-plug opens its HTTP proxy only once its node is on a tailnet, which
   # the VM has none of. This fake Connect stands in for that proxy: it
-  # serves on the proxy socket and takes requests in absolute form. With
-  # /run/fake-connect-no-client present it has no client key item.
+  # serves on the proxy socket and takes requests in absolute form.
   fakeConnect = pkgs.writers.writePython3 "fake-connect" { flakeIgnore = [ "E501" ]; } ''
     import json
     import os

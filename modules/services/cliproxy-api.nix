@@ -6,13 +6,6 @@
   ...
 }:
 
-# ts-plug puts CLIProxyAPI on the tailnet as its own node and starts it as
-# its child, so both run as the cliproxyapi user. The child waits for
-# ts-plug's HTTP proxy, which opens once the node is up, resolves the op://
-# references in settings through it from 1Password Connect, and then serves
-# on loopback. A config without a client key never starts: CLIProxyAPI
-# accepts every request when it has none. The proxy socket and the rendered
-# config sit in the runtime directory, mode 0700.
 let
   cfg = config.modules.services.cliproxy-api;
   authKeyCredential = "ts-authkey";
@@ -40,7 +33,7 @@ let
   serve = pkgs.writeShellScript "cliproxyapi-serve" ''
     set -eu
     unset TS_AUTHKEY
-    until [ -S ${proxySocket} ]; do sleep 1; done
+    until [ -S ${proxySocket} ]; do ${pkgs.coreutils}/bin/sleep 1; done
     ${bb} ${../../scripts/render-op-config.clj} ${template} ${reader} ${configFile}
     exec ${lib.getExe cfg.package} --config ${configFile}
   '';
@@ -59,7 +52,6 @@ let
     "-response-header-timeout"
     "0"
   ];
-  # tsnet reads the auth key from TS_AUTHKEY for its first login.
   start = pkgs.writeShellScript "cliproxyapi-start" ''
     TS_AUTHKEY=$(< "$CREDENTIALS_DIRECTORY/${authKeyCredential}")
     export TS_AUTHKEY
@@ -135,6 +127,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = (cfg.settings.access.api-keys or [ ]) != [ ];
+        message = "modules.services.cliproxy-api.settings.access.api-keys must configure at least one client API key.";
+      }
+    ];
+
     users.users.cliproxyapi = {
       isSystemUser = true;
       group = "cliproxyapi";

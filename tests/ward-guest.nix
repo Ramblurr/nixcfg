@@ -13,14 +13,11 @@ let
     ];
   };
   cfg = guest.config;
-  # The full debord system needs the private wrapper; its guest-host-wiring
-  # check covers the attachment. This is the file debord materializes.
   hostSecrets =
     (import ../hosts/debord/microvm-host.nix)
     .modules.services.onepassword-systemd-credentials.microvmSecrets.ward;
   mountPoint = cfg.modules.microvm-guest.hostSecrets.mountPoint;
-  # The host-secrets files each service loads as systemd credentials.
-  loads =
+  hostSecretCredentials =
     service:
     lib.sort lib.lessThan (
       map (lib.removePrefix "${mountPoint}/") (
@@ -54,7 +51,7 @@ assert lib.assertMsg (
   && cfg.microvm.credentialFiles == { }
 ) "ward runs on debord under cloud-hypervisor without a SOPS bootstrap";
 assert lib.assertMsg (
-  loads "ts-egress" == [
+  hostSecretCredentials "ts-egress" == [
     "ca-cert"
     "ca-key"
     "moot-op-connect-token"
@@ -62,19 +59,19 @@ assert lib.assertMsg (
   ]
 ) "ts-egress loads exactly its auth key, the CA and the moot Connect token";
 assert lib.assertMsg (
-  loads "ts-broker" == [
+  hostSecretCredentials "ts-broker" == [
     "moot-op-connect-token"
     "ts-broker-authkey"
   ]
 ) "ts-broker loads exactly its auth key and the moot Connect token";
 assert lib.assertMsg (
-  loads "cliproxy-api" == [
+  hostSecretCredentials "cliproxy-api" == [
     "cliproxy-authkey"
     "cliproxy-op-connect-token"
   ]
 ) "cliproxy-api loads exactly its auth key and its own Connect token";
 assert lib.assertMsg (
-  lib.sort lib.lessThan (lib.unique (lib.concatMap loads services))
+  lib.sort lib.lessThan (lib.unique (lib.concatMap hostSecretCredentials services))
   == lib.sort lib.lessThan (builtins.attrNames hostSecrets)
 ) "debord materializes exactly the host-secrets files ward's services load";
 assert lib.assertMsg (inMootWard (

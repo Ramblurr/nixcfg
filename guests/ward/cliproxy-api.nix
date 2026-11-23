@@ -2,7 +2,6 @@ let
   models = import ../../modules/dev/llms/models.nix;
 in
 {
-  # The routes and models of quine's CLIProxyAPI, with keys from moot-ward.
   modules.services.cliproxy-api.settings = {
     server.trusted-proxies = [
       "127.0.0.1"
