@@ -26,7 +26,7 @@ buildGoModule {
       patch -p1 -d vendor/gvisor.dev/gvisor <"$p"
     done
   '';
-  vendorHash = "sha256-6YHf8OoxzJunvx++zc+VhkOJ1ZjWhBR6UOPzMRPPRyY=";
+  vendorHash = "sha256-OhcBEXqvZbREGuE6qY9woaqBjDjCL9W1tMeAdqYYP00=";
 
   meta = {
     description = "Tailscale exit-node egress that decides every flow from grant capabilities";
