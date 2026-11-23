@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"tailscale.com/tailcfg"
-	"tailscale.com/tsnet"
 	"tailscale.com/tstest/integration/testcontrol"
 	"tailscale.com/types/logger"
 )
@@ -130,13 +129,9 @@ func TestOAuthClientSecretLogin(t *testing.T) {
 			if err := tags.Set(tt.tags); err != nil {
 				t.Fatal(err)
 			}
-			s := &tsnet.Server{
-				Dir:           t.TempDir(),
-				ControlURL:    control.HTTPTestServer.URL,
-				Hostname:      "workstead",
-				AdvertiseTags: tags,
-				Logf:          logger.Discard,
-			}
+			s := newServer("workstead", t.TempDir(), tags)
+			s.ControlURL = control.HTTPTestServer.URL
+			s.Logf = logger.Discard
 			t.Cleanup(func() { s.Close() })
 
 			st, err := s.Up(ctx)
@@ -164,5 +159,13 @@ func TestOAuthClientSecretLogin(t *testing.T) {
 				t.Errorf("node tags = %q, want %q", got, tags)
 			}
 		})
+	}
+}
+
+func TestChildEnvStripsAuthKey(t *testing.T) {
+	got := childEnv([]string{"PATH=/bin", "TS_AUTHKEY=tskey-client-secret", "HOME=/tmp"})
+	want := []string{"PATH=/bin", "HOME=/tmp", "TSPLUG_ACTIVE=1"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("childEnv() = %q, want %q", got, want)
 	}
 }

@@ -472,11 +472,12 @@ State is saved in the `-dir` location (default: `.data/`)
 
 To log in unattended, put an auth key in `TS_AUTHKEY`. An OAuth client secret
 (`tskey-client-...`) works too: ts-plug mints a single-use auth key from it
-for the tags in `-advertise-tags`. That key is ephemeral and not
-preauthorized unless the secret carries `?ephemeral=false&preauthorized=true`:
+for the tags in `-advertise-tags`, and strips `TS_AUTHKEY` from any wrapped
+child command's environment. That key is ephemeral and not preauthorized unless
+the secret carries `?ephemeral=false&preauthorized=true`:
 ```sh
 TS_AUTHKEY='tskey-client-...?ephemeral=false&preauthorized=true' \
-  ts-plug -hostname api -advertise-tags tag:api -- ./server
+  ts-plug -hostname api -advertise-tags tag:api -https-port 443:8080
 ```
 
 ## Examples

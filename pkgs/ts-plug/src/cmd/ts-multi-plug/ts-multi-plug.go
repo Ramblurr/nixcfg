@@ -144,15 +144,30 @@ func main() {
 	}
 }
 
+func newServer(hostname, dir string, tags []string) *tsnet.Server {
+	return &tsnet.Server{
+		Hostname:      hostname,
+		Dir:           dir,
+		AdvertiseTags: tags,
+	}
+}
+
+func childEnv(environ []string) []string {
+	out := make([]string, 0, len(environ)+1)
+	for _, entry := range environ {
+		if strings.HasPrefix(entry, "TS_AUTHKEY=") {
+			continue
+		}
+		out = append(out, entry)
+	}
+	return append(out, "TSPLUG_ACTIVE=1")
+}
+
 // run serves until a shutdown signal, the command's exit, or the first
 // listener or proxy failure. It returns nil for a signal or a clean command
 // exit, so systemd restarts the process only after a failure.
 func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
-	ts := &tsnet.Server{
-		Hostname:      flagHostname,
-		Dir:           flagDir,
-		AdvertiseTags: flagAdvertiseTags,
-	}
+	ts := newServer(flagHostname, flagDir, flagAdvertiseTags)
 	defer ts.Close()
 
 	if *flagDebugTSNet {
@@ -182,7 +197,7 @@ func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 	if len(cmdArgs) > 0 {
 		// start the child process that will handle requests
 		cmd := exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...)
-		cmd.Env = append(os.Environ(), "TSPLUG_ACTIVE=1")
+		cmd.Env = childEnv(os.Environ())
 		if err := commandOutput(cmd, *flagInheritOutput, os.Stdout, os.Stderr); err != nil {
 			return fmt.Errorf("attach logging to command: %w", err)
 		}

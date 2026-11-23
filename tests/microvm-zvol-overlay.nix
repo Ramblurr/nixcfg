@@ -5,6 +5,7 @@ let
   # A store path that is a symlink. The initrd dedup must see it in the
   # image even though its target does not resolve before the overlay is up.
   helloLink = pkgs.runCommand "moot-hello-link" { } "ln -s ${pkgs.hello} $out";
+  v2Only = pkgs.runCommand "moot-v2-boot-only" { } "echo v2-boot-only > $out";
 
   guest = {
     boot.initrd.systemd.services.nix-rw-store-dedup = {
@@ -86,14 +87,21 @@ pkgs.testers.runNixOSTest {
     {
       imports = [ guest ];
       virtualisation.sharedDirectories.v2-cache = {
-        source = "${pkgs.mkBinaryCache { rootPaths = [ nodes.v2.system.build.toplevel ]; }}";
+        source = "${pkgs.mkBinaryCache { rootPaths = [ nodes.v2Hot.system.build.toplevel ]; }}";
         target = "/mnt/v2-cache";
       };
     };
+  nodes.v2Hot = {
+    imports = [ guest ];
+    environment.etc."moot-release".text = "v2-hot";
+    environment.etc."moot-hello-link".source = helloLink;
+    environment.systemPackages = [ pkgs.hello ];
+  };
   nodes.v2 = {
     imports = [ guest ];
     environment.etc."moot-release".text = "v2";
     environment.etc."moot-hello-link".source = helloLink;
+    environment.etc."moot-v2-only".source = v2Only;
     environment.systemPackages = [ pkgs.hello ];
   };
 
@@ -104,9 +112,11 @@ pkgs.testers.runNixOSTest {
       import subprocess
 
       v1_top = "${nodes.v1.system.build.toplevel}"
+      v2_hot_top = "${nodes.v2Hot.system.build.toplevel}"
       v2_top = "${nodes.v2.system.build.toplevel}"
       hello = "${pkgs.hello}"
       hello_link = "${helloLink}"
+      v2_only = "${v2Only}"
 
 
       def name(path):
@@ -149,17 +159,18 @@ pkgs.testers.runNixOSTest {
           v1.succeed("nix-store --verify")
           assert upper_store_paths(v1) == set(), f"a fresh boot wrote to the upper layer: {upper_store_paths(v1)}"
 
-      with subtest("a hot switch writes v2's new paths into the writable layer"):
-          v1.succeed(f"nix copy --no-check-sigs --from file:///mnt/v2-cache {v2_top}")
-          v1.succeed(f"nix-env -p /nix/var/nix/profiles/system --set {v2_top}")
-          v1.succeed(f"{v2_top}/bin/switch-to-configuration switch")
-          v1.succeed("grep -qx v2 /etc/moot-release")
+      with subtest("a hot switch writes new paths into the writable layer"):
+          v1.succeed(f"nix copy --no-check-sigs --from file:///mnt/v2-cache {v2_hot_top}")
+          v1.succeed(f"nix-env -p /nix/var/nix/profiles/system --set {v2_hot_top}")
+          v1.succeed(f"{v2_hot_top}/bin/switch-to-configuration switch")
+          v1.succeed("grep -qx v2-hot /etc/moot-release")
           v1.succeed("hello")
-          v2_new = closure(v1, v2_top) - closure(v1, v1_top)
-          for p in [v2_top, hello, hello_link]:
-              assert name(p) in v2_new, f"{p} is already in the v1 image"
-          assert v2_new <= upper_store_paths(v1), f"missing from the upper layer: {v2_new - upper_store_paths(v1)}"
+          v2_hot_new = closure(v1, v2_hot_top) - closure(v1, v1_top)
+          for p in [v2_hot_top, hello, hello_link]:
+              assert name(p) in v2_hot_new, f"{p} is already in the v1 image"
+          assert v2_hot_new <= upper_store_paths(v1), f"missing from the upper layer: {v2_hot_new - upper_store_paths(v1)}"
           v1.succeed(f"test -L /nix/.rw-store/store/{name(hello_link)}")
+          v1.fail(f"nix-store --check-validity {v2_only}")
 
       with subtest("a path added on the guest lands only in the writable layer"):
           added = v1.succeed("echo moot-state > /tmp/moot-state && nix-store --add /tmp/moot-state").strip()
@@ -178,20 +189,20 @@ pkgs.testers.runNixOSTest {
       with subtest("the initrd dropped upper copies of paths the v2 image ships"):
           left = upper_store_paths(v2) & closure(v2, v2_top)
           assert left == set(), f"duplicated in the upper layer: {left}"
-          for p in [v2_top, hello, hello_link]:
+          for p in [v2_top, hello, hello_link, v2_only]:
               v2.succeed(f"test -e /nix/.ro-store/{name(p)} -o -L /nix/.ro-store/{name(p)}")
           v2.succeed("hello")
           v2.succeed(f"test $(readlink /nix/store/{name(hello_link)}) = {hello}")
 
       with subtest("a path only the writable layer holds survives intact"):
-          assert upper_store_paths(v2) == {name(added)}, f"upper layer holds {upper_store_paths(v2)}"
+          assert name(added) in upper_store_paths(v2), f"added path missing from {upper_store_paths(v2)}"
           v2.succeed(f"grep -qx moot-state {added}")
           v2.succeed(f"nix-store --verify-path {added}")
 
-      with subtest("db.sqlite stays consistent and registers the v2 closure"):
+      with subtest("db.sqlite stays consistent and registers paths new to the v2 image"):
           v2.succeed("sqlite3 /nix/var/nix/db/db.sqlite 'PRAGMA integrity_check' | grep -qx ok")
-          v2.succeed(f"nix-store --check-validity {v2_top} {hello} {hello_link} {added}")
-          v2.succeed(f"nix-store --verify-path {hello}")
+          v2.succeed(f"nix-store --check-validity {v2_top} {v2_only} {hello} {hello_link} {added}")
+          v2.succeed(f"nix-store --verify-path {hello} {v2_only}")
 
       with subtest("rows for paths only the v1 image held stay valid until nix-store --verify"):
           v2.fail(f"test -e {v1_top}")
