@@ -6,19 +6,19 @@
 
 buildNpmPackage (_finalAttrs: {
   pname = "pi-hashline-edit-pro";
-  version = "7.1.1";
+  version = "7.2.1";
 
   src = fetchFromGitHub {
     owner = "YuGiMob";
     repo = "pi-hashline-edit-pro";
-    rev = "d7145c8cf23bb439e1a4733c7ed0391432c92bc8";
-    hash = "sha256-ruzbTJADWx8OOjwViae9jrBei29StBd7k1snKv9NRjE=";
+    rev = "e4811ccc565ff79551910d6fd3c0200ea44eacac";
+    hash = "sha256-gftfMApuFQypevdObDq+qX4LVIV/e9Q4L5EBqIaof0Q=";
   };
 
   postPatch = ''
     cp ${./package-lock.json} package-lock.json
   '';
-  npmDepsHash = "sha256-10wffDGIp6qtwxhpUelccFY396fZ7XGbOVb8PCJxBew=";
+  npmDepsHash = "sha256-ZvTxc6wnHlZzTRHkUe/8ZjFxqNSmiDtE0sEXBHF7iIg=";
   npmDepsFetcherVersion = 2;
   npmFlags = [ "--legacy-peer-deps" ];
   npmInstallFlags = [ "--omit=dev" ];
