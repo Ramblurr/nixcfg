@@ -5,9 +5,9 @@
   kernelPackages,
 }:
 (kernelPackages.nvidiaPackages.mkDriver {
-  version = "595.112.07";
-  sha256_64bit = "sha256-Gjjs1Tii2mIypzMBhAY69Z6fyUbJCMylVb0HkJhIufA=";
-  openSha256 = "sha256-nQnXGCcvo4i7eGaVft3Xc9dRUPPH0v9Zi87cfI4i/Ys=";
+  version = "620.73.04";
+  sha256_64bit = "sha256-tfLi1dqENbMlOTBAFbib9+si/grsjNaQW3puip+bjxs=";
+  openSha256 = "sha256-+GPU2bXC/QWZTt0eH3dTvI0bMAta1GCdU2WFI4E4LWE=";
 
   useSettings = false;
   usePersistenced = false;
