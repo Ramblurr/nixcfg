@@ -1,0 +1,86 @@
+Upstream gVisor change, carried unchanged: the non-test part of
+https://github.com/google/gvisor/pull/15019
+"tcp: forward SYN in TIME_WAIT to the protocol handler", head commit
+ed8a800c0c2d10916616ad2e0a791976fbd60274 (fetched 2026-11-23).
+Fixes https://github.com/google/gvisor/issues/15013, as reported for
+tailscale in https://github.com/tailscale/tailscale/issues/22083.
+
+Drop this patch once tailscale.com pins a gVisor that contains the change.
+
+diff --git a/pkg/tcpip/stack/stack.go b/pkg/tcpip/stack/stack.go
+index 9f1645e9654..caed0d1e60f 100644
+--- a/pkg/tcpip/stack/stack.go
++++ b/pkg/tcpip/stack/stack.go
+@@ -581,6 +581,18 @@ func (s *Stack) SetTransportProtocolHandler(p tcpip.TransportProtocolNumber, h f
+ 	}
+ }
+ 
++// TransportProtocolDefaultHandler returns the per-stack default handler
++// previously set for the given protocol via SetTransportProtocolHandler, or
++// nil if none was set (e.g. a tcp.Forwarder registered as the TCP handler
++// for a stack that has no bound listening endpoints).
++func (s *Stack) TransportProtocolDefaultHandler(p tcpip.TransportProtocolNumber) func(TransportEndpointID, *PacketBuffer) bool {
++	state := s.transportProtocols[p]
++	if state == nil {
++		return nil
++	}
++	return state.defaultHandler
++}
++
+ // Clock returns the Stack's clock for retrieving the current time and
+ // scheduling work.
+ func (s *Stack) Clock() tcpip.Clock {
+diff --git a/pkg/tcpip/transport/tcp/connect.go b/pkg/tcpip/transport/tcp/connect.go
+index d6ad34ebd26..dd4f7ef1508 100644
+--- a/pkg/tcpip/transport/tcp/connect.go
++++ b/pkg/tcpip/transport/tcp/connect.go
+@@ -1540,6 +1540,30 @@ func (e *Endpoint) handleTimeWaitSegments() (extendTimeWait bool, reuseTW func()
+ 					}
+ 				}
+ 			}
++
++			// No bound listening endpoint claimed the new connection. The
++			// stack may still be accepting connections through a
++			// tcp.Forwarder registered as the protocol's default handler
++			// instead of a listening endpoint, so give it the same chance a
++			// listening endpoint would have had rather than dropping the SYN
++			// for the rest of the TIME-WAIT period.
++			if handler := e.stack.TransportProtocolDefaultHandler(info.TransProto); handler != nil {
++				reuseTW = func() {
++					if !handler(s.id, s.pkt) {
++						// Mirror the normal (non-TIME-WAIT) delivery path in
++						// nic.DeliverTransportPacket: a default handler that
++						// declines the segment is not itself an answer, so
++						// reply with a RST rather than dropping it silently.
++						if !s.flags.Contains(header.TCPFlagRst) {
++							replyWithReset(e.stack, s, stack.DefaultTOS, tcpip.UseDefaultIPv4TTL, tcpip.UseDefaultIPv6HopLimit)
++						}
++					}
++					s.DecRef()
++				}
++				// We explicitly do not DecRef the segment as it's still valid and
++				// being reflected to the default handler.
++				return false, reuseTW
++			}
+ 		}
+ 		if extTW {
+ 			extendTimeWait = true
+diff --git a/pkg/tcpip/transport/tcp/rcv.go b/pkg/tcpip/transport/tcp/rcv.go
+index 7370fe99e05..4b4fb382a85 100644
+--- a/pkg/tcpip/transport/tcp/rcv.go
++++ b/pkg/tcpip/transport/tcp/rcv.go
+@@ -583,7 +583,13 @@ func (r *receiver) handleTimeWaitSegment(s *segment) (resetTimeWait bool, newSyn
+ 
+ 	//    (2) returns to TIME-WAIT state if the SYN turns out
+ 	//      to be an old duplicate".
+-	if s.flags.Contains(header.TCPFlagSyn) && r.RcvNxt.LessThan(segSeq) {
++	//
++	// A SYN that also carries an ACK is not a reopening SYN: it belongs to
++	// the old incarnation (a retransmitted SYN-ACK, for instance) and is
++	// handled below like any other segment of that incarnation. Linux does
++	// the same: tcp_timewait_state_process only reopens for a SYN without
++	// ACK or RST.
++	if s.flags.Contains(header.TCPFlagSyn) && !s.flags.Contains(header.TCPFlagAck) && r.RcvNxt.LessThan(segSeq) {
+ 		return false, true
+ 	}
+ 
