@@ -29,7 +29,6 @@ LIST_LINE = re.compile(r"^(?P<path>.+?): '(?P<families>.*)', \d+, (?P<style>\w+)
 
 
 def parse_textproto(text):
-    """Parse protobuf text format into {field: [values]}; messages are dicts."""
     tokens = re.findall(r'"(?:[^"\\]|\\.)*"|#.*|[{}:]|[^\s{}:"#]+', text)
     tokens = [t for t in tokens if not t.startswith("#")]
     pos = 0
@@ -87,7 +86,6 @@ class TextExtractor(html.parser.HTMLParser):
 
 
 def description(family_dir):
-    """Plain text of DESCRIPTION.en_us.html, or of the article newer families use instead."""
     for name in ["DESCRIPTION.en_us.html", "article/ARTICLE.en_us.html"]:
         path = os.path.join(family_dir, name)
         if os.path.exists(path):
@@ -113,7 +111,6 @@ def select(src):
 
 
 def list_fonts(font_dirs):
-    """Map each font file resvg loads from font_dirs to (family, style, weight)."""
     args = ["resvg", "--skip-system-fonts", "--list-fonts"]
     for font_dir in font_dirs:
         args += ["--use-fonts-dir", font_dir]
@@ -129,7 +126,6 @@ def list_fonts(font_dirs):
 
 
 def group_faces(faces, key):
-    """Group faces by (key(path), family) into sorted style and weight lists."""
     groups = {}
     for path, (family, style, weight) in faces.items():
         styles, weights = groups.setdefault((key(path), family), (set(), set()))

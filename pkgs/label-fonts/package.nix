@@ -19,7 +19,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     resvg
   ];
 
-  # One directory per google/fonts family directory, so file names never collide.
   installPhase = ''
     runHook preInstall
     fonts=$out/share/fonts
@@ -34,7 +33,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru = {
     fontsDir = "${finalAttrs.finalPackage}/share/fonts";
-    # The catalog for SVG rendering over this package's fonts plus bundledFontDirs.
     mkCatalog =
       bundledFontDirs:
       runCommand "label-fonts-catalog.json"
