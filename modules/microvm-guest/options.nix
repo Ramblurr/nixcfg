@@ -20,6 +20,7 @@ in
         "quine"
         "dewey"
         "debord"
+        "thingstead"
       ];
       default = null;
       description = ''

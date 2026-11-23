@@ -10,5 +10,6 @@
     ./zvols.nix
     ./home-manager.nix
     ./dev-sandbox.nix
+    ./moot-wright.nix
   ];
 }
