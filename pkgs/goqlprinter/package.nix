@@ -55,7 +55,6 @@ buildGoModule {
   postInstall = ''
     mkdir -p "$out/share/goqlprinter"
     cp -r fonts "$out/share/goqlprinter/"
-    # SVG labels render through the resvg CLI.
     wrapProgram "$out/bin/goqlprinter" --prefix PATH : ${lib.makeBinPath [ resvg ]}
   '';
   passthru = { inherit frontend; };
