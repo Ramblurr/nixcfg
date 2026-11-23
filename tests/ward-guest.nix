@@ -49,8 +49,9 @@ assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Guest must fully
 assert lib.assertMsg (
   cfg.modules.microvm-guest.host == "debord"
   && cfg.microvm.hypervisor == "cloud-hypervisor"
+  && !cfg.microvm.storeDiskDirect
   && cfg.microvm.credentialFiles == { }
-) "ward runs on debord under cloud-hypervisor without a SOPS bootstrap";
+) "ward runs on debord under cloud-hypervisor without O_DIRECT store disk or SOPS bootstrap";
 assert lib.assertMsg (
   hostSecretCredentials "ts-egress" == [
     "ca-cert"

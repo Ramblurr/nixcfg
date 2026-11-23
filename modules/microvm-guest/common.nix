@@ -88,6 +88,9 @@ in
 
       socket = "${cfg.mountBase}/${hostName}.sock";
 
+      # ZFS reports a 128 KiB O_DIRECT alignment on /nix/store, which makes
+      # cloud-hypervisor advertise a block size > PAGE_SIZE that virtio_blk rejects with -EINVAL.
+      storeDiskDirect = lib.mkDefault false;
       storeDiskErofsFlags = [ "-zlz4hc,level=5" ];
 
       virtiofsd = {
