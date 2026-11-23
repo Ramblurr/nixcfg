@@ -4,7 +4,7 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
-      inputs.quadlet-nix2.nixosModules.default
+      (import ../modules/quadlet-nix.nix inputs)
       inputs.sops-nix.nixosModules.sops
       ../modules/site/gatus.nix
       ../modules/services/invoiceninja.nix

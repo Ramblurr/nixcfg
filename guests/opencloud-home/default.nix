@@ -18,7 +18,7 @@ let
 in
 {
   imports = [
-    inputs.quadlet-nix2.nixosModules.default
+    (import ../../modules/quadlet-nix.nix inputs)
     ../../modules/services/opencloud.nix
   ];
 

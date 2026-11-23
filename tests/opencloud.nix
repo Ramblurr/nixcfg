@@ -78,7 +78,7 @@ pkgs.testers.runNixOSTest {
   };
   nodes.client = { lib, ... }: {
     imports = [
-      inputs.quadlet-nix2.nixosModules.default
+      (import ../modules/quadlet-nix.nix inputs)
       ../modules/services/opencloud.nix
     ];
     modules.services.opencloud.instances = lib.genAttrs names instance;

@@ -4,7 +4,7 @@ let
   configuration = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
-      inputs.quadlet-nix2.nixosModules.default
+      (import ../modules/quadlet-nix.nix inputs)
       ../modules/services/opencloud.nix
       {
         boot.isContainer = true;

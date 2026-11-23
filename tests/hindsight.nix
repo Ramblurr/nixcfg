@@ -142,7 +142,7 @@ let
       system = pkgs.stdenv.hostPlatform.system;
       modules = [
         inputs.impermanence.nixosModules.impermanence
-        inputs.quadlet-nix2.nixosModules.default
+        (import ../modules/quadlet-nix.nix inputs)
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
         testCaddyOptions
@@ -240,7 +240,7 @@ pkgs.testers.runNixOSTest {
     {
       imports = [
         inputs.impermanence.nixosModules.impermanence
-        inputs.quadlet-nix2.nixosModules.default
+        (import ../modules/quadlet-nix.nix inputs)
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
         testCaddyOptions

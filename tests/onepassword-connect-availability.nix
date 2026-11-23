@@ -27,7 +27,7 @@ let
       system = pkgs.stdenv.hostPlatform.system;
       specialArgs = { inherit inputs; };
       modules = [
-        inputs.quadlet-nix2.nixosModules.default
+        (import ../modules/quadlet-nix.nix inputs)
         inputs.home-manager.nixosModules.home-manager
         inputs.sops-nix.nixosModules.sops
         ../modules/zfs-attrs.nix
