@@ -19,7 +19,8 @@ let
          "fields": [{"id": "credential", "label": "credential", "value": "${clientKey}"},
                     {"id": "fld0000000000000000000000b", "label": "management-secret-unhashed",
                      "value": "management-fixture"},
-                    {"id": "fld0000000000000000000000d", "label": "empty-field"}]},
+                    {"id": "fld0000000000000000000000d", "label": "empty-field"},
+                    {"id": "fld0000000000000000000000e", "label": "nbsp-field", "value": "\u00a0"}]},
         {"id": "itm0000000000000000000000c", "title": "OpenRouter",
          "fields": [{"id": "credential", "label": "credential", "value": "upstream-fixture"}]},
     ]
@@ -89,6 +90,7 @@ pkgs.testers.runNixOSTest {
           access.api-keys = [
             "op://moot-ward/cliproxyapi/credential"
             "op://moot-ward/cliproxyapi/empty-field"
+            "op://moot-ward/cliproxyapi/nbsp-field"
             "op://moot-ward/missing/credential"
           ];
           api-keys.openai-compatibility = [

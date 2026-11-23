@@ -38,6 +38,7 @@ let
       tries=$((tries + 1))
       if [ "$tries" -ge 60 ]; then
         echo "cliproxy-api: timed out waiting for ${proxySocket}" >&2
+        kill -TERM "$PPID" 2>/dev/null || true
         exit 1
       fi
       ${pkgs.coreutils}/bin/sleep 1
@@ -137,7 +138,7 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = lib.any (k: builtins.isString k && lib.strings.trim k != "") (
+        assertion = lib.any (k: builtins.isString k && builtins.match ".*[!-~].*" k != null) (
           cfg.settings.access.api-keys or [ ]
         );
         message = "modules.services.cliproxy-api.settings.access.api-keys must configure at least one non-blank client API key.";

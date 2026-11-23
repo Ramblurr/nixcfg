@@ -9,6 +9,10 @@
 
 (defn- fail [message] (throw (ex-info message {:safe true})))
 
+(defn- unicode-blank? [s]
+  (or (not (string? s))
+      (nil? (re-find #"[^\t\n\x0B\f\r \u0085\u00A0\p{Zs}]" s))))
+
 (defn parse-reference [reference]
   (let [parts (some-> (second (re-matches #"op://([^?]+)" reference)) (str/split #"/"))]
     (case (count parts)
@@ -51,7 +55,7 @@
                    (filter #(= section-id (get-in % [:section :id])) fields))
                  fields)
         value (:value (one "field" field fields :label))]
-    (if (and (string? value) (not (str/blank? value)))
+    (if-not (unicode-blank? value)
       value
       (fail (str "Empty value for " reference)))))
 

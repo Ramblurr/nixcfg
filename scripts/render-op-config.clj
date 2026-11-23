@@ -2,13 +2,21 @@
 (require '[babashka.fs :as fs] '[babashka.process :as process]
          '[cheshire.core :as json] '[clojure.string :as str])
 
+(def ^:private unicode-space-re #"^[\t\n\x0B\f\r \u0085\u00A0\p{Zs}]+|[\t\n\x0B\f\r \u0085\u00A0\p{Zs}]+$")
+
+(defn- trim-unicode [s]
+  (str/replace s unicode-space-re ""))
+
+(defn- unicode-blank? [s]
+  (or (not (string? s)) (empty? (trim-unicode s))))
+
 (defn- read-secret [reference reader]
-  (let [secret (str/trim
+  (let [secret (trim-unicode
                 (let [{:keys [exit out]} (process/shell {:in "" :out :string :err :string :continue true}
                                                         reader reference)]
                   (when-not (zero? exit) (throw (ex-info (str "Cannot resolve " reference) {:safe true})))
                   out))]
-    (when (str/blank? secret) (throw (ex-info (str "Empty credential: " reference) {:safe true})))
+    (when (unicode-blank? secret) (throw (ex-info (str "Empty credential: " reference) {:safe true})))
     secret))
 
 (defn- resolve-or-skip [reference reader]
@@ -33,8 +41,7 @@
 
 (defn- require-client-keys! [template rendered]
   (when (and (seq (get-in template ["access" "api-keys"]))
-             (not-any? #(and (string? %) (not (str/blank? %)))
-                       (get-in rendered ["access" "api-keys"])))
+             (every? unicode-blank? (get-in rendered ["access" "api-keys"])))
     ;; CLIProxyAPI accepts every request when it has no client keys.
     (throw (ex-info "No client API key resolved" {:safe true})))
   rendered)
