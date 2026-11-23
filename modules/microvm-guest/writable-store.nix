@@ -22,20 +22,29 @@ let
       [[ "$remote_name" == ${lib.escapeShellArg config.networking.hostName} ]] \
         || { echo "refusing to switch $remote_name to ${config.networking.hostName}" >&2; exit 1; }
 
-      # The guest GC holds gc.lock exclusively while it runs. A shared lock
-      # held until this script exits keeps it from deleting paths between the
-      # validity check and the profile update. Closing stdin releases it.
-      coproc gc_lock { ssh "$target" "flock -s /nix/var/nix/gc.lock sh -c 'echo locked; exec cat'"; }
-      read -r _ <&"''${gc_lock[0]}"
+      # Every requisite gets a GC root before its validity is checked, so no
+      # guest GC between the check and the profile update deletes a path the
+      # profile needs. That includes the auto-GC nix-store --import runs, which
+      # takes gc.lock exclusively. A link becomes a root once its path is valid.
+      # A GC already running scanned the roots before the links existed, so
+      # wait for it to finish before checking.
+      requisites=$(nix-store --query --requisites ${toplevel})
+      root_dir=$(ssh -n "$target" mktemp -d /nix/var/nix/gcroots/microvm-switch.XXXXXX)
+      [[ "$root_dir" =~ ^/nix/var/nix/gcroots/microvm-switch\.[A-Za-z0-9._-]+$ ]] \
+        || { echo "unexpected staging root: $root_dir" >&2; exit 1; }
+      trap 'ssh -n "$target" rm -rf "$root_dir"' EXIT
+      ssh "$target" xargs ln -s -t "$root_dir" <<< "$requisites"
+      ssh -n "$target" flock -s /nix/var/nix/gc.lock true
 
-      missing=$(nix-store --query --requisites ${toplevel} \
-        | ssh "$target" xargs nix-store --check-validity --print-invalid)
+      missing=$(ssh "$target" xargs nix-store --check-validity --print-invalid <<< "$requisites")
       if [[ -n "$missing" ]]; then
         readarray -t paths <<< "$missing"
         echo "Copying ''${#paths[@]} store paths to $target"
         nix-store --export "''${paths[@]}" | ssh "$target" nix-store --import >/dev/null
       fi
       ssh -n "$target" nix-env -p /nix/var/nix/profiles/system --set ${toplevel}
+      ssh -n "$target" rm -rf "$root_dir"
+      trap - EXIT
       ssh -n "$target" ${toplevel}/bin/switch-to-configuration switch
     '';
   };
