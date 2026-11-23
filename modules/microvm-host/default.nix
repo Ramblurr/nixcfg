@@ -24,6 +24,8 @@ let
   '';
 in
 {
+  imports = [ ./isolated-taps.nix ];
+
   options.modules.microvm-host = {
     enable = lib.mkEnableOption "Enable microvm host services (for imperative control!)";
     baseZfsDataset = lib.mkOption {
