@@ -14,7 +14,6 @@ let
   models = import ../../modules/dev/llms/models.nix;
   cliproxyProvider = import ../../modules/dev/llms/cliproxy-pi-provider.nix {
     inherit (osConfig.modules.dev.llms.proxy) url;
-    apiKey = "!op read 'op://moot/cliproxyapi hirde/credential'";
   };
   workspaceDir = config.home.homeDirectory;
   repoDir = "${workspaceDir}/thingstead";
