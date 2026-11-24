@@ -41,7 +41,7 @@ in
       map (
         vm:
         lib.nameValuePair "moot-node@${vm}" {
-          ts-authkey = "op://home-ops-prod/thingstead-bootstrap/${vm}-authkey";
+          ts-authkey = "op://thingstead/thingstead-bootstrap/${vm}-authkey";
         }
       ) steads
     );
