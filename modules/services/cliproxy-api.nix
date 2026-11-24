@@ -11,6 +11,8 @@ let
   authKeyCredential = "ts-authkey";
   stateDir = "/var/lib/cliproxyapi";
   configFile = "/run/cliproxyapi/config.yaml";
+  # CLIProxyAPI trusts ts-plug's Tailscale-Node-* headers only on this socket.
+  tailnetSocket = "/run/cliproxyapi/tailnet.sock";
   bb = lib.getExe pkgs.babashka;
   template = pkgs.writeText "cliproxyapi-template.json" (
     builtins.toJSON {
@@ -19,6 +21,7 @@ let
         server = {
           host = "127.0.0.1";
           inherit (cfg) port;
+          tailnet-socket = tailnetSocket;
         };
       } cfg.settings;
     }
@@ -60,7 +63,7 @@ let
     "-dir"
     "/var/lib/cliproxyapi-tailscale"
     "-https-port"
-    "443:${toString cfg.port}"
+    "443:unix:${tailnetSocket}"
     "-inherit-output"
     # Non-streaming completions send no headers until the model finishes.
     "-response-header-timeout"
