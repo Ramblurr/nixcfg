@@ -33,6 +33,10 @@
         "sr_mod"
         "sdhci_pci"
       ];
+      systemd.services.zfs-import-rpool = {
+        requires = [ "dev-disk-by\\x2dpartlabel-cryptkey.device" ];
+        after = [ "dev-disk-by\\x2dpartlabel-cryptkey.device" ];
+      };
       systemd.services.rollback.script = lib.mkForce ''
         zfs rollback -r rpool/encrypted/local/root@blank && \
         echo "rollback complete"
