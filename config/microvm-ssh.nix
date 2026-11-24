@@ -48,8 +48,14 @@
   mootforge = {
     publicKeyFile = ./ssh/mootforge-microvm.pub;
     guests = {
-      anvil.cid = 4250;
-      cinder.cid = 4251;
+      anvil = {
+        cid = 4250;
+        hostKeyFile = ./ssh/anvil-host.pub;
+      };
+      cinder = {
+        cid = 4251;
+        hostKeyFile = ./ssh/cinder-host.pub;
+      };
     };
   };
 }
