@@ -14,6 +14,14 @@ let
   upstream = pkgs.callPackage "${inputs.microvm}/pkgs/microvm-command.nix" {
     inherit (config.microvm) stateDir;
   };
+  guestConfig =
+    name: vm:
+    if vm.flake != null then
+      vm.flake.nixosConfigurations.${name}.config
+    else if vm.evaluatedConfig != null then
+      vm.evaluatedConfig.config
+    else
+      vm.config.config;
   # Retain upstream routing, but let our strict host-key policy take effect.
   verifiedMicrovm = pkgs.runCommand "microvm-verified-ssh" { } ''
     mkdir -p "$out/bin"
@@ -189,7 +197,21 @@ in
             done
           '';
       };
-    };
+    }
+    # A wright VM's guest processes could otherwise send sd_notify messages
+    # to its host unit over the VSOCK notify relay.
+    // lib.concatMapAttrs (
+      name: vm:
+      lib.optionalAttrs ((guestConfig name vm).modules.microvm-guest.mootWright.enable or false) {
+        "microvm@${name}" = {
+          overrideStrategy = "asDropin";
+          serviceConfig = {
+            Type = lib.mkForce "simple";
+            NotifyAccess = "none";
+          };
+        };
+      }
+    ) config.microvm.vms;
 
     nix.settings = {
       min-free =
