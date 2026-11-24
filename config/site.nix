@@ -79,7 +79,6 @@ in
       immich-home = [ "10.9.4.23" ];
       peirce = [ "10.9.4.24" ];
       mali = [ "10.9.4.10" ];
-      mootforge = [ "10.9.4.19" ];
     };
     hosts6 = { };
     #hosts6.main = {
@@ -407,10 +406,6 @@ in
       role = "server";
       interfaces = {
         lan0.type = "phys";
-        prim = {
-          type = "bridge";
-          parent = "lan0";
-        };
         mgmt = {
           type = "bridge";
           parent = "lan0";
