@@ -70,13 +70,12 @@ assert lib.assertMsg (
   hostSecretCredentials "cliproxy-api" == [
     "cliproxy-authkey"
     "cliproxy-client-key"
-    "cliproxy-hirde-key"
     "cliproxy-management-secret"
     "cliproxy-mistral-key"
     "cliproxy-openrouter-key"
     "cliproxy-subq-key"
   ]
-) "cliproxy-api loads exactly its auth key and its six keys, never the CA or a Connect token";
+) "cliproxy-api loads exactly its auth key and its five keys, never the CA or a Connect token";
 assert lib.assertMsg (
   lib.sort lib.lessThan (lib.unique (lib.concatMap hostSecretCredentials services))
   == lib.sort lib.lessThan (builtins.attrNames hostSecrets)

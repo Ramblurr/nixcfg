@@ -6,7 +6,6 @@ in
     "op://mootward/CLIProxyAPI/management-secret-unhashed" =
       "/run/host-secrets/cliproxy-management-secret";
     "op://mootward/CLIProxyAPI/credential" = "/run/host-secrets/cliproxy-client-key";
-    "op://mootward/CLIProxyAPI hirde/credential" = "/run/host-secrets/cliproxy-hirde-key";
     "op://mootward/OpenRouter/credential" = "/run/host-secrets/cliproxy-openrouter-key";
     "op://mootward/Subq/credential" = "/run/host-secrets/cliproxy-subq-key";
     "op://mootward/Mistral/credential" = "/run/host-secrets/cliproxy-mistral-key";
@@ -22,7 +21,6 @@ in
     };
     access.api-keys = [
       "op://mootward/CLIProxyAPI/credential"
-      "op://mootward/CLIProxyAPI hirde/credential"
     ];
     api-keys.openai-compatibility = [
       {

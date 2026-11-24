@@ -17,7 +17,6 @@
     "cliproxy-authkey" = "op://mootward/tailscale-bootstrap/cliproxy-authkey";
     "cliproxy-management-secret" = "op://mootward/CLIProxyAPI/management-secret-unhashed";
     "cliproxy-client-key" = "op://mootward/CLIProxyAPI/credential";
-    "cliproxy-hirde-key" = "op://mootward/CLIProxyAPI hirde/credential";
     "cliproxy-openrouter-key" = "op://mootward/OpenRouter/credential";
     "cliproxy-subq-key" = "op://mootward/Subq/credential";
     "cliproxy-mistral-key" = "op://mootward/Mistral/credential";
