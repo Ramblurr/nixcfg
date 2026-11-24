@@ -580,17 +580,21 @@ in
         matchConfig.MACAddress = mac;
         address = [ "${cfg.network.guestAddress}/${toString cfg.network.prefixLength}" ];
         gateway = [ cfg.network.hostAddress ];
-        dns = [ cfg.network.dnsResolver ];
         networkConfig = {
           LinkLocalAddressing = "no";
           IPv6AcceptRA = false;
         };
       };
     };
-    services.resolved.settings.Resolve.FallbackDNS = lib.mkForce [ cfg.network.dnsResolver ];
-    environment.etc."resolv-external.conf".text = ''
-      nameserver ${cfg.network.dnsResolver}
-    '';
+    # resolved would resolve for any local user over D-Bus and varlink, from
+    # the root namespace where the wright's drop rules do not apply.
+    services.resolved.enable = false;
+    networking.resolvconf.enable = false;
+    environment.etc = lib.genAttrs [ "resolv.conf" "resolv-external.conf" ] (_: {
+      text = ''
+        nameserver ${cfg.network.dnsResolver}
+      '';
+    });
 
     modules.users.enable = lib.mkForce false;
     modules.services.sshd.enable = lib.mkForce false;
@@ -617,9 +621,9 @@ in
       after = [ "sshd-keygen.service" ];
     };
 
-    # glibc would resolve through nsncd or resolved's NSS socket, both in the
-    # root namespace, so wright lookups would skip the egress DNS filter.
-    # Resolve only from files and each namespace's resolv.conf.
+    # glibc would resolve through nsncd in the root namespace, so wright
+    # lookups would skip the egress DNS filter. Resolve only from files and
+    # each namespace's resolv.conf.
     services.nscd.enable = false;
     system.nssModules = lib.mkForce [ ];
     system.nssDatabases.hosts = lib.mkForce [
