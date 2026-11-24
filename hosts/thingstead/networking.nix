@@ -1,6 +1,7 @@
 { config, ... }:
 let
   inherit (config.repo.secrets) local;
+  inherit (config.site.net) data;
 in
 {
   networking.useDHCP = false;
@@ -9,6 +10,14 @@ in
   time.timeZone = "Europe/Berlin";
   systemd.network = {
     enable = true;
+    netdevs."20-data" = {
+      netdevConfig = {
+        Kind = "vlan";
+        Name = "data";
+        MTUBytes = data.mtu;
+      };
+      vlanConfig.Id = data.vlan;
+    };
     links = {
       "10-eno1" = {
         matchConfig.MACAddress = local.eno1.hwaddr;
@@ -26,10 +35,20 @@ in
       };
       "10-enp6s0" = {
         matchConfig.Name = "enp6s0";
-        linkConfig = {
-          ActivationPolicy = "always-down";
-          Unmanaged = true;
+        networkConfig = {
+          VLAN = [ "data" ];
+          LinkLocalAddressing = false;
         };
+        linkConfig = {
+          MTUBytes = data.mtu;
+          RequiredForOnline = false;
+        };
+      };
+      "30-data" = {
+        matchConfig.Name = "data";
+        address = map (a: "${a}/${toString data.subnet4Len}") data.hosts4.thingstead;
+        networkConfig.LinkLocalAddressing = false;
+        linkConfig.RequiredForOnline = false;
       };
       "10-wlp0s20f3" = {
         matchConfig.Name = "wlp0s20f3";

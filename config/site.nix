@@ -172,6 +172,7 @@ in
       mali = [ "10.9.10.10" ];
       mootforge = [ "10.9.10.19" ];
       quine = [ "10.9.10.5" ];
+      thingstead = [ "10.9.10.20" ];
       immich-home = [ "10.9.10.23" ];
     };
     #hosts6.main = {
