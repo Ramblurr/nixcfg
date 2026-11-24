@@ -138,10 +138,5 @@ in
         description = "Additional plugin@marketplace selectors installed through the Codex CLI.";
       };
     };
-    nono.enable = lib.mkOption {
-      type = lib.types.bool;
-      default = cfg.enable;
-      description = "Install nono profiles and ECA wrapper.";
-    };
   };
 }

@@ -33,7 +33,6 @@ in
     ./llms/agents.nix
     ./llms/clients.nix
     ./llms/cliproxy-api.nix
-    ./llms/nono.nix
     ./llms/pi.nix
     ./llms/plugins-sync.nix
     ./llms/profile.nix
