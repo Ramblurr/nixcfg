@@ -37,7 +37,6 @@ in
 
   modules.services.onepassword-systemd-credentials = {
     enable = true;
-    bootstrapTokenFile = "/run/secrets/onepassword-connect-llm-token";
     consumers = lib.listToAttrs (
       map (
         vm:
