@@ -903,11 +903,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795434327,
-        "narHash": "sha256-xMQimYfMEoA3PszT21kqH5ua88fUDNSh+e8PWx/lc0A=",
+        "lastModified": 1795476022,
+        "narHash": "sha256-V/VCqR/8VYYdDxaQjKp/z6AHifQuOS6zxhoehRNzYz4=",
         "owner": "nix-community",
         "repo": "flake-firefox-nightly",
-        "rev": "86dbd7b83dff556d15803c7b7f1a312c1d05bd34",
+        "rev": "096bd6c36863d59e5c2b815be71d79279536dd97",
         "type": "github"
       },
       "original": {
@@ -2045,11 +2045,11 @@
         "treefmt-nix": "treefmt-nix_2"
       },
       "locked": {
-        "lastModified": 1795416666,
-        "narHash": "sha256-b1GmfrMPoZ2ANkR0we9Q9KQN6n1e+vNyDqt1p4CNEAY=",
+        "lastModified": 1795495638,
+        "narHash": "sha256-hhROWq9062PdIznKMqiQuy3L9F7l4LHwofEVrcncfZM=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "5330ee115c06d2b43f49e902130125eab579b22f",
+        "rev": "45e6e554481f962d4134021d3a63c96d8755f395",
         "type": "github"
       },
       "original": {
@@ -3561,11 +3561,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795435329,
-        "narHash": "sha256-Ufa5GSEP6QQmVWaqzQu/GX23xtnhwMVIejw5fBk45Ps=",
+        "lastModified": 1795499911,
+        "narHash": "sha256-SFDgvv6Ew543iWFE5P+XeCOV+E+oZGTMZCsd7xwV3Z8=",
         "owner": "smol-machines",
         "repo": "smolvm",
-        "rev": "86ed90b75702a025429b2f554de81d5be76daf35",
+        "rev": "831c4a9601886359eba2abf431f06e325800896b",
         "type": "github"
       },
       "original": {
