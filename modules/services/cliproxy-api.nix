@@ -68,6 +68,10 @@ let
     # Non-streaming completions send no headers until the model finishes.
     "-response-header-timeout"
     "0"
+  ]
+  ++ lib.optionals (cfg.wireguardPort != null) [
+    "-port"
+    (toString cfg.wireguardPort)
   ];
   start = pkgs.writeShellScript "cliproxyapi-start" ''
     set -eu
@@ -114,6 +118,12 @@ in
       type = lib.types.port;
       default = 8317;
       description = "Loopback port CLIProxyAPI listens on and the node proxies to.";
+    };
+
+    wireguardPort = lib.mkOption {
+      type = lib.types.nullOr lib.types.port;
+      default = null;
+      description = "UDP port of the node's WireGuard, opened in the firewall so LAN peers reach it directly. Null picks one at random and opens none.";
     };
 
     authKeyFile = lib.mkOption {
@@ -163,6 +173,8 @@ in
         message = "modules.services.cliproxy-api.credentials has no file for: ${lib.concatStringsSep ", " unmapped}";
       }
     ];
+
+    networking.firewall.allowedUDPPorts = lib.optional (cfg.wireguardPort != null) cfg.wireguardPort;
 
     users.users.cliproxyapi = {
       isSystemUser = true;

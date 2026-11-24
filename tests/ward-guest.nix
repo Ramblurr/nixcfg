@@ -107,4 +107,12 @@ assert lib.assertMsg (lib.all (url: url == connectUrl) [
   cfg.modules.services.ts-egress.onepassword.url
   cfg.modules.services.ts-broker.onepassword.url
 ]) "ts-egress and ts-broker read the tailnet's Connect";
+assert lib.assertMsg
+  (
+    lib.sort lib.lessThan cfg.networking.firewall.allowedUDPPorts == [
+      41641
+      41642
+    ]
+  )
+  "ward opens exactly the WireGuard ports of ts-egress and CLIProxyAPI, which LAN nodes reach directly";
 pkgs.runCommand "ward-guest-evaluation" { } "touch $out"

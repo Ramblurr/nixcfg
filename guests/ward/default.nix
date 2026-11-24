@@ -73,5 +73,8 @@ in
     };
   };
 
-  modules.services.cliproxy-api.enable = true;
+  modules.services.cliproxy-api = {
+    enable = true;
+    wireguardPort = 41642;
+  };
 }
