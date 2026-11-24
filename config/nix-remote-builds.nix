@@ -10,8 +10,8 @@
 let
   inherit (config.networking) hostName;
   mgmt = config.site.net.mgmt.hosts4;
-  moot = config.site.net.moot.hosts4;
   prim = config.site.net.prim.hosts4;
+  data = config.site.net.data.hosts4;
 
   builders = {
     quine = {
@@ -39,7 +39,7 @@ let
       ];
     };
     thingstead = {
-      address = builtins.head moot.thingstead;
+      address = builtins.head data.thingstead;
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICHrsPyW6qZoi6QEMyYL1oeN7Us3VNQKmR96uDcAlA08";
       speedFactor = 1;
       maxJobs = 4;
