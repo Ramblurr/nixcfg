@@ -222,7 +222,7 @@ func TestIdentityHeaders(t *testing.T) {
 		t.Fatal(err)
 	}
 	go func() {
-		if err := startHTTPListener(ctx, plug, lc, "plug", upstream); err != nil {
+		if err := startHTTPListener(ctx, plug, lc, "plug", upstream); err != nil && ctx.Err() == nil {
 			t.Error(err)
 		}
 	}()
