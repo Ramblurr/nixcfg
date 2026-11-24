@@ -1,5 +1,6 @@
 { config, lib, ... }:
 let
+  ward = lib.head config.site.net.svc.hosts4.ward;
   steads = [
     "workstead"
     "homestead"
@@ -8,7 +9,20 @@ let
 in
 {
   modules.microvm-host = {
-    mootNodeUplinks = [ "eno1" ];
+    mootNodeUplinks = [
+      "eno1"
+      "data"
+    ];
+    mootNodePeers = [
+      {
+        address = ward;
+        port = 41641;
+      }
+      {
+        address = ward;
+        port = 41642;
+      }
+    ];
     mootNodes = lib.listToAttrs (
       lib.imap0 (
         i: vm:
