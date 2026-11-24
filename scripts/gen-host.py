@@ -7,7 +7,6 @@ import sys
 import os
 import shutil
 from pathlib import Path
-from passlib.hash import sha512_crypt
 import getpass
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import LiteralScalarString
@@ -54,7 +53,9 @@ def write_nix(host_path: Path, nix_data, interactive=False):
 
 
 def ensure_host_path(host_path: Path, interactive=False):
-    if host_path.exists():
+    if host_path.exists() and not (host_path / "secrets.sops.yaml").exists():
+        print(f"Using existing host config path {host_path}")
+    elif host_path.exists():
         if interactive:
             print()
             print(f"The host config path {host_path} already exists.")
@@ -69,7 +70,7 @@ def ensure_host_path(host_path: Path, interactive=False):
                 print("Aborting")
                 sys.exit(1)
         else:
-            print(f"The host config path {host_path} already exists, aborting.")
+            print(f"{host_path}/secrets.sops.yaml already exists, aborting.")
             sys.exit(1)
     else:
         os.mkdir(host_path)
@@ -81,7 +82,7 @@ def generate_machine_id():
     return machine_id.lower()
 
 
-def generate_ssh_key(hostname):
+def generate_ssh_key(hostname, install_files=None):
     # Use ssh-keygen to generate ED25519 keys
     with tempfile.TemporaryDirectory() as temp_dir:
         private_key_file = f"{temp_dir}/temp_ssh_key"
@@ -89,8 +90,9 @@ def generate_ssh_key(hostname):
         subprocess.run(
             [
                 "ssh-keygen",
+                "-q",
                 "-C",
-                hostname,
+                f"root@{hostname}",
                 "-t",
                 "ed25519",
                 "-N",
@@ -112,16 +114,37 @@ def generate_ssh_key(hostname):
             .decode("utf-8")
             .strip()
         )
+        if install_files:
+            ssh_dir = Path(install_files) / "persist/etc/ssh"
+            ssh_dir.mkdir(mode=0o755, parents=True, exist_ok=True)
+            shutil.copy(private_key_file, ssh_dir / "ssh_host_ed25519_key")
+            os.chmod(ssh_dir / "ssh_host_ed25519_key", 0o600)
+            shutil.copy(public_key_file, ssh_dir / "ssh_host_ed25519_key.pub")
+            os.chmod(ssh_dir / "ssh_host_ed25519_key.pub", 0o644)
+            print(f"Wrote the host key for nixos-anywhere --extra-files under {ssh_dir}")
         return private_key, public_key, age_key_pub
 
 
 def hash_password(pw):
-    return sha512_crypt.hash(pw)
+    return subprocess.run(
+        ["mkpasswd", "-m", "yescrypt", "--stdin"],
+        input=pw,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
 
 
-def prompt_host_data():
-    root_password = getpass.getpass("Enter root password: ")
-    ramblurr_password = getpass.getpass("Enter ramblurr password: ")
+def prompt_host_data(interactive=True):
+    if interactive:
+        root_password = getpass.getpass("Enter root password: ")
+        ramblurr_password = getpass.getpass("Enter ramblurr password: ")
+    else:
+        # Two lines on stdin: root password, then ramblurr password.
+        root_password = sys.stdin.readline().rstrip("\n")
+        ramblurr_password = sys.stdin.readline().rstrip("\n")
+        if not root_password or not ramblurr_password:
+            sys.exit("Expected two password lines on stdin")
     return hash_password(root_password), hash_password(ramblurr_password)
 
 
@@ -143,6 +166,10 @@ def main():
         default=False,
         help="Run in non-interactive mode",
     )
+    parser.add_argument(
+        "--install-files",
+        help="Also write the host key under DIR/persist/etc/ssh for nixos-anywhere --extra-files",
+    )
     parser.add_argument("hostname", nargs="?", help="The hostname of the machine")
 
     args = parser.parse_args()
@@ -155,16 +182,16 @@ def main():
 
     if args.type == "host":
         host_path = Path("./hosts") / hostname
-        root_password_hash, ramblurr_password_hash = prompt_host_data()
+        root_password_hash, ramblurr_password_hash = prompt_host_data(interactive)
         machine_id = generate_machine_id()
-        private_key, public_key, age_key_pub = generate_ssh_key(hostname)
+        private_key, public_key, age_key_pub = generate_ssh_key(
+            hostname, args.install_files
+        )
         secrets_data = {
-            "root-password": root_password_hash,
-            "ramblurr-password": ramblurr_password_hash,
             "ssh_host_ed25519_key": LS(private_key),
             "ssh_host_ed25519_key_pub": public_key.strip(),
-            "age_key_pub": age_key_pub,
-            "machine_id": machine_id,
+            "root-password": root_password_hash,
+            "ramblurr-password": ramblurr_password_hash,
         }
         nix_data = """
 {
@@ -260,6 +287,14 @@ in
     ensure_host_path(host_path, interactive)
     write_secrets(host_path, secrets_data)
     write_nix(host_path, nix_data, interactive)
+    print()
+    print(f"Wrote {host_path}/secrets.sops.yaml in plaintext. Next:")
+    print(f"  1. Add '- &{hostname} {age_key_pub}' under hosts: in .sops.yaml,")
+    print(f"     with a creation rule for {host_path}/secrets.sops.yaml")
+    print(f"  2. sops -e -i {host_path}/secrets.sops.yaml")
+    if args.type == "host":
+        print(f"  3. Set machineId = \"{machine_id}\" in the private repo's")
+        print(f"     hosts/{hostname}/secrets/local.nix if it has none")
 
 
 if __name__ == "__main__":
