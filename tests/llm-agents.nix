@@ -114,31 +114,23 @@ let
   instructionsOff = evaluate { agents.enable = false; };
   codexInstructionsOff = evaluate { codex.agents.enable = false; };
 
-  wrapper =
-    reader:
+  codexWrapper =
     let
       config = evaluate {
         claude.enable = false;
         proxy = {
           enable = true;
-          credential = "op://fixture/proxy/key";
           url = "https://proxy.example.test:8317/";
         };
         codex.extraArgs = [ "--fixture-argument" ];
         codex.package = pkgs.writeShellScriptBin "codex" ''
           test "$1" = --fixture-argument || exit 1
-          test "$CLIPROXY_API_KEY" = fixture-token || exit 1
+          test "$CLIPROXY_API_KEY" = tailnet || exit 1
           echo invoked
         '';
-        onepasswordConnect = {
-          tokenFile = "/fixture";
-          package = reader;
-        };
       };
     in
     lib.getExe (lib.findFirst (p: (p.name or "") == "codex") null config.home.packages);
-  goodWrapper = wrapper (pkgs.writeShellScriptBin "reader" "echo fixture-token");
-  badWrapper = wrapper (pkgs.writeShellScriptBin "reader" "exit 1");
 
   profileSystem = evaluateSystem {
     profile.enable = true;
@@ -183,14 +175,6 @@ let
       proxy = {
         enable = true;
         url = "http://proxy.invalid";
-        credential = "op://fixture/proxy/key";
-      };
-      onepasswordConnect = {
-        tokenFile = "/fixture";
-        package = pkgs.writeShellScriptBin "reader" ''
-          test "$1" = op://fixture/proxy/key || exit 1
-          echo fixture-token
-        '';
       };
     }).config.modules.dev.llms;
   rpcProfiles = pkgs.writeText "pi-proxy-rpc-profiles.json" (
@@ -304,10 +288,8 @@ pkgs.runCommand "llm-agents-test"
   ''
     set -euo pipefail
 
-    # The launcher passes the proxy key and extra arguments, and never runs Codex without the key.
-    test "$(${goodWrapper})" = invoked
-    if ${badWrapper} > bad.out 2> bad.err; then exit 1; fi
-    test ! -s bad.out
+    # The launcher passes the placeholder proxy key and extra arguments.
+    test "$(${codexWrapper})" = invoked
 
     errorEcho() { echo "$@" >&2; }
     export -f errorEcho

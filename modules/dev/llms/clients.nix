@@ -10,19 +10,10 @@ let
   packages = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   json = pkgs.formats.json { };
   toml = pkgs.formats.toml { };
-  reader =
-    if cfg.onepasswordConnect.tokenFile == null then
-      pkgs.writeShellScriptBin "op-read-agent" ''exec ${lib.getExe pkgs._1password-cli} read "$@"''
-    else
-      cfg.onepasswordConnect.package;
   wrap =
     name: package: variable: extraArgs:
     pkgs.writeShellScriptBin name ''
-      set -euo pipefail
-      ${lib.optionalString cfg.proxy.enable ''
-        ${variable}="$(${lib.getExe reader} ${lib.escapeShellArg cfg.proxy.credential})"
-        export ${variable}
-      ''}
+      ${lib.optionalString cfg.proxy.enable "export ${variable}=tailnet"}
       exec ${lib.getExe package} ${lib.escapeShellArgs extraArgs} "$@"
     '';
   codexPackage =
@@ -65,13 +56,13 @@ in
       type = lib.types.package;
       readOnly = true;
       default = codexPackage;
-      description = "Codex package with runtime proxy credentials.";
+      description = "Codex package with the proxy placeholder key and host arguments.";
     };
     claude.finalPackage = lib.mkOption {
       type = lib.types.package;
       readOnly = true;
       default = claudePackage;
-      description = "Claude package with runtime proxy credentials.";
+      description = "Claude package with the proxy placeholder key and host arguments.";
     };
   };
   config = lib.mkIf cfg.enable {

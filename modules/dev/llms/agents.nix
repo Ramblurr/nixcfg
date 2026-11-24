@@ -84,11 +84,6 @@ in
         defaultText = lib.literalExpression ''"https://moot-llm.''${config.repo.secrets.global.domain.tailnet}"'';
         description = "Proxy root URL, without /v1. Override for other proxy hosts.";
       };
-      credential = lib.mkOption {
-        type = lib.types.str;
-        default = "op://LLM/CLIProxyAPI/credential";
-        description = "1Password reference for the proxy client key.";
-      };
     };
     skills = {
       enable = lib.mkOption {

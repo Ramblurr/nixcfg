@@ -2,7 +2,7 @@
 # discover proxy models at runtime, so every model is here.
 {
   url,
-  apiKey,
+  apiKey ? "tailnet",
   extraModels ? [ ],
 }:
 let

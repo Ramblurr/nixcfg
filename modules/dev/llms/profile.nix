@@ -18,7 +18,6 @@ let
   cliproxyProvider = import ./cliproxy-pi-provider.nix {
     inherit (cfg.proxy) url;
     extraModels = cfg.profile.piProxyExtraModels;
-    apiKey = "!${opRead} ${lib.escapeShellArg cfg.proxy.credential}";
   };
   piProviders =
     lib.mapAttrs (_: credential: {

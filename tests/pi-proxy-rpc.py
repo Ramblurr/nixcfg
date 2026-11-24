@@ -73,8 +73,8 @@ class Proxy(BaseHTTPRequestHandler):
         model_id = payload["model"]
         path = urlsplit(self.path).path
         self.server.requests.append((model_id, path))
-        if self.headers.get("Authorization") != "Bearer fixture-token" and self.headers.get("x-api-key") != "fixture-token":
-            self.send_body(401, "text/plain", "missing fixture credential")
+        if self.headers.get("Authorization") != "Bearer tailnet" and self.headers.get("x-api-key") != "tailnet":
+            self.send_body(401, "text/plain", "missing placeholder key")
             return
         if path == "/v1/responses":
             events = [{"type": "response.completed", "response": {"status": "completed"}}]
