@@ -2,8 +2,9 @@
   vcpu,
   mem,
   zvolSize,
+  builder ? null,
 }:
-{ config, ... }:
+{ config, lib, ... }:
 let
   inherit (config.repo.secrets) global;
 in
@@ -13,7 +14,13 @@ in
   modules.microvm-guest = {
     host = "thingstead";
     hostFQDN = "thingstead.${config.site.net.moot.domainName}";
-    mootWright.enable = true;
+    mootWright = {
+      enable = true;
+      nix.remoteBuilder = lib.mkIf (builder != null) {
+        hostName = "${builder}.${global.domain.tailnet}";
+        publicHostKey = lib.fileContents ../config/ssh/${builder}-node-host.pub;
+      };
+    };
     mootVm = {
       inherit zvolSize;
       network = {
