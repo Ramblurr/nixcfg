@@ -392,6 +392,8 @@ in
       }
       (lib.mkIf (nodes != { }) {
         boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = true;
+        # networkd writes its global setting over the sysctl when one is set.
+        systemd.network.config.networkConfig.IPv4Forwarding = true;
 
         environment.etc = lib.concatMapAttrs (vm: node: {
           ${etcFile vm "env"}.text = ''
