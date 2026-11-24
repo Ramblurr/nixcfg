@@ -27,10 +27,6 @@ in
     };
   };
   microvm = {
-    vsock = {
-      cid = 4301;
-      ssh.enable = true;
-    };
     mem = 3072;
     vcpu = 2;
   };

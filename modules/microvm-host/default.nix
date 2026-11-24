@@ -78,7 +78,7 @@ in
           hostNames = [ "microvm-${name}" ];
           publicKeyFile = guest.hostKeyFile;
         }
-      ) host.guests;
+      ) (lib.filterAttrs (_: guest: guest ? hostKeyFile) host.guests);
     };
 
     # create the state directory for our microvms

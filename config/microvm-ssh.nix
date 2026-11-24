@@ -1,5 +1,6 @@
 # Host-owned administrative SSH over VSOCK. Public keys only.
 # Onboarding and rotation: nixcfg-private/docs/services/microvm-ssh.md.
+# A guest without hostKeyFile is not pinned yet, so the host refuses to connect.
 {
   quine = {
     publicKeyFile = ./ssh/quine-microvm.pub;
@@ -25,6 +26,14 @@
         cid = 4244;
         hostKeyFile = ./ssh/opencloud-home-host.pub;
       };
+    };
+  };
+  thingstead = {
+    publicKeyFile = ./ssh/thingstead-microvm.pub;
+    guests = {
+      workstead.cid = 4247;
+      homestead.cid = 4248;
+      outstead.cid = 4249;
     };
   };
 }
