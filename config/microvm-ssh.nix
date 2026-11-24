@@ -31,9 +31,18 @@
   thingstead = {
     publicKeyFile = ./ssh/thingstead-microvm.pub;
     guests = {
-      workstead.cid = 4247;
-      homestead.cid = 4248;
-      outstead.cid = 4249;
+      workstead = {
+        cid = 4247;
+        hostKeyFile = ./ssh/workstead-host.pub;
+      };
+      homestead = {
+        cid = 4248;
+        hostKeyFile = ./ssh/homestead-host.pub;
+      };
+      outstead = {
+        cid = 4249;
+        hostKeyFile = ./ssh/outstead-host.pub;
+      };
     };
   };
 }
