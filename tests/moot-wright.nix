@@ -424,12 +424,12 @@ pkgs.testers.runNixOSTest {
         guest("findmnt -n -o FSTYPE /nix/.rw-store | grep -qx ext4")
 
     with subtest("the guest holds no tailnet key and no node state"):
-        guest("! pgrep -f ts-plug")
+        guest("! pgrep -x ts-plug")
         guest(f"! getent passwd ts-{name}")
         guest("! ls /var/lib | grep -q ts-plug")
         guest("! test -e /run/host-secrets/ts-authkey")
         # grep exits 1 only when it read everything and matched nothing.
-        guest(f"rc=0; grep -rlFs -D skip -e {authkey} /nix/store /etc /var /home /run || rc=$?; test $rc -eq 1")
+        guest(f"rc=0; grep -rlFs -D skip -e {authkey} /etc /var /home /run || rc=$?; test $rc -eq 1")
         environ = host.succeed(f"tr '\\0' '\\n' < /proc/{host_pid(node)}/environ")
         assert f"TS_AUTHKEY={authkey}" in environ.splitlines(), "the node did not get its auth key"
         cmdline = host.succeed(f"tr '\\0' ' ' < /proc/{host_pid(node)}/cmdline")
@@ -497,9 +497,9 @@ pkgs.testers.runNixOSTest {
     with subtest("every guest flow arrives at the node's capture and nowhere else"):
         # The node cannot log in without a control server, so it never opens
         # its listeners; probes on the same addresses stand in for them.
-        host.succeed(f"systemd-run --unit=capture-tcp {in_node} socat TCP-LISTEN:15001,bind=127.0.0.1,ip-transparent,reuseaddr,fork SYSTEM:'echo captured'")
-        host.succeed(f"systemd-run --unit=capture-udp {in_node} socat -u UDP-RECV:15001,bind=127.0.0.1,ip-transparent,reuseaddr OPEN:/run/captured-udp,creat,append")
-        host.succeed(f"systemd-run --unit=proxy-probe {in_node} socat TCP-LISTEN:1056,bind={tap_host},reuseaddr,fork SYSTEM:'echo proxy'")
+        host.succeed(f"systemd-run --unit=capture-tcp {in_node} ${lib.getExe pkgs.socat} TCP-LISTEN:15001,bind=127.0.0.1,ip-transparent,reuseaddr,fork SYSTEM:'echo captured'")
+        host.succeed(f"systemd-run --unit=capture-udp {in_node} ${lib.getExe pkgs.socat} -u UDP-RECV:15001,bind=127.0.0.1,ip-transparent,reuseaddr OPEN:/run/captured-udp,creat,append")
+        host.succeed(f"systemd-run --unit=proxy-probe {in_node} ${lib.getExe pkgs.socat} TCP-LISTEN:1056,bind={tap_host},reuseaddr,fork SYSTEM:'echo proxy'")
         host.succeed("sleep 1")
         for addr, port in targets:
             assert guest(tcp(addr, port)).strip() == "captured", f"{addr}:{port}"

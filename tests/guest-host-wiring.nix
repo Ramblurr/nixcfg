@@ -31,9 +31,15 @@ let
       ) host.systemd.network.netdevs;
     in
     lib.all (parent: builtins.elem parent hostNetdevNames) macvtapParents;
+  placementHasMootNode =
+    guestName:
+    !(configurations.${guestName}.config.modules.microvm-guest.mootWright.enable or false)
+    || (configurations.${guestHosts.${guestName}}.config.modules.microvm-host.mootNodes or { }) ? ${guestName};
 in
 assert lib.assertMsg (lib.all placementUsesSecretAwareOutput placements)
   "Every public guest placement must target the guest-declared host and use its secret-aware output";
 assert lib.assertMsg (lib.all placementHasMacvtapParents placements)
   "Every guest MACVTAP parent must be generated on its host";
+assert lib.assertMsg (lib.all placementHasMootNode placements)
+  "Every Moot wright guest must have a tailnet node record on its host";
 pkgs.runCommand "check-guest-host-wiring" { } "touch $out"
