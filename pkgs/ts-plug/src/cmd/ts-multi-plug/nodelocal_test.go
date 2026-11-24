@@ -197,19 +197,23 @@ func udpArrives(relay *udpRelay, src, dst netip.AddrPort, l net.PacketConn) bool
 func TestCheckTailnetDst(t *testing.T) {
 	self := []netip.Addr{netip.MustParseAddr("100.64.0.7"), netip.MustParseAddr("fd7a:115c:a1e0::7")}
 	for addr, ok := range map[string]bool{
-		"192.0.2.1:443":               true,
-		"[2001:db8::1]:53":            true,
-		"100.64.0.8:22":               true,
-		"127.0.0.1:443":               false,
-		"[::1]:443":                   false,
-		"0.0.0.0:443":                 false,
-		"192.0.2.1:0":                 false,
-		"100.100.100.100:53":          false,
-		"[::ffff:100.100.100.100]:53": false,
-		"[fd7a:115c:a1e0::53]:53":     false,
-		"100.64.0.7:22":               false,
-		"[::ffff:100.64.0.7]:22":      false,
-		"[fd7a:115c:a1e0::7]:443":     false,
+		"192.0.2.1:443":                true,
+		"[2001:db8::1]:53":             true,
+		"100.64.0.8:22":                true,
+		"127.0.0.1:443":                false,
+		"[::1]:443":                    false,
+		"0.0.0.0:443":                  false,
+		"192.0.2.1:0":                  false,
+		"100.100.100.100:53":           false,
+		"[::ffff:100.100.100.100]:53":  false,
+		"[fd7a:115c:a1e0::53]:53":      false,
+		"100.64.0.7:22":                false,
+		"[::ffff:100.64.0.7]:22":       false,
+		"[fd7a:115c:a1e0::7]:443":      false,
+		"[fd7a:115c:a1e0::7%eth0]:443": false,
+		"[fd7a:115c:a1e0::53%eth0]:53": false,
+		"[::1%lo]:443":                 false,
+		"[2001:db8::1%eth0]:53":        true,
 	} {
 		err := checkTailnetDst(netip.MustParseAddrPort(addr), self...)
 		if ok && err != nil {
