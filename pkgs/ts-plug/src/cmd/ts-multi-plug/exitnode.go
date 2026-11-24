@@ -56,7 +56,7 @@ var errNodeLocal = errors.New("destination is this node, not the tailnet")
 // node's PeerAPI or resolver, with the node as the source, around the packet
 // filter and the exit node's policy.
 func checkTailnetDst(dst netip.AddrPort, self ...netip.Addr) error {
-	addr := dst.Addr().Unmap()
+	addr := dst.Addr().Unmap().WithZone("")
 	if !addr.IsValid() || dst.Port() == 0 || addr.IsLoopback() || addr.IsUnspecified() ||
 		addr == tsaddr.TailscaleServiceIP() || addr == tsaddr.TailscaleServiceIPv6() || slices.Contains(self, addr) {
 		return fmt.Errorf("dial %v: %w", dst, errNodeLocal)
