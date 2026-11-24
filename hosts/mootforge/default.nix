@@ -9,6 +9,7 @@
     ./disk-config.nix
     ./hardware.nix
     ./networking.nix
+    ./moot.nix
     ../../config
     ../../modules/site-net
   ];

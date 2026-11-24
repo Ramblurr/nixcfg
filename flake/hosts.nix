@@ -75,6 +75,8 @@
         workstead = "thingstead";
         homestead = "thingstead";
         outstead = "thingstead";
+        anvil = "mootforge";
+        cinder = "mootforge";
       };
     in
     {

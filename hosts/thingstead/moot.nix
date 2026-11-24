@@ -1,6 +1,7 @@
 { config, lib, ... }:
 let
   ward = lib.head config.site.net.svc.hosts4.ward;
+  mootforge = lib.head config.site.net.data.hosts4.mootforge;
   steads = [
     "workstead"
     "homestead"
@@ -21,6 +22,14 @@ in
       {
         address = ward;
         port = 41642;
+      }
+      {
+        address = mootforge;
+        port = 41650;
+      }
+      {
+        address = mootforge;
+        port = 41651;
       }
     ];
     mootNodes = lib.listToAttrs (
