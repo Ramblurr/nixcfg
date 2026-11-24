@@ -197,6 +197,10 @@ pkgs.testers.runNixOSTest {
       wantedBy = [ "multi-user.target" ];
       script = "exec ${lib.getExe pkgs.socat} -u UDP-RECV:9999,reuseaddr OPEN:/run/udp-sink,creat,append";
     };
+    systemd.services.dns-sink = {
+      wantedBy = [ "multi-user.target" ];
+      script = "exec ${lib.getExe pkgs.socat} -u UDP-RECV:53,reuseaddr OPEN:/run/dns-sink,creat,append";
+    };
     environment.systemPackages = [ pkgs.socat ];
   };
 
@@ -319,6 +323,7 @@ pkgs.testers.runNixOSTest {
     host.start()
     lan.wait_for_unit("peer-echo.service")
     lan.wait_for_unit("udp-sink.service")
+    lan.wait_for_unit("dns-sink.service")
     host.wait_for_unit("multi-user.target")
     # As on the real hosts: virtiofs checks a non-root guest user against POSIX ACLs.
     host.succeed("zpool create -O mountpoint=none -O acltype=posixacl -O xattr=sa tank /dev/vdb")
@@ -423,6 +428,17 @@ pkgs.testers.runNixOSTest {
         guest(f"sleep 1; {tcp(f'{in_ns} {as_wright}', '198.51.100.10', 80)} | grep -qx captured")
         guest_fail(tcp(f"{in_ns} {as_wright}", "198.51.100.10", 80, bound[0]))
         guest("systemctl stop capture-probe")
+
+    with subtest("with ts-plug stopped, the wright resolves nothing through the root namespace"):
+        resolve1 = "busctl --timeout=5 call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager ResolveHostname isit 0"
+        varlink = "varlinkctl --timeout=5 call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.ResolveHostname"
+        for prefix in [f"{in_ns} {as_wright}", as_wright]:
+            guest(f"timeout 15 {prefix} getent hosts leak-libc.example || true")
+            guest(f"timeout 15 {prefix} {resolve1} leak-dbus.example 2 0 || true")
+            guest(f"timeout 15 {prefix} {varlink} " + shlex.quote('{"name":"leak-varlink.example","family":2}') + " || true")
+        guest("timeout 15 getent hosts ok-root.example || true")
+        lan.wait_until_succeeds("grep -aq ok-root /run/dns-sink")
+        lan.succeed("sleep 3; ! grep -aq leak /run/dns-sink")
 
     with subtest("a wright process outside the namespace has no network"):
         guest_fail(tcp(as_wright, "198.51.100.10", 80))

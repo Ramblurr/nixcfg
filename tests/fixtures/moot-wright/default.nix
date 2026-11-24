@@ -16,6 +16,7 @@ in
         tapId = "mw-workstead";
         hostAddress = "10.77.0.1";
         guestAddress = "10.77.0.2";
+        dnsResolver = "198.51.100.10";
       };
       tailscale.advertiseTags = [ "tag:moot-wright" ];
       credentials = [ "GITHUB_TOKEN" ];
