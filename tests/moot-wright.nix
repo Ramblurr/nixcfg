@@ -14,7 +14,6 @@ let
     (mkGuest {
       modules.microvm-guest.mootWright.nix.remoteBuilder = {
         hostName = "moot-builder.example.ts.net";
-        sshUser = "nix-ssh";
         publicHostKey = sshKeys.snakeOilEd25519PublicKey;
       };
     }).config;
@@ -135,9 +134,10 @@ assert lib.assertMsg (
   && !(lib.any (s: s.tag == "host-secrets") cfg.microvm.shares)
   && !(cfg.systemd.services ? moot-wright-credentials)
 ) "without a remote builder the guest gets no host secrets";
-assert lib.assertMsg
-  (builtins.elem "/run/host-secrets" builderCfg.systemd.services.nix-daemon.unitConfig.RequiresMountsFor)
-  "the remote builder's key waits for the host secrets share";
+assert lib.assertMsg (
+  !builderCfg.modules.microvm-guest.hostSecrets.enable
+  && lib.all (m: m.sshKey == null) builderCfg.nix.buildMachines
+) "with a remote builder the guest still holds no SSH key";
 assert lib.assertMsg (
   !(cfg.systemd.services ? "ts-plug-${name}")
   && !(cfg.users.users ? "ts-${name}")

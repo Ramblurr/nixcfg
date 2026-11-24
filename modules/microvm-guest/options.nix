@@ -21,6 +21,7 @@ in
         "dewey"
         "debord"
         "thingstead"
+        "mootforge"
       ];
       default = null;
       description = ''

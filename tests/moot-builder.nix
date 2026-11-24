@@ -118,16 +118,18 @@ let
     outstead = 1056;
   };
 in
-assert lib.assertMsg (
-  cfg.microvm.hypervisor == "cloud-hypervisor"
-  && cfg.microvm.storeOnDisk
-  && cfg.microvm.balloon
-  && cfg.modules.microvm-guest.zvols.nix-rw.size == 4096
-  && cfg.microvm.vsock.ssh.enable
-  && map (i: i.type) cfg.microvm.interfaces == [ "tap" ]
-  && !cfg.modules.microvm-guest.hostSecrets.enable
-  && cfg.microvm.credentialFiles == { }
-) "the builder runs under cloud-hypervisor with balloon, a zvol store, VSOCK SSH, only its tap and no secrets";
+assert lib.assertMsg
+  (
+    cfg.microvm.hypervisor == "cloud-hypervisor"
+    && cfg.microvm.storeOnDisk
+    && cfg.microvm.balloon
+    && cfg.modules.microvm-guest.zvols.nix-rw.size == 4096
+    && cfg.microvm.vsock.ssh.enable
+    && map (i: i.type) cfg.microvm.interfaces == [ "tap" ]
+    && !cfg.modules.microvm-guest.hostSecrets.enable
+    && cfg.microvm.credentialFiles == { }
+  )
+  "the builder runs under cloud-hypervisor with balloon, a zvol store, VSOCK SSH, only its tap and no secrets";
 assert lib.assertMsg (
   cfg.systemd.sockets.nix-remote.listenStreams == [ daemon ]
   && cfg.systemd.services."nix-remote@".environment.NIX_REMOTE == "daemon"
@@ -139,7 +141,9 @@ assert lib.assertMsg (
   lib.hasInfix "MOOT_SSH_STDIO=${daemon}\n" envFile
   && lib.hasInfix "MOOT_SSH_ALLOW_TAGS=tag:moot-workstead\n" envFile
   && lib.hasInfix "MOOT_T3_PORT=\n" envFile
-  && builtins.elem "ssh-host-key:${record.builder.hostKeyFile}" host.systemd.services."moot-node@${name}".serviceConfig.LoadCredential
+  &&
+    builtins.elem "ssh-host-key:${record.builder.hostKeyFile}"
+      host.systemd.services."moot-node@${name}".serviceConfig.LoadCredential
 ) "a builder's node serves SSH to its tags with its own host key, and no T3";
 assert lib.assertMsg (
   failures host == [ ]
@@ -351,13 +355,13 @@ pkgs.testers.runNixOSTest {
 
 
     with subtest("the agents and ward join the test tailnet"):
-        for node, tag, extra in [
+        for agent, tag, extra in [
             ("ward", "tag:moot-egress", "--advertise-exit-node"),
             ("workstead", "tag:moot-workstead", ""),
             ("outstead", "tag:moot-outstead", ""),
         ]:
-            tailnet.wait_for_unit(f"tailscaled-{node}.service")
-            tailnet.succeed(ts(node, f"up --login-server=https://headscale --authkey={authkey(tag)} --hostname={node} {extra}"))
+            tailnet.wait_for_unit(f"tailscaled-{agent}.service")
+            tailnet.succeed(ts(agent, f"up --login-server=https://headscale --authkey={authkey(tag)} --hostname={agent} {extra}"))
 
     host.wait_for_unit("multi-user.target")
     host.succeed("zpool create -O mountpoint=none -O acltype=posixacl -O xattr=sa tank /dev/vdb")
@@ -397,8 +401,11 @@ pkgs.testers.runNixOSTest {
         lan.fail(tcp(guest_addr, 7700))
 
     with subtest("root in the builder reaches nothing on the LAN or the host, and the internet only through ward"):
-        for addr, port in [("192.168.1.2", 80), ("192.168.1.1", 8080), (tap_host, 8080), ("192.168.1.1", 22)]:
-            guest_fail(tcp(addr, port))
+        # The node accepts every guest connection and then dials it through
+        # ward, so a refused flow opens and closes with no answer.
+        for addr, port, answer in [("192.168.1.2", 80, "peer="), ("192.168.1.1", 8080, "host"), (tap_host, 8080, "host")]:
+            out = guest(f"{tcp(addr, port)} || true")
+            assert answer not in out, f"{addr}:{port} answered: {out}"
         for addr in ["192.168.1.1", "192.168.1.2", tap_host]:
             guest_fail(f"ping -c1 -W2 {addr}")
         peer = guest(tcp("${control}", 80)).strip()

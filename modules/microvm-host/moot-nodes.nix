@@ -81,6 +81,25 @@ let
     let
       guest = guestOf vm;
       inherit (guest.mootVm) network;
+      role =
+        if node.builder == null then
+          {
+            name = "wright";
+            enabled = guest.mootWright.enable or false;
+            port.t3Port = [
+              node.t3Port
+              guest.mootWright.t3Port
+            ];
+          }
+        else
+          {
+            name = "builder";
+            enabled = guest.mootBuilder.enable or false;
+            port.daemonPort = [
+              node.builder.daemonPort
+              guest.mootBuilder.daemonPort
+            ];
+          };
       shared = {
         "tap.id" = [
           node.tap.id
@@ -102,18 +121,15 @@ let
           node.dnsResolver
           network.dnsResolver
         ];
-        t3Port = [
-          node.t3Port
-          guest.mootWright.t3Port
-        ];
         proxyPort = [
           node.proxyPort
           network.proxyPort
         ];
-      };
+      }
+      // role.port;
     in
-    if !(guest.mootWright.enable or false) then
-      [ "modules.microvm-host.mootNodes.${vm} names a MicroVM that is not a Moot wright." ]
+    if !role.enabled then
+      [ "modules.microvm-host.mootNodes.${vm} names a MicroVM that is not a Moot ${role.name}." ]
     else
       lib.concatLists (
         lib.mapAttrsToList (
@@ -182,12 +198,17 @@ let
   '';
 
   startNode = pkgs.writeShellScript "moot-node" ''
+    set -euo pipefail
     TS_AUTHKEY="$(< "$CREDENTIALS_DIRECTORY/ts-authkey")"
     export TS_AUTHKEY
+    if [ -n "$MOOT_SSH_STDIO" ]; then
+      install -D -m 0600 "$CREDENTIALS_DIRECTORY/ssh-host-key" "$STATE_DIRECTORY/ssh/ssh_host_ed25519_key"
+    fi
     exec ${lib.getExe pkgs.ts-plug} \
       -hostname "$MOOT_HOSTNAME" \
       -dir "$STATE_DIRECTORY" \
-      -https-port "443:$MOOT_GUEST:$MOOT_T3_PORT" \
+      ''${MOOT_T3_PORT:+-https-port "443:$MOOT_GUEST:$MOOT_T3_PORT"} \
+      ''${MOOT_SSH_STDIO:+-ssh-stdio "$MOOT_SSH_STDIO" -ssh-allow-tags "$MOOT_SSH_ALLOW_TAGS"} \
       -response-header-timeout 0 \
       -http-proxy "$MOOT_TAP_HOST:$MOOT_PROXY_PORT" \
       -exit-node "$MOOT_EXIT_NODE" \
@@ -236,9 +257,10 @@ in
     mootNodes = lib.mkOption {
       default = { };
       description = ''
-        The tailnet node of each Moot agent MicroVM, keyed by VM name. The
-        host runs the node in a network namespace that also holds the VM's
-        tap, so everything the VM sends reaches only the node.
+        The tailnet node of each Moot MicroVM, an agent VM or a builder,
+        keyed by VM name. The host runs the node in a network namespace that
+        also holds the VM's tap, so everything the VM sends reaches only the
+        node.
       '';
       type = lib.types.attrsOf (
         lib.types.submodule (
@@ -317,7 +339,36 @@ in
               t3Port = lib.mkOption {
                 type = lib.types.port;
                 default = 3780;
-                description = "Guest port that the node's tailnet HTTPS on 443 proxies to.";
+                description = "Guest port that an agent VM's node proxies its tailnet HTTPS on 443 to.";
+              };
+              builder = lib.mkOption {
+                default = null;
+                description = ''
+                  Makes this a builder's node. Instead of HTTPS for T3, it
+                  serves SSH on tailnet port 22 under its own host key,
+                  without client keys, to the nodes holding one of allowTags.
+                  Each session gets its own nix-daemon --stdio at
+                  guestAddress:daemonPort.
+                '';
+                type = lib.types.nullOr (
+                  lib.types.submodule {
+                    options = {
+                      allowTags = lib.mkOption {
+                        type = lib.types.nonEmptyListOf (lib.types.strMatching "tag:[a-zA-Z0-9-]+");
+                        description = "Tags of the agent VMs that build here. One builder serves one trust tier.";
+                      };
+                      daemonPort = lib.mkOption {
+                        type = lib.types.port;
+                        default = 7700;
+                        description = "Guest port of the builder's nix-daemon --stdio socket.";
+                      };
+                      hostKeyFile = lib.mkOption {
+                        type = lib.types.strMatching "/.+";
+                        description = "Host path of the node's ed25519 SSH host key, which the agents pin.";
+                      };
+                    };
+                  }
+                );
               };
               proxyPort = lib.mkOption {
                 type = lib.types.port;
@@ -357,7 +408,15 @@ in
             MOOT_STATIC_ENDPOINT=${lib.optionalString (node.endpoint != null) (endpointString node)}
             MOOT_EXIT_NODE=${node.exitNode}
             MOOT_DNS_RESOLVER=${node.dnsResolver}
-            MOOT_T3_PORT=${toString node.t3Port}
+            MOOT_T3_PORT=${lib.optionalString (node.builder == null) (toString node.t3Port)}
+            MOOT_SSH_STDIO=${
+              lib.optionalString (
+                node.builder != null
+              ) "${node.tap.guestAddress}:${toString node.builder.daemonPort}"
+            }
+            MOOT_SSH_ALLOW_TAGS=${
+              lib.optionalString (node.builder != null) (lib.concatStringsSep "," node.builder.allowTags)
+            }
             MOOT_PROXY_PORT=${toString node.proxyPort}
           '';
           ${etcFile vm "resolv.conf"}.text = ''
@@ -438,7 +497,10 @@ in
           };
           "moot-node@${vm}" = {
             overrideStrategy = "asDropin";
-            serviceConfig.LoadCredential = [ "ts-authkey:${node.authKeyFile}" ];
+            serviceConfig.LoadCredential = [
+              "ts-authkey:${node.authKeyFile}"
+            ]
+            ++ lib.optional (node.builder != null) "ssh-host-key:${node.builder.hostKeyFile}";
           };
         }) nodes;
 

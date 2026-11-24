@@ -45,4 +45,11 @@
       };
     };
   };
+  mootforge = {
+    publicKeyFile = ./ssh/mootforge-microvm.pub;
+    guests = {
+      anvil.cid = 4250;
+      cinder.cid = 4251;
+    };
+  };
 }

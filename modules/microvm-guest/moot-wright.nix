@@ -9,7 +9,6 @@ let
   cfg = config.modules.microvm-guest.mootWright;
   inherit (cfg) name;
   inherit (config.repo.secrets.global.domain) tailnet;
-  hostSecretsMount = config.modules.microvm-guest.hostSecrets.mountPoint;
   vm = config.modules.microvm-guest.mootVm;
   agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   models = import ../dev/llms/models.nix;
@@ -286,7 +285,11 @@ in
       };
       remoteBuilder = lib.mkOption {
         default = null;
-        description = "Remote builder reached over ssh-ng through the node's proxy. Without one, the guest builds locally.";
+        description = ''
+          Remote builder reached over ssh-ng through the node's proxy. The
+          builder's node knows the guest by its tailnet identity, so the guest
+          holds no SSH key. Without one, the guest builds locally.
+        '';
         type = lib.types.nullOr (
           lib.types.submodule {
             options = {
@@ -294,19 +297,9 @@ in
                 type = lib.types.str;
                 description = "Builder hostname; tailnet names resolve through the node's proxy.";
               };
-              sshUser = lib.mkOption {
-                type = lib.types.str;
-                description = "SSH user on the builder.";
-              };
-              sshKeyFile = lib.mkOption {
-                type = lib.types.str;
-                default = "${hostSecretsMount}/nix-builder-key";
-                defaultText = lib.literalExpression ''"''${hostSecrets.mountPoint}/nix-builder-key"'';
-                description = "SSH private key the root nix-daemon uses for the builder.";
-              };
               publicHostKey = lib.mkOption {
                 type = lib.types.str;
-                description = "The builder's SSH host key, as an OpenSSH public key line.";
+                description = "The SSH host key of the builder's node, as an OpenSSH public key line.";
               };
               systems = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
@@ -327,10 +320,8 @@ in
               supportedFeatures = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [
-                  "nixos-test"
                   "benchmark"
                   "big-parallel"
-                  "kvm"
                 ];
                 description = "System features the builder supports.";
               };
@@ -388,10 +379,6 @@ in
         "var/lib"
         "home"
       ];
-      hostSecrets = lib.mkIf (builder != null) {
-        enable = true;
-        services = [ "nix-daemon" ];
-      };
     };
 
     programs.git = {
@@ -422,14 +409,12 @@ in
       buildMachines = lib.optional (builder != null) {
         inherit (builder)
           hostName
-          sshUser
           systems
           maxJobs
           speedFactor
           supportedFeatures
           ;
         protocol = "ssh-ng";
-        sshKey = builder.sshKeyFile;
       };
     };
     programs.ssh = lib.mkIf (builder != null) {

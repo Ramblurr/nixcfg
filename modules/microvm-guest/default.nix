@@ -12,5 +12,6 @@
     ./dev-sandbox.nix
     ./moot-vm.nix
     ./moot-wright.nix
+    ./moot-builder.nix
   ];
 }
