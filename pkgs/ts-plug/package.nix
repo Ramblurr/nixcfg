@@ -8,7 +8,7 @@ buildGoModule {
 
   src = ./src;
 
-  vendorHash = "sha256-BbejEtEMfPQbQrKocoBFFeumG5aIDd6qfmC97Z/nJYY=";
+  vendorHash = "sha256-Z5d80O1ykxD83z+/Go1/WvF/liwLk+ErPMXgvmxrHXk=";
   subPackages = [ "cmd/ts-multi-plug" ];
 
   postInstall = ''

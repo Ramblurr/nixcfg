@@ -69,6 +69,9 @@ var (
 	flagPort           uint16
 	flagStaticEndpoint netip.AddrPort
 	flagLocalAPISocket = flag.String("localapi-socket", "", "Absolute path of a unix socket that serves this node's LocalAPI, for the tailscale CLI's --socket")
+
+	flagSSHStdio     = flag.String("ssh-stdio", "", "Serve SSH on tailnet port 22 and connect each session's stdio to this TCP ip:port, such as a socket-activated nix-daemon --stdio; needs -ssh-allow-tags")
+	flagSSHAllowTags tagsFlag
 )
 
 func init() {
@@ -89,6 +92,7 @@ func init() {
 		flagStaticEndpoint, err = netip.ParseAddrPort(v)
 		return err
 	})
+	flag.Var(&flagSSHAllowTags, "ssh-allow-tags", "Comma-separated ACL tags whose nodes may open -ssh-stdio sessions; every other peer is refused")
 	flag.Var(&flagAdvertiseTags, "advertise-tags", "Comma-separated ACL tags for this node (tag:a,tag:b); required when TS_AUTHKEY holds an OAuth client secret (tskey-client-...)")
 }
 
@@ -124,8 +128,13 @@ func main() {
 		}
 	}
 
+	if (*flagSSHStdio == "") != (len(flagSSHAllowTags) == 0) {
+		slog.Error("invalid flags", "error", "-ssh-stdio and -ssh-allow-tags go together")
+		os.Exit(1)
+	}
+
 	// Check that at least one listener is enabled
-	if !flagHttp.IsSet() && !flagHttps.IsSet() && !flagDNS.IsSet() {
+	if !flagHttp.IsSet() && !flagHttps.IsSet() && !flagDNS.IsSet() && *flagSSHStdio == "" {
 		slog.Info("no listeners enabled, using HTTPS by default")
 		*httpsEnable = true
 	}
@@ -332,6 +341,14 @@ func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 				fail(fmt.Errorf("DNS listener: %w", err))
 			}
 		}()
+	}
+	if *flagSSHStdio != "" {
+		ln, err := ts.ListenSSH(":22")
+		if err != nil {
+			return fmt.Errorf("listen for SSH: %w", err)
+		}
+		defer ln.Close()
+		go serveSSHStdio(ln, *flagSSHStdio, flagSSHAllowTags, fail)
 	}
 	proxyDialer := &tailnetDialer{ts: ts, lc: lc}
 	if *flagExitNode != "" {
