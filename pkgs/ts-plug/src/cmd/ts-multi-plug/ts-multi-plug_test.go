@@ -210,7 +210,7 @@ func startControl(t *testing.T, wrap func(http.Handler) http.Handler) *testcontr
 		DNSConfig:      &tailcfg.DNSConfig{Proxied: true},
 		MagicDNSDomain: "tail-scale.ts.net",
 		Logf:           logger.Discard,
-		TagOwners:      map[string][]string{"tag:ts-broker": nil, "tag:egress": nil},
+		TagOwners:      map[string][]string{"tag:ts-broker": nil, "tag:egress": nil, "tag:moot-workstead": nil, "tag:moot-outstead": nil},
 	}
 	var h http.Handler = control
 	if wrap != nil {
