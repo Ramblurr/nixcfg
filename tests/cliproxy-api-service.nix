@@ -67,6 +67,8 @@ pkgs.testers.runNixOSTest {
 
     API = "http://127.0.0.1:8317"
     CONFIG = "/run/cliproxyapi/config.yaml"
+    SOCKET = "/run/cliproxyapi/tailnet.sock"
+    NODE = "-H 'Tailscale-Node-Name: workstead.example.ts.net.'"
 
 
     def status(path, key=None):
@@ -89,7 +91,11 @@ pkgs.testers.runNixOSTest {
         assert rendered["management"]["secret-key"].startswith("$2"), rendered["management"]
         compat = rendered["api-keys"]["openai-compatibility"][0]
         assert compat["keys"] == [{"api-key": "${upstreamKey}"}], compat
-        assert rendered["server"] == {"host": "127.0.0.1", "port": 8317}, rendered["server"]
+        assert rendered["server"] == {
+            "host": "127.0.0.1",
+            "port": 8317,
+            "tailnet-socket": SOCKET,
+        }, rendered["server"]
         for field in ["empty-field", "nbsp-field", "sep-field"]:
             machine.succeed(f"journalctl -u cliproxy-api | grep -q 'Skipping credential: Empty credential: op://mootward/cliproxyapi/{field}'")
 
@@ -101,6 +107,15 @@ pkgs.testers.runNixOSTest {
         models = machine.succeed(f"curl -sf -H 'Authorization: Bearer ${clientKey}' {API}/v1/models")
         assert "test/upstream-model" in models, models
         machine.fail("ss -Hltn 'sport = :8317' | grep -v 127.0.0.1")
+
+    with subtest("tailnet callers need no key on the socket, and TCP ignores their headers"):
+        assert machine.succeed(f"stat -c '%F %a %U' {SOCKET}").strip() == "socket 600 cliproxyapi"
+        sock = f"curl -s -o /dev/null -w '%{{http_code}}' --unix-socket {SOCKET}"
+        assert machine.succeed(f"{sock} {NODE} http://moot-llm/v1/models").strip() == "200"
+        assert machine.succeed(f"{sock} http://moot-llm/v1/models").strip() == "401"
+        tcp = machine.succeed(f"curl -s -o /dev/null -w '%{{http_code}}' {NODE} {API}/v1/models").strip()
+        assert tcp == "401", tcp
+        machine.fail(f"runuser -u outsider -- curl -sf --unix-socket {SOCKET} {NODE} http://moot-llm/v1/models")
 
     with subtest("both processes run hardened as cliproxyapi"):
         machine.succeed("pgrep -u cliproxyapi -x ts-plug")
