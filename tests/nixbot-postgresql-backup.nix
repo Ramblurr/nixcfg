@@ -114,6 +114,7 @@ assert
     "nixbot"
     "nixbot-ssh-keygen"
   ];
+assert nixbot.unitConfig.ConditionPathExists == "/var/lib/nixbot/session-key";
 assert lib.all (unit: builtins.elem "zfs-datasets.service" unit.requires) zfsUnits;
 assert lib.all (unit: builtins.elem "zfs-datasets.service" unit.after) zfsUnits;
 assert lib.all (unit: builtins.elem "zfs-mount.service" unit.bindsTo) zfsUnits;

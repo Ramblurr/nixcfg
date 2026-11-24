@@ -162,6 +162,9 @@ in
   systemd.services.nixbot.serviceConfig.LoadCredential = [
     "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"
   ];
+  # Never start without the migrated state: on an empty database nixbot
+  # re-imports projects by topic and reconciles their heads as new builds.
+  systemd.services.nixbot.unitConfig.ConditionPathExists = "/var/lib/nixbot/session-key";
 
   systemd.services.databasus-nixbot-role = {
     description = "Provision the Databasus read-only role for Nixbot";
