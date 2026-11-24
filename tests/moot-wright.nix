@@ -33,6 +33,11 @@ let
       hostAddress = "172.31.255.1";
       nodeAddress = "172.31.255.2";
     };
+    endpoint = {
+      address = "192.168.1.1";
+      port = 41642;
+      allowFrom = [ "192.168.1.2" ];
+    };
     advertiseTags = [ "tag:moot-wright" ];
     authKeyFile = "/run/keys/${name}-ts-authkey";
     inherit (network) dnsResolver;
@@ -90,6 +95,7 @@ let
       hostAddress = "172.31.255.5";
       nodeAddress = "172.31.255.6";
     };
+    endpoint.port = 41644;
   };
 in
 assert lib.assertMsg
@@ -203,6 +209,13 @@ assert lib.assertMsg (
       b = lib.recursiveUpdate other { uplink.prefixLength = 28; };
     };
   })
+  && lib.any (lib.hasInfix "share endpoints: 192.168.1.1:41642") (nodeFailures {
+    vms = { };
+    nodes = {
+      a = record;
+      b = lib.recursiveUpdate other { endpoint.port = 41642; };
+    };
+  })
   && lib.any (lib.hasInfix "uplink overlaps its tap") (nodeFailures {
     vms = { };
     nodes.a = lib.recursiveUpdate record {
@@ -212,7 +225,7 @@ assert lib.assertMsg (
       };
     };
   })
-) "node uplinks need unique ids and disjoint subnets, apart from their taps";
+) "node uplinks need unique ids and disjoint subnets, apart from their taps, and nodes unique endpoints";
 assert lib.assertMsg (lib.all
   (
     u:
@@ -274,6 +287,14 @@ pkgs.testers.runNixOSTest {
       wantedBy = [ "multi-user.target" ];
       script = "exec ${lib.getExe pkgs.socat} -u UDP-RECV:9999,reuseaddr OPEN:/run/udp-sink,creat,append";
     };
+    systemd.services.wg-sink = {
+      wantedBy = [ "multi-user.target" ];
+      script = "exec ${lib.getExe pkgs.socat} -u UDP-RECV:41641,reuseaddr OPEN:/run/wg-sink,creat,append";
+    };
+    systemd.services.other-port-sink = {
+      wantedBy = [ "multi-user.target" ];
+      script = "exec ${lib.getExe pkgs.socat} -u UDP-RECV:41643,reuseaddr OPEN:/run/wg-sink,creat,append";
+    };
     systemd.services.dns-sink = {
       wantedBy = [ "multi-user.target" ];
       script = "exec ${lib.getExe pkgs.socat} -u UDP-RECV:53,reuseaddr OPEN:/run/dns-sink,creat,append";
@@ -291,6 +312,12 @@ pkgs.testers.runNixOSTest {
       enable = true;
       baseZfsDataset = "tank/microvms";
       mootNodeUplinks = [ "eth1" ];
+      mootNodePeers = [
+        {
+          address = "192.168.1.2";
+          port = 41641;
+        }
+      ];
       mootNodes.${name} = record;
     };
     microvm.vms.${name} = {
@@ -314,6 +341,7 @@ pkgs.testers.runNixOSTest {
     environment.systemPackages = [
       pkgs.socat
       pkgs.curl
+      pkgs.tailscale
     ];
     virtualisation = {
       cores = 4;
@@ -357,6 +385,10 @@ pkgs.testers.runNixOSTest {
     guest_addr = "${network.guestAddress}"
     spoofed = "192.168.1.77"
     node = f"moot-node@{name}.service"
+    peer = "192.168.1.2"
+    node_addr = "${record.uplink.nodeAddress}"
+    endpoint = "${record.endpoint.address}:${toString record.endpoint.port}"
+    localapi = f"/var/lib/private/moot-nodes/{name}/localapi.sock"
     in_node = f"ip netns exec {netns}"
     as_wright = f"setpriv --reuid={uid} --regid={uid} --init-groups"
     targets = {
@@ -407,11 +439,20 @@ pkgs.testers.runNixOSTest {
         return sum(e["counter"]["packets"] for expr in exprs if any("drop" in e for e in expr) for e in expr if "counter" in e)
 
 
+    def peer_accepts():
+        rules = json.loads(host.succeed("nft -j list chain inet moot-nodes forward"))["nftables"]
+        exprs = [r["rule"]["expr"] for r in rules if "rule" in r and "@moot-peers" in json.dumps(r)]
+        assert exprs, "no rule matches @moot-peers"
+        return sum(e["counter"]["packets"] for expr in exprs for e in expr if "counter" in e)
+
+
     lan.start()
     host.start()
     lan.wait_for_unit("peer-echo.service")
     lan.wait_for_unit("udp-sink.service")
     lan.wait_for_unit("dns-sink.service")
+    lan.wait_for_unit("wg-sink.service")
+    lan.wait_for_unit("other-port-sink.service")
     host.wait_for_unit("multi-user.target")
     # As on the real hosts: virtiofs checks a non-root guest user against POSIX ACLs.
     host.succeed("zpool create -O mountpoint=none -O acltype=posixacl -O xattr=sa tank /dev/vdb")
@@ -454,10 +495,19 @@ pkgs.testers.runNixOSTest {
             "-dns-resolver 198.51.100.10:53 ",
             "-transparent-tcp 127.0.0.1:15001 ",
             "-transparent-udp 127.0.0.1:15001 ",
+            "-port 41642 ",
+            f"-static-endpoint {endpoint} ",
+            f"-localapi-socket /var/lib/moot-nodes/{name}/localapi.sock ",
             "-advertise-tags tag:moot-wright",
         ]:
             assert want in cmdline, f"{want}: {cmdline}"
         host.succeed(f"test -d /var/lib/private/moot-nodes/{name}")
+
+    with subtest("the node listens on its fixed port and answers on its LocalAPI socket"):
+        host.wait_until_succeeds(f"{in_node} ss -Hulnp | grep ':41642 ' | grep -q ts-plug")
+        host.wait_until_succeeds(f"test -S {localapi}")
+        status = json.loads(host.succeed(f"tailscale --socket {localapi} status --json"))
+        assert "BackendState" in status, status
 
     with subtest("T3 answers the node's inbound path and nothing else"):
         guest(f"systemctl start moot-wright-config.service t3-{name}.service")
@@ -502,10 +552,32 @@ pkgs.testers.runNixOSTest {
         guest(udp("leak-root", "198.51.100.10", 9999))
         guest(f"{as_wright} {udp('leak-wright', '198.51.100.10', 9999)}")
         guest(udp("leak-spoofed", "198.51.100.10", 9999, f",bind={spoofed}"))
+        guest(udp("leak-peer", peer, 41641))
+        guest(f"{as_wright} {udp('leak-peer-wright', peer, 41641)}")
+        guest(udp("leak-peer-spoofed", peer, 41641, f",bind={spoofed}"))
         guest("echo leak-v6 | socat -u - 'UDP6:[2001:db8::10]:9999' || true")
         guest("timeout 15 getent hosts leak-dns.example || true")
-        lan.succeed("sleep 3; ! grep -aqs leak /run/udp-sink /run/dns-sink")
+        lan.succeed("sleep 3; ! grep -aqs leak /run/udp-sink /run/dns-sink /run/wg-sink")
         assert node_drops() > before, "the node's namespace dropped nothing"
+
+    with subtest("the node's own WireGuard reaches only listed LAN peers, and they reach it"):
+        # ts-plug owns the node's port, so with the node stopped probes in its
+        # namespace stand in for its WireGuard socket.
+        before = peer_accepts()
+        host.succeed(f"echo node-wg | {in_node} socat -u - UDP:{peer}:41641,sourceport=41642")
+        host.succeed(f"echo node-other-port | {in_node} socat -u - UDP:{peer}:41643")
+        host.fail(f"{in_node} {tcp(peer, 80)}")
+        lan.wait_until_succeeds("grep -aq node-wg /run/wg-sink", timeout=30)
+        lan.succeed("sleep 2; ! grep -aq node-other-port /run/wg-sink")
+        assert peer_accepts() > before, "the peer rule accepted nothing"
+        host.succeed(f"systemd-run --unit=node-wg {in_node} ${lib.getExe pkgs.socat} UDP-LISTEN:41642,bind={node_addr},reuseaddr,fork SYSTEM:'echo node'")
+        host.succeed("sleep 1")
+        assert lan.succeed(f"echo peer | socat -T3 - UDP:{endpoint}").strip() == "node"
+        lan.succeed("ip addr add 192.168.1.50/24 dev eth1")
+        _, stranger = lan.execute(f"echo stranger | socat -T3 - UDP:{endpoint},bind=192.168.1.50")
+        assert stranger.strip() != "node", "an unlisted LAN host reached the node"
+        lan.succeed("ip addr del 192.168.1.50/24 dev eth1")
+        host.succeed("systemctl stop node-wg")
 
     with subtest("every guest flow arrives at the node's capture and nowhere else"):
         # The node cannot log in without a control server, so it never opens
@@ -520,10 +592,11 @@ pkgs.testers.runNixOSTest {
         assert guest(tcp(tap_host, 1056)).strip() == "proxy"
         guest(udp("captured-udp", "198.51.100.10", 9999))
         guest(udp("spoofed-udp", "198.51.100.10", 9999, f",bind={spoofed}"))
+        guest(udp("captured-peer", peer, 41641))
         guest("timeout 5 getent hosts captured-dns.example || true")
-        host.wait_until_succeeds("grep -aq captured-udp /run/captured-udp && grep -aq captured-dns /run/captured-udp")
+        host.wait_until_succeeds("grep -aq captured-udp /run/captured-udp && grep -aq captured-dns /run/captured-udp && grep -aq captured-peer /run/captured-udp")
         host.succeed("sleep 2; ! grep -aq spoofed /run/captured-udp")
-        lan.succeed("! grep -aqs -e leak -e captured -e spoofed /run/udp-sink /run/dns-sink")
+        lan.succeed("! grep -aqs -e leak -e captured -e spoofed /run/udp-sink /run/dns-sink /run/wg-sink")
         host.succeed("systemctl stop capture-tcp capture-udp proxy-probe")
         guest(f"ip addr del {spoofed}/32 dev uplink && ip -6 addr del fd00::2/64 dev uplink")
         host.succeed(f"systemctl start {node}")
