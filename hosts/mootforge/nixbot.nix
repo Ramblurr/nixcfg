@@ -24,6 +24,7 @@ let
   workDomain = config.repo.secrets.global.domain.work;
   forgejoItem = "op://home-ops-prod/nixbot git.outskirtslabs.com ";
   credentialSocket = config.modules.services.onepassword-systemd-credentials.socketPath;
+  activationMarker = "/persist/etc/nixbot-activated";
   localAtticSubstituter = config.repo.secrets.global.localAtticSubstituter;
   atticServer = "mali";
   atticCacheName = builtins.baseNameOf localAtticSubstituter;
@@ -162,9 +163,10 @@ in
   systemd.services.nixbot.serviceConfig.LoadCredential = [
     "attic-nixbot-token:${config.sops.secrets."attic-nixbot-token".path}"
   ];
-  # Never start without the migrated state: on an empty database nixbot
-  # re-imports projects by topic and reconciles their heads as new builds.
-  systemd.services.nixbot.unitConfig.ConditionPathExists = "/var/lib/nixbot/session-key";
+  # Never start without the verified migrated state: on an empty database
+  # nixbot re-imports projects by topic and reconciles their heads as new builds.
+  systemd.services.nixbot.unitConfig.ConditionPathExists = activationMarker;
+  systemd.sockets.nixbot.unitConfig.ConditionPathExists = activationMarker;
 
   systemd.services.databasus-nixbot-role = {
     description = "Provision the Databasus read-only role for Nixbot";
