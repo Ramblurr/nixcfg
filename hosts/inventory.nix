@@ -71,6 +71,16 @@ let
       ramMiB = 65536;
       gpu = "ASPEED Graphics Family";
     };
+    mootforge = {
+      purpose = "Trusted Nix builder and CI host";
+      system = "x86_64-linux";
+      channel = "unstable";
+      role = "server";
+      board = "Intel NUC10i7FNB (NUC10i7FNH)";
+      cpu = "Intel Core i7-10710U";
+      ramMiB = 65536;
+      gpu = "Intel UHD Graphics (Comet Lake-U)";
+    };
     octoprint = {
       purpose = "3D printer controller";
       system = "aarch64-linux";

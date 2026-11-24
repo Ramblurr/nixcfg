@@ -78,6 +78,7 @@ in
       immich-home = [ "10.9.4.23" ];
       peirce = [ "10.9.4.24" ];
       mali = [ "10.9.4.10" ];
+      mootforge = [ "10.9.4.19" ];
     };
     hosts6 = { };
     #hosts6.main = {
@@ -103,6 +104,7 @@ in
       dewey = [ "10.9.8.14" ];
       debord = [ "10.9.8.21" ];
       mali = [ "10.9.8.3" ];
+      mootforge = [ "10.9.8.19" ];
       onepassword-connect = [ "10.9.8.22" ];
     };
     #hosts6.main = {
@@ -167,6 +169,7 @@ in
       debord = [ "10.9.10.21" ];
       dewey = [ "10.9.10.14" ];
       mali = [ "10.9.10.10" ];
+      mootforge = [ "10.9.10.19" ];
       quine = [ "10.9.10.5" ];
       immich-home = [ "10.9.10.23" ];
     };
@@ -396,6 +399,25 @@ in
           parent = "lan0";
         };
         vpn.type = "bridge";
+      };
+    };
+    mootforge = {
+      role = "server";
+      interfaces = {
+        lan0.type = "phys";
+        prim = {
+          type = "bridge";
+          parent = "lan0";
+        };
+        mgmt = {
+          type = "bridge";
+          parent = "lan0";
+          gw4 = true;
+        };
+        data = {
+          type = "bridge";
+          parent = "lan1";
+        };
       };
     };
     mali = {
