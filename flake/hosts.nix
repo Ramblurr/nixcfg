@@ -72,6 +72,9 @@
         t3-users = "quine";
         egress = "quine";
         ward = "debord";
+        workstead = "thingstead";
+        homestead = "thingstead";
+        outstead = "thingstead";
       };
     in
     {

@@ -13,6 +13,7 @@
     ./hirde.nix
     ./ingress.nix
     ./llm.nix
+    ./moot.nix
     ../../config
   ];
 
