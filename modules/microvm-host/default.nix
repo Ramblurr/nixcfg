@@ -32,7 +32,7 @@ let
   '';
 in
 {
-  imports = [ ./isolated-taps.nix ];
+  imports = [ (import ./moot-nodes.nix guestConfig) ];
 
   options.modules.microvm-host = {
     enable = lib.mkEnableOption "Enable microvm host services (for imperative control!)";
