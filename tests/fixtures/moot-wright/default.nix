@@ -22,11 +22,6 @@ in
       nix = {
         substituters = [ "https://moot-cache.example.ts.net" ];
         trustedPublicKeys = [ "moot-cache:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" ];
-        remoteBuilder = {
-          hostName = "moot-builder.example.ts.net";
-          sshUser = "nix-ssh";
-          publicHostKey = sshKeys.snakeOilEd25519PublicKey;
-        };
       };
       extraPackages = [ pkgs.socat ];
     };

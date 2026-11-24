@@ -10,6 +10,14 @@ let
     };
   guest = mkGuest { };
   cfg = guest.config;
+  builderCfg =
+    (mkGuest {
+      modules.microvm-guest.mootWright.nix.remoteBuilder = {
+        hostName = "moot-builder.example.ts.net";
+        sshUser = "nix-ssh";
+        publicHostKey = sshKeys.snakeOilEd25519PublicKey;
+      };
+    }).config;
   wright = cfg.modules.microvm-guest.mootWright;
   inherit (wright) name network;
   netns = "moot-${name}";
@@ -115,13 +123,14 @@ assert lib.assertMsg (
       }
     ]
 ) "sshd listens only on VSOCK, with a persistent host key";
-assert lib.assertMsg (lib.all
-  (n: builtins.elem "/run/host-secrets" (service n).unitConfig.RequiresMountsFor)
-  [
-    "moot-wright-credentials"
-    "nix-daemon"
-  ]
-) "every host-secrets consumer waits for the share";
+assert lib.assertMsg (
+  !cfg.modules.microvm-guest.hostSecrets.enable
+  && !(lib.any (s: s.tag == "host-secrets") cfg.microvm.shares)
+  && !(cfg.systemd.services ? moot-wright-credentials)
+) "without a remote builder the guest gets no host secrets";
+assert lib.assertMsg
+  (builtins.elem "/run/host-secrets" builderCfg.systemd.services.nix-daemon.unitConfig.RequiresMountsFor)
+  "the remote builder's key waits for the host secrets share";
 assert lib.assertMsg (
   !(cfg.systemd.services ? "ts-plug-${name}")
   && !(cfg.users.users ? "ts-${name}")
@@ -132,11 +141,16 @@ assert lib.assertMsg (
   ]
 ) "the guest runs no tailnet node and no network namespace";
 assert lib.assertMsg (
-  cfg.nix.settings.max-jobs == 0
+  cfg.nix.settings.max-jobs == 1
   && cfg.nix.settings.extra-substituters == [ "https://moot-cache.example.ts.net" ]
-  && map (m: m.protocol) cfg.nix.buildMachines == [ "ssh-ng" ]
-  && cfg.nix.distributedBuilds
-) "builds go only to the ssh-ng remote builder, with the moot cache as substituter";
+  && cfg.nix.buildMachines == [ ]
+  && !cfg.nix.distributedBuilds
+) "without a remote builder the guest builds locally, with the moot cache as substituter";
+assert lib.assertMsg (
+  builderCfg.nix.settings.max-jobs == 0
+  && map (m: m.protocol) builderCfg.nix.buildMachines == [ "ssh-ng" ]
+  && builderCfg.nix.distributedBuilds
+) "with a remote builder, builds go only to it over ssh-ng";
 assert lib.assertMsg (
   gitConfig.user.email == "${name}@moot.land"
   && gitConfig.user.name == name
@@ -337,7 +351,6 @@ pkgs.testers.runNixOSTest {
     target = f"root@vsock-mux/{state}/notify.vsock"
     ssh = f"ssh -n {target}"
     authkey = "tskey-auth-moot-wright-test-0b5e"
-    proxy_key = "cliproxy-moot-wright-test-7d21"
     home = f"/home/{name}"
     tap = "${network.tapId}"
     tap_host = "${network.hostAddress}"
@@ -403,11 +416,7 @@ pkgs.testers.runNixOSTest {
     # As on the real hosts: virtiofs checks a non-root guest user against POSIX ACLs.
     host.succeed("zpool create -O mountpoint=none -O acltype=posixacl -O xattr=sa tank /dev/vdb")
     host.succeed(
-        f"install -d -m 0700 /run/microvms/secrets/{name}"
-        f" && printf %s {proxy_key} > /run/microvms/secrets/{name}/cliproxy-key"
-        f" && install -m 0400 /etc/microvm-test-key /run/microvms/secrets/{name}/nix-builder-key"
-        f" && chmod 0400 /run/microvms/secrets/{name}/*"
-        f" && install -d -m 0700 /run/keys"
+        "install -d -m 0700 /run/keys"
         f" && printf %s {authkey} > /run/keys/{name}-ts-authkey"
         f" && chmod 0400 /run/keys/{name}-ts-authkey"
     )
@@ -464,18 +473,18 @@ pkgs.testers.runNixOSTest {
         host.fail(f"curl -s --connect-timeout 3 http://{guest_addr}:3780/")
         lan.fail(f"socat -T3 - TCP:{guest_addr}:3780,connect-timeout=3 </dev/null")
 
-    with subtest("nix-daemon serves root and the wright and fetches through the node's proxy"):
+    with subtest("nix-daemon builds locally and fetches through the node's proxy"):
         guest("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
         wright("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
         environ = guest(f"tr '\\0' '\\n' < /proc/{main_pid('nix-daemon')}/environ")
         assert f"HTTPS_PROXY=http://{tap_host}:1056" in environ, environ
         conf = guest("cat /etc/nix/nix.conf")
-        assert "max-jobs = 0" in conf, conf
+        assert "max-jobs = 1" in conf, conf
         assert "extra-substituters = https://moot-cache.example.ts.net" in conf, conf
-        # Nix reads builders from /etc/nix/machines by default.
-        assert "builders =" not in conf, conf
-        guest("grep -q '^ssh-ng://nix-ssh@moot-builder.example.ts.net ' /etc/nix/machines")
-        guest(f"grep -q 'connect -x {tap_host}:1056 ' /etc/ssh/ssh_config")
+        guest("! test -s /etc/nix/machines")
+        drv = 'derivation { name = "moot-local"; system = builtins.currentSystem; builder = "/bin/sh"; args = [ "-c" "echo built > $out" ]; }'
+        out = guest(f"NIX_REMOTE=daemon nix-build --no-out-link --option substitute false -E {shlex.quote(drv)}").strip()
+        assert guest(f"cat {out}").strip() == "built"
 
     with subtest("with the node stopped, nothing leaves the VM"):
         host.succeed(f"systemctl stop {node}")
@@ -534,31 +543,26 @@ pkgs.testers.runNixOSTest {
         status = host.succeed(f"systemctl show -P StatusText microvm@{name}.service")
         assert "leak" not in status, status
 
-    with subtest("the wright reads only the proxy key"):
-        wright("! ls /run/host-secrets")
-        wright("! cat /run/host-secrets/cliproxy-key")
-        assert wright("cat /run/moot-wright/cliproxy-key") == proxy_key
-        assert guest("stat -c '%U %a' /run/moot-wright/cliproxy-key").strip() == f"{name} 400"
+    with subtest("no CLIProxyAPI key in the guest"):
+        guest("! test -e /run/host-secrets")
+        guest("! test -e /run/moot-wright")
         t3_env = guest(f"tr '\\0' '\\n' < /proc/{main_pid('t3-' + name)}/environ")
-        assert proxy_key not in t3_env, t3_env
         assert "TS_EGRESS_PLACEHOLDER_GITHUB_TOKEN" in t3_env, t3_env
         assert f"HTTPS_PROXY=http://{tap_host}:1056" in t3_env, t3_env
-
-    with subtest("the provider wrappers read the key at launch"):
         trace = wright("strace -f -qq -v -s 512 -e trace=execve codex --version 2>&1")
-        assert f"CLIPROXY_API_KEY={proxy_key}" in trace, trace
+        assert "CLIPROXY_API_KEY=tailnet" in trace, trace
         trace = wright("strace -f -qq -v -s 512 -e trace=execve claude --version 2>&1")
-        assert f"ANTHROPIC_AUTH_TOKEN={proxy_key}" in trace, trace
+        assert "ANTHROPIC_AUTH_TOKEN=tailnet" in trace, trace
         assert "ANTHROPIC_BASE_URL=https://moot-llm.example.ts.net" in trace, trace
         for d in ["pi", "pi-t3"]:
             models = json.loads(guest(f"cat {home}/.config/{d}/agent/models.json"))
             cliproxy = models["providers"]["cliproxy"]
             assert cliproxy["baseUrl"] == "https://moot-llm.example.ts.net", cliproxy["baseUrl"]
-            assert wright(cliproxy["apiKey"].removeprefix("!")) == proxy_key
+            assert cliproxy["apiKey"] == "tailnet", cliproxy["apiKey"]
 
     with subtest("no secret reaches the store or a managed config"):
         # grep exits 1 only when it read everything and matched nothing.
-        guest(f"rc=0; grep -rlFs -e {authkey} -e {proxy_key} /nix/store /etc {home}/.config {home}/.t3 || rc=$?; test $rc -eq 1")
+        guest(f"rc=0; grep -rlFs -e {authkey} /nix/store /etc {home}/.config {home}/.t3 || rc=$?; test $rc -eq 1")
 
     with subtest("all four providers, T3 and harness-plugins-sync are configured"):
         for tool in ["claude", "codex", "pi", "agy", "t3", "harness-plugins-sync"]:

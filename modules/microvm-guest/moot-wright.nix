@@ -22,7 +22,6 @@ let
   mac = lib.my.generateMacAddress "1-moot-${name}";
   proxyAddress = "${cfg.network.hostAddress}:${toString cfg.network.proxyPort}";
 
-  keyFile = "/run/moot-wright/cliproxy-key";
   pluginsStateDir = "${home}/.local/share/ol-plugins-sync";
   t3Home = "${home}/.t3";
   dirs = {
@@ -75,18 +74,16 @@ let
     env:
     lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") env);
 
-  withKey =
+  withPlaceholder =
     bin: package: variable: extraEnv:
     pkgs.writeShellScriptBin bin ''
-      ${variable}="$(< ${keyFile})"
-      export ${variable}
-      ${exports extraEnv}
+      ${exports ({ ${variable} = "tailnet"; } // extraEnv)}
       exec ${lib.getExe package} "$@"
     '';
-  claude = withKey "claude" agents.claude-code "ANTHROPIC_AUTH_TOKEN" {
+  claude = withPlaceholder "claude" agents.claude-code "ANTHROPIC_AUTH_TOKEN" {
     ANTHROPIC_BASE_URL = cfg.cliproxy.url;
   };
-  codex = withKey "codex" agents.codex "CLIPROXY_API_KEY" { };
+  codex = withPlaceholder "codex" agents.codex "CLIPROXY_API_KEY" { };
   pi = agents.pi.override { useBun = false; };
   antigravity = agents.antigravity-cli;
   t3 = pkgs.t3code.override {
@@ -129,7 +126,6 @@ let
   piPackages = profile: { packages = [ "${pluginsStateDir}/profiles/${profile}" ]; };
   piModels.providers.cliproxy = import ../dev/llms/cliproxy-pi-provider.nix {
     inherit (cfg.cliproxy) url;
-    apiKey = "!cat ${keyFile}";
   };
   t3Settings = {
     linkedEnvironmentsEnabled = true;
@@ -268,7 +264,6 @@ let
     ${writeConfig "${configHome}/ol-plugins-sync/config.edn" pluginsSyncConfig}
   '';
 
-  credentialUnit = "moot-wright-credentials.service";
   configUnit = "moot-wright-config.service";
   builder = cfg.nix.remoteBuilder;
 in
@@ -318,26 +313,19 @@ in
       };
     };
 
-    cliproxy = {
-      url = lib.mkOption {
-        type = lib.types.str;
-        apply = lib.removeSuffix "/";
-        default = "https://moot-llm.${tailnet}";
-        defaultText = lib.literalExpression ''"https://moot-llm.''${tailnet}"'';
-        description = "CLIProxyAPI root URL, without /v1.";
-      };
-      keyFile = lib.mkOption {
-        type = lib.types.str;
-        default = "${hostSecretsMount}/cliproxy-key";
-        defaultText = lib.literalExpression ''"''${hostSecrets.mountPoint}/cliproxy-key"'';
-        description = "CLIProxyAPI client key, copied to ${keyFile} for the wright.";
-      };
+    cliproxy.url = lib.mkOption {
+      type = lib.types.str;
+      apply = lib.removeSuffix "/";
+      default = "https://moot-llm.${tailnet}";
+      defaultText = lib.literalExpression ''"https://moot-llm.''${tailnet}"'';
+      description = "CLIProxyAPI root URL, without /v1. It knows the wright by its tailnet identity.";
     };
 
     nix = {
       maxJobs = lib.mkOption {
         type = lib.types.ints.unsigned;
-        default = 0;
+        default = if cfg.nix.remoteBuilder == null then lib.max 1 (config.microvm.vcpu / 2) else 0;
+        defaultText = lib.literalExpression "if remoteBuilder == null then max 1 (microvm.vcpu / 2) else 0";
         description = "Local build jobs; 0 builds only on the remote builder.";
       };
       substituters = lib.mkOption {
@@ -352,7 +340,7 @@ in
       };
       remoteBuilder = lib.mkOption {
         default = null;
-        description = "Remote builder reached over ssh-ng through the node's proxy.";
+        description = "Remote builder reached over ssh-ng through the node's proxy. Without one, the guest builds locally.";
         type = lib.types.nullOr (
           lib.types.submodule {
             options = {
@@ -469,9 +457,9 @@ in
         "var/lib"
         "home"
       ];
-      hostSecrets = {
+      hostSecrets = lib.mkIf (builder != null) {
         enable = true;
-        services = [ "moot-wright-credentials" ] ++ lib.optional (builder != null) "nix-daemon";
+        services = [ "nix-daemon" ];
       };
     };
     microvm = {
@@ -600,19 +588,6 @@ in
     systemd.tmpfiles.rules = [ "d ${home} 0700 ${name} ${name} -" ];
 
     systemd.services = {
-      moot-wright-credentials = {
-        description = "Provide the CLIProxyAPI key to ${name}";
-        wantedBy = [ "multi-user.target" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          LoadCredential = [ "cliproxy-key:${cfg.cliproxy.keyFile}" ];
-          RuntimeDirectory = "moot-wright";
-          RuntimeDirectoryMode = "0755";
-          ExecStart = "${lib.getExe' pkgs.coreutils "install"} -m 0400 -o ${name} -g ${name} %d/cliproxy-key ${keyFile}";
-        };
-      };
-
       moot-wright-config = {
         description = "Merge managed agent settings for ${name}";
         wantedBy = [ "multi-user.target" ];
@@ -629,14 +604,8 @@ in
 
       "user@${toString uid}" = {
         overrideStrategy = "asDropin";
-        wants = [
-          credentialUnit
-          configUnit
-        ];
-        after = [
-          credentialUnit
-          configUnit
-        ];
+        wants = [ configUnit ];
+        after = [ configUnit ];
       };
 
       nix-daemon.environment = proxyEnv // {
