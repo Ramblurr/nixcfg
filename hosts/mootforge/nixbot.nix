@@ -10,7 +10,7 @@
 #
 # The service listens on a plain TCP port. Dewey Caddy terminates TLS and
 # James HAProxy selects ci.<work> for James public exposure, then Dewey
-# proxies the request over the prim VLAN to Debord.
+# proxies the request over the mgmt VLAN to this host.
 let
   inherit (self.inputs.nixbot.lib) interpolate;
 
@@ -20,7 +20,7 @@ let
   nixbotDataset = "rpool/encrypted/safe/svc/nixbot";
   postgresqlDataset = "rpool/encrypted/safe/svc/postgresql";
   maliMgmtAddress = builtins.head config.site.net.mgmt.hosts4.mali;
-  debordMgmtAddress = builtins.head config.site.net.mgmt.hosts4.debord;
+  hostMgmtAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
   workDomain = config.repo.secrets.global.domain.work;
   forgejoItem = "op://home-ops-prod/nixbot git.outskirtslabs.com ";
   credentialSocket = config.modules.services.onepassword-systemd-credentials.socketPath;
@@ -60,8 +60,8 @@ let
 in
 {
   # Keep persistent state ownership stable when impermanent root rebuilds accounts.
-  users.users.nixbot.uid = 996;
-  users.groups.nixbot.gid = 997;
+  users.users.nixbot.uid = 993;
+  users.groups.nixbot.gid = 992;
 
   assertions = [
     {
@@ -88,7 +88,7 @@ in
 
   services.postgresql = {
     enableTCPIP = true;
-    settings.listen_addresses = lib.mkForce debordMgmtAddress;
+    settings.listen_addresses = lib.mkForce hostMgmtAddress;
     authentication = lib.mkAfter ''
       host ${databaseName} ${backupRole} ${maliMgmtAddress}/32 scram-sha-256
       host all ${backupRole} ${maliMgmtAddress}/32 reject
@@ -139,7 +139,7 @@ in
           "${atticPush}"
           (interpolate "%(prop:out_link)s")
         ];
-        # Cache upload is part of Debord CI's success criteria: a build that
+        # Cache upload is part of CI's success criteria: a build that
         # cannot be pushed should not be reported as a successful cached build.
         warnOnly = false;
       }
@@ -242,7 +242,7 @@ in
 
   networking.firewall.allowedTCPPorts = [ nixbotPort ];
   networking.firewall.extraInputRules = ''
-    iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${debordMgmtAddress} tcp dport 5432 accept comment "Databasus Nixbot logical backup"
+    iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${hostMgmtAddress} tcp dport 5432 accept comment "Databasus Nixbot logical backup"
   '';
   nix.settings = {
     max-jobs = 2;
@@ -265,7 +265,7 @@ in
           mkdir -p /var/lib/nixbot/.ssh
           chmod 700 /var/lib/nixbot/.ssh
           ${lib.getExe' pkgs.openssh "ssh-keygen"} -t ed25519 \
-            -f /var/lib/nixbot/.ssh/id_ed25519 -N "" -C "nixbot@debord"
+            -f /var/lib/nixbot/.ssh/id_ed25519 -N "" -C "nixbot@${config.networking.hostName}"
         fi
       '';
     };

@@ -10,13 +10,17 @@
     ./hardware.nix
     ./networking.nix
     ./moot.nix
+    ./nixbot.nix
     ../../config
     ../../modules/site-net
   ];
 
   system.stateVersion = "26.11";
+  # Nixbot's flake prefetch and the tarmac plugin need upstream Nix.
+  determinate.enable = false;
   networking.hostName = "mootforge";
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
+  repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
   documentation.enable = false;
 
@@ -47,6 +51,7 @@
       enable = true;
       baseZfsDataset = "rpool/encrypted/safe/microvms";
     };
+    services.onepassword-systemd-credentials.enable = true;
   };
   home.nix-lan-cache.enable = true;
 

@@ -103,7 +103,7 @@ creation_rules:
           - *thingstead
         merge:
           - *admin-group
-  - path_regex: hosts/mootforge/secrets\.sops\.ya?ml$
+  - path_regex: hosts/mootforge/.*\.sops\.ya?ml$
     key_groups:
       - age:
           - *mootforge

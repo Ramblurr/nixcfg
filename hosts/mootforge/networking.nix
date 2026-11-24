@@ -12,7 +12,11 @@ in
   modules.vpn.tailscale.enable = true;
   services.tailscale = {
     authKeyFile = "/persist/etc/tailscale/authkey";
-    extraSetFlags = [ "--ssh" ];
+    # The tailnet DNS view sends the forge to an address this host cannot reach.
+    extraSetFlags = [
+      "--ssh"
+      "--accept-dns=false"
+    ];
   };
 
   systemd.network = {

@@ -36,13 +36,10 @@ let
   };
 
   clients = {
-    debord = {
+    mootforge = {
       sshKey = "/var/lib/nixbot/.ssh/id_ed25519";
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBRYhwBrSDvAH+qmr3KmMOjiVJpNgUpy4WFBserUtLiz nixbot@debord";
-      builders = [
-        "quine"
-        "thingstead"
-      ];
+      builders = [ "thingstead" ];
     };
     quine = {
       sshKey = "/persist/etc/ssh/ssh_host_ed25519_key";

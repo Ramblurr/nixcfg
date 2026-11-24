@@ -24,12 +24,10 @@
       # Executable additions stay out of the public, JSON-serialisable inventory.
       hostExtras = {
         debord = {
-          hostExtraModules = [
-            inputs.nad-api.nixosModules.default
-            inputs.nixbot.nixosModules.nixbot
-          ];
+          hostExtraModules = [ inputs.nad-api.nixosModules.default ];
           hostOverlays = [ inputs.nad-api.overlays.default ];
         };
+        mootforge.hostExtraModules = [ inputs.nixbot.nixosModules.nixbot ];
         addams.hostExtraModules = [
           inputs.nixos-nftables-firewall.nixosModules.default
         ];

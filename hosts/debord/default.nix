@@ -15,7 +15,6 @@ in
     ./networking.nix
     ./label-printer.nix
     ./microvm-host.nix
-    ./nixbot.nix
     ./prometheus.nix
     #./grafana
     ../../config
@@ -23,7 +22,7 @@ in
     ../../modules/site-net
   ];
   determinate.enable = false;
-  # Nixbot builds must never take CPU or disk time from the Home Assistant VM.
+  # Nix builds must never take CPU or disk time from the Home Assistant VM.
   nix.daemonCPUSchedPolicy = "idle";
   nix.daemonIOSchedClass = "idle";
   assertions = [

@@ -30,11 +30,11 @@ let
         ../modules/zfs-attrs.nix
         inputs.nixbot.nixosModules.nixbot
         ../modules/services/onepassword-systemd-credentials.nix
-        ../hosts/debord/nixbot.nix
+        ../hosts/mootforge/nixbot.nix
         testOptions
         {
           nixpkgs.pkgs = pkgs;
-          networking.hostName = "debord";
+          networking.hostName = "mootforge";
           system.stateVersion = "26.05";
           boot.loader.grub.devices = [ "nodev" ];
           fileSystems."/" = {
@@ -42,10 +42,11 @@ let
             fsType = "tmpfs";
           };
           modules.zfs.datasets.enable = true;
+          modules.services.onepassword-systemd-credentials.enable = true;
           sops.defaultSopsFile = secretFile;
           sops.age.keyFile = "/tmp/age-key.txt";
           site.net.mgmt.hosts4 = {
-            debord = [ "192.0.2.21" ];
+            mootforge = [ "192.0.2.21" ];
             mali = [ "192.0.2.3" ];
             onepassword-connect = [ "192.0.2.22" ];
           };
