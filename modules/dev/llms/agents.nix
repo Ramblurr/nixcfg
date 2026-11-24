@@ -80,8 +80,8 @@ in
       url = lib.mkOption {
         type = lib.types.str;
         apply = lib.removeSuffix "/";
-        default = "https://quine.${config.repo.secrets.global.domain.tailnet}:8317";
-        defaultText = lib.literalExpression ''"https://quine.''${config.repo.secrets.global.domain.tailnet}:8317"'';
+        default = "https://moot-llm.${config.repo.secrets.global.domain.tailnet}";
+        defaultText = lib.literalExpression ''"https://moot-llm.''${config.repo.secrets.global.domain.tailnet}"'';
         description = "Proxy root URL, without /v1. Override for other proxy hosts.";
       };
       credential = lib.mkOption {

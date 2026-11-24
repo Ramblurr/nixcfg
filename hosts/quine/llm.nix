@@ -269,7 +269,7 @@ in
   modules.dev.llms.proxy.enable = true;
 
   modules.dev.llms.cliproxy-api = {
-    enable = true;
+    enable = false;
     package = import ../../pkgs/cli-proxy-api.nix {
       inherit (inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}) cli-proxy-api;
     };
