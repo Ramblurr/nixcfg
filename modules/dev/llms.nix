@@ -32,7 +32,6 @@ in
   imports = [
     ./llms/agents.nix
     ./llms/clients.nix
-    ./llms/cliproxy-api.nix
     ./llms/pi.nix
     ./llms/plugins-sync.nix
     ./llms/profile.nix
