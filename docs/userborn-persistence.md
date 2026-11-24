@@ -15,7 +15,8 @@ subordinate-ID support additionally requires both subordinate files to exist.
 This procedure is for ordinary, non-overlay `/etc` and `users.mutableUsers = false`.
 It is not an automatic Perl-to-Userborn migration or fresh-install bootstrap.
 Do not initialize empty databases on an existing host. For a new installation,
-provision the intended initial account database before its first boot.
+provision the intended initial account database before its first boot, as
+described in [Seed a new installation](#seed-a-new-installation).
 
 Use a host-specific operation ledger and obtain approval for migration, activation,
 and any reboot. Record exact old/new system paths and recovery access. Keep another
@@ -27,6 +28,34 @@ these are **Addams, Dewey, James, Mali, Peirce, Quine, Witt, and Debord**. Migra
 before deploying it; **Debord goes last**. Non-impermanent hosts keep `/etc`.
 Stable Userborn 0.5 retains the generated subordinate files; Userborn 1.0 uses native
 ranges and bind mounts. Never change those mappings just to make migration pass.
+
+## Seed a new installation
+
+A new impermanent host has no account database, so the guard stops Userborn on
+its first boot and every service with a `User=` fails, including
+`systemd-networkd` and `sshd`. `scripts/deploy-anywhere.sh` prevents this. It
+builds the host's system and runs `scripts/userborn-seed.sh` on it before
+nixos-anywhere starts. That script runs the system's own Userborn, with the
+system's own configuration, into `persist/var/lib/userborn` in the
+`--extra-files` staging directory. The installed host then boots with a
+database that already exists. Any other installer that stages `--extra-files`
+must run the same script:
+
+```bash
+toplevel=$(nix build --no-link --print-out-paths ".#nixosConfigurations.HOST.config.system.build.toplevel")
+scripts/userborn-seed.sh "$toplevel" "$staging"
+```
+
+The script reads the bind source from the system's `fstab`, and does nothing
+for a host that keeps its accounts in `/etc`. It allocates IDs and creates
+locked accounts. It does not carry password hashes, because
+`hashedPasswordFile` paths name the target's secrets, not the workstation's.
+The target's first Userborn run sets the hashes. It writes under `umask 022`,
+because Userborn keeps the modes it finds and `passwd` and `group` must stay
+world-readable.
+
+Run it only for a new installation. On an existing host it would allocate new
+identities in place of the ones the host already has.
 
 ## Inspect the target
 

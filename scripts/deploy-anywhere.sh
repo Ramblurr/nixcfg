@@ -45,6 +45,9 @@ sops -d --extract "['ssh_host_ed25519_key_pub']" "$sops_secrets" >"$temp/persist
 # Set the correct permissions so sshd will accept the key
 chmod 600 "$temp/persist/etc/ssh/ssh_host_ed25519_key"
 
+toplevel=$(nix build --no-link --print-out-paths ".#nixosConfigurations.$host.config.system.build.toplevel")
+"$public_repo/scripts/userborn-seed.sh" "$toplevel" "$temp"
+
 # Prepare installer access only after the host identity has decrypted successfully.
 if [ "$BOOTSTRAP_USER" != "root" ]; then
     ssh-copy-id -f -i ~/.ssh/casey-all.pub "$BOOTSTRAP_USER@$host"
