@@ -193,8 +193,12 @@ pkgs.testers.runNixOSTest {
         unseeded.wait_until_succeeds("systemctl is-failed userborn.service", timeout=60)
         unseeded.succeed("systemctl is-failed userborn.service && test ! -e /var/lib/userborn/passwd && test ! -e /var/lib/userborn/group && test ! -e /var/lib/userborn/shadow")
 
-    with subtest("an installer-seeded database boots with its accounts"):
-        unseeded.succeed("${lib.getExe seed} /run/current-system / && sync")
+    with subtest("an installer-seeded database survives the nixos-anywhere transfer and boots"):
+        installer = "setpriv --reuid=1000 --regid=100 --clear-groups"
+        unseeded.succeed("install -d -o 1000 -g 100 -m 0700 /tmp/stage")
+        unseeded.succeed(f"{installer} ${lib.getExe seed} /run/current-system /tmp/stage")
+        unseeded.succeed(f"set -o pipefail; {installer} tar -C /tmp/stage -cpf- . | tar -C / -xf- --no-same-owner")
+        unseeded.succeed("chmod 755 / && sync")
         unseeded.shutdown()
         unseeded.start()
         unseeded.wait_for_unit("multi-user.target")
@@ -202,6 +206,8 @@ pkgs.testers.runNixOSTest {
         assert unseeded.succeed("id -u alice").strip() == "1000"
         unseeded.succeed("sudo -u alice getent passwd zservice")
         unseeded.fail("sudo -u alice test -r /etc/shadow")
+        owner, mode = unseeded.succeed("stat -c '%U:%G %a' /var/lib/userborn/shadow").split()
+        assert owner == "root:root" and int(mode, 8) & 0o077 == 0, (owner, mode)
         assert unseeded.succeed("sort /etc/subuid") == ranges
         unseeded.crash()
   '';
