@@ -52,7 +52,10 @@ locked accounts. It does not carry password hashes, because
 `hashedPasswordFile` paths name the target's secrets, not the workstation's.
 The target's first Userborn run sets the hashes. It writes under `umask 022`,
 because Userborn keeps the modes it finds and `passwd` and `group` must stay
-world-readable.
+world-readable. It sets `shadow` to 0600, because nixos-anywhere archives the
+staging directory as the installing user and cannot read the 000 that Userborn
+creates. nixos-anywhere extracts as root without keeping owners, so every seeded
+file belongs to root on the target.
 
 Run it only for a new installation. On an existing host it would allocate new
 identities in place of the ones the host already has.

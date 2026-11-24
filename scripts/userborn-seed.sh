@@ -21,3 +21,5 @@ umask 022
 install -d -m755 "$root$source"
 # The target sets password hashes from its own secrets on first boot.
 "$userborn" <(jq 'del(.users[].hashedPasswordFile)' "$config") "$root$source"
+# Userborn creates shadow as 000, which the unprivileged nixos-anywhere archive step cannot read.
+chmod 600 "$root$source/shadow"
