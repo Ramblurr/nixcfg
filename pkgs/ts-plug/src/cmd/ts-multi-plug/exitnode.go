@@ -7,11 +7,13 @@ import (
 	"log/slog"
 	"net"
 	"net/netip"
+	"slices"
 	"strings"
 	"time"
 
 	"tailscale.com/client/local"
 	"tailscale.com/ipn"
+	"tailscale.com/net/tsaddr"
 	"tailscale.com/tsnet"
 	"tailscale.com/wgengine/netstack"
 )
@@ -28,6 +30,10 @@ func newNetstackDial(ts *tsnet.Server) (netstackDial, error) {
 	}
 	return func(ctx context.Context, network string, dst netip.AddrPort) (net.Conn, error) {
 		dst = unmap(dst)
+		ip4, ip6 := ts.TailscaleIPs()
+		if err := checkTailnetDst(dst, ip4, ip6); err != nil {
+			return nil, err
+		}
 		if strings.HasPrefix(network, "udp") {
 			conn, err := ns.DialContextUDP(ctx, dst)
 			if err != nil {
@@ -41,6 +47,21 @@ func newNetstackDial(ts *tsnet.Server) (netstackDial, error) {
 		}
 		return conn, nil
 	}, nil
+}
+
+var errNodeLocal = errors.New("destination is this node, not the tailnet")
+
+// checkTailnetDst refuses a destination this node answers itself. Netstack
+// hands a dial to the node's own address or a Tailscale service IP to the
+// node's PeerAPI or resolver, with the node as the source, around the packet
+// filter and the exit node's policy.
+func checkTailnetDst(dst netip.AddrPort, self ...netip.Addr) error {
+	addr := dst.Addr().Unmap()
+	if !addr.IsValid() || dst.Port() == 0 || addr.IsLoopback() || addr.IsUnspecified() ||
+		addr == tsaddr.TailscaleServiceIP() || addr == tsaddr.TailscaleServiceIPv6() || slices.Contains(self, addr) {
+		return fmt.Errorf("dial %v: %w", dst, errNodeLocal)
+	}
+	return nil
 }
 
 func unmap(ap netip.AddrPort) netip.AddrPort {

@@ -106,21 +106,3 @@ func flowCount(r *udpRelay) int {
 	defer r.mu.Unlock()
 	return len(r.flows)
 }
-
-func TestCapturable(t *testing.T) {
-	for addr, want := range map[string]bool{
-		"192.0.2.1:443":           true,
-		"[2001:db8::1]:53":        true,
-		"127.0.0.1:443":           false,
-		"[::1]:443":               false,
-		"0.0.0.0:443":             false,
-		"192.0.2.1:0":             false,
-		"100.100.100.100:53":      false,
-		"[fd7a:115c:a1e0::53]:53": false,
-		"100.64.0.7:22":           true,
-	} {
-		if got := capturable(netip.MustParseAddrPort(addr)); got != want {
-			t.Errorf("capturable(%s) = %v, want %v", addr, got, want)
-		}
-	}
-}

@@ -13,8 +13,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"tailscale.com/net/tsaddr"
 )
 
 const (
@@ -22,22 +20,8 @@ const (
 	udpFlowIdleTimeout     = time.Minute
 )
 
-// capturable reports whether dst can be a captured flow's destination. A
-// loopback or unspecified one means a client reached the listener directly.
-// The Tailscale service IP is refused because this node's resolver answers
-// there and forwards to the exit node's DNS, around the exit node's policy.
-func capturable(dst netip.AddrPort) bool {
-	addr := dst.Addr()
-	return addr.IsValid() && !addr.IsLoopback() && !addr.IsUnspecified() && dst.Port() != 0 &&
-		addr != tsaddr.TailscaleServiceIP() && addr != tsaddr.TailscaleServiceIPv6()
-}
-
 func proxyTransparentTCP(client *net.TCPConn, dst netip.AddrPort, dial netstackDial) {
 	defer client.Close()
-	if !capturable(dst) {
-		slog.Warn("transparent TCP: refusing destination", slog.String("dst", dst.String()))
-		return
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), transparentDialTimeout)
 	backend, err := dial(ctx, "tcp", dst)
 	cancel()
@@ -82,10 +66,6 @@ func newUDPRelay(dial netstackDial, openReply func(netip.AddrPort) (net.PacketCo
 
 // forward sends payload, captured from src on its way to dst, to dst.
 func (r *udpRelay) forward(src, dst netip.AddrPort, payload []byte) {
-	if !capturable(dst) {
-		slog.Warn("transparent UDP: refusing destination", slog.String("dst", dst.String()))
-		return
-	}
 	flow, err := r.flow(udpFlowKey{src: src, dst: dst})
 	if err != nil {
 		slog.Info("transparent UDP: open flow failed", slog.String("src", src.String()), slog.String("dst", dst.String()), slog.Any("error", err))

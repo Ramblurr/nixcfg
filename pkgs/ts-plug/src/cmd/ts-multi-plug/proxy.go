@@ -50,22 +50,26 @@ func (d *tailnetDialer) Dial(ctx context.Context, network, addr string) (net.Con
 	if err != nil {
 		return nil, err
 	}
-	if d.viaNetstack != nil {
-		if !resolved {
+	if !resolved {
+		if d.viaNetstack != nil {
 			return nil, fmt.Errorf("resolve %q through the tailnet: no addresses", addr)
 		}
-		dst, err := netip.ParseAddrPort(resolvedAddr)
-		if err != nil {
-			return nil, err
-		}
-		return d.viaNetstack(ctx, network, dst)
-	}
-	if !resolved {
 		slog.Debug("dialing through tailnet with original host",
 			slog.String("network", network),
 			slog.String("addr", addr),
 		)
 		return d.ts.Dial(ctx, network, addr)
+	}
+	dst, err := netip.ParseAddrPort(resolvedAddr)
+	if err != nil {
+		return nil, err
+	}
+	if d.viaNetstack != nil {
+		return d.viaNetstack(ctx, network, dst)
+	}
+	ip4, ip6 := d.ts.TailscaleIPs()
+	if err := checkTailnetDst(dst, ip4, ip6); err != nil {
+		return nil, err
 	}
 	slog.Debug("dialing through tailnet",
 		slog.String("network", network),

@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -17,10 +18,6 @@ import (
 	"tailscale.com/net/tsaddr"
 )
 
-// Guest-originated dials reach the tailnet and never this node itself. In
-// netstack a dial to the node's own address or to a Tailscale service IP is
-// answered by the node's own handlers, such as PeerAPI and the quad-100
-// resolver, with the node as its source.
 func TestGuestDialsNeverReachTheNode(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -49,18 +46,19 @@ func TestGuestDialsNeverReachTheNode(t *testing.T) {
 	if len(st.Self.PeerAPIURL) == 0 {
 		t.Fatal("plug has no PeerAPI")
 	}
-	nodeLocal := []netip.AddrPort{
-		netip.AddrPortFrom(tsaddr.TailscaleServiceIP(), 53),
-		netip.AddrPortFrom(tsaddr.TailscaleServiceIPv6(), 53),
-		netip.AddrPortFrom(netip.AddrFrom16(tsaddr.TailscaleServiceIP().As16()), 53),
-	}
+	var peerAPI []netip.AddrPort
 	for _, u := range st.Self.PeerAPIURL {
 		parsed, err := url.Parse(u)
 		if err != nil {
 			t.Fatal(err)
 		}
-		nodeLocal = append(nodeLocal, netip.MustParseAddrPort(parsed.Host))
+		peerAPI = append(peerAPI, netip.MustParseAddrPort(parsed.Host))
 	}
+	nodeLocal := append([]netip.AddrPort{
+		netip.AddrPortFrom(tsaddr.TailscaleServiceIP(), 53),
+		netip.AddrPortFrom(tsaddr.TailscaleServiceIPv6(), 53),
+		netip.AddrPortFrom(netip.AddrFrom16(tsaddr.TailscaleServiceIP().As16()), 53),
+	}, peerAPI...)
 
 	dial, err := newNetstackDial(plug)
 	if err != nil {
@@ -95,8 +93,7 @@ func TestGuestDialsNeverReachTheNode(t *testing.T) {
 		if code, body := get(peerWeb); code != http.StatusOK || body != "peer" {
 			t.Errorf("GET %v = %d %q, want 200 \"peer\"", peerWeb, code, body)
 		}
-		for _, u := range st.Self.PeerAPIURL {
-			dst := netip.MustParseAddrPort(strings.TrimPrefix(u, "http://"))
+		for _, dst := range peerAPI {
 			if code, body := get(dst); code != http.StatusBadGateway {
 				t.Errorf("GET PeerAPI %v = %d %q, want 502", dst, code, body)
 			}
@@ -148,8 +145,6 @@ func TestGuestDialsNeverReachTheNode(t *testing.T) {
 	})
 }
 
-// connectStatus sends CONNECT dst to the HTTP proxy at proxyAddr and returns
-// the response status.
 func connectStatus(t *testing.T, proxyAddr string, dst netip.AddrPort) int {
 	t.Helper()
 	conn, err := net.Dial("tcp", proxyAddr)
@@ -166,8 +161,6 @@ func connectStatus(t *testing.T, proxyAddr string, dst netip.AddrPort) int {
 	return resp.StatusCode
 }
 
-// transparentGET hands a client connection captured on its way to dst to the
-// transparent TCP path, sends a GET and returns whatever comes back.
 func transparentGET(t *testing.T, dial netstackDial, dst netip.AddrPort) string {
 	t.Helper()
 	ln, err := net.ListenTCP("tcp", &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)})
@@ -193,12 +186,37 @@ func transparentGET(t *testing.T, dial netstackDial, dst netip.AddrPort) string 
 	return string(reply)
 }
 
-// udpArrives relays a datagram captured from src on its way to dst and
-// reports whether l, listening at dst, receives it.
 func udpArrives(relay *udpRelay, src, dst netip.AddrPort, l net.PacketConn) bool {
 	relay.forward(src, dst, []byte("ping"))
 	l.SetReadDeadline(time.Now().Add(2 * time.Second))
 	buf := make([]byte, 16)
 	n, _, err := l.ReadFrom(buf)
 	return err == nil && string(buf[:n]) == "ping"
+}
+
+func TestCheckTailnetDst(t *testing.T) {
+	self := []netip.Addr{netip.MustParseAddr("100.64.0.7"), netip.MustParseAddr("fd7a:115c:a1e0::7")}
+	for addr, ok := range map[string]bool{
+		"192.0.2.1:443":               true,
+		"[2001:db8::1]:53":            true,
+		"100.64.0.8:22":               true,
+		"127.0.0.1:443":               false,
+		"[::1]:443":                   false,
+		"0.0.0.0:443":                 false,
+		"192.0.2.1:0":                 false,
+		"100.100.100.100:53":          false,
+		"[::ffff:100.100.100.100]:53": false,
+		"[fd7a:115c:a1e0::53]:53":     false,
+		"100.64.0.7:22":               false,
+		"[::ffff:100.64.0.7]:22":      false,
+		"[fd7a:115c:a1e0::7]:443":     false,
+	} {
+		err := checkTailnetDst(netip.MustParseAddrPort(addr), self...)
+		if ok && err != nil {
+			t.Errorf("checkTailnetDst(%s) = %v, want nil", addr, err)
+		}
+		if !ok && !errors.Is(err, errNodeLocal) {
+			t.Errorf("checkTailnetDst(%s) = %v, want errNodeLocal", addr, err)
+		}
+	}
 }
