@@ -18,7 +18,6 @@ in
         guestAddress = "10.77.0.2";
         dnsResolver = "198.51.100.10";
       };
-      tailscale.advertiseTags = [ "tag:moot-wright" ];
       credentials = [ "GITHUB_TOKEN" ];
       nix = {
         substituters = [ "https://moot-cache.example.ts.net" ];

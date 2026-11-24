@@ -9,19 +9,26 @@ let
       extraModules = [ extra ];
     };
   guest = mkGuest { };
-  untagged = mkGuest { modules.microvm-guest.mootWright.tailscale.advertiseTags = lib.mkForce [ ]; };
   cfg = guest.config;
   wright = cfg.modules.microvm-guest.mootWright;
   inherit (wright) name network;
+  netns = "moot-${name}";
   service = n: cfg.systemd.services.${n};
   gitConfig = lib.foldl' lib.recursiveUpdate { } cfg.programs.git.config;
-  tsPlugScript = c: c.systemd.services."ts-plug-${name}".serviceConfig.ExecStart;
-  confined = [
-    "ts-plug-${name}"
-    "t3-${name}"
-    "user@2001"
-    "nix-daemon"
-  ];
+  record = {
+    tap = {
+      id = network.tapId;
+      inherit (network) hostAddress guestAddress;
+    };
+    uplink = {
+      id = "mn-${name}";
+      hostAddress = "172.31.255.1";
+      nodeAddress = "172.31.255.2";
+    };
+    advertiseTags = [ "tag:moot-wright" ];
+    authKeyFile = "/run/keys/${name}-ts-authkey";
+    inherit (network) dnsResolver;
+  };
   mkBareHost =
     extra:
     (inputs.nixpkgs.lib.nixosSystem {
@@ -46,35 +53,34 @@ let
   failures =
     scope: c:
     lib.filter (lib.hasInfix scope) (map (a: a.message) (lib.filter (a: !a.assertion) c.assertions));
-  tapFailures =
-    hostAddress: guestAddress: prefixLength:
-    failures "mootWright"
-      (mkGuest {
-        modules.microvm-guest.mootWright.network = {
-          hostAddress = lib.mkForce hostAddress;
-          guestAddress = lib.mkForce guestAddress;
-          prefixLength = lib.mkForce prefixLength;
+  nodeHost =
+    {
+      nodes ? {
+        ${name} = record;
+      },
+      vms ? {
+        ${name} = {
+          evaluatedConfig = guest;
+          autostart = false;
         };
-      }).config;
-  tapHost =
-    guests:
+      },
+    }:
     mkBareHost {
-      systemd.network.enable = true;
-      modules.microvm-host.isolatedTaps = {
-        uplinks = [ "eth1" ];
-        inherit guests;
+      modules.microvm-host = {
+        mootNodeUplinks = [ "eth1" ];
+        mootNodes = nodes;
       };
+      microvm.vms = vms;
     };
-  tapHostFailures = guests: failures "isolatedTaps" (tapHost guests);
-  disjointHost = tapHost disjointTaps;
-  disjointTaps = {
-    a = {
-      tapId = "tap-a";
-      hostAddress = "10.0.0.1";
-    };
-    b = {
-      tapId = "tap-b";
-      hostAddress = "10.0.0.5";
+  nodeFailures = args: failures "mootNodes" (nodeHost args);
+  host = nodeHost { };
+  hostUnit = n: host.systemd.services.${n};
+  envFile = c: c.environment.etc."moot-nodes/${name}.env".text;
+  other = lib.recursiveUpdate record {
+    uplink = {
+      id = "mn-other";
+      hostAddress = "172.31.255.5";
+      nodeAddress = "172.31.255.6";
     };
   };
 in
@@ -96,7 +102,7 @@ assert lib.assertMsg (
     }
   ]
   && !cfg.modules.microvm-guest.autoNetSetup.enable
-) "the wright's only interface is its host-local tap";
+) "the wright's only interface is its tap";
 assert lib.assertMsg (
   !cfg.systemd.sockets.sshd.enable
   && !(cfg.systemd.services ? sshd)
@@ -112,17 +118,19 @@ assert lib.assertMsg (
 assert lib.assertMsg (lib.all
   (n: builtins.elem "/run/host-secrets" (service n).unitConfig.RequiresMountsFor)
   [
-    "ts-plug-${name}"
     "moot-wright-credentials"
     "nix-daemon"
   ]
 ) "every host-secrets consumer waits for the share";
-assert lib.assertMsg (lib.all (
-  n:
-  builtins.elem "nftables.service" (service n).bindsTo
-  && builtins.elem "systemd-netns-private-access-moot-${name}.service" (service n).bindsTo
-  && builtins.elem "systemd-netns-private-access-moot-${name}.service" (service n).after
-) confined) "confined units start after and stop with nftables and the namespace";
+assert lib.assertMsg (
+  !(cfg.systemd.services ? "ts-plug-${name}")
+  && !(cfg.users.users ? "ts-${name}")
+  && !(cfg.systemd.services ? "systemd-netns-private-${netns}")
+  && lib.all (n: !((service n).serviceConfig ? NetworkNamespacePath)) [
+    "t3-${name}"
+    "nix-daemon"
+  ]
+) "the guest runs no tailnet node and no network namespace";
 assert lib.assertMsg (
   cfg.nix.settings.max-jobs == 0
   && cfg.nix.settings.extra-substituters == [ "https://moot-cache.example.ts.net" ]
@@ -134,40 +142,95 @@ assert lib.assertMsg (
   && gitConfig.user.name == name
   && wright.identity.matrixId == "@${name}:moot.land"
 ) "the wright's identity defaults to its name";
+assert lib.assertMsg (lib.any (lib.hasInfix "distinct host addresses") (
+  failures "mootWright"
+    (mkGuest {
+      modules.microvm-guest.mootWright.network.guestAddress = lib.mkForce "10.77.0.5";
+    }).config
+)) "the guest's tap addresses share one subnet";
 assert lib.assertMsg (
-  lib.any (lib.hasInfix "namespace link") (tapFailures "192.168.255.1" "192.168.255.2" 23)
-  && tapFailures "192.168.254.6" "192.168.254.5" 30 == [ ]
-  && lib.any (lib.hasInfix "distinct host addresses") (tapFailures "10.77.0.1" "10.77.0.5" 30)
-  && lib.any (lib.hasInfix "distinct host addresses") (tapFailures "10.77.0.0" "10.77.0.2" 30)
-) "the guest tap subnet must miss the namespace link and hold both tap addresses";
+  nodeFailures { } == [ ]
+  &&
+    nodeFailures {
+      nodes = {
+        ${name} = record;
+        inherit other;
+      };
+    } == [ ]
+) "a node record that agrees with its guest passes";
 assert lib.assertMsg (
-  failures "isolatedTaps" disjointHost == [ ]
-  && lib.any (lib.hasInfix "share tap ids: tap-a") (
-    tapHostFailures (lib.recursiveUpdate disjointTaps { b.tapId = "tap-a"; })
-  )
-  && lib.any (lib.hasInfix "overlapping subnets: a/b") (
-    tapHostFailures (lib.recursiveUpdate disjointTaps { a.prefixLength = 29; })
-  )
-) "isolated taps need unique tap ids and disjoint subnets";
+  lib.any (lib.hasInfix "disagrees with its guest on t3Port") (nodeFailures {
+    nodes.${name} = record // {
+      t3Port = 3781;
+    };
+  })
+  && lib.any (lib.hasInfix "disagrees with its guest on tap.guestAddress") (nodeFailures {
+    nodes.${name} = lib.recursiveUpdate record {
+      tap.guestAddress = "10.77.0.1";
+      tap.hostAddress = "10.77.0.2";
+    };
+  })
+  && lib.any (lib.hasInfix "${name} has no modules.microvm-host.mootNodes record") (nodeFailures {
+    nodes = { };
+  })
+) "the host checks every wright VM against its node record";
+assert lib.assertMsg (
+  lib.any (lib.hasInfix "share uplink ids: mn-${name}") (nodeFailures {
+    vms = { };
+    nodes = {
+      a = record;
+      b = lib.recursiveUpdate other { uplink.id = "mn-${name}"; };
+    };
+  })
+  && lib.any (lib.hasInfix "overlapping uplink subnets: a/b") (nodeFailures {
+    vms = { };
+    nodes = {
+      a = record;
+      b = lib.recursiveUpdate other { uplink.prefixLength = 28; };
+    };
+  })
+  && lib.any (lib.hasInfix "uplink overlaps its tap") (nodeFailures {
+    vms = { };
+    nodes.a = lib.recursiveUpdate record {
+      uplink = {
+        hostAddress = "10.77.0.1";
+        nodeAddress = "10.77.0.2";
+      };
+    };
+  })
+) "node uplinks need unique ids and disjoint subnets, apart from their taps";
 assert lib.assertMsg (lib.all
   (
     u:
-    builtins.elem "nftables.service" u.bindsTo
-    && builtins.elem "nftables.service" u.after
+    u.serviceConfig.NetworkNamespacePath == "/run/netns/${netns}"
+    && builtins.elem "moot-node-netns@${name}.service" u.bindsTo
+    && builtins.elem "moot-node-netns@${name}.service" u.after
     && u.overrideStrategy == "asDropin"
   )
-  (
-    map (n: disjointHost.systemd.services.${n}) [
-      "microvm@a"
-      "microvm-tap-interfaces@a"
-    ]
+  [
+    (hostUnit "microvm@${name}")
+    (hostUnit "microvm-tap-interfaces@${name}")
+  ]
+) "the VM and its tap live in the node's namespace";
+assert lib.assertMsg (
+  builtins.elem "nftables.service" (hostUnit "moot-node-netns@").bindsTo
+  && builtins.elem "moot-node@${name}.service" (hostUnit "microvm@${name}").wants
+) "the node's namespace stops with the host firewall, and the VM pulls in its node";
+assert lib.assertMsg (
+  lib.hasInfix "MOOT_ADVERTISE_TAGS=tag:moot-wright\n" (envFile host)
+  && lib.hasInfix "MOOT_ADVERTISE_TAGS=\n" (
+    envFile (nodeHost {
+      nodes.${name} = record // {
+        advertiseTags = [ ];
+      };
+    })
   )
-) "isolated guests and their taps stop with the host firewall";
+) "a pre-tagged auth key starts the node without tags";
 assert lib.assertMsg (
   !bareHost.networking.nftables.enable
-  && !(bareHost.networking.nftables.tables ? microvm-isolated-taps)
+  && !(bareHost.networking.nftables.tables ? moot-nodes)
   && !(bareHost.boot.kernel.sysctl ? "net.ipv4.conf.all.forwarding")
-) "a host without isolated taps keeps its firewall and sysctls";
+) "a host without node records keeps its firewall and sysctls";
 pkgs.testers.runNixOSTest {
   name = "moot-wright";
   node.specialArgs = { inherit inputs; };
@@ -213,18 +276,13 @@ pkgs.testers.runNixOSTest {
     modules.microvm-host = {
       enable = true;
       baseZfsDataset = "tank/microvms";
-      isolatedTaps = {
-        uplinks = [ "eth1" ];
-        guests.${name} = {
-          inherit (network) tapId hostAddress;
-        };
-      };
+      mootNodeUplinks = [ "eth1" ];
+      mootNodes.${name} = record;
     };
     microvm.vms.${name} = {
       evaluatedConfig = guest;
       autostart = false;
     };
-    networking.firewall.trustedInterfaces = [ network.tapId ];
     networking.interfaces.eth1.ipv4.routes = [
       {
         address = "198.51.100.0";
@@ -239,7 +297,10 @@ pkgs.testers.runNixOSTest {
       wantedBy = [ "multi-user.target" ];
       script = "exec ${lib.getExe pkgs.socat} TCP-LISTEN:8080,fork,reuseaddr SYSTEM:'echo host'";
     };
-    environment.systemPackages = [ pkgs.socat ];
+    environment.systemPackages = [
+      pkgs.socat
+      pkgs.curl
+    ];
     virtualisation = {
       cores = 4;
       memorySize = 5120;
@@ -271,17 +332,23 @@ pkgs.testers.runNixOSTest {
 
     name = "${name}"
     uid = 2001
-    ts_uid = 2101
-    netns = f"moot-{name}"
+    netns = "${netns}"
     state = f"/var/lib/microvms/{name}"
     target = f"root@vsock-mux/{state}/notify.vsock"
     ssh = f"ssh -n {target}"
     authkey = "tskey-auth-moot-wright-test-0b5e"
     proxy_key = "cliproxy-moot-wright-test-7d21"
     home = f"/home/{name}"
-    in_ns = f"ip netns exec {netns}"
+    tap = "${network.tapId}"
+    tap_host = "${network.hostAddress}"
+    guest_addr = "${network.guestAddress}"
+    spoofed = "192.168.1.77"
+    node = f"moot-node@{name}.service"
+    in_node = f"ip netns exec {netns}"
     as_wright = f"setpriv --reuid={uid} --regid={uid} --init-groups"
-    as_ts = f"setpriv --reuid={ts_uid} --regid={ts_uid} --clear-groups"
+    # The public internet, the LAN, the host on the LAN, the node's tap
+    # address, and a tailnet address.
+    targets = [("198.51.100.10", 80), ("192.168.1.2", 80), ("192.168.1.1", 8080), (tap_host, 8080), ("100.100.100.100", 80)]
 
 
     def guest(cmd):
@@ -296,8 +363,12 @@ pkgs.testers.runNixOSTest {
         return guest(f"runuser -l {name} -c {shlex.quote(cmd)}")
 
 
-    def tcp(prefix, addr, port, opts=""):
-        return f"{prefix} socat -T3 - TCP:{addr}:{port},connect-timeout=3{opts} </dev/null"
+    def tcp(addr, port, opts=""):
+        return f"socat -T3 - TCP:{addr}:{port},connect-timeout=3{opts} </dev/null"
+
+
+    def udp(tag, addr, port, opts=""):
+        return f"echo {tag} | socat -u - UDP:{addr}:{port}{opts}"
 
 
     def write_json(path, value):
@@ -309,14 +380,14 @@ pkgs.testers.runNixOSTest {
         return guest(f"systemctl show -P MainPID {unit}").strip()
 
 
-    def drop_count(chain, match):
-        rules = json.loads(host.succeed(f"nft -j list chain inet microvm-isolated-taps {chain}"))["nftables"]
-        for r in rules:
-            expr = r.get("rule", {}).get("expr", [])
-            text = json.dumps(expr)
-            if match in text and any("drop" in e for e in expr):
-                return next(e["counter"]["packets"] for e in expr if "counter" in e)
-        raise Exception(f"no drop rule matching {match} in {chain}")
+    def host_pid(unit):
+        return host.succeed(f"systemctl show -P MainPID {unit}").strip()
+
+
+    def node_drops():
+        rules = json.loads(host.succeed(f"{in_node} nft -j list chain inet moot-node prerouting"))["nftables"]
+        exprs = [r["rule"]["expr"] for r in rules if "rule" in r]
+        return sum(e["counter"]["packets"] for expr in exprs if any("drop" in e for e in expr) for e in expr if "counter" in e)
 
 
     lan.start()
@@ -329,123 +400,129 @@ pkgs.testers.runNixOSTest {
     host.succeed("zpool create -O mountpoint=none -O acltype=posixacl -O xattr=sa tank /dev/vdb")
     host.succeed(
         f"install -d -m 0700 /run/microvms/secrets/{name}"
-        f" && printf %s {authkey} > /run/microvms/secrets/{name}/ts-authkey"
         f" && printf %s {proxy_key} > /run/microvms/secrets/{name}/cliproxy-key"
         f" && install -m 0400 /etc/microvm-test-key /run/microvms/secrets/{name}/nix-builder-key"
         f" && chmod 0400 /run/microvms/secrets/{name}/*"
+        f" && install -d -m 0700 /run/keys"
+        f" && printf %s {authkey} > /run/keys/{name}-ts-authkey"
+        f" && chmod 0400 /run/keys/{name}-ts-authkey"
     )
     host.succeed(f"systemctl start microvm@{name}.service")
     host.wait_until_succeeds(f"{ssh} true", timeout=600)
+    host.wait_for_unit(node)
     guest("systemctl is-system-running --wait || true")
     boot_id = guest("cat /proc/sys/kernel/random/boot_id").strip()
 
-    with subtest("the guest is reachable only over VSOCK"):
-        host.succeed("ip -4 addr show ${network.tapId} | grep -q '${network.hostAddress}/30'")
-        guest("ip -4 addr show uplink | grep -q '${network.guestAddress}/30'")
+    with subtest("the VM's tap and its node live only in the node's namespace"):
+        host.fail(f"ip link show {tap}")
+        host.succeed(f"{in_node} ip -4 addr show {tap} | grep -q '{tap_host}/30'")
+        for unit in [f"microvm@{name}.service", node]:
+            assert host.succeed(f"ip netns identify {host_pid(unit)}").strip() == netns, unit
+        guest(f"ip -4 addr show uplink | grep -q '{guest_addr}/30'")
         guest("! ss -Htln | grep -q ':22 '")
         guest("test -s /var/lib/ssh/ssh_host_ed25519_key")
         guest("findmnt -n -o FSTYPE /nix/.rw-store | grep -qx ext4")
 
-    with subtest("the wright, T3, ts-plug and nix-daemon run in the wright's namespace"):
-        guest("systemctl start moot-wright-config.service t3-${name}.service")
-        guest(f"systemctl is-active t3-{name}.service ts-plug-{name}.service user@{uid}.service")
-        guest("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
-        root_ns = guest("readlink /proc/1/ns/net").strip()
-        for unit in [f"t3-{name}", f"ts-plug-{name}", f"user@{uid}", "nix-daemon"]:
-            pid = main_pid(unit)
-            assert guest(f"ip netns identify {pid}").strip() == netns, unit
-            assert guest(f"readlink /proc/{pid}/ns/net").strip() != root_ns, unit
-        listening = shlex.quote(f"{in_ns} ss -Htln | grep -q 127.0.0.1:3780")
-        host.wait_until_succeeds(f"{ssh} {listening}", timeout=300)
-        guest_fail("ss -Htln | grep -q 127.0.0.1:3780")
+    with subtest("the guest holds no tailnet key and no node state"):
+        guest("! pgrep -f ts-plug")
+        guest(f"! getent passwd ts-{name}")
+        guest("! ls /var/lib | grep -q ts-plug")
+        guest("! test -e /run/host-secrets/ts-authkey")
+        # grep exits 1 only when it read everything and matched nothing.
+        guest(f"rc=0; grep -rlFs -D skip -e {authkey} /nix/store /etc /var /home /run || rc=$?; test $rc -eq 1")
+        environ = host.succeed(f"tr '\\0' '\\n' < /proc/{host_pid(node)}/environ")
+        assert f"TS_AUTHKEY={authkey}" in environ.splitlines(), "the node did not get its auth key"
+        cmdline = host.succeed(f"tr '\\0' ' ' < /proc/{host_pid(node)}/cmdline")
+        for want in [
+            f"-hostname {name} ",
+            f"-https-port 443:{guest_addr}:3780 ",
+            f"-http-proxy {tap_host}:1056 ",
+            "-exit-node ward ",
+            "-dns-resolver 198.51.100.10:53 ",
+            "-transparent-tcp 127.0.0.1:15001 ",
+            "-transparent-udp 127.0.0.1:15001 ",
+            "-advertise-tags tag:moot-wright",
+        ]:
+            assert want in cmdline, f"{want}: {cmdline}"
+        host.succeed(f"test -d /var/lib/private/moot-nodes/{name}")
 
-    with subtest("nix-daemon serves root and the wright and fetches through ts-plug"):
+    with subtest("T3 answers the node's inbound path and nothing else"):
+        guest(f"systemctl start moot-wright-config.service t3-{name}.service")
+        guest(f"systemctl is-active t3-{name}.service user@{uid}.service")
+        # The node's -https-port 443:<guest>:3780 reverse proxy dials this
+        # address from the node's namespace. Without a control server the
+        # node cannot log in, so a client in that namespace stands in for it.
+        host.wait_until_succeeds(
+            f"{in_node} curl -s -o /dev/null -w '%{{http_code}}' http://{guest_addr}:3780/ | grep -qv '^000$'",
+            timeout=300,
+        )
+        guest(f"ss -Htln | grep -q '{guest_addr}:3780'")
+        host.fail(f"curl -s --connect-timeout 3 http://{guest_addr}:3780/")
+        lan.fail(f"socat -T3 - TCP:{guest_addr}:3780,connect-timeout=3 </dev/null")
+
+    with subtest("nix-daemon serves root and the wright and fetches through the node's proxy"):
         guest("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
         wright("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
         environ = guest(f"tr '\\0' '\\n' < /proc/{main_pid('nix-daemon')}/environ")
-        assert "HTTPS_PROXY=http://127.0.0.1:1056" in environ, environ
+        assert f"HTTPS_PROXY=http://{tap_host}:1056" in environ, environ
         conf = guest("cat /etc/nix/nix.conf")
         assert "max-jobs = 0" in conf, conf
         assert "extra-substituters = https://moot-cache.example.ts.net" in conf, conf
         # Nix reads builders from /etc/nix/machines by default.
         assert "builders =" not in conf, conf
         guest("grep -q '^ssh-ng://nix-ssh@moot-builder.example.ts.net ' /etc/nix/machines")
+        guest(f"grep -q 'connect -x {tap_host}:1056 ' /etc/ssh/ssh_config")
 
-    with subtest("the guest reaches the public internet through the host, masqueraded"):
-        out = guest(tcp("", "198.51.100.10", 80))
-        assert "peer=192.168.1.1" in out, out
-        out = guest(tcp(f"{in_ns} {as_ts}", "198.51.100.10", 80))
-        assert "peer=192.168.1.1" in out, out
+    with subtest("with the node stopped, nothing leaves the VM"):
+        host.succeed(f"systemctl stop {node}")
+        host.succeed(f"systemctl is-active microvm@{name}.service moot-node-netns@{name}.service")
+        guest(f"ip addr add {spoofed}/32 dev uplink")
+        guest("sysctl -qw net.ipv6.conf.uplink.disable_ipv6=0 && ip -6 addr add fd00::2/64 dev uplink nodad && ip -6 route add default dev uplink")
+        before = node_drops()
+        for addr, port in targets:
+            guest_fail(tcp(addr, port))
+            guest_fail(f"{as_wright} {tcp(addr, port)}")
+            guest_fail(tcp(addr, port, f",bind={spoofed}"))
+        for addr in ["198.51.100.10", "192.168.1.1", tap_host]:
+            guest_fail(f"ping -c1 -W2 {addr}")
+        guest_fail("socat -T3 - 'TCP6:[2001:db8::10]:80,connect-timeout=3' </dev/null")
+        guest(udp("leak-root", "198.51.100.10", 9999))
+        guest(f"{as_wright} {udp('leak-wright', '198.51.100.10', 9999)}")
+        guest(udp("leak-spoofed", "198.51.100.10", 9999, f",bind={spoofed}"))
+        guest("echo leak-v6 | socat -u - 'UDP6:[2001:db8::10]:9999' || true")
+        guest("timeout 15 getent hosts leak-dns.example || true")
+        lan.succeed("sleep 3; ! grep -aqs leak /run/udp-sink /run/dns-sink")
+        assert node_drops() > before, "the node's namespace dropped nothing"
 
-    with subtest("the host drops guest traffic to itself and to private ranges"):
-        host.succeed("socat -T3 - TCP:127.0.0.1:8080 </dev/null | grep -qx host")
-        before = drop_count("input", "${network.tapId}")
-        guest_fail(tcp("", "${network.hostAddress}", 8080))
-        guest_fail(tcp("", "192.168.1.1", 8080))
-        assert drop_count("input", "${network.tapId}") > before
-        before = drop_count("forward", "daddr")
-        guest_fail(tcp("", "192.168.1.2", 80))
-        guest_fail(tcp("", "100.100.100.100", 80))
-        assert drop_count("forward", "daddr") > before
-        lan.succeed("socat -T3 - TCP:192.168.1.2:80 </dev/null | grep -q peer=")
+    with subtest("every guest flow arrives at the node's capture and nowhere else"):
+        # The node cannot log in without a control server, so it never opens
+        # its listeners; probes on the same addresses stand in for them.
+        host.succeed(f"systemd-run --unit=capture-tcp {in_node} socat TCP-LISTEN:15001,bind=127.0.0.1,ip-transparent,reuseaddr,fork SYSTEM:'echo captured'")
+        host.succeed(f"systemd-run --unit=capture-udp {in_node} socat -u UDP-RECV:15001,bind=127.0.0.1,ip-transparent,reuseaddr OPEN:/run/captured-udp,creat,append")
+        host.succeed(f"systemd-run --unit=proxy-probe {in_node} socat TCP-LISTEN:1056,bind={tap_host},reuseaddr,fork SYSTEM:'echo proxy'")
+        host.succeed("sleep 1")
+        for addr, port in targets:
+            assert guest(tcp(addr, port)).strip() == "captured", f"{addr}:{port}"
+            guest_fail(tcp(addr, port, f",bind={spoofed}"))
+        assert guest(tcp(tap_host, 1056)).strip() == "proxy"
+        guest(udp("captured-udp", "198.51.100.10", 9999))
+        guest(udp("spoofed-udp", "198.51.100.10", 9999, f",bind={spoofed}"))
+        guest("timeout 5 getent hosts captured-dns.example || true")
+        host.wait_until_succeeds("grep -aq captured-udp /run/captured-udp && grep -aq captured-dns /run/captured-udp")
+        host.succeed("sleep 2; ! grep -aq spoofed /run/captured-udp")
+        lan.succeed("! grep -aqs -e leak -e captured -e spoofed /run/udp-sink /run/dns-sink")
+        host.succeed("systemctl stop capture-tcp capture-udp proxy-probe")
+        guest(f"ip addr del {spoofed}/32 dev uplink && ip -6 addr del fd00::2/64 dev uplink")
+        host.succeed(f"systemctl start {node}")
 
-    with subtest("the host drops connections into the guest"):
+    with subtest("nothing outside the node reaches into the guest"):
         guest("systemd-run --unit=guest-echo socat TCP-LISTEN:7000,fork,reuseaddr SYSTEM:'echo guest'")
         guest("sleep 1; socat -T3 - TCP:127.0.0.1:7000 </dev/null | grep -qx guest")
-        before = drop_count("forward", "oifname")
-        lan.fail("socat -T3 - TCP:10.77.0.2:7000,connect-timeout=3 </dev/null")
-        assert drop_count("forward", "oifname") > before
-
-    with subtest("the namespace reaches neither the guest nor private ranges"):
-        for addr, port in [("192.168.254.1", 7000), ("${network.guestAddress}", 7000), ("192.168.1.2", 80), ("${network.hostAddress}", 8080)]:
-            guest_fail(tcp(f"{in_ns} {as_ts}", addr, port))
-
-    with subtest("with ts-plug stopped, nothing but ts-plug leaves the namespace"):
-        guest(f"systemctl stop ts-plug-{name}.service")
-        guest(f"systemctl is-active t3-{name}.service user@{uid}.service systemd-netns-private-access-{netns}.service")
-        daemon_ns = f"nsenter --net=/proc/{main_pid('nix-daemon')}/ns/net"
-        assert guest(f"ip netns identify {main_pid('nix-daemon')}").strip() == netns
-        for prefix in [f"{in_ns} {as_wright}", daemon_ns, f"{in_ns}"]:
-            out = guest(f"{tcp(prefix, '198.51.100.10', 80)} 2>&1 || true")
-            assert "Connection refused" in out, f"{prefix}: {out}"
-            guest_fail(f"{prefix} socat -T3 - 'TCP6:[2001:db8::10]:80,connect-timeout=3' </dev/null")
-            guest_fail(f"{prefix} ping -c1 -W2 198.51.100.10")
-        guest("ping -c1 -W2 198.51.100.10")
-        guest(f"echo leak-wright | {in_ns} {as_wright} socat -u - UDP:198.51.100.10:9999")
-        guest(f"echo leak-daemon | {daemon_ns} socat -u - UDP:198.51.100.10:9999")
-        guest(f"echo ok-ts | {in_ns} {as_ts} socat -u - UDP:198.51.100.10:9999")
-        guest("echo ok-root | socat -u - UDP:198.51.100.10:9999")
-        bound = [",so-bindtodevice=mw-ns", ",bind=192.168.254.2"]
-        out = guest(tcp(f"{in_ns} {as_ts}", "198.51.100.10", 80, bound[0]))
-        assert "peer=192.168.1.1" in out, out
-        guest(f"echo ok-ts-bound | {in_ns} {as_ts} socat -u - UDP:198.51.100.10:9999{bound[0]}")
-        for opts in bound:
-            guest_fail(tcp(f"{in_ns} {as_wright}", "198.51.100.10", 80, opts))
-            guest(f"echo leak-bound | {in_ns} {as_wright} socat -u - UDP:198.51.100.10:9999{opts} || true")
-        lan.wait_until_succeeds("grep -q ok-ts /run/udp-sink && grep -q ok-root /run/udp-sink && grep -q ok-ts-bound /run/udp-sink")
-        lan.succeed("sleep 3; ! grep -q leak /run/udp-sink")
-        guest(f"systemd-run --unit=capture-probe {in_ns} $(command -v socat) TCP-LISTEN:15001,bind=127.0.0.1,ip-transparent,reuseaddr,fork SYSTEM:'echo captured'")
-        guest(f"sleep 1; {tcp(f'{in_ns} {as_wright}', '198.51.100.10', 80)} | grep -qx captured")
-        guest_fail(tcp(f"{in_ns} {as_wright}", "198.51.100.10", 80, bound[0]))
-        guest("systemctl stop capture-probe")
-
-    with subtest("with ts-plug stopped, the wright resolves nothing through the root namespace"):
-        resolve1 = "busctl --timeout=5 call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager ResolveHostname isit 0"
-        varlink = "varlinkctl --timeout=5 call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.ResolveHostname"
-        for prefix in [f"{in_ns} {as_wright}", as_wright]:
-            guest(f"timeout 15 {prefix} getent hosts leak-libc.example || true")
-            guest(f"timeout 15 {prefix} {resolve1} leak-dbus.example 2 0 || true")
-            guest(f"timeout 15 {prefix} {varlink} " + shlex.quote('{"name":"leak-varlink.example","family":2}') + " || true")
-        guest("timeout 15 getent hosts ok-root.example || true")
-        lan.wait_until_succeeds("grep -aq ok-root /run/dns-sink")
-        lan.succeed("sleep 3; ! grep -aq leak /run/dns-sink")
-
-    with subtest("a wright process outside the namespace has no network"):
-        guest_fail(tcp(as_wright, "198.51.100.10", 80))
-        guest(tcp("", "198.51.100.10", 80))
+        lan.fail(f"socat -T3 - TCP:{guest_addr}:7000,connect-timeout=3 </dev/null")
+        host.fail(f"socat -T3 - TCP:{guest_addr}:7000,connect-timeout=3 </dev/null")
 
     with subtest("the wright cannot notify the host's microvm unit over VSOCK"):
-        for prefix in [f"{in_ns} {as_wright}", as_wright]:
+        for prefix in [as_wright, ""]:
             guest(f"printf STATUS=leak | timeout 5 {prefix} socat -u - VSOCK-CONNECT:2:8888 || true")
         host.succeed("sleep 2")
         host.fail(f"test -e {state}/notify.vsock_8888")
@@ -454,19 +531,14 @@ pkgs.testers.runNixOSTest {
         assert "leak" not in status, status
 
     with subtest("the wright reads only the proxy key"):
-        guest(f"systemctl start ts-plug-{name}.service")
         wright("! ls /run/host-secrets")
-        wright("! cat /run/host-secrets/ts-authkey")
         wright("! cat /run/host-secrets/cliproxy-key")
         assert wright("cat /run/moot-wright/cliproxy-key") == proxy_key
         assert guest("stat -c '%U %a' /run/moot-wright/cliproxy-key").strip() == f"{name} 400"
-        environ = guest(f"tr '\\0' '\\n' < /proc/{main_pid('ts-plug-' + name)}/environ")
-        assert f"TS_AUTHKEY={authkey}" in environ.splitlines(), "ts-plug did not get its auth key"
         t3_env = guest(f"tr '\\0' '\\n' < /proc/{main_pid('t3-' + name)}/environ")
-        assert authkey not in t3_env and proxy_key not in t3_env, t3_env
+        assert proxy_key not in t3_env, t3_env
         assert "TS_EGRESS_PLACEHOLDER_GITHUB_TOKEN" in t3_env, t3_env
-        cmdline = guest(f"tr '\\0' ' ' < /proc/{main_pid('ts-plug-' + name)}/cmdline")
-        assert "-advertise-tags tag:moot-wright" in cmdline, cmdline
+        assert f"HTTPS_PROXY=http://{tap_host}:1056" in t3_env, t3_env
 
     with subtest("the provider wrappers read the key at launch"):
         trace = wright("strace -f -qq -v -s 512 -e trace=execve codex --version 2>&1")
@@ -554,30 +626,25 @@ pkgs.testers.runNixOSTest {
         assert wright("git config init.defaultBranch").strip() == "main"
         assert wright("echo $MOOT_MATRIX_ID").strip() == f"@{name}:moot.land"
 
-    with subtest("a pre-tagged auth key starts ts-plug without -advertise-tags"):
-        script = open("${tsPlugScript untagged.config}").read()
-        assert "-advertise-tags" not in script, script
-        assert "-advertise-tags" in open("${tsPlugScript cfg}").read()
-
     with subtest("deploy still hot-switches the guest over VSOCK"):
         host.succeed(f"timeout 600 ${cfg.microvm.deploy.sshSwitch}/bin/microvm-switch {target}")
         assert guest("cat /proc/sys/kernel/random/boot_id").strip() == boot_id, "the guest rebooted"
         guest("NIX_REMOTE=daemon nix-store -q --hash /run/current-system")
-        assert guest(f"ip netns identify {main_pid('nix-daemon')}").strip() == netns
 
-    with subtest("the guest runs only while the host firewall is loaded"):
+    with subtest("the node runs only while the host firewall is loaded"):
         host.succeed("systemctl reload nftables.service")
         assert guest("cat /proc/sys/kernel/random/boot_id").strip() == boot_id, "a firewall reload restarted the guest"
         host.succeed("systemctl stop nftables.service")
-        host.fail("nft list table inet microvm-isolated-taps")
-        host.fail(f"systemctl is-active microvm@{name}.service")
-        host.fail(f"systemctl is-active microvm-tap-interfaces@{name}.service")
-        host.fail("ip link show ${network.tapId}")
+        host.fail("nft list table inet moot-nodes")
+        for unit in [f"moot-node-netns@{name}", f"microvm@{name}", f"microvm-tap-interfaces@{name}", f"moot-node@{name}"]:
+            host.fail(f"systemctl is-active {unit}.service")
+        host.fail(f"ip netns list | grep -qw {netns}")
         host.succeed("systemctl start nftables.service")
         host.succeed(f"systemctl start microvm@{name}.service")
         host.wait_until_succeeds(f"{ssh} true", timeout=600)
-        out = guest(tcp("", "198.51.100.10", 80))
-        assert "peer=192.168.1.1" in out, out
-        guest_fail(tcp("", "${network.hostAddress}", 8080))
+        host.wait_for_unit(node)
+        host.succeed(f"{in_node} nft list table inet moot-node")
+        guest_fail(tcp("198.51.100.10", 80))
+        guest_fail(tcp(tap_host, 8080))
   '';
 }
