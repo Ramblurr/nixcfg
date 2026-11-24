@@ -74,44 +74,45 @@ let
     ) uplinkSubnets
   );
 
-  wright = vm: (guestConfig vm config.microvm.vms.${vm}).modules.microvm-guest.mootWright or { };
-  isWright = vm: (wright vm).enable or false;
+  guestOf = vm: (guestConfig vm config.microvm.vms.${vm}).modules.microvm-guest;
+  isMootVm = vm: (guestOf vm).mootVm.enable or false;
   guestFailures =
     vm: node:
     let
-      guest = (wright vm).network;
+      guest = guestOf vm;
+      inherit (guest.mootVm) network;
       shared = {
         "tap.id" = [
           node.tap.id
-          guest.tapId
+          network.tapId
         ];
         "tap.hostAddress" = [
           node.tap.hostAddress
-          guest.hostAddress
+          network.hostAddress
         ];
         "tap.guestAddress" = [
           node.tap.guestAddress
-          guest.guestAddress
+          network.guestAddress
         ];
         "tap.prefixLength" = [
           node.tap.prefixLength
-          guest.prefixLength
+          network.prefixLength
         ];
         dnsResolver = [
           node.dnsResolver
-          guest.dnsResolver
+          network.dnsResolver
         ];
         t3Port = [
           node.t3Port
-          guest.t3Port
+          guest.mootWright.t3Port
         ];
         proxyPort = [
           node.proxyPort
-          guest.proxyPort
+          network.proxyPort
         ];
       };
     in
-    if !(isWright vm) then
+    if !(guest.mootWright.enable or false) then
       [ "modules.microvm-host.mootNodes.${vm} names a MicroVM that is not a Moot wright." ]
     else
       lib.concatLists (
@@ -138,8 +139,8 @@ let
     ++ lib.concatLists (
       lib.mapAttrsToList guestFailures (lib.filterAttrs (vm: _: config.microvm.vms ? ${vm}) nodes)
     )
-    ++ map (vm: "Moot wright MicroVM ${vm} has no modules.microvm-host.mootNodes record.") (
-      lib.filter (vm: isWright vm && !(nodes ? ${vm})) (builtins.attrNames config.microvm.vms)
+    ++ map (vm: "Moot MicroVM ${vm} has no modules.microvm-host.mootNodes record.") (
+      lib.filter (vm: isMootVm vm && !(nodes ? ${vm})) (builtins.attrNames config.microvm.vms)
     );
 
   setupNamespace = pkgs.writeShellScript "moot-node-netns" ''

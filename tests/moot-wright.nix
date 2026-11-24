@@ -19,7 +19,8 @@ let
       };
     }).config;
   wright = cfg.modules.microvm-guest.mootWright;
-  inherit (wright) name network;
+  inherit (wright) name;
+  inherit (cfg.modules.microvm-guest.mootVm) network zvolSize;
   netns = "moot-${name}";
   service = n: cfg.systemd.services.${n};
   gitConfig = lib.foldl' lib.recursiveUpdate { } cfg.programs.git.config;
@@ -102,7 +103,7 @@ assert lib.assertMsg
   (
     cfg.microvm.hypervisor == "cloud-hypervisor"
     && cfg.microvm.storeOnDisk
-    && cfg.modules.microvm-guest.zvols.nix-rw.size == wright.zvolSize
+    && cfg.modules.microvm-guest.zvols.nix-rw.size == zvolSize
     && cfg.microvm.vsock.ssh.enable
     && cfg.microvm.credentialFiles == { }
     && !cfg.modules.microvm-guest.bootstrapSops.enable
@@ -163,9 +164,9 @@ assert lib.assertMsg (
   && wright.identity.matrixId == "@${name}:moot.land"
 ) "the wright's identity defaults to its name";
 assert lib.assertMsg (lib.any (lib.hasInfix "distinct host addresses") (
-  failures "mootWright"
+  failures "mootVm"
     (mkGuest {
-      modules.microvm-guest.mootWright.network.guestAddress = lib.mkForce "10.77.0.5";
+      modules.microvm-guest.mootVm.network.guestAddress = lib.mkForce "10.77.0.5";
     }).config
 )) "the guest's tap addresses share one subnet";
 assert lib.assertMsg (

@@ -10,17 +10,15 @@ let
   inherit (cfg) name;
   inherit (config.repo.secrets.global.domain) tailnet;
   hostSecretsMount = config.modules.microvm-guest.hostSecrets.mountPoint;
+  vm = config.modules.microvm-guest.mootVm;
   agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   models = import ../dev/llms/models.nix;
   json = pkgs.formats.json { };
-  ipv4 = import ../../lib/ipv4.nix { inherit lib; };
 
   uid = 2001;
   home = "/home/${name}";
   configHome = "${home}/.config";
-  uplink = "uplink";
-  mac = lib.my.generateMacAddress "1-moot-${name}";
-  proxyAddress = "${cfg.network.hostAddress}:${toString cfg.network.proxyPort}";
+  proxyAddress = "${vm.network.hostAddress}:${toString vm.network.proxyPort}";
 
   pluginsStateDir = "${home}/.local/share/ol-plugins-sync";
   t3Home = "${home}/.t3";
@@ -31,19 +29,6 @@ let
     piT3 = "${configHome}/pi-t3/agent";
   };
 
-  proxyEnv =
-    let
-      proxy = "http://${proxyAddress}";
-      noProxy = "localhost,127.0.0.1,::1";
-    in
-    {
-      HTTPS_PROXY = proxy;
-      HTTP_PROXY = proxy;
-      https_proxy = proxy;
-      http_proxy = proxy;
-      NO_PROXY = noProxy;
-      no_proxy = noProxy;
-    };
   # The egress signs decrypted flows with its own CA. Node keeps its own
   # roots, so it needs the CA named on top of the system bundle.
   egressCa = ../../config/ts-egress-ca.pem;
@@ -52,7 +37,7 @@ let
     NODE_EXTRA_CA_CERTS = "${egressCa}";
   };
   wrightEnv =
-    proxyEnv
+    vm.proxyEnv
     // caEnv
     // lib.genAttrs cfg.credentials (n: "TS_EGRESS_PLACEHOLDER_${n}")
     // {
@@ -278,39 +263,10 @@ in
       description = "The wright's name: its Unix user and identity.";
     };
 
-    network = {
-      tapId = lib.mkOption {
-        type = lib.types.strMatching "[a-zA-Z0-9-]{1,15}";
-        description = "Tap interface name; must match the host's mootNodes record.";
-      };
-      hostAddress = lib.mkOption {
-        inherit (ipv4) type;
-        description = "The tailnet node's IPv4 address on the tap, used as the default gateway.";
-      };
-      guestAddress = lib.mkOption {
-        inherit (ipv4) type;
-        description = "Guest IPv4 address on the tap.";
-      };
-      prefixLength = lib.mkOption {
-        type = lib.types.ints.between 1 32;
-        default = 30;
-        description = "Prefix length of the tap subnet.";
-      };
-      dnsResolver = lib.mkOption {
-        type = lib.types.str;
-        default = "1.1.1.1";
-        description = "Public numeric DNS server for the guest; the node carries its queries through the exit node.";
-      };
-      t3Port = lib.mkOption {
-        type = lib.types.port;
-        default = 3780;
-        description = "Port T3 listens on at the guest address, the target of the node's tailnet HTTPS.";
-      };
-      proxyPort = lib.mkOption {
-        type = lib.types.port;
-        default = 1056;
-        description = "Port of the node's HTTP proxy at hostAddress, which resolves tailnet names.";
-      };
+    t3Port = lib.mkOption {
+      type = lib.types.port;
+      default = 3780;
+      description = "Port T3 listens on at the guest address, the target of the node's tailnet HTTPS.";
     };
 
     cliproxy.url = lib.mkOption {
@@ -327,16 +283,6 @@ in
         default = if cfg.nix.remoteBuilder == null then lib.max 1 (config.microvm.vcpu / 2) else 0;
         defaultText = lib.literalExpression "if remoteBuilder == null then max 1 (microvm.vcpu / 2) else 0";
         description = "Local build jobs; 0 builds only on the remote builder.";
-      };
-      substituters = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Extra binary caches, fetched through the node's proxy.";
-      };
-      trustedPublicKeys = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [ ];
-        description = "Signing keys for the extra binary caches.";
       };
       remoteBuilder = lib.mkOption {
         default = null;
@@ -425,11 +371,6 @@ in
       '';
     };
 
-    zvolSize = lib.mkOption {
-      type = lib.types.ints.positive;
-      description = "Size in MiB of the zvol holding the writable store.";
-    };
-
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [ ];
@@ -438,21 +379,11 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    assertions =
-      let
-        inherit (cfg.network) hostAddress guestAddress prefixLength;
-      in
-      [
-        {
-          assertion = ipv4.isLink hostAddress guestAddress prefixLength;
-          message = "mootWright needs hostAddress and guestAddress to be distinct host addresses of one /${toString prefixLength}.";
-        }
-      ];
-
     modules.microvm-guest = {
-      autoNetSetup.enable = false;
-      nixStoreBackend = "blk";
-      writableStoreOverlay.zvolSize = cfg.zvolSize;
+      mootVm = {
+        enable = true;
+        network.ingressPort = cfg.t3Port;
+      };
       mounts = [
         "var/lib"
         "home"
@@ -462,67 +393,6 @@ in
         services = [ "nix-daemon" ];
       };
     };
-    microvm = {
-      hypervisor = "cloud-hypervisor";
-      interfaces = [
-        {
-          type = "tap";
-          id = cfg.network.tapId;
-          inherit mac;
-        }
-      ];
-    };
-
-    networking.useDHCP = false;
-    systemd.network = {
-      enable = true;
-      links."30-${uplink}" = {
-        matchConfig.MACAddress = mac;
-        linkConfig.Name = uplink;
-      };
-      networks."30-${uplink}" = {
-        matchConfig.MACAddress = mac;
-        address = [ "${cfg.network.guestAddress}/${toString cfg.network.prefixLength}" ];
-        gateway = [ cfg.network.hostAddress ];
-        networkConfig = {
-          LinkLocalAddressing = "no";
-          IPv6AcceptRA = false;
-        };
-      };
-    };
-    networking.firewall.interfaces.${uplink}.allowedTCPPorts = [ cfg.network.t3Port ];
-    services.resolved.enable = false;
-    networking.resolvconf.enable = false;
-    environment.etc."resolv.conf".text = ''
-      nameserver ${cfg.network.dnsResolver}
-    '';
-
-    modules.users.enable = lib.mkForce false;
-    modules.services.sshd.enable = lib.mkForce false;
-    security.sudo.enable = false;
-    users.allowNoPasswordLogin = true;
-    services.openssh = {
-      startWhenNeeded = true;
-      openFirewall = false;
-      hostKeys = [
-        {
-          path = "/var/lib/ssh/ssh_host_ed25519_key";
-          type = "ed25519";
-        }
-      ];
-      settings = {
-        PermitRootLogin = "prohibit-password";
-        PasswordAuthentication = false;
-        KbdInteractiveAuthentication = false;
-      };
-    };
-    systemd.sockets.sshd.enable = false;
-    systemd.services."sshd-vsock@" = {
-      wants = [ "sshd-keygen.service" ];
-      after = [ "sshd-keygen.service" ];
-    };
-
-    security.pki.certificateFiles = [ egressCa ];
 
     programs.git = {
       enable = true;
@@ -547,11 +417,7 @@ in
     '';
 
     nix = {
-      settings = {
-        max-jobs = cfg.nix.maxJobs;
-        extra-substituters = lib.mkIf (cfg.nix.substituters != [ ]) cfg.nix.substituters;
-        extra-trusted-public-keys = lib.mkIf (cfg.nix.trustedPublicKeys != [ ]) cfg.nix.trustedPublicKeys;
-      };
+      settings.max-jobs = cfg.nix.maxJobs;
       distributedBuilds = builder != null;
       buildMachines = lib.optional (builder != null) {
         inherit (builder)
@@ -608,10 +474,6 @@ in
         after = [ configUnit ];
       };
 
-      nix-daemon.environment = proxyEnv // {
-        inherit (caEnv) SSL_CERT_FILE;
-      };
-
       "t3-${name}" = {
         description = "T3 Code server for ${name}";
         wantedBy = [ "multi-user.target" ];
@@ -637,7 +499,7 @@ in
           User = name;
           Group = name;
           WorkingDirectory = home;
-          ExecStart = "${lib.getExe' t3 "t3"} serve --host ${cfg.network.guestAddress} --port ${toString cfg.network.t3Port} ${home}";
+          ExecStart = "${lib.getExe' t3 "t3"} serve --host ${vm.network.guestAddress} --port ${toString cfg.t3Port} ${home}";
           Restart = "on-failure";
           RestartSec = 5;
         };

@@ -198,11 +198,11 @@ in
           '';
       };
     }
-    # A wright VM's guest processes could otherwise send sd_notify messages
+    # A Moot VM's guest processes could otherwise send sd_notify messages
     # to its host unit over the VSOCK notify relay.
     // lib.concatMapAttrs (
       name: vm:
-      lib.optionalAttrs ((guestConfig name vm).modules.microvm-guest.mootWright.enable or false) {
+      lib.optionalAttrs ((guestConfig name vm).modules.microvm-guest.mootVm.enable or false) {
         "microvm@${name}" = {
           overrideStrategy = "asDropin";
           serviceConfig = {

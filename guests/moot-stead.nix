@@ -13,8 +13,8 @@ in
   modules.microvm-guest = {
     host = "thingstead";
     hostFQDN = "thingstead.${config.site.net.moot.domainName}";
-    mootWright = {
-      enable = true;
+    mootWright.enable = true;
+    mootVm = {
       inherit zvolSize;
       network = {
         tapId = "mw-${config.networking.hostName}";

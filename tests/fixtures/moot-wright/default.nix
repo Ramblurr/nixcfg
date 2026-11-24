@@ -8,9 +8,7 @@ in
   modules.microvm-guest = {
     host = "thingstead";
     hostFQDN = "thingstead.example.test";
-    mootWright = {
-      enable = true;
-      name = "workstead";
+    mootVm = {
       zvolSize = 4096;
       network = {
         tapId = "mw-workstead";
@@ -18,11 +16,15 @@ in
         guestAddress = "10.77.0.2";
         dnsResolver = "198.51.100.10";
       };
-      credentials = [ "GITHUB_TOKEN" ];
       nix = {
         substituters = [ "https://moot-cache.example.ts.net" ];
         trustedPublicKeys = [ "moot-cache:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" ];
       };
+    };
+    mootWright = {
+      enable = true;
+      name = "workstead";
+      credentials = [ "GITHUB_TOKEN" ];
       extraPackages = [ pkgs.socat ];
     };
   };
