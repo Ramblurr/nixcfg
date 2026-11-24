@@ -10,12 +10,13 @@ let
   cfg = config.modules.desktop.programs.voxtype;
   inherit (pkgs.pkgsCuda) cudaPackages;
   onnxruntime = if cfg.cudaSupport then pkgs.pkgsCuda.onnxruntime else pkgs.onnxruntime;
-  # Pin feat/elevenlabs-developer-backend so builds remain reproducible.
+  # Pin elevenlabs-dev (upstream dev plus our ElevenLabs Scribe series) so builds
+  # remain reproducible.
   voxtypeSrc = pkgs.fetchFromGitHub {
     owner = "Ramblurr";
     repo = "voxtype";
-    rev = "deabf1e4106d8522b91d6eb0b7bba9dccad61a5a";
-    hash = "sha256-vXLV0LlPG4ogIl8A5CS2NPmvNmacfptfYQfAcmQEuQc=";
+    rev = "91afe6db672df5784ab1b716cc4deb0e590cf00a";
+    hash = "sha256-bgGNSZWIR2UDbSx4JsBWTu9WkZaW2LSiocgbDc3MbFY=";
   };
   # llm-agents packages only Voxtype's default Whisper backend. Enable the fork's
   # ElevenLabs backend and match upstream's ONNX package for Parakeet and Cohere,
