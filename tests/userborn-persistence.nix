@@ -2,6 +2,15 @@
 let
   inherit (pkgs) lib;
   nativeSubids = lib.versionAtLeast pkgs.userborn.version "1.0.0";
+  seed = pkgs.writeShellApplication {
+    name = "userborn-seed";
+    runtimeInputs = [
+      pkgs.gawk
+      pkgs.gnused
+      pkgs.jq
+    ];
+    text = builtins.readFile ../scripts/userborn-seed.sh;
+  };
   node =
     { config, ... }:
     {
@@ -83,6 +92,7 @@ pkgs.testers.runNixOSTest {
     unseeded = {
       imports = [ node ];
       modules.impermanence.enable = true;
+      system.extraDependencies = [ seed ];
     };
   };
   testScript = ''
@@ -182,6 +192,17 @@ pkgs.testers.runNixOSTest {
         unseeded.start()
         unseeded.wait_until_succeeds("systemctl is-failed userborn.service", timeout=60)
         unseeded.succeed("systemctl is-failed userborn.service && test ! -e /var/lib/userborn/passwd && test ! -e /var/lib/userborn/group && test ! -e /var/lib/userborn/shadow")
+
+    with subtest("an installer-seeded database boots with its accounts"):
+        unseeded.succeed("${lib.getExe seed} /run/current-system / && sync")
+        unseeded.shutdown()
+        unseeded.start()
+        unseeded.wait_for_unit("multi-user.target")
+        unseeded.succeed("systemctl is-active userborn.service")
+        assert unseeded.succeed("id -u alice").strip() == "1000"
+        unseeded.succeed("sudo -u alice getent passwd zservice")
+        unseeded.fail("sudo -u alice test -r /etc/shadow")
+        assert unseeded.succeed("sort /etc/subuid") == ranges
         unseeded.crash()
   '';
 }
