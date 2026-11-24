@@ -194,38 +194,40 @@ assert lib.assertMsg (
     nodes = { };
   })
 ) "the host checks every wright VM against its node record";
-assert lib.assertMsg (
-  lib.any (lib.hasInfix "share uplink ids: mn-${name}") (nodeFailures {
-    vms = { };
-    nodes = {
-      a = record;
-      b = lib.recursiveUpdate other { uplink.id = "mn-${name}"; };
-    };
-  })
-  && lib.any (lib.hasInfix "overlapping uplink subnets: a/b") (nodeFailures {
-    vms = { };
-    nodes = {
-      a = record;
-      b = lib.recursiveUpdate other { uplink.prefixLength = 28; };
-    };
-  })
-  && lib.any (lib.hasInfix "share endpoints: 192.168.1.1:41642") (nodeFailures {
-    vms = { };
-    nodes = {
-      a = record;
-      b = lib.recursiveUpdate other { endpoint.port = 41642; };
-    };
-  })
-  && lib.any (lib.hasInfix "uplink overlaps its tap") (nodeFailures {
-    vms = { };
-    nodes.a = lib.recursiveUpdate record {
-      uplink = {
-        hostAddress = "10.77.0.1";
-        nodeAddress = "10.77.0.2";
+assert lib.assertMsg
+  (
+    lib.any (lib.hasInfix "share uplink ids: mn-${name}") (nodeFailures {
+      vms = { };
+      nodes = {
+        a = record;
+        b = lib.recursiveUpdate other { uplink.id = "mn-${name}"; };
       };
-    };
-  })
-) "node uplinks need unique ids and disjoint subnets, apart from their taps, and nodes unique endpoints";
+    })
+    && lib.any (lib.hasInfix "overlapping uplink subnets: a/b") (nodeFailures {
+      vms = { };
+      nodes = {
+        a = record;
+        b = lib.recursiveUpdate other { uplink.prefixLength = 28; };
+      };
+    })
+    && lib.any (lib.hasInfix "share endpoints: 192.168.1.1:41642") (nodeFailures {
+      vms = { };
+      nodes = {
+        a = record;
+        b = lib.recursiveUpdate other { endpoint.port = 41642; };
+      };
+    })
+    && lib.any (lib.hasInfix "uplink overlaps its tap") (nodeFailures {
+      vms = { };
+      nodes.a = lib.recursiveUpdate record {
+        uplink = {
+          hostAddress = "10.77.0.1";
+          nodeAddress = "10.77.0.2";
+        };
+      };
+    })
+  )
+  "node uplinks need unique ids and disjoint subnets, apart from their taps, and nodes unique endpoints";
 assert lib.assertMsg (lib.all
   (
     u:
@@ -561,8 +563,6 @@ pkgs.testers.runNixOSTest {
         assert node_drops() > before, "the node's namespace dropped nothing"
 
     with subtest("the node's own WireGuard reaches only listed LAN peers, and they reach it"):
-        # ts-plug owns the node's port, so with the node stopped probes in its
-        # namespace stand in for its WireGuard socket.
         before = peer_accepts()
         host.succeed(f"echo node-wg | {in_node} socat -u - UDP:{peer}:41641,sourceport=41642")
         host.succeed(f"echo node-other-port | {in_node} socat -u - UDP:{peer}:41643")

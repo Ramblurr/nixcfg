@@ -44,6 +44,19 @@ let
         "${scope}.uplink needs hostAddress and nodeAddress to be distinct host addresses of one /${toString node.uplink.prefixLength}."
     ++ lib.optional (ipv4.overlaps tap uplink) "${scope} uplink overlaps its tap subnet.";
 
+  endpoints = lib.filterAttrs (_: node: node.endpoint != null) nodes;
+  endpointString = node: "${node.endpoint.address}:${toString node.endpoint.port}";
+  endpointList = lib.mapAttrsToList (_: endpointString) endpoints;
+  duplicateEndpoints = lib.filter (ep: lib.count (x: x == ep) endpointList > 1) (
+    lib.unique endpointList
+  );
+  peerElements = map (peer: "${peer.address} . ${toString peer.port}") cfg.mootNodePeers;
+  endpointDnat = lib.concatStrings (
+    lib.mapAttrsToList (_: node: ''
+      iifname ${uplinks} ip daddr ${node.endpoint.address} udp dport ${toString node.endpoint.port} ip saddr ${nftSet node.endpoint.allowFrom} dnat ip to ${node.uplink.nodeAddress}
+    '') endpoints
+  );
+
   uplinkIdList = lib.mapAttrsToList (_: node: node.uplink.id) nodes;
   duplicateUplinkIds = lib.filter (id: lib.count (x: x == id) uplinkIdList > 1) (
     lib.unique uplinkIdList
@@ -115,6 +128,9 @@ let
     ++ lib.optional (
       duplicateUplinkIds != [ ]
     ) "modules.microvm-host.mootNodes share uplink ids: ${lib.concatStringsSep ", " duplicateUplinkIds}"
+    ++ lib.optional (
+      duplicateEndpoints != [ ]
+    ) "modules.microvm-host.mootNodes share endpoints: ${lib.concatStringsSep ", " duplicateEndpoints}"
     ++
       lib.optional (overlappingUplinks != [ ])
         "modules.microvm-host.mootNodes have overlapping uplink subnets: ${lib.concatStringsSep ", " overlappingUplinks}"
@@ -177,6 +193,9 @@ let
       -dns-resolver "$MOOT_DNS_RESOLVER:53" \
       -transparent-tcp ${transparentAddress} \
       -transparent-udp ${transparentAddress} \
+      -localapi-socket "$STATE_DIRECTORY/localapi.sock" \
+      ''${MOOT_PORT:+-port "$MOOT_PORT"} \
+      ''${MOOT_STATIC_ENDPOINT:+-static-endpoint "$MOOT_STATIC_ENDPOINT"} \
       ''${MOOT_ADVERTISE_TAGS:+-advertise-tags "$MOOT_ADVERTISE_TAGS"}
   '';
 
@@ -193,6 +212,25 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Host interfaces through which Moot tailnet nodes reach the public internet.";
+    };
+    mootNodePeers = lib.mkOption {
+      type = lib.types.listOf (
+        lib.types.submodule {
+          options = {
+            address = linkOption "LAN IPv4 address of the peer's WireGuard socket.";
+            port = lib.mkOption {
+              type = lib.types.port;
+              description = "UDP port of the peer's WireGuard socket.";
+            };
+          };
+        }
+      );
+      default = [ ];
+      description = ''
+        WireGuard sockets of tailnet peers on the LAN, such as ward's nodes,
+        that the nodes' own UDP may reach directly through an uplink. Every
+        other private address stays closed to them.
+      '';
     };
     mootNodes = lib.mkOption {
       default = { };
@@ -223,6 +261,29 @@ in
                 hostAddress = linkOption "The host's IPv4 address on the uplink, the node's gateway.";
                 nodeAddress = linkOption "The node's IPv4 address on the uplink.";
                 prefixLength = prefixOption;
+              };
+              endpoint = lib.mkOption {
+                default = null;
+                description = ''
+                  A host address on which LAN peers reach the node's
+                  WireGuard. The node listens on the port, advertises
+                  address:port, and the host forwards it to the node.
+                '';
+                type = lib.types.nullOr (
+                  lib.types.submodule {
+                    options = {
+                      address = linkOption "Host LAN IPv4 address that peers send the node's WireGuard traffic to.";
+                      port = lib.mkOption {
+                        type = lib.types.port;
+                        description = "UDP port of the node's WireGuard, on the host address and in the namespace.";
+                      };
+                      allowFrom = lib.mkOption {
+                        type = lib.types.nonEmptyListOf ipv4.type;
+                        description = "LAN IPv4 addresses whose packets the host forwards to the node's WireGuard.";
+                      };
+                    };
+                  }
+                );
               };
               hostname = lib.mkOption {
                 type = lib.types.strMatching "[a-zA-Z0-9-]+";
@@ -291,6 +352,8 @@ in
             MOOT_UPLINK_PREFIX=${toString node.uplink.prefixLength}
             MOOT_HOSTNAME=${node.hostname}
             MOOT_ADVERTISE_TAGS=${lib.concatStringsSep "," node.advertiseTags}
+            MOOT_PORT=${lib.optionalString (node.endpoint != null) (toString node.endpoint.port)}
+            MOOT_STATIC_ENDPOINT=${lib.optionalString (node.endpoint != null) (endpointString node)}
             MOOT_EXIT_NODE=${node.exitNode}
             MOOT_DNS_RESOLVER=${node.dnsResolver}
             MOOT_T3_PORT=${toString node.t3Port}
@@ -382,6 +445,14 @@ in
         networking.nftables.tables.moot-nodes = {
           family = "inet";
           content = ''
+            set moot-peers {
+              type ipv4_addr . inet_service
+              ${lib.optionalString (peerElements != [ ]) "elements = ${nftSet peerElements}"}
+            }
+            chain prerouting {
+              type nat hook prerouting priority dstnat; policy accept;
+              ${endpointDnat}
+            }
             chain input {
               type filter hook input priority filter; policy accept;
               iifname ${uplinkIds} counter drop
@@ -389,10 +460,13 @@ in
             chain forward {
               type filter hook forward priority filter; policy accept;
               iifname ${uplinkIds} meta nfproto ipv6 counter drop
+              iifname ${uplinkIds} ct direction reply ct status dnat accept
+              iifname ${uplinkIds} oifname ${uplinks} ip daddr . udp dport @moot-peers counter accept
               iifname ${uplinkIds} ip daddr ${nftSet nonPublic} counter drop
               iifname ${uplinkIds} oifname ${uplinks} accept
               iifname ${uplinkIds} counter drop
               oifname ${uplinkIds} ct state { established, related } accept
+              oifname ${uplinkIds} ct status dnat accept
               oifname ${uplinkIds} counter drop
             }
             chain postrouting {
