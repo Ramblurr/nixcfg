@@ -58,11 +58,7 @@ in
   system.stateVersion = "23.05";
   sops.defaultSopsFile = ./secrets.sops.yaml;
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
-  modules.services.onepassword-systemd-credentials = {
-    enable = true;
-    # A config.sops.secrets reference here causes infinite recursion.
-    bootstrapTokenFile = "/run/secrets/onepassword-connect-llm-token";
-  };
+  modules.services.onepassword-systemd-credentials.enable = true;
   site.gatus.heartbeatToken = {
     gatusEnvironmentVariable = "GATUS_QUINE_EXTERNAL_TOKEN";
     onepasswordReference = "op://home-ops-prod/gatus/quine_external_endpoint_token";

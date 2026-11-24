@@ -34,11 +34,11 @@ let
           site.net.mgmt.hosts4.onepassword-connect = [ virtualAddress ];
           sops.defaultSopsFile = tokenSopsFile;
           modules.services.onepassword-systemd-credentials = {
-            inherit bootstrapTokenFile;
             package = testOp;
             consumers.${consumerService}.password = reference;
             inherit microvmSecrets;
-          };
+          }
+          // lib.optionalAttrs (bootstrapTokenFile != null) { inherit bootstrapTokenFile; };
           systemd.services = lib.optionalAttrs (consumerService == "example") {
             example.script = "true";
           };
@@ -89,7 +89,6 @@ let
       socket = cfg.systemd.sockets.onepassword-credential-provider;
       helper = cfg.systemd.services."onepassword-credential-provider@";
       consumer = cfg.systemd.services.example;
-      token = cfg.sops.secrets.onepassword-connect-token;
       hardening = lib.getAttrs [
         "DynamicUser"
         "PrivateTmp"
@@ -150,10 +149,10 @@ let
     && lib.hasPrefix "credential-map:/nix/store/" (
       builtins.elemAt helper.serviceConfig.LoadCredential 0
     )
-    && builtins.elemAt helper.serviceConfig.LoadCredential 1 == "connect-token:${token.path}"
-    && token.sopsFile == tokenSopsFile
-    && token.mode == "0400"
-    && token.restartUnits == [ ]
+    &&
+      builtins.elemAt helper.serviceConfig.LoadCredential 1
+      == "connect-token:/persist/etc/op-connect-token"
+    && cfg.sops.secrets == { }
     && builtins.elem "onepassword-credential-provider.socket" consumer.requires
     && builtins.elem "onepassword-credential-provider.socket" consumer.after
     && builtins.elem "password:${provider.socketPath}" consumer.serviceConfig.LoadCredential

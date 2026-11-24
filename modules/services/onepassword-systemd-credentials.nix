@@ -24,12 +24,7 @@ let
     "systemd-networkd"
     "systemd-networkd-wait-online"
   ];
-  tokenSecretName = "onepassword-connect-token";
-  tokenFile =
-    if cfg.bootstrapTokenFile == null then
-      config.sops.secrets.${tokenSecretName}.path
-    else
-      cfg.bootstrapTokenFile;
+  tokenFile = cfg.bootstrapTokenFile;
   microvmConsumers = lib.mapAttrs' (
     guest: credentials: lib.nameValuePair "microvm-secrets-${guest}" credentials
   ) cfg.microvmSecrets;
@@ -231,12 +226,11 @@ in
     };
 
     bootstrapTokenFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      example = "/run/credentials/onepassword-bootstrap/token";
+      type = lib.types.str;
+      default = "/persist/etc/op-connect-token";
       description = ''
-        Optional externally managed runtime Connect token. When null, the module
-        declares the host-local SOPS secret onepassword-connect-token.
+        Host-local Connect token file, placed over SSH outside Nix and replaced
+        on rotation. Each lookup reads it afresh, so a new token needs no deploy.
       '';
     };
 
@@ -284,12 +278,11 @@ in
         message = "The 1Password credential provider socket path must be absolute.";
       }
       {
-        assertion = cfg.bootstrapTokenFile == null || lib.hasPrefix "/" cfg.bootstrapTokenFile;
+        assertion = lib.hasPrefix "/" cfg.bootstrapTokenFile;
         message = "The external 1Password provider bootstrap token path must be absolute.";
       }
       {
-        assertion =
-          cfg.bootstrapTokenFile == null || !lib.hasPrefix builtins.storeDir cfg.bootstrapTokenFile;
+        assertion = !lib.hasPrefix builtins.storeDir cfg.bootstrapTokenFile;
         message = "The 1Password provider bootstrap token must not come from the Nix store.";
       }
       {
@@ -327,13 +320,6 @@ in
         message = "Each MicroVM 1Password secret guest must define at least one file.";
       }
     ];
-
-    sops.secrets.${tokenSecretName} = lib.mkIf (cfg.bootstrapTokenFile == null) {
-      owner = "root";
-      group = "root";
-      mode = "0400";
-      restartUnits = [ ];
-    };
 
     systemd.sockets.onepassword-credential-provider = {
       description = "1Password-backed systemd credential provider";
