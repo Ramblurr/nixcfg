@@ -16,29 +16,12 @@ let
   ipv4 = import ../../lib/ipv4.nix { inherit lib; };
 
   uid = 2001;
-  tsUid = 2101;
   home = "/home/${name}";
   configHome = "${home}/.config";
-  netns = "moot-${name}";
-  nsUnits = [
-    "systemd-netns-private-${netns}.service"
-    "systemd-netns-private-access-${netns}.service"
-  ];
-  veth = {
-    hostIface = "mw-host";
-    nsIface = "mw-ns";
-    hostAddr = "192.168.254.1/30";
-    nsAddr = "192.168.254.2/30";
-  };
   uplink = "uplink";
   mac = lib.my.generateMacAddress "1-moot-${name}";
-  nonPublic = "{ ${lib.concatStringsSep ", " (import ../../config/non-public-ipv4.nix)} }";
+  proxyAddress = "${cfg.network.hostAddress}:${toString cfg.network.proxyPort}";
 
-  proxyPort = 1056;
-  t3Port = 3780;
-  transparentAddr = "127.0.0.1:15001";
-  captureMark = "0x1";
-  captureTable = "100";
   keyFile = "/run/moot-wright/cliproxy-key";
   pluginsStateDir = "${home}/.local/share/ol-plugins-sync";
   t3Home = "${home}/.t3";
@@ -51,7 +34,7 @@ let
 
   proxyEnv =
     let
-      proxy = "http://127.0.0.1:${toString proxyPort}";
+      proxy = "http://${proxyAddress}";
       noProxy = "localhost,127.0.0.1,::1";
     in
     {
@@ -285,51 +268,11 @@ let
     ${writeConfig "${configHome}/ol-plugins-sync/config.edn" pluginsSyncConfig}
   '';
 
-  captureRules = pkgs.writeText "moot-${name}-capture.nft" ''
-    table inet moot-capture
-    delete table inet moot-capture
-    table inet moot-capture {
-      chain output {
-        type route hook output priority mangle; policy accept;
-        meta skuid ${toString tsUid} return
-        fib daddr type local return
-        meta nfproto ipv6 reject
-        meta l4proto { tcp, udp } meta mark set ${captureMark} return
-        counter drop
-      }
-      chain prerouting {
-        type filter hook prerouting priority mangle; policy accept;
-        iifname != "lo" return
-        meta mark ${captureMark} meta l4proto { tcp, udp } tproxy ip to ${transparentAddr} accept
-        meta mark ${captureMark} meta l4proto tcp reject with tcp reset
-        meta mark ${captureMark} drop
-      }
-      # A socket bound to ${veth.nsIface} skips the capture route. Output
-      # chains see the device from before the reroute; postrouting sees the final one.
-      chain postrouting {
-        type filter hook postrouting priority filter; policy accept;
-        oifname "lo" accept
-        meta skuid ${toString tsUid} accept
-        counter drop
-      }
-    }
-  '';
-
-  confinement = {
-    bindsTo = [ "nftables.service" ] ++ nsUnits;
-    after = [ "nftables.service" ] ++ nsUnits;
-  };
-  inNetns = {
-    NetworkNamespacePath = "/var/run/netns/${netns}";
-    BindReadOnlyPaths = [ "/etc/netns/${netns}/resolv.conf:/etc/resolv.conf:norbind" ];
-  };
   credentialUnit = "moot-wright-credentials.service";
   configUnit = "moot-wright-config.service";
   builder = cfg.nix.remoteBuilder;
 in
 {
-  imports = [ ../networking/systemd-netns-private.nix ];
-
   options.modules.microvm-guest.mootWright = {
     enable = lib.mkEnableOption "a confined Moot wright: one agent user whose traffic leaves only through its own tailnet node";
 
@@ -337,17 +280,17 @@ in
       type = lib.types.strMatching "[a-z][a-z0-9-]{0,15}";
       default = config.networking.hostName;
       defaultText = lib.literalExpression "config.networking.hostName";
-      description = "The wright's name: its Unix user, tailnet hostname and identity.";
+      description = "The wright's name: its Unix user and identity.";
     };
 
     network = {
       tapId = lib.mkOption {
         type = lib.types.strMatching "[a-zA-Z0-9-]{1,15}";
-        description = "Host tap interface name; must match the host's isolatedTaps entry.";
+        description = "Tap interface name; must match the host's mootNodes record.";
       };
       hostAddress = lib.mkOption {
         inherit (ipv4) type;
-        description = "Host IPv4 address on the tap, used as the default gateway.";
+        description = "The tailnet node's IPv4 address on the tap, used as the default gateway.";
       };
       guestAddress = lib.mkOption {
         inherit (ipv4) type;
@@ -361,36 +304,17 @@ in
       dnsResolver = lib.mkOption {
         type = lib.types.str;
         default = "1.1.1.1";
-        description = "Public numeric DNS server for the guest and for ts-plug's lookups through the exit node.";
+        description = "Public numeric DNS server for the guest; the node carries its queries through the exit node.";
       };
-    };
-
-    tailscale = {
-      hostname = lib.mkOption {
-        type = lib.types.str;
-        default = name;
-        defaultText = lib.literalExpression "config.modules.microvm-guest.mootWright.name";
-        description = "Tailnet hostname of the wright's ts-plug node.";
+      t3Port = lib.mkOption {
+        type = lib.types.port;
+        default = 3780;
+        description = "Port T3 listens on at the guest address, the target of the node's tailnet HTTPS.";
       };
-      advertiseTags = lib.mkOption {
-        type = lib.types.listOf (lib.types.strMatching "tag:[a-zA-Z0-9-]+");
-        default = [ ];
-        description = ''
-          ACL tags ts-plug requests. Required when the auth key file holds an
-          OAuth client secret (tskey-client-...); leave empty for a pre-tagged
-          auth key (tskey-auth-...).
-        '';
-      };
-      exitNode = lib.mkOption {
-        type = lib.types.str;
-        default = "ward";
-        description = "Exit node carrying all of the wright's traffic.";
-      };
-      authKeyFile = lib.mkOption {
-        type = lib.types.str;
-        default = "${hostSecretsMount}/ts-authkey";
-        defaultText = lib.literalExpression ''"''${hostSecrets.mountPoint}/ts-authkey"'';
-        description = "Tailscale auth key or OAuth client secret, read only by ts-plug.";
+      proxyPort = lib.mkOption {
+        type = lib.types.port;
+        default = 1056;
+        description = "Port of the node's HTTP proxy at hostAddress, which resolves tailnet names.";
       };
     };
 
@@ -419,7 +343,7 @@ in
       substituters = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
-        description = "Extra binary caches, fetched through ts-plug.";
+        description = "Extra binary caches, fetched through the node's proxy.";
       };
       trustedPublicKeys = lib.mkOption {
         type = lib.types.listOf lib.types.str;
@@ -428,13 +352,13 @@ in
       };
       remoteBuilder = lib.mkOption {
         default = null;
-        description = "Remote builder reached over ssh-ng through ts-plug.";
+        description = "Remote builder reached over ssh-ng through the node's proxy.";
         type = lib.types.nullOr (
           lib.types.submodule {
             options = {
               hostName = lib.mkOption {
                 type = lib.types.str;
-                description = "Builder hostname; tailnet names resolve through ts-plug.";
+                description = "Builder hostname; tailnet names resolve through the node's proxy.";
               };
               sshUser = lib.mkOption {
                 type = lib.types.str;
@@ -532,10 +456,6 @@ in
       in
       [
         {
-          assertion = !ipv4.overlaps (ipv4.subnet guestAddress prefixLength) (ipv4.fromCidr veth.nsAddr);
-          message = "mootWright reserves the namespace link ${veth.nsAddr}; pick a tap subnet outside it.";
-        }
-        {
           assertion = ipv4.isLink hostAddress guestAddress prefixLength;
           message = "mootWright needs hostAddress and guestAddress to be distinct host addresses of one /${toString prefixLength}.";
         }
@@ -551,11 +471,7 @@ in
       ];
       hostSecrets = {
         enable = true;
-        services = [
-          "ts-plug-${name}"
-          "moot-wright-credentials"
-        ]
-        ++ lib.optional (builder != null) "nix-daemon";
+        services = [ "moot-wright-credentials" ] ++ lib.optional (builder != null) "nix-daemon";
       };
     };
     microvm = {
@@ -586,15 +502,12 @@ in
         };
       };
     };
-    # resolved would resolve for any local user over D-Bus and varlink, from
-    # the root namespace where the wright's drop rules do not apply.
+    networking.firewall.interfaces.${uplink}.allowedTCPPorts = [ cfg.network.t3Port ];
     services.resolved.enable = false;
     networking.resolvconf.enable = false;
-    environment.etc = lib.genAttrs [ "resolv.conf" "resolv-external.conf" ] (_: {
-      text = ''
-        nameserver ${cfg.network.dnsResolver}
-      '';
-    });
+    environment.etc."resolv.conf".text = ''
+      nameserver ${cfg.network.dnsResolver}
+    '';
 
     modules.users.enable = lib.mkForce false;
     modules.services.sshd.enable = lib.mkForce false;
@@ -620,16 +533,6 @@ in
       wants = [ "sshd-keygen.service" ];
       after = [ "sshd-keygen.service" ];
     };
-
-    # glibc would resolve through nsncd in the root namespace, so wright
-    # lookups would skip the egress DNS filter. Resolve only from files and
-    # each namespace's resolv.conf.
-    services.nscd.enable = false;
-    system.nssModules = lib.mkForce [ ];
-    system.nssDatabases.hosts = lib.mkForce [
-      "files"
-      "dns"
-    ];
 
     security.pki.certificateFiles = [ egressCa ];
 
@@ -679,13 +582,12 @@ in
       knownHosts.${builder.hostName}.publicKey = builder.publicHostKey;
       extraConfig = ''
         Host ${builder.hostName}
-          ProxyCommand ${lib.getExe' pkgs.netcat-openbsd "nc"} -X connect -x 127.0.0.1:${toString proxyPort} %h %p
+          ProxyCommand ${lib.getExe' pkgs.netcat-openbsd "nc"} -X connect -x ${proxyAddress} %h %p
       '';
     };
 
     users = {
       groups.${name}.gid = uid;
-      groups."ts-${name}".gid = tsUid;
       users.${name} = {
         isNormalUser = true;
         inherit uid home;
@@ -694,62 +596,10 @@ in
         # T3 starts agents in scopes under this user's systemd manager.
         linger = true;
       };
-      users."ts-${name}" = {
-        isSystemUser = true;
-        uid = tsUid;
-        group = "ts-${name}";
-      };
     };
     systemd.tmpfiles.rules = [ "d ${home} 0700 ${name} ${name} -" ];
 
-    modules.networking.systemd-netns-private = {
-      enable = true;
-      namespaces.${netns} = veth // {
-        natInterface = uplink;
-      };
-    };
-
-    networking.nftables.enable = true;
-    networking.nftables.tables.moot-wright = {
-      family = "inet";
-      content = ''
-        chain input {
-          type filter hook input priority filter; policy accept;
-          iifname "${veth.hostIface}" counter drop
-        }
-        chain forward {
-          type filter hook forward priority filter; policy accept;
-          iifname "${veth.hostIface}" meta nfproto ipv6 counter drop
-          iifname "${veth.hostIface}" ip daddr ${nonPublic} counter drop
-          iifname "${veth.hostIface}" oifname "${uplink}" accept
-          iifname "${veth.hostIface}" counter drop
-          oifname "${veth.hostIface}" ct state { established, related } accept
-          oifname "${veth.hostIface}" counter drop
-        }
-        chain output {
-          type filter hook output priority filter; policy accept;
-          meta skuid ${toString uid} counter drop
-        }
-        chain postrouting {
-          type nat hook postrouting priority srcnat; policy accept;
-          meta nfproto ipv4 ip saddr ${veth.nsAddr} oifname "${uplink}" masquerade
-        }
-      '';
-    };
-
     systemd.services = {
-      "systemd-netns-private-access-${netns}".serviceConfig.ExecStartPost =
-        let
-          inNs = "${pkgs.iproute2}/bin/ip netns exec ${netns}";
-          ip = "${pkgs.iproute2}/bin/ip";
-        in
-        [
-          "${inNs} ${lib.getExe pkgs.nftables} -f ${captureRules}"
-          "-${inNs} ${ip} rule del fwmark ${captureMark} lookup ${captureTable}"
-          "${inNs} ${ip} rule add fwmark ${captureMark} lookup ${captureTable}"
-          "${inNs} ${ip} route replace local 0.0.0.0/0 dev lo table ${captureTable}"
-        ];
-
       moot-wright-credentials = {
         description = "Provide the CLIProxyAPI key to ${name}";
         wantedBy = [ "multi-user.target" ];
@@ -777,100 +627,33 @@ in
         };
       };
 
-      "user@${toString uid}" = confinement // {
+      "user@${toString uid}" = {
         overrideStrategy = "asDropin";
         wants = [
           credentialUnit
           configUnit
         ];
-        after = confinement.after ++ [
+        after = [
           credentialUnit
           configUnit
         ];
-        serviceConfig = inNetns;
       };
 
-      nix-daemon = confinement // {
-        environment = proxyEnv // {
-          inherit (caEnv) SSL_CERT_FILE;
-        };
-        serviceConfig = inNetns;
+      nix-daemon.environment = proxyEnv // {
+        inherit (caEnv) SSL_CERT_FILE;
       };
 
-      "ts-plug-${name}" = confinement // {
-        description = "ts-plug tailnet node for ${name}";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "network-online.target" ];
-        after = confinement.after ++ [ "network-online.target" ];
-        environment.TS_NO_LOGS_NO_SUPPORT = "true";
-        serviceConfig = inNetns // {
-          User = "ts-${name}";
-          Group = "ts-${name}";
-          StateDirectory = "ts-plug-${name}";
-          StateDirectoryMode = "0700";
-          LoadCredential = [ "ts-authkey:${cfg.tailscale.authKeyFile}" ];
-          # ts-plug strips the key from the environment of its children.
-          ExecStart = pkgs.writeShellScript "ts-plug-${name}" ''
-            TS_AUTHKEY="$(< "$CREDENTIALS_DIRECTORY/ts-authkey")"
-            export TS_AUTHKEY
-            exec ${lib.getExe pkgs.ts-plug} ${
-              lib.escapeShellArgs (
-                [
-                  "-hostname"
-                  cfg.tailscale.hostname
-                  "-dir"
-                  "/var/lib/ts-plug-${name}"
-                  "-https-port"
-                  "443:${toString t3Port}"
-                  # T3 streams over websockets and long responses.
-                  "-response-header-timeout"
-                  "0"
-                  "-http-proxy"
-                  "127.0.0.1:${toString proxyPort}"
-                  "-exit-node"
-                  cfg.tailscale.exitNode
-                  "-dns-resolver"
-                  "${cfg.network.dnsResolver}:53"
-                  "-transparent-tcp"
-                  transparentAddr
-                  "-transparent-udp"
-                  transparentAddr
-                ]
-                ++ lib.optionals (cfg.tailscale.advertiseTags != [ ]) [
-                  "-advertise-tags"
-                  (lib.concatStringsSep "," cfg.tailscale.advertiseTags)
-                ]
-              )
-            }
-          '';
-          # IP_TRANSPARENT needs CAP_NET_RAW or CAP_NET_ADMIN; NET_RAW cannot
-          # change the namespace's capture rules or routes. UDP replies leave
-          # from the original destination, so ports such as 53 and 123 need
-          # CAP_NET_BIND_SERVICE.
-          AmbientCapabilities = [
-            "CAP_NET_RAW"
-            "CAP_NET_BIND_SERVICE"
-          ];
-          CapabilityBoundingSet = [
-            "CAP_NET_RAW"
-            "CAP_NET_BIND_SERVICE"
-          ];
-          Restart = "on-failure";
-          RestartSec = 5;
-        };
-      };
-
-      "t3-${name}" = confinement // {
+      "t3-${name}" = {
         description = "T3 Code server for ${name}";
         wantedBy = [ "multi-user.target" ];
         # T3 probes for agent scopes once at startup, so the user manager
         # must already be running.
         wants = [
-          "ts-plug-${name}.service"
+          "network-online.target"
           "user@${toString uid}.service"
         ];
-        after = confinement.after ++ [
-          "ts-plug-${name}.service"
+        after = [
+          "network-online.target"
           "user@${toString uid}.service"
         ];
         path = providers ++ [
@@ -881,11 +664,11 @@ in
         environment = wrightEnv // {
           HOME = home;
         };
-        serviceConfig = inNetns // {
+        serviceConfig = {
           User = name;
           Group = name;
           WorkingDirectory = home;
-          ExecStart = "${lib.getExe' t3 "t3"} serve --host 127.0.0.1 --port ${toString t3Port} ${home}";
+          ExecStart = "${lib.getExe' t3 "t3"} serve --host ${cfg.network.guestAddress} --port ${toString cfg.network.t3Port} ${home}";
           Restart = "on-failure";
           RestartSec = 5;
         };
