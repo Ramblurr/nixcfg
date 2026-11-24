@@ -105,6 +105,7 @@ in
       debord = [ "10.9.8.21" ];
       mali = [ "10.9.8.3" ];
       mootforge = [ "10.9.8.19" ];
+      thingstead = [ "10.9.8.18" ];
       onepassword-connect = [ "10.9.8.22" ];
     };
     #hosts6.main = {
@@ -285,7 +286,6 @@ in
     };
     thingstead = {
       role = "server";
-      # The switch presents moot untagged on eno1.
       interfaces.eno1.type = "phys";
     };
     addams = {

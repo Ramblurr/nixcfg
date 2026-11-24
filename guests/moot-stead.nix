@@ -13,7 +13,7 @@ in
 
   modules.microvm-guest = {
     host = "thingstead";
-    hostFQDN = "thingstead.${config.site.net.moot.domainName}";
+    hostFQDN = "thingstead.${config.site.net.mgmt.domainName}";
     mootWright = {
       enable = true;
       nix.remoteBuilder = lib.mkIf (builder != null) {

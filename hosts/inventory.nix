@@ -116,7 +116,7 @@ let
       gpu = "NVIDIA GeForce RTX 4090";
     };
     thingstead = {
-      purpose = "Agent host on the moot VLAN";
+      purpose = "Moot agent VM host";
       system = "x86_64-linux";
       channel = "unstable";
       role = "server";

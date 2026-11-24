@@ -152,7 +152,7 @@ assert
     "docs.work.example.test"
   ];
 assert lib.hasInfix "server dewey dewey.prim.home.example.test:443" cfg.services.haproxy.config;
-assert lib.hasInfix "server thingstead thingstead.moot.home.example.test:443"
+assert lib.hasInfix "server thingstead thingstead.mgmt.home.example.test:443"
   cfg.services.haproxy.config;
 assert builtins.elem "caddy.service" cfg.systemd.services.haproxy.after;
 assert builtins.elem "caddy.service" cfg.systemd.services.haproxy.wants;

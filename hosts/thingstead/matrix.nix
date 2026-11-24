@@ -106,8 +106,6 @@ in
       suppress_key_server_warning = true;
       enable_search = true;
       allow_public_rooms_over_federation = true;
-      # Matrix federation can legitimately resolve peer homeservers to private
-      # addresses reachable over moot or Tailscale split-horizon DNS.
       ip_range_whitelist = [
         "10.9.0.0/16"
         "100.117.130.101/32"

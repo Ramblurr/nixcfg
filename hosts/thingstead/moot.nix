@@ -11,7 +11,7 @@ in
 {
   modules.microvm-host = {
     mootNodeUplinks = [
-      "eno1"
+      "mgmt"
       "data"
     ];
     mootNodePeers = [

@@ -77,11 +77,8 @@
     user = config.repo.secrets.home-ops.users.forgejo;
     group = config.repo.secrets.home-ops.groups.forgejo;
   };
-  # Push webhooks to the moot VLAN and to Nixbot CI, whose name resolves to
-  # Dewey's private address here.
   services.forgejo.settings.webhook.ALLOWED_HOST_LIST = lib.concatStringsSep "," [
     "external"
-    config.site.net.moot.subnet4
     "ci.${config.repo.secrets.home-ops.workDomain}"
   ];
   modules.services.caddy.defaultRequestBodyMaxSize = "100MB";

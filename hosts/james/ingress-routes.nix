@@ -62,7 +62,7 @@ in
       port = 443;
     };
     thingstead = {
-      host = "thingstead.moot.${home}";
+      host = "thingstead.mgmt.${home}";
       port = 443;
     };
     local = {

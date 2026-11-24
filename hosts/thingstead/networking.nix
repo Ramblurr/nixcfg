@@ -1,15 +1,23 @@
 { config, ... }:
 let
   inherit (config.repo.secrets) local;
-  inherit (config.site.net) data;
+  inherit (config.site.net) data mgmt;
 in
 {
   networking.useDHCP = false;
+  networking.nameservers = config.repo.secrets.global.nameservers;
   services.timesyncd.enable = true;
   services.resolved.enable = true;
   time.timeZone = "Europe/Berlin";
   systemd.network = {
     enable = true;
+    netdevs."20-mgmt" = {
+      netdevConfig = {
+        Kind = "vlan";
+        Name = "mgmt";
+      };
+      vlanConfig.Id = mgmt.vlan;
+    };
     netdevs."20-data" = {
       netdevConfig = {
         Kind = "vlan";
@@ -31,7 +39,11 @@ in
     networks = {
       "10-eno1" = {
         matchConfig.Name = "eno1";
-        networkConfig.DHCP = "ipv4";
+        networkConfig = {
+          VLAN = [ "mgmt" ];
+          LinkLocalAddressing = false;
+        };
+        linkConfig.RequiredForOnline = "carrier";
       };
       "10-enp6s0" = {
         matchConfig.Name = "enp6s0";
@@ -43,6 +55,12 @@ in
           MTUBytes = data.mtu;
           RequiredForOnline = false;
         };
+      };
+      "30-mgmt" = {
+        matchConfig.Name = "mgmt";
+        address = map (a: "${a}/${toString mgmt.subnet4Len}") mgmt.hosts4.thingstead;
+        gateway = mgmt.hosts4.${mgmt.dhcp.router};
+        networkConfig.LinkLocalAddressing = false;
       };
       "30-data" = {
         matchConfig.Name = "data";
