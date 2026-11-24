@@ -24,6 +24,15 @@ let
         "kvm"
       ];
     };
+    mootforge = {
+      address = builtins.head mgmt.mootforge;
+      hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB+N3bAL4uu/8gaxfY1ET0oQcKKaMUTh6w3JIXxe+N32";
+      speedFactor = 1;
+      supportedFeatures = [
+        "nixos-test"
+        "kvm"
+      ];
+    };
     thingstead = {
       address = builtins.head moot.thingstead;
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICHrsPyW6qZoi6QEMyYL1oeN7Us3VNQKmR96uDcAlA08";
@@ -44,7 +53,7 @@ let
     quine = {
       sshKey = "/persist/etc/ssh/ssh_host_ed25519_key";
       publicKey = builders.quine.hostKey;
-      builders = [ "thingstead" ];
+      builders = [ "mootforge" ];
     };
   };
 
