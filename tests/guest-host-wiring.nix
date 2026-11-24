@@ -34,7 +34,8 @@ let
   placementHasMootNode =
     guestName:
     !(configurations.${guestName}.config.modules.microvm-guest.mootWright.enable or false)
-    || (configurations.${guestHosts.${guestName}}.config.modules.microvm-host.mootNodes or { }) ? ${guestName};
+    || (configurations.${guestHosts.${guestName}}.config.modules.microvm-host.mootNodes or { })
+      ? ${guestName};
 in
 assert lib.assertMsg (lib.all placementUsesSecretAwareOutput placements)
   "Every public guest placement must target the guest-declared host and use its secret-aware output";
