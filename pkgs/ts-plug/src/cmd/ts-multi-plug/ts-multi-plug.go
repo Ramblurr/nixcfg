@@ -67,8 +67,8 @@ var (
 )
 
 func init() {
-	flag.Var(flagHttp, "http-port", "HTTP port mapping (in:out, port, or in:unix:/path/to/socket)")
-	flag.Var(flagHttps, "https-port", "HTTPS port mapping (in:out, port, or in:unix:/path/to/socket)")
+	flag.Var(flagHttp, "http-port", "HTTP port mapping (in:out, port, in:ip:port, or in:unix:/path/to/socket)")
+	flag.Var(flagHttps, "https-port", "HTTPS port mapping (in:out, port, in:ip:port, or in:unix:/path/to/socket)")
 	flag.Var(flagDNS, "dns-port", "DNS port mapping (in:out or port)")
 
 	flag.StringVar(&flagHostname, "hostname", "tsmultiplug", "hostname on tailnet")
@@ -127,8 +127,8 @@ func main() {
 		flagDNS.Set("")
 	}
 
-	if flagDNS.Socket != "" {
-		slog.Error("invalid flags", "error", "-dns-port forwards UDP and takes no unix socket upstream")
+	if flagDNS.Socket != "" || flagDNS.Host.IsValid() {
+		slog.Error("invalid flags", "error", "-dns-port forwards UDP to a local port and takes no unix socket or address upstream")
 		os.Exit(1)
 	}
 
@@ -469,8 +469,8 @@ func handleDNSQuery(query []byte, clientAddr net.Addr, tsConn net.PacketConn, up
 	slog.Debug("DNS query handled", "client", clientAddr, "size", n)
 }
 
-// createReverseProxy creates a reverse proxy to portMap's localhost port or
-// unix socket. ReverseProxy strips hop-by-hop headers and Forwarded,
+// createReverseProxy creates a reverse proxy to portMap's localhost port,
+// ip:port or unix socket. ReverseProxy strips hop-by-hop headers and Forwarded,
 // X-Forwarded-For, X-Forwarded-Host and X-Forwarded-Proto before Rewrite runs,
 // so a caller can neither forge nor suppress the headers Rewrite sets. Other
 // X-Forwarded-* headers, such as X-Forwarded-Port, pass through untrusted.
@@ -478,6 +478,9 @@ func createReverseProxy(portMap *PortMapFlag, whois whoisFunc) *httputil.Reverse
 	dialer := &net.Dialer{Timeout: *flagDialTimeout}
 	dial := dialer.DialContext
 	upstream := &url.URL{Scheme: "http", Host: fmt.Sprintf("localhost:%d", portMap.Out)}
+	if portMap.Host.IsValid() {
+		upstream.Host = netip.AddrPortFrom(portMap.Host, uint16(portMap.Out)).String()
+	}
 	if portMap.Socket != "" {
 		upstream.Host = "localhost"
 		dial = func(ctx context.Context, _, _ string) (net.Conn, error) {
@@ -584,6 +587,7 @@ func attachLogging(cmd *exec.Cmd) error {
 type PortMapFlag struct {
 	In     int
 	Out    int
+	Host   netip.Addr
 	Socket string
 	isSet  bool
 
@@ -606,6 +610,9 @@ func (p *PortMapFlag) String() string {
 	if p.Socket != "" {
 		return fmt.Sprintf("%d:unix:%s", p.In, p.Socket)
 	}
+	if p.Host.IsValid() {
+		return fmt.Sprintf("%d:%s", p.In, netip.AddrPortFrom(p.Host, uint16(p.Out)))
+	}
 	return fmt.Sprintf("%d:%d", p.In, p.Out)
 }
 
@@ -616,6 +623,7 @@ func (p *PortMapFlag) IsSet() bool {
 func (p *PortMapFlag) Set(value string) error {
 	p.isSet = true
 	p.Socket = ""
+	p.Host = netip.Addr{}
 
 	if value == "" {
 		p.In = p.defaultIn
@@ -638,6 +646,15 @@ func (p *PortMapFlag) Set(value string) error {
 			return fmt.Errorf("unix socket upstream must be an absolute filesystem path, not abstract or relative: %s", value)
 		}
 		p.Socket = socket
+		return nil
+	}
+	if strings.Contains(out, ":") {
+		upstream, err := netip.ParseAddrPort(out)
+		if err != nil {
+			return fmt.Errorf("upstream must be a port, ip:port or unix:<path>: %s", out)
+		}
+		p.Host = upstream.Addr()
+		p.Out = int(upstream.Port())
 		return nil
 	}
 	outPort, err := strconv.Atoi(out)

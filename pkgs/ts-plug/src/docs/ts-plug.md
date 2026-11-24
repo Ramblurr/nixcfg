@@ -136,6 +136,16 @@ By default, ts-plug enables HTTPS on port 443 proxying to localhost:8080.
   ts-plug -https-port 8443:3000 -hostname web -- node server.js
   ```
 
+#### Address Upstream
+
+`-http-port` and `-https-port` also take `in:ip:port`, which proxies the
+listener to an HTTP server at a numeric address instead of localhost, such as
+a VM on a link that only ts-plug's network namespace reaches:
+
+```sh
+ts-plug -https-port 443:10.77.0.2:3780 -hostname vm
+```
+
 #### Unix Socket Upstream
 
 `-http-port` and `-https-port` also take `in:unix:<path>`, which proxies the

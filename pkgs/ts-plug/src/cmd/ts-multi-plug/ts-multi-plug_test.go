@@ -44,6 +44,10 @@ func TestPortMapFlag(t *testing.T) {
 		{"443:unix:run/broker/ui.sock", "error"},
 		{"unix:/run/broker/ui.sock", "error"},
 		{"443:3000:1", "error"},
+		{"443:10.77.0.2:3780", "443:10.77.0.2:3780"},
+		{"443:[fd00::2]:3780", "443:[fd00::2]:3780"},
+		{"443:guest:3780", "error"},
+		{"443:10.77.0.2", "error"},
 		{"https", "error"},
 	} {
 		p := NewPortMapFlag(443, 8080)
@@ -60,6 +64,42 @@ func TestPortMapFlag(t *testing.T) {
 	p.Set("443:unix:/run/broker/ui.sock")
 	if p.Set("443:3000"); p.String() != "443:3000" {
 		t.Errorf("a later -https-port 443:3000 left %s", p)
+	}
+	p.Set("443:10.77.0.2:3780")
+	if p.Set("443:3000"); p.String() != "443:3000" {
+		t.Errorf("a later -https-port 443:3000 left %s", p)
+	}
+}
+
+func TestReverseProxyToAddress(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.2:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "upstream")
+	})}
+	go srv.Serve(ln)
+	t.Cleanup(func() { srv.Close() })
+
+	upstream := NewPortMapFlag(443, 8080)
+	if err := upstream.Set("443:" + ln.Addr().String()); err != nil {
+		t.Fatal(err)
+	}
+	whois := func(context.Context, string) (*apitype.WhoIsResponse, error) {
+		return nil, io.EOF
+	}
+	front := httptest.NewTLSServer(createReverseProxy(upstream, whois))
+	defer front.Close()
+
+	resp, err := front.Client().Get(front.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "upstream" {
+		t.Errorf("body = %q, want the upstream at %s", body, ln.Addr())
 	}
 }
 

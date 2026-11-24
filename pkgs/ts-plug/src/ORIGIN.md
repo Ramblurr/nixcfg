@@ -25,6 +25,7 @@ Later changes in this tree:
 - cmd/ts-multi-plug: add -inherit-output to pass the command's output through
 - cmd/ts-multi-plug: add -advertise-tags, so an OAuth client secret can log in,
   and strip TS_AUTHKEY from the wrapped command's environment
+- cmd/ts-multi-plug: proxy HTTP and HTTPS to an ip:port upstream
 
 Upstream's docker/, cmd/examples/ and images/ were left out. Edit this tree
 directly from now on.
