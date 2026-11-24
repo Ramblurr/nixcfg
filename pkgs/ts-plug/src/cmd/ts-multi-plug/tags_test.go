@@ -129,7 +129,7 @@ func TestOAuthClientSecretLogin(t *testing.T) {
 			if err := tags.Set(tt.tags); err != nil {
 				t.Fatal(err)
 			}
-			s := newServer("workstead", t.TempDir(), tags)
+			s := newServer("workstead", t.TempDir(), tags, 0)
 			s.ControlURL = control.HTTPTestServer.URL
 			s.Logf = logger.Discard
 			t.Cleanup(func() { s.Close() })

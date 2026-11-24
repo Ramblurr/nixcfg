@@ -28,6 +28,7 @@ import (
 	"tailscale.com/client/tailscale/apitype"
 	"tailscale.com/tailcfg"
 	"tailscale.com/tsnet"
+	"tailscale.com/types/views"
 )
 
 var (
@@ -64,6 +65,10 @@ var (
 	flagDialTimeout           = flag.Duration("dial-timeout", 2*time.Second, "Reverse-proxy dial timeout to the upstream (0 = no limit)")
 	flagResponseHeaderTimeout = flag.Duration("response-header-timeout", time.Second, "Reverse-proxy response-header timeout (0 = no limit; useful for streaming / slow-first-byte upstreams)")
 	flagIdleConnTimeout       = flag.Duration("idle-conn-timeout", 0, "Reverse-proxy idle connection timeout (0 = no limit)")
+
+	flagPort           uint16
+	flagStaticEndpoint netip.AddrPort
+	flagLocalAPISocket = flag.String("localapi-socket", "", "Absolute path of a unix socket that serves this node's LocalAPI, for the tailscale CLI's --socket")
 )
 
 func init() {
@@ -75,6 +80,15 @@ func init() {
 	flag.StringVar(&flagHostname, "hn", "tsmultiplug", "hostname on tailnet (short)")
 	flag.StringVar(&flagDir, "dir", ".data", "directory to store tailscale state")
 	flag.StringVar(&flagLogLevel, "log", "info", "Log level (debug | info | warn | error)")
+	flag.Func("port", "UDP port of WireGuard and peer-to-peer traffic (default automatic)", func(v string) error {
+		port, err := strconv.ParseUint(v, 10, 16)
+		flagPort = uint16(port)
+		return err
+	})
+	flag.Func("static-endpoint", "ip:port that peers can reach this node's WireGuard on, advertised besides the endpoints it discovers", func(v string) (err error) {
+		flagStaticEndpoint, err = netip.ParseAddrPort(v)
+		return err
+	})
 	flag.Var(&flagAdvertiseTags, "advertise-tags", "Comma-separated ACL tags for this node (tag:a,tag:b); required when TS_AUTHKEY holds an OAuth client secret (tskey-client-...)")
 }
 
@@ -144,12 +158,53 @@ func main() {
 	}
 }
 
-func newServer(hostname, dir string, tags []string) *tsnet.Server {
+func newServer(hostname, dir string, tags []string, port uint16) *tsnet.Server {
 	return &tsnet.Server{
 		Hostname:      hostname,
 		Dir:           dir,
 		AdvertiseTags: tags,
+		Port:          port,
 	}
+}
+
+// startServer starts ts and, when staticEndpoint is valid, adds it to the
+// endpoints ts advertises before its first login.
+func startServer(ts *tsnet.Server, staticEndpoint netip.AddrPort) error {
+	if err := ts.Start(); err != nil {
+		return err
+	}
+	if staticEndpoint.IsValid() {
+		ts.Sys().MagicSock.Get().SetStaticEndpoints(views.SliceOf([]netip.AddrPort{staticEndpoint}))
+	}
+	return nil
+}
+
+// serveLocalAPI relays each connection on the unix socket at path to the
+// node's in-memory LocalAPI, which dial reaches. An accept failure goes to
+// fail.
+func serveLocalAPI(path string, dial func(context.Context, string, string) (net.Conn, error), fail func(error)) (net.Listener, error) {
+	ln, err := listenLocal("unix:" + path)
+	if err != nil {
+		return nil, fmt.Errorf("listen for LocalAPI on %s: %w", path, err)
+	}
+	go func() {
+		for {
+			client, err := ln.Accept()
+			if err != nil {
+				fail(fmt.Errorf("LocalAPI socket: %w", err))
+				return
+			}
+			go func() {
+				backend, err := dial(context.Background(), "tcp", "local-tailscaled.sock:80")
+				if err != nil {
+					client.Close()
+					return
+				}
+				splice(client, client, backend)
+			}()
+		}
+	}()
+	return ln, nil
 }
 
 func childEnv(environ []string) []string {
@@ -169,7 +224,7 @@ func childEnv(environ []string) []string {
 // listener or proxy failure. It returns nil for a signal or a clean command
 // exit, so systemd restarts the process only after a failure.
 func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
-	ts := newServer(flagHostname, flagDir, flagAdvertiseTags)
+	ts := newServer(flagHostname, flagDir, flagAdvertiseTags, flagPort)
 	defer ts.Close()
 
 	if *flagDebugTSNet {
@@ -218,6 +273,21 @@ func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 		slog.Info("no command given, proxying to an externally managed upstream")
 	}
 
+	if err := startServer(ts, flagStaticEndpoint); err != nil {
+		return fmt.Errorf("start tsnet server: %w", err)
+	}
+	lc, err := ts.LocalClient()
+	if err != nil {
+		return fmt.Errorf("get tsnet LocalClient: %w", err)
+	}
+	if *flagLocalAPISocket != "" {
+		ln, err := serveLocalAPI(*flagLocalAPISocket, lc.Dial, fail)
+		if err != nil {
+			return err
+		}
+		defer ln.Close()
+	}
+
 	// ts.Up blocks until the node is running. Cancelling ctx on a signal
 	// makes it return early instead of hanging.
 	st, err := ts.Up(ctx)
@@ -227,11 +297,6 @@ func run(cmdArgs []string, dnsResolver netip.AddrPort) error {
 			return nil
 		}
 		return fmt.Errorf("start tsnet server: %w", err)
-	}
-
-	lc, err := ts.LocalClient()
-	if err != nil {
-		return fmt.Errorf("get tsnet LocalClient: %w", err)
 	}
 
 	// Select the exit node before any listener can dial.

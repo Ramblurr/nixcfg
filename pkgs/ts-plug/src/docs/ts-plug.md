@@ -102,6 +102,17 @@ ts-plug:
 - `-advertise-tags` - Comma-separated ACL tags for the node, such as
   `tag:web,tag:prod`. Required when `TS_AUTHKEY` holds an OAuth client secret.
 
+- `-port` - UDP port of the node's WireGuard and peer-to-peer traffic
+  (default: automatic). A firewall can then open exactly this port.
+
+- `-static-endpoint <ip:port>` - An address peers can reach the node's
+  WireGuard on, such as a DNAT on the host, advertised besides the
+  endpoints the node discovers.
+
+- `-localapi-socket <path>` - Serve the node's LocalAPI on this unix socket,
+  so `tailscale --socket <path> status` or `ping` inspects the node. Anyone
+  who can open the socket controls the node.
+
 ### Listeners
 
 By default, ts-plug enables HTTPS on port 443 proxying to localhost:8080.
