@@ -15,8 +15,8 @@ let
   voxtypeSrc = pkgs.fetchFromGitHub {
     owner = "Ramblurr";
     repo = "voxtype";
-    rev = "91afe6db672df5784ab1b716cc4deb0e590cf00a";
-    hash = "sha256-bgGNSZWIR2UDbSx4JsBWTu9WkZaW2LSiocgbDc3MbFY=";
+    rev = "c640e1a556f9dfb9ed8ef7791a8335db4ecb87af";
+    hash = "sha256-dQiBvHK9A5yNtH18ii00XFfvz6p1ILCqOBoGu12grWY=";
   };
   # llm-agents packages only Voxtype's default Whisper backend. Enable the fork's
   # ElevenLabs backend and match upstream's ONNX package for Parakeet and Cohere,
