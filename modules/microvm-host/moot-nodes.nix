@@ -523,16 +523,13 @@ in
               iifname ${uplinkIds} counter drop
             }
             chain forward {
-              type filter hook forward priority filter; policy accept;
-              iifname ${uplinkIds} meta nfproto ipv6 counter drop
-              iifname ${uplinkIds} ct direction reply ct status dnat accept
+              type filter hook forward priority filter; policy drop;
+              iifname ${uplinkIds} oifname ${uplinks} meta nfproto ipv4 ct direction reply ct status dnat accept
               iifname ${uplinkIds} oifname ${uplinks} ip daddr . udp dport @moot-peers counter accept
-              iifname ${uplinkIds} ip daddr ${nftSet nonPublic} counter drop
-              iifname ${uplinkIds} oifname ${uplinks} accept
-              iifname ${uplinkIds} counter drop
-              oifname ${uplinkIds} ct state { established, related } accept
-              oifname ${uplinkIds} ct status dnat accept
-              oifname ${uplinkIds} counter drop
+              iifname ${uplinkIds} oifname ${uplinks} ip daddr != ${nftSet nonPublic} accept
+              iifname ${uplinks} oifname ${uplinkIds} ct state { established, related } accept
+              iifname ${uplinks} oifname ${uplinkIds} ct status dnat accept
+              counter drop
             }
             chain postrouting {
               type nat hook postrouting priority srcnat; policy accept;
