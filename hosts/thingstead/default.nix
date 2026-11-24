@@ -23,6 +23,10 @@
   # ZFS pools record this hostid; changing it blocks the next import.
   networking.hostId = "350d17ed";
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  site.gatus.heartbeatToken = {
+    gatusEnvironmentVariable = "GATUS_THINGSTEAD_EXTERNAL_TOKEN";
+    onepasswordReference = "op://thingstead/gatus/external_endpoint_token";
+  };
   documentation.enable = false;
 
   modules = {
