@@ -126,10 +126,6 @@ let
       lib.filter (vm: isWright vm && !(nodes ? ${vm})) (builtins.attrNames config.microvm.vms)
     );
 
-  # The capture keys on the tap: everything the guest sends is either a
-  # reply to the node's own dial into the guest, a request to the node's
-  # HTTP proxy, or a flow for ts-plug's transparent listeners. Nothing else
-  # is delivered, and nothing is forwarded.
   setupNamespace = pkgs.writeShellScript "moot-node-netns" ''
     set -euo pipefail
     ns="moot-$1"
@@ -168,8 +164,6 @@ let
     in_ns ip route add default via "$MOOT_UPLINK_HOST"
   '';
 
-  # T3 streams over websockets and long responses, hence no response-header
-  # timeout.
   startNode = pkgs.writeShellScript "moot-node" ''
     TS_AUTHKEY="$(< "$CREDENTIALS_DIRECTORY/ts-authkey")"
     export TS_AUTHKEY

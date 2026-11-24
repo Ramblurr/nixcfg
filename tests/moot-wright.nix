@@ -346,9 +346,13 @@ pkgs.testers.runNixOSTest {
     node = f"moot-node@{name}.service"
     in_node = f"ip netns exec {netns}"
     as_wright = f"setpriv --reuid={uid} --regid={uid} --init-groups"
-    # The public internet, the LAN, the host on the LAN, the node's tap
-    # address, and a tailnet address.
-    targets = [("198.51.100.10", 80), ("192.168.1.2", 80), ("192.168.1.1", 8080), (tap_host, 8080), ("100.100.100.100", 80)]
+    targets = {
+        "internet": ("198.51.100.10", 80),
+        "lan": ("192.168.1.2", 80),
+        "host on the lan": ("192.168.1.1", 8080),
+        "node tap address": (tap_host, 8080),
+        "tailnet": ("100.100.100.100", 80),
+    }
 
 
     def guest(cmd):
@@ -479,7 +483,7 @@ pkgs.testers.runNixOSTest {
         guest(f"ip addr add {spoofed}/32 dev uplink")
         guest("sysctl -qw net.ipv6.conf.uplink.disable_ipv6=0 && ip -6 addr add fd00::2/64 dev uplink nodad && ip -6 route add default dev uplink")
         before = node_drops()
-        for addr, port in targets:
+        for addr, port in targets.values():
             guest_fail(tcp(addr, port))
             guest_fail(f"{as_wright} {tcp(addr, port)}")
             guest_fail(tcp(addr, port, f",bind={spoofed}"))
@@ -501,8 +505,8 @@ pkgs.testers.runNixOSTest {
         host.succeed(f"systemd-run --unit=capture-udp {in_node} ${lib.getExe pkgs.socat} -u UDP-RECV:15001,bind=127.0.0.1,ip-transparent,reuseaddr OPEN:/run/captured-udp,creat,append")
         host.succeed(f"systemd-run --unit=proxy-probe {in_node} ${lib.getExe pkgs.socat} TCP-LISTEN:1056,bind={tap_host},reuseaddr,fork SYSTEM:'echo proxy'")
         host.succeed("sleep 1")
-        for addr, port in targets:
-            assert guest(tcp(addr, port)).strip() == "captured", f"{addr}:{port}"
+        for label, (addr, port) in targets.items():
+            assert guest(tcp(addr, port)).strip() == "captured", label
             guest_fail(tcp(addr, port, f",bind={spoofed}"))
         assert guest(tcp(tap_host, 1056)).strip() == "proxy"
         guest(udp("captured-udp", "198.51.100.10", 9999))

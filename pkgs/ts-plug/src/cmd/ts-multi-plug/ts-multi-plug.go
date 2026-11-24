@@ -469,8 +469,7 @@ func handleDNSQuery(query []byte, clientAddr net.Addr, tsConn net.PacketConn, up
 	slog.Debug("DNS query handled", "client", clientAddr, "size", n)
 }
 
-// createReverseProxy creates a reverse proxy to portMap's localhost port,
-// ip:port or unix socket. ReverseProxy strips hop-by-hop headers and Forwarded,
+// ReverseProxy strips hop-by-hop headers and Forwarded,
 // X-Forwarded-For, X-Forwarded-Host and X-Forwarded-Proto before Rewrite runs,
 // so a caller can neither forge nor suppress the headers Rewrite sets. Other
 // X-Forwarded-* headers, such as X-Forwarded-Port, pass through untrusted.
