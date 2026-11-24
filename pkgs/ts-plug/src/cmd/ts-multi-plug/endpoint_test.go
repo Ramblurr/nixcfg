@@ -25,8 +25,6 @@ func freeUDPPort(t *testing.T) uint16 {
 	return uint16(c.LocalAddr().(*net.UDPAddr).Port)
 }
 
-// The node advertises the static endpoint as given, and its own socket on
-// the fixed port.
 func TestFixedPortAndStaticEndpointAreAdvertised(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -77,7 +75,6 @@ func TestFixedPortAndStaticEndpointAreAdvertised(t *testing.T) {
 	}
 }
 
-// The LocalAPI socket answers the tailscale CLI's requests for the node.
 func TestLocalAPISocketServesTheNode(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()

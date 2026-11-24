@@ -167,8 +167,6 @@ func newServer(hostname, dir string, tags []string, port uint16) *tsnet.Server {
 	}
 }
 
-// startServer starts ts and, when staticEndpoint is valid, adds it to the
-// endpoints ts advertises before its first login.
 func startServer(ts *tsnet.Server, staticEndpoint netip.AddrPort) error {
 	if err := ts.Start(); err != nil {
 		return err
@@ -179,9 +177,6 @@ func startServer(ts *tsnet.Server, staticEndpoint netip.AddrPort) error {
 	return nil
 }
 
-// serveLocalAPI relays each connection on the unix socket at path to the
-// node's in-memory LocalAPI, which dial reaches. An accept failure goes to
-// fail.
 func serveLocalAPI(path string, dial func(context.Context, string, string) (net.Conn, error), fail func(error)) (net.Listener, error) {
 	ln, err := listenLocal("unix:" + path)
 	if err != nil {
