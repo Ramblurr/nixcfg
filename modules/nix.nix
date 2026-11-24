@@ -11,6 +11,7 @@ let
   inherit (config.repo.secrets.global) ciSigningPublicKey;
   heartbeatAvailable = config.site.gatus.heartbeatToken.available;
   gcCfg = config.modules.nix.gc;
+  buildCfg = config.modules.nix.buildLimits;
   pruneProfiles = pkgs.writeShellScript "nix-gc-prune-profiles" ''
     set -euo pipefail
     cutoff=$(( $(date +%s) - ${toString gcCfg.keepDays} * 86400 ))
@@ -52,16 +53,26 @@ with lib;
     };
   };
 
-  options.modules.nix.buildLimits.enable =
-    lib.mkEnableOption "per-build cgroups that systemd-oomd can kill one at a time";
+  options.modules.nix.buildLimits = {
+    enable = lib.mkEnableOption "per-build cgroups that systemd-oomd can kill one at a time";
+    idleCpu = lib.mkEnableOption "builds that get CPU only when no other cgroup wants it";
+    memoryHigh = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "16G";
+      description = "MemoryHigh for nix-daemon.service and its builds. Above it the kernel throttles and reclaims them.";
+    };
+  };
 
   config = lib.mkMerge [
-    (lib.mkIf config.modules.nix.buildLimits.enable {
+    (lib.mkIf buildCfg.enable {
       nix.settings.use-cgroups = true;
       nix.settings.experimental-features = [ "cgroups" ];
       systemd.services.nix-daemon.serviceConfig = {
         ManagedOOMMemoryPressure = "kill";
         ManagedOOMMemoryPressureLimit = "50%";
+        CPUWeight = lib.mkIf buildCfg.idleCpu "idle";
+        MemoryHigh = lib.mkIf (buildCfg.memoryHigh != null) buildCfg.memoryHigh;
       };
     })
     (lib.mkIf (gcCfg.keepGenerations != null) {

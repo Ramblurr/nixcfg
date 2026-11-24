@@ -51,7 +51,11 @@
     };
     zfs.datasets.enable = true;
     nix.pruneAgedGcroots.enable = true;
-    nix.buildLimits.enable = true;
+    nix.buildLimits = {
+      enable = true;
+      idleCpu = true;
+      memoryHigh = "20G";
+    };
     vpn.tailscale.enable = true;
     microvm-host = {
       enable = true;
