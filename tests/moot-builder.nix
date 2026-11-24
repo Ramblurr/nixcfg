@@ -24,6 +24,11 @@ let
       hostAddress = "172.31.255.1";
       nodeAddress = "172.31.255.2";
     };
+    endpoint = {
+      address = "192.168.2.1";
+      port = 41650;
+      allowFrom = [ "192.168.2.3" ];
+    };
     builder = {
       allowTags = [ "tag:moot-workstead" ];
       hostKeyFile = "/run/keys/${name}-ssh-host-key";
@@ -72,6 +77,8 @@ let
       -subj '/CN=headscale' -addext 'subjectAltName=DNS:headscale'
   '';
   control = "198.51.100.10";
+  client = "10.99.0.3";
+  peerPort = 41649;
   onControlNet = gateway: {
     security.pki.certificateFiles = [ "${tlsCert}/cert.pem" ];
     networking.hosts.${control} = [ "headscale" ];
@@ -174,6 +181,17 @@ pkgs.testers.runNixOSTest {
         address = control;
         prefixLength = 24;
       }
+      {
+        address = "198.18.0.1";
+        prefixLength = 15;
+      }
+    ];
+    networking.interfaces.eth1.ipv4.routes = [
+      {
+        address = client;
+        prefixLength = 32;
+        via = "192.168.1.1";
+      }
     ];
     services.headscale = {
       enable = true;
@@ -221,17 +239,42 @@ pkgs.testers.runNixOSTest {
       virtualisation.vlans = [ 2 ];
       virtualisation.memorySize = 1536;
       networking.firewall.enable = false;
-      environment.systemPackages = [ pkgs.tailscale ];
-      systemd.services = lib.mapAttrs' (
-        node: port:
-        lib.nameValuePair "tailscaled-${node}" {
-          wantedBy = [ "multi-user.target" ];
-          serviceConfig = {
-            StateDirectory = "tailscale-${node}";
-            ExecStart = "${lib.getExe' pkgs.tailscale "tailscaled"} --tun=userspace-networking --port=0 --statedir=/var/lib/tailscale-${node} --socket=/run/tailscale-${node}.sock --outbound-http-proxy-listen=127.0.0.1:${toString port}";
+      networking.interfaces.eth1.ipv4 = {
+        addresses = [
+          {
+            address = client;
+            prefixLength = 32;
+          }
+        ];
+        routes = [
+          {
+            address = "192.168.1.2";
+            prefixLength = 32;
+            via = "192.168.2.1";
+          }
+        ];
+      };
+      environment.systemPackages = [
+        pkgs.tailscale
+        pkgs.socat
+      ];
+      systemd.services =
+        lib.mapAttrs' (
+          node: port:
+          lib.nameValuePair "tailscaled-${node}" {
+            wantedBy = [ "multi-user.target" ];
+            serviceConfig = {
+              StateDirectory = "tailscale-${node}";
+              ExecStart = "${lib.getExe' pkgs.tailscale "tailscaled"} --tun=userspace-networking --port=0 --statedir=/var/lib/tailscale-${node} --socket=/run/tailscale-${node}.sock --outbound-http-proxy-listen=127.0.0.1:${toString port}";
+            };
+          }
+        ) tailnetNodes
+        // {
+          peer-wg = {
+            wantedBy = [ "multi-user.target" ];
+            script = "exec ${lib.getExe pkgs.socat} UDP-LISTEN:${toString peerPort},fork,reuseaddr SYSTEM:'echo peer'";
           };
-        }
-      ) tailnetNodes;
+        };
       programs.ssh = {
         knownHosts.${name}.publicKey = sshKeys.snakeOilEd25519PublicKey;
         extraConfig = lib.concatStrings (
@@ -255,12 +298,39 @@ pkgs.testers.runNixOSTest {
         inputs.impermanence.nixosModules.impermanence
         ../modules/microvm-host
       ];
+      virtualisation.vlans = [
+        1
+        2
+      ];
       modules.microvm-host = {
         enable = true;
         baseZfsDataset = "tank/microvms";
-        mootNodeUplinks = [ "eth1" ];
+        mootNodeUplinks = [
+          "eth1"
+          "eth2"
+        ];
+        mootNodePeers = [
+          {
+            address = "192.168.2.3";
+            port = peerPort;
+          }
+        ];
         mootNodes.${name} = record;
       };
+      networking.interfaces.eth1.ipv4.routes = [
+        {
+          address = "198.18.0.0";
+          prefixLength = 15;
+          via = "192.168.1.2";
+        }
+      ];
+      networking.interfaces.eth2.ipv4.routes = [
+        {
+          address = client;
+          prefixLength = 32;
+          via = "192.168.2.3";
+        }
+      ];
       microvm.vms.${name} = {
         evaluatedConfig = guest;
         autostart = false;
@@ -390,6 +460,15 @@ pkgs.testers.runNixOSTest {
         tailnet.fail(f"timeout 60 {nix} store info --store ssh-ng://{name}-as-outstead")
         tailnet.fail(remote_build("outstead").replace("echo built", "echo outstead"))
         host.succeed(f"journalctl -u {node} | grep 'SSH: refused' | grep -q tag:moot-outstead")
+
+    with subtest("the host forwards its node's traffic and nothing else"):
+        assert tailnet.succeed("socat -T5 - TCP:192.168.1.2:80,bind=${client},connect-timeout=5 </dev/null || true").strip() == "", "the host routed a LAN client to another segment"
+        assert host.succeed(f"{in_node} {tcp('${control}', 80)}").strip() == "peer=192.168.1.1"
+        assert host.succeed(f"echo node | {in_node} socat -T5 - UDP:192.168.2.3:${toString peerPort}").strip() == "peer"
+        out = host.succeed(f"{in_node} {tcp('198.18.0.1', 80)} || true")
+        assert "peer=" not in out, f"the node reached 198.18.0.1: {out}"
+        out = tailnet.wait_until_succeeds(ts("workstead", f"ping -c 20 {name}"), timeout=120)
+        assert "via 192.168.2.1:${toString record.endpoint.port}" in out, out
 
     with subtest("the builder holds no keys or tailnet node, and listens only for its node"):
         guest("! pgrep -x tailscaled && ! pgrep -x ts-plug")
