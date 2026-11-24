@@ -444,6 +444,15 @@ pkgs.testers.runNixOSTest {
         guest_fail(tcp(as_wright, "198.51.100.10", 80))
         guest(tcp("", "198.51.100.10", 80))
 
+    with subtest("the wright cannot notify the host's microvm unit over VSOCK"):
+        for prefix in [f"{in_ns} {as_wright}", as_wright]:
+            guest(f"printf STATUS=leak | timeout 5 {prefix} socat -u - VSOCK-CONNECT:2:8888 || true")
+        host.succeed("sleep 2")
+        host.fail(f"test -e {state}/notify.vsock_8888")
+        host.fail("ss -Hxl | grep -F notify.vsock_8888")
+        status = host.succeed(f"systemctl show -P StatusText microvm@{name}.service")
+        assert "leak" not in status, status
+
     with subtest("the wright reads only the proxy key"):
         guest(f"systemctl start ts-plug-{name}.service")
         wright("! ls /run/host-secrets")
