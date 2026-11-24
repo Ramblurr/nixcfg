@@ -24,6 +24,7 @@ in
   site.hosts.mali.tailscaleIPv4 = "100.114.104.114";
   site.hosts.peirce.tailscaleIPv4 = "100.64.18.17";
   site.hosts.thingstead.tailscaleIPv4 = "100.115.53.81";
+  site.hosts.mootforge.tailscaleIPv4 = "100.127.229.121";
   #site.net.wan6tun = {
   #  vlan = null;
   #  domainName = null;
