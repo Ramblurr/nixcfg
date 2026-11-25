@@ -59,7 +59,11 @@
     };
     zfs.datasets.enable = true;
     nix.pruneAgedGcroots.enable = true;
-    nix.buildLimits.enable = true;
+    nix.buildLimits = {
+      enable = true;
+      idleCpu = true;
+      memoryHigh = "16G";
+    };
     microvm-host = {
       enable = true;
       baseZfsDataset = "rpool/encrypted/safe/microvms";
