@@ -85,7 +85,29 @@ in
       in
       {
         home.packages =
-          lib.optional cfg.codex.enable codexPackage ++ lib.optional cfg.claude.enable claudePackage;
+          lib.optional cfg.codex.enable codexPackage
+          ++ lib.optional cfg.claude.enable claudePackage
+          ++ lib.optional (cfg.proxy.enable && cfg.claude.enable) (
+            pkgs.writeShellScriptBin "claude-direct" ''
+              settings=${lib.escapeShellArg ''{"env":{"ANTHROPIC_BASE_URL":"https://api.anthropic.com","ANTHROPIC_AUTH_TOKEN":""}}''}
+              args=()
+              while (($#)); do
+                if [[ $1 == --settings && $# -gt 1 ]]; then
+                  settings=$({ [[ -f $2 ]] && cat "$2" || printf %s "$2"; } | ${lib.getExe pkgs.jq} -c --argjson direct "$settings" '. * $direct')
+                  shift 2
+                else
+                  args+=("$1")
+                  shift
+                fi
+              done
+              exec ${lib.getExe claudePackage} --settings "$settings" "''${args[@]}"
+            ''
+          )
+          ++ lib.optional (cfg.proxy.enable && cfg.codex.enable) (
+            pkgs.writeShellScriptBin "codex-direct" ''
+              exec ${lib.getExe codexPackage} -c model_provider=openai "$@"
+            ''
+          );
         home.sessionVariables =
           lib.optionalAttrs cfg.codex.enable { CODEX_HOME = codexHome; }
           // lib.optionalAttrs cfg.claude.enable { CLAUDE_CONFIG_DIR = claudeHome; };
