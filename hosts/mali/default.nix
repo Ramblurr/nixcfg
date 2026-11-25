@@ -22,6 +22,7 @@ in
     ./zrepl-receiver-reconcile.nix
     ./zrepl-metrics-tunnel.nix
     ./caddy.nix
+    ./moot-cache.nix
     ./garage.nix
     ./syncthing.nix
     ./borgbackup-server.nix

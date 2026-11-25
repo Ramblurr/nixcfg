@@ -118,6 +118,7 @@ let
       ../hosts/mali/caddy.nix
       ../hosts/mali/atticd.nix
       ../hosts/mali/ncps.nix
+      ../hosts/mali/moot-cache.nix
       {
         options.repo.secrets = lib.mkOption {
           type = lib.types.attrs;
@@ -245,8 +246,10 @@ pkgs.runCommand "home-ops-caddy-test"
   {
     nativeBuildInputs = [
       pkgs.caddy-with-security
+      pkgs.curl
       pkgs.gnugrep
       pkgs.jq
+      pkgs.python3
     ];
   }
   ''
@@ -268,6 +271,32 @@ pkgs.runCommand "home-ops-caddy-test"
     ! grep -Fq 's3.data.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq 'nix-cache.int.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq 'nix-cache.moot.land' "$TMPDIR/mali-caddy.json"
+
+    # The moot-cache node's listener passes substitution reads to ncps and
+    # refuses everything else, pin and unpin included.
+    mkdir -p "$TMPDIR/ncps/nar"
+    touch "$TMPDIR/ncps/nix-cache-info" "$TMPDIR/ncps/a.narinfo" "$TMPDIR/ncps/nar/a.nar"
+    python3 -m http.server 3400 --bind 127.0.0.1 --directory "$TMPDIR/ncps" >/dev/null 2>&1 &
+    {
+      printf '{\n\tadmin off\n\tauto_https off\n\tstorage file_system %s\n}\n' "$TMPDIR/caddy-data"
+      sed -n '/^http:\/\/:3401 {/,/^}/p' ${maliCaddy.configFile}
+    } > "$TMPDIR/moot-cache.Caddyfile"
+    HOME="$TMPDIR" XDG_DATA_HOME="$TMPDIR" XDG_CONFIG_HOME="$TMPDIR" \
+      caddy run --config "$TMPDIR/moot-cache.Caddyfile" --adapter caddyfile >"$TMPDIR/moot-cache.log" 2>&1 &
+    status() {
+      curl -s -o /dev/null -w '%{http_code}' --retry 20 --retry-connrefused --retry-delay 1 \
+        -H 'Host: moot-cache.example.ts.net' "$@"
+    }
+    for path in /nix-cache-info /a.narinfo /nar/a.nar; do
+      [ "$(status "http://127.0.0.1:3401$path")" = 200 ]
+    done
+    [ "$(status -I http://127.0.0.1:3401/a.narinfo)" = 200 ]
+    [ "$(status -X POST http://127.0.0.1:3401/pin/a.narinfo)" = 403 ]
+    [ "$(status -X DELETE http://127.0.0.1:3401/pin/a.narinfo)" = 403 ]
+    [ "$(status -X PUT http://127.0.0.1:3401/upload/a.narinfo)" = 403 ]
+    [ "$(status -X DELETE http://127.0.0.1:3401/a.narinfo)" = 403 ]
+    [ "$(status http://127.0.0.1:3401/pins)" = 403 ]
+    kill %1 %2
     jq -e '[.. | objects | select(.handler? == "request_body") | .max_size] | index(100000000) != null and index(1000000000) != null and index(10000000) != null' "$TMPDIR/caddy.json"
     jq -e '[.. | objects | select(.handle? != null) | select(any(.handle[]; .handler? == "request_body" and .max_size == 100000000)) | .match[0].not[0].host] | any(.[]; index("git.example.test") != null)' "$TMPDIR/caddy.json"
     grep -Fq '"jelly.example.test"' "$TMPDIR/caddy.json"
