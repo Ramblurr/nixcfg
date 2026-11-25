@@ -3,7 +3,7 @@
 
          demo
          {:doc  "Render the MOTD with dummy data"
-          :task (apply shell "bb" "-m" "motd.main" *command-line-args*)}
+          :task (apply shell "bb" "-m" "motd.main" "--demo" "host" *command-line-args*)}
 
          lint
          {:doc  "Run clj-kondo on source and tests"
@@ -15,8 +15,9 @@
          {:doc         "Run unit tests"
           :extra-paths ["test"]
           :requires    ([clojure.test :as t]
+                        [motd.collect-test]
                         [motd.render-test])
-          :task        (let [r (t/run-tests 'motd.render-test)]
+          :task        (let [r (t/run-tests 'motd.collect-test 'motd.render-test)]
                          (System/exit (+ (:fail r) (:error r))))}
 
          build
