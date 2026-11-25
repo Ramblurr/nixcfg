@@ -4,12 +4,7 @@
 {
   quine = {
     publicKeyFile = ./ssh/quine-microvm.pub;
-    guests = {
-      egress = {
-        cid = 4246;
-        hostKeyFile = ./ssh/egress-host.pub;
-      };
-    };
+    guests = { };
   };
   dewey = {
     publicKeyFile = ./ssh/dewey-microvm.pub;

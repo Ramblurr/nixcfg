@@ -1,7 +1,7 @@
 { inputs, pkgs }:
 let
   cfg =
-    (inputs.self.lib.nixcfg.mkGuest "dev1" {
+    (inputs.self.lib.nixcfg.mkGuest "immich-home" {
       extraModules = [ { modules.microvm-guest.host = "dewey"; } ];
     }).config;
 in

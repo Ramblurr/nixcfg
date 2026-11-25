@@ -67,7 +67,6 @@
       guestHosts = {
         immich-home = "dewey";
         opencloud-home = "dewey";
-        egress = "quine";
         ward = "debord";
         workstead = "thingstead";
         homestead = "thingstead";
