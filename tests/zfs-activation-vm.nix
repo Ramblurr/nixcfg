@@ -102,6 +102,23 @@ let
           };
           script = "touch /srv/probe/consumer-started";
         };
+        systemd.services.probe-at-final = {
+          wantedBy = [ "final.target" ];
+          before = [ "final.target" ];
+          after = [
+            "shutdown.target"
+            "umount.target"
+          ];
+          unitConfig.DefaultDependencies = false;
+          serviceConfig.Type = "oneshot";
+          script = ''
+            if ${pkgs.util-linux}/bin/mountpoint -q /srv/probe; then dataset=mounted; else dataset=unmounted; fi
+            printf 'FINAL: sysinit=%s barrier=%s dataset=%s cycles=%s\n' \
+              "$(systemctl show sysinit.target -p ActiveState --value)" \
+              "$(systemctl show zfs-datasets.service -p ActiveState --value)" \
+              "$dataset" "$(journalctl -b -q --grep='ordering cycle' | wc -l)" > /dev/ttyS0
+          '';
+        };
         systemd.services.key-import-probe = {
           inherit (config.systemd.services.zfs-import-fast) wants after preStart;
           serviceConfig.Type = "oneshot";
@@ -212,5 +229,11 @@ pkgs.testers.runNixOSTest {
                     assert invocation(unit) == identity, f"{toplevel} restarted {unit}"
                 for unit in [changed, "zfs-mount.service", "consumer.service", "multi-user.target"]:
                     machine.succeed(f"systemctl is-active {unit}")
+
+    with subtest("shutdown stops dataset readiness with the dataset mounts"):
+        machine.fail("journalctl -b --grep='ordering cycle'")
+        machine.execute("systemctl poweroff --no-block")
+        machine.wait_for_console_text("FINAL: sysinit=inactive barrier=inactive dataset=unmounted cycles=0", timeout=60)
+        machine.wait_for_shutdown()
   '';
 }

@@ -106,7 +106,9 @@ in
           "sysinit-reactivation.target"
           "systemd-tmpfiles-setup.service"
           "systemd-tmpfiles-resetup.service"
+          "umount.target"
         ];
+        conflicts = [ "umount.target" ];
         wants = [ "zfs-mount.service" ];
         after = [
           "zfs-mount.service"
