@@ -101,10 +101,33 @@ pkgs.testers.runNixOSTest {
     retired = "${v1.config.environment.etc."moot-retired".source}"
     hello = "${v2.pkgs.hello}"
     hello_link = "${v2.config.environment.etc."moot-hello-link".source}"
+    nixpkgs_src = "${v1.config.nix.registry.nixpkgs.to.path}"
+    nixpkgs_version = "${v1.pkgs.lib.version}"
+    shell = "${v1.pkgs.runtimeShell}"
 
 
     def guest(cmd):
         return host.succeed(f"{ssh} {shlex.quote(cmd)}")
+
+
+    def check_nix(stage):
+        for entry in ["nixpkgs", "nixos"]:
+            found = guest(f"nix-instantiate --find-file {entry}").strip()
+            assert found == nixpkgs_src, f"<{entry}> is {found}, not {nixpkgs_src}"
+        version = guest("nix-instantiate --eval -E 'with import <nixpkgs> {}; lib.version'").strip()
+        assert version == f'"{nixpkgs_version}"', version
+        registry = guest("nix --extra-experimental-features 'nix-command flakes' --option flake-registry ''' registry list")
+        assert f"system flake:nixpkgs path:{nixpkgs_src}?" in registry, registry
+        guest(f"nix-store --check-validity {nixpkgs_src}")
+        guest("systemctl is-active nix-store-verify.service")
+        report = guest("nix-store --verify 2>&1")
+        assert "disappeared" not in report, report
+        expr = (
+            f'derivation {{ name = "moot-{stage}"; system = builtins.currentSystem;'
+            f' builder = builtins.storePath "{shell}"; args = [ "-c" "echo {stage} > $out" ]; }}'
+        )
+        out = guest(f"NIX_REMOTE=daemon nix-build --no-out-link -E {shlex.quote(expr)}").strip()
+        assert guest(f"cat {out}").strip() == stage
 
 
     def guest_fail(cmd):
@@ -173,6 +196,9 @@ pkgs.testers.runNixOSTest {
         guest("systemctl is-enabled nix-gc.timer fstrim.timer")
         assert upper_store_paths() == set(), f"a fresh boot wrote to the upper layer: {upper_store_paths()}"
 
+    with subtest("the v1 image resolves <nixpkgs> to its pinned nixpkgs and builds"):
+        check_nix("v1")
+
     with subtest("fstrim returns freed zvol blocks to the pool"):
         before = referenced()
         guest("head -c 256M /dev/urandom > /nix/.rw-store/trim-probe && sync")
@@ -211,6 +237,9 @@ pkgs.testers.runNixOSTest {
         out = host.succeed(f"${v2Switch}/bin/microvm-switch {target} 2>&1")
         assert "Copying" not in out, out
         assert staging_roots() == [], staging_roots()
+
+    with subtest("the hot-switched v2 system resolves <nixpkgs> and builds"):
+        check_nix("v2")
 
     with subtest("the guest reboots onto the v3 image with the same zvol"):
         assert name(retired) in closure(v2_top) and name(retired) not in upper_store_paths()
@@ -257,6 +286,9 @@ pkgs.testers.runNixOSTest {
         assert name(v2_top) not in upper_store_paths()
         report = guest("nix-store --verify --check-contents 2>&1")
         assert "disappeared" not in report and "modified" not in report, report
+
+    with subtest("the v3 image resolves <nixpkgs> and builds after the reboot"):
+        check_nix("v3")
 
     with subtest("nix-daemon starts on its socket only after the database is verified"):
         guest("systemctl stop nix-daemon.service")

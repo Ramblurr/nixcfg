@@ -11,6 +11,9 @@ assert !cfg.security.acme.acceptTerms;
 assert cfg.security.acme.defaults.email == null;
 assert cfg.security.acme.defaults.reloadServices == [ ];
 assert cfg.security.acme.defaults.server == "https://acme-v02.api.letsencrypt.org/directory";
+assert builtins.all builtins.hasContext (
+  builtins.filter (e: builtins.match "(nixpkgs|nixos)=.*" e != null) cfg.nix.nixPath
+);
 pkgs.runCommand "common-server-test" { } ''
   touch "$out"
 ''
