@@ -55,7 +55,7 @@ let
   clients = {
     mootforge = {
       sshKey = "/var/lib/nixbot/.ssh/id_ed25519";
-      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBRYhwBrSDvAH+qmr3KmMOjiVJpNgUpy4WFBserUtLiz nixbot@debord";
+      publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBRYhwBrSDvAH+qmr3KmMOjiVJpNgUpy4WFBserUtLiz nixbot@mootforge";
       builders = [
         "quine"
         "peirce"
