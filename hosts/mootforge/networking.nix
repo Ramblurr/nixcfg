@@ -3,10 +3,16 @@ let
   inherit (config.networking) hostName;
   inherit (config.repo.secrets) local;
   hostConfig = config.site.hosts.${hostName};
+  homeDomain = config.repo.secrets.global.domain.home;
 in
 {
   inherit (config.repo.secrets.site) site;
   networking.nameservers = config.repo.secrets.global.nameservers;
+  # No prim address here, so mali would answer its prim address over mgmt, bypassing the router.
+  networking.hosts.${builtins.head config.site.net.data.hosts4.mali} = [
+    "nix-cache.int.${homeDomain}"
+    "attic.int.${homeDomain}"
+  ];
   time.timeZone = "Europe/Berlin";
 
   modules.vpn.tailscale.enable = true;
