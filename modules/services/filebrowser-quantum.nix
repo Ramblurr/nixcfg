@@ -14,15 +14,26 @@ let
   sourcePaths = lib.unique (map (source: source.path) cfg.sources);
   settingsFile = settingsFormat.generate "filebrowser-quantum-config.yaml" (
     lib.recursiveUpdate {
-      server = {
+      http = {
         port = cfg.ports.http;
         listen = "127.0.0.1";
-        database = "${stateDir}/database.db";
+      };
+      server = {
+        database.path = "${stateDir}/filebrowser.sqlite";
         inherit cacheDir;
         disableUpdateCheck = true;
         sources = map (source: {
           inherit (source) name path;
-          config.defaultEnabled = true;
+          config = {
+            defaultEnabled = true;
+            defaultPermissions = {
+              view = true;
+              download = true;
+              modify = true;
+              delete = true;
+              create = true;
+            };
+          };
         }) cfg.sources;
       };
       auth = {
@@ -37,15 +48,11 @@ let
         };
       };
       integrations.media.ffmpegPath = "${pkgs.ffmpeg-headless}/bin";
-      userDefaults.permissions = {
+      userDefaults.account.permissions = {
         api = false;
         admin = false;
-        modify = true;
         share = false;
         realtime = false;
-        delete = true;
-        create = true;
-        download = true;
       };
     } cfg.settings
   );
