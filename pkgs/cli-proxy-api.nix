@@ -5,11 +5,11 @@
 # (the fork's flake.nix carries the current value).
 { cli-proxy-api }:
 let
-  version = "8.0.66-unstable-2026-11-24-token-usage";
+  version = "8.0.66-unstable-2026-11-25-caller-usage";
   src = builtins.fetchGit {
     url = "https://git.outskirtslabs.com/forks/cliproxyapi.git";
     ref = "main";
-    rev = "608562487d5f4708c289b87230c4e5d0a7419230";
+    rev = "0e16d8983bc64dfcd554c488dc0ad60f355aa85b";
   };
 in
 cli-proxy-api.overrideAttrs {
