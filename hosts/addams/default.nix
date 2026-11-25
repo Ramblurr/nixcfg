@@ -57,6 +57,21 @@ in
   ## My Custom Base Modules ##
   ############################
   modules = {
+    motd = {
+      enable = true;
+      disks = [
+        "/"
+        "/nix"
+        "/persist"
+        "/boot"
+      ];
+      units = [
+        config.systemd.services.kea-dhcp4-server.name
+        config.systemd.services.dnsdist.name
+        config.systemd.services.unifi.name
+        config.systemd.services.crowdsec.name
+      ];
+    };
     telemetry = {
       smartd.enable = true;
       prometheus-node-exporter.enable = true;

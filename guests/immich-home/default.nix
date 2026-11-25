@@ -15,6 +15,10 @@ in
 
   system.stateVersion = "26.05";
 
+  modules.motd.units = [
+    config.systemd.services.immich-server.name
+    config.systemd.services.postgresql.name
+  ];
   modules.microvm-guest = {
     host = "dewey";
     hostFQDN = "dewey.${config.site.net.mgmt.domainName}";

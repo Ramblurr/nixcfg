@@ -39,6 +39,19 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  modules.motd = {
+    enable = true;
+    disks = [
+      "/"
+      "/nix"
+      "/persist"
+      "/boot"
+    ];
+    units = [
+      config.systemd.services.nad-api.name
+      config.systemd.services.linux-voice-assistant.name
+    ];
+  };
   modules.boot.zfs.trimPools = [
     "rpool"
     "tank"

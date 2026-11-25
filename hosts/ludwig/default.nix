@@ -33,6 +33,26 @@ in
   # here. Closures are copied from the deploying host or cache.nixos.org.
 
   modules = {
+    motd = {
+      enable = true;
+      disks = [
+        "/"
+        "/nix"
+        "/persist"
+        "/home"
+        "/boot"
+        "/mnt/tank"
+      ];
+      units = [
+        config.systemd.services.zrepl.name
+        config.systemd.services.samba-smbd.name
+        config.systemd.services.nfs-server.name
+        config.systemd.services.adguardhome.name
+        config.systemd.services.upsmon.name
+        config.systemd.timers.zrepl-mali-received.name
+        config.systemd.timers.tailscale-watchdog.name
+      ];
+    };
     telemetry.smartd.enable = true;
     shell = {
       htop.enable = true;

@@ -45,6 +45,30 @@ in
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
   modules = {
+    motd = {
+      enable = true;
+      disks = [
+        "/"
+        "/nix"
+        "/persist"
+        "/home"
+        "/boot"
+        "/mnt/fast"
+        "/mnt/tank"
+        "/mnt/tank2"
+      ];
+      units = [
+        config.systemd.services.zrepl.name
+        config.systemd.services.garage.name
+        config.systemd.services.atticd.name
+        config.systemd.services.ncps.name
+        config.systemd.services.samba-smbd.name
+        config.systemd.services.nfs-server.name
+        config.systemd.services.syncthing.name
+        config.systemd.services.upsmon.name
+        config.systemd.timers.rclone-google-personal.name
+      ];
+    };
     telemetry = {
       smartd.enable = true;
       prometheus-node-exporter.enable = true;

@@ -162,6 +162,21 @@ in
   };
 
   modules = {
+    motd = {
+      enable = true;
+      disks = [
+        "/"
+        "/nix"
+        "/persist"
+        "/home"
+        "/boot"
+        "/srv/data"
+      ];
+      units = [
+        config.systemd.services.ollama.name
+        config.systemd.services.syncthing.name
+      ];
+    };
     nix.pruneAgedGcroots.enable = true;
     nix.buildLimits.enable = true;
     desktop = {

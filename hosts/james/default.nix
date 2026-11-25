@@ -38,6 +38,21 @@ in
   networking.firewall.enable = false;
 
   modules = {
+    motd = {
+      enable = true;
+      disks = [
+        "/"
+        "/nix"
+        "/persist"
+        "/boot"
+      ];
+      units = [
+        config.systemd.services.haproxy.name
+        config.systemd.services.caddy.name
+        config.systemd.services.crowdsec.name
+        config.systemd.timers.goaccess-report.name
+      ];
+    };
     shell = {
       htop.enable = true;
       tmux.enable = true;

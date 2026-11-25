@@ -160,6 +160,9 @@ in
     mem = 6144;
   };
 
+  modules.motd.units = lib.mapAttrsToList (
+    name: _: config.systemd.services."t3-${name}".name
+  ) instances;
   modules.users.enable = lib.mkForce false;
   modules.services.sshd.enable = lib.mkForce false;
   security.sudo.enable = false;

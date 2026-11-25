@@ -23,6 +23,16 @@ in
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
+  modules.motd = {
+    enable = true;
+    disks = [
+      "/"
+      "/nix"
+      "/persist"
+      "/boot"
+      "/mnt/downloads"
+    ];
+  };
   modules.boot.zfs.scrubPools = lib.mkForce [
     "rpool"
     "tank"

@@ -26,6 +26,16 @@
       receiverAddress = config.site.hosts.mali.tailscaleIPv4;
     };
   };
+  modules.motd = {
+    enable = true;
+    disks = [
+      "/"
+      "/nix"
+      "/persist"
+      "/boot/crucial"
+      "/boot/samsung"
+    ];
+  };
   modules.boot.zfs.extraPools = lib.mkForce [ ];
   modules.vpn.tailscale.enable = true;
 

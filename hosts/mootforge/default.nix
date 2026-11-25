@@ -25,6 +25,19 @@
   documentation.enable = false;
 
   modules = {
+    motd = {
+      enable = true;
+      disks = [
+        "/"
+        "/nix"
+        "/persist"
+        "/boot"
+      ];
+      units = [
+        config.systemd.services.nixbot.name
+        config.systemd.services.postgresql.name
+      ];
+    };
     users = {
       enable = true;
       headless.enable = true;
