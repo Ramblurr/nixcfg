@@ -5,6 +5,7 @@
 }:
 let
   cfg = config.repo.secrets.local;
+  mootCache = import ../../../config/moot-nix-cache.nix;
 in
 {
   environment.persistence."/persist".directories = [ "/var/lib/pdns" ];
@@ -91,6 +92,8 @@ in
 
         addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.home}'), PoolAction('powerdns'))
         addAction(RegexRule('${transformDomainToRegex config.repo.secrets.global.domain.work}'), PoolAction('powerdns'))
+        -- Only this name: the rest of its zone is public and stays with NextDNS.
+        addAction(QNameRule('${mootCache.host}'), PoolAction('powerdns'))
         ${builtins.concatStringsSep "\n  " (
           map (zone: "addAction('${zone}', PoolAction('powerdns'))") config.repo.secrets.local.reverseZones
         )}
