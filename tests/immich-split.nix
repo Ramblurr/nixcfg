@@ -36,6 +36,7 @@ let
       pkgs.jq
     ];
     virtualisation.memorySize = 3072;
+    specialisation.switched.configuration.environment.etc."immich-test/generation".text = "switched";
   };
 in
 pkgs.testers.runNixOSTest {
@@ -127,6 +128,13 @@ pkgs.testers.runNixOSTest {
         storage.succeed("systemctl start nfs-server.service")
         for machine in [api, worker]:
             machine.wait_for_unit("immich-server.service", timeout=300)
+
+    with subtest("A switch starts a stopped Immich while its mount stays active"):
+        for machine in [api, worker]:
+            machine.succeed("systemctl stop immich-server.service")
+            machine.succeed("systemctl is-active var-lib-immich.mount")
+            machine.succeed("/run/current-system/specialisation/switched/bin/switch-to-configuration test")
+            machine.wait_for_unit("immich-server.service", timeout=60)
 
     api.wait_until_succeeds("curl -fsS http://api:2283/api/server/ping")
     worker.succeed("systemctl stop immich-server.service")
