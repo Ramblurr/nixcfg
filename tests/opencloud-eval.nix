@@ -90,6 +90,7 @@ assert
 assert officeWait != null;
 assert rejects { modules.services.opencloud.instances.beta.uid = lib.mkForce 3101; };
 assert rejects { modules.services.opencloud.instances.beta.subIds.start = lib.mkForce 160000; };
+assert rejects { modules.services.opencloud.instances.beta.subIds.start = lib.mkForce 1000; };
 assert rejects { modules.services.opencloud.instances.beta.ports.app = lib.mkForce 9200; };
 assert rejects {
   modules.services.opencloud.instances.beta.dataMount = lib.mkForce "/mnt/alpha/child";

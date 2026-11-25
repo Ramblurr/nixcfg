@@ -438,6 +438,10 @@ in
         message = "OpenCloud instances require non-overlapping subordinate ID ranges.";
       }
       {
+        assertion = lib.all (i: i.subIds.start >= 100000) values;
+        message = "OpenCloud subordinate ID ranges must start at 100000 or above, clear of login UIDs and GIDs.";
+      }
+      {
         assertion = unique (
           lib.concatMap (i: [
             i.ports.app
