@@ -13,9 +13,22 @@
       ...
     }:
     let
+      nix-comment-lint = pkgs.writeShellApplication {
+        name = "nix-comment-lint";
+        runtimeInputs = [
+          pkgs.ast-grep
+          pkgs.babashka
+          pkgs.git
+        ];
+        text = ''
+          exec bb ${./nix-comment-lint.clj} "$@"
+        '';
+      };
+
       lint = pkgs.writeShellApplication {
         name = "lint";
         runtimeInputs = [
+          nix-comment-lint
           pkgs.deadnix
           pkgs.git
           pkgs.nixfmt
@@ -56,6 +69,11 @@
             fi
           fi
 
+          echo "==> nix-comment-lint"
+          if ! nix-comment-lint; then
+            status=1
+          fi
+
           exit "$status"
         '';
       };
@@ -76,7 +94,9 @@
         };
       };
 
-      packages.lint = lint;
+      packages = {
+        inherit lint nix-comment-lint;
+      };
 
       devshells.default = {
         packages = [
@@ -104,7 +124,11 @@
           }
           {
             package = lint;
-            help = "Run statix, deadnix, and nixfmt checks without modifying files";
+            help = "Run statix, deadnix, nixfmt, and new-code comment checks without modifying files";
+          }
+          {
+            package = nix-comment-lint;
+            help = "Report Nix comments in new code, staged changes, all files, or explicit paths";
           }
           {
             package = pkgs.deploy;
