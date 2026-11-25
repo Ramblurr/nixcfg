@@ -27,5 +27,9 @@ in
       };
     };
   };
+  nix.settings = {
+    min-free = zvolSize * 1024 * 1024 / 8;
+    max-free = zvolSize * 1024 * 1024 / 4;
+  };
   microvm = { inherit vcpu mem; };
 }
