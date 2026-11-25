@@ -11,6 +11,8 @@ let
   values = builtins.attrValues instances;
   unique = xs: builtins.length xs == builtins.length (lib.unique xs);
   yaml = pkgs.formats.yaml { };
+  images = import ./opencloud-images.nix;
+  imageRef = image: "${image.name}:${image.tag}@${image.digest}";
   instanceModule = { name, ... }: {
     options = {
       enable = lib.mkEnableOption "this OpenCloud instance" // {
@@ -56,7 +58,7 @@ let
       ports.office = lib.mkOption { type = lib.types.port; };
       image = lib.mkOption {
         type = lib.types.str;
-        default = "docker.io/opencloudeu/opencloud-rolling:9.0.0@sha256:bd57f039d0dd3df510fb25f178beefdf0b1f049097285feead607824460e6506";
+        default = imageRef images.opencloud;
       };
       environmentFile = lib.mkOption {
         type = lib.types.str;
@@ -78,7 +80,7 @@ let
         domain = lib.mkOption { type = lib.types.str; };
         image = lib.mkOption {
           type = lib.types.str;
-          default = "ghcr.io/euro-office/documentserver@sha256:889e681923d2dcc8bdfb92fe128d10e185fcff880d302b6a0c0c7bf339499290";
+          default = imageRef images.office;
           description = "Pinned Euro Office image (digest or local docker-archive).";
         };
         environmentFile = lib.mkOption {

@@ -1,17 +1,16 @@
 { inputs, pkgs }:
 let
-  opencloudImage = pkgs.dockerTools.pullImage {
-    imageName = "docker.io/opencloudeu/opencloud-rolling";
-    imageDigest = "sha256:6db1cfb06d430a663f16e9f33dcd4596d82a4875be0b4df233c26ce5f667ea74";
-    hash = "sha256-71JvIg8o9EwG71ysaG82ITcgmJhahssZaauVIMhbhIk=";
-    finalImageTag = "7.5.0";
-  };
-  officeImage = pkgs.dockerTools.pullImage {
-    imageName = "ghcr.io/euro-office/documentserver";
-    imageDigest = "sha256:889e681923d2dcc8bdfb92fe128d10e185fcff880d302b6a0c0c7bf339499290";
-    hash = "sha256-tOCXhcy2sDZwtRPTh+ig9kJVyjHIfBPq9ltA/FZONo0=";
-    finalImageTag = "latest";
-  };
+  images = import ../modules/services/opencloud-images.nix;
+  pull =
+    image: hash:
+    pkgs.dockerTools.pullImage {
+      imageName = image.name;
+      imageDigest = image.digest;
+      finalImageTag = image.tag;
+      inherit hash;
+    };
+  opencloudImage = pull images.opencloud "sha256-1TttoUfFSPjFg+b5rV/CWSOdNJMDaUCaTxnupzzlSRg=";
+  officeImage = pull images.office "sha256-HyUBhzYYgV4ffJmXq+c9OmTkw/ssbln3K0Ip+O+Zl48=";
   names = [
     "alpha"
     "beta"
@@ -20,7 +19,17 @@ let
     alpha = 3101;
     beta = 3102;
   };
-  instance = name: {
+  imageUnits = name: {
+    "opencloud-${name}" = {
+      uid = ids.${name};
+      package = opencloudImage;
+    };
+    "opencloud-${name}-office" = {
+      uid = ids.${name};
+      package = officeImage;
+    };
+  };
+  instance = quadlet: name: {
     uid = ids.${name};
     gid = ids.${name};
     dataMount = "/mnt/${name}";
@@ -38,7 +47,7 @@ let
           app = 9300;
           office = 9301;
         };
-    image = "docker-archive:${opencloudImage}";
+    image = quadlet.images."opencloud-${name}".ref;
     environmentFile = "/run/opencloud-test/${name}.env";
     oidc.issuer = "https://127.0.0.1:9200";
     # Use OpenCloud's real built-in IDP for this isolated storage test; no
@@ -54,7 +63,7 @@ let
     };
     office = {
       domain = "docs-${name}.example.test";
-      image = "docker-archive:${officeImage}";
+      image = quadlet.images."opencloud-${name}-office".ref;
       environmentFile = "/run/opencloud-test/${name}-office.env";
     };
   };
@@ -76,16 +85,17 @@ pkgs.testers.runNixOSTest {
     environment.systemPackages = [ pkgs.attr ];
     system.stateVersion = "26.05";
   };
-  nodes.client = { lib, ... }: {
+  nodes.client = { config, lib, ... }: {
     imports = [
       (import ../modules/quadlet-nix.nix inputs)
       ../modules/services/opencloud.nix
     ];
-    modules.services.opencloud.instances = lib.genAttrs names instance;
+    modules.services.opencloud.instances = lib.genAttrs names (instance config.virtualisation.quadlet);
     virtualisation = {
       memorySize = 12288;
       cores = 4;
       diskSize = 32768;
+      quadlet.images = lib.mkMerge (map imageUnits names);
       # Bind test tools, not replacement applications, into the real containers.
       quadlet.containers = lib.genAttrs (map (name: "opencloud-${name}") names) (_: {
         containerConfig.Volume = [ "/nix/store:/nix/store:ro" ];
@@ -142,6 +152,9 @@ pkgs.testers.runNixOSTest {
     client.wait_for_unit("multi-user.target")
     for name in ["alpha", "beta"]:
         client.wait_for_unit(f"user@{3101 if name == 'alpha' else 3102}.service")
+        # The first boot loads both images; only then does the application get
+        # past its office preflight to the NFS check this asserts on.
+        office_ready(name)
         client.wait_until_succeeds(f"test $(systemctl --user --machine=opencloud-{name}@ show opencloud-{name}.service -p NRestarts --value) -ge 1", timeout=120)
         client.succeed(f"test ! -e /mnt/{name}/users; test ! -e /mnt/{name}/metadata")
         assert json.loads(podman(name, "ps --format json")) == [] or all(
