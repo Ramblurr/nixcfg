@@ -38,6 +38,15 @@
   };
   modules.boot.zfs.extraPools = lib.mkForce [ ];
   modules.vpn.tailscale.enable = true;
+  modules.nix.buildLimits = {
+    enable = true;
+    idleCpu = true;
+    memoryHigh = "32G";
+  };
+  nix.settings = {
+    max-jobs = 2;
+    cores = 3;
+  };
 
   modules.services.dependency-mirror = {
     enable = true;
