@@ -40,6 +40,14 @@ let
   lan0_ip = first config.site.net.lan0.hosts4.${hostName};
   dewey_mgmt_ip = first config.site.net.mgmt.hosts4.dewey;
   quine_mgmt_ip = first config.site.net.mgmt.hosts4.quine;
+  debord_mgmt_ip = first config.site.net.mgmt.hosts4.debord;
+  exporter_ports =
+    lib.concatMapStringsSep ", " (name: toString config.services.prometheus.exporters.${name}.port)
+      [
+        "node"
+        "zfs"
+        "smartctl"
+      ];
 
   # ──────────────────────────────────────────────────────────────────
   # Begin my actual config data
@@ -307,6 +315,14 @@ let
       to = [ local_zone ];
       extraLines = [
         ''ip saddr ${quine_mgmt_ip} tcp dport 8068 counter accept comment "allow Quine PowerDNS API"''
+      ];
+    };
+
+    prometheus_scrape = {
+      from = [ zones.mgmt ];
+      to = [ local_zone ];
+      extraLines = [
+        ''ip saddr ${debord_mgmt_ip} tcp dport { ${exporter_ports} } counter accept comment "allow debord Prometheus to scrape exporters"''
       ];
     };
 
