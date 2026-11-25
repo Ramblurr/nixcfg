@@ -7,8 +7,12 @@ let
       hostPath = ./fixtures/zvol-guest;
       extraModules = [ extra ];
     };
-  v1 = mkGuest { };
-  v2 = mkGuest (
+  # v1 and v2 ship this path; v3 drops it. The hot-switched v2 system in the
+  # upper layer refers to it while only the v1 image holds it.
+  retired = {
+    environment.etc."moot-retired".text = "retired";
+  };
+  helloRelease =
     { pkgs, ... }:
     {
       environment.etc."moot-release".text = "v2";
@@ -17,10 +21,17 @@ let
         pkgs.runCommand "moot-hello-link" { }
           "ln -s ${pkgs.hello} $out";
       environment.systemPackages = [ pkgs.hello ];
-    }
-  );
+    };
+  v1 = mkGuest retired;
+  v2 = mkGuest {
+    imports = [
+      retired
+      helloRelease
+    ];
+  };
+  v3 = mkGuest helloRelease;
   v2Switch = v2.config.microvm.deploy.sshSwitch;
-  v2Runner = v2.config.microvm.declaredRunner;
+  v3Runner = v3.config.microvm.declaredRunner;
   zvolSize = v1.config.modules.microvm-guest.writableStoreOverlay.zvolSize;
 in
 pkgs.testers.runNixOSTest {
@@ -57,7 +68,7 @@ pkgs.testers.runNixOSTest {
       # deploy copies the switch helper's closure to the VM host first.
       additionalPaths = [
         v2Switch
-        v2Runner
+        v3Runner
       ];
     };
     environment.etc."microvm-test-key" = {
@@ -85,6 +96,8 @@ pkgs.testers.runNixOSTest {
     ssh = f"ssh -n {target}"
     v1_top = "${v1.config.system.build.toplevel}"
     v2_top = "${v2.config.system.build.toplevel}"
+    v3_top = "${v3.config.system.build.toplevel}"
+    retired = "${v1.config.environment.etc."moot-retired".source}"
     hello = "${v2.pkgs.hello}"
     hello_link = "${v2.config.environment.etc."moot-hello-link".source}"
 
@@ -121,6 +134,8 @@ pkgs.testers.runNixOSTest {
     def boot_guest():
         host.wait_for_unit("microvm@zvol-guest.service")
         host.wait_until_succeeds(f"{ssh} true", timeout=300)
+        # SSH can answer before the boot's oneshot units finish.
+        guest("systemctl is-system-running --wait || true")
         return guest("cat /proc/sys/kernel/random/boot_id").strip()
 
 
@@ -196,11 +211,12 @@ pkgs.testers.runNixOSTest {
         assert "Copying" not in out, out
         assert staging_roots() == [], staging_roots()
 
-    with subtest("the guest reboots onto the v2 image with the same zvol"):
-        host.succeed(f"ln -sfn ${v2Runner} {state}/current")
+    with subtest("the guest reboots onto the v3 image with the same zvol"):
+        assert name(retired) in closure(v2_top) and name(retired) not in upper_store_paths()
+        host.succeed(f"ln -sfn ${v3Runner} {state}/current")
         host.succeed("systemctl restart microvm@zvol-guest.service")
         assert boot_guest() != first_boot
-        guest(f"test $(readlink /run/booted-system) = {v2_top}")
+        guest(f"test $(readlink /run/booted-system) = {v3_top}")
         guest("systemctl is-active nix-store-verify.service")
 
     with subtest("the initrd dedup ran once, before the overlay was mounted"):
@@ -220,8 +236,8 @@ pkgs.testers.runNixOSTest {
             ("sysroot-nix-store.mount", "started"),
         ], events
 
-    with subtest("the initrd dropped upper copies of paths the v2 image ships with the same type"):
-        left = upper_store_paths() & closure(v2_top)
+    with subtest("the initrd dropped upper copies of paths the v3 image ships with the same type"):
+        left = upper_store_paths() & closure(v3_top)
         # microvm.nix's image builder stores a symlink path as a copy of its target,
         # so the upper symlink is the only copy that matches its database hash.
         assert left == {name(hello_link)}, f"duplicated in the upper layer: {left}"
@@ -233,16 +249,17 @@ pkgs.testers.runNixOSTest {
     with subtest("state only the zvol holds survives and the database is consistent"):
         assert name(added) in upper_store_paths()
         guest(f"grep -qx moot-state {added}")
-        guest(f"nix-store --check-validity {v2_top} {hello} {added}")
-        report = guest("journalctl -b -u nix-store-verify.service")
-        assert f"path '{v1_top}' disappeared, removing from database" in report, report
-        guest_fail(f"nix-store --check-validity {v1_top}")
+        guest(f"nix-store --check-validity {v3_top} {hello} {added}")
+        guest(f"nix-store -qR {v3_top} | xargs ls -d > /dev/null")
+        for gone in [v1_top, retired, v2_top]:
+            guest_fail(f"nix-store --check-validity {gone}")
+        assert name(v2_top) not in upper_store_paths()
         report = guest("nix-store --verify --check-contents 2>&1")
         assert "disappeared" not in report and "modified" not in report, report
 
     with subtest("nix-daemon starts on its socket only after the database is verified"):
         guest("systemctl stop nix-daemon.service")
-        guest(f"NIX_REMOTE=daemon nix-store --check-validity {v2_top}")
+        guest(f"NIX_REMOTE=daemon nix-store --check-validity {v3_top}")
         guest("systemctl is-active nix-daemon.service")
         guest(
             "mkdir -p /run/systemd/system/nix-store-verify.service.d"
