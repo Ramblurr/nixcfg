@@ -10,6 +10,7 @@ let
   inherit (config.repo.secrets.global) domain;
   cfg = config.services.ncps;
   hostName = "nix-cache.int.${domain.home}";
+  mootCacheHost = (import ../../config/moot-nix-cache.nix).host;
 in
 {
   # Preserve cache ownership across impermanent-root boots that rebuild accounts with userborn.
@@ -95,6 +96,7 @@ in
 
   modules.services.caddy.routes.ncps = {
     publicHost = hostName;
+    aliases = [ mootCacheHost ];
     upstream = "http://${config.services.ncps.server.addr}";
   };
 }

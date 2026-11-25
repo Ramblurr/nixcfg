@@ -13,6 +13,7 @@ in
       "attic.int.${homeDomain}"
       "databasus.${homeDomain}"
       "nix-cache.int.${homeDomain}"
+      (import ../../config/moot-nix-cache.nix).host
       "garage.data.${homeDomain}"
       "garage.mgmt.${homeDomain}"
     ];

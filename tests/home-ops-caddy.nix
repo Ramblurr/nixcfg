@@ -230,10 +230,12 @@ assert
     "attic.int.example.test"
     "databasus.example.test"
     "nix-cache.int.example.test"
+    "nix-cache.moot.land"
     "garage.data.example.test"
     "garage.mgmt.example.test"
   ];
 assert maliCfg.modules.services.caddy.routes.attic.aliases == [ "attic.int.example.test" ];
+assert maliCfg.modules.services.caddy.routes.ncps.aliases == [ "nix-cache.moot.land" ];
 assert !(maliCfg.modules.services.caddy.routes ? minio-console);
 assert !(maliCfg.modules.services.caddy.routes ? s3);
 assert !lib.hasInfix "remote_ip 10.9.8.0/23 10.9.10.0/23" maliCaddy.extraConfig;
@@ -265,6 +267,7 @@ pkgs.runCommand "home-ops-caddy-test"
     ! grep -Fq 'minio.data.example.test' "$TMPDIR/mali-caddy.json"
     ! grep -Fq 's3.data.example.test' "$TMPDIR/mali-caddy.json"
     grep -Fq 'nix-cache.int.example.test' "$TMPDIR/mali-caddy.json"
+    grep -Fq 'nix-cache.moot.land' "$TMPDIR/mali-caddy.json"
     jq -e '[.. | objects | select(.handler? == "request_body") | .max_size] | index(100000000) != null and index(1000000000) != null and index(10000000) != null' "$TMPDIR/caddy.json"
     jq -e '[.. | objects | select(.handle? != null) | select(any(.handle[]; .handler? == "request_body" and .max_size == 100000000)) | .match[0].not[0].host] | any(.[]; index("git.example.test") != null)' "$TMPDIR/caddy.json"
     grep -Fq '"jelly.example.test"' "$TMPDIR/caddy.json"
