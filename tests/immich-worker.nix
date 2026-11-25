@@ -18,6 +18,7 @@ let
           fileSystems."/var/lib/immich" = {
             device = "192.0.2.10:/exports/immich";
             fsType = "nfs";
+            options = [ "nofail" ];
           };
           users.users.root.openssh.authorizedKeys.keys = (import ./fixtures/immich/global.nix).pubKeys;
           modules.services.immich-worker.enable = enable;

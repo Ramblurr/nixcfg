@@ -28,7 +28,7 @@ in
       "vers=4.2"
       "hard"
       "_netdev"
-      "bg"
+      "nofail"
     ];
   };
   systemd.services.immich-server = {

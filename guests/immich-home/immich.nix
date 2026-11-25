@@ -22,6 +22,7 @@ in
 {
   imports = [
     ../../modules/services/immich-common.nix
+    ../../modules/mount-retry.nix
     ../../modules/services/immich-ml-proxy.nix
   ];
 

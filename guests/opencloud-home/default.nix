@@ -20,6 +20,7 @@ in
   imports = [
     (import ../../modules/quadlet-nix.nix inputs)
     ../../modules/services/opencloud.nix
+    ../../modules/mount-retry.nix
   ];
 
   networking.hostName = "opencloud-home";
@@ -130,9 +131,9 @@ in
       "noac"
       "hard"
       "nofail"
-      "bg"
     ];
   };
+  modules.mount-retry.mountPoints = lib.mkIf (dataSource != null) [ "/mnt/opencloud" ];
   networking.firewall.extraInputRules = ''
     ip saddr ${deweyAddress} tcp dport { 22, 9200, 9201 } accept
   '';

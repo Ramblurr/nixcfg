@@ -90,8 +90,10 @@ pkgs.testers.runNixOSTest {
     imports = [
       (import ../modules/quadlet-nix.nix inputs)
       ../modules/services/opencloud.nix
+      ../modules/mount-retry.nix
     ];
     modules.services.opencloud.instances = lib.genAttrs names (instance config.virtualisation.quadlet);
+    modules.mount-retry.mountPoints = map (name: "/mnt/${name}") names;
     virtualisation = {
       memorySize = 12288;
       cores = 4;
@@ -109,7 +111,6 @@ pkgs.testers.runNixOSTest {
           "noac"
           "hard"
           "nofail"
-          "bg"
         ];
       });
     };
@@ -137,6 +138,7 @@ pkgs.testers.runNixOSTest {
     system.stateVersion = "26.05";
   };
   testScript = ''
+    import datetime
     import json
 
     def podman(name, args):
@@ -156,14 +158,13 @@ pkgs.testers.runNixOSTest {
     server.succeed("systemctl stop nfs-server.service")
     client.start()
     client.wait_for_unit("multi-user.target")
-    # Outlast a single boot-time attempt: the mounts must still be retrying.
-    client.sleep(45)
     for name in ["alpha", "beta"]:
+        client.wait_until_succeeds(f"journalctl -u mnt-{name}.mount | grep -F \"mnt-{name}.mount: Failed with result 'timeout'\"", timeout=120)
+        client.wait_for_unit(f"user@{3101 if name == 'alpha' else 3102}.service")
         for subids in ["/etc/subuid", "/etc/subgid"]:
             client.succeed(f"grep -Fx opencloud-{name}:{100000 if name == 'alpha' else 165536}:65536 {subids}")
-        state = dict(line.split("=", 1) for line in client.succeed(f"systemctl show mnt-{name}.mount -p ActiveState -p Result").split())
-        assert state["ActiveState"] == "activating", state
-        client.succeed(f"test ! -e /mnt/{name}/users; test ! -e /mnt/{name}/metadata")
+        client.succeed(f"test ! -e /mnt/{name}/users && test ! -e /mnt/{name}/metadata")
+        client.fail(f"curl -kfsS --max-time 5 https://127.0.0.1:{9200 if name == 'alpha' else 9300}/status.php")
 
     server.succeed("systemctl start nfs-server.service")
     for name in ["alpha", "beta"]:
@@ -217,5 +218,10 @@ pkgs.testers.runNixOSTest {
         client.succeed(f"sudo -u opencloud-{name} -- getfattr --only-values -n user.opencloud-test /mnt/{name}/probe | grep -Fx {name}")
         office_ready(name)
         podman(name, f"exec opencloud-{name}-office grep -Fx office-durable /var/www/euro-office/Data/probe")
+
+    # The storage host disappears under established mounts and running applications.
+    server.crash()
+    client.succeed("systemctl --no-block poweroff")
+    client.wait_for_shutdown(timeout=datetime.timedelta(seconds=300))
   '';
 }

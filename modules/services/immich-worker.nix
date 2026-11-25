@@ -9,6 +9,7 @@ let
   cfg = config.modules.services.immich-worker;
 in
 {
+  imports = [ ../mount-retry.nix ];
   options.modules.services.immich-worker.enable =
     lib.mkEnableOption "the remote Immich background worker with GPU video transcoding";
 

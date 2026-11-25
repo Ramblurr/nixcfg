@@ -22,6 +22,7 @@ let
         "vers=4.2"
         "hard"
         "_netdev"
+        "nofail"
       ];
     };
     # Synthetic credentials for these disposable VMs only, never deployment data.
@@ -104,9 +105,17 @@ pkgs.testers.runNixOSTest {
     import json
     import shlex
 
-    start_all()
+    storage.start()
     storage.wait_for_unit("nfs-server.service")
-    api.wait_for_unit("immich-server.service")
+    storage.succeed("systemctl stop nfs-server.service")
+    start_all()
+
+    with subtest("API host boots while NFS is down and starts Immich once it returns"):
+        api.wait_for_unit("multi-user.target", timeout=180)
+        api.fail("systemctl is-active immich-server.service")
+        storage.succeed("systemctl start nfs-server.service")
+        api.wait_for_unit("immich-server.service", timeout=300)
+
     api.wait_until_succeeds("curl -fsS http://api:2283/api/server/ping")
     worker.fail("systemctl is-active immich-server.service")
 

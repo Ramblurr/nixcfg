@@ -115,7 +115,7 @@ in
       "hard"
       "_netdev"
       "noatime"
-      "bg"
+      "nofail"
     ];
   };
   systemd.tmpfiles.rules = [
