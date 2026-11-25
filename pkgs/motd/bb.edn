@@ -1,0 +1,35 @@
+{:paths ["src"]
+ :tasks {:init (def paths ["src" "test"])
+
+         demo
+         {:doc  "Render the MOTD with dummy data"
+          :task (apply shell "bb" "-m" "motd.main" *command-line-args*)}
+
+         lint
+         {:doc  "Run clj-kondo on source and tests"
+          :task (if (seq *command-line-args*)
+                  (apply shell "clj-kondo" "--lint" *command-line-args*)
+                  (apply shell "clj-kondo" "--lint" paths))}
+
+         test
+         {:doc         "Run unit tests"
+          :extra-paths ["test"]
+          :requires    ([clojure.test :as t]
+                        [motd.render-test])
+          :task        (let [r (t/run-tests 'motd.render-test)]
+                         (System/exit (+ (:fail r) (:error r))))}
+
+         build
+         {:doc  "Generate standalone motd uberscript from source"
+          :task (do
+                  (println "Building uberscript...")
+                  (babashka.fs/delete-if-exists "motd")
+                  (shell {:err :string} "bb" "uberscript" "motd" "-m" "motd.main")
+                  (let [content (slurp "motd")]
+                    (spit "motd" (str "#!/usr/bin/env -S bb --config /dev/null\n" content)))
+                  (shell "chmod" "+x" "motd")
+                  (println "Done. Generated: motd"))}
+
+         ci
+         {:doc     "Run lint and test suite"
+          :depends [lint test]}}}
