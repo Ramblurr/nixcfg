@@ -92,6 +92,21 @@ assert
   c.systemd.services.opencloud-home-credentials.unitConfig.RequiresMountsFor
   == [ "/run/host-secrets" ];
 assert c.modules.services.opencloud.instances.home.uid == 3100;
+assert !c.users.users.opencloud-home.autoSubUidGidRange;
+assert
+  c.users.users.opencloud-home.subUidRanges == [
+    {
+      startUid = 100000;
+      count = 65536;
+    }
+  ];
+assert
+  c.users.users.opencloud-home.subGidRanges == [
+    {
+      startGid = 100000;
+      count = 65536;
+    }
+  ];
 assert c.modules.services.opencloud.instances.home.dataMount == "/mnt/opencloud";
 assert c.fileSystems."/mnt/opencloud".fsType == "nfs";
 assert builtins.all (option: builtins.elem option c.fileSystems."/mnt/opencloud".options) [

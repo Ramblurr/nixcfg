@@ -13,6 +13,7 @@ let
           alpha = {
             uid = 3101;
             gid = 3101;
+            subIds.start = 100000;
             dataMount = "/mnt/alpha";
             domain = "alpha.example.test";
             office.domain = "docs-alpha.example.test";
@@ -27,6 +28,7 @@ let
           beta = {
             uid = 3102;
             gid = 3102;
+            subIds.start = 165536;
             dataMount = "/mnt/beta";
             domain = "beta.example.test";
             office.domain = "docs-beta.example.test";
@@ -56,6 +58,21 @@ assert lib.all (a: a.assertion) c.assertions;
 assert c.users.users.opencloud-alpha.uid == 3101;
 assert c.users.users.opencloud-beta.uid == 3102;
 assert c.users.users.opencloud-alpha.linger;
+assert !c.users.users.opencloud-alpha.autoSubUidGidRange;
+assert
+  c.users.users.opencloud-beta.subUidRanges == [
+    {
+      startUid = 165536;
+      count = 65536;
+    }
+  ];
+assert
+  c.users.users.opencloud-beta.subGidRanges == [
+    {
+      startGid = 165536;
+      count = 65536;
+    }
+  ];
 assert c.virtualisation.quadlet.containers.opencloud-alpha.uid == 3101;
 assert c.virtualisation.quadlet.containers.opencloud-beta.uid == 3102;
 assert builtins.elem "PROXY_OIDC_REWRITE_WELLKNOWN=true"
@@ -72,6 +89,7 @@ assert
   == "keep-id:uid=1000,gid=1000";
 assert officeWait != null;
 assert rejects { modules.services.opencloud.instances.beta.uid = lib.mkForce 3101; };
+assert rejects { modules.services.opencloud.instances.beta.subIds.start = lib.mkForce 160000; };
 assert rejects { modules.services.opencloud.instances.beta.ports.app = lib.mkForce 9200; };
 assert rejects {
   modules.services.opencloud.instances.beta.dataMount = lib.mkForce "/mnt/alpha/child";

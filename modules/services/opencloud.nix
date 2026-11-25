@@ -30,6 +30,16 @@ let
         type = lib.types.ints.positive;
         description = "Stable service GID, also owning the NFS export.";
       };
+      subIds = {
+        start = lib.mkOption {
+          type = lib.types.ints.positive;
+          description = "First subordinate UID and GID of the rootless Podman user namespace. Pinned rather than allocated, because the ownership of the office's named volumes depends on it.";
+        };
+        count = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 65536;
+        };
+      };
       stateDir = lib.mkOption {
         type = lib.types.str;
         default = "/var/lib/opencloud-${name}";
@@ -248,7 +258,19 @@ let
         createHome = false;
         shell = pkgs.shadow;
         linger = true;
-        autoSubUidGidRange = true;
+        autoSubUidGidRange = false;
+        subUidRanges = [
+          {
+            startUid = i.subIds.start;
+            inherit (i.subIds) count;
+          }
+        ];
+        subGidRanges = [
+          {
+            startGid = i.subIds.start;
+            inherit (i.subIds) count;
+          }
+        ];
       };
       systemd.tmpfiles.rules = map (path: "d '${path}' 0700 ${i.user} ${i.user} - -") [
         i.stateDir
@@ -404,6 +426,18 @@ in
         assertion =
           unique (map (i: i.uid) values) && unique (map (i: i.gid) values) && unique (map (i: i.user) values);
         message = "OpenCloud instances require distinct users, UIDs and GIDs.";
+      }
+      {
+        assertion = lib.all (
+          a:
+          lib.all (
+            b:
+            a == b
+            || a.subIds.start + a.subIds.count <= b.subIds.start
+            || b.subIds.start + b.subIds.count <= a.subIds.start
+          ) values
+        ) values;
+        message = "OpenCloud instances require non-overlapping subordinate ID ranges.";
       }
       {
         assertion = unique (

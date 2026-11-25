@@ -92,6 +92,7 @@ in
   modules.services.opencloud.instances.home = {
     uid = 3100;
     gid = 3100;
+    subIds.start = 100000;
     dataMount = "/mnt/opencloud";
     domain = "data.${home.homeDomain}";
     listenAddress = address;

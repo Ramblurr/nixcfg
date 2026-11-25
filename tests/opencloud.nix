@@ -32,6 +32,7 @@ let
   instance = quadlet: name: {
     uid = ids.${name};
     gid = ids.${name};
+    subIds.start = if name == "alpha" then 100000 else 165536;
     dataMount = "/mnt/${name}";
     dataSource = "server:/exports/${name}";
     domain = "${name}.example.test";
@@ -152,6 +153,8 @@ pkgs.testers.runNixOSTest {
     client.wait_for_unit("multi-user.target")
     for name in ["alpha", "beta"]:
         client.wait_for_unit(f"user@{3101 if name == 'alpha' else 3102}.service")
+        for subids in ["/etc/subuid", "/etc/subgid"]:
+            client.succeed(f"grep -Fx opencloud-{name}:{100000 if name == 'alpha' else 165536}:65536 {subids}")
         # The first boot loads both images; only then does the application get
         # past its office preflight to the NFS check this asserts on.
         office_ready(name)
