@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -73,6 +74,11 @@
   home.nix-lan-cache = {
     enable = true;
     substituter = "https://${(import ../../config/moot-nix-cache.nix).host}";
+  };
+
+  nix.settings = {
+    min-free = lib.mkForce (32 * 1024 * 1024 * 1024);
+    max-free = lib.mkForce (64 * 1024 * 1024 * 1024);
   };
 
   security.sudo.wheelNeedsPassword = false;
