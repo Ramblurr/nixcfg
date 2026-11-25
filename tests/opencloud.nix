@@ -9,8 +9,8 @@ let
       finalImageTag = image.tag;
       inherit hash;
     };
-  opencloudImage = pull images.opencloud "sha256-1TttoUfFSPjFg+b5rV/CWSOdNJMDaUCaTxnupzzlSRg=";
-  officeImage = pull images.office "sha256-HyUBhzYYgV4ffJmXq+c9OmTkw/ssbln3K0Ip+O+Zl48=";
+  opencloudImage = pull images.opencloud "sha256-dfY7MFdkZpS8CgrDZ03KNR/NXTKh2wRMSNxbC3OURFs=";
+  officeImage = pull images.office "sha256-JrLkcmIRZhfrAg2f3QUxpAs0k2EK9hgI/tcEjWpwR8Q=";
   names = [
     "alpha"
     "beta"
