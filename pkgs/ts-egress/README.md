@@ -30,8 +30,7 @@ lives:
 - The decision runs on the egress host, away from the client. Killing or
   tampering with the tenant's Tailscale client cannot loosen the rules. At
   most it cuts the tenant off. Stopping a tenant from going around the exit
-  node is the tenant host's job: in this repository `guests/t3-users` does it
-  with nftables.
+  node is the tenant host's job, for example with nftables.
 - Secrets stay on the egress. The tenant holds a placeholder such as
   `TS_EGRESS_PLACEHOLDER_GITHUB_TOKEN`, and the egress swaps in the real
   value on the way out, only for the hosts, methods and paths the rule names.

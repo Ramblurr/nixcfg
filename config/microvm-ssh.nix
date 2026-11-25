@@ -5,10 +5,6 @@
   quine = {
     publicKeyFile = ./ssh/quine-microvm.pub;
     guests = {
-      t3-users = {
-        cid = 4245;
-        hostKeyFile = ./ssh/t3-users-host.pub;
-      };
       egress = {
         cid = 4246;
         hostKeyFile = ./ssh/egress-host.pub;
