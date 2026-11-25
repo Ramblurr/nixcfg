@@ -1,7 +1,17 @@
 # TODO
 
-- [ ] debord: 10GbE/sonnet is not working
-- [ ] debord: zfs replication to mali is not working, because of 10GbE not working
+- [ ] moot: break-glass agent access. Casey needs a self-contained way to use
+  T3, pi, Claude Code and similar tools when ward is down, on witt or quine.
+- [ ] moot: document shell access to the MicroVMs from their hosts, so Casey
+  can troubleshoot when the agents are down.
+- [ ] moot: separate guest MicroVM lifecycles from their hosts (imperative
+  MicroVMs or something like it), for all our MicroVM guests, not only the
+  agents. Document how to deploy a single guest.
+- [ ] moot: how every wright reaches Forgejo (https://git.outskirtslabs.com/)
+  and the code archive with its search and MCP (https://src.outskirtslabs.com/).
+- [ ] moot: how wrights in homestead reach Home Assistant and its MCP server.
+- [ ] moot: deploy bb workers to the wrights instead of T3.
+- [ ] debord: zfs replication to mali verify if it is working or fix
 
 ### Temporary package fixes and pins
 
