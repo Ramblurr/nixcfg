@@ -205,6 +205,7 @@ let
           --retry-delay 2 \
           --retry-max-time 180 \
           --connect-timeout 5 \
+          --max-time 10 \
           ${lib.escapeShellArg "http://${officeProbeAddress}:${toString i.ports.office}/hosting/discovery"} >/dev/null
       '';
       start = pkgs.writeText "${unit}-start.sh" ''
@@ -290,7 +291,7 @@ let
         ) officeVolumes;
         containers.${unit} = lib.recursiveUpdate common {
           unitConfig = {
-            Requires = [ "${officeUnit}.service" ];
+            Wants = [ "${officeUnit}.service" ];
             After = [ "${officeUnit}.service" ];
           };
           serviceConfig.ExecStartPre = [

@@ -61,8 +61,9 @@ assert c.virtualisation.quadlet.containers.opencloud-beta.uid == 3102;
 assert builtins.elem "PROXY_OIDC_REWRITE_WELLKNOWN=true"
   c.virtualisation.quadlet.containers.opencloud-alpha.containerConfig.Environment;
 assert builtins.elem "opencloud-alpha-office.service" (
-  c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig.Requires or [ ]
+  c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig.Wants or [ ]
 );
+assert !(c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig ? Requires);
 assert builtins.elem "opencloud-alpha-office.service" (
   c.virtualisation.quadlet.containers.opencloud-alpha.unitConfig.After or [ ]
 );
@@ -83,5 +84,6 @@ pkgs.runCommand "opencloud-evaluation" { } ''
   ${pkgs.gnugrep}/bin/grep -F \
     'http://127.0.0.1:9201/hosting/discovery' \
     ${officeWait}
+  ${pkgs.gnugrep}/bin/grep -F -- '--max-time 10' ${officeWait}
   touch $out
 ''

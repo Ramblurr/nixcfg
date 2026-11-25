@@ -189,6 +189,18 @@ pkgs.testers.runNixOSTest {
         assert podman(name, f"inspect --format '{{{{.Id}}}}' opencloud-{name}").strip() != container_id
         podman(name, f"exec opencloud-{name} sh -c 'grep -Fx persistent /data/probe; grep -Fx durable /var/lib/opencloud/probe'")
 
+    # Office fails before the application starts and recovers later; the
+    # application must still come up without anyone restarting it.
+    alpha = "systemctl --user --machine=opencloud-alpha@"
+    client.succeed(f"{alpha} stop opencloud-alpha.service opencloud-alpha-office.service")
+    office_restarts = int(client.succeed(f"{alpha} show opencloud-alpha-office.service -p NRestarts --value"))
+    client.succeed("mv /run/opencloud-test/alpha-office.env /run/opencloud-test/alpha-office.env.held")
+    client.succeed(f"{alpha} start --no-block opencloud-alpha.service")
+    client.wait_until_succeeds(f"test $({alpha} show opencloud-alpha-office.service -p NRestarts --value) -gt {office_restarts}", timeout=60)
+    client.succeed("mv /run/opencloud-test/alpha-office.env.held /run/opencloud-test/alpha-office.env")
+    office_ready("alpha")
+    ready("alpha")
+
     server.succeed("curl -kfsS https://client:9300/status.php")
     server.fail("curl --connect-timeout 3 -kfsS https://client:9200/status.php")
     assert json.loads(client.succeed("podman ps --format json")) == []
