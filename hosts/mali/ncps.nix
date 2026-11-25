@@ -53,12 +53,14 @@ in
           "https://cache.nixos.org"
           "https://nix-community.cachix.org"
           "https://cache.numtide.com"
+          "https://cache.flox.dev"
           config.repo.secrets.global.localAtticSubstituter
         ];
         publicKeys = [
           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
           "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+          "flox-cache-public-1:7F4OyH7ZCnFhcze3fJdfyXYLQw/aV7GEed86nQ7IsOs="
           config.repo.secrets.global.localAtticPublicKey
         ];
       };
