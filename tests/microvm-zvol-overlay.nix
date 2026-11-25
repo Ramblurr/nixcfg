@@ -30,6 +30,7 @@ let
     ];
   };
   v3 = mkGuest helloRelease;
+  v1Switch = v1.config.microvm.deploy.sshSwitch;
   v2Switch = v2.config.microvm.deploy.sshSwitch;
   v3Runner = v3.config.microvm.declaredRunner;
   zvolSize = v1.config.modules.microvm-guest.writableStoreOverlay.zvolSize;
@@ -68,6 +69,7 @@ pkgs.testers.runNixOSTest {
       ];
       # deploy copies the switch helper's closure to the VM host first.
       additionalPaths = [
+        v1Switch
         v2Switch
         v3Runner
       ];
@@ -237,6 +239,28 @@ pkgs.testers.runNixOSTest {
         out = host.succeed(f"${v2Switch}/bin/microvm-switch {target} 2>&1")
         assert "Copying" not in out, out
         assert staging_roots() == [], staging_roots()
+
+    with subtest("test, dry-activate and boot change only what they name"):
+        def system_state():
+            return tuple(guest(f"readlink -f {link}").strip() for link in ["/run/current-system", "/nix/var/nix/profiles/system"])
+
+        def run_switch(switch, action):
+            host.succeed(f"timeout 600 {switch}/bin/microvm-switch {target} {action}")
+            assert host.succeed("readlink -f /nix/var/nix/gcroots/microvm/staged-zvol-guest").strip() == {"${v1Switch}": v1_top, "${v2Switch}": v2_top}[switch]
+
+        run_switch("${v1Switch}", "test")
+        assert system_state() == (v1_top, v2_top), system_state()
+        run_switch("${v2Switch}", "dry-activate")
+        assert system_state() == (v1_top, v2_top), system_state()
+        run_switch("${v1Switch}", "boot")
+        assert system_state() == (v1_top, v1_top), system_state()
+        run_switch("${v2Switch}", "boot")
+        assert system_state() == (v1_top, v2_top), system_state()
+        run_switch("${v2Switch}", "switch")
+        assert system_state() == (v2_top, v2_top), system_state()
+        assert staging_roots() == [], staging_roots()
+        assert guest("cat /proc/sys/kernel/random/boot_id").strip() == first_boot, "the guest rebooted"
+        host.fail(f"${v2Switch}/bin/microvm-switch {target} reboot")
 
     with subtest("the hot-switched v2 system resolves <nixpkgs> and builds"):
         check_nix("v2")

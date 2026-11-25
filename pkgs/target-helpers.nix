@@ -47,7 +47,10 @@
       '  diff            Show package changes against the running system (nvd).' \
       '                  Copies the build to remote hosts; activates nothing.' \
       "" \
-      '  Guests support switch only.' \
+      '  Guests: boot and switch install the runner as current on the VM host;' \
+      '  switch, test and dry-activate activate in the guest over VSOCK.' \
+      '  A guest without a hot switch (ward) refuses test and dry-activate,' \
+      '  and switch restarts it onto the new runner.' \
       "" \
       'Options' \
       '  build           No options; accepts one or more names.' \
@@ -55,9 +58,9 @@
       '                  Examples: --show-trace, --keep-going, --verbose' \
       '  deploy --help   Show help.' \
       "" \
-      'Guest deployment builds remotely on its host.' \
+      'Guest runners build remotely on their host.' \
       'Local build options do not apply to that remote build.' \
       'Hot switching does not apply VM hardware/kernel or host-side service/credential changes.' \
-      'Those changes require a separately planned VM restart or host deployment.'
+      'The guest picks those up at its next restart onto the current runner.'
   }
 ''

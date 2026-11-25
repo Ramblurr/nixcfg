@@ -7,6 +7,7 @@
     ./common.nix
     ./host-secrets.nix
     ./writable-store.nix
+    ./switch.nix
     ./zvols.nix
     ./home-manager.nix
     ./dev-sandbox.nix

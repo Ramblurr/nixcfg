@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -9,54 +8,6 @@ let
   inherit (cfg.writableStoreOverlay) zvolSize;
   persistent = zvolSize != null;
   rwStore = "/nix/.rw-store";
-  inherit (config.system.build) toplevel;
-
-  # Runs on the VM host, which holds the closure after deploy copies this
-  # script there. The guest cannot reach the host store, so the missing paths
-  # are streamed over the same SSH channel.
-  switcher = pkgs.writeShellApplication {
-    name = "microvm-switch";
-    text = ''
-      target=''${1:?usage: microvm-switch root@<guest>}
-      remote_name=$(ssh -n "$target" cat /etc/hostname)
-      [[ "$remote_name" == ${lib.escapeShellArg config.networking.hostName} ]] \
-        || { echo "refusing to switch $remote_name to ${config.networking.hostName}" >&2; exit 1; }
-
-      # A link becomes a GC root once its path is valid. Taking and dropping a
-      # shared gc.lock waits out any GC that scanned roots earlier, so paths
-      # still valid afterwards stay rooted. Holding gc.lock across a store
-      # operation instead deadlocks against auto-GC.
-      requisites=$(nix-store --query --requisites ${toplevel})
-      root_dir=$(ssh -n "$target" mktemp -d /nix/var/nix/gcroots/microvm-switch.XXXXXX)
-      [[ "$root_dir" =~ ^/nix/var/nix/gcroots/microvm-switch\.[A-Za-z0-9._-]+$ ]] \
-        || { echo "unexpected staging root: $root_dir" >&2; exit 1; }
-      trap 'ssh -n "$target" rm -rf -- "$root_dir"' EXIT
-      ssh "$target" xargs ln -s -t "$root_dir" <<< "$requisites"
-
-      # A GC that scanned roots before the last import can still delete the
-      # toplevel, so the profile is set and the toplevel checked after another
-      # barrier. nix-env --set fails on an invalid toplevel and is a no-op when
-      # the profile already points at it.
-      for attempt in 1 2 3; do
-        ssh -n "$target" "umask 077 && flock -s /nix/var/nix/gc.lock true"
-        missing=$(ssh "$target" xargs nix-store --check-validity --print-invalid <<< "$requisites")
-        if [[ -n "$missing" ]]; then
-          readarray -t paths <<< "$missing"
-          echo "Copying ''${#paths[@]} store paths to $target"
-          nix-store --export "''${paths[@]}" | ssh "$target" nix-store --import >/dev/null
-        fi
-        if ssh -n "$target" nix-env -p /nix/var/nix/profiles/system --set ${toplevel} \
-          && ssh -n "$target" "umask 077 && flock -s /nix/var/nix/gc.lock true" \
-          && ssh -n "$target" nix-store --check-validity ${toplevel}; then
-          break
-        fi
-        (( attempt < 3 )) || { echo "store paths keep disappearing from $target" >&2; exit 1; }
-      done
-      ssh -n "$target" rm -rf -- "$root_dir"
-      trap - EXIT
-      ssh -n "$target" ${toplevel}/bin/switch-to-configuration switch
-    '';
-  };
 in
 {
   config = lib.mkIf cfg.enable (
@@ -180,8 +131,6 @@ in
           after = [ "nix-store-verify.service" ];
         };
 
-        system.switch.enable = true;
-        microvm.deploy.sshSwitch = switcher;
         microvm.balloon = lib.mkDefault true;
 
         # The zvol is sparse, so freed blocks return to the pool only after GC and TRIM.

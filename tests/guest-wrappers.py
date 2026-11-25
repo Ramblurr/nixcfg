@@ -35,35 +35,51 @@ elif command == "nix" and args[0] == "eval":
         guest = name.startswith("guest")
         result[name] = {"guest": guest, "buildAttribute": "nixosConfigurations." + name + ".config." + ("microvm.declaredRunner" if guest else "system.build.toplevel")}
         if guest:
-            result[name].update(host="host")
-            if os.environ.get("VSOCK"):
-                target = "vsock-mux//var/lib/microvms/guest/notify.vsock" if name == "guest" else "vsock/4244"
-                result[name].update(guestSSH=target)
-            else:
-                result[name].update(guestIP="192.0.2.23" if name == "guest" else "192.0.2.24")
+            result[name].update(host="host", activation="hot" if name == "guest" else "restart",
+                                guestSSH="vsock-mux//var/lib/microvms/guest/notify.vsock" if name == "guest" else "vsock/4244")
     print(json.dumps(result))
 elif command in ("nom", "nix") and args[0] == "build":
     if os.environ.get("FAIL_BUILD"):
         sys.exit(41)
-    print(os.environ["SYSTEM"])
-    if any(a.endswith(".microvm.deploy.installOnHost") for a in args):
-        print(os.environ["SYSTEM"])
-elif command == "microvm-rebuild":
-    sys.exit(42 if os.environ.get("FAIL_GUEST") else 0)
+    for a in args:
+        if a.endswith(".config.system.build.toplevel"):
+            print("/nix/store/" + "c" * 32 + "-nixos-system-" + a.split(".")[2])
+        elif a.startswith(".#"):
+            print(os.environ["SYSTEM"] + "/" + a.split(".config.", 1)[1])
 elif command == "nix" and args[0] == "copy":
     sys.exit(46 if os.environ.get("FAIL_COPY") else 0)
 elif command == "microvm-install-on-host":
     sys.exit(45 if os.environ.get("FAIL_INSTALL") else 0)
 elif command == "ssh":
-    if args[-1].startswith("ssh ") and os.environ.get("FAIL_PREFLIGHT"):
-        sys.exit(43)
-    if "microvm-switch" in args[-1] and os.environ.get("FAIL_SWITCH"):
+    remote = " ".join(args[args.index("--") + 1:]) if "--" in args else ""
+    if "microvm-switch" in remote and os.environ.get("FAIL_SWITCH"):
         sys.exit(44)
+    if remote.startswith("nix-store --check-validity") and os.environ.get("FAIL_VALID"):
+        sys.exit(1)
+    if "readlink -e /run/current-system" in remote:
+        print(os.environ.get("RUNNING", "/nix/store/" + "a" * 32 + "-nixos-system-guest-1"))
     if "readlink" in args:
         print("/previous-system")
 else:
     sys.exit(64)
 '''
+
+
+def guest_steps(commands):
+    "The guest operations deploy ran, in order."
+    steps = []
+    for c in commands:
+        if c[0] == "microvm-install-on-host":
+            steps.append("install")
+        elif c[0] == "ssh" and "--" in c:
+            remote = shlex.split(" ".join(c[c.index("--") + 1:]))
+            if remote[0].endswith("/bin/microvm-switch"):
+                steps.append("activate:" + remote[2])
+            elif remote[:2] == ["systemctl", "restart"]:
+                steps.append("restart")
+            elif remote[0] == "nvd" and "-nixos-system-guest" in remote[-1]:
+                steps.append("diff")
+    return steps
 
 
 class Wrappers(unittest.TestCase):
@@ -75,8 +91,9 @@ class Wrappers(unittest.TestCase):
         self.bin.mkdir()
         (self.root / "flake.nix").touch()
         self.log = self.root / "commands.jsonl"
-        for name in ("git", "nix", "nom", "ssh", "microvm-rebuild", "microvm-install-on-host"):
-            path = self.bin / name
+        installer = self.root / "microvm.deploy.installOnHost" / "bin"
+        installer.mkdir(parents=True)
+        for path in [self.bin / name for name in ("git", "nix", "nom", "ssh")] + [installer / "microvm-install-on-host"]:
             path.write_text(f"#!{sys.executable}\n" + STUB)
             path.chmod(0o755)
         self.env = dict(os.environ, PATH=f"{self.bin}:{os.environ['PATH']}",
@@ -90,35 +107,69 @@ class Wrappers(unittest.TestCase):
         self.stderr = result.stderr
         return [json.loads(line) for line in self.log.read_text().splitlines()]
 
-    def test_vsock_runs_upstream_switch_on_host_for_both_transports(self):
-        self.env["VSOCK"] = "1"
-        commands = self.run_wrapper(DEPLOY, "switch", "guest", "guest2")
-        self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
-        ssh = [c for c in commands if c[0] == "ssh"]
-        self.assertEqual(len(ssh), 4)
-        targets = ("vsock-mux//var/lib/microvms/guest/notify.vsock", "vsock/4244")
-        for i, target in enumerate(targets):
-            self.assertEqual(ssh[2*i][1:3], ["root@host", "--"])
-            self.assertEqual(shlex.split(ssh[2*i][-1]), ["ssh", "-o", "BatchMode=yes", "root@" + target, "true"])
-            self.assertEqual(shlex.split(ssh[2*i+1][-1]), [str(self.bin / "microvm-switch"), "root@" + target])
-        self.assertEqual(sum(c[0] == "microvm-install-on-host" for c in commands), 2)
-        self.assertTrue(all("root@192.0.2." not in str(c) for c in commands if c[0] != "nix"))
+    def test_guest_action_plans(self):
+        plans = {
+            ("guest", "diff"): ["diff"],
+            ("guest", "dry-activate"): ["activate:dry-activate"],
+            ("guest", "test"): ["activate:test"],
+            ("guest", "boot"): ["activate:boot", "install"],
+            ("guest", "switch"): ["activate:switch", "install"],
+            ("guest2", "diff"): ["diff"],
+            ("guest2", "boot"): ["install"],
+            ("guest2", "switch"): ["install", "restart"],
+        }
+        for (guest, action), steps in plans.items():
+            with self.subTest(guest=guest, action=action):
+                self.log.unlink(missing_ok=True)
+                commands = self.run_wrapper(DEPLOY, action, guest)
+                self.assertEqual(guest_steps(commands), steps)
+                target = "vsock-mux//var/lib/microvms/guest/notify.vsock" if guest == "guest" else "vsock/4244"
+                for c in commands:
+                    if c[0] == "ssh" and "microvm-switch" in c[-1]:
+                        self.assertEqual(c[1:3], ["root@host", "--"])
+                        self.assertEqual(shlex.split(c[-1])[1], "root@" + target)
+                self.assertFalse(any("192.0.2." in str(c) for c in commands))
 
-    def test_vsock_failures_stop_without_network_fallback(self):
-        self.env["VSOCK"] = "1"
-        for failure, last in (("FAIL_PREFLIGHT", "ssh"), ("FAIL_COPY", "nix"),
-                              ("FAIL_INSTALL", "microvm-install-on-host"), ("FAIL_SWITCH", "ssh")):
+    def test_guest_refusals_happen_before_build(self):
+        for action in ("test", "dry-activate"):
+            with self.subTest(action=action):
+                self.log.unlink(missing_ok=True)
+                commands = self.run_wrapper(DEPLOY, action, "guest", "guest2", success=False)
+                self.assertIn(f"error: Guest guest2 cannot {action}: ", self.stderr)
+                self.assertTrue(all(c[0] == "git" or c[:2] == ["nix", "eval"] for c in commands))
+
+    def test_failed_activation_leaves_the_runner(self):
+        self.env["FAIL_SWITCH"] = "1"
+        commands = self.run_wrapper(DEPLOY, "switch", "guest", success=False)
+        self.assertEqual(guest_steps(commands), ["activate:switch"])
+        self.assertIn("runner on host is unchanged", self.stderr)
+
+    def test_failures_before_activation_stop_the_guest(self):
+        for failure in ("FAIL_BUILD", "FAIL_COPY"):
             with self.subTest(failure=failure):
                 self.log.unlink(missing_ok=True)
                 self.env[failure] = "1"
                 commands = self.run_wrapper(DEPLOY, "switch", "guest", success=False)
                 del self.env[failure]
-                self.assertEqual(commands[-1][0], last)
-                self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
-                if failure == "FAIL_PREFLIGHT":
-                    self.assertFalse(any(c[:2] == ["nix", "copy"] or c[0] == "microvm-install-on-host" for c in commands))
-                if failure == "FAIL_INSTALL":
-                    self.assertFalse(any(c[0] == "ssh" and "microvm-switch" in c[-1] for c in commands))
+                self.assertEqual(guest_steps(commands), [])
+
+    def test_restart_guest_already_running_the_build_is_left_alone(self):
+        self.env["RUNNING"] = "/nix/store/" + "c" * 32 + "-nixos-system-guest2"
+        commands = self.run_wrapper(DEPLOY, "switch", "guest2")
+        self.assertEqual(guest_steps(commands), ["install"])
+        self.assertIn("guest2 already runs", self.stdout)
+
+    def test_guest_running_system_is_validated(self):
+        self.env["RUNNING"] = "/tmp/evil; reboot"
+        commands = self.run_wrapper(DEPLOY, "diff", "guest", success=False)
+        self.assertIn("Unexpected running system for guest", self.stderr)
+        self.assertFalse(any(c[0] == "ssh" and "nix-store" in c for c in commands))
+
+    def test_guest_diff_needs_the_running_system_on_the_host(self):
+        self.env["FAIL_VALID"] = "1"
+        commands = self.run_wrapper(DEPLOY, "diff", "guest", success=False)
+        self.assertEqual(guest_steps(commands), [])
+        self.assertIn("store no longer holds", self.stderr)
 
     def test_no_args_and_help(self):
         outputs = []
@@ -137,7 +188,7 @@ class Wrappers(unittest.TestCase):
         self.assertIn("Hosts\n  host\n  zhost\n\nGuests    Runs on\n  guest   host\n  guest2  host\n", outputs[0])
         for phrase in ("Usage: build <name>...", "deploy [OPTIONS] <COMMAND> <name>...",
                        "Deploy commands", "switch", "boot", "test", "dry-activate", "diff",
-                       "Guests support switch only.", "Options", "--show-trace, --keep-going, --verbose",
+                       "A guest without a hot switch (ward) refuses test and dry-activate,", "Options", "--show-trace, --keep-going, --verbose",
                        "Local build options do not apply to that remote build."):
             self.assertIn(phrase, outputs[0])
 
@@ -162,10 +213,9 @@ class Wrappers(unittest.TestCase):
 
     def test_switch_requires_command_first(self):
         commands = self.run_wrapper(DEPLOY, "--show-trace", "switch", "guest")
-        self.assertEqual(commands[-1], ["microvm-rebuild", "root@host", "root@192.0.2.23"])
         self.assertIn(["nom", "build", "--no-link", "--print-out-paths", "--show-trace",
-                       ".#nixosConfigurations.guest.config.microvm.deploy.rebuild"], commands)
-        self.assertFalse(any(c[0] == "ssh" or c[:2] == ["nix", "copy"] for c in commands))
+                       ".#nixosConfigurations.guest.config.microvm.deploy.sshSwitch",
+                       ".#nixosConfigurations.guest.config.microvm.deploy.installOnHost"], commands)
         for args in (["guest"], ["guest", "switch"]):
             with self.subTest(args=args):
                 self.log.unlink(missing_ok=True)
@@ -175,14 +225,15 @@ class Wrappers(unittest.TestCase):
 
     def test_mixed_deploy(self):
         commands = self.run_wrapper(DEPLOY, "switch", "host", "guest", "guest2")
-        self.assertIn(["microvm-rebuild", "root@host", "root@192.0.2.24"], commands)
         copies = [c for c in commands if c[:2] == ["nix", "copy"]]
-        self.assertEqual(len(copies), 1)
-        self.assertIn("ssh://root@host", copies[0])
-        self.assertTrue(any(c[0] == "ssh" and "switch" in c for c in commands))
+        self.assertEqual(len(copies), 3)
+        self.assertFalse(any("installOnHost" in str(c) for c in copies))
+        self.assertTrue(all("ssh://root@host" in c for c in copies))
+        self.assertTrue(any(c[0] == "ssh" and c[-1] == "switch" and "switch-to-configuration" in c[-2] for c in commands))
+        self.assertEqual(guest_steps(commands), ["activate:switch", "install", "install", "restart"])
 
     def test_unsupported_actions_fail_before_build_or_activation(self):
-        for action in ("boot", "test", "dry-activate", "diff", "invalid"):
+        for action in ("invalid", "reboot"):
             with self.subTest(action=action):
                 self.log.unlink(missing_ok=True)
                 commands = self.run_wrapper(DEPLOY, action, "host", "guest", success=False)
@@ -203,14 +254,6 @@ class Wrappers(unittest.TestCase):
                 commands = self.run_wrapper(executable, *names, success=False)
                 self.assertTrue(all(c[0] == "git" or c[:2] == ["nix", "eval"] for c in commands))
 
-    def test_failures_propagate(self):
-        self.env["FAIL_BUILD"] = "1"
-        commands = self.run_wrapper(DEPLOY, "switch", "guest", success=False)
-        self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
-        del self.env["FAIL_BUILD"]
-        self.env["FAIL_GUEST"] = "1"
-        self.run_wrapper(DEPLOY, "switch", "guest", success=False)
-
     def test_nix_fallback(self):
         (self.bin / "nom").unlink()
         commands = self.run_wrapper(BUILD, "guest")
@@ -218,12 +261,11 @@ class Wrappers(unittest.TestCase):
         self.log.unlink()
         commands = self.run_wrapper(DEPLOY, "switch", "guest")
         self.assertTrue(any(c[:2] == ["nix", "build"] for c in commands))
-        self.assertEqual(commands[-1], ["microvm-rebuild", "root@host", "root@192.0.2.23"])
+        self.assertEqual(guest_steps(commands), ["activate:switch", "install"])
 
     def test_host_boot(self):
         commands = self.run_wrapper(DEPLOY, "boot", "host")
         self.assertTrue(any(c[0] == "ssh" and "boot" in c for c in commands))
-        self.assertFalse(any(c[0] == "microvm-rebuild" for c in commands))
 
 
 unittest.main()
