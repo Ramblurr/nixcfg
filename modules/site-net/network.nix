@@ -30,6 +30,25 @@ let
   hasStatic4 = net: (nets.${net}.hosts4 ? ${hostName});
   hasStatic6 = net: (some (v: containsKey v hostName) (vals nets.${net}.hosts6));
   defaultBridgeParent = first hostPhysicals;
+  routedLegs = lib.optionals (
+    hostConfig.sourceRouting && builtins.length hostBridges > 1
+  ) hostBridges;
+  legTable = net: 1000 + nets.${net}.vlan;
+  sourceRoutes =
+    net:
+    lib.optional (builtins.elem net routedLegs) {
+      Gateway = builtins.head nets.${net}.hosts4.${nets.${net}.dhcp.router};
+      GatewayOnLink = true;
+      Table = legTable net;
+    };
+  sourceRules =
+    net:
+    map (other: {
+      From = nets.${net}.subnet4;
+      To = nets.${other}.subnet4;
+      Table = legTable net;
+      Priority = 32000;
+    }) (lib.optionals (builtins.elem net routedLegs) (lib.remove net routedLegs));
 
   genNetDev = net: {
     "20-${net}" = {
@@ -98,8 +117,8 @@ let
         Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
       };
       addresses = genAddresses net;
-      inherit (hostConfig.interfaces.${net}) routes;
-      inherit (hostConfig.interfaces.${net}) routingPolicyRules;
+      routes = hostConfig.interfaces.${net}.routes ++ sourceRoutes net;
+      routingPolicyRules = hostConfig.interfaces.${net}.routingPolicyRules ++ sourceRules net;
       ipv6Prefixes = lib.optionals hostConfig.isRouter (
         map (prefix: {
           Prefix = prefix;

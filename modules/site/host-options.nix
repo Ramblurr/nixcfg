@@ -59,6 +59,11 @@ in
       default = false;
       description = "Should this host route?";
     };
+    sourceRouting = mkOption {
+      type = types.bool;
+      default = !config.site.hosts.${name}.isRouter;
+      description = "Send traffic from one of this host's site subnets to another of its site subnets through the router of the source subnet, so the router sees both directions of a routed flow.";
+    };
     firewall = {
       enable = mkOption {
         type = types.bool;
