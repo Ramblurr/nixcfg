@@ -2,25 +2,18 @@
 fail_fast: false
 
 repos:
-  - repo: local
-    hooks:
-      - id: nixfmt
-        name: nixfmt
-        entry: nixfmt
-        language: system
-        files: \.nix$
-        pass_filenames: true
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        #- id: end-of-file-fixer
       - id: fix-byte-order-marker
       - id: mixed-line-ending
       - id: check-added-large-files
         args: [--maxkb=2048]
       - id: check-merge-conflict
       - id: check-executables-have-shebangs
+      - id: forbid-submodules
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.4
     hooks:
@@ -28,10 +21,19 @@ repos:
       - id: remove-tabs
         exclude: (Makefile)
 
-  - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.23.3
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
     hooks:
       - id: gitleaks
         args:
           - --config
           - .github/lint/gitleaks.toml
+
+  - repo: local
+    hooks:
+      - id: nix-lint
+        name: nix lint (statix, deadnix, nixfmt, nix-comment-lint)
+        entry: nix run .#lint
+        language: system
+        files: '\.nix$'
+        pass_filenames: false
