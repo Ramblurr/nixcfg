@@ -17,20 +17,11 @@ let
       address = builtins.head mgmt.quine;
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFICZ13T85//UvjEjf+I72FqaXyGJNt9LD4mjYSq3LTl";
       speedFactor = 2;
+      maxJobs = 4;
       supportedFeatures = [
         "nixos-test"
         "benchmark"
         "big-parallel"
-        "kvm"
-      ];
-    };
-    mootforge = {
-      address = builtins.head mgmt.mootforge;
-      hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB+N3bAL4uu/8gaxfY1ET0oQcKKaMUTh6w3JIXxe+N32";
-      speedFactor = 1;
-      maxJobs = 3;
-      supportedFeatures = [
-        "nixos-test"
         "kvm"
       ];
     };
@@ -41,6 +32,8 @@ let
       maxJobs = 4;
       supportedFeatures = [
         "nixos-test"
+        "benchmark"
+        "big-parallel"
         "kvm"
       ];
     };
@@ -50,12 +43,10 @@ let
     mootforge = {
       sshKey = "/var/lib/nixbot/.ssh/id_ed25519";
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBRYhwBrSDvAH+qmr3KmMOjiVJpNgUpy4WFBserUtLiz nixbot@debord";
-      builders = [ "thingstead" ];
-    };
-    quine = {
-      sshKey = "/persist/etc/ssh/ssh_host_ed25519_key";
-      publicKey = builders.quine.hostKey;
-      builders = [ "mootforge" ];
+      builders = [
+        "quine"
+        "thingstead"
+      ];
     };
   };
 
@@ -87,11 +78,14 @@ in
         hostName = builders.${name}.address;
         system = "x86_64-linux";
         protocol = "ssh-ng";
-        maxJobs = builders.${name}.maxJobs or 2;
-        inherit (builders.${name}) speedFactor supportedFeatures;
+        inherit (builders.${name}) maxJobs speedFactor supportedFeatures;
         sshUser = "nix-remote-build";
         inherit (client) sshKey;
       }) client.builders;
+      programs.ssh.extraConfig = lib.concatMapStrings (name: ''
+        Host ${builders.${name}.address}
+          ConnectTimeout 5
+      '') client.builders;
       programs.ssh.knownHosts = lib.genAttrs client.builders (name: {
         hostNames = [ builders.${name}.address ];
         publicKey = builders.${name}.hostKey;
