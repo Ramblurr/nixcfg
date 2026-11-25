@@ -105,10 +105,11 @@ pkgs.testers.runNixOSTest {
         device = "server:/exports/${builtins.baseNameOf path}";
         fsType = "nfs";
         options = [
-          "noauto"
           "vers=4.2"
           "noac"
           "hard"
+          "nofail"
+          "bg"
         ];
       });
     };
@@ -149,25 +150,24 @@ pkgs.testers.runNixOSTest {
         client.wait_until_succeeds(f"curl -fsS http://127.0.0.1:{port}/hosting/discovery", timeout=300)
 
 
-    client.start()
-    client.wait_for_unit("multi-user.target")
-    for name in ["alpha", "beta"]:
-        client.wait_for_unit(f"user@{3101 if name == 'alpha' else 3102}.service")
-        for subids in ["/etc/subuid", "/etc/subgid"]:
-            client.succeed(f"grep -Fx opencloud-{name}:{100000 if name == 'alpha' else 165536}:65536 {subids}")
-        # The first boot loads both images; only then does the application get
-        # past its office preflight to the NFS check this asserts on.
-        office_ready(name)
-        client.wait_until_succeeds(f"test $(systemctl --user --machine=opencloud-{name}@ show opencloud-{name}.service -p NRestarts --value) -ge 1", timeout=120)
-        client.succeed(f"test ! -e /mnt/{name}/users; test ! -e /mnt/{name}/metadata")
-        assert json.loads(podman(name, "ps --format json")) == [] or all(
-            c["Names"][0].endswith("-office") for c in json.loads(podman(name, "ps --format json"))
-        )
-
+    # The storage host is up but not serving NFS while the client boots.
     server.start()
     server.wait_for_unit("nfs-server.service")
+    server.succeed("systemctl stop nfs-server.service")
+    client.start()
+    client.wait_for_unit("multi-user.target")
+    # Outlast a single boot-time attempt: the mounts must still be retrying.
+    client.sleep(45)
     for name in ["alpha", "beta"]:
-        client.succeed(f"systemctl start mnt-{name}.mount")
+        for subids in ["/etc/subuid", "/etc/subgid"]:
+            client.succeed(f"grep -Fx opencloud-{name}:{100000 if name == 'alpha' else 165536}:65536 {subids}")
+        state = dict(line.split("=", 1) for line in client.succeed(f"systemctl show mnt-{name}.mount -p ActiveState -p Result").split())
+        assert state["ActiveState"] == "activating", state
+        client.succeed(f"test ! -e /mnt/{name}/users; test ! -e /mnt/{name}/metadata")
+
+    server.succeed("systemctl start nfs-server.service")
+    for name in ["alpha", "beta"]:
+        client.wait_for_unit(f"mnt-{name}.mount", timeout=300)
         mount_options = set(client.succeed(f"findmnt -n -o OPTIONS /mnt/{name}").strip().split(","))
         assert {"vers=4.2", "noac", "hard"} <= mount_options
         ready(name)
@@ -211,7 +211,7 @@ pkgs.testers.runNixOSTest {
     client.start()
     client.wait_for_unit("multi-user.target")
     for name in ["alpha", "beta"]:
-        client.succeed(f"systemctl start mnt-{name}.mount")
+        client.wait_for_unit(f"mnt-{name}.mount")
         ready(name)
         podman(name, f"exec opencloud-{name} sh -c 'grep -Fx persistent /data/probe; grep -Fx durable /var/lib/opencloud/probe'")
         client.succeed(f"sudo -u opencloud-{name} -- getfattr --only-values -n user.opencloud-test /mnt/{name}/probe | grep -Fx {name}")

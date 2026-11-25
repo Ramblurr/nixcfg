@@ -288,8 +288,6 @@ let
         # can already be stopping during shutdown.
         serviceConfig.ExecStop = "${pkgs.coreutils}/bin/env XDG_RUNTIME_DIR=/run/user/${toString i.uid} ${pkgs.systemd}/bin/systemctl --user stop ${unit}.service ${officeUnit}.service";
         wants = [ "network-online.target" ];
-        # Order shutdown before NFS unmount without requiring the mount to
-        # succeed before the user manager starts its retrying Quadlets.
         after = [
           "network-online.target"
           "${utils.escapeSystemdPath i.dataMount}.mount"

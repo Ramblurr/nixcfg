@@ -125,13 +125,12 @@ in
     device = dataSource;
     fsType = "nfs";
     # A missing server must not block local state or the credential service.
-    # The application preflight retries until this actual mount is available.
     options = [
       "vers=4.2"
       "noac"
       "hard"
       "nofail"
-      "x-systemd.mount-timeout=30s"
+      "bg"
     ];
   };
   networking.firewall.extraInputRules = ''
