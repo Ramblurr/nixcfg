@@ -101,8 +101,8 @@
       randomizedDelaySec = "6h";
     };
     nixPath = [
-      "nixpkgs=${builtins.unsafeDiscardStringContext nixpkgs}"
-      "nixos=${builtins.unsafeDiscardStringContext nixpkgs}"
+      "nixpkgs=${nixpkgs}"
+      "nixos=${nixpkgs}"
       "nixos-config=/you/shall/deploy/from/the/flake"
     ];
     registry.nixpkgs.flake = nixpkgs;
