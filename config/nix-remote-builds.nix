@@ -11,6 +11,7 @@ let
   inherit (config.networking) hostName;
   mgmt = config.site.net.mgmt.hosts4;
   moot = config.site.net.moot.hosts4;
+  prim = config.site.net.prim.hosts4;
 
   builders = {
     quine = {
@@ -18,6 +19,18 @@ let
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFICZ13T85//UvjEjf+I72FqaXyGJNt9LD4mjYSq3LTl";
       speedFactor = 2;
       maxJobs = 4;
+      supportedFeatures = [
+        "nixos-test"
+        "benchmark"
+        "big-parallel"
+        "kvm"
+      ];
+    };
+    peirce = {
+      address = builtins.head prim.peirce;
+      hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILa8ve0f0zLpO1AI7opNBEirdQucHM0HsXGpR+f1pA48";
+      speedFactor = 1.5;
+      maxJobs = 2;
       supportedFeatures = [
         "nixos-test"
         "benchmark"
@@ -45,6 +58,7 @@ let
       publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBRYhwBrSDvAH+qmr3KmMOjiVJpNgUpy4WFBserUtLiz nixbot@debord";
       builders = [
         "quine"
+        "peirce"
         "thingstead"
       ];
     };
