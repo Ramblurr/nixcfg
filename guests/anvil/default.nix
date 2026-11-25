@@ -3,7 +3,7 @@
     (import ../moot-builder.nix {
       vcpu = 6;
       mem = 24576;
-      zvolSize = 409600;
+      zvolSize = 49152;
     })
   ];
 }
