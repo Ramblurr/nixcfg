@@ -44,8 +44,6 @@ let
       ++ extraModules;
     }).config;
 
-  # Two modules registering overlapping units, as self-registering service
-  # modules do, plus a template instance.
   host = mkHost {
     enable = true;
     units = [
@@ -79,7 +77,6 @@ let
       "caddy.timer"
     ];
   };
-  # A disabled host may name units it does not define.
   missingDisabled = mkHost { units = [ "nope.service" ]; };
 
   failedAssertions = cfg: map (a: a.message) (lib.filter (a: !a.assertion) cfg.assertions);

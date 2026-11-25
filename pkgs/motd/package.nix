@@ -60,7 +60,6 @@ stdenvNoCC.mkDerivation {
     ${babashka}/bin/bb --config /dev/null --classpath src:test \
       -e "(require 'clojure.test 'motd.collect-test 'motd.render-test) (let [r (clojure.test/run-tests 'motd.collect-test 'motd.render-test)] (System/exit (+ (:fail r) (:error r))))"
 
-    # Verify the installed script runs outside the checkout and beside an unrelated bb.edn.
     mkdir -p "$TMPDIR/unrelated"
     printf '{:deps {nonexistent/pkg {:mvn/version "0.0.0"}}}\n' > "$TMPDIR/unrelated/bb.edn"
     (cd "$TMPDIR/unrelated" && "$out/bin/motd" --help >/dev/null)

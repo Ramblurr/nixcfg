@@ -9,8 +9,6 @@
    [cheshire.core :as json]
    [clojure.string :as str]))
 
-;; Pure parsers
-
 (defn- parse-num
   [s]
   (when-let [s (some-> s str/trim not-empty)]
@@ -234,8 +232,6 @@
              :sub    (get props "SubState")}
       (pos? (or mono-us 0)) (assoc :since-sec (max 0 (- uptime-sec (quot mono-us 1000000))))
       next-sec              (assoc :next-sec next-sec))))
-
-;; Boundary
 
 (defn- read-file
   "Read a file through a stream. `slurp` of a path fails on procfs in Babashka."
