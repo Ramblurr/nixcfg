@@ -46,11 +46,6 @@
 
   programs.command-not-found.enable = false;
   environment = {
-    interactiveShellInit = # sh
-      ''
-        # raise some awareness towards failed services
-        systemctl --no-pager --failed || true
-      '';
     systemPackages =
       with pkgs;
       [
@@ -177,6 +172,7 @@
   };
 
   modules.services.sshd.enable = true;
+  modules.motd.enable = lib.mkDefault true;
 
   system.activationScripts.deleteOldSystemProfiles = lib.mkIf config.nix.gc.automatic ''
     echo "Deleting old system profiles..."
