@@ -12,7 +12,7 @@ _: {
     disk = {
       system = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-KINGSTON_SNVS2000GB_50026B7684EC6328";
+        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_250GB_S4EUNM0T120070B";
         content = {
           type = "gpt";
           partitions = {
