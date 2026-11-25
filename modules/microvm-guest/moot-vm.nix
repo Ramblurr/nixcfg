@@ -142,29 +142,9 @@ in
     '';
 
     modules.users.enable = lib.mkForce false;
-    modules.services.sshd.enable = lib.mkForce false;
+    modules.microvm-guest.vsockOnlySsh = true;
     security.sudo.enable = false;
     users.allowNoPasswordLogin = true;
-    services.openssh = {
-      startWhenNeeded = true;
-      openFirewall = false;
-      hostKeys = [
-        {
-          path = "/var/lib/ssh/ssh_host_ed25519_key";
-          type = "ed25519";
-        }
-      ];
-      settings = {
-        PermitRootLogin = "prohibit-password";
-        PasswordAuthentication = false;
-        KbdInteractiveAuthentication = false;
-      };
-    };
-    systemd.sockets.sshd.enable = false;
-    systemd.services."sshd-vsock@" = {
-      wants = [ "sshd-keygen.service" ];
-      after = [ "sshd-keygen.service" ];
-    };
 
     security.pki.certificateFiles = [ ../../config/ts-egress-ca.pem ];
 

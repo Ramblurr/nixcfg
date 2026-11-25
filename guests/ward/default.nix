@@ -41,7 +41,7 @@ in
   };
 
   modules.users.enable = lib.mkForce false;
-  modules.services.sshd.enable = lib.mkForce false;
+  modules.microvm-guest.vsockOnlySsh = true;
   security.sudo.enable = false;
   users.allowNoPasswordLogin = true;
 

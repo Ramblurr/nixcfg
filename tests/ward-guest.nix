@@ -43,6 +43,11 @@ let
       lib.optional (builtins.isString value && lib.hasPrefix "op://" value) value;
   inMootWard = lib.all (lib.hasPrefix "op://mootward/");
   cliproxy = cfg.modules.services.cliproxy-api;
+  registry = (import ../config/microvm-ssh.nix).debord;
+  sshd = cfg.services.openssh;
+  firewallTcp =
+    cfg.networking.firewall.allowedTCPPorts
+    ++ lib.concatMap (i: i.allowedTCPPorts) (builtins.attrValues cfg.networking.firewall.interfaces);
   connectUrl = "http://op-connect.example.ts.net:8080";
 in
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Guest must fully evaluate";
@@ -115,4 +120,25 @@ assert lib.assertMsg
     ]
   )
   "ward opens exactly the WireGuard ports of ts-egress and CLIProxyAPI, which LAN nodes reach directly";
+assert lib.assertMsg (
+  cfg.microvm.vsock.cid == registry.guests.ward.cid
+  && cfg.microvm.vsock.ssh.enable
+  && sshd.enable
+  && sshd.startWhenNeeded
+  && !cfg.systemd.sockets.sshd.enable
+  && !(cfg.systemd.services ? sshd)
+) "ward's sshd starts only per VSOCK connection, never from a TCP socket or a listening daemon";
+assert lib.assertMsg (
+  !sshd.openFirewall && !(builtins.elem 22 firewallTcp) && firewallTcp == [ ]
+) "ward's firewall opens no TCP port";
+assert lib.assertMsg (
+  sshd.settings.PermitRootLogin == "prohibit-password"
+  && !sshd.settings.PasswordAuthentication
+  && !sshd.settings.KbdInteractiveAuthentication
+  && cfg.users.users.root.openssh.authorizedKeys.keyFiles == [ registry.publicKeyFile ]
+  && cfg.users.users.root.openssh.authorizedKeys.keys == cfg.site.sshPubKeys
+  && lib.all (
+    u: u.name == "root" || u.openssh.authorizedKeys.keys ++ u.openssh.authorizedKeys.keyFiles == [ ]
+  ) (builtins.attrValues cfg.users.users)
+) "Only debord's VSOCK key and the operators' keys log in to ward, as root, by key";
 pkgs.runCommand "ward-guest-evaluation" { } "touch $out"

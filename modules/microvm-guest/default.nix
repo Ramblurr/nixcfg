@@ -10,6 +10,7 @@
     ./zvols.nix
     ./home-manager.nix
     ./dev-sandbox.nix
+    ./vsock-only-ssh.nix
     ./moot-vm.nix
     ./moot-wright.nix
     ./moot-builder.nix

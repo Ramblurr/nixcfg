@@ -19,6 +19,14 @@
       };
     };
   };
+  debord = {
+    publicKeyFile = ./ssh/debord-microvm.pub;
+    guests = {
+      ward = {
+        cid = 4252;
+      };
+    };
+  };
   thingstead = {
     publicKeyFile = ./ssh/thingstead-microvm.pub;
     guests = {
