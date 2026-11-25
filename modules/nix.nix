@@ -56,6 +56,12 @@ with lib;
   options.modules.nix.buildLimits = {
     enable = lib.mkEnableOption "per-build cgroups that systemd-oomd can kill one at a time";
     idleCpu = lib.mkEnableOption "builds that get CPU only when no other cgroup wants it";
+    cpuWeight = lib.mkOption {
+      type = lib.types.nullOr (lib.types.ints.between 1 10000);
+      default = null;
+      example = 20;
+      description = "CPUWeight for nix-daemon.service and its builds. Lower than the default 100 without starving them like idleCpu.";
+    };
     memoryHigh = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -66,12 +72,22 @@ with lib;
 
   config = lib.mkMerge [
     (lib.mkIf buildCfg.enable {
+      assertions = [
+        {
+          assertion = !(buildCfg.idleCpu && buildCfg.cpuWeight != null);
+          message = "modules.nix.buildLimits: set idleCpu or cpuWeight, not both.";
+        }
+      ];
       nix.settings.use-cgroups = true;
       nix.settings.experimental-features = [ "cgroups" ];
       systemd.services.nix-daemon.serviceConfig = {
         ManagedOOMMemoryPressure = "kill";
         ManagedOOMMemoryPressureLimit = "50%";
-        CPUWeight = lib.mkIf buildCfg.idleCpu "idle";
+        CPUWeight =
+          if buildCfg.idleCpu then
+            "idle"
+          else
+            lib.mkIf (buildCfg.cpuWeight != null) (toString buildCfg.cpuWeight);
         MemoryHigh = lib.mkIf (buildCfg.memoryHigh != null) buildCfg.memoryHigh;
       };
     })

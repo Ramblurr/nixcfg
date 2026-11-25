@@ -24,6 +24,7 @@
   repo.secretFiles.home-ops = ../../secrets/home-ops.nix;
   sops.defaultSopsFile = ./secrets.sops.yaml;
   documentation.enable = false;
+  boot.kernelParams = [ "zfs.zfs_arc_max=${toString (8 * 1024 * 1024 * 1024)}" ];
 
   modules = {
     motd = {
@@ -62,7 +63,7 @@
     nix.pruneAgedGcroots.enable = true;
     nix.buildLimits = {
       enable = true;
-      idleCpu = true;
+      cpuWeight = 20;
       memoryHigh = "16G";
     };
     microvm-host = {
