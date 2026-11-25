@@ -8,6 +8,7 @@
     ../modules/services/sshd.nix
     ../modules/microvm-guest
     ../modules/meta.nix
+    ../modules/motd.nix
     ../modules/secrets.nix
     ../modules/sops.nix
     ../modules/impermanence/default.nix

@@ -12,6 +12,7 @@ inputs: [
       caddy-with-security = prev.callPackage ./caddy/package.nix {
         inherit (inputs.nixpkgs.legacyPackages.${prev.stdenv.hostPlatform.system}) caddy;
       };
+      motd = prev.callPackage ./motd/package.nix { };
       neogrok = prev.callPackage ./neogrok/package.nix { };
       code-search-mcp = prev.callPackage ./code-search-mcp/package.nix {
         clojureNixLocker = inputs.clojure-nix-locker;

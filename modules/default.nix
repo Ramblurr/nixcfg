@@ -176,6 +176,7 @@
     ./vpn/mullvad.nix
     ./vpn/tailscale.nix
     ./meta.nix
+    ./motd.nix
     ./nix.nix
     ./nix-prune-aged-gcroots.nix
     ./secrets.nix

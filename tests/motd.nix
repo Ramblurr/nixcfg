@@ -1,0 +1,85 @@
+{ inputs, pkgs }:
+let
+  inherit (pkgs) lib;
+
+  # The real guest builder needs private site secrets, so stand in for the
+  # microvm-guest module with its enable option only.
+  microvmGuestStub = enable: {
+    options.modules.microvm-guest.enable = lib.mkEnableOption "microvm guest stub";
+    config.modules.microvm-guest.enable = enable;
+  };
+
+  mkHost =
+    {
+      microvmGuest ? false,
+      ...
+    }@motdConfig:
+    (inputs.nixpkgs.lib.nixosSystem {
+      inherit (pkgs.stdenv.hostPlatform) system;
+      modules = [
+        ../modules/motd.nix
+        (microvmGuestStub microvmGuest)
+        {
+          nixpkgs.pkgs = pkgs;
+          boot.loader.grub.enable = false;
+          fileSystems."/" = {
+            device = "none";
+            fsType = "tmpfs";
+          };
+          system.stateVersion = "25.11";
+          modules.motd = removeAttrs motdConfig [ "microvmGuest" ];
+        }
+      ];
+    }).config;
+
+  host = mkHost {
+    enable = true;
+    units = [
+      "caddy.service"
+      "restic-backup.timer"
+    ];
+    disks = [
+      "/"
+      "/persist"
+    ];
+  };
+  disabled = mkHost { };
+  guest = mkHost {
+    enable = true;
+    microvmGuest = true;
+  };
+
+  has =
+    needle: haystack:
+    lib.hasInfix (builtins.unsafeDiscardStringContext needle) (
+      builtins.unsafeDiscardStringContext haystack
+    );
+  hasMotd = cfg: lib.any (p: (p.pname or "") == "motd") cfg.environment.systemPackages;
+  hook = "${lib.getExe pkgs.motd} || true";
+  guard = ''[ -n "''${SSH_CONNECTION:-}" ] && [ -t 1 ] && [ -z "''${MOTD_SHOWN:-}" ]'';
+in
+assert hasMotd host;
+assert hasMotd guest;
+assert !(hasMotd disabled);
+assert has guard host.environment.loginShellInit;
+assert has hook host.environment.loginShellInit;
+assert has hook guest.environment.loginShellInit;
+assert !(has "motd" disabled.environment.loginShellInit);
+assert !(disabled.environment.etc ? "motd/config.edn");
+assert !host.services.openssh.settings.PrintMotd;
+pkgs.runCommand "motd-module-test"
+  {
+    nativeBuildInputs = [ pkgs.babashka ];
+    hostConfig = host.environment.etc."motd/config.edn".text;
+    guestConfig = guest.environment.etc."motd/config.edn".text;
+  }
+  ''
+    export HOME="$TMPDIR"
+    bb --config /dev/null -e '
+      (require (quote [clojure.edn :as edn]))
+      (let [host  (edn/read-string (System/getenv "hostConfig"))
+            guest (edn/read-string (System/getenv "guestConfig"))]
+        (assert (= {:role "host" :units ["caddy.service" "restic-backup.timer"] :disks ["/" "/persist"]} host) (pr-str host))
+        (assert (= {:role "microvm" :units [] :disks nil} guest) (pr-str guest)))'
+    touch "$out"
+  ''
