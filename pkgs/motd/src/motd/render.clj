@@ -246,14 +246,42 @@
                   (paint th :dim (str (format-bytes stored) " stored"))
                   meta)]))
 
+(defn- format-network-lines
+  [th network]
+  (let [g      (:glyphs th)
+        sep    (str "  " (paint th :dim (:dot g)) "  ")
+        max-w  (- (:width th) 12)
+        items  (mapv #(format-iface th %) network)]
+    (cond
+      (empty? items)
+      [(paint th :dim "none")]
+
+      (= 1 (count items))
+      items
+
+      (and (= 2 (count items))
+           (<= (+ (visible-len (first items)) 5 (visible-len (second items))) max-w))
+      [(str/join sep items)]
+
+      :else
+      (let [pairs  (partition-all 2 items)
+            left-w (apply max (map #(visible-len (first %)) pairs))
+            two-c? (every? (fn [[_a b]]
+                             (or (nil? b)
+                                 (<= (+ left-w 5 (visible-len b)) max-w)))
+                           pairs)]
+        (if two-c?
+          (mapv (fn [[a b]]
+                  (if b
+                    (str (pad-right a left-w) sep b)
+                    a))
+                pairs)
+          items)))))
+
 (defn render-system
   "Render System section covering network, CPU, memory, and optional zram/zswap."
   [th {:keys [network cpu memory zram zswap]}]
-  (let [g          (:glyphs th)
-        sep        (str "  " (paint th :dim (:dot g)) "  ")
-        net-val    (if (seq network)
-                     (str/join sep (map #(format-iface th %) network))
-                     (paint th :dim "none"))
+  (let [net-lines  (format-network-lines th network)
         cpu-pct    (long (Math/round (double (or (:usage-pct cpu) 0))))
         cpu-val    (str (render-bar th cpu-pct 12)
                         " "
@@ -277,9 +305,11 @@
                         (format-bytes mem-used)
                         (paint th :dim (str " / " (format-bytes mem-total)))
                         swap-str)
-        rows       (cond-> [["Network" net-val]
-                            ["CPU"     cpu-val]
-                            ["Memory"  mem-val]]
+        net-rows   (into [["Network" (first net-lines)]]
+                         (map (fn [line] ["" line]) (rest net-lines)))
+        rows       (cond-> (into net-rows
+                                 [["CPU"    cpu-val]
+                                  ["Memory" mem-val]])
                      zram  (conj (format-zram-row th zram))
                      zswap (conj (format-zswap-row th zswap)))]
     (into [(paint th :bold-cyan "System")]

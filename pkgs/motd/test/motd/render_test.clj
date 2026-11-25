@@ -40,3 +40,15 @@
     (is (str/includes? with-both "2.8x"))
     (is (not (str/includes? without "Zram")))
     (is (not (str/includes? without "Zswap")))))
+
+(deftest many-network-interfaces-wrap-within-width
+  (let [many-ifaces (mapv (fn [i]
+                            {:iface (str "eth" i)
+                             :addr  (str "10.9." i ".10/24")
+                             :kind  :lan
+                             :state :up})
+                          (range 7))
+        state       (assoc dummy/host-state :network many-ifaces)
+        lines       (render/render-system (render/theme {:color? false :width 76}) state)]
+    (is (> (count lines) 6))
+    (is (every? #(<= (render/visible-len %) 76) lines))))
