@@ -90,7 +90,8 @@ in
     systemd.services.tailscaled-set =
       lib.mkIf
         (
-          config.services.tailscale.extraSetFlags != [ ] || config.services.tailscale.relayServerPort != null
+          config.services.tailscale.extraSetFlags != [ ]
+          || (config.services.tailscale.relayServerPort or null) != null
         )
         {
           wantedBy = [ "multi-user.target" ];
