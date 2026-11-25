@@ -107,11 +107,12 @@ in
           "systemd-tmpfiles-setup.service"
           "systemd-tmpfiles-resetup.service"
         ];
-        requires = [ "zfs-mount.service" ];
+        wants = [ "zfs-mount.service" ];
         after = [
           "zfs-mount.service"
           "local-fs.target"
         ];
+        preStart = "${config.systemd.package}/bin/systemctl is-active --quiet zfs-mount.service";
         unitConfig.DefaultDependencies = false;
         serviceConfig = {
           Type = "oneshot";

@@ -22,10 +22,7 @@ let
       *) exit 1 ;;
     esac
   '';
-in
-pkgs.testers.runNixOSTest {
-  name = "zfs-activation";
-  nodes.machine =
+  machine =
     { config, lib, ... }:
     {
       imports = [
@@ -38,6 +35,7 @@ pkgs.testers.runNixOSTest {
       };
       config = {
         system.stateVersion = "26.05";
+        systemd.services.backdoor.unitConfig.DefaultDependencies = false;
         systemd.services.zfs-datasets.path = lib.mkForce [ zfsFixture ];
         virtualisation.memorySize = 1024;
         virtualisation.fileSystems."/srv/probe" = {
@@ -115,7 +113,24 @@ pkgs.testers.runNixOSTest {
             test "$(cat /run/probe-quota)" = 1G
           '';
         };
+        specialisation.mountchange.configuration = {
+          systemd.services.zfs-mount.environment.ZFS_SERIAL_MOUNT = "1";
+        };
+        specialisation.importchange.configuration = {
+          systemd.services.zfs-import-fast.environment.CHANGED = "1";
+        };
       };
+    };
+in
+pkgs.testers.runNixOSTest {
+  name = "zfs-activation";
+  nodes.machine = machine;
+  nodes.mountfail =
+    { lib, ... }:
+    {
+      imports = [ machine ];
+      specialisation = lib.mkForce { };
+      systemd.services.zfs-mount.script = lib.mkForce "exit 1";
     };
 
   testScript = ''
@@ -168,5 +183,33 @@ pkgs.testers.runNixOSTest {
         machine.succeed("systemctl start systemd-tmpfiles-resetup.service")
         for unit in protected:
             assert machine.succeed(f"systemctl show {unit} -p InvocationID --value").strip() == identities[unit]
+
+    with subtest("a failed zfs-mount at boot still blocks dataset readiness and sysinit.target"):
+        mountfail.wait_until_succeeds("systemctl is-failed zfs-mount.service")
+        mountfail.wait_until_succeeds('test -z "$(systemctl list-jobs --no-legend)"', timeout=120)
+        for unit in ["zfs-datasets.service", "sysinit.target", "consumer.service"]:
+            mountfail.fail(f"systemctl is-active {unit}")
+        mountfail.fail("test -e /srv/probe/consumer-started")
+
+    with subtest("a switch that restarts zfs-mount or a pool import keeps sysinit.target and the switch alive"):
+        session = "systemd-run --scope -p Requires=sysinit.target -p After=sysinit.target "
+
+        def invocation(unit):
+            return machine.succeed(f"systemctl show {unit} -p InvocationID --value").strip()
+
+        def switch(toplevel):
+            machine.succeed(session + f"{toplevel}/bin/switch-to-configuration test", timeout=180)
+            machine.wait_until_succeeds('test -z "$(systemctl list-jobs --no-legend)"', timeout=120)
+
+        switch("/run/booted-system")
+        barrier = {unit: invocation(unit) for unit in ["sysinit.target", "zfs-datasets.service"]}
+        for spec, changed in [("mountchange", "zfs-mount.service"), ("importchange", "zfs-import-fast.service")]:
+            for toplevel in [f"/run/booted-system/specialisation/{spec}", "/run/booted-system"]:
+                before = invocation(changed)
+                switch(toplevel)
+                assert invocation(changed) != before, f"{toplevel} did not restart {changed}"
+                for unit, identity in barrier.items():
+                    assert invocation(unit) == identity, f"{toplevel} restarted {unit}"
+                machine.succeed("systemctl is-active zfs-mount.service consumer.service multi-user.target")
   '';
 }
