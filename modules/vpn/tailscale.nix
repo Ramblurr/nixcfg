@@ -84,6 +84,19 @@ in
       serviceConfig.ExecStartPre = "${lib.getExe config.services.tailscale.package} wait --timeout=5m";
     };
 
+    # A switch restarts only active units and starts only what an active
+    # target wants, so the nixpkgs oneshot (inactive after it ran, wanted only
+    # by tailscaled) never sees new or changed set flags. NixOS/nixpkgs#570148
+    systemd.services.tailscaled-set =
+      lib.mkIf
+        (
+          config.services.tailscale.extraSetFlags != [ ] || config.services.tailscale.relayServerPort != null
+        )
+        {
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig.RemainAfterExit = true;
+        };
+
     environment.persistence = mkIf config.modules.impermanence.enable {
       "/persist".directories = [
         "/var/lib/tailscale"
