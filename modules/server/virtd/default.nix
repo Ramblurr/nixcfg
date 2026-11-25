@@ -56,6 +56,7 @@ in
     };
   };
   config = mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.libvirtd.name ];
     assertions = [
       {
         assertion = config.modules.impermanence.enable;

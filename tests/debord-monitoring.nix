@@ -7,6 +7,7 @@ let
     modules = [
       inputs.sops-nix.nixosModules.sops
       ../modules/zfs-attrs.nix
+      ../modules/motd.nix
       ../modules/telemetry/prometheus.nix
       ../modules/telemetry/thanos.nix
       ../modules/site/gatus.nix

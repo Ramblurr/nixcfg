@@ -60,6 +60,7 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.matrix-synapse.name ];
     assertions = [
       {
         message = "The user name and group must be matrix-synapse, because that's that the nixos module hard codes";

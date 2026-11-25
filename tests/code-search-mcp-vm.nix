@@ -7,6 +7,7 @@ pkgs.testers.runNixOSTest {
   nodes = {
     server = { config, lib, ... }: {
       imports = [
+        ../modules/motd.nix
         ../modules/services/code-search-mcp.nix
         ../modules/services/neogrok.nix
       ];

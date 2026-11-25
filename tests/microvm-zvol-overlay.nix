@@ -42,6 +42,7 @@ pkgs.testers.runNixOSTest {
     imports = [
       inputs.microvm.nixosModules.host
       inputs.impermanence.nixosModules.impermanence
+      ../modules/motd.nix
       ../modules/microvm-host
     ];
     modules.microvm-host = {

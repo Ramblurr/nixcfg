@@ -6,6 +6,7 @@ let
     modules = [
       ../modules/site/gatus.nix
       ../modules/site/gatus-heartbeats.nix
+      ../modules/motd.nix
       ../modules/services/databasus
       ../modules/services/podman.nix
       ../modules/zfs-attrs.nix

@@ -23,6 +23,7 @@ in
           ;
       })
       {
+        modules.motd.units = [ config.systemd.services.immich-server.name ];
         assertions = [
           {
             assertion = !config.services.postgresql.enable;

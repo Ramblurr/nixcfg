@@ -12,6 +12,7 @@ let
       ../modules/services/ingress-octoprint.nix
       ../modules/services/ingress-phoniebox.nix
       ../modules/services/calibre-web.nix
+      ../modules/motd.nix
       ../modules/services/caddy.nix
       ../modules/services/onepassword-systemd-credentials.nix
       {
@@ -110,6 +111,7 @@ let
     modules = [
       inputs.impermanence.nixosModules.impermanence
       inputs.sops-nix.nixosModules.sops
+      ../modules/motd.nix
       ../modules/services/caddy.nix
       ../modules/services/onepassword-systemd-credentials.nix
       ../modules/site/gatus.nix

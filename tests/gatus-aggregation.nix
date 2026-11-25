@@ -28,6 +28,7 @@ let
   };
 
   commonModules = [
+    ../modules/motd.nix
     ../modules/site
     testOptions
   ];

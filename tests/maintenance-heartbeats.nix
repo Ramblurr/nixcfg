@@ -14,6 +14,7 @@ let
         ../modules/nix.nix
         ../modules/nix-prune-aged-gcroots.nix
         ../modules/boot/zfs.nix
+        ../modules/motd.nix
         ../modules/services/zfs-backup-check.nix
         ({ lib, ... }: {
           options = {

@@ -5,6 +5,7 @@ let
     settings: extra:
     (inputs.nixpkgs.lib.nixosSystem {
       modules = [
+        ../modules/motd.nix
         ../modules/services/immich-machine-learning.nix
         {
           nixpkgs.pkgs = pkgs;

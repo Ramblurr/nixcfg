@@ -63,7 +63,10 @@ pkgs.testers.runNixOSTest {
   nodes.machine =
     { ... }:
     {
-      imports = [ ../modules/services/ts-broker.nix ];
+      imports = [
+        ../modules/motd.nix
+        ../modules/services/ts-broker.nix
+      ];
       virtualisation.memorySize = 2048;
       environment.systemPackages = [
         pkgs.curl

@@ -14,6 +14,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.prometheus.name ];
     services.prometheus = {
       enable = true;
 

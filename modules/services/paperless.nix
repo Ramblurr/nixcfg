@@ -53,6 +53,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [
+      config.systemd.services.paperless-web.name
+      config.systemd.services.paperless-consumer.name
+    ];
 
     modules.zfs.datasets.properties = {
       "rpool/encrypted/safe/svc/paperless"."mountpoint" = config.services.paperless.dataDir;

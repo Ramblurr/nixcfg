@@ -663,6 +663,7 @@ in
   };
 
   config = lib.mkIf caddyEnabled {
+    modules.motd.units = [ config.systemd.services.caddy.name ];
     assertions = [
       {
         assertion = onepassword.enable;

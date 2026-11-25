@@ -56,6 +56,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [
+      config.systemd.services.dependency-mirror.name
+      config.systemd.timers.dependency-mirror-sync.name
+    ];
     assertions = [
       {
         assertion =

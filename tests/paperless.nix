@@ -25,6 +25,7 @@ let
       modules = [
         inputs.sops-nix.nixosModules.sops
         inputs.impermanence.nixosModules.impermanence
+        ../modules/motd.nix
         ../modules/services/caddy.nix
         ../modules/services/onepassword-systemd-credentials.nix
         ../modules/site/gatus.nix

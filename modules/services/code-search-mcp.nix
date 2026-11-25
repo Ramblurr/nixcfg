@@ -51,6 +51,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.code-search-mcp.name ];
     assertions = [
       {
         assertion =

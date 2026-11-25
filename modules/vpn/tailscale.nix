@@ -35,6 +35,7 @@ in
     };
   };
   config = mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.tailscaled.name ];
     services.tailscale.enable = lib.mkIf cfg.enable true;
     services.tailscale.useRoutingFeatures = cfg.useRoutingFeatures;
     # ref: https://github.com/tailscale/tailscale/issues/3310

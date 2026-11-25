@@ -54,6 +54,7 @@ pkgs.testers.runNixOSTest {
     api = { nodes, ... }: {
       imports = [
         client
+        ../modules/motd.nix
         ../guests/immich-home/immich.nix
       ];
       options = {
@@ -80,6 +81,7 @@ pkgs.testers.runNixOSTest {
     worker = { nodes, ... }: {
       imports = [
         client
+        ../modules/motd.nix
         ../modules/services/immich-worker.nix
       ];
       modules.services.immich-worker.enable = true;

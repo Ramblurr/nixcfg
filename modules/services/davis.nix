@@ -33,6 +33,7 @@ in
     "${inputs.nixpkgs-mine}/nixos/modules/services/web-apps/davis.nix"
   ];
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.phpfpm-davis.name ];
     assertions = [
       {
         assertion = onepassword.enable;

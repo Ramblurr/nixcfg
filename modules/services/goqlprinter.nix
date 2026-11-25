@@ -49,6 +49,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.goqlprinter.name ];
     environment.etc."labelprinter/config.json".source = json.generate "goqlprinter.json" {
       server = {
         host = cfg.listenAddress;

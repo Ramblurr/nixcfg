@@ -47,6 +47,7 @@ in
   };
 
   config = mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.pdns.name ];
 
     environment.etc.pdns.source = finalConfigDir;
 

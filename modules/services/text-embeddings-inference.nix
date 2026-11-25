@@ -141,6 +141,9 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = lib.mapAttrsToList (
+      name: _: config.systemd.services."podman-${containerNameFor name}".name
+    ) cfg.instances;
     assertions = [
       {
         assertion = cfg.instances != { };

@@ -20,7 +20,10 @@ pkgs.testers.runNixOSTest {
   nodes.machine =
     { ... }:
     {
-      imports = [ ../modules/services/cliproxy-api.nix ];
+      imports = [
+        ../modules/motd.nix
+        ../modules/services/cliproxy-api.nix
+      ];
       virtualisation.memorySize = 2048;
       environment.systemPackages = [ pkgs.curl ];
       modules.services.cliproxy-api = {

@@ -23,6 +23,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.atuin.name ];
     services.atuin = {
       enable = true;
       openRegistration = false;

@@ -5,6 +5,7 @@ let
     extra:
     lib.nixosSystem {
       modules = [
+        ../modules/motd.nix
         ../modules/services/ts-egress.nix
         {
           nixpkgs.pkgs = pkgs;

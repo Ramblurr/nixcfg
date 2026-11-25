@@ -49,6 +49,7 @@ let
       modules = [
         inputs.sops-nix.nixosModules.sops
         ../modules/services/onepassword-systemd-credentials.nix
+        ../modules/motd.nix
         ../modules/services/postgresql.nix
         ../modules/site/gatus.nix
         ../modules/services/davis.nix

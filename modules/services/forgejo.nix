@@ -24,6 +24,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.forgejo.name ];
     users.users.forgejo.uid = lib.mkForce cfg.user.uid;
     users.groups.forgejo.gid = lib.mkForce cfg.group.gid;
 

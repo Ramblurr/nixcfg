@@ -5,6 +5,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       ../modules/zfs-attrs.nix
+      ../modules/motd.nix
       ../modules/services/mariadb.nix
       ../modules/services/postgresql.nix
       {

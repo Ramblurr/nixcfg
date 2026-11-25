@@ -50,6 +50,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [
+      config.systemd.services.neogrok.name
+      config.systemd.timers.neogrok-index.name
+    ];
     assertions = [
       {
         assertion = config.modules.services.dependency-mirror.enable;

@@ -29,6 +29,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.sockets.nix-remote.name ];
     modules.microvm-guest = {
       mootVm = {
         enable = true;

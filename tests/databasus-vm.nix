@@ -5,6 +5,7 @@ pkgs.testers.runNixOSTest {
     { lib, ... }:
     {
       imports = [
+        ../modules/motd.nix
         ../modules/services/databasus
         ../modules/services/podman.nix
         ../modules/site/gatus.nix

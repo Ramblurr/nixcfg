@@ -9,6 +9,7 @@ let
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
       ../modules/zfs-attrs.nix
+      ../modules/motd.nix
       ../modules/services/roon-server.nix
       {
         nixpkgs.pkgs = hostPkgs;

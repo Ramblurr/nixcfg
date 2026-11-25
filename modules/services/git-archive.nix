@@ -46,6 +46,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.timers.gickup.name ];
     modules.zfs.datasets = {
       properties."tank/svc/git-archive".mountpoint = stateDirActual;
       services."tank/svc/git-archive" = [ "gickup" ];

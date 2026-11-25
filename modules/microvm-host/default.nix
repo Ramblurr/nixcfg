@@ -42,6 +42,9 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
+    modules.motd.units = map (
+      name: config.systemd.services."microvm@${name}".name
+    ) config.microvm.autostart;
     microvm = {
       host.enable = true;
       # TODO autostart = [ ];

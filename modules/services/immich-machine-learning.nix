@@ -33,6 +33,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.immich-machine-learning.name ];
     assertions = [
       {
         assertion = !config.services.immich.enable || !config.services.immich.machine-learning.enable;

@@ -40,6 +40,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.gatus.name ];
     assertions = [
       {
         assertion = onepassword.enable;

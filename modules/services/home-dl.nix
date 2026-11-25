@@ -109,6 +109,14 @@ in
     subnet = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [
+      config.systemd.services.sonarr.name
+      config.systemd.services.radarr.name
+      config.systemd.services.prowlarr.name
+      config.systemd.services.sabnzbd.name
+      config.systemd.services.qbittorrent.name
+      config.systemd.services.seerr.name
+    ];
 
     services.seerr = {
       enable = true;

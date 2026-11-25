@@ -41,6 +41,7 @@ in
     enable = lib.mkEnableOption "roon-server";
   };
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.roon-server.name ];
     networking.firewall = {
       allowedTCPPorts = [
         33399 # Roon ARC

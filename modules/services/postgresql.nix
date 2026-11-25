@@ -57,6 +57,7 @@ in
   };
 
   config = mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.postgresql.name ];
     assertions = [
       {
         assertion = lib.hasPrefix "/var/lib/postgresql" cfg.pgDataDir;

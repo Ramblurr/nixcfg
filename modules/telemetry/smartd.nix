@@ -12,6 +12,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.smartd.name ];
     services.smartd = {
       enable = true;
       notifications = {

@@ -23,6 +23,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.stirling-pdf.name ];
     services.stirling-pdf = {
       enable = true;
       environment = {

@@ -25,6 +25,7 @@ in
     group = lib.mkOption { type = lib.types.unspecified; };
   };
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.audiobookshelf.name ];
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
       uid = lib.mkForce cfg.user.uid;

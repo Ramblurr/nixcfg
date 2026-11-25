@@ -216,6 +216,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.${serviceName}.name ];
     assertions = [
       {
         assertion = credentialSourcesAreValid;

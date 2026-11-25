@@ -11,6 +11,7 @@ let
         ../modules/site/gatus.nix
         ../modules/site/gatus-heartbeats.nix
         ../modules/site/gatus-heartbeats-onepassword.nix
+        ../modules/motd.nix
         ../modules/services/git-archive.nix
         {
           options = {

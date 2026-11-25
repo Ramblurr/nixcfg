@@ -19,6 +19,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.paperless-gpt.name ];
     modules.zfs.datasets.properties."rpool/encrypted/safe/svc/paperless-gpt".mountpoint =
       "/var/lib/private/paperless-gpt";
 

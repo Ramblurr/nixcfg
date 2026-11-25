@@ -29,6 +29,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.influxdb2.name ];
     site.gatus.endpoints = [
       {
         name = "InfluxDB";

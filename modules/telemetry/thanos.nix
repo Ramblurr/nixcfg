@@ -12,6 +12,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [
+      config.systemd.services.thanos-sidecar.name
+      config.systemd.services.thanos-compact.name
+    ];
     users.groups.thanos-objstore = { };
     sops.secrets = {
       "thanos-object-storage-access-key" = { };

@@ -18,6 +18,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.mysql.name ];
 
     services.mysql = {
       enable = true;

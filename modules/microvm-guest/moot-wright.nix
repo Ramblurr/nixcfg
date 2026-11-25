@@ -370,6 +370,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services."t3-${name}".name ];
     modules.microvm-guest = {
       mootVm = {
         enable = true;

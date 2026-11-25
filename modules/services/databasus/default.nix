@@ -52,6 +52,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.podman-databasus.name ];
     modules.services.podman.enable = true;
 
     modules.zfs.datasets = {

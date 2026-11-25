@@ -22,6 +22,7 @@ let
         ../modules/site/gatus.nix
         ../modules/site/gatus-heartbeats.nix
         ../modules/site/gatus-heartbeats-onepassword.nix
+        ../modules/motd.nix
         ../modules/services/borgmatic.nix
         {
           options.repo.secrets = lib.mkOption { type = lib.types.attrs; };

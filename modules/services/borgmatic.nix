@@ -58,6 +58,7 @@ in
     };
   };
   config = mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.timers.borgmatic.name ];
     /*
       To use this module you must provide the secrets with the yaml:
       borgmatic-ssh-key: |

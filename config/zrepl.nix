@@ -24,6 +24,7 @@ in
     };
   };
   config = lib.mkIf config.home-ops.zrepl.enable {
+    modules.motd.units = [ config.systemd.services.zrepl.name ];
     # zrepl - ZFS snapshotting and replication
     # Every node has a source job and snapshots are pulled by the NAS
     networking.firewall.allowedTCPPorts = [

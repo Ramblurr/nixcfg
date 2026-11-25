@@ -36,6 +36,7 @@ let
     (lib.nixosSystem {
       specialArgs = { inherit inputs; };
       modules = [
+        ../modules/motd.nix
         ../modules/services/postgresql.nix
         ../modules/services/atuin-sync.nix
         testOptions

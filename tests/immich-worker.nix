@@ -5,6 +5,7 @@ let
     enable: localPostgres:
     (inputs.nixpkgs.lib.nixosSystem {
       modules = [
+        ../modules/motd.nix
         ../modules/services/immich-worker.nix
         {
           nixpkgs.pkgs = pkgs;

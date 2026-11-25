@@ -18,6 +18,7 @@ let
   evaluated = inputs.nixpkgs.lib.nixosSystem {
     system = pkgs.stdenv.hostPlatform.system;
     modules = [
+      ../modules/motd.nix
       ../modules/services/caddy.nix
       ../modules/services/static-sites.nix
       ../modules/services/onepassword-systemd-credentials.nix

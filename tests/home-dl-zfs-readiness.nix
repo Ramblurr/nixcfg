@@ -14,6 +14,7 @@ let
     specialArgs.lib = hostPkgs.lib;
     modules = [
       ../modules/zfs-attrs.nix
+      ../modules/motd.nix
       ../modules/services/home-dl.nix
       {
         disabledModules = [ ../modules/services/home-dl/qbittorrent.nix ];

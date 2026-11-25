@@ -161,6 +161,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.cliproxy-api.name ];
     assertions = [
       {
         assertion = lib.any (k: builtins.isString k && builtins.match ".*[!-~].*" k != null) (

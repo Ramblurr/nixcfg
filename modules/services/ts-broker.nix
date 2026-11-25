@@ -119,6 +119,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.ts-broker.name ];
     users.users.ts-broker = {
       isSystemUser = true;
       group = "ts-broker";

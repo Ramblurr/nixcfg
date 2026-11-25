@@ -85,6 +85,7 @@ pkgs.testers.runNixOSTest {
       { pkgs, ... }:
       {
         imports = [
+          ../modules/motd.nix
           ../modules/services/immich-ml-proxy.nix
           (provisionCertificates "immich-ml-server-proxy")
         ];
@@ -130,6 +131,7 @@ pkgs.testers.runNixOSTest {
       { pkgs, ... }:
       {
         imports = [
+          ../modules/motd.nix
           ../modules/services/immich-ml-proxy.nix
           (provisionCertificates "immich-ml-client-proxy")
         ];

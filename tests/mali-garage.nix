@@ -7,6 +7,7 @@ let
     modules = [
       inputs.impermanence.nixosModules.impermanence
       inputs.sops-nix.nixosModules.sops
+      ../modules/motd.nix
       ../modules/services/caddy.nix
       ../modules/services/onepassword-systemd-credentials.nix
       ../modules/zfs-attrs.nix

@@ -174,6 +174,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.ts-egress.name ];
     assertions = [
       {
         assertion = onepasswordEnabled -> cfg.ca.enable;

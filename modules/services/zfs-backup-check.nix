@@ -43,6 +43,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.timers.zrepl-healthcheck.name ];
     assertions = [
       {
         assertion = cfg.healthchecks != [ ];

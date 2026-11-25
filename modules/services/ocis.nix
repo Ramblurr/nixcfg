@@ -110,6 +110,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    modules.motd.units = [ config.systemd.services.ocis.name ];
 
     users.users.${cfg.user.name} = {
       inherit (cfg.user) name;
