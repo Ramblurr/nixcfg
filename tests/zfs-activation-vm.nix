@@ -210,6 +210,7 @@ pkgs.testers.runNixOSTest {
                 assert invocation(changed) != before, f"{toplevel} did not restart {changed}"
                 for unit, identity in barrier.items():
                     assert invocation(unit) == identity, f"{toplevel} restarted {unit}"
-                machine.succeed("systemctl is-active zfs-mount.service consumer.service multi-user.target")
+                for unit in [changed, "zfs-mount.service", "consumer.service", "multi-user.target"]:
+                    machine.succeed(f"systemctl is-active {unit}")
   '';
 }
