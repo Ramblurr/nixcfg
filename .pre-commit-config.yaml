@@ -6,8 +6,10 @@ repos:
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: '\.(patch|diff)$'
       - id: fix-byte-order-marker
       - id: mixed-line-ending
+        exclude: '\.(patch|diff)$'
       - id: check-added-large-files
         args: [--maxkb=2048]
       - id: check-merge-conflict
