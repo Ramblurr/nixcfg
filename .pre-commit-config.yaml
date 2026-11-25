@@ -14,23 +14,18 @@ repos:
       - id: check-executables-have-shebangs
       - id: forbid-submodules
 
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.4
-    hooks:
-      - id: remove-crlf
-      - id: remove-tabs
-        exclude: (Makefile)
-
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.24.2
-    hooks:
-      - id: gitleaks
-        args:
-          - --config
-          - .github/lint/gitleaks.toml
-
   - repo: local
     hooks:
+      - id: gitleaks
+        name: gitleaks
+        entry: gitleaks git --pre-commit --staged --config .github/lint/gitleaks.toml
+        language: system
+        pass_filenames: false
+      - id: forbidden-strings
+        name: forbidden-strings
+        entry: nix run .#forbidden-strings -- --staged
+        language: system
+        pass_filenames: false
       - id: nix-lint
         name: nix lint (statix, deadnix, nixfmt, nix-comment-lint)
         entry: nix run .#lint

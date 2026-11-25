@@ -91,7 +91,7 @@ in
         cloc
         whois
         nmap
-        pre-commit
+        prek
         bridge-utils
         yq
         yamlfmt
