@@ -138,15 +138,41 @@ in
 
         # Stage 2 runs nix-store --load-db for the booted image. Rows for
         # paths that only the previous image held stay valid until verified.
+        # Upper-layer paths can refer to them, such as a system that
+        # microvm-switch installed onto the previous image. Those paths lost
+        # part of their closure for good, and nix-store --verify keeps a
+        # missing path while a valid path refers to it, so they go first.
+        # --load-db adds references but never drops one, so a stale row could
+        # lead into the booted image; deleting there would hide an image path.
         systemd.services.nix-store-verify = {
           description = "Drop Nix database rows for store paths no layer holds";
           wantedBy = [ "multi-user.target" ];
           restartIfChanged = false;
+          path = [ config.nix.package ];
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-            ExecStart = "${config.nix.package}/bin/nix-store --verify";
           };
+          script = ''
+            set -o pipefail
+            valid=$(nix --extra-experimental-features nix-command path-info --store local --all)
+            gone=$(while read -r p; do [[ -e "$p" || -L "$p" ]] || echo "$p"; done <<< "$valid")
+            if [[ -n "$gone" ]]; then
+              doomed=$(xargs nix-store --store local --query --referrers-closure <<< "$gone" | sort -u)
+              in_image=$(while read -r p; do
+                ro=/nix/.ro-store/''${p#/nix/store/}
+                if [[ -e "$ro" || -L "$ro" ]]; then echo "$p"; fi
+              done <<< "$doomed")
+              if [[ -n "$in_image" ]]; then
+                echo "refusing to delete paths the booted image holds:" >&2
+                echo "$in_image" >&2
+                exit 1
+              fi
+              nix --extra-experimental-features nix-command store delete \
+                --store local --ignore-liveness --stdin <<< "$doomed"
+            fi
+            nix-store --store local --verify
+          '';
         };
 
         systemd.services.nix-daemon = {
