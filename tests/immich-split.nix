@@ -128,13 +128,17 @@ pkgs.testers.runNixOSTest {
         storage.succeed("systemctl start nfs-server.service")
         for machine in [api, worker]:
             machine.wait_for_unit("immich-server.service", timeout=300)
+        api.wait_until_succeeds("curl -fsS http://api:2283/api/server/ping")
 
     with subtest("A switch starts a stopped Immich while its mount stays active"):
+        mounted = "systemctl show var-lib-immich.mount -p ActiveEnterTimestampMonotonic --value"
         for machine in [api, worker]:
             machine.succeed("systemctl stop immich-server.service")
             machine.succeed("systemctl is-active var-lib-immich.mount")
+            before = machine.succeed(mounted)
             machine.succeed("/run/current-system/specialisation/switched/bin/switch-to-configuration test")
             machine.wait_for_unit("immich-server.service", timeout=60)
+            assert machine.succeed(mounted) == before, "the switch remounted var-lib-immich.mount"
 
     api.wait_until_succeeds("curl -fsS http://api:2283/api/server/ping")
     worker.succeed("systemctl stop immich-server.service")
@@ -147,7 +151,7 @@ pkgs.testers.runNixOSTest {
             command += " -H " + shlex.quote("Authorization: Bearer " + token)
         return json.loads(api.succeed(command))
 
-    with subtest("API cold-starts without a background worker"):
+    with subtest("API serves without a background worker"):
         account = {"email": "admin@example.test", "password": "immich-test-admin-password", "name": "Test Admin"}
         request("POST", "auth/admin-sign-up", account)
         token = request("POST", "auth/login", account)["accessToken"]
