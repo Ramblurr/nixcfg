@@ -165,6 +165,12 @@ pkgs.testers.runNixOSTest {
             client.succeed(f"grep -Fx opencloud-{name}:{100000 if name == 'alpha' else 165536}:65536 {subids}")
         client.succeed(f"test ! -e /mnt/{name}/users && test ! -e /mnt/{name}/metadata")
         client.fail(f"curl -kfsS --max-time 5 https://127.0.0.1:{9200 if name == 'alpha' else 9300}/status.php")
+    for name in ["alpha", "beta"]:
+        client.wait_until_succeeds(
+            f"test $(journalctl -b -o cat -u mnt-{name}.mount --grep \"Failed with result 'timeout'\" | wc -l) -ge 2"
+            f" && test $(systemctl show mount-retry@mnt-{name}.mount.service -p NRestarts --value) -ge 1",
+            timeout=180,
+        )
 
     server.succeed("systemctl start nfs-server.service")
     for name in ["alpha", "beta"]:
