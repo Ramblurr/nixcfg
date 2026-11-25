@@ -28,7 +28,7 @@ in
       "vers=4.2"
       "hard"
       "_netdev"
-      "x-systemd.mount-timeout=30s"
+      "bg"
     ];
   };
   systemd.services.immich-server = {

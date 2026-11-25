@@ -115,7 +115,7 @@ in
       "hard"
       "_netdev"
       "noatime"
-      "x-systemd.mount-timeout=30s"
+      "bg"
     ];
   };
   systemd.tmpfiles.rules = [
