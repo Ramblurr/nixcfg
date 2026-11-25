@@ -143,5 +143,10 @@ ref: https://kea.readthedocs.io/en/kea-2.4.0/arm/dhcp4-srv.html#ipv4-subnet-iden
       type = types.nullOr types.int;
       default = null;
     };
+    sourceRouting = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Include this net in the source routing of multi-homed hosts. Disable it for a net whose router keeps its traffic apart from the other site nets.";
+    };
   };
 }

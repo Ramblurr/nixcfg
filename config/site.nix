@@ -224,6 +224,7 @@ in
   };
   site.net.vpn = {
     vlan = 70;
+    sourceRouting = false;
     domainName = "vpn.${domain}";
     mtu = 1500;
     subnet4 = "10.8.70.0/24";

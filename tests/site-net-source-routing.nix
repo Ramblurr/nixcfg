@@ -187,10 +187,13 @@ pkgs.testers.runNixOSTest {
         };
       };
     };
-    plain = {
-      imports = [ siteNode ];
-      networking.hostName = "plain";
-    };
+    plain =
+      { lib, ... }:
+      {
+        imports = [ siteNode ];
+        networking.hostName = "plain";
+        specialisation.routed.configuration.site.hosts.plain.sourceRouting = lib.mkForce true;
+      };
     fixed = {
       imports = [ siteNode ];
       networking.hostName = "fixed";
@@ -246,5 +249,20 @@ pkgs.testers.runNixOSTest {
 
     with subtest("traffic from a bound prim address to the client goes through the router and works"):
         fixed.succeed("curl -sf --max-time 5 --interface 10.9.4.11 http://10.9.8.19:8000/hostname")
+
+    with subtest("switching a running host to source routing keeps foreign addresses, routes and rules"):
+        plain.succeed("ip addr add 10.9.8.22/32 dev mgmt proto 18")
+        plain.succeed("ip route replace default via 10.9.4.1 dev prim table 100")
+        plain.succeed("ip route replace 10.9.4.0/22 dev prim table 100")
+        plain.succeed("ip rule add priority 100 from 192.168.10.8/29 table 100")
+        plain.succeed("/run/current-system/specialisation/routed/bin/switch-to-configuration test")
+        plain.wait_until_succeeds("ip rule | grep -q 'from 10.9.4.0/22 to 10.9.8.0/23 lookup 1004'")
+        print(plain.succeed("ip rule; ip -4 addr show mgmt; ip route show table 100; journalctl -u systemd-networkd --no-pager | tail -30"))
+        out = client.succeed("python3 ${probe} 10.9.4.10")
+        assert "reply HTTP/1.0 200 OK" in out, out
+        plain.succeed("ip -4 addr show mgmt | grep -q 10.9.8.22/32")
+        plain.succeed("ip route show table 100 | grep -q 'default via 10.9.4.1 dev prim'")
+        plain.succeed("ip route show table 100 | grep -q '10.9.4.0/22 dev prim'")
+        plain.succeed("ip rule | grep -q '^100:.*from 192.168.10.8/29 lookup 100'")
   '';
 }

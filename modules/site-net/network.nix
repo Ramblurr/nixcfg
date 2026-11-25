@@ -30,9 +30,10 @@ let
   hasStatic4 = net: (nets.${net}.hosts4 ? ${hostName});
   hasStatic6 = net: (some (v: containsKey v hostName) (vals nets.${net}.hosts6));
   defaultBridgeParent = first hostPhysicals;
+  routableLegs = builtins.filter (net: nets.${net}.sourceRouting) hostBridges;
   routedLegs = lib.optionals (
-    hostConfig.sourceRouting && builtins.length hostBridges > 1
-  ) hostBridges;
+    hostConfig.sourceRouting && builtins.length routableLegs > 1
+  ) routableLegs;
   legTable = net: 1000 + nets.${net}.vlan;
   sourceRoutes =
     net:
@@ -115,6 +116,9 @@ let
       }
       // lib.optionalAttrs hostConfig.interfaces.${net}.gw4 {
         Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
+      }
+      // lib.optionalAttrs (builtins.elem net routedLegs) {
+        KeepConfiguration = "yes";
       };
       addresses = genAddresses net;
       routes = hostConfig.interfaces.${net}.routes ++ sourceRoutes net;
