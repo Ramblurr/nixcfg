@@ -9,13 +9,17 @@ in
 {
   options.home.nix-lan-cache = {
     enable = lib.mkEnableOption "Enable local nix cache";
+    substituter = lib.mkOption {
+      type = lib.types.str;
+      default = config.repo.secrets.global.nixCacheSubstituter;
+      defaultText = lib.literalExpression "config.repo.secrets.global.nixCacheSubstituter";
+      description = "URL of mali's ncps for this host.";
+    };
   };
   config = lib.mkIf cfg.enable {
     nix = {
       settings = {
-        extra-substituters = [
-          config.repo.secrets.global.nixCacheSubstituter
-        ];
+        extra-substituters = [ cfg.substituter ];
         extra-trusted-public-keys = [
           config.repo.secrets.global.nixCachePublicKey
         ];

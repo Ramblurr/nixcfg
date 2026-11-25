@@ -76,7 +76,10 @@
       baseZfsDataset = "rpool/encrypted/safe/microvms";
     };
   };
-  home.nix-lan-cache.enable = true;
+  home.nix-lan-cache = {
+    enable = true;
+    substituter = "https://${(import ../../config/moot-nix-cache.nix).host}";
+  };
 
   security.sudo.wheelNeedsPassword = false;
 
