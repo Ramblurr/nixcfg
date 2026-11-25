@@ -98,7 +98,6 @@ pkgs.testers.runNixOSTest {
         };
         secretsFile = "/etc/immich-test/environment";
       };
-      systemd.services.immich-server.wantedBy = lib.mkForce [ ];
     };
   };
   testScript = ''
@@ -110,14 +109,27 @@ pkgs.testers.runNixOSTest {
     storage.succeed("systemctl stop nfs-server.service")
     start_all()
 
-    with subtest("API host boots while NFS is down and starts Immich once it returns"):
-        api.wait_for_unit("multi-user.target", timeout=180)
-        api.fail("systemctl is-active immich-server.service")
+    def boot_timeline(machine):
+        machine.wait_for_unit("multi-user.target", timeout=180)
+        machine.fail("systemctl is-active immich-server.service")
+        timeout = "journalctl -b -o json -u var-lib-immich.mount --grep \"Failed with result 'timeout'\""
+        machine.wait_until_succeeds(timeout, timeout=120)
+        reached = int(machine.succeed("systemctl show multi-user.target -p ActiveEnterTimestampMonotonic --value"))
+        failed = int(machine.succeed(timeout + " | jq -rs '.[0].__MONOTONIC_TIMESTAMP'"))
+        machine.log(f"multi-user.target at {reached / 1e6:.2f} s, first mount timeout at {failed / 1e6:.2f} s")
+        return reached, failed
+
+    with subtest("Both roles reach multi-user before the first NFS mount attempt times out"):
+        timelines = {machine.name: boot_timeline(machine) for machine in [api, worker]}
+        assert all(reached < failed for reached, failed in timelines.values()), timelines
+
+    with subtest("Both roles start Immich by themselves once NFS returns"):
         storage.succeed("systemctl start nfs-server.service")
-        api.wait_for_unit("immich-server.service", timeout=300)
+        for machine in [api, worker]:
+            machine.wait_for_unit("immich-server.service", timeout=300)
 
     api.wait_until_succeeds("curl -fsS http://api:2283/api/server/ping")
-    worker.fail("systemctl is-active immich-server.service")
+    worker.succeed("systemctl stop immich-server.service")
 
     def request(method, path, body=None, token=None):
         command = f"curl -fsS -X {method} http://api:2283/api/{path}"

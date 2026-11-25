@@ -24,7 +24,7 @@ in
   services.immich.settings = null;
   modules.mount-retry.mountPoints = [ cfg.mediaLocation ];
   systemd.services.immich-server = {
-    wantedBy = [ mediaMount ];
+    wantedBy = lib.mkForce [ mediaMount ];
     after = [
       "network-online.target"
       mediaMount
