@@ -426,13 +426,6 @@ in
           '';
         }) nodes;
 
-        # systemd refuses a DynamicUser state directory under a
-        # world-readable /var/lib/private. Each activation, impermanence
-        # copies the persisted parent's mode onto it, so fix both.
-        systemd.tmpfiles.rules = [
-          "d /persist/var/lib/private 0700 root root -"
-          "d /var/lib/private 0700 root root -"
-        ];
         environment.persistence."/persist".directories = [ "/var/lib/private/moot-nodes" ];
 
         systemd.services = {
