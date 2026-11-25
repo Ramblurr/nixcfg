@@ -122,6 +122,7 @@ assert lib.assertMsg
   "ward opens exactly the WireGuard ports of ts-egress and CLIProxyAPI, which LAN nodes reach directly";
 assert lib.assertMsg (
   cfg.microvm.vsock.cid == registry.guests.ward.cid
+  && registry.guests.ward ? hostKeyFile
   && cfg.microvm.vsock.ssh.enable
   && sshd.enable
   && sshd.startWhenNeeded

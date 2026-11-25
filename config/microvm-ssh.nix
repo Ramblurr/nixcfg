@@ -24,6 +24,7 @@
     guests = {
       ward = {
         cid = 4252;
+        hostKeyFile = ./ssh/ward-host.pub;
       };
     };
   };
