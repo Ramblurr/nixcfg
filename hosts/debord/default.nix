@@ -109,6 +109,7 @@ in
     domain = "status.${config.repo.secrets.global.domain.home}";
     allowedRemoteIPs = [
       config.site.net.prim.subnet4
+      (lib.head config.site.net.mgmt.hosts4.mootforge)
       "100.64.0.0/10"
     ];
   };
