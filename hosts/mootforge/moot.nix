@@ -29,6 +29,10 @@ in
         address = ward;
         port = 41642;
       }
+      {
+        address = lib.head config.site.net.data.hosts4.mali;
+        port = (import ../../config/moot-nix-cache.nix).nodePort;
+      }
     ];
     mootNodes = lib.mapAttrs (vm: builder: {
       tap = {

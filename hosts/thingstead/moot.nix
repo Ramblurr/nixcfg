@@ -31,6 +31,10 @@ in
         address = mootforge;
         port = 41651;
       }
+      {
+        address = lib.head config.site.net.data.hosts4.mali;
+        port = (import ../../config/moot-nix-cache.nix).nodePort;
+      }
     ];
     mootNodes = lib.listToAttrs (
       lib.imap0 (
