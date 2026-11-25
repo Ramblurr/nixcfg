@@ -1,0 +1,14 @@
+disabled = [
+  "repeated_keys",
+]
+
+ignore = [
+  ".direnv",
+  ".swamp",
+  ".worktrees",
+  "archive",
+  "modules-new",
+  "modules-old",
+  "pkgs/ts-egress/vendor",
+  "result",
+]

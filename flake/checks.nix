@@ -1,9 +1,18 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 {
   perSystem =
     { pkgs, ... }:
     {
       checks = {
+        statix = pkgs.runCommand "check-statix" { nativeBuildInputs = [ pkgs.statix ]; } ''
+          cd ${self}
+          statix check --config ${./statix.toml} .
+          touch "$out"
+        '';
+        deadnix = pkgs.runCommand "check-deadnix" { nativeBuildInputs = [ pkgs.deadnix ]; } ''
+          deadnix --fail ${self}
+          touch "$out"
+        '';
         bb-module = import ../tests/bb-module.nix { inherit inputs pkgs; };
         bb-isolation = import ../tests/bb-isolation.nix { inherit inputs pkgs; };
         git-credential-cache = import ../tests/git-credential-cache.nix { inherit inputs pkgs; };

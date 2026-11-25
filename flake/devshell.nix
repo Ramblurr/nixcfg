@@ -12,17 +12,71 @@
       pkgs,
       ...
     }:
+    let
+      lint = pkgs.writeShellApplication {
+        name = "lint";
+        runtimeInputs = [
+          pkgs.deadnix
+          pkgs.git
+          pkgs.nixfmt
+          pkgs.statix
+        ];
+        text = ''
+          set -euo pipefail
+
+          root="$(git rev-parse --show-toplevel)"
+          cd "$root"
+
+          status=0
+
+          echo "==> statix check"
+          if ! statix check --config ${./statix.toml} .; then
+            status=1
+          fi
+
+          mapfile -d "" -t nix_files < <(
+            git ls-files -z --cached --others --exclude-standard -- '*.nix' ':!pkgs/ts-egress/vendor/*'
+          )
+          existing_nix_files=()
+          for f in "''${nix_files[@]}"; do
+            if [[ -f "$f" ]]; then
+              existing_nix_files+=("$f")
+            fi
+          done
+
+          if [[ "''${#existing_nix_files[@]}" -gt 0 ]]; then
+            echo "==> deadnix"
+            if ! deadnix --fail -- "''${existing_nix_files[@]}"; then
+              status=1
+            fi
+
+            echo "==> nixfmt --check"
+            if ! nixfmt --check -- "''${existing_nix_files[@]}"; then
+              status=1
+            fi
+          fi
+
+          exit "$status"
+        '';
+      };
+    in
     {
       #pre-commit.settings.hooks.treefmt.enable = true;
       treefmt = {
         projectRootFile = "flake.nix";
+        settings.global.excludes = [ "pkgs/ts-egress/vendor/**" ];
         programs = {
           nixfmt.enable = pkgs.lib.meta.availableOn pkgs.stdenv.buildPlatform pkgs.nixfmt.compiler;
           nixfmt.package = pkgs.nixfmt;
           deadnix.enable = true;
-          statix.enable = true;
+          statix = {
+            enable = true;
+            disabled-lints = [ "repeated_keys" ];
+          };
         };
       };
+
+      packages.lint = lint;
 
       devshells.default = {
         packages = [
@@ -47,6 +101,10 @@
           {
             package = config.treefmt.build.wrapper;
             help = "Format all files";
+          }
+          {
+            package = lint;
+            help = "Run statix, deadnix, and nixfmt checks without modifying files";
           }
           {
             package = pkgs.deploy;
