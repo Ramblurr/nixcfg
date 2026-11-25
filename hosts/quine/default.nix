@@ -93,8 +93,8 @@ in
 
   nix = {
     settings = {
-      max-jobs = 2;
-      cores = 14;
+      max-jobs = 4;
+      cores = 6;
     };
 
     extraOptions = ''
@@ -178,7 +178,11 @@ in
       ];
     };
     nix.pruneAgedGcroots.enable = true;
-    nix.buildLimits.enable = true;
+    nix.buildLimits = {
+      enable = true;
+      idleCpu = true;
+      memoryHigh = "24G";
+    };
     desktop = {
       wayland.enable = true;
       niri.enable = true;

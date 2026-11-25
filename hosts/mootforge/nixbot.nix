@@ -250,7 +250,7 @@ in
     iifname "mgmt" ip saddr ${maliMgmtAddress}/32 ip daddr ${hostMgmtAddress} tcp dport 5432 accept comment "Databasus Nixbot logical backup"
   '';
   nix.settings = {
-    max-jobs = 2;
+    max-jobs = 3;
     cores = 4;
   };
 

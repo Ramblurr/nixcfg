@@ -28,6 +28,7 @@ let
       address = builtins.head mgmt.mootforge;
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB+N3bAL4uu/8gaxfY1ET0oQcKKaMUTh6w3JIXxe+N32";
       speedFactor = 1;
+      maxJobs = 3;
       supportedFeatures = [
         "nixos-test"
         "kvm"
@@ -37,6 +38,7 @@ let
       address = builtins.head moot.thingstead;
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICHrsPyW6qZoi6QEMyYL1oeN7Us3VNQKmR96uDcAlA08";
       speedFactor = 1;
+      maxJobs = 4;
       supportedFeatures = [
         "nixos-test"
         "kvm"
@@ -85,7 +87,7 @@ in
         hostName = builders.${name}.address;
         system = "x86_64-linux";
         protocol = "ssh-ng";
-        maxJobs = 2;
+        maxJobs = builders.${name}.maxJobs or 2;
         inherit (builders.${name}) speedFactor supportedFeatures;
         sshUser = "nix-remote-build";
         inherit (client) sshKey;
