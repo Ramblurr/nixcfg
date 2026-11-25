@@ -386,10 +386,17 @@
 
 (defn- unit-state-label
   [{:keys [kind active sub]}]
-  (cond
-    (= :failed active) "failed"
-    (= :timer kind)    (or sub (name active))
-    :else              (name active)))
+  (let [label (case active
+                :failed     "failed"
+                :activating "start"
+                :reloading  "reload"
+                :inactive   "stopped"
+                (if (= :timer kind)
+                  (or sub (name active))
+                  (name active)))]
+    (if (> (count label) 7)
+      (subs label 0 7)
+      label)))
 
 (defn- unit-timing-label
   [{:keys [kind active since-sec next-sec]}]
@@ -418,7 +425,7 @@
 (defn render-curated-units
   "Render opt-in curated systemd units in a 2-column or 1-column aligned grid."
   [th {:keys [units]}]
-  (let [curated (:curated units)]
+  (let [curated (sort-by :name (:curated units))]
     (when (seq curated)
       (let [two-col? (and (>= (:width th) 72) (> (count curated) 1))
             name-w   (if two-col? 18 34)
@@ -436,7 +443,7 @@
   "Return failed units not already present in the curated unit list."
   [{:keys [units]}]
   (let [curated-names (into #{} (map :name) (:curated units))]
-    (vec (remove #(contains? curated-names (:name %)) (:failed units)))))
+    (vec (sort-by :name (remove #(contains? curated-names (:name %)) (:failed units))))))
 
 (defn render-failed-units
   "Render any failed systemd units not already listed under curated units."

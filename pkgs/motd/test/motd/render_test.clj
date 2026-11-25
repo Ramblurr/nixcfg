@@ -52,3 +52,19 @@
         lines       (render/render-system (render/theme {:color? false :width 76}) state)]
     (is (> (count lines) 6))
     (is (every? #(<= (render/visible-len %) 76) lines))))
+
+(deftest curated-units-sort-alphabetically-and-keep-aligned-width
+  (let [state (assoc-in dummy/host-state [:units :curated]
+                        [{:name "zrepl.service"       :kind :service :active :failed     :sub "failed"     :since-sec 30}
+                         {:name "caddy.service"       :kind :service :active :activating :sub "auto-restart" :since-sec 3}
+                         {:name "atuin.service"       :kind :service :active :inactive   :sub "dead"       :since-sec 10}
+                         {:name "postgresql.service"  :kind :service :active :reloading  :sub "reload"     :since-sec 5}])
+        lines (rest (render/render-curated-units (render/theme {:color? false :width 76}) state))]
+    (is (str/includes? (first lines) "atuin"))
+    (is (str/includes? (first lines) "stopped"))
+    (is (str/includes? (first lines) "caddy"))
+    (is (str/includes? (first lines) "start"))
+    (is (str/includes? (second lines) "postgresql"))
+    (is (str/includes? (second lines) "reload"))
+    (is (str/includes? (second lines) "zrepl"))
+    (is (every? #(<= (render/visible-len %) 76) lines))))
