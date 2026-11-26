@@ -90,6 +90,8 @@ in
       interfaces-config = {
         dhcp-socket-type = "raw";
         interfaces = lib.naturalSort dhcpInterfaces;
+        service-sockets-max-retries = 1000000;
+        service-sockets-retry-wait-time = 5000;
       };
       match-client-id = false;
       sanity-checks = {
