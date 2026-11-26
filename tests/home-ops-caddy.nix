@@ -58,7 +58,7 @@ let
         sops.age.keyFile = "/tmp/age-key.txt";
         modules.services.onepassword-systemd-credentials = {
           enable = true;
-          connectHosts = [ "http://127.0.0.1:8080" ];
+          connectHosts = [ { url = "http://127.0.0.1:8080"; } ];
         };
         modules.services.caddy = {
           defaultRequestBodyMaxSize = "100MB";
@@ -137,7 +137,7 @@ let
         sops.age.keyFile = "/tmp/age-key.txt";
         modules.services.onepassword-systemd-credentials = {
           enable = true;
-          connectHosts = [ "http://127.0.0.1:8080" ];
+          connectHosts = [ { url = "http://127.0.0.1:8080"; } ];
         };
         repo.secrets.global = {
           domain.home = "example.test";

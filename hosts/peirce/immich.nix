@@ -32,7 +32,7 @@ in
 
   modules.services.onepassword-systemd-credentials = {
     enable = true;
-    connectHosts = [ "http://${address instance.workerNetwork "dewey"}:8080" ];
+    connectHosts = [ { url = "http://${address instance.workerNetwork "dewey"}:8080"; } ];
     consumers.immich-ml-server-proxy = {
       "ca.pem" = "${credentials.ca}/ca-certificate";
       "certificate.pem" = "${credentials.server}/certificate";

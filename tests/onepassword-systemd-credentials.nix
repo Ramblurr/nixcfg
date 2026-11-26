@@ -7,6 +7,7 @@ let
     "mali"
   ];
   virtualAddress = "192.0.2.22";
+  connectUid = 3007;
   tokenSopsFile = pkgs.writeText "onepassword-provider-test-secrets.yaml" "{}\n";
   testOp = pkgs.writeShellScriptBin "op" "exit 1";
   evaluate =
@@ -46,9 +47,15 @@ let
         }
       ]
       ++ lib.optional connectReplica {
-        options.modules.services.onepassword-connect.enable = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
+        options.modules.services.onepassword-connect = {
+          enable = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+          };
+          user = lib.mkOption {
+            type = lib.types.attrs;
+            default.uid = connectUid;
+          };
         };
       };
     }).config;
@@ -125,8 +132,14 @@ let
       ] helper.serviceConfig;
     in
     provider.connectHosts == [
-      "http://127.0.0.1:8080"
-      "http://${virtualAddress}:8080"
+      {
+        url = "http://127.0.0.1:8080";
+        listenerUid = connectUid;
+      }
+      {
+        url = "http://${virtualAddress}:8080";
+        listenerUid = null;
+      }
     ]
     && socket.wantedBy == [ "sockets.target" ]
     && socket.socketConfig.ListenStream == provider.socketPath
@@ -192,7 +205,10 @@ assert enabledHosts == replicaNames;
 assert lib.all targetIsCorrect replicaNames;
 assert
   withoutReplica.modules.services.onepassword-systemd-credentials.connectHosts == [
-    "http://${virtualAddress}:8080"
+    {
+      url = "http://${virtualAddress}:8080";
+      listenerUid = null;
+    }
   ];
 assert !invalidReference.success;
 assert !storeBootstrapToken.success;

@@ -98,10 +98,12 @@ let
       import subprocess
       import sys
       import time
+      from urllib.parse import urlsplit
 
       LOOKUP_RETRY_SECONDS = 15
       LOOKUP_TIMEOUT_SECONDS = 5
       MAX_CREDENTIAL_SIZE = 1024 * 1024
+      CONNECT_HOSTS = json.loads(${builtins.toJSON (builtins.toJSON cfg.connectHosts)})
 
 
       def fail(message):
@@ -154,17 +156,45 @@ let
       )
 
 
-      def lookup():
-          for connect_host in ${builtins.toJSON cfg.connectHosts}:
+      def listener_uids(port):
+          uids = []
+          for table in ("/proc/net/tcp", "/proc/net/tcp6"):
+              try:
+                  lines = Path(table).read_text(encoding="ascii").splitlines()[1:]
+              except FileNotFoundError:
+                  continue
+              for line in lines:
+                  fields = line.split()
+                  if fields[3] == "0A" and int(fields[1].rsplit(":", 1)[1], 16) == port:
+                      uids.append(int(fields[7]))
+          return uids
+
+
+      def trusted(connect_host):
+          expected_uid = connect_host["listenerUid"]
+          if expected_uid is None:
+              return True
+          url = urlsplit(connect_host["url"])
+          uids = listener_uids(url.port or (443 if url.scheme == "https" else 80))
+          return bool(uids) and all(uid == expected_uid for uid in uids)
+
+
+      def lookup(deadline):
+          for connect_host in CONNECT_HOSTS:
+              remaining = deadline - time.monotonic()
+              if remaining <= 0:
+                  return None
+              if not trusted(connect_host):
+                  continue
               try:
                   result = subprocess.run(
                       [${builtins.toJSON (lib.getExe cfg.package)}, "read", "--no-newline", reference],
                       stdin=subprocess.DEVNULL,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.DEVNULL,
-                      env=environment | {"OP_CONNECT_HOST": connect_host},
+                      env=environment | {"OP_CONNECT_HOST": connect_host["url"]},
                       check=False,
-                      timeout=LOOKUP_TIMEOUT_SECONDS,
+                      timeout=min(LOOKUP_TIMEOUT_SECONDS, remaining),
                   )
               except OSError:
                   fail(f"lookup failed for {unit_name}/{credential_id}")
@@ -176,10 +206,11 @@ let
 
 
       deadline = time.monotonic() + LOOKUP_RETRY_SECONDS
-      while (value := lookup()) is None:
-          if time.monotonic() >= deadline:
+      while (value := lookup(deadline)) is None:
+          remaining = deadline - time.monotonic()
+          if remaining <= 0:
               fail(f"lookup failed for {unit_name}/{credential_id}")
-          time.sleep(1)
+          time.sleep(min(1, remaining))
       if not value:
           fail(f"lookup returned an empty value for {unit_name}/{credential_id}")
       if len(value) > MAX_CREDENTIAL_SIZE:
@@ -211,10 +242,31 @@ in
     };
 
     connectHosts = lib.mkOption {
-      type = lib.types.nonEmptyListOf lib.types.str;
+      type = lib.types.nonEmptyListOf (
+        lib.types.submodule {
+          options = {
+            url = lib.mkOption {
+              type = lib.types.str;
+              description = "Connect endpoint URL.";
+            };
+            listenerUid = lib.mkOption {
+              type = lib.types.nullOr lib.types.int;
+              default = null;
+              description = ''
+                When set, the endpoint is used only while every socket listening
+                on its port belongs to this uid, so no other local user can
+                receive the bootstrap token by binding the port first.
+              '';
+            };
+          };
+        }
+      );
       default =
-        lib.optional (config.modules.services.onepassword-connect.enable or false) "http://127.0.0.1:8080"
-        ++ [ "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080" ];
+        lib.optional (config.modules.services.onepassword-connect.enable or false) {
+          url = "http://127.0.0.1:8080";
+          listenerUid = config.modules.services.onepassword-connect.user.uid;
+        }
+        ++ [ { url = "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080"; } ];
       description = ''
         Connect endpoints used for credential lookups, most preferred first.
         Each lookup attempt tries them in order and uses the first that answers.

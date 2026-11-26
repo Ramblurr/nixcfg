@@ -1,5 +1,13 @@
 { inputs, pkgs }:
 let
+  connectUid = 3007;
+  squatterUid = 3008;
+  listener = user: {
+    serviceConfig = {
+      User = user;
+      ExecStart = "${pkgs.python3}/bin/python3 -m http.server --bind 127.0.0.1 8080";
+    };
+  };
   fakeOp = pkgs.writeShellScriptBin "op" ''
     set -eu
 
@@ -25,6 +33,9 @@ let
       op://test/Example/local-down)
         test "$connect" = fallback
         printf %s "$connect-credential-value"
+        ;;
+      op://test/Example/hang)
+        exec ${pkgs.coreutils}/bin/sleep 60
         ;;
       op://test/Example/transient)
         attempts_file="$HOME/transient-attempts"
@@ -72,19 +83,39 @@ pkgs.testers.runNixOSTest {
       modules.services.onepassword-systemd-credentials = {
         package = fakeOp;
         connectHosts = [
-          "http://127.0.0.1:8080"
-          "http://192.0.2.22:8080"
+          {
+            url = "http://127.0.0.1:8080";
+            listenerUid = connectUid;
+          }
+          { url = "http://192.0.2.22:8080"; }
         ];
         bootstrapTokenFile = "/run/onepassword-provider-test-token";
         consumers = {
           credential-success.password = "op://test/Example/password";
           credential-fallback.password = "op://test/Example/local-down";
+          credential-untrusted-local.password = "op://test/Example/password";
+          credential-hang.password = "op://test/Example/hang";
           credential-transient.password = "op://test/Example/transient";
           credential-empty.password = "op://test/Example/empty";
           credential-oversized.password = "op://test/Example/oversized";
           credential-failure.password = "op://test/Example/failure";
         };
       };
+
+      users.groups.listeners = { };
+      users.users.connect = {
+        isSystemUser = true;
+        uid = connectUid;
+        group = "listeners";
+      };
+      users.users.squatter = {
+        isSystemUser = true;
+        uid = squatterUid;
+        group = "listeners";
+      };
+
+      systemd.services.local-connect = listener "connect";
+      systemd.services.local-squatter = listener "squatter";
 
       systemd.services.prepare-provider-token = {
         serviceConfig.Type = "oneshot";
@@ -108,6 +139,19 @@ pkgs.testers.runNixOSTest {
           test "$(cat "$CREDENTIALS_DIRECTORY/password")" = fallback-credential-value
           touch /run/credential-fallback
         '';
+      };
+
+      systemd.services.credential-untrusted-local = {
+        serviceConfig.Type = "oneshot";
+        script = ''
+          test "$(cat "$CREDENTIALS_DIRECTORY/password")" = fallback-credential-value
+          touch /run/credential-untrusted-local
+        '';
+      };
+
+      systemd.services.credential-hang = {
+        serviceConfig.Type = "oneshot";
+        script = "touch /run/credential-hang-unexpected";
       };
 
       systemd.services.credential-transient = {
@@ -149,10 +193,15 @@ pkgs.testers.runNixOSTest {
   };
 
   testScript = ''
+    import time
+
     start_all()
     machine.wait_for_unit("multi-user.target")
     machine.succeed("systemctl start prepare-provider-token.service")
     machine.wait_for_unit("onepassword-credential-provider.socket")
+
+    machine.succeed("systemctl start local-connect.service")
+    machine.wait_for_open_port(8080)
 
     machine.succeed("systemctl start credential-success.service")
     machine.succeed("test -e /run/credential-success")
@@ -162,6 +211,24 @@ pkgs.testers.runNixOSTest {
 
     machine.succeed("systemctl start credential-transient.service")
     machine.succeed("test -e /run/credential-transient")
+
+    start = time.monotonic()
+    machine.fail("systemctl start credential-hang.service")
+    elapsed = time.monotonic() - start
+    assert 14 <= elapsed < 18, f"hanging lookup took {elapsed:.1f}s"
+    machine.fail("test -e /run/credential-hang-unexpected")
+
+    machine.succeed("systemctl stop local-connect.service")
+    machine.wait_for_closed_port(8080)
+    machine.succeed("systemctl start local-squatter.service")
+    machine.wait_for_open_port(8080)
+    machine.succeed("systemctl start credential-untrusted-local.service")
+    machine.succeed("rm /run/credential-untrusted-local")
+
+    machine.succeed("systemctl stop local-squatter.service")
+    machine.wait_for_closed_port(8080)
+    machine.succeed("systemctl start credential-untrusted-local.service")
+    machine.succeed("test -e /run/credential-untrusted-local")
 
     for unit in [
         "credential-empty.service",
