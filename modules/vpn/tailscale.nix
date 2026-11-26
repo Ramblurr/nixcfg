@@ -86,6 +86,7 @@ in
         ExecStartPre = "${lib.getExe config.services.tailscale.package} wait --timeout=5m";
         Restart = "on-failure";
         RestartSec = "30s";
+        TimeoutStartSec = "30s";
       };
     };
 
