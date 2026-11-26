@@ -138,8 +138,6 @@ in
     };
   };
 
-  systemd.network.networks."30-mgmt".networkConfig.ConfigureWithoutCarrier = true;
-
   networking.firewall.interfaces.mgmt.allowedTCPPorts = [
     garagePorts.rpc
     garagePorts.admin

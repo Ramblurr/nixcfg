@@ -48,8 +48,6 @@ in
     secretFile = config.sops.templates."powerdns.env".path;
   };
 
-  systemd.network.networks."30-mgmt".networkConfig.ConfigureWithoutCarrier = true;
-
   modules.zfs.datasets.properties = {
     "rpool/encrypted/safe/svc/powerdns"."mountpoint" = directory;
     "rpool/encrypted/safe/svc/powerdns"."com.sun:auto-snapshot" = "false";

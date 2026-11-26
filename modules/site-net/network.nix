@@ -114,6 +114,9 @@ let
         #LinkLocalAddressing = "ipv6";
         LinkLocalAddressing = "no";
       }
+      // lib.optionalAttrs (hasStatic4 net) {
+        ConfigureWithoutCarrier = true;
+      }
       // lib.optionalAttrs hostConfig.interfaces.${net}.gw4 {
         Gateway = nets.${net}.hosts4.${nets.${net}.dhcp.router};
       }
@@ -201,6 +204,9 @@ let
           LinkLocalAddressing = false;
           LLDP = true;
           EmitLLDP = true;
+        }
+        // lib.optionalAttrs (containsKey nets.${net}.hosts4 hostName) {
+          ConfigureWithoutCarrier = true;
         };
         linkConfig = {
           MTUBytes = nets.${net}.mtu;
