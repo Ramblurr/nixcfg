@@ -59,6 +59,7 @@
         ts-egress = import ../tests/ts-egress.nix { inherit inputs pkgs; };
         ts-broker = import ../tests/ts-broker.nix { inherit pkgs; };
         site-net-source-routing = import ../tests/site-net-source-routing.nix { inherit inputs pkgs; };
+        ntp-by-address = import ../tests/ntp-by-address.nix { inherit inputs pkgs; };
         ts-broker-contract = import ../tests/ts-broker-contract.nix { inherit pkgs; };
         cliproxy-api-service = import ../tests/cliproxy-api-service.nix { inherit inputs pkgs; };
         ward-guest = import ../tests/ward-guest.nix { inherit inputs pkgs; };

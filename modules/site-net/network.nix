@@ -215,6 +215,12 @@ let
       };
   };
   reduce = fn: list: builtins.foldl' (result: item: result // (fn item)) { } list;
+  hasAddress4 = net: hasStatic4 net || (builtins.elem net hostBridges && nets.${net}.dhcp.enable);
+  routerTimeServers = map (net: builtins.head nets.${net}.hosts4.${nets.${net}.dhcp.router}) (
+    builtins.filter (
+      net: hasAddress4 net && nets.${net}.dhcp.enable && nets.${net}.dhcp.router != hostName
+    ) (keys nets)
+  );
 in
 {
 
@@ -222,6 +228,9 @@ in
     networking.hostId = lib.my.generateHostId hostName;
     networking.useDHCP = false;
     services.timesyncd.enable = true;
+    services.timesyncd.servers = lib.mkIf (routerTimeServers != [ ]) (
+      routerTimeServers ++ config.networking.timeServers
+    );
     services.resolved.enable = lib.mkDefault true;
     boot.kernelModules = lib.mkIf (hostGres != [ ]) [ "ip_gre" ];
     systemd.network.config.networkConfig = {
