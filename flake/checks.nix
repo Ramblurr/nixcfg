@@ -79,6 +79,9 @@
         onepassword-connect-availability = import ../tests/onepassword-connect-availability.nix {
           inherit inputs pkgs;
         };
+        onepassword-connect-cold-boot-vm = import ../tests/onepassword-connect-cold-boot-vm.nix {
+          inherit inputs pkgs;
+        };
         onepassword-systemd-credentials = import ../tests/onepassword-systemd-credentials.nix {
           inherit inputs pkgs;
         };
