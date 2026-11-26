@@ -25,6 +25,9 @@ pkgs.testers.runNixOSTest {
         };
 
         networking.useNetworkd = true;
+        services.udev.extraRules = ''
+          SUBSYSTEM=="net", KERNEL=="vlan-svc", ENV{SYSTEMD_READY}="0"
+        '';
         system.switch.enable = true;
         specialisation.changed.configuration.environment.etc.changed.text = "1";
         systemd.network = {
@@ -102,7 +105,6 @@ pkgs.testers.runNixOSTest {
     with subtest("the guest retries its MACVTAP setup while the parent link is missing"):
         machine.wait_until_succeeds("systemctl is-failed systemd-networkd-wait-online.service", timeout=120)
         machine.wait_until_succeeds("test $(journalctl -b -u microvm@ward | grep -c 'Scheduled restart') -ge 2", timeout=120)
-        machine.succeed("journalctl -b | grep -q 'Dependency failed for Setup MicroVM .ward. MACVTAP interfaces'")
         machine.fail("ip link show vlan-svc")
         assert state(unit) != "active"
         assert state("microvm@ward.service") != "active"
@@ -126,10 +128,18 @@ pkgs.testers.runNixOSTest {
         assert status != 124 and elapsed < 60, f"status {status} after {elapsed:.1f}s"
         assert state("microvm@ward.service") != "active"
 
-    with subtest("a parent link that appears after 120 s still brings up the guest"):
+    with subtest("a late parent link without an active device alias still brings up the guest"):
         machine.succeed("sleep $((120 - $(cut -d. -f1 /proc/uptime))) || true")
         machine.fail("ip link show vlan-svc")
         machine.succeed("ip link add trunk0 type dummy")
+        machine.wait_until_succeeds("ip link show vlan-svc")
+        machine.wait_until_succeeds(
+            "udevadm info --query=property --path=/sys/class/net/vlan-svc | grep -qx SYSTEMD_READY=0"
+        )
+        alias = machine.succeed(
+            "systemd-escape --path --suffix=device /sys/subsystem/net/devices/vlan-svc"
+        ).strip()
+        assert state(alias) == "inactive"
         machine.wait_until_succeeds(f"systemctl is-active {unit}", timeout=60)
         machine.succeed("ip link show svc-ward")
         machine.wait_until_succeeds("systemctl is-active microvm@ward.service", timeout=120)

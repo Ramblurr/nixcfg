@@ -2,7 +2,6 @@ guestConfig:
 {
   config,
   lib,
-  utils,
   ...
 }:
 let
@@ -13,7 +12,6 @@ let
         builtins.filter (interface: interface.type == "macvtap") (guestConfig name vm).microvm.interfaces
       )
     );
-  linkDevice = link: "sys-subsystem-net-devices-${utils.escapeSystemdPath link}.device";
 in
 {
   config = lib.mkIf config.modules.microvm-host.enable {
@@ -21,8 +19,14 @@ in
       name: links:
       lib.nameValuePair "microvm-macvtap-interfaces@${name}" {
         overrideStrategy = "asDropin";
-        requisite = map linkDevice links;
-        after = map linkDevice links;
+        preStart = ''
+          for link in ${lib.escapeShellArgs links}; do
+            if [ ! -e "/sys/class/net/$link" ]; then
+              echo "MACVTAP parent link $link does not exist" >&2
+              exit 1
+            fi
+          done
+        '';
       }
     ) (lib.filterAttrs (_: links: links != [ ]) (lib.mapAttrs parentLinks config.microvm.vms));
   };
