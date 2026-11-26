@@ -120,6 +120,10 @@ in
           "microvm-macvtap-interfaces@%i.service"
           "microvm-virtiofsd@%i.service"
         ];
+        partOf = [
+          "microvm-macvtap-interfaces@%i.service"
+          "microvm-virtiofsd@%i.service"
+        ];
         after = [ "microvm-zfs-datasets@%i.service" ];
       };
       "microvm-zfs-datasets@" = {
