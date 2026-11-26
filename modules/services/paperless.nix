@@ -83,7 +83,7 @@ in
         paperless-secrets-setup = {
           description = "Prepare Paperless files from 1Password credentials";
           before = map (service: "${service}.service") paperlessServices;
-          requiredBy = map (service: "${service}.service") paperlessServices;
+          wantedBy = map (service: "${service}.service") paperlessServices;
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
@@ -103,15 +103,14 @@ in
             chown ${config.services.paperless.user}:${cfg.group.name} ${paperlessEnvironmentFile}
           '';
         };
-        paperless-secret-key = {
-          after = oidcDeps;
-          requires = oidcDeps;
-        };
+        paperless-secret-key.serviceConfig.EnvironmentFile = lib.mkForce [ ];
       }
       (lib.genAttrs paperlessServices (_: {
         after = serviceDeps ++ oidcDeps ++ [ "postgresql.service" ];
         bindsTo = serviceDeps;
-        requires = oidcDeps ++ [ "postgresql.service" ];
+        partOf = oidcDeps;
+        requires = [ "postgresql.service" ];
+        serviceConfig.RestartSec = "30s";
       }))
     ];
 

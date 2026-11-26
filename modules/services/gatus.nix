@@ -88,7 +88,7 @@ in
     systemd.services.gatus-env-setup = {
       description = "Prepare Gatus environment from 1Password credentials";
       before = [ "gatus.service" ];
-      requiredBy = [ "gatus.service" ];
+      wantedBy = [ "gatus.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -107,7 +107,11 @@ in
       '';
     };
 
-    systemd.services.gatus.unitConfig.RequiresMountsFor = [ stateDirActual ];
+    systemd.services.gatus = {
+      partOf = [ "gatus-env-setup.service" ];
+      serviceConfig.RestartSec = "30s";
+      unitConfig.RequiresMountsFor = [ stateDirActual ];
+    };
 
     modules.services.caddy.routes.gatus = {
       publicHost = cfg.domain;

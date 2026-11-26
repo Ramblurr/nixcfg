@@ -226,8 +226,9 @@ assert
     "API_TOKEN:${microvmConfig.modules.services.onepassword-systemd-credentials.socketPath}"
   ];
 assert microvmSecretService.partOf == [ "microvm@demo.service" ];
-assert builtins.elem "microvm-secrets-demo.service" microvmGuestService.requires;
-assert builtins.elem "microvm-secrets-demo.service" microvmVirtiofsdService.requires;
+assert builtins.elem "microvm-secrets-demo.service" microvmGuestService.wants;
+assert !(builtins.elem "microvm-secrets-demo.service" microvmGuestService.requires);
+assert microvmVirtiofsdService.unitConfig.AssertPathIsDirectory == "/run/microvms/secrets/demo";
 assert lib.all (rule: builtins.elem rule microvmConfig.systemd.tmpfiles.rules) [
   "d /run/microvms 0755 root root -"
   "d /run/microvms/secrets 0755 root root -"

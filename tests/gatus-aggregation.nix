@@ -166,7 +166,8 @@ assert
     pushover-user-key = "op://home-ops-prod/pushover/pushover_user_key";
   };
 assert gatusEnvSetup.before == [ "gatus.service" ];
-assert gatusEnvSetup.requiredBy == [ "gatus.service" ];
+assert gatusEnvSetup.wantedBy == [ "gatus.service" ];
+assert gatusEnvSetup.requiredBy == [ ];
 assert lib.hasInfix "BORGMATIC_GATUS_TOKEN=%s" gatusEnvSetup.script;
 assert lib.hasInfix "GATUS_EXTERNAL_TOKEN=%s" gatusEnvSetup.script;
 assert lib.hasInfix "GATUS_QUINE_EXTERNAL_TOKEN=%s" gatusEnvSetup.script;

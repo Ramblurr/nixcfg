@@ -133,6 +133,8 @@ in
         RemainAfterExit = true;
         RuntimeDirectory = "invoiceninja-env";
         UMask = "0077";
+        Restart = "on-failure";
+        RestartSec = "30s";
       };
       script = ''
         : > ${appEnvironmentFile}
@@ -197,6 +199,8 @@ in
         User = "mysql";
         Group = "mysql";
         RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = "30s";
         ExecStartPre = "${pkgs.coreutils}/bin/test -S /run/mysqld/mysqld.sock";
       };
     };

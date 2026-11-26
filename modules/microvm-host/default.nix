@@ -112,7 +112,14 @@ in
         requires = [ "microvm-zfs-datasets@%i.service" ];
       };
       "microvm@" = {
-        requires = [ "microvm-zfs-datasets@%i.service" ];
+        requires = lib.mkForce [
+          "microvm-tap-interfaces@%i.service"
+          "microvm-macvtap-interfaces@%i.service"
+          "microvm-pci-devices@%i.service"
+          "microvm-set-booted@%i.service"
+          "microvm-zfs-datasets@%i.service"
+        ];
+        wants = [ "microvm-virtiofsd@%i.service" ];
         after = [ "microvm-zfs-datasets@%i.service" ];
       };
       "microvm-zfs-datasets@" = {

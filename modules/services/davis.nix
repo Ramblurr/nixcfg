@@ -59,11 +59,22 @@ in
     ];
 
     systemd.services.phpfpm-davis = {
-      requires = [ "postgresql.service" ];
+      requires = lib.mkForce [
+        "postgresql.service"
+        "postgresql.target"
+        "davis-db-migrate.service"
+      ];
+      wants = [ "davis-env-setup.service" ];
+      partOf = [ "davis-env-setup.service" ];
       after = [ "postgresql.service" ];
     };
     systemd.services.davis-db-migrate = {
-      requires = [ "postgresql.service" ];
+      requires = lib.mkForce [
+        "postgresql.service"
+        "postgresql.target"
+      ];
+      wants = [ "davis-env-setup.service" ];
+      partOf = [ "davis-env-setup.service" ];
       after = [ "postgresql.service" ];
     };
 
@@ -115,6 +126,8 @@ in
         User = "postgres";
         Group = "postgres";
         RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = "30s";
       };
     };
     site.gatus.endpoints = [

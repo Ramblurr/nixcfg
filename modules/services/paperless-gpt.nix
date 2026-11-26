@@ -44,12 +44,14 @@ in
     systemd.services.paperless-gpt = {
       description = "Paperless GPT metadata and Mistral OCR sidecar";
       wantedBy = [ "multi-user.target" ];
-      wants = [ "network-online.target" ];
+      wants = [
+        "network-online.target"
+        "paperless-web.service"
+      ];
       after = [
         "network-online.target"
         "paperless-web.service"
       ];
-      requires = [ "paperless-web.service" ];
       unitConfig.RequiresMountsFor = [ "/var/lib/private/paperless-gpt" ];
       environment = {
         PAPERLESS_BASE_URL = "http://127.0.0.1:${toString config.services.paperless.port}";

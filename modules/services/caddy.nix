@@ -796,7 +796,7 @@ in
     systemd.services.caddy-env-setup = {
       description = "Prepare Caddy environment from 1Password credentials";
       before = [ "caddy.service" ];
-      requiredBy = [ "caddy.service" ];
+      wantedBy = [ "caddy.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -863,7 +863,7 @@ in
     };
 
     systemd.services.caddy = {
-      requires = [ "caddy-env-setup.service" ];
+      partOf = [ "caddy-env-setup.service" ];
       after = [ "caddy-env-setup.service" ];
       unitConfig.RequiresMountsFor = [ "/var/lib/caddy" ];
       serviceConfig = {

@@ -67,15 +67,22 @@ let
   ) cfg.microvmSecrets;
   microvmSecretDependencies = lib.foldl' (
     result: guest:
+    let
+      directory = "/run/microvms/secrets/${guest}";
+      secrets = "microvm-secrets-${guest}.service";
+    in
     result
     // {
       "microvm-virtiofsd@${guest}" = {
-        requires = [ "microvm-secrets-${guest}.service" ];
-        after = [ "microvm-secrets-${guest}.service" ];
+        wants = [ secrets ];
+        after = [ secrets ];
+        unitConfig.AssertPathIsDirectory = directory;
       };
       "microvm@${guest}" = {
-        requires = [ "microvm-secrets-${guest}.service" ];
-        after = [ "microvm-secrets-${guest}.service" ];
+        wants = [ secrets ];
+        after = [ secrets ];
+        partOf = [ secrets ];
+        serviceConfig.ExecStartPre = "${pkgs.coreutils}/bin/test -d ${directory}";
       };
     }
   ) { } (builtins.attrNames cfg.microvmSecrets);

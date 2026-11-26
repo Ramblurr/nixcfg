@@ -148,11 +148,12 @@ assert enforcedSettings.PAPERLESS_REDIRECT_LOGIN_TO_SSO;
 assert compatibility.services.paperless.environmentFile == "/run/paperless-secrets/paperless.env";
 assert compatibility.services.paperless.passwordFile == "/run/paperless-secrets/admin-password";
 assert provider.consumers.paperless-secrets-setup == paperlessCredentials;
-assert builtins.elem "paperless-web.service" setupService.requiredBy;
-assert builtins.elem "paperless-secrets-setup.service" secretKeyService.requires;
-assert builtins.elem "paperless-secrets-setup.service" secretKeyService.after;
+assert builtins.elem "paperless-web.service" setupService.wantedBy;
+assert setupService.requiredBy == [ ];
+assert secretKeyService.serviceConfig.EnvironmentFile == [ ];
 assert builtins.elem "onepassword-credential-provider.socket" setupService.requires;
-assert builtins.elem "paperless-secrets-setup.service" webService.requires;
+assert !(builtins.elem "paperless-secrets-setup.service" webService.requires);
+assert builtins.elem "paperless-secrets-setup.service" webService.partOf;
 assert builtins.elem "paperless-secrets-setup.service" webService.after;
 assert lib.all (
   service: builtins.elem "postgresql.service" service.requires

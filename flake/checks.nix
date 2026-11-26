@@ -88,6 +88,7 @@
         onepassword-systemd-credentials-vm = import ../tests/onepassword-systemd-credentials-vm.nix {
           inherit inputs pkgs;
         };
+        outage-recovery-vm = import ../tests/outage-recovery-vm.nix { inherit inputs pkgs; };
         mali-garage = import ../tests/mali-garage.nix { inherit inputs pkgs; };
         mali-zrepl-retention = import ../tests/mali-zrepl-retention.nix { inherit inputs pkgs; };
         mali-homeassistant-backup-retention = import ../tests/mali-homeassistant-backup-retention.nix {

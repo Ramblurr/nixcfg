@@ -215,6 +215,8 @@ in
       User = "postgres";
       Group = "postgres";
       RemainAfterExit = true;
+      Restart = "on-failure";
+      RestartSec = "30s";
       ExecStartPre = "${pkgs.coreutils}/bin/test -S /run/postgresql/.s.PGSQL.5432";
     };
   };
