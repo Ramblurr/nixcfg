@@ -72,9 +72,11 @@ assert
   };
 assert !(d.modules.services.onepassword-systemd-credentials.consumers ? "opencloud-home-env-setup");
 assert builtins.elem "microvm-secrets-opencloud-home.service"
-  d.systemd.services."microvm@opencloud-home".requires;
+  d.systemd.services."microvm@opencloud-home".wants;
 assert builtins.elem "microvm-secrets-opencloud-home.service"
-  d.systemd.services."microvm-virtiofsd@opencloud-home".requires;
+  d.systemd.services."microvm@opencloud-home".partOf;
+assert builtins.elem "microvm-secrets-opencloud-home.service"
+  d.systemd.services."microvm-virtiofsd@opencloud-home".wants;
 assert builtins.elem "microvm@opencloud-home.service" secretService.partOf;
 assert secretService.serviceConfig.User == "root";
 assert secretService.serviceConfig.Group == "root";
