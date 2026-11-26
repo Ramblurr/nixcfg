@@ -2,6 +2,11 @@
 let
   inherit (config.repo.secrets) global;
   domain = global.domain.home;
+  quineUplink = "lan1";
+  quineVlan = {
+    type = "bridge";
+    parent = quineUplink;
+  };
 
   # this is a /56 prefix with no trailing :
 in
@@ -367,17 +372,11 @@ in
       role = "server";
       interfaces = {
         lan0.type = "phys";
-        prim.type = "bridge";
-        data = {
-          type = "bridge";
-          parent = "lan1";
-        };
-        mgmt.type = "bridge";
-        svc = {
-          type = "bridge";
-          parent = "lan0";
-        };
-        vpn.type = "bridge";
+        prim = quineVlan;
+        data = quineVlan;
+        mgmt = quineVlan;
+        svc = quineVlan;
+        vpn = quineVlan;
       };
     };
     mootforge = {

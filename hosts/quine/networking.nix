@@ -8,7 +8,6 @@ let
 in
 {
   inherit (config.repo.secrets.site) site;
-  boot.kernel.sysctl."net.ipv4.conf.data.ignore_routes_with_linkdown" = 1;
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   services.resolved.settings.Resolve.FallbackDNS = [
     "1.1.1.1#cloudflare-dns.com"
@@ -17,10 +16,6 @@ in
     "8.8.4.4#dns.google"
   ];
   systemd.network = {
-    wait-online.ignoredInterfaces = [
-      "vlan-data"
-      "data"
-    ];
     config.networkConfig = {
       IPv4Forwarding = true;
       #IPv6Forwarding = false;
@@ -66,6 +61,7 @@ in
           ]
       ))
       // {
+        "10-lan0".linkConfig.RequiredForOnline = lib.mkForce "no";
         "10-lan1" = {
           matchConfig.Name = "lan1";
           networkConfig = {
