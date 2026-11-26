@@ -203,6 +203,11 @@ in
 
         #${hm.config.lib.shell.exportAll config.environment.sessionVariables}
         envExtra = ''
+          # Bash-like behaviour for every zsh, including the non-interactive
+          # shells coding agents and `ssh host cmd` run: unmatched globs stay
+          # literal, `=word` is not a command lookup, unquoted $var splits.
+          setopt no_nomatch no_equals sh_word_split
+
           # SESSION
 
           # HM SESSION
