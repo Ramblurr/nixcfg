@@ -32,7 +32,10 @@ let
   '';
 in
 {
-  imports = [ (import ./moot-nodes.nix guestConfig) ];
+  imports = [
+    (import ./macvtap-parents.nix guestConfig)
+    (import ./moot-nodes.nix guestConfig)
+  ];
 
   options.modules.microvm-host = {
     enable = lib.mkEnableOption "Enable microvm host services (for imperative control!)";
@@ -103,23 +106,20 @@ in
 
     # systemd services to ensure the ZFS datasets for the microvms are created
     systemd.services = {
-      # MACVTAP parents must exist before guest interface setup runs.
-      "microvm-macvtap-interfaces@" = {
-        requires = [ "systemd-networkd-wait-online.service" ];
-        after = [ "systemd-networkd-wait-online.service" ];
-      };
       "microvm-virtiofsd@" = {
         requires = [ "microvm-zfs-datasets@%i.service" ];
       };
       "microvm@" = {
         requires = lib.mkForce [
           "microvm-tap-interfaces@%i.service"
-          "microvm-macvtap-interfaces@%i.service"
           "microvm-pci-devices@%i.service"
           "microvm-set-booted@%i.service"
           "microvm-zfs-datasets@%i.service"
         ];
-        wants = [ "microvm-virtiofsd@%i.service" ];
+        wants = [
+          "microvm-macvtap-interfaces@%i.service"
+          "microvm-virtiofsd@%i.service"
+        ];
         after = [ "microvm-zfs-datasets@%i.service" ];
       };
       "microvm-zfs-datasets@" = {

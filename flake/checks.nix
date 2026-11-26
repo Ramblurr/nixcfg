@@ -29,6 +29,7 @@
         peirce-boot = import ../tests/peirce-boot.nix { inherit inputs pkgs; };
         immich-guest = import ../tests/immich-guest.nix { inherit inputs pkgs; };
         microvm-ssh = import ../tests/microvm-ssh.nix { inherit inputs pkgs; };
+        microvm-macvtap-parent-vm = import ../tests/microvm-macvtap-parent-vm.nix { inherit inputs pkgs; };
         microvm-zvol-overlay = import ../tests/microvm-zvol-overlay.nix { inherit inputs pkgs; };
         moot-wright = import ../tests/moot-wright.nix { inherit inputs pkgs; };
         moot-builder = import ../tests/moot-builder.nix { inherit inputs pkgs; };
