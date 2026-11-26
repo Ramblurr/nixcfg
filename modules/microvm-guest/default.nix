@@ -8,6 +8,7 @@
     ./host-secrets.nix
     ./writable-store.nix
     ./switch.nix
+    ./install-on-host.nix
     ./zvols.nix
     ./home-manager.nix
     ./dev-sandbox.nix

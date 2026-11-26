@@ -33,6 +33,18 @@ let
   v1Switch = v1.config.microvm.deploy.sshSwitch;
   v2Switch = v2.config.microvm.deploy.sshSwitch;
   v3Runner = v3.config.microvm.declaredRunner;
+  installer = guest: guest.config.microvm.deploy.installOnHost;
+  installInputs =
+    guest:
+    let
+      closureInfo = guest.pkgs.closureInfo { rootPaths = [ guest.config.system.build.toplevel ]; };
+    in
+    [
+      closureInfo
+      guest.config.microvm.declaredRunner
+      (builtins.unsafeDiscardOutputDependency closureInfo.drvPath)
+      (builtins.unsafeDiscardOutputDependency guest.config.microvm.declaredRunner.drvPath)
+    ];
   zvolSize = v1.config.modules.microvm-guest.writableStoreOverlay.zvolSize;
 in
 pkgs.testers.runNixOSTest {
@@ -58,6 +70,15 @@ pkgs.testers.runNixOSTest {
     networking.hostId = "8425e349";
     # The host module orders guest interfaces after networkd-wait-online.
     networking.useNetworkd = true;
+    nix.settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      min-free = pkgs.lib.mkForce 0;
+    };
+    services.openssh.enable = true;
+    users.users.root.openssh.authorizedKeys.keys = [ sshKeys.snakeOilEd25519PublicKey ];
     virtualisation = {
       cores = 2;
       memorySize = 3072;
@@ -72,13 +93,22 @@ pkgs.testers.runNixOSTest {
         v1Switch
         v2Switch
         v3Runner
-      ];
+      ]
+      ++ installInputs v1
+      ++ installInputs v3;
     };
     environment.etc."microvm-test-key" = {
       source = sshKeys.snakeOilEd25519PrivateKey;
       mode = "0600";
     };
     programs.ssh.extraConfig = ''
+      Host localhost
+        User root
+        IdentityFile /etc/microvm-test-key
+        BatchMode yes
+        StrictHostKeyChecking no
+        UserKnownHostsFile /dev/null
+
       Host vsock-mux/*
         User root
         IdentityFile /etc/microvm-test-key
@@ -100,6 +130,7 @@ pkgs.testers.runNixOSTest {
     v1_top = "${v1.config.system.build.toplevel}"
     v2_top = "${v2.config.system.build.toplevel}"
     v3_top = "${v3.config.system.build.toplevel}"
+    v1_runner = "${v1.config.microvm.declaredRunner}"
     retired = "${v1.config.environment.etc."moot-retired".source}"
     hello = "${v2.pkgs.hello}"
     hello_link = "${v2.config.environment.etc."moot-hello-link".source}"
@@ -265,9 +296,25 @@ pkgs.testers.runNixOSTest {
     with subtest("the hot-switched v2 system resolves <nixpkgs> and builds"):
         check_nix("v2")
 
+    with subtest("the host installer keeps old for an unchanged runner and rotates it on a change"):
+        def install(installer):
+            return host.succeed(f"timeout 600 {installer}/bin/microvm-install-on-host root@localhost 2>&1")
+
+        def runners():
+            return tuple(host.succeed(f"readlink {state}/{link} || true").strip() for link in ["current", "old", "new"])
+
+        assert runners() == (v1_runner, "", ""), runners()
+        out = install("${installer v1}")
+        assert "already installed" in out, out
+        assert runners() == (v1_runner, "", ""), runners()
+        install("${installer v3}")
+        assert runners() == ("${v3Runner}", v1_runner, ""), runners()
+        out = install("${installer v3}")
+        assert "already installed" in out, out
+        assert runners() == ("${v3Runner}", v1_runner, ""), runners()
+
     with subtest("the guest reboots onto the v3 image with the same zvol"):
         assert name(retired) in closure(v2_top) and name(retired) not in upper_store_paths()
-        host.succeed(f"ln -sfn ${v3Runner} {state}/current")
         host.succeed("systemctl restart microvm@zvol-guest.service")
         assert boot_guest() != first_boot
         guest(f"test $(readlink /run/booted-system) = {v3_top}")
