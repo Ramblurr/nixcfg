@@ -2,7 +2,11 @@ _: {
   environment.persistence."/persist".directories = [ "/var/lib/chrony" ];
   services.chrony = {
     enable = true;
-    servers = [ "id.pool.ntp.org" ];
+    servers = [
+      "id.pool.ntp.org"
+      "162.159.200.1"
+      "162.159.200.123"
+    ];
     serverOption = "iburst";
     extraConfig = ''
       allow 127.0.0.0/8

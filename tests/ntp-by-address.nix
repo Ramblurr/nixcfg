@@ -60,9 +60,25 @@ let
     lib.assertMsg (lib.hasInfix "\nNTP=${servers} ${pool}\n" conf) "${hostName} timesyncd.conf:\n${conf}";
 
   addams = timesyncdConf "addams";
+  addamsChrony =
+    (evaluate "addams" [
+      ../hosts/addams/modules/chrony.nix
+      {
+        options.environment.persistence = lib.mkOption { type = lib.types.attrs; };
+      }
+    ]).systemd.services.chronyd.serviceConfig.ExecStart;
 in
 assert lib.all lib.id (lib.mapAttrsToList checkHost expectedNtp);
 assert lib.assertMsg (!lib.hasInfix "\nNTP=" addams) addams;
 pkgs.runCommand "ntp-by-address" { } ''
+  conf=$(echo '${addamsChrony}' | grep -o '/nix/store/[^ ]*-chrony.conf')
+  cat "$conf"
+  grep -qx 'pool id.pool.ntp.org iburst' "$conf"
+  grep -qx 'server 162.159.200.1 iburst' "$conf"
+  grep -qx 'server 162.159.200.123 iburst' "$conf"
+  if grep -q '^local' "$conf"; then
+    echo "chrony must not serve its own clock as a reference while unsynced" >&2
+    exit 1
+  fi
   touch "$out"
 ''
