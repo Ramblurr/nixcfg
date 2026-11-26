@@ -20,6 +20,7 @@ in
     ./zrepl.nix
     ./zfs-keys.nix
     ./zrepl-receiver-reconcile.nix
+    ./homeassistant-backup-retention.nix
     ./zrepl-metrics-tunnel.nix
     ./caddy.nix
     ./moot-cache.nix
@@ -42,6 +43,7 @@ in
   sops.age.sshKeyPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
   environment.etc."machine-id".text = config.repo.secrets.local.machineId;
   services.rsyncnet-zrepl-reconcile.metricsTunnel.enable = true;
+  services.homeassistant-backup-retention.enable = true;
 
   documentation.nixos.enable = false;
   documentation.doc.enable = false;
