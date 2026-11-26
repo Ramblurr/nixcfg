@@ -370,7 +370,7 @@ in
         prim.type = "bridge";
         data = {
           type = "bridge";
-          parent = "lan0";
+          parent = "lan1";
         };
         mgmt.type = "bridge";
         svc = {

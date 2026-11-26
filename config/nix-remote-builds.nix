@@ -9,13 +9,12 @@
 # output locks held by both ends.
 let
   inherit (config.networking) hostName;
-  mgmt = config.site.net.mgmt.hosts4;
   prim = config.site.net.prim.hosts4;
   data = config.site.net.data.hosts4;
 
   builders = {
     quine = {
-      address = builtins.head mgmt.quine;
+      address = builtins.head data.quine;
       hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFICZ13T85//UvjEjf+I72FqaXyGJNt9LD4mjYSq3LTl";
       speedFactor = 2;
       maxJobs = 4;

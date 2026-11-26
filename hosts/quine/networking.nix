@@ -3,8 +3,12 @@
   lib,
   ...
 }:
+let
+  hostConfig = config.site.hosts.${config.networking.hostName};
+in
 {
   inherit (config.repo.secrets.site) site;
+  boot.kernel.sysctl."net.ipv4.conf.data.ignore_routes_with_linkdown" = 1;
   #systemd.services.systemd-networkd.serviceConfig.Environment = ["SYSTEMD_LOG_LEVEL=debug"];
   services.resolved.settings.Resolve.FallbackDNS = [
     "1.1.1.1#cloudflare-dns.com"
@@ -13,6 +17,10 @@
     "8.8.4.4#dns.google"
   ];
   systemd.network = {
+    wait-online.ignoredInterfaces = [
+      "vlan-data"
+      "data"
+    ];
     config.networkConfig = {
       IPv4Forwarding = true;
       #IPv6Forwarding = false;
@@ -54,11 +62,26 @@
             };
           })
           [
-            "lan1"
             "wlp8s0"
           ]
       ))
       // {
+        "10-lan1" = {
+          matchConfig.Name = "lan1";
+          networkConfig = {
+            DHCPServer = false;
+            VLAN = map (net: "vlan-${net}") (
+              lib.attrNames (lib.filterAttrs (_: iface: iface.parent == "lan1") hostConfig.interfaces)
+            );
+            LinkLocalAddressing = false;
+            LLDP = true;
+            EmitLLDP = true;
+          };
+          linkConfig = {
+            MTUBytes = 9000;
+            RequiredForOnline = "no";
+          };
+        };
         "30-data" = {
           dhcpV4Config = {
             UseRoutes = lib.mkForce false;
