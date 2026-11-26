@@ -206,14 +206,6 @@ assert builtins.elem "postgresql.service" davisService.after;
 assert builtins.elem "postgresql.service" davisMigrationService.requires;
 assert builtins.elem "postgresql.service" davisMigrationService.after;
 assert builtins.elem "davis-db-migrate.service" davisService.requires;
-assert lib.all (unit: !(builtins.elem "davis-env-setup.service" unit.requires)) [
-  davisService
-  davisMigrationService
-];
-assert lib.all (unit: builtins.elem "davis-env-setup.service" unit.wants) [
-  davisService
-  davisMigrationService
-];
 assert
   cfg.modules.services.postgresql.extraAuthentication == [
     "host replication databasus_pg_dewey 192.0.2.3/32 scram-sha-256"
