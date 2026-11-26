@@ -82,7 +82,11 @@ in
     # started. At boot the backend can still be NoState, so set-config exits
     # with "unexpected state: NoState" and nothing retries it.
     systemd.services.tailscale-serve = lib.mkIf config.services.tailscale.serve.enable {
-      serviceConfig.ExecStartPre = "${lib.getExe config.services.tailscale.package} wait --timeout=5m";
+      serviceConfig = {
+        ExecStartPre = "${lib.getExe config.services.tailscale.package} wait --timeout=5m";
+        Restart = "on-failure";
+        RestartSec = "30s";
+      };
     };
 
     # A switch restarts only active units and starts only what an active
