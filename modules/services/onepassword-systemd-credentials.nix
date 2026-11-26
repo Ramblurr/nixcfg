@@ -181,11 +181,11 @@ let
 
       def lookup(deadline):
           for connect_host in CONNECT_HOSTS:
+              if not trusted(connect_host):
+                  continue
               remaining = deadline - time.monotonic()
               if remaining <= 0:
                   return None
-              if not trusted(connect_host):
-                  continue
               try:
                   result = subprocess.run(
                       [${builtins.toJSON (lib.getExe cfg.package)}, "read", "--no-newline", reference],

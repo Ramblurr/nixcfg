@@ -2,10 +2,10 @@
 let
   connectUid = 3007;
   squatterUid = 3008;
-  listener = user: {
+  listener = user: address: {
     serviceConfig = {
       User = user;
-      ExecStart = "${pkgs.python3}/bin/python3 -m http.server --bind 127.0.0.1 8080";
+      ExecStart = "${pkgs.python3}/bin/python3 -m http.server --bind ${address} 8080";
     };
   };
   fakeOp = pkgs.writeShellScriptBin "op" ''
@@ -114,8 +114,10 @@ pkgs.testers.runNixOSTest {
         group = "listeners";
       };
 
-      systemd.services.local-connect = listener "connect";
-      systemd.services.local-squatter = listener "squatter";
+      systemd.services.local-connect = listener "connect" "::";
+      systemd.services.local-connect-ipv4 = listener "connect" "127.0.0.1";
+      systemd.services.local-squatter = listener "squatter" "127.0.0.1";
+      systemd.services.local-squatter-ipv6 = listener "squatter" "::1";
 
       systemd.services.prepare-provider-token = {
         serviceConfig.Type = "oneshot";
@@ -215,7 +217,7 @@ pkgs.testers.runNixOSTest {
     start = time.monotonic()
     machine.fail("systemctl start credential-hang.service")
     elapsed = time.monotonic() - start
-    assert 14 <= elapsed < 18, f"hanging lookup took {elapsed:.1f}s"
+    assert 14.5 <= elapsed < 15.7, f"hanging lookup took {elapsed:.2f}s"
     machine.fail("test -e /run/credential-hang-unexpected")
 
     machine.succeed("systemctl stop local-connect.service")
@@ -226,6 +228,14 @@ pkgs.testers.runNixOSTest {
     machine.succeed("rm /run/credential-untrusted-local")
 
     machine.succeed("systemctl stop local-squatter.service")
+    machine.wait_for_closed_port(8080)
+    machine.succeed("systemctl start local-connect-ipv4.service local-squatter-ipv6.service")
+    machine.wait_for_open_port(8080)
+    machine.wait_until_succeeds("ss -Hltn 'sport = :8080' | grep -qF '[::1]:8080'")
+    machine.succeed("systemctl start credential-untrusted-local.service")
+    machine.succeed("rm /run/credential-untrusted-local")
+
+    machine.succeed("systemctl stop local-connect-ipv4.service local-squatter-ipv6.service")
     machine.wait_for_closed_port(8080)
     machine.succeed("systemctl start credential-untrusted-local.service")
     machine.succeed("test -e /run/credential-untrusted-local")
