@@ -36,7 +36,7 @@ let
         sops.age.keyFile = "/tmp/age-key.txt";
         modules.services.onepassword-systemd-credentials = {
           enable = true;
-          connectHost = "http://127.0.0.1:8080";
+          connectHosts = [ "http://127.0.0.1:8080" ];
         };
         repo.secrets.global = {
           domain.home = "example.test";

@@ -149,39 +149,43 @@ let
               "HOME": "/tmp",
               "XDG_CONFIG_HOME": "/tmp/op-config",
               "OP_CACHE": "false",
-              "OP_CONNECT_HOST": ${builtins.toJSON cfg.connectHost},
               "OP_CONNECT_TOKEN": token,
           }
       )
 
-      deadline = time.monotonic() + LOOKUP_RETRY_SECONDS
-      while True:
-          try:
-              result = subprocess.run(
-                  [${builtins.toJSON (lib.getExe cfg.package)}, "read", "--no-newline", reference],
-                  stdin=subprocess.DEVNULL,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.DEVNULL,
-                  env=environment,
-                  check=False,
-                  timeout=LOOKUP_TIMEOUT_SECONDS,
-              )
-          except OSError:
-              fail(f"lookup failed for {unit_name}/{credential_id}")
-          except subprocess.TimeoutExpired:
-              result = None
 
-          if result is not None and result.returncode == 0:
-              break
+      def lookup():
+          for connect_host in ${builtins.toJSON cfg.connectHosts}:
+              try:
+                  result = subprocess.run(
+                      [${builtins.toJSON (lib.getExe cfg.package)}, "read", "--no-newline", reference],
+                      stdin=subprocess.DEVNULL,
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.DEVNULL,
+                      env=environment | {"OP_CONNECT_HOST": connect_host},
+                      check=False,
+                      timeout=LOOKUP_TIMEOUT_SECONDS,
+                  )
+              except OSError:
+                  fail(f"lookup failed for {unit_name}/{credential_id}")
+              except subprocess.TimeoutExpired:
+                  continue
+              if result.returncode == 0:
+                  return result.stdout
+          return None
+
+
+      deadline = time.monotonic() + LOOKUP_RETRY_SECONDS
+      while (value := lookup()) is None:
           if time.monotonic() >= deadline:
               fail(f"lookup failed for {unit_name}/{credential_id}")
           time.sleep(1)
-      if not result.stdout:
+      if not value:
           fail(f"lookup returned an empty value for {unit_name}/{credential_id}")
-      if len(result.stdout) > MAX_CREDENTIAL_SIZE:
+      if len(value) > MAX_CREDENTIAL_SIZE:
           fail(f"lookup exceeded the credential size limit for {unit_name}/{credential_id}")
 
-      sys.stdout.buffer.write(result.stdout)
+      sys.stdout.buffer.write(value)
       sys.stdout.buffer.flush()
     '';
   };
@@ -206,10 +210,17 @@ in
       description = "Whether to provide 1Password-backed credentials to system services.";
     };
 
-    connectHost = lib.mkOption {
-      type = lib.types.str;
-      default = "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080";
-      description = "Connect availability endpoint used for credential lookups.";
+    connectHosts = lib.mkOption {
+      type = lib.types.nonEmptyListOf lib.types.str;
+      default =
+        lib.optional (config.modules.services.onepassword-connect.enable or false) "http://127.0.0.1:8080"
+        ++ [ "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080" ];
+      description = ''
+        Connect endpoints used for credential lookups, most preferred first.
+        Each lookup attempt tries them in order and uses the first that answers.
+        Defaults to the host's own Connect replica, when it runs one, then the
+        shared availability endpoint.
+      '';
     };
 
     socketPath = lib.mkOption {

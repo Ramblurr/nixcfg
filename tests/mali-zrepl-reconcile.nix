@@ -37,7 +37,7 @@ let
           modules.services.onepassword-systemd-credentials = {
             enable = true;
             bootstrapTokenFile = "/run/onepassword-connect-token";
-            connectHost = "http://192.0.2.22:8080";
+            connectHosts = [ "http://192.0.2.22:8080" ];
             package = pkgs.writeShellScriptBin "op" "exit 1";
           };
           services.rsyncnet-zrepl-reconcile = reconcileConfig;

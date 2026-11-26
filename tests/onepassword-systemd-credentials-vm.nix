@@ -5,14 +5,26 @@ let
 
     test "''${HOME:-}" = "/tmp"
     test "''${XDG_CONFIG_HOME:-}" = "/tmp/op-config"
-    test "''${OP_CONNECT_HOST:-}" = "http://192.0.2.22:8080"
     test "''${OP_CONNECT_TOKEN:-}" = "runtime-bootstrap-token"
     test "$1" = "read"
     test "$2" = "--no-newline"
 
+    case "''${OP_CONNECT_HOST:-}" in
+      http://127.0.0.1:8080) connect=local ;;
+      http://192.0.2.22:8080) connect=fallback ;;
+      *)
+        echo "unexpected Connect host" >&2
+        exit 1
+        ;;
+    esac
+
     case "$3" in
       op://test/Example/password)
-        printf %s dynamic-credential-value
+        printf %s "$connect-credential-value"
+        ;;
+      op://test/Example/local-down)
+        test "$connect" = fallback
+        printf %s "$connect-credential-value"
         ;;
       op://test/Example/transient)
         attempts_file="$HOME/transient-attempts"
@@ -59,9 +71,14 @@ pkgs.testers.runNixOSTest {
 
       modules.services.onepassword-systemd-credentials = {
         package = fakeOp;
+        connectHosts = [
+          "http://127.0.0.1:8080"
+          "http://192.0.2.22:8080"
+        ];
         bootstrapTokenFile = "/run/onepassword-provider-test-token";
         consumers = {
           credential-success.password = "op://test/Example/password";
+          credential-fallback.password = "op://test/Example/local-down";
           credential-transient.password = "op://test/Example/transient";
           credential-empty.password = "op://test/Example/empty";
           credential-oversized.password = "op://test/Example/oversized";
@@ -80,8 +97,16 @@ pkgs.testers.runNixOSTest {
       systemd.services.credential-success = {
         serviceConfig.Type = "oneshot";
         script = ''
-          test "$(cat "$CREDENTIALS_DIRECTORY/password")" = dynamic-credential-value
+          test "$(cat "$CREDENTIALS_DIRECTORY/password")" = local-credential-value
           touch /run/credential-success
+        '';
+      };
+
+      systemd.services.credential-fallback = {
+        serviceConfig.Type = "oneshot";
+        script = ''
+          test "$(cat "$CREDENTIALS_DIRECTORY/password")" = fallback-credential-value
+          touch /run/credential-fallback
         '';
       };
 
@@ -132,6 +157,9 @@ pkgs.testers.runNixOSTest {
     machine.succeed("systemctl start credential-success.service")
     machine.succeed("test -e /run/credential-success")
 
+    machine.succeed("systemctl start credential-fallback.service")
+    machine.succeed("test -e /run/credential-fallback")
+
     machine.succeed("systemctl start credential-transient.service")
     machine.succeed("test -e /run/credential-transient")
 
@@ -152,7 +180,8 @@ pkgs.testers.runNixOSTest {
         "journalctl --no-pager -u 'onepassword-credential-provider@*.service'"
     )
     assert "runtime-bootstrap-token" not in journal
-    assert "dynamic-credential-value" not in journal
+    assert "local-credential-value" not in journal
+    assert "fallback-credential-value" not in journal
     assert "recovered-credential-value" not in journal
   '';
 }

@@ -16,6 +16,7 @@ let
       reference ? "op://home-ops-prod/Example/password",
       bootstrapTokenFile ? null,
       microvmSecrets ? { },
+      connectReplica ? false,
     }:
     (inputs.nixpkgs.lib.nixosSystem {
       system = pkgs.stdenv.hostPlatform.system;
@@ -43,9 +44,22 @@ let
             example.script = "true";
           };
         }
-      ];
+      ]
+      ++ lib.optional connectReplica {
+        options.modules.services.onepassword-connect.enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+        };
+      };
     }).config;
-  configs = lib.genAttrs (replicaNames ++ [ "quine" ]) (name: evaluate { inherit name; });
+  configs = lib.genAttrs (replicaNames ++ [ "quine" ]) (
+    name:
+    evaluate {
+      inherit name;
+      connectReplica = builtins.elem name replicaNames;
+    }
+  );
+  withoutReplica = evaluate { name = "debord"; };
   microvmConfig = evaluate {
     name = "dewey";
     microvmSecrets.demo.API_TOKEN = "op://home-ops-prod/Example/token";
@@ -110,7 +124,10 @@ let
         "TimeoutStartSec"
       ] helper.serviceConfig;
     in
-    provider.connectHost == "http://${virtualAddress}:8080"
+    provider.connectHosts == [
+      "http://127.0.0.1:8080"
+      "http://${virtualAddress}:8080"
+    ]
     && socket.wantedBy == [ "sockets.target" ]
     && socket.socketConfig.ListenStream == provider.socketPath
     && socket.socketConfig.Accept
@@ -173,6 +190,10 @@ let
 in
 assert enabledHosts == replicaNames;
 assert lib.all targetIsCorrect replicaNames;
+assert
+  withoutReplica.modules.services.onepassword-systemd-credentials.connectHosts == [
+    "http://${virtualAddress}:8080"
+  ];
 assert !invalidReference.success;
 assert !storeBootstrapToken.success;
 assert !bootstrapConsumer.success;
