@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
@@ -12,22 +11,14 @@ let
     "dewey"
     "mali"
   ];
-  inventory = import ../../hosts/inventory.nix;
-  channelTailscale =
-    host:
-    (if inventory.${host}.channel == "stable" then inputs.nixpkgs-stable else inputs.nixpkgs)
-    .legacyPackages.${inventory.${host}.system}.tailscale;
-  # Tailscale before 1.106 cannot load tls-terminated-tcp Service endpoints (tailscale/tailscale@cfa83f7ef).
-  serviceHttps = lib.all (
-    host: lib.versionAtLeast (channelTailscale host).version "1.106"
-  ) replicaHosts;
+  tls = import ../../configs/home-ops/onepassword-connect-tls.nix;
   replicaAddresses = map (name: builtins.head config.site.net.mgmt.hosts4.${name}) replicaHosts;
   localAddress = builtins.head config.site.net.mgmt.hosts4.${config.networking.hostName};
   dataDir = "/var/lib/onepassword-connect";
   credentials = config.sops.secrets."onepassword-connect/credentials";
-  heartbeat = "${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 2 http://127.0.0.1:8080/heartbeat";
+  tlsKey = config.sops.secrets."onepassword-connect/tls-key";
+  heartbeat = "${pkgs.curl}/bin/curl --fail --silent --show-error --max-time 2 --cacert ${tls.certificate} ${tls.url "127.0.0.1"}/heartbeat";
   peerSet = lib.concatStringsSep ", " cfg.availability.peerAddresses;
-  availabilityTarget = "${cfg.availability.virtualAddress}:8080";
 in
 {
   options.modules.services.onepassword-connect = {
@@ -76,13 +67,9 @@ in
     tailnetUrl = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      default =
-        let
-          name = "op-connect.${config.repo.secrets.global.domain.tailnet}";
-        in
-        if serviceHttps then "https://${name}" else "http://${name}:8080";
-      defaultText = lib.literalMD "the op-connect Tailscale Service, HTTPS once every replica's Tailscale supports it";
-      description = "Connect URL for clients outside the management network.";
+      default = tls.tailnetUrl config.repo.secrets.global.domain.tailnet;
+      defaultText = lib.literalMD "the op-connect Tailscale Service";
+      description = "Connect URL for clients outside the management network, served with the tailnet's certificate.";
     };
     ports.sync = lib.mkOption {
       type = lib.types.port;
@@ -150,6 +137,13 @@ in
       mode = "0400";
     };
 
+    sops.secrets."onepassword-connect/tls-key" = {
+      sopsFile = tls.keyFile;
+      owner = cfg.user.name;
+      group = cfg.group.name;
+      mode = "0400";
+    };
+
     systemd.tmpfiles.rules = [ "d ${dataDir} 0770 ${cfg.user.name} ${cfg.group.name}" ];
 
     modules.zfs.datasets.properties = {
@@ -160,7 +154,7 @@ in
     };
 
     networking.firewall = {
-      interfaces.${cfg.availability.interface}.allowedTCPPorts = [ 8080 ];
+      interfaces.${cfg.availability.interface}.allowedTCPPorts = [ tls.port ];
       extraInputRules = ''
         iifname "${cfg.availability.interface}" ip saddr { ${peerSet} } ip daddr ${cfg.availability.localAddress} meta l4proto vrrp accept comment "Connect replica VRRP peers"
       '';
@@ -168,11 +162,10 @@ in
 
     services.tailscale.serve = {
       enable = true;
-      services.op-connect.endpoints = {
-        "tcp:8080" = "tcp://${availabilityTarget}";
-      }
-      // lib.optionalAttrs serviceHttps { "tcp:443" = "tls-terminated-tcp://${availabilityTarget}"; };
+      services.op-connect.endpoints."tcp:443" = tls.url cfg.availability.virtualAddress;
     };
+
+    systemd.services.tailscaled.environment.SSL_CERT_DIR = "${tls.trustDirectory pkgs tls.certificate}";
 
     services.keepalived = {
       enable = true;
@@ -207,7 +200,7 @@ in
         podConfig = {
           PodName = "op-connect";
           PublishPort = [
-            "8080:8080"
+            "${toString tls.port}:${toString tls.port}"
             "127.0.0.1:${toString cfg.ports.sync}:8081"
           ];
           DNS = [ (builtins.head config.repo.secrets.global.nameservers) ];
@@ -219,7 +212,10 @@ in
           inherit (cfg.user) uid;
           autoStart = true;
           serviceConfig = {
-            ExecStartPre = [ "${pkgs.coreutils}/bin/test -r ${credentials.path}" ];
+            ExecStartPre = [
+              "${pkgs.coreutils}/bin/test -r ${credentials.path}"
+              "${pkgs.coreutils}/bin/test -r ${tlsKey.path}"
+            ];
             RestartSec = "10";
             Restart = "always";
           };
@@ -231,11 +227,16 @@ in
               "OP_BUS_PORT=11220"
               "OP_BUS_PEERS=localhost:11221"
               "OP_SESSION=/config/1password-credentials.json"
+              "OP_HTTPS_PORT=${toString tls.port}"
+              "OP_TLS_CERT_FILE=/tls/certificate.pem"
+              "OP_TLS_KEY_FILE=/tls/key.pem"
             ];
             Pod = "op-connect.pod";
             Volume = [
               "${dataDir}:/config:rw"
               "${credentials.path}:/config/1password-credentials.json:ro"
+              "${tls.certificate}:/tls/certificate.pem:ro"
+              "${tlsKey.path}:/tls/key.pem:ro"
             ];
           };
         };

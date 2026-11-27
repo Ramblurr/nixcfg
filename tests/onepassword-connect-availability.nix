@@ -14,6 +14,7 @@ let
     group
     evaluate
     ;
+  tls = import ../configs/home-ops/onepassword-connect-tls.nix;
   configs = lib.genAttrs (replicaNames ++ [ "quine" ]) evaluate;
   enabledReplicas = lib.filter (name: configs.${name}.modules.services.onepassword-connect.enable) (
     builtins.attrNames configs
@@ -32,6 +33,7 @@ let
       api = cfg.virtualisation.quadlet.containers.op-connect-api;
       sync = cfg.virtualisation.quadlet.containers.op-connect-sync;
       credentials = cfg.sops.secrets."onepassword-connect/credentials";
+      tlsKey = cfg.sops.secrets."onepassword-connect/tls-key";
     in
     instance == {
       interface = "mgmt";
@@ -62,22 +64,35 @@ let
     && heartbeat.rise == 1
     && heartbeat.user == user.name
     && heartbeat.group == group.name
-    && lib.hasInfix "http://127.0.0.1:8080/heartbeat" heartbeat.script
-    && endpoints."tcp:8080" == "tcp://${virtualAddress}:8080"
-    && (
-      !(endpoints ? "tcp:443") || endpoints."tcp:443" == "tls-terminated-tcp://${virtualAddress}:8080"
-    )
+    && lib.hasInfix "-onepassword-connect.crt https://127.0.0.1:8443/heartbeat" heartbeat.script
+    && lib.hasInfix "--cacert /nix/store/" heartbeat.script
+    && endpoints == { "tcp:443" = "https://${virtualAddress}:8443"; }
+    && lib.hasInfix "onepassword-connect-trust" cfg.systemd.services.tailscaled.environment.SSL_CERT_DIR
     &&
       pod.podConfig.PublishPort == [
-        "8080:8080"
+        "8443:8443"
         "127.0.0.1:10003:8081"
       ]
+    && lib.all (variable: builtins.elem variable api.containerConfig.Environment) [
+      "OP_HTTPS_PORT=8443"
+      "OP_TLS_CERT_FILE=/tls/certificate.pem"
+      "OP_TLS_KEY_FILE=/tls/key.pem"
+    ]
     &&
       api.containerConfig.Volume == [
         "/var/lib/onepassword-connect:/config:rw"
         "${credentials.path}:/config/1password-credentials.json:ro"
+        "${tls.certificate}:/tls/certificate.pem:ro"
+        "${tlsKey.path}:/tls/key.pem:ro"
       ]
-    && sync.containerConfig.Volume == api.containerConfig.Volume
+    &&
+      sync.containerConfig.Volume == [
+        "/var/lib/onepassword-connect:/config:rw"
+        "${credentials.path}:/config/1password-credentials.json:ro"
+      ]
+    && tlsKey.sopsFile == tls.keyFile
+    && tlsKey.owner == user.name
+    && tlsKey.mode == "0400"
     && !(builtins.elem "sops-install-secrets.service" (api.unitConfig.Requires or [ ]))
     && !(builtins.elem "sops-install-secrets.service" (api.unitConfig.After or [ ]))
     && !(builtins.elem "sops-install-secrets.service" (sync.unitConfig.Requires or [ ]))
@@ -104,7 +119,7 @@ let
     &&
       cfg.modules.zfs.datasets.properties.${service.cacheDataset}.mountpoint
       == "/var/lib/onepassword-connect"
-    && cfg.networking.firewall.interfaces.mgmt.allowedTCPPorts == [ 8080 ]
+    && cfg.networking.firewall.interfaces.mgmt.allowedTCPPorts == [ 8443 ]
     && !cfg.services.keepalived.openFirewall
     && !(builtins.elem 10003 cfg.networking.firewall.allowedTCPPorts)
     && lib.hasInfix "iifname \"mgmt\"" cfg.networking.firewall.extraInputRules

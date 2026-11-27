@@ -7,6 +7,7 @@ let
   workerAddress = address "prim" "peirce";
   instance = import ../../config/immich-home.nix;
   credentials = instance.machineLearning.credentials;
+  connectTls = import ../../configs/home-ops/onepassword-connect-tls.nix;
 in
 {
   # The private wrapper supplies the evaluated, secret-aware guest configuration.
@@ -34,6 +35,6 @@ in
     '';
   };
   networking.firewall.extraInputRules = ''
-    iifname "prim" ip saddr ${workerAddress} ip daddr ${connectAddress} tcp dport 8080 accept
+    iifname "prim" ip saddr ${workerAddress} ip daddr ${connectAddress} tcp dport ${toString connectTls.port} accept
   '';
 }

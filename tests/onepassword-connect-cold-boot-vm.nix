@@ -3,6 +3,7 @@ let
   eval = import ./onepassword-connect-eval.nix { inherit inputs pkgs; };
   inherit (eval) user;
   pod = (eval.evaluate "debord").virtualisation.quadlet.pods.op-connect;
+  port = toString (import ../configs/home-ops/onepassword-connect-tls.nix).port;
   siteLib =
     (import inputs.nixpkgs {
       inherit (pkgs.stdenv.hostPlatform) system;
@@ -22,7 +23,7 @@ let
       "-f"
       "-vv"
       "-p"
-      "8080"
+      port
       "-h"
       "/www"
     ];
@@ -158,11 +159,11 @@ pkgs.testers.runNixOSTest {
       debord.wait_for_unit("user@${uid}.service")
       debord.wait_for_unit("op-connect-api.service", user="${user.name}", timeout=300)
       debord.succeed("ip link show lan0 | grep -q NO-CARRIER")
-      debord.wait_until_succeeds("curl --fail --silent --max-time 2 http://127.0.0.1:8080/heartbeat", timeout=60)
+      debord.wait_until_succeeds("curl --fail --silent --max-time 2 http://127.0.0.1:${port}/heartbeat", timeout=60)
       before = identity()
       print(before)
       assert len(before["containers"].splitlines()) == 2, before
-      debord.succeed("curl --fail --silent --show-error --max-time 5 http://127.0.0.1:8080/heartbeat")
+      debord.succeed("curl --fail --silent --show-error --max-time 5 http://127.0.0.1:${port}/heartbeat")
       print(debord.succeed("ip -4 addr show; ip -4 route show; ip -4 route show table all | grep -v '^local\\|^broadcast'"))
       print(pod_routes(before))
 
@@ -170,7 +171,7 @@ pkgs.testers.runNixOSTest {
       debord.wait_until_succeeds("ip -4 route show default | grep 'via ${router} dev mgmt' | grep -vq linkdown", timeout=30)
       debord.succeed("ip addr add ${virtualAddress}/32 dev mgmt")
 
-      debord.succeed("curl --fail --silent --show-error --max-time 10 http://${virtualAddress}:8080/v1/vaults")
+      debord.succeed("curl --fail --silent --show-error --max-time 10 http://${virtualAddress}:${port}/v1/vaults")
 
       routes = pod_routes(before)
       print(routes)
