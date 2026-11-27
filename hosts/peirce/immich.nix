@@ -11,6 +11,7 @@ let
   apiClientAddress = address instance.workerNetwork "immich-home";
   credentialDirectory = "/run/credentials/immich-ml-server-proxy.service";
   expiryCredentialDirectory = "/run/credentials/immich-ml-server-proxy-certificate-expiry.service";
+  connectTls = import ../../configs/home-ops/onepassword-connect-tls.nix;
 in
 {
   imports = [ ../../config/immich-worker.nix ];
@@ -32,7 +33,7 @@ in
 
   modules.services.onepassword-systemd-credentials = {
     enable = true;
-    connectHosts = [ { url = "http://${address instance.workerNetwork "dewey"}:8080"; } ];
+    connectHosts = [ (connectTls.url (address instance.workerNetwork "dewey")) ];
     consumers.immich-ml-server-proxy = {
       "ca.pem" = "${credentials.ca}/ca-certificate";
       "certificate.pem" = "${credentials.server}/certificate";

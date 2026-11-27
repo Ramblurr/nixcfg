@@ -42,7 +42,7 @@ let
         };
         modules.services.onepassword-systemd-credentials = {
           enable = true;
-          connectHosts = [ { url = "http://127.0.0.1:8080"; } ];
+          connectHosts = [ "https://127.0.0.1:8443" ];
           bootstrapTokenFile = "/run/test-connect-token";
         };
         modules.services.invoiceninja = {

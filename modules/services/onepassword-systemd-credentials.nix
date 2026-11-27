@@ -6,6 +6,8 @@
 }:
 let
   cfg = config.modules.services.onepassword-systemd-credentials;
+  tls = import ../../configs/home-ops/onepassword-connect-tls.nix;
+  connectTrust = tls.trustDirectory pkgs cfg.connectCertificate;
   targetHosts = [
     "debord"
     "dewey"
@@ -105,7 +107,6 @@ let
       import subprocess
       import sys
       import time
-      from urllib.parse import urlsplit
 
       LOOKUP_RETRY_SECONDS = 15
       LOOKUP_TIMEOUT_SECONDS = 5
@@ -159,37 +160,14 @@ let
               "XDG_CONFIG_HOME": "/tmp/op-config",
               "OP_CACHE": "false",
               "OP_CONNECT_TOKEN": token,
+              "SSL_CERT_FILE": "${connectTrust}/onepassword-connect.pem",
+              "SSL_CERT_DIR": "${connectTrust}",
           }
       )
 
 
-      def listener_uids(port):
-          uids = []
-          for table in ("/proc/net/tcp", "/proc/net/tcp6"):
-              try:
-                  lines = Path(table).read_text(encoding="ascii").splitlines()[1:]
-              except FileNotFoundError:
-                  continue
-              for line in lines:
-                  fields = line.split()
-                  if fields[3] == "0A" and int(fields[1].rsplit(":", 1)[1], 16) == port:
-                      uids.append(int(fields[7]))
-          return uids
-
-
-      def trusted(connect_host):
-          expected_uid = connect_host["listenerUid"]
-          if expected_uid is None:
-              return True
-          url = urlsplit(connect_host["url"])
-          uids = listener_uids(url.port or (443 if url.scheme == "https" else 80))
-          return bool(uids) and all(uid == expected_uid for uid in uids)
-
-
       def lookup(deadline):
           for connect_host in CONNECT_HOSTS:
-              if not trusted(connect_host):
-                  continue
               remaining = deadline - time.monotonic()
               if remaining <= 0:
                   return None
@@ -199,7 +177,7 @@ let
                       stdin=subprocess.DEVNULL,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.DEVNULL,
-                      env=environment | {"OP_CONNECT_HOST": connect_host["url"]},
+                      env=environment | {"OP_CONNECT_HOST": connect_host},
                       check=False,
                       timeout=min(LOOKUP_TIMEOUT_SECONDS, remaining),
                   )
@@ -249,36 +227,24 @@ in
     };
 
     connectHosts = lib.mkOption {
-      type = lib.types.nonEmptyListOf (
-        lib.types.submodule {
-          options = {
-            url = lib.mkOption {
-              type = lib.types.str;
-              description = "Connect endpoint URL.";
-            };
-            listenerUid = lib.mkOption {
-              type = lib.types.nullOr lib.types.int;
-              default = null;
-              description = ''
-                When set, the endpoint is used only while every socket listening
-                on its port belongs to this uid, so no other local user can
-                receive the bootstrap token by binding the port first.
-              '';
-            };
-          };
-        }
-      );
+      type = lib.types.nonEmptyListOf (lib.types.strMatching "https://.+");
       default =
-        lib.optional (config.modules.services.onepassword-connect.enable or false) {
-          url = "http://127.0.0.1:8080";
-          listenerUid = config.modules.services.onepassword-connect.user.uid;
-        }
-        ++ [ { url = "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080"; } ];
+        lib.optional (config.modules.services.onepassword-connect.enable or false) (tls.url "127.0.0.1")
+        ++ [ (tls.url (builtins.head config.site.net.mgmt.hosts4.onepassword-connect)) ];
       description = ''
-        Connect endpoints used for credential lookups, most preferred first.
+        Connect endpoint URLs used for credential lookups, most preferred first.
         Each lookup attempt tries them in order and uses the first that answers.
         Defaults to the host's own Connect replica, when it runs one, then the
         shared availability endpoint.
+      '';
+    };
+
+    connectCertificate = lib.mkOption {
+      type = lib.types.path;
+      default = tls.certificate;
+      description = ''
+        Certificate of the Connect API. Lookups trust only this certificate,
+        so the token goes only to a server that holds its key.
       '';
     };
 
