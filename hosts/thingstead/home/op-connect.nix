@@ -12,7 +12,7 @@ let
     name = "op";
     text = ''
       export OP_CONNECT_HOST=${lib.escapeShellArg cfg.host}
-      export SSL_CERT_DIR=${connectTls.trustDirectory pkgs connectTls.certificate}
+      ${connectTls.clientExports pkgs cfg.host}
       OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg cfg.tokenFile})"
       export OP_CONNECT_TOKEN
       exec ${lib.getExe pkgs._1password-cli} "$@"

@@ -66,8 +66,8 @@ in
         type = lib.types.package;
         readOnly = true;
         default = pkgs.writeShellScriptBin "op-read-llm" ''
+          ${connectTls.clientExports pkgs cfg.onepasswordConnect.host}
           OP_CONNECT_HOST=${lib.escapeShellArg cfg.onepasswordConnect.host} \
-          SSL_CERT_DIR=${connectTls.trustDirectory pkgs connectTls.certificate} \
           OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg cfg.onepasswordConnect.tokenFile})" \
             exec ${lib.getExe pkgs._1password-cli} read "$@"
         '';

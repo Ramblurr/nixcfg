@@ -7,7 +7,7 @@
 let
   cfg = config.modules.services.onepassword-systemd-credentials;
   tls = import ../../configs/home-ops/onepassword-connect-tls.nix;
-  connectTrust = tls.trustDirectory pkgs cfg.connectCertificate;
+  connectTrust = tls.trustEnvironment pkgs cfg.connectCertificate;
   targetHosts = [
     "debord"
     "dewey"
@@ -160,8 +160,8 @@ let
               "XDG_CONFIG_HOME": "/tmp/op-config",
               "OP_CACHE": "false",
               "OP_CONNECT_TOKEN": token,
-              "SSL_CERT_FILE": "${connectTrust}/onepassword-connect.pem",
-              "SSL_CERT_DIR": "${connectTrust}",
+              "SSL_CERT_FILE": "${connectTrust.SSL_CERT_FILE}",
+              "SSL_CERT_DIR": "${connectTrust.SSL_CERT_DIR}",
           }
       )
 
