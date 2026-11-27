@@ -135,6 +135,14 @@ creation_rules:
           - *james
         merge:
           - *admin-group
+  - path_regex: configs/home-ops/onepassword-connect-tls\.sops\.yaml$
+    key_groups:
+      - age:
+          - *dewey
+          - *debord
+          - *mali
+        merge:
+          - *admin-group
   - path_regex: configs/home-ops/.*.sops.*$
     key_groups:
       - age:
