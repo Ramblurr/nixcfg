@@ -132,8 +132,8 @@ let
       ] helper.serviceConfig;
     in
     provider.connectHosts == [
-      "https://127.0.0.1:8443"
-      "https://${virtualAddress}:8443"
+      "https://127.0.0.1:9443"
+      "https://${virtualAddress}:9443"
     ]
     && socket.wantedBy == [ "sockets.target" ]
     && socket.socketConfig.ListenStream == provider.socketPath
@@ -199,7 +199,7 @@ assert enabledHosts == replicaNames;
 assert lib.all targetIsCorrect replicaNames;
 assert
   withoutReplica.modules.services.onepassword-systemd-credentials.connectHosts == [
-    "https://${virtualAddress}:8443"
+    "https://${virtualAddress}:9443"
   ];
 assert !invalidReference.success;
 assert !storeBootstrapToken.success;

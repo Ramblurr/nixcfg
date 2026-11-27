@@ -24,7 +24,7 @@ in
     enable = lib.mkEnableOption "the 1Password CLI using a Connect server";
     host = lib.mkOption {
       type = lib.types.str;
-      example = "https://somehost:8443";
+      example = "https://somehost:9443";
       description = "1Password Connect server URL (OP_CONNECT_HOST).";
     };
     tokenFile = lib.mkOption {

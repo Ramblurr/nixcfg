@@ -1,5 +1,5 @@
 let
-  port = 8443;
+  port = 9443;
   certificate = ./onepassword-connect.crt;
   trustDirectory =
     pkgs: certificate:

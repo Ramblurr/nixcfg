@@ -64,17 +64,17 @@ let
     && heartbeat.rise == 1
     && heartbeat.user == user.name
     && heartbeat.group == group.name
-    && lib.hasInfix "-onepassword-connect.crt https://127.0.0.1:8443/heartbeat" heartbeat.script
+    && lib.hasInfix "-onepassword-connect.crt https://127.0.0.1:9443/heartbeat" heartbeat.script
     && lib.hasInfix "--cacert /nix/store/" heartbeat.script
-    && endpoints == { "tcp:443" = "https://${virtualAddress}:8443"; }
+    && endpoints == { "tcp:443" = "https://${virtualAddress}:9443"; }
     && lib.hasInfix "onepassword-connect-trust" cfg.systemd.services.tailscaled.environment.SSL_CERT_DIR
     &&
       pod.podConfig.PublishPort == [
-        "8443:8443"
+        "9443:9443"
         "127.0.0.1:10003:8081"
       ]
     && lib.all (variable: builtins.elem variable api.containerConfig.Environment) [
-      "OP_HTTPS_PORT=8443"
+      "OP_HTTPS_PORT=9443"
       "OP_TLS_CERT_FILE=/tls/certificate.pem"
       "OP_TLS_KEY_FILE=/tls/key.pem"
     ]
@@ -119,7 +119,7 @@ let
     &&
       cfg.modules.zfs.datasets.properties.${service.cacheDataset}.mountpoint
       == "/var/lib/onepassword-connect"
-    && cfg.networking.firewall.interfaces.mgmt.allowedTCPPorts == [ 8443 ]
+    && cfg.networking.firewall.interfaces.mgmt.allowedTCPPorts == [ 9443 ]
     && !cfg.services.keepalived.openFirewall
     && !(builtins.elem 10003 cfg.networking.firewall.allowedTCPPorts)
     && lib.hasInfix "iifname \"mgmt\"" cfg.networking.firewall.extraInputRules
