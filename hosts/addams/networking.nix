@@ -51,19 +51,19 @@ in
       "10-wan0" = {
         # 00:1f.6 Ethernet controller: Intel Corporation Ethernet Connection (7) I219-V (rev 10)
         #matchConfig.Path = "pci-0000:00:1f.6";
-        matchConfig.MACAddress = config.repo.secrets.local.wan0.mac;
+        matchConfig.PermanentMACAddress = config.repo.secrets.local.wan0.mac;
         linkConfig.Name = "wan0";
       };
       "10-lan0" = {
         # 01:00.0 Ethernet controller: Mellanox Technologies MT27520 Family [ConnectX-3 Pro]
         # right SFP+ port
-        matchConfig.MACAddress = config.repo.secrets.local.lan0.mac;
+        matchConfig.PermanentMACAddress = config.repo.secrets.local.lan0.mac;
         linkConfig.Name = "lan0";
       };
       "10-lan1" = {
         # 01:00.0 Ethernet controller: Mellanox Technologies MT27520 Family [ConnectX-3 Pro]
         # left SFP+ port
-        matchConfig.MACAddress = config.repo.secrets.local.lan1.mac;
+        matchConfig.PermanentMACAddress = config.repo.secrets.local.lan1.mac;
         linkConfig.Name = "lan1";
       };
     };

@@ -121,11 +121,11 @@ in
   systemd.network = {
     links = {
       "10-lan0" = {
-        matchConfig.MACAddress = config.repo.secrets.site.site.hosts.dewey.interfaces.lan0.hwaddr;
+        matchConfig.PermanentMACAddress = config.repo.secrets.site.site.hosts.dewey.interfaces.lan0.hwaddr;
         linkConfig.Name = "lan0";
       };
       "10-lan1" = {
-        matchConfig.MACAddress = config.repo.secrets.local.lan1.hwaddr;
+        matchConfig.PermanentMACAddress = config.repo.secrets.local.lan1.hwaddr;
         linkConfig.Name = "lan1";
       };
     };

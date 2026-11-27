@@ -28,11 +28,11 @@ in
     };
     links = {
       "10-eno1" = {
-        matchConfig.MACAddress = local.eno1.hwaddr;
+        matchConfig.PermanentMACAddress = local.eno1.hwaddr;
         linkConfig.Name = "eno1";
       };
       "10-enp6s0" = {
-        matchConfig.MACAddress = local.enp6s0.hwaddr;
+        matchConfig.PermanentMACAddress = local.enp6s0.hwaddr;
         linkConfig.Name = "enp6s0";
       };
     };
