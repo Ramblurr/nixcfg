@@ -8,7 +8,7 @@ let
   inherit (config.repo.secrets.global.domain) tailnet;
   address = lib.head svc.hosts4.ward;
   svcDns = lib.head svc.hosts4.${svc.dhcp.router};
-  connectUrl = "http://op-connect.${tailnet}:8080";
+  connectUrl = (import ../../configs/home-ops/onepassword-connect-tls.nix).tailnetUrl tailnet;
   mootConnectToken = "/run/host-secrets/moot-op-connect-token";
 in
 {

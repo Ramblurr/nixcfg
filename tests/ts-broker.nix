@@ -1,7 +1,7 @@
 { pkgs }:
 let
   connectToken = "fake-connect-token";
-  connectUrl = "http://op-connect.example.ts.net:8080";
+  connectUrl = "https://op-connect.example.ts.net";
   # ts-plug opens its HTTP proxy only once its node is on a tailnet, which
   # the VM has none of. This fake Connect stands in for that proxy: it
   # serves on the proxy socket and takes requests in absolute form.
@@ -231,7 +231,7 @@ pkgs.testers.runNixOSTest {
                          "item_title": "GitHub token", "field_label": "credential",
                          "editor": "admin@example"}], cred
         requests = machine.succeed("cat /run/fake-connect/requests").split()
-        assert "http://op-connect.example.ts.net:8080/v1/vaults/vlt0000000000000000000000a/items/itm0000000000000000000000a" in requests, requests
+        assert "${connectUrl}/v1/vaults/vlt0000000000000000000000a/items/itm0000000000000000000000a" in requests, requests
 
     allow = {"decision": "allow", "approval": None,
              "secret": {"vault": "vlt0000000000000000000000a", "item": "itm0000000000000000000000a",

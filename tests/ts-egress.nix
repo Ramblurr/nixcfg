@@ -35,13 +35,13 @@ let
         allowFrom = [ "192.0.2.0/24" ];
       };
       ca.enable = true;
-      onepassword.url = "http://op-connect.example.ts.net:8080";
+      onepassword.url = "https://op-connect.example.ts.net";
       broker.socket = "/run/ts-broker/decide.sock";
     };
   };
   minimal = evaluate { };
   halfOnepassword = evaluate {
-    modules.services.ts-egress.onepassword.url = "http://op-connect.example.ts.net:8080";
+    modules.services.ts-egress.onepassword.url = "https://op-connect.example.ts.net";
   };
   halfBroker = evaluate {
     modules.services.ts-egress = {
@@ -132,7 +132,7 @@ pkgs.runCommand "ts-egress-evaluation"
       and .self == ["192.0.2.26"]
       and .helper == {listen: "192.0.2.26:3128"}
       and .ca == {certCredential: "ca-cert", keyCredential: "ca-key"}
-      and .onepassword == {url: "http://op-connect.example.ts.net:8080", tokenCredential: "op-connect-token"}
+      and .onepassword == {url: "https://op-connect.example.ts.net", tokenCredential: "op-connect-token"}
       and .brokerSocket == "/run/ts-broker/decide.sock"
     ' "$full"
     jq -e '. == {

@@ -7,10 +7,12 @@
 
 let
   cfg = config.my.programs.op-connect;
+  connectTls = import ../../../configs/home-ops/onepassword-connect-tls.nix;
   op = pkgs.writeShellApplication {
     name = "op";
     text = ''
       export OP_CONNECT_HOST=${lib.escapeShellArg cfg.host}
+      export SSL_CERT_DIR=${connectTls.trustDirectory pkgs connectTls.certificate}
       OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg cfg.tokenFile})"
       export OP_CONNECT_TOKEN
       exec ${lib.getExe pkgs._1password-cli} "$@"
@@ -22,7 +24,7 @@ in
     enable = lib.mkEnableOption "the 1Password CLI using a Connect server";
     host = lib.mkOption {
       type = lib.types.str;
-      example = "http://somehost:8080";
+      example = "https://somehost:8443";
       description = "1Password Connect server URL (OP_CONNECT_HOST).";
     };
     tokenFile = lib.mkOption {

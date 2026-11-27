@@ -132,7 +132,9 @@ in
   };
   my.programs.op-connect = {
     enable = true;
-    host = "http://${lib.head osConfig.site.net.mgmt.hosts4.onepassword-connect}:8080";
+    host = (import ../../configs/home-ops/onepassword-connect-tls.nix).url (
+      lib.head osConfig.site.net.mgmt.hosts4.onepassword-connect
+    );
     tokenFile = config.sops.secrets.onepassword-connect-token.path;
   };
   programs.pi.instances.pi-t3 = {

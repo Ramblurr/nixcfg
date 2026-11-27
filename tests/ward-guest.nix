@@ -48,7 +48,7 @@ let
   firewallTcp =
     cfg.networking.firewall.allowedTCPPorts
     ++ lib.concatMap (i: i.allowedTCPPorts) (builtins.attrValues cfg.networking.firewall.interfaces);
-  connectUrl = "http://op-connect.example.ts.net:8080";
+  connectUrl = "https://op-connect.example.ts.net";
 in
 assert lib.assertMsg (cfg.system.build.toplevel.drvPath != "") "Guest must fully evaluate";
 assert lib.assertMsg (

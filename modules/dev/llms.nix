@@ -8,6 +8,7 @@
 
 let
   cfg = config.modules.dev.llms;
+  connectTls = import ../../configs/home-ops/onepassword-connect-tls.nix;
   llm-agents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   cat-url-markdown = pkgs.writeShellScriptBin "cat-url-markdown" ''
     if [ -z "$1" ]; then
@@ -58,7 +59,7 @@ in
       };
       host = lib.mkOption {
         type = lib.types.str;
-        default = "http://${builtins.head config.site.net.mgmt.hosts4.onepassword-connect}:8080";
+        default = connectTls.url (builtins.head config.site.net.mgmt.hosts4.onepassword-connect);
         description = "1Password Connect endpoint used with `tokenFile`.";
       };
       package = lib.mkOption {
@@ -66,6 +67,7 @@ in
         readOnly = true;
         default = pkgs.writeShellScriptBin "op-read-llm" ''
           OP_CONNECT_HOST=${lib.escapeShellArg cfg.onepasswordConnect.host} \
+          SSL_CERT_DIR=${connectTls.trustDirectory pkgs connectTls.certificate} \
           OP_CONNECT_TOKEN="$(< ${lib.escapeShellArg cfg.onepasswordConnect.tokenFile})" \
             exec ${lib.getExe pkgs._1password-cli} read "$@"
         '';
