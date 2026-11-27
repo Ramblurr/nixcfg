@@ -169,7 +169,6 @@ in
       }
     ];
   };
-  systemd.services.systemd-timesyncd.environment.SYSTEMD_LOG_LEVEL = "debug";
   systemd.network = {
     links = {
       "10-lan0" = {
