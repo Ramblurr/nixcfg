@@ -4,15 +4,21 @@ let
   token = "runtime-bootstrap-token";
   virtualAddress = "192.0.2.22";
   port = toString tls.port;
+  outageClock = 1577836800;
   certificates =
     pkgs.runCommand "onepassword-provider-test-certificates"
       {
         nativeBuildInputs = [ pkgs.openssl ];
       }
       ''
+        for address in 127.0.0.1 10.9.8.22 10.9.4.17; do
+          openssl verify -attime ${toString outageClock} -partial_chain -purpose sslserver \
+            -verify_ip $address -trusted ${tls.certificate} ${tls.certificate}
+        done
         mkdir $out
         for name in connect squatter; do
-          openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 3650 \
+          openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
+            -not_before 20000101000000Z -not_after 20460101000000Z \
             -subj "/CN=$name" \
             -addext "subjectAltName=IP:127.0.0.1,IP:${virtualAddress}" \
             -addext "basicConstraints=critical,CA:FALSE" \
@@ -193,6 +199,7 @@ pkgs.testers.runNixOSTest {
         bootstrapTokenFile = "/run/onepassword-provider-test-token";
         consumers = {
           credential-success.password = "op://test/Example/password";
+          credential-old-clock.password = "op://test/Example/password";
           credential-fallback.password = "op://test/local-down/password";
           credential-squatted-local.password = "op://test/Example/password";
           credential-squatted.password = "op://test/Example/password";
@@ -234,6 +241,14 @@ pkgs.testers.runNixOSTest {
         script = ''
           test "$(cat "$CREDENTIALS_DIRECTORY/password")" = local-credential-value
           touch /run/credential-success
+        '';
+      };
+
+      systemd.services.credential-old-clock = {
+        serviceConfig.Type = "oneshot";
+        script = ''
+          test "$(cat "$CREDENTIALS_DIRECTORY/password")" = local-credential-value
+          touch /run/credential-old-clock
         '';
       };
 
@@ -339,6 +354,13 @@ pkgs.testers.runNixOSTest {
 
     machine.succeed("systemctl start credential-success.service")
     machine.succeed("test -e /run/credential-success")
+
+    now = machine.succeed("date +%s").strip()
+    machine.succeed("date -u -s @${toString outageClock}")
+    assert machine.succeed("date -u +%Y").strip() == "2020"
+    machine.succeed("systemctl start credential-old-clock.service")
+    machine.succeed("test -e /run/credential-old-clock")
+    machine.succeed(f"date -u -s @{now}")
 
     machine.succeed("systemctl start credential-fallback.service")
     machine.succeed("test -e /run/credential-fallback")
