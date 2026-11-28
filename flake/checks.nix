@@ -108,6 +108,10 @@
           inherit pkgs;
           inherit (pkgs) deploy;
         };
+        deploy-detached-vm = import ../tests/deploy-detached-vm.nix {
+          inherit pkgs;
+          inherit (pkgs) deploy;
+        };
         deploy-user = import ../tests/deploy-user.nix { inherit inputs pkgs; };
         userborn-persistence = import ../tests/userborn-persistence.nix { inherit pkgs; };
         userborn-persistence-stable = import ../tests/userborn-persistence.nix {
