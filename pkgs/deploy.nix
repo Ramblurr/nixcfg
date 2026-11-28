@@ -13,6 +13,26 @@ let
       shopt -s lastpipe # allow cmd | readarray
       localTargetHost=$(${coreutils}/bin/uname -n)
       declare -A SSH_TARGETS=([addams]="addams-lan")
+      CONTROL_BASE=/tmp
+      [[ -w /dev/shm ]] && CONTROL_BASE=/dev/shm
+      CONTROL_DIR=$(${coreutils}/bin/mktemp -d "$CONTROL_BASE/nixcfg-deploy.XXXXXX")
+      SSH_OPTS=(-o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2
+        -o ControlMaster=auto -o ControlPath="$CONTROL_DIR/cm-%C" -o ControlPersist=300)
+      SSH_ATTEMPT_SECONDS=25
+      RECONNECT_SECONDS=120
+
+      function close_control_masters() {
+        local socket
+        for socket in "$CONTROL_DIR"/cm-*; do
+          [[ ! -S "$socket" ]] || ${coreutils}/bin/timeout --foreground 5 ssh -o ControlPath="$socket" -O exit deploy 2>/dev/null || true
+        done
+        rm -rf "$CONTROL_DIR"
+      }
+      trap close_control_masters EXIT
+
+      function reset_control_master() {
+        ${coreutils}/bin/timeout --foreground 5 ssh "''${SSH_OPTS[@]}" -O exit "$1" 2>/dev/null || true
+      }
 
       function die() { echo "error: $*" >&2; exit 1; }
       ${import ./target-helpers.nix { inherit jq lib; }}
@@ -212,6 +232,102 @@ let
         [[ "$ACTION" == diff ]] || echo "[1;32m     Applied [m✅ [34m$host[m [90min ''${T_LAST}s[m"
       }
 
+      # OpenSSH exits 255 for its own errors and timeout(1) exits 124 on expiry; retry both until the transport returns.
+      function remote() {
+        local ssh_host=$1 deadline=''${REMOTE_DEADLINE:-$((SECONDS + RECONNECT_SECONDS))} status
+        shift
+        while :; do
+          status=0
+          ${coreutils}/bin/timeout --foreground "$SSH_ATTEMPT_SECONDS" ssh "''${SSH_OPTS[@]}" "$ssh_host" -- "$@" \
+            > "$CONTROL_DIR/stdout" || status=$?
+          if [[ $status -eq 0 ]]; then
+            cat "$CONTROL_DIR/stdout"
+            return 0
+          fi
+          [[ ($status -eq 255 || $status -eq 124) && $SECONDS -lt $deadline ]] || return "$status"
+          reset_control_master "$ssh_host"
+          sleep 2
+        done
+      }
+
+      function read_journal_since_cursor() {
+        local ssh_host=$1 unit=$2 remote_command output last
+        printf -v remote_command '%q ' journalctl --no-pager --quiet --output=cat --show-cursor --unit="$unit" \
+          ''${JOURNAL_CURSOR:+"--after-cursor=$JOURNAL_CURSOR"}
+        output=$(remote "$ssh_host" "$remote_command") || return $?
+        last=''${output##*$'\n'}
+        if [[ "$last" == "-- cursor: "* ]]; then
+          JOURNAL_CURSOR=''${last#-- cursor: }
+          output=''${output%"$last"}
+        fi
+        printf '%s' "$output"
+      }
+
+      function read_unit_state() {
+        local ssh_host=$1 unit=$2 props key value
+        local properties=LoadState,ActiveState,Result,ExecMainStatus,InactiveExitTimestampMonotonic
+        state=()
+        props=$(remote "$ssh_host" systemctl show --property="$properties" "$unit") || return 1
+        while IFS='=' read -r key value; do
+          [[ -z "$key" ]] || state[$key]=$value
+        done <<< "$props"
+        for key in ''${properties//,/ }; do
+          [[ -n "''${state[$key]-}" ]] || return 1
+        done
+        [[ "''${state[LoadState]}" =~ ^(stub|loaded|not-found|bad-setting|error|merged|masked)$ ]]
+      }
+
+      function activate_remote() {
+        local host=$1 ssh_host=$2 failure=$3 remote_command JOURNAL_CURSOR="" status=0
+        local deadline=$((SECONDS + RECONNECT_SECONDS)) final_result final_detail
+        shift 3
+        local unit
+        unit="nixcfg-deploy-$host-$(date +%s)-$$.service"
+        local -A state=()
+        printf -v remote_command '%q ' systemd-run --unit="$unit" --description="nixcfg deploy $ACTION $host" \
+          --property=Type=oneshot --property=RemainAfterExit=yes \
+          --property=StandardOutput=journal --property=StandardError=journal --setenv=PATH \
+          --no-block -- "$@"
+        ${coreutils}/bin/timeout --foreground "$SSH_ATTEMPT_SECONDS" ssh "''${SSH_OPTS[@]}" "$ssh_host" -- "$remote_command" \
+          || status=$?
+        case $status in
+          0) ;;
+          124|255) reset_control_master "$ssh_host" ;;
+          *) die "$failure" ;;
+        esac
+        while :; do
+          if REMOTE_DEADLINE=$deadline read_unit_state "$ssh_host" "$unit"; then
+            deadline=$((SECONDS + RECONNECT_SECONDS))
+            case "''${state[LoadState]}/''${state[ActiveState]}" in
+              loaded/activating|loaded/reloading|loaded/deactivating) ;;
+              loaded/inactive) [[ "''${state[InactiveExitTimestampMonotonic]}" == 0 ]] || break ;;
+              *) break ;;
+            esac
+            REMOTE_DEADLINE=$SECONDS read_journal_since_cursor "$ssh_host" "$unit" || true
+          elif [[ $SECONDS -ge $deadline ]]; then
+            die "Could not read the state of $unit on $host for ''${RECONNECT_SECONDS}s; it may still be running there"
+          fi
+          sleep 2
+        done
+        final_result="''${state[ActiveState]}/''${state[Result]}/''${state[ExecMainStatus]}"
+        final_detail="$unit: LoadState=''${state[LoadState]} ActiveState=''${state[ActiveState]} Result=''${state[Result]} ExecMainStatus=''${state[ExecMainStatus]}"
+        deadline=$((SECONDS + RECONNECT_SECONDS))
+        REMOTE_DEADLINE=$deadline remote "$ssh_host" journalctl --sync || true
+        status=0
+        REMOTE_DEADLINE=$deadline read_journal_since_cursor "$ssh_host" "$unit" || status=$?
+        [[ $status -eq 0 ]] || echo "warning: failed to fetch final journal output for $unit on $host (exit $status)" >&2
+        printf -v remote_command 'systemctl stop %q 2>/dev/null || true; systemctl reset-failed %q 2>/dev/null || true' \
+          "$unit" "$unit"
+        REMOTE_DEADLINE=$deadline remote "$ssh_host" "$remote_command" || true
+        if ! REMOTE_DEADLINE=$deadline read_unit_state "$ssh_host" "$unit" \
+          || [[ "''${state[LoadState]}" != not-found && "''${state[ActiveState]}" != inactive ]]; then
+          echo "warning: failed to clean up $unit on $host" >&2
+        fi
+        [[ "$final_result" == active/success/0 ]] && return 0
+        echo "$final_detail" >&2
+        die "$failure"
+      }
+
       for host in "''${HOSTS[@]}"; do
         [[ -z "''${GUEST_HOSTS[$host]-}" ]] || continue
         store_path="''${TOPLEVEL_STORE_PATHS["$host"]}"
@@ -221,9 +337,8 @@ let
           ssh_target="''${SSH_TARGETS[$host]-$host}"
           ssh_host="root@$ssh_target"
           echo "[1;36m     Copying [m➡️ [34m$host[m"
-          # Establish the configured SSH master before Nix creates its own private socket.
-          ssh "$ssh_host" -- true || die "Failed to authenticate to $host"
-          nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
+          ssh "''${SSH_OPTS[@]}" "$ssh_host" -- true || die "Failed to authenticate to $host"
+          NIX_SSHOPTS="''${SSH_OPTS[*]}" nix copy --substitute-on-destination --to "ssh://$ssh_host" "$store_path"
         fi
         time_next
         echo "[1;32m      Copied [m✅ [34m$host[m [90min ''${T_LAST}s[m"
@@ -240,7 +355,7 @@ let
             nvd --color always diff /run/current-system "$store_path" \
               || die "Failed to diff $host"
           else
-            ssh "root@''${SSH_TARGETS[$host]-$host}" -- nvd --color always diff /run/current-system "$store_path" \
+            ssh "''${SSH_OPTS[@]}" "root@''${SSH_TARGETS[$host]-$host}" -- nvd --color always diff /run/current-system "$store_path" \
               || die "Failed to diff $host"
           fi
           continue
@@ -267,23 +382,23 @@ let
         else
           ssh_target="''${SSH_TARGETS[$host]-$host}"
           ssh_host="root@$ssh_target"
-          prev_system=$(ssh "$ssh_host" -- readlink -e /nix/var/nix/profiles/system)
+          prev_system=$(ssh "''${SSH_OPTS[@]}" "$ssh_host" -- readlink -e /nix/var/nix/profiles/system)
           if [[ "$host" == "thinkpad1" ]]; then
             [[ -x "$store_path/thinkpad1-tpm-deploy" ]] \
               || die "Missing TPM deployment helper for $host"
-            ssh "$ssh_host" -- "$store_path/thinkpad1-tpm-deploy" "$ACTION" "$store_path" \
-              || die "Failed TPM-aware activation of $host"
+            activate_remote "$host" "$ssh_host" "Failed TPM-aware activation of $host" \
+              "$store_path/thinkpad1-tpm-deploy" "$ACTION" "$store_path"
           else
             if [[ "$ACTION" != "dry-activate" ]]; then
-              ssh "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
+              ssh "''${SSH_OPTS[@]}" "$ssh_host" -- /run/current-system/sw/bin/nix-env --profile /nix/var/nix/profiles/system --set "$store_path" \
                 || die "Failed to set system profile"
             fi
-            ssh "$ssh_host" -- "$store_path"/bin/switch-to-configuration "$ACTION" \
-              || die "Failed to activate $host"
+            activate_remote "$host" "$ssh_host" "Failed to activate $host" \
+              "$store_path/bin/switch-to-configuration" "$ACTION"
           fi
           if [[ -n "$prev_system" ]]; then
             # nvd must be installed on the target system for this to work
-            ssh "$ssh_host" -- nvd --color always diff "$prev_system" "$store_path" || true
+            remote "$ssh_host" nvd --color always diff "$prev_system" "$store_path" || true
           fi
         fi
         time_next
